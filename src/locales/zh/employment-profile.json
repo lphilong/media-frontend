@@ -1,0 +1,213 @@
+{
+  "page": {
+    "title": "员工档案",
+    "subtitle": "管理员工身份、分配和生命周期",
+    "placeholder": "员工档案业务流程尚未在本阶段实现。"
+  },
+  "fields": {
+    "employeeCode": "员工编码",
+    "legalName": "法定名称",
+    "displayName": "显示名称",
+    "employmentKind": "员工类型",
+    "jobTitle": "职位",
+    "orgUnitId": "组织单元 ID",
+    "newOrgUnitId": "新组织单元 ID",
+    "managerEmploymentProfileId": "主管档案 ID",
+    "newManagerEmploymentProfileId": "新主管档案 ID",
+    "linkedUserId": "关联用户ID",
+    "contractStatus": "合同状态",
+    "newContractStatus": "新合同状态",
+    "employmentStartDate": "员工开始日期",
+    "employmentEndDate": "员工结束日期",
+    "titleDescription": "标题描述",
+    "externalRef": "外部引用",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "placeholders": {
+    "optional": "可选",
+    "clearToUnset": "留空以清除主管分配"
+  },
+  "states": {
+    "emptyTitle": "未找到员工档案",
+    "emptyMessage": "请尝试更新搜索或筛选条件。",
+    "loadErrorTitle": "无法加载员工档案",
+    "loadErrorMessage": "无法加载员工档案数据。"
+  },
+  "filters": {
+    "searchPlaceholder": "按员工编码、法定名称或显示名称搜索",
+    "employmentStatus": "员工状态",
+    "contractStatus": "合同状态",
+    "employmentKind": "员工类型",
+    "employmentKindPlaceholder": "筛选按类型标记",
+    "orgUnitId": "组织单元",
+    "orgUnitIdPlaceholder": "组织单元 ID",
+    "managerEmploymentProfileId": "主管",
+    "managerEmploymentProfileIdPlaceholder": "主管档案 ID",
+    "hasLinkedUser": "已关联用户",
+    "allEmploymentStatuses": "所有员工状态",
+    "allContractStatuses": "所有合同状态",
+    "allLinkedUserStates": "所有用户关联状态",
+    "linkedOnly": "仅已关联",
+    "unlinkedOnly": "仅未关联"
+  },
+  "sort": {
+    "employeeCode": "员工编码",
+    "displayName": "显示名称",
+    "legalName": "法定名称",
+    "createdAt": "创建时间"
+  },
+  "statuses": {
+    "ACTIVE": "启用",
+    "ON_LEAVE": "休假中",
+    "SUSPENDED": "已暂停",
+    "TERMINATED": "已终止",
+    "ARCHIVED": "已归档"
+  },
+  "contractStatuses": {
+    "NONE": "无",
+    "PENDING_SIGNATURE": "待签署",
+    "ACTIVE": "启用",
+    "EXPIRED": "已过期",
+    "TERMINATED": "已终止"
+  },
+  "actions": {
+    "create": "新建员工档案",
+    "closeCreate": "关闭新建",
+    "open": "打开",
+    "edit": "编辑",
+    "assignOrgUnit": "分配组织单元",
+    "assignManager": "分配主管",
+    "linkUser": "关联用户",
+    "unlinkUser": "解除用户关联",
+    "updateContractStatus": "更新合同状态",
+    "place-on-leave": "置为休假",
+    "return-from-leave": "休假返回",
+    "suspend": "暂停",
+    "reactivate": "重新启用",
+    "terminate": "终止",
+    "archive": "归档"
+  },
+  "table": {
+    "caption": "员工档案列表",
+    "employeeCode": "员工编码",
+    "displayName": "显示名称",
+    "legalName": "法定名称",
+    "employmentKind": "类型",
+    "jobTitle": "职位",
+    "orgUnitId": "组织单元",
+    "managerEmploymentProfileId": "主管",
+    "linkedUserId": "已关联用户",
+    "employmentStatus": "员工状态",
+    "contractStatus": "合同状态",
+    "createdAt": "已创建",
+    "actions": "操作"
+  },
+  "directReportsTable": {
+    "employeeCode": "员工编码",
+    "displayName": "显示名称",
+    "employmentStatus": "员工状态",
+    "contractStatus": "合同状态",
+    "orgUnitId": "组织单元",
+    "managerEmploymentProfileId": "主管"
+  },
+  "directReports": {
+    "sortBy": "排序",
+    "sort": {
+      "employeeCode": "员工编码",
+      "displayName": "显示名称"
+    },
+    "emptyTitle": "无直接下属",
+    "emptyMessage": "此档案当前没有直接下属。",
+    "caption": "直接下属列表"
+  },
+  "detail": {
+    "summaryTitle": "档案摘要",
+    "assignmentTitle": "分配和日期",
+    "noManager": "未分配主管"
+  },
+  "related": {
+    "navigationTitle": "关联导航",
+    "workShifts": "按主体查看工作班次",
+    "events": "按分配查看活动",
+    "contractsByOwner": "按所有者查看合同",
+    "contractsByLinkedEntity": "按关联实体查看合同",
+    "openFilteredList": "打开筛选列表",
+    "unavailable": "不可用",
+    "directReportsTitle": "直接下属"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建员工档案",
+      "subtitle": "新建员工档案记录",
+      "submit": "新建",
+      "pending": "新建中..."
+    },
+    "edit": {
+      "title": "编辑员工档案",
+      "subtitle": "更新档案可编辑字段",
+      "submit": "保存",
+      "pending": "保存中..."
+    },
+    "assignOrgUnit": {
+      "title": "分配组织单元",
+      "subtitle": "将档案移动到其他组织单元",
+      "submit": "分配",
+      "pending": "分配中..."
+    },
+    "assignManager": {
+      "title": "分配主管",
+      "subtitle": "更新主管关系",
+      "submit": "分配",
+      "pending": "分配中..."
+    },
+    "linkUser": {
+      "title": "关联用户",
+      "subtitle": "将用户账号关联到此档案",
+      "submit": "关联",
+      "pending": "关联中..."
+    },
+    "contractStatus": {
+      "title": "更新合同状态",
+      "subtitle": "通过专用操作变更合同状态",
+      "submit": "更新",
+      "pending": "更新中..."
+    },
+    "terminate": {
+      "title": "终止员工",
+      "subtitle": "通过终止操作设置员工结束日期",
+      "submit": "终止",
+      "pending": "终止中..."
+    }
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "值只能使用支持的标记字符。",
+    "invalidDate": "日期必须是有效的 YYYY-MM-DD 值。",
+    "invalidReferenceToken": "引用 ID 包含不支持的字符。",
+    "managerCannotBeSelf": "档案不能将自己设为主管。",
+    "contractStatusTransitionNotAllowed": "不支持此合同状态转换。"
+  },
+  "feedback": {
+    "created": "员工档案已创建。",
+    "updated": "员工档案已更新。",
+    "orgUnitAssigned": "组织单元分配已更新。",
+    "managerAssigned": "主管分配已更新。",
+    "userLinked": "用户已关联。",
+    "userUnlinked": "用户已取消关联。",
+    "contractStatusUpdated": "合同状态已更新。",
+    "terminated": "员工档案已终止。",
+    "lifecycleUpdated": "员工生命周期已更新。"
+  },
+  "confirm": {
+    "unlinkUser": "从此员工档案解除用户关联？",
+    "place-on-leave": "将此档案置为休假？",
+    "return-from-leave": "将此档案从休假恢复？",
+    "suspend": "暂停此员工档案？",
+    "reactivate": "重新启用此员工档案？",
+    "archive": "归档此员工档案？"
+  },
+  "actionRail": {
+    "title": "员工操作"
+  }
+}

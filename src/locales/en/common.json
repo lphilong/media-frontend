@@ -1,0 +1,70 @@
+{
+  "app": {
+    "name": "Livestream Admin"
+  },
+  "labels": {
+    "locale": "Locale",
+    "breadcrumb": "Breadcrumb navigation",
+    "detail": "Detail",
+    "recordId": "Record ID",
+    "waveState": "Wave State",
+    "search": "Search",
+    "sort": "Sort",
+    "sortDefault": "Default",
+    "sortAscending": "Ascending",
+    "sortDescending": "Descending"
+  },
+  "locales": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "zh": "中文"
+  },
+  "actions": {
+    "reload": "Reload",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "previous": "Previous",
+    "next": "Next",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "confirmDestructive": "Confirm Action",
+    "close": "Close",
+    "search": "Search",
+    "stubAction": "Actions In Next Wave",
+    "toggleSidebar": "Toggle sidebar",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "states": {
+    "loading": "Loading"
+  },
+  "auth": {
+    "loginTitle": "Admin sign in",
+    "loginSubtitle": "Foundation auth seam is ready for Auth0"
+  },
+  "session": {
+    "placeholderUser": "Admin session",
+    "statusActive": "Active"
+  },
+  "placeholders": {
+    "foundationOnlyTitle": "This page is scaffolded at foundation level",
+    "waveStubSubtitle": "Not yet implemented in this wave",
+    "waveStubState": "Stub Only",
+    "listSectionTitle": "List Surface",
+    "detailSummaryTitle": "Record Summary",
+    "detailMetadataTitle": "Metadata Surface",
+    "relatedSectionTitle": "Related Surface",
+    "relatedSectionSubtitle": "Related views are scaffolded for future module work",
+    "relatedSectionMessage": "No related list behavior is implemented in this wave.",
+    "actionRailTitle": "Actions",
+    "actionRailPlaceholder": "Detail actions are not implemented yet."
+  },
+  "dialogs": {
+    "destructive": {
+      "title": "Confirm Destructive Action"
+    }
+  },
+  "feedback": {
+    "saved": "Saved successfully"
+  }
+}

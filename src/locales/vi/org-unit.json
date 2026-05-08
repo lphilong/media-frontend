@@ -1,0 +1,142 @@
+{
+  "page": {
+    "title": "Đơn vị tổ chức",
+    "subtitle": "Quản lý cơ cấu tổ chức.",
+    "placeholder": "Danh sách, bộ lọc và hành động của Đơn vị tổ chức chưa được triển khai."
+  },
+  "fields": {
+    "code": "Mã",
+    "name": "Tên",
+    "type": "Loại",
+    "status": "Trạng thái",
+    "parentOrgUnitId": "ID đơn vị tổ chức cha",
+    "newParentOrgUnitId": "ID đơn vị tổ chức cha mới",
+    "displayOrder": "Thứ tự hiển thị",
+    "depth": "Độ sâu",
+    "ancestorChain": "Chuỗi cấp trên",
+    "externalRef": "Tham chiếu bên ngoài",
+    "description": "Mô tả",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật"
+  },
+  "placeholders": {
+    "typeToken": "Ví dụ: DEPARTMENT",
+    "parentOrgUnitId": "Để trống nếu là đơn vị gốc",
+    "optional": "Không bắt buộc"
+  },
+  "states": {
+    "emptyTitle": "Không tìm thấy đơn vị tổ chức",
+    "emptyMessage": "Thử cập nhật tìm kiếm hoặc bộ lọc.",
+    "loadErrorTitle": "Không tải được đơn vị tổ chức",
+    "loadErrorMessage": "Không thể tải dữ liệu đơn vị tổ chức."
+  },
+  "filters": {
+    "searchPlaceholder": "Nhập mã hoặc tên đơn vị",
+    "status": "Trạng thái",
+    "type": "Loại",
+    "typePlaceholder": "Lọc theo token loại",
+    "parentOrgUnitId": "Đơn vị tổ chức cha",
+    "parentOrgUnitIdPlaceholder": "ID đơn vị cha",
+    "rootOnly": "Chế độ phân cấp",
+    "allStatuses": "Tất cả trạng thái",
+    "allRootModes": "Tất cả chế độ phân cấp",
+    "onlyRoots": "Chỉ đơn vị gốc",
+    "withParent": "Có đơn vị cha"
+  },
+  "sort": {
+    "code": "Mã",
+    "name": "Tên",
+    "createdAt": "Thời điểm tạo",
+    "displayOrder": "Thứ tự hiển thị"
+  },
+  "statuses": {
+    "ACTIVE": "Đang hoạt động",
+    "INACTIVE": "Không hoạt động",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "actions": {
+    "create": "Tạo đơn vị tổ chức",
+    "closeCreate": "Đóng tạo mới",
+    "open": "Mở",
+    "edit": "Chỉnh sửa",
+    "move": "Di chuyển",
+    "activate": "Kích hoạt",
+    "deactivate": "Vô hiệu hóa",
+    "archive": "Lưu trữ"
+  },
+  "table": {
+    "caption": "Danh sách đơn vị tổ chức",
+    "code": "Mã",
+    "name": "Tên",
+    "type": "Loại",
+    "status": "Trạng thái",
+    "parentOrgUnitId": "Đơn vị cha",
+    "depth": "Độ sâu",
+    "displayOrder": "Thứ tự",
+    "createdAt": "Thời điểm tạo",
+    "actions": "Hành động"
+  },
+  "childrenTable": {
+    "code": "Mã",
+    "name": "Tên",
+    "type": "Loại",
+    "status": "Trạng thái",
+    "depth": "Độ sâu",
+    "displayOrder": "Thứ tự"
+  },
+  "detail": {
+    "summaryTitle": "Metadata chính",
+    "hierarchyTitle": "Phân cấp",
+    "rootUnit": "Đơn vị gốc"
+  },
+  "related": {
+    "navigationTitle": "Điều hướng liên quan",
+    "employmentProfiles": "Hồ sơ nhân sự",
+    "platformAccounts": "Tài khoản nền tảng",
+    "openFilteredList": "Mở danh sách đã lọc",
+    "childrenTitle": "Đơn vị tổ chức con",
+    "childrenEmptyTitle": "Không có đơn vị tổ chức con",
+    "childrenEmptyMessage": "Đơn vị này hiện chưa có bản ghi con."
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo đơn vị tổ chức",
+      "subtitle": "Tạo bản ghi đơn vị tổ chức mới.",
+      "submit": "Tạo",
+      "pending": "Đang tạo..."
+    },
+    "edit": {
+      "title": "Chỉnh sửa đơn vị tổ chức",
+      "subtitle": "Cập nhật các trường có thể chỉnh sửa của đơn vị tổ chức.",
+      "submit": "Lưu",
+      "pending": "Đang lưu..."
+    },
+    "move": {
+      "title": "Di chuyển đơn vị tổ chức",
+      "subtitle": "Đổi đơn vị cha bằng hành động di chuyển chuyên biệt.",
+      "submit": "Di chuyển",
+      "pending": "Đang di chuyển..."
+    }
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidDisplayOrder": "Thứ tự hiển thị phải là số nguyên lớn hơn hoặc bằng 0.",
+    "invalidTypeToken": "Loại phải là token chữ hoa, ví dụ DEPARTMENT.",
+    "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
+    "moveSelfForbidden": "Không thể di chuyển đơn vị tổ chức vào chính nó."
+  },
+  "feedback": {
+    "created": "Đã tạo đơn vị tổ chức.",
+    "updated": "Đã cập nhật đơn vị tổ chức.",
+    "moved": "Đã di chuyển đơn vị tổ chức.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời đơn vị tổ chức."
+  },
+  "confirm": {
+    "activate": "Kích hoạt đơn vị tổ chức này?",
+    "deactivate": "Vô hiệu hóa đơn vị tổ chức này?",
+    "archive": "Lưu trữ đơn vị tổ chức này?"
+  },
+  "actionRail": {
+    "title": "Hành động đơn vị tổ chức"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "landmarks": {
+    "primaryNavigation": "主导航"
+  },
+  "groups": {
+    "overview": "概览",
+    "identityAccess": "身份与访问",
+    "organization": "组织",
+    "talentOwnership": "艺人与归属",
+    "operations": "运营",
+    "commercial": "商业"
+  },
+  "items": {
+    "dashboard": "仪表盘",
+    "users": "用户",
+    "roles": "角色",
+    "orgUnits": "组织单元",
+    "employmentProfiles": "员工档案",
+    "talents": "艺人",
+    "talentGroups": "艺人组",
+    "platformAccounts": "平台账号",
+    "studioResources": "演播资源",
+    "workShifts": "工作班次",
+    "events": "活动",
+    "contractRegistry": "合同登记",
+    "talentKpi": "艺人 KPI",
+    "revenueLedger": "收入台账",
+    "commission": "佣金",
+    "commissionRules": "佣金规则",
+    "commissionSettlements": "佣金结算"
+  },
+  "short": {
+    "dashboard": "db",
+    "users": "us",
+    "roles": "ro",
+    "orgUnits": "ou",
+    "employmentProfiles": "ep",
+    "talents": "tl",
+    "talentGroups": "tg",
+    "platformAccounts": "pa",
+    "studioResources": "sr",
+    "workShifts": "ws",
+    "events": "ev",
+    "contractRegistry": "cr",
+    "talentKpi": "KPI",
+    "revenueLedger": "rl",
+    "commission": "cm",
+    "commissionRules": "R",
+    "commissionSettlements": "S"
+  }
+}

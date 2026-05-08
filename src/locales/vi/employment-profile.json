@@ -1,0 +1,213 @@
+{
+  "page": {
+    "title": "Hồ sơ nhân sự",
+    "subtitle": "Quản lý định danh nhân sự, phân công và vòng đời.",
+    "placeholder": "Luồng nghiệp vụ hồ sơ nhân sự chưa được triển khai chủ đích."
+  },
+  "fields": {
+    "employeeCode": "Mã nhân viên",
+    "legalName": "Tên pháp lý",
+    "displayName": "Tên hiển thị",
+    "employmentKind": "Loại nhân sự",
+    "jobTitle": "Chức danh",
+    "orgUnitId": "ID đơn vị tổ chức",
+    "newOrgUnitId": "ID đơn vị tổ chức mới",
+    "managerEmploymentProfileId": "ID hồ sơ quản lý",
+    "newManagerEmploymentProfileId": "ID hồ sơ quản lý mới",
+    "linkedUserId": "ID người dùng liên kết",
+    "contractStatus": "Trạng thái hợp đồng",
+    "newContractStatus": "Trạng thái hợp đồng mới",
+    "employmentStartDate": "Ngày bắt đầu làm việc",
+    "employmentEndDate": "Ngày kết thúc làm việc",
+    "titleDescription": "Mô tả chức danh",
+    "externalRef": "Tham chiếu bên ngoài",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật"
+  },
+  "placeholders": {
+    "optional": "Không bắt buộc",
+    "clearToUnset": "Để trống để xóa quản lý đang gán"
+  },
+  "states": {
+    "emptyTitle": "Không tìm thấy hồ sơ nhân sự",
+    "emptyMessage": "Thử cập nhật tìm kiếm hoặc bộ lọc.",
+    "loadErrorTitle": "Không tải được hồ sơ nhân sự",
+    "loadErrorMessage": "Không tải được dữ liệu hồ sơ nhân sự."
+  },
+  "filters": {
+    "searchPlaceholder": "Nhập mã nhân viên",
+    "employmentStatus": "Trạng thái nhân sự",
+    "contractStatus": "Trạng thái hợp đồng",
+    "employmentKind": "Loại nhân sự",
+    "employmentKindPlaceholder": "Lọc theo token loại nhân sự",
+    "orgUnitId": "Đơn vị tổ chức",
+    "orgUnitIdPlaceholder": "ID đơn vị tổ chức",
+    "managerEmploymentProfileId": "Quản lý",
+    "managerEmploymentProfileIdPlaceholder": "ID hồ sơ quản lý",
+    "hasLinkedUser": "Trạng thái liên kết người dùng",
+    "allEmploymentStatuses": "Tất cả trạng thái nhân sự",
+    "allContractStatuses": "Tất cả trạng thái hợp đồng",
+    "allLinkedUserStates": "Tất cả trạng thái liên kết người dùng",
+    "linkedOnly": "Đã liên kết",
+    "unlinkedOnly": "Chưa liên kết"
+  },
+  "sort": {
+    "employeeCode": "Mã nhân viên",
+    "displayName": "Tên hiển thị",
+    "legalName": "Tên pháp lý",
+    "createdAt": "Thời điểm tạo"
+  },
+  "statuses": {
+    "ACTIVE": "Đang hoạt động",
+    "ON_LEAVE": "Đang nghỉ phép",
+    "SUSPENDED": "Đã tạm ngưng",
+    "TERMINATED": "Đã kết thúc",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "contractStatuses": {
+    "NONE": "Không có",
+    "PENDING_SIGNATURE": "Chờ ký",
+    "ACTIVE": "Đang hoạt động",
+    "EXPIRED": "Đã hết hạn",
+    "TERMINATED": "Đã kết thúc"
+  },
+  "actions": {
+    "create": "Tạo hồ sơ nhân sự",
+    "closeCreate": "Đóng tạo mới",
+    "open": "Mở",
+    "edit": "Chỉnh sửa",
+    "assignOrgUnit": "Gán đơn vị tổ chức",
+    "assignManager": "Gán quản lý",
+    "linkUser": "Liên kết người dùng",
+    "unlinkUser": "Bỏ liên kết người dùng",
+    "updateContractStatus": "Cập nhật trạng thái hợp đồng",
+    "place-on-leave": "Đưa vào nghỉ phép",
+    "return-from-leave": "Quay lại sau nghỉ phép",
+    "suspend": "Tạm ngưng",
+    "reactivate": "Kích hoạt lại",
+    "terminate": "Kết thúc",
+    "archive": "Lưu trữ"
+  },
+  "table": {
+    "caption": "Danh sách hồ sơ nhân sự",
+    "employeeCode": "Mã nhân viên",
+    "displayName": "Tên hiển thị",
+    "legalName": "Tên pháp lý",
+    "employmentKind": "Loại",
+    "jobTitle": "Chức danh",
+    "orgUnitId": "Đơn vị tổ chức",
+    "managerEmploymentProfileId": "Quản lý",
+    "linkedUserId": "Người dùng liên kết",
+    "employmentStatus": "Trạng thái nhân sự",
+    "contractStatus": "Trạng thái hợp đồng",
+    "createdAt": "Thời điểm tạo",
+    "actions": "Hành động"
+  },
+  "directReportsTable": {
+    "employeeCode": "Mã nhân viên",
+    "displayName": "Tên hiển thị",
+    "employmentStatus": "Trạng thái nhân sự",
+    "contractStatus": "Trạng thái hợp đồng",
+    "orgUnitId": "Đơn vị tổ chức",
+    "managerEmploymentProfileId": "Quản lý"
+  },
+  "directReports": {
+    "sortBy": "Sắp xếp",
+    "sort": {
+      "employeeCode": "Mã nhân viên",
+      "displayName": "Tên hiển thị"
+    },
+    "emptyTitle": "Không có cấp dưới trực tiếp",
+    "emptyMessage": "Hồ sơ này hiện không có cấp dưới trực tiếp.",
+    "caption": "Danh sách cấp dưới trực tiếp"
+  },
+  "detail": {
+    "summaryTitle": "Tóm tắt hồ sơ",
+    "assignmentTitle": "Phân công và mốc thời gian",
+    "noManager": "Chưa gán quản lý"
+  },
+  "related": {
+    "navigationTitle": "Điều hướng liên quan",
+    "workShifts": "Ca làm việc theo chủ thể",
+    "events": "Sự kiện theo phân công",
+    "contractsByOwner": "Hợp đồng theo chủ sở hữu",
+    "contractsByLinkedEntity": "Hợp đồng theo thực thể liên kết",
+    "openFilteredList": "Mở danh sách đã lọc",
+    "unavailable": "Không khả dụng",
+    "directReportsTitle": "Cấp dưới trực tiếp"
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo hồ sơ nhân sự",
+      "subtitle": "Tạo một bản ghi hồ sơ nhân sự mới.",
+      "submit": "Tạo",
+      "pending": "Đang tạo..."
+    },
+    "edit": {
+      "title": "Chỉnh sửa hồ sơ nhân sự",
+      "subtitle": "Cập nhật các trường hồ sơ được phép chỉnh sửa.",
+      "submit": "Lưu",
+      "pending": "Đang lưu..."
+    },
+    "assignOrgUnit": {
+      "title": "Gán đơn vị tổ chức",
+      "subtitle": "Chuyển hồ sơ sang một đơn vị tổ chức khác.",
+      "submit": "Gán",
+      "pending": "Đang gán..."
+    },
+    "assignManager": {
+      "title": "Gán quản lý",
+      "subtitle": "Cập nhật quan hệ quản lý cho hồ sơ này.",
+      "submit": "Gán",
+      "pending": "Đang gán..."
+    },
+    "linkUser": {
+      "title": "Liên kết người dùng",
+      "subtitle": "Gắn một tài khoản người dùng vào hồ sơ nhân sự này.",
+      "submit": "Liên kết",
+      "pending": "Đang liên kết..."
+    },
+    "contractStatus": {
+      "title": "Cập nhật trạng thái hợp đồng",
+      "subtitle": "Đổi trạng thái hợp đồng qua hành động chuyên biệt.",
+      "submit": "Cập nhật",
+      "pending": "Đang cập nhật..."
+    },
+    "terminate": {
+      "title": "Kết thúc nhân sự",
+      "subtitle": "Thiết lập ngày kết thúc làm việc qua hành động kết thúc.",
+      "submit": "Kết thúc",
+      "pending": "Đang kết thúc..."
+    }
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
+    "invalidDate": "Ngày phải có định dạng YYYY-MM-DD hợp lệ.",
+    "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
+    "managerCannotBeSelf": "Một hồ sơ không thể tự làm quản lý của chính nó.",
+    "contractStatusTransitionNotAllowed": "Không hỗ trợ chuyển trạng thái hợp đồng này."
+  },
+  "feedback": {
+    "created": "Đã tạo hồ sơ nhân sự.",
+    "updated": "Đã cập nhật hồ sơ nhân sự.",
+    "orgUnitAssigned": "Đã cập nhật đơn vị tổ chức.",
+    "managerAssigned": "Đã cập nhật quản lý.",
+    "userLinked": "Đã liên kết người dùng.",
+    "userUnlinked": "Đã bỏ liên kết người dùng.",
+    "contractStatusUpdated": "Đã cập nhật trạng thái hợp đồng.",
+    "terminated": "Đã kết thúc hồ sơ nhân sự.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời hồ sơ nhân sự."
+  },
+  "confirm": {
+    "unlinkUser": "Bỏ liên kết người dùng khỏi hồ sơ nhân sự này?",
+    "place-on-leave": "Đưa hồ sơ này vào nghỉ phép?",
+    "return-from-leave": "Đưa hồ sơ này quay lại sau nghỉ phép?",
+    "suspend": "Tạm ngưng hồ sơ nhân sự này?",
+    "reactivate": "Kích hoạt lại hồ sơ nhân sự này?",
+    "archive": "Lưu trữ hồ sơ nhân sự này?"
+  },
+  "actionRail": {
+    "title": "Hành động hồ sơ nhân sự"
+  }
+}

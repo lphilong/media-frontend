@@ -1,0 +1,181 @@
+import { APP_PATHS } from '@app/router/paths';
+import { fetchEmploymentProfiles } from '@modules/employment-profile/api/employment-profile.api';
+import type { EmploymentProfileListItem } from '@modules/employment-profile/types/employment-profile.types';
+import { fetchOrgUnits } from '@modules/org-unit/api/org-unit.api';
+import type { OrgUnitRecord } from '@modules/org-unit/types/org-unit.types';
+import { fetchStudioResources } from '@modules/studio-resource/api/studio-resource.api';
+import type { StudioResourceListItem } from '@modules/studio-resource/types/studio-resource.types';
+import { fetchTalentGroups } from '@modules/talent-group/api/talent-group.api';
+import type { TalentGroupRecord } from '@modules/talent-group/types/talent-group.types';
+import { fetchTalents } from '@modules/talent/api/talent.api';
+import type { TalentRecord } from '@modules/talent/types/talent.types';
+import {
+  fetchHolidayCalendars,
+  fetchWorkPatterns,
+} from '@modules/work-schedule/api/work-schedule.api';
+import type {
+  HolidayCalendarRecord,
+  WorkPatternRecord,
+  WorkShiftSubjectKind,
+} from '@modules/work-schedule/types/work-schedule.types';
+import type { ReferenceOption } from '@shared/components/reference';
+
+const OPTION_LIMIT = 20;
+
+const compactDescription = (values: Array<string | null | undefined>): string | undefined => {
+  const items = values.filter((value): value is string => Boolean(value));
+  return items.length > 0 ? items.join(' - ') : undefined;
+};
+
+const toEmploymentProfileOption = (item: EmploymentProfileListItem): ReferenceOption => ({
+  id: item.id,
+  label: `${item.employeeCode} - ${item.displayName || item.legalName}`,
+  description: compactDescription([item.legalName, item.jobTitle, item.employmentStatus]),
+  href: APP_PATHS.employmentProfileDetail(item.id),
+});
+
+const toTalentOption = (item: TalentRecord): ReferenceOption => ({
+  id: item.id,
+  label: `${item.talentCode} - ${item.stageName}`,
+  description: compactDescription([item.legalName, item.displayShortName, item.operationalStatus]),
+  href: APP_PATHS.talentDetail(item.id),
+});
+
+const toTalentGroupOption = (item: TalentGroupRecord): ReferenceOption => ({
+  id: item.id,
+  label: `${item.groupCode} - ${item.name}`,
+  description: compactDescription([item.shortName, item.status]),
+  href: APP_PATHS.talentGroupDetail(item.id),
+});
+
+const toStudioResourceOption = (item: StudioResourceListItem): ReferenceOption => ({
+  id: item.id,
+  label: `${item.resourceCode} - ${item.shortName || item.name}`,
+  description: compactDescription([item.name, item.resourceClass, item.operationalStatus]),
+  href: APP_PATHS.studioResourceDetail(item.id),
+});
+
+const toDepartmentOption = (item: OrgUnitRecord): ReferenceOption => ({
+  id: item.id,
+  label: `${item.code} - ${item.name}`,
+  description: compactDescription([item.type, item.status]),
+  href: APP_PATHS.orgUnitDetail(item.id),
+});
+
+const toWorkPatternOption = (item: WorkPatternRecord): ReferenceOption => ({
+  id: item.workPatternId,
+  label: `${item.patternCode} - ${item.name}`,
+  description: compactDescription([
+    item.status,
+    item.workingDays.join(', '),
+    `${item.startLocalTime}-${item.endLocalTime}`,
+  ]),
+  href: APP_PATHS.workPatternDetail(item.workPatternId),
+});
+
+const toHolidayCalendarOption = (item: HolidayCalendarRecord): ReferenceOption => ({
+  id: item.holidayCalendarId,
+  label: `${item.calendarCode} - ${item.name}`,
+  description: compactDescription([item.scopeType, item.timezone, item.status]),
+  href: APP_PATHS.holidayCalendarDetail(item.holidayCalendarId),
+});
+
+export const loadWorkShiftSubjectOptions = async (
+  subjectKind: WorkShiftSubjectKind,
+  search: string,
+): Promise<ReferenceOption[]> => {
+  if (subjectKind === 'EMPLOYMENT_PROFILE') {
+    const response = await fetchEmploymentProfiles({
+      search: search || undefined,
+      limit: OPTION_LIMIT,
+      sortBy: 'employeeCode',
+      sortDirection: 'asc',
+    });
+    return response.data.map(toEmploymentProfileOption);
+  }
+
+  if (subjectKind === 'TALENT') {
+    const response = await fetchTalents({
+      search: search || undefined,
+      limit: OPTION_LIMIT,
+      sortBy: 'talentCode',
+      sortDirection: 'asc',
+    });
+    return response.data.map(toTalentOption);
+  }
+
+  const response = await fetchTalentGroups({
+    search: search || undefined,
+    limit: OPTION_LIMIT,
+    sortBy: 'groupCode',
+    sortDirection: 'asc',
+  });
+  return response.data.map(toTalentGroupOption);
+};
+
+export const loadWorkShiftStudioResourceOptions = async (
+  search: string,
+): Promise<ReferenceOption[]> => {
+  const response = await fetchStudioResources({
+    search: search || undefined,
+    limit: OPTION_LIMIT,
+    sortBy: 'resourceCode',
+    sortDirection: 'asc',
+  });
+  return response.data.map(toStudioResourceOption);
+};
+
+export const loadMonthlyRosterEmploymentProfileOptions = async (
+  search: string,
+  departmentOrgUnitId?: string,
+): Promise<ReferenceOption[]> => {
+  const response = await fetchEmploymentProfiles({
+    search: search || undefined,
+    orgUnitId: departmentOrgUnitId || undefined,
+    employmentStatus: 'ACTIVE',
+    limit: OPTION_LIMIT,
+    sortBy: 'employeeCode',
+    sortDirection: 'asc',
+  });
+
+  return response.data.map(toEmploymentProfileOption);
+};
+
+export const loadMonthlyRosterDepartmentOptions = async (
+  search: string,
+): Promise<ReferenceOption[]> => {
+  const response = await fetchOrgUnits({
+    search: search || undefined,
+    status: 'ACTIVE',
+    type: 'DEPARTMENT',
+    limit: OPTION_LIMIT,
+    sortBy: 'name',
+    sortDirection: 'asc',
+  });
+
+  return response.data.map(toDepartmentOption);
+};
+
+export const loadMonthlyRosterWorkPatternOptions = async (
+  search: string,
+): Promise<ReferenceOption[]> => {
+  const response = await fetchWorkPatterns({
+    search: search || undefined,
+    status: 'ACTIVE',
+    limit: OPTION_LIMIT,
+  });
+
+  return response.data.map(toWorkPatternOption);
+};
+
+export const loadMonthlyRosterHolidayCalendarOptions = async (
+  search: string,
+): Promise<ReferenceOption[]> => {
+  const response = await fetchHolidayCalendars({
+    search: search || undefined,
+    status: 'ACTIVE',
+    limit: OPTION_LIMIT,
+  });
+
+  return response.data.map(toHolidayCalendarOption);
+};

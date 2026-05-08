@@ -1,0 +1,158 @@
+{
+  "page": {
+    "title": "Talent Groups",
+    "subtitle": "Talent group membership and lifecycle management",
+    "placeholder": "Talent Group business flows are intentionally not implemented yet."
+  },
+  "fields": {
+    "groupCode": "Group Code",
+    "name": "Name",
+    "shortName": "Short Name",
+    "status": "Status",
+    "displayOrder": "Display Order",
+    "description": "Description",
+    "externalRef": "External Reference",
+    "talentId": "Talent ID",
+    "lineupOrder": "Lineup Order",
+    "newLineupOrder": "New Lineup Order",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At"
+  },
+  "placeholders": {
+    "optional": "Optional"
+  },
+  "states": {
+    "emptyTitle": "No talent groups found",
+    "emptyMessage": "Try updating search or filters.",
+    "loadErrorTitle": "Unable to load talent groups",
+    "loadErrorMessage": "Talent group data could not be loaded."
+  },
+  "filters": {
+    "searchPlaceholder": "Search by group code, name, or short name",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "containsTalentId": "Contains Talent",
+    "containsTalentIdPlaceholder": "Talent ID",
+    "talentId": "Talent ID",
+    "talentIdPlaceholder": "Related talent ID"
+  },
+  "sort": {
+    "groupCode": "Group Code",
+    "name": "Name",
+    "createdAt": "Created At",
+    "displayOrder": "Display Order"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
+  },
+  "membershipStatuses": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "REMOVED": "Removed"
+  },
+  "actions": {
+    "create": "Create Talent Group",
+    "closeCreate": "Close Create",
+    "exitByTalent": "Exit By-Talent View",
+    "open": "Open",
+    "edit": "Edit",
+    "addMember": "Add Member",
+    "updateLineup": "Update Lineup",
+    "deactivateMember": "Deactivate Member",
+    "reactivateMember": "Reactivate Member",
+    "removeMember": "Remove Member",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "archive": "Archive"
+  },
+  "table": {
+    "caption": "Talent group list",
+    "groupCode": "Group Code",
+    "name": "Name",
+    "shortName": "Short Name",
+    "status": "Status",
+    "displayOrder": "Order",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "actions": "Actions"
+  },
+  "membersTable": {
+    "caption": "Group members",
+    "talentId": "Talent ID",
+    "membershipStatus": "Membership Status",
+    "lineupOrder": "Lineup Order",
+    "joinedAt": "Joined At",
+    "leftAt": "Left At",
+    "actions": "Actions"
+  },
+  "detail": {
+    "summaryTitle": "Group Summary",
+    "metadataTitle": "Group Metadata"
+  },
+  "related": {
+    "byTalentModeLabel": "By Talent",
+    "navigationTitle": "Related Navigation",
+    "platformAccounts": "Platform Accounts",
+    "workShifts": "Work Shifts",
+    "events": "Events",
+    "openFilteredList": "Open filtered list",
+    "unavailable": "Unavailable",
+    "membersTitle": "Member Roster",
+    "membersEmptyTitle": "No active or inactive members",
+    "membersEmptyMessage": "This group currently has no visible members."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create Talent Group",
+      "subtitle": "Create a new talent group",
+      "submit": "Create",
+      "pending": "Creating..."
+    },
+    "edit": {
+      "title": "Edit Talent Group",
+      "subtitle": "Update editable group fields",
+      "submit": "Save",
+      "pending": "Saving..."
+    },
+    "addMember": {
+      "title": "Add Member",
+      "subtitle": "Add a talent to this group",
+      "submit": "Add",
+      "pending": "Adding..."
+    },
+    "updateLineup": {
+      "title": "Update Lineup",
+      "subtitle": "Update a member lineup order",
+      "submit": "Update",
+      "pending": "Updating..."
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Value must use supported token characters.",
+    "invalidReferenceToken": "Reference ID contains unsupported characters.",
+    "invalidDisplayOrder": "Display order must be an integer greater than or equal to 0.",
+    "invalidLineupOrder": "Lineup order must be an integer greater than or equal to 0."
+  },
+  "feedback": {
+    "created": "Talent group created successfully.",
+    "updated": "Talent group updated successfully.",
+    "memberAdded": "Member added successfully.",
+    "lineupUpdated": "Lineup updated successfully.",
+    "lifecycleUpdated": "Group lifecycle updated successfully.",
+    "membershipLifecycleUpdated": "Membership lifecycle updated successfully."
+  },
+  "confirm": {
+    "activate": "Activate this group?",
+    "deactivate": "Deactivate this group?",
+    "archive": "Archive this group?",
+    "deactivateMember": "Deactivate this member?",
+    "reactivateMember": "Reactivate this member?",
+    "removeMember": "Remove this member?"
+  },
+  "actionRail": {
+    "title": "Talent Group Actions"
+  }
+}

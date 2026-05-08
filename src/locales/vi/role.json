@@ -1,0 +1,174 @@
+{
+  "page": {
+    "title": "Vai trò",
+    "subtitle": "Quản trị mẫu quyền, quy tắc gán và các bản ghi gán người dùng do Vai trò sở hữu.",
+    "placeholder": "Luồng định danh và truy cập của Vai trò chưa khả dụng."
+  },
+  "fields": {
+    "roleId": "ID vai trò",
+    "userId": "ID người dùng",
+    "code": "Mã",
+    "name": "Họ và Tên",
+    "state": "Trạng thái",
+    "description": "Mô tả",
+    "delegationBand": "Dải ủy quyền",
+    "maxDelegatableBand": "Dải ủy quyền tối đa",
+    "permissions": "Quyền",
+    "assignmentRules": "Quy tắc gán",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật",
+    "activatedAt": "Thời điểm kích hoạt",
+    "archivedAt": "Thời điểm lưu trữ",
+    "reason": "Lý do"
+  },
+  "states": {
+    "DRAFT": "Nháp",
+    "ACTIVE": "Đang hoạt động",
+    "INACTIVE": "Không hoạt động",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "assignmentStates": {
+    "ACTIVE": "Đang hoạt động",
+    "REVOKED": "Đã thu hồi"
+  },
+  "delegationBands": {
+    "LIMITED": "Giới hạn",
+    "PRIVILEGED": "Đặc quyền",
+    "FOUNDATION": "Nền tảng"
+  },
+  "maxDelegatableBands": {
+    "NONE": "Không có",
+    "LIMITED": "Giới hạn",
+    "PRIVILEGED": "Đặc quyền"
+  },
+  "table": {
+    "caption": "Danh sách vai trò",
+    "code": "Mã",
+    "name": "Tên",
+    "state": "Trạng thái",
+    "permissionsSummary": "Quyền",
+    "assignmentCountSummary": "Số lượt gán",
+    "updatedAt": "Thời điểm cập nhật",
+    "actions": "Hành động"
+  },
+  "filters": {
+    "searchPlaceholder": "Tìm theo tên hoặc mã vai trò",
+    "state": "Trạng thái",
+    "allStates": "Tất cả trạng thái"
+  },
+  "actions": {
+    "open": "Mở",
+    "create": "Tạo vai trò",
+    "closeCreate": "Đóng tạo mới",
+    "edit": "Chỉnh sửa metadata",
+    "replacePermissions": "Thay thế quyền",
+    "replaceAssignmentRules": "Thay thế quy tắc gán",
+    "assignToUser": "Gán cho người dùng",
+    "revokeAssignment": "Thu hồi",
+    "activate": "Kích hoạt",
+    "deactivate": "Vô hiệu hóa",
+    "archive": "Lưu trữ"
+  },
+  "actionRail": {
+    "title": "Hành động vai trò"
+  },
+  "detail": {
+    "identityTitle": "Metadata vai trò",
+    "policyTitle": "Chính sách quyền",
+    "permissionMatrixTitle": "Ma trận quyền",
+    "archivedReadOnly": "Vai trò đã lưu trữ không thể chỉnh sửa.",
+    "boundaryNotice": "Vai trò chỉ cấp quyền. Việc gán và thu hồi vai trò vẫn do Vai trò sở hữu, không chỉnh sửa hồ sơ người dùng, liên kết Auth0, vòng đời người dùng, hồ sơ nhân sự hoặc bản ghi nghiệp vụ."
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo vai trò",
+      "subtitle": "Tạo vai trò mẫu quyền ở trạng thái nháp.",
+      "submit": "Tạo vai trò",
+      "pending": "Đang tạo vai trò"
+    },
+    "update": {
+      "title": "Cập nhật metadata và dải ủy quyền",
+      "subtitle": "Chỉ gửi metadata vai trò và các trường dải ủy quyền.",
+      "submit": "Cập nhật vai trò",
+      "pending": "Đang cập nhật vai trò"
+    },
+    "permissions": {
+      "title": "Thay thế quyền",
+      "subtitle": "Payload thay thế đầy đủ phải đúng dạng { permissions: [...] }.",
+      "submit": "Thay thế quyền",
+      "pending": "Đang thay thế quyền"
+    },
+    "assignmentRules": {
+      "title": "Thay thế quy tắc gán",
+      "subtitle": "Payload thay thế đầy đủ phải đúng dạng { rules: [...] }.",
+      "submit": "Thay thế quy tắc",
+      "pending": "Đang thay thế quy tắc"
+    },
+    "deactivate": {
+      "title": "Vô hiệu hóa vai trò",
+      "subtitle": "Các bản ghi gán đang hoạt động hoặc ràng buộc quản trị có thể khiến backend từ chối thao tác.",
+      "submit": "Vô hiệu hóa vai trò",
+      "pending": "Đang vô hiệu hóa vai trò"
+    },
+    "archive": {
+      "title": "Lưu trữ vai trò",
+      "subtitle": "Không thể lưu trữ vai trò đang hoạt động.",
+      "submit": "Lưu trữ vai trò",
+      "pending": "Đang lưu trữ vai trò"
+    },
+    "assignToUser": {
+      "title": "Gán vai trò cho người dùng",
+      "subtitle": "Chỉ tạo bản ghi gán do Vai trò sở hữu.",
+      "submit": "Gán vai trò",
+      "pending": "Đang gán vai trò"
+    },
+    "revokeAssignment": {
+      "title": "Thu hồi gán vai trò",
+      "subtitle": "Bản ghi gán {{assignmentId}} sẽ được cập nhật dưới dạng bản ghi gán do Vai trò sở hữu.",
+      "submit": "Thu hồi gán",
+      "pending": "Đang thu hồi gán"
+    }
+  },
+  "placeholders": {
+    "permissions": "role:view user:view",
+    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]"
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidRulesJson": "Quy tắc gán phải là mảng JSON, trong đó conditions là object thuần hoặc null."
+  },
+  "confirm": {
+    "activate": "Kích hoạt vai trò này nếu backend cho phép?",
+    "deactivate": "Vô hiệu hóa vai trò này nếu không có ràng buộc từ backend?",
+    "archive": "Lưu trữ vai trò này nếu không có ràng buộc từ backend?"
+  },
+  "feedback": {
+    "created": "Đã tạo vai trò.",
+    "updated": "Đã cập nhật vai trò.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời vai trò.",
+    "permissionsUpdated": "Đã thay thế quyền của vai trò.",
+    "assignmentRulesUpdated": "Đã thay thế quy tắc gán của vai trò.",
+    "assignedToUser": "Đã gán vai trò cho người dùng.",
+    "assignmentRevoked": "Đã thu hồi gán vai trò."
+  },
+  "statesView": {
+    "emptyTitle": "Không tìm thấy vai trò",
+    "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo vai trò.",
+    "loadErrorTitle": "Không tải được vai trò",
+    "loadErrorMessage": "Không thể tải dữ liệu vai trò.",
+    "permissionMatrixUnavailable": "Ma trận quyền không khả dụng."
+  },
+  "assignments": {
+    "title": "Gán vai trò",
+    "caption": "Danh sách gán vai trò",
+    "assignmentId": "ID bản ghi gán",
+    "userId": "ID người dùng",
+    "state": "Trạng thái",
+    "effectiveAt": "Thời điểm có hiệu lực",
+    "revokedAt": "Thời điểm thu hồi",
+    "reason": "Lý do",
+    "allStates": "Tất cả trạng thái gán",
+    "emptyTitle": "Không tìm thấy bản ghi gán vai trò",
+    "emptyMessage": "Không có bản ghi gán do Vai trò sở hữu nào khớp với bộ lọc hiện tại."
+  }
+}

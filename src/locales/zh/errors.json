@@ -1,0 +1,31 @@
+{
+  "unexpected": {
+    "title": "发生未知错误",
+    "message": "请重试或刷新页面"
+  },
+  "transport": {
+    "generic": "无法连接服务器"
+  },
+  "auth": {
+    "title": "认证错误",
+    "loginFailed": "登录跳转失败",
+    "callbackFailed": "无法处理认证回调",
+    "configMissing": "Auth0 配置缺失。请设置 VITE_AUTH0_DOMAIN 和 VITE_AUTH0_CLIENT_ID，或仅在本地 mock auth 时设置 VITE_AUTH_MODE=mock。"
+  },
+  "permission": {
+    "title": "无访问权限",
+    "message": "后端拒绝了该资源"
+  },
+  "notFound": {
+    "title": "页面不存在",
+    "message": "该路由不在管理后台壳层中"
+  },
+  "validation": {
+    "invalidTransition": "当前状态不能执行此操作。",
+    "unsupportedPayload": "请求包含不支持的字段。",
+    "unsupportedQuery": "请求包含不支持的筛选条件。"
+  },
+  "conflict": {
+    "message": "请求与已有记录冲突。"
+  }
+}

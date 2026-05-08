@@ -1,0 +1,42 @@
+{
+  "page": {
+    "title": "Bảng điều khiển",
+    "subtitle": "Ảnh chụp vận hành"
+  },
+  "actions": {
+    "refreshing": "Đang làm mới..."
+  },
+  "meta": {
+    "title": "Thông tin ảnh chụp",
+    "generatedAt": "Thời điểm tạo (UTC)",
+    "businessDate": "Ngày nghiệp vụ"
+  },
+  "groups": {
+    "overview": "Tổng quan",
+    "operations": "Vận hành",
+    "commercial": "Thương mại",
+    "attention": "Cần xử lý"
+  },
+  "metrics": {
+    "todayEventCount": "Số sự kiện hôm nay",
+    "next7DayEventCount": "Số sự kiện trong 7 ngày tới",
+    "draftTalentKpiCount": "KPI nháp",
+    "finalizedTalentKpiCount30d": "KPI đã chốt (30 ngày)",
+    "draftRevenueEntryCount": "Bút toán doanh thu nháp",
+    "finalizedRevenueAmount30d": "Doanh thu đã chốt (30 ngày)",
+    "reconciledRevenueAmount30d": "Doanh thu đã đối soát (30 ngày)",
+    "draftSettlementCount": "Quyết toán nháp",
+    "finalizedSettlementAmount30d": "Giá trị quyết toán đã chốt (30 ngày)",
+    "activeCommissionRuleCount": "Quy tắc hoa hồng đang hoạt động",
+    "expiringContractCount30d": "Hợp đồng sắp hết hạn (30 ngày)",
+    "staleTalentKpiDraftCount": "KPI nháp quá hạn",
+    "staleRevenueDraftCount": "Bút toán doanh thu nháp quá hạn",
+    "staleSettlementDraftCount": "Quyết toán nháp quá hạn"
+  },
+  "states": {
+    "loadErrorTitle": "Không tải được ảnh chụp bảng điều khiển",
+    "loadErrorMessage": "Vui lòng thử lại để tải ảnh chụp bảng điều khiển.",
+    "emptyTitle": "Không có dữ liệu ảnh chụp",
+    "emptyMessage": "Backend chưa trả về dữ liệu ảnh chụp bảng điều khiển."
+  }
+}

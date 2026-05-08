@@ -1,0 +1,180 @@
+{
+  "page": {
+    "title": "Talents",
+    "subtitle": "Talent identity, assignment, and lifecycle management",
+    "placeholder": "Talent business flows are intentionally not implemented yet."
+  },
+  "fields": {
+    "talentCode": "Talent Code",
+    "stageName": "Stage Name",
+    "legalName": "Legal Name",
+    "displayShortName": "Display Short Name",
+    "talentOrigin": "Talent Origin",
+    "selectTalentOrigin": "Select a talent origin",
+    "managerEmploymentProfileId": "Manager Profile ID",
+    "newManagerEmploymentProfileId": "New Manager Profile ID",
+    "linkedEmploymentProfileId": "Linked Employment Profile ID",
+    "commercialParticipationStatus": "Commercial Participation Status",
+    "newCommercialParticipationStatus": "New Commercial Participation Status",
+    "livestreamEligible": "Livestream Eligible",
+    "eventEligible": "Event Eligible",
+    "externalRef": "External Reference",
+    "profileSummary": "Profile Summary",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At"
+  },
+  "placeholders": {
+    "optional": "Optional",
+    "clearToUnset": "Leave blank to clear manager assignment"
+  },
+  "states": {
+    "emptyTitle": "No talents found",
+    "emptyMessage": "Try updating search or filters.",
+    "loadErrorTitle": "Unable to load talents",
+    "loadErrorMessage": "Talent data could not be loaded."
+  },
+  "filters": {
+    "searchPlaceholder": "Search by talent code, stage name, legal name, or short name",
+    "operationalStatus": "Operational Status",
+    "allOperationalStatuses": "All operational statuses",
+    "talentOrigin": "Talent Origin",
+    "allTalentOrigins": "All talent origins",
+    "managerEmploymentProfileId": "Manager",
+    "managerEmploymentProfileIdPlaceholder": "Manager profile ID",
+    "hasLinkedEmploymentProfile": "Linked Employment Profile",
+    "allLinkedEmploymentProfileStates": "All linked-profile states",
+    "linkedOnly": "Linked only",
+    "unlinkedOnly": "Unlinked only",
+    "commercialParticipationStatus": "Commercial Participation",
+    "allCommercialParticipationStatuses": "All commercial participation states",
+    "livestreamEligible": "Livestream Eligible",
+    "eventEligible": "Event Eligible",
+    "allEligibilityStates": "All eligibility states"
+  },
+  "origins": {
+    "INTERNAL": "Internal",
+    "EXTERNAL": "External"
+  },
+  "commercialStatuses": {
+    "ALLOWED": "Allowed",
+    "BLOCKED": "Blocked"
+  },
+  "sort": {
+    "talentCode": "Talent Code",
+    "stageName": "Stage Name",
+    "legalName": "Legal Name",
+    "createdAt": "Created At"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "SUSPENDED": "Suspended",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
+  },
+  "boolean": {
+    "true": "Yes",
+    "false": "No"
+  },
+  "actions": {
+    "create": "Create Talent",
+    "closeCreate": "Close Create",
+    "open": "Open",
+    "edit": "Edit",
+    "assignManager": "Assign Manager",
+    "linkEmploymentProfile": "Link Employment Profile",
+    "updateCommercialParticipation": "Update Commercial Participation",
+    "suspend": "Suspend",
+    "reactivate": "Reactivate",
+    "deactivate": "Deactivate",
+    "archive": "Archive"
+  },
+  "table": {
+    "caption": "Talent list",
+    "talentCode": "Talent Code",
+    "stageName": "Stage Name",
+    "legalName": "Legal Name",
+    "displayShortName": "Short Name",
+    "talentOrigin": "Origin",
+    "operationalStatus": "Status",
+    "managerEmploymentProfileId": "Manager",
+    "linkedEmploymentProfileId": "Linked Profile",
+    "commercialParticipationStatus": "Commercial",
+    "livestreamEligible": "Livestream Eligible",
+    "eventEligible": "Event Eligible",
+    "createdAt": "Created",
+    "actions": "Actions"
+  },
+  "detail": {
+    "summaryTitle": "Talent Summary",
+    "assignmentTitle": "Assignments and Commercial Flags"
+  },
+  "related": {
+    "navigationTitle": "Related Navigation",
+    "talentGroups": "Talent Groups",
+    "platformAccounts": "Platform Accounts",
+    "workShifts": "Work Shifts",
+    "events": "Events",
+    "talentKpi": "Talent KPI",
+    "revenueLedger": "Revenue Ledger",
+    "commissionSettlements": "Commission Settlements",
+    "contractRegistry": "Contract Registry",
+    "openFilteredList": "Open filtered list",
+    "unavailable": "Unavailable"
+  },
+  "mutations": {
+    "create": {
+      "title": "Create Talent",
+      "subtitle": "Create a new talent record",
+      "submit": "Create",
+      "pending": "Creating..."
+    },
+    "edit": {
+      "title": "Edit Talent",
+      "subtitle": "Update editable talent fields",
+      "submit": "Save",
+      "pending": "Saving..."
+    },
+    "assignManager": {
+      "title": "Assign Manager",
+      "subtitle": "Update manager relationship",
+      "submit": "Assign",
+      "pending": "Assigning..."
+    },
+    "linkEmploymentProfile": {
+      "title": "Link Employment Profile",
+      "subtitle": "Attach an employment profile to this talent",
+      "submit": "Link",
+      "pending": "Linking..."
+    },
+    "commercialParticipation": {
+      "title": "Update Commercial Participation",
+      "subtitle": "Update commercial participation and eligibility flags",
+      "submit": "Update",
+      "pending": "Updating..."
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Value must use supported token characters.",
+    "invalidReferenceToken": "Reference ID contains unsupported characters.",
+    "blockedCommercialStatus": "Blocked participation requires both eligibility flags to be false.",
+    "managerCannotMatchTalentId": "Manager profile cannot match this talent ID."
+  },
+  "feedback": {
+    "created": "Talent created successfully.",
+    "updated": "Talent updated successfully.",
+    "managerAssigned": "Manager assignment updated successfully.",
+    "employmentProfileLinked": "Employment profile linked successfully.",
+    "commercialParticipationUpdated": "Commercial participation updated successfully.",
+    "lifecycleUpdated": "Talent lifecycle updated successfully."
+  },
+  "confirm": {
+    "suspend": "Suspend this talent?",
+    "reactivate": "Reactivate this talent?",
+    "deactivate": "Deactivate this talent?",
+    "archive": "Archive this talent?"
+  },
+  "actionRail": {
+    "title": "Talent Actions"
+  }
+}

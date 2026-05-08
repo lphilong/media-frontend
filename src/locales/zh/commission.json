@@ -1,0 +1,332 @@
+{
+  "globalOnly": "仅全局范围",
+  "settlementKinds": {
+    "REVENUE_SHARE": "收入分成"
+  },
+  "settlementBases": {
+    "RECOGNIZED_GROSS_REVENUE": "已确认总收入"
+  },
+  "beneficiaryKinds": {
+    "EMPLOYMENT_PROFILE": "员工档案",
+    "TALENT": "艺人"
+  },
+  "revenueKinds": {
+    "PLATFORM_LIVESTREAM": "平台直播",
+    "PLATFORM_CONTENT": "平台内容",
+    "EVENT_OPERATIONAL": "活动运营"
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "只能使用字母、数字、下划线或连字符。",
+    "invalidRatePercent": "比例必须大于 0、最多为 100，并且最多 4 位小数。",
+    "revenueKindsRequired": "请选择至少一种收入类型。",
+    "utcMidnightTimestamp": "请输入 UTC 零点整数时间戳。",
+    "effectiveWindow": "生效结束必须不早于生效开始。",
+    "beneficiaryExactOne": "请提供一个且仅一个匹配的受益方 ID。",
+    "revenueShareTalentOnly": "收入分成规则要求受益方为艺人。",
+    "invalidTimestamp": "请输入整数时间戳。",
+    "periodWindow": "结算周期结束必须晚于开始。",
+    "duplicateRevenueEntry": "收入条目 ID 必须唯一。"
+  },
+  "rules": {
+    "title": "佣金规则",
+    "subtitle": "维护用于全局佣金结算计算的收入分成规则记录。",
+    "placeholder": "佣金规则已在 Wave 9 实现。",
+    "statuses": {
+      "DRAFT": "草稿",
+      "INACTIVE": "停用",
+      "ACTIVE": "启用",
+      "ARCHIVED": "已归档"
+    },
+    "sort": {
+      "ruleCode": "规则编码",
+      "title": "标题",
+      "effectiveStartDate": "生效开始",
+      "createdAt": "已创建"
+    },
+    "relatedModes": {
+      "by-beneficiary": "规则已筛选按受益方",
+      "by-contract": "规则已筛选按来源合同"
+    },
+    "filters": {
+      "searchPlaceholder": "搜索精确规则编码或标题前缀",
+      "status": "状态",
+      "allStatuses": "所有未归档",
+      "beneficiaryKind": "受益方类型",
+      "anyBeneficiaryKind": "任意受益方类型",
+      "beneficiaryEmploymentProfileId": "受益员工档案 ID",
+      "beneficiaryTalentId": "受益艺人 ID",
+      "sourceContractRecordId": "来源合同记录 ID",
+      "settlementKind": "结算类型",
+      "anySettlementKind": "任意结算类型",
+      "appliesToRevenueKind": "收入类型",
+      "anyRevenueKind": "任意收入类型",
+      "windowStartDate": "窗口开始 UTC 零点",
+      "windowEndDate": "窗口结束 UTC 零点"
+    },
+    "fields": {
+      "ruleCode": "规则编码",
+      "title": "标题",
+      "settlementKind": "结算类型",
+      "beneficiaryKind": "受益方类型",
+      "beneficiaryEmploymentProfileId": "受益员工档案 ID",
+      "beneficiaryTalentId": "受益艺人 ID",
+      "beneficiaryId": "受益方 ID",
+      "sourceContractRecordId": "来源合同记录 ID",
+      "settlementBasis": "结算依据",
+      "ratePercent": "比例",
+      "appliesToRevenueKinds": "适用收入类型",
+      "effectiveStartDate": "生效开始 UTC 零点时间戳",
+      "effectiveEndDate": "生效结束 UTC 零点时间戳",
+      "status": "状态",
+      "scopeBoundary": "范围边界",
+      "description": "描述",
+      "externalRef": "外部引用",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间"
+    },
+    "table": {
+      "caption": "佣金规则",
+      "ruleCode": "规则编码",
+      "title": "标题",
+      "settlementKind": "结算类型",
+      "beneficiaryKind": "受益方类型",
+      "beneficiaryId": "受益方 ID",
+      "sourceContractRecordId": "来源合同",
+      "ratePercent": "比例",
+      "status": "状态",
+      "effectiveStartDate": "生效开始",
+      "effectiveEndDate": "生效结束",
+      "createdAt": "已创建",
+      "actions": "操作"
+    },
+    "actions": {
+      "closeCreate": "关闭新建",
+      "create": "新建佣金规则",
+      "open": "打开",
+      "editDraftCore": "编辑草稿核心",
+      "activate": "启用",
+      "deactivate": "停用",
+      "archive": "归档"
+    },
+    "mutations": {
+      "create": {
+        "title": "新建佣金规则",
+        "subtitle": "创建草稿全局规则。生效日期使用 UTC 零点整数时间戳。",
+        "submit": "新建",
+        "pending": "新建中"
+      },
+      "draftCore": {
+        "title": "编辑规则草稿核心",
+        "subtitle": "只有草稿或停用规则可变更编写字段。",
+        "submit": "保存规则",
+        "pending": "保存中"
+      }
+    },
+    "confirm": {
+      "activate": "启用此佣金规则？",
+      "deactivate": "停用此佣金规则？",
+      "archive": "归档此佣金规则？"
+    },
+    "feedback": {
+      "created": "佣金规则已创建。",
+      "updated": "佣金规则已更新。",
+      "lifecycleUpdated": "佣金规则生命周期已更新。"
+    },
+    "states": {
+      "emptyTitle": "否佣金规则",
+      "emptyMessage": "没有规则记录匹配当前查询。",
+      "loadErrorTitle": "无法加载佣金规则",
+      "loadErrorMessage": "请重试请求或调整查询。"
+    },
+    "detail": {
+      "archivedReadOnly": "已归档规则只读。",
+      "activeReadOnly": "启用规则不可变更，只允许生命周期操作。",
+      "identityTitle": "规则身份",
+      "ruleTermsTitle": "规则条款",
+      "beneficiaryTitle": "受益方",
+      "sourceContractTitle": "来源合同",
+      "lifecycleTitle": "生命周期元数据",
+      "freeTextTitle": "备注"
+    },
+    "related": {
+      "navigationTitle": "关联导航",
+      "sourceContract": "来源合同",
+      "beneficiary": "受益方",
+      "settlementsByRule": "结算按来源规则"
+    },
+    "actionRail": {
+      "title": "佣金规则操作"
+    }
+  },
+  "settlements": {
+    "title": "佣金结算",
+    "subtitle": "查看并确认后端派生的佣金结算记录。",
+    "placeholder": "佣金结算已在 Wave 9 实现。",
+    "statuses": {
+      "DRAFT": "草稿",
+      "FINALIZED": "已确认",
+      "VOIDED": "已作废",
+      "ARCHIVED": "已归档"
+    },
+    "sort": {
+      "settlementPeriodStartAt": "期间开始",
+      "settlementCode": "结算编码",
+      "createdAt": "已创建",
+      "finalizedAt": "已确认"
+    },
+    "relatedModes": {
+      "by-beneficiary": "结算已筛选按受益方",
+      "by-subject-talent": "结算已筛选按主体艺人",
+      "by-revenue-entry": "结算已筛选按收入记录"
+    },
+    "filters": {
+      "searchPlaceholder": "搜索精确结算编码或标题前缀",
+      "status": "状态",
+      "allStatuses": "所有未归档",
+      "settlementKindSnapshot": "结算类型快照",
+      "anySettlementKind": "任意结算类型",
+      "beneficiaryKindSnapshot": "受益方类型快照",
+      "anyBeneficiaryKind": "任意受益方类型",
+      "beneficiaryEmploymentProfileIdSnapshot": "受益员工档案快照 ID",
+      "beneficiaryTalentIdSnapshot": "受益艺人快照 ID",
+      "subjectTalentId": "主体艺人 ID",
+      "sourceRuleId": "来源规则 ID",
+      "containsRevenueEntryId": "收入记录 ID",
+      "settlementCurrencyCode": "币种",
+      "windowStartAt": "窗口开始时间戳",
+      "windowEndAt": "窗口结束时间戳"
+    },
+    "fields": {
+      "settlementCode": "结算编码",
+      "title": "标题",
+      "sourceRuleId": "来源规则 ID",
+      "sourceContractRecordIdSnapshot": "来源合同快照 ID",
+      "settlementKindSnapshot": "结算类型快照",
+      "beneficiaryKindSnapshot": "受益方类型快照",
+      "beneficiaryEmploymentProfileIdSnapshot": "受益员工档案快照 ID",
+      "beneficiaryTalentIdSnapshot": "受益艺人快照 ID",
+      "beneficiarySnapshotId": "受益方快照 ID",
+      "subjectTalentId": "主体艺人 ID",
+      "settlementBasisSnapshot": "结算依据快照",
+      "ratePercentSnapshot": "比例快照",
+      "revenueEntryId": "收入记录 ID",
+      "settlementPeriodStartAt": "结算期间开始时间戳",
+      "settlementPeriodEndAt": "结算期间结束时间戳",
+      "settlementCurrencyCode": "结算币种",
+      "grossRevenueAmount": "总收入金额",
+      "settlementAmount": "结算金额",
+      "status": "状态",
+      "scopeBoundary": "范围边界",
+      "finalizedAt": "确认时间",
+      "voidedAt": "作废时间",
+      "description": "描述",
+      "externalRef": "外部引用",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间"
+    },
+    "table": {
+      "caption": "佣金结算",
+      "settlementCode": "结算编码",
+      "title": "标题",
+      "sourceRuleId": "来源规则",
+      "settlementKindSnapshot": "类型快照",
+      "beneficiaryKindSnapshot": "受益方类型",
+      "beneficiarySnapshotId": "受益方 ID",
+      "subjectTalentId": "主体艺人",
+      "settlementCurrencyCode": "币种",
+      "grossRevenueAmount": "总收入",
+      "settlementAmount": "结算金额",
+      "status": "状态",
+      "settlementPeriodStartAt": "期间开始",
+      "settlementPeriodEndAt": "期间结束",
+      "finalizedAt": "已确认",
+      "createdAt": "已创建",
+      "actions": "操作"
+    },
+    "actions": {
+      "closeCreate": "关闭新建",
+      "create": "新建佣金结算",
+      "open": "打开",
+      "editDraftCore": "编辑草稿核心",
+      "replaceRevenueEntries": "替换收入记录",
+      "addRevenueEntry": "添加收入记录",
+      "removeRevenueEntry": "移除",
+      "finalize": "确认",
+      "void": "作废",
+      "archive": "归档"
+    },
+    "mutations": {
+      "create": {
+        "title": "新建佣金结算",
+        "subtitle": "创建带完整收入条目替换集合的草稿结算。",
+        "submit": "新建",
+        "pending": "新建中"
+      },
+      "draftCore": {
+        "title": "编辑结算草稿核心",
+        "subtitle": "只有草稿结算可变更编写字段。",
+        "submit": "保存结算",
+        "pending": "保存中"
+      },
+      "revenueEntries": {
+        "title": "替换收入记录",
+        "subtitle": "提交完整规范收入条目集合。结算行和总额仍由后端派生。",
+        "rowsTitle": "收入记录集合",
+        "submit": "替换集合",
+        "pending": "替换中"
+      }
+    },
+    "confirm": {
+      "finalize": "确认此佣金结算？",
+      "void": "作废此佣金结算？",
+      "archive": "归档此佣金结算？"
+    },
+    "feedback": {
+      "created": "佣金结算已创建。",
+      "updated": "佣金结算已更新。",
+      "revenueEntriesUpdated": "收入条目集合已替换。",
+      "lifecycleUpdated": "佣金结算生命周期已更新。"
+    },
+    "states": {
+      "emptyTitle": "否佣金结算",
+      "emptyMessage": "没有结算记录匹配当前查询。",
+      "loadErrorTitle": "无法加载佣金结算",
+      "loadErrorMessage": "请重试请求或调整查询。",
+      "linesLoadErrorTitle": "无法加载结算行",
+      "linesLoadErrorMessage": "重试加载后端派生行。",
+      "noLines": "未返回结算行。"
+    },
+    "detail": {
+      "archivedReadOnly": "已归档结算只读。",
+      "derivedReadOnly": "派生金额、快照和结算行由后端拥有且只读。",
+      "identityTitle": "结算身份",
+      "amountsTitle": "后端派生金额",
+      "sourceTitle": "来源快照",
+      "beneficiaryTitle": "受益方和主体",
+      "periodTitle": "结算期间",
+      "revenueEntriesTitle": "收入记录集合",
+      "linesTitle": "只读结算行",
+      "lifecycleTitle": "生命周期元数据",
+      "freeTextTitle": "备注"
+    },
+    "lines": {
+      "caption": "只读结算行",
+      "revenueEntryId": "收入记录 ID",
+      "revenueEntryCodeSnapshot": "收入编码快照",
+      "revenueKindSnapshot": "收入类型快照",
+      "revenueRecognizedAmountSnapshot": "已确认金额快照",
+      "lineSettlementAmount": "行结算金额"
+    },
+    "related": {
+      "navigationTitle": "关联导航",
+      "sourceRule": "来源规则",
+      "sourceContract": "来源合同快照",
+      "beneficiary": "受益方快照",
+      "subjectTalent": "主体艺人"
+    },
+    "actionRail": {
+      "title": "佣金结算操作"
+    }
+  }
+}

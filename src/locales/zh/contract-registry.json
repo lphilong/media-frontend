@@ -1,0 +1,198 @@
+{
+  "page": {
+    "title": "合同登记",
+    "subtitle": "全局法务和运营合同元数据。",
+    "placeholder": "合同登记已作为 Wave 7 真实路由实现。"
+  },
+  "fields": {
+    "contractCode": "合同编码",
+    "title": "标题",
+    "contractKind": "合同类型",
+    "linkedEntityKind": "关联实体类型",
+    "linkedEntityId": "关联实体 ID",
+    "ownerEmploymentProfileId": "所有者员工档案 ID",
+    "newOwnerEmploymentProfileId": "新所有者员工档案ID",
+    "confidentialityTier": "保密等级",
+    "status": "状态",
+    "effectiveStartDate": "生效开始日期",
+    "effectiveEndDate": "生效结束日期",
+    "expiryDate": "到期日期",
+    "terminationDate": "终止日期",
+    "fileReferenceId": "文件引用 ID",
+    "fileDisplayName": "文件显示名称",
+    "newFileReferenceId": "新文件引用ID",
+    "newFileDisplayName": "新文件显示名称",
+    "description": "描述",
+    "externalRef": "外部引用",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间",
+    "scopeBoundary": "范围边界"
+  },
+  "statuses": {
+    "DRAFT": "草稿",
+    "PENDING_SIGNATURE": "待签署",
+    "ACTIVE": "启用",
+    "EXPIRED": "已过期",
+    "TERMINATED": "已终止",
+    "ARCHIVED": "已归档"
+  },
+  "contractKinds": {
+    "EMPLOYMENT": "员工",
+    "TALENT_SERVICE": "艺人服务",
+    "TALENT_MANAGEMENT": "艺人管理"
+  },
+  "linkedEntityKinds": {
+    "EMPLOYMENT_PROFILE": "员工档案",
+    "TALENT": "艺人"
+  },
+  "confidentialityTiers": {
+    "STANDARD": "标准",
+    "CONFIDENTIAL": "保密",
+    "RESTRICTED": "受限"
+  },
+  "sort": {
+    "effectiveStartDate": "生效开始",
+    "contractCode": "合同编码",
+    "createdAt": "已创建"
+  },
+  "filters": {
+    "searchPlaceholder": "精确合同编码或标题前缀",
+    "status": "状态",
+    "allStatuses": "所有启用状态",
+    "contractKind": "合同类型",
+    "allContractKinds": "所有合同类型",
+    "linkedEntityKind": "关联实体类型",
+    "allLinkedEntityKinds": "所有关联实体类型",
+    "linkedEntityId": "关联实体 ID",
+    "linkedEntityIdPlaceholder": "精确关联实体标识",
+    "ownerEmploymentProfileId": "所有者员工档案 ID",
+    "ownerEmploymentProfileIdPlaceholder": "精确所有者档案标识",
+    "confidentialityTier": "保密等级",
+    "allConfidentialityTiers": "所有等级",
+    "hasFileReference": "文件引用",
+    "anyFileReference": "任意文件状态",
+    "fileReference": {
+      "true": "有文件引用",
+      "false": "否文件引用"
+    },
+    "windowStartDate": "窗口开始日期",
+    "windowEndDate": "窗口结束日期"
+  },
+  "relatedModes": {
+    "by-linked-entity": "按关联实体查看合同",
+    "by-owner": "按所有者查看合同"
+  },
+  "actions": {
+    "create": "新建合同",
+    "closeCreate": "关闭新建",
+    "open": "打开详情",
+    "editDraftCore": "编辑草稿核心",
+    "assignOwner": "分配所有者",
+    "updateFileReference": "更新文件引用",
+    "mark-pending-signature": "标记为待签署",
+    "markPendingSignature": "标记为待签署",
+    "reopen-draft": "重开草稿",
+    "reopenDraft": "重开草稿",
+    "activate": "启用",
+    "expire": "标记过期",
+    "terminate": "终止",
+    "archive": "归档"
+  },
+  "table": {
+    "caption": "合同记录列表",
+    "contractCode": "合同编码",
+    "title": "标题",
+    "contractKind": "类型",
+    "linkedEntityKind": "关联类型",
+    "linkedEntityId": "关联ID",
+    "ownerEmploymentProfileId": "所有者ID",
+    "confidentialityTier": "保密等级",
+    "status": "状态",
+    "effectiveStartDate": "开始",
+    "effectiveEndDate": "结束",
+    "actions": "操作"
+  },
+  "detail": {
+    "archivedReadOnly": "已归档合同记录只读。",
+    "identityTitle": "合同记录",
+    "contractMetadataTitle": "合同元数据",
+    "linkedEntityTitle": "关联实体和所有者",
+    "fileReferenceTitle": "文件引用元数据",
+    "freeTextTitle": "描述和外部引用",
+    "globalOnly": "仅全局范围"
+  },
+  "related": {
+    "navigationTitle": "关联导航",
+    "commissionRules": "佣金规则按合同",
+    "unavailable": "链接不可用"
+  },
+  "states": {
+    "emptyTitle": "未找到合同记录",
+    "emptyMessage": "调整筛选条件或新建合同记录。",
+    "loadErrorTitle": "无法加载合同记录",
+    "loadErrorMessage": "后端拒绝或未返回合同数据。"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建合同记录",
+      "subtitle": "仅新建法务和运营元数据。",
+      "submit": "新建",
+      "pending": "新建中"
+    },
+    "draftCore": {
+      "title": "编辑草稿核心",
+      "subtitle": "更新可变草稿元数据。所有者和文件引用是独立操作。",
+      "submit": "保存",
+      "pending": "保存中"
+    },
+    "assignOwner": {
+      "title": "分配所有者",
+      "subtitle": "替换所有者员工档案引用。",
+      "submit": "分配所有者",
+      "pending": "分配中"
+    },
+    "fileReference": {
+      "title": "更新文件引用",
+      "subtitle": "仅存储元数据。这不是上传或下载管理。",
+      "submit": "保存",
+      "pending": "更新中"
+    },
+    "expire": {
+      "title": "标记合同到期",
+      "subtitle": "设置合同到期日期。",
+      "submit": "标记过期",
+      "pending": "标记到期中"
+    },
+    "terminate": {
+      "title": "终止合同",
+      "subtitle": "设置合同终止日期。",
+      "submit": "终止",
+      "pending": "终止中"
+    }
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "请输入有效标识符 token。",
+    "invalidDate": "使用 YYYY-MM-DD 格式。",
+    "kindCompatibility": "合同类型和关联实体类型不兼容。",
+    "filePair": "文件引用 ID 和显示名称必须同时提供或同时清除。"
+  },
+  "feedback": {
+    "created": "合同记录已创建。",
+    "updated": "合同记录已更新。",
+    "ownerAssigned": "所有者已更新。",
+    "fileReferenceUpdated": "文件引用元数据已更新。",
+    "expired": "合同已到期。",
+    "terminated": "合同已终止。",
+    "lifecycleUpdated": "合同生命周期已更新。"
+  },
+  "confirm": {
+    "markPendingSignature": "将此合同标记为待签署？",
+    "reopenDraft": "将此合同重新打开为草稿？",
+    "activate": "启用此合同？",
+    "archive": "归档此合同？"
+  },
+  "actionRail": {
+    "title": "合同操作"
+  }
+}

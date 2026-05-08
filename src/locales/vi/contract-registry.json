@@ -1,0 +1,198 @@
+{
+  "page": {
+    "title": "Sổ hợp đồng",
+    "subtitle": "Quản lý hợp đồng pháp lý và vận hành.",
+    "placeholder": "Sổ hợp đồng."
+  },
+  "fields": {
+    "contractCode": "Mã hợp đồng",
+    "title": "Tiêu đề",
+    "contractKind": "Loại hợp đồng",
+    "linkedEntityKind": "Loại thực thể liên kết",
+    "linkedEntityId": "ID thực thể liên kết",
+    "ownerEmploymentProfileId": "ID hồ sơ nhân sự sở hữu",
+    "newOwnerEmploymentProfileId": "ID hồ sơ nhân sự sở hữu mới",
+    "confidentialityTier": "Cấp bảo mật",
+    "status": "Trạng thái",
+    "effectiveStartDate": "Ngày bắt đầu hiệu lực",
+    "effectiveEndDate": "Ngày kết thúc hiệu lực",
+    "expiryDate": "Ngày hết hạn",
+    "terminationDate": "Ngày kết thúc",
+    "fileReferenceId": "ID tham chiếu tệp",
+    "fileDisplayName": "Tên hiển thị của tệp",
+    "newFileReferenceId": "ID tham chiếu tệp mới",
+    "newFileDisplayName": "Tên hiển thị tệp mới",
+    "description": "Mô tả",
+    "externalRef": "Tham chiếu bên ngoài",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật",
+    "scopeBoundary": "Ranh giới phạm vi"
+  },
+  "statuses": {
+    "DRAFT": "Nháp",
+    "PENDING_SIGNATURE": "Chờ ký",
+    "ACTIVE": "Đang hoạt động",
+    "EXPIRED": "Đã hết hạn",
+    "TERMINATED": "Đã kết thúc",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "contractKinds": {
+    "EMPLOYMENT": "Nhân sự",
+    "TALENT_SERVICE": "Dịch vụ Talent",
+    "TALENT_MANAGEMENT": "Quản lý Talent"
+  },
+  "linkedEntityKinds": {
+    "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
+    "TALENT": "Talent"
+  },
+  "confidentialityTiers": {
+    "STANDARD": "Tiêu chuẩn",
+    "CONFIDENTIAL": "Bảo mật",
+    "RESTRICTED": "Hạn chế"
+  },
+  "sort": {
+    "effectiveStartDate": "Bắt đầu hiệu lực",
+    "contractCode": "Mã hợp đồng",
+    "createdAt": "Thời điểm tạo"
+  },
+  "filters": {
+    "searchPlaceholder": "Nhập mã hợp đồng",
+    "status": "Trạng thái",
+    "allStatuses": "Tất cả trạng thái",
+    "contractKind": "Loại hợp đồng",
+    "allContractKinds": "Tất cả loại hợp đồng",
+    "linkedEntityKind": "Loại thực thể liên kết",
+    "allLinkedEntityKinds": "Tất cả loại thực thể liên kết",
+    "linkedEntityId": "ID thực thể liên kết",
+    "linkedEntityIdPlaceholder": "Nhập ID thực thể liên kết",
+    "ownerEmploymentProfileId": "ID hồ sơ nhân sự sở hữu",
+    "ownerEmploymentProfileIdPlaceholder": "Nhập ID hồ sơ nhân sự sở hữu",
+    "confidentialityTier": "Cấp bảo mật",
+    "allConfidentialityTiers": "Tất cả cấp bảo mật",
+    "hasFileReference": "Tham chiếu tệp",
+    "anyFileReference": "Bất kỳ trạng thái tệp nào",
+    "fileReference": {
+      "true": "Có tham chiếu tệp",
+      "false": "Không có tham chiếu tệp"
+    },
+    "windowStartDate": "Ngày bắt đầu khung thời gian",
+    "windowEndDate": "Ngày kết thúc khung thời gian"
+  },
+  "relatedModes": {
+    "by-linked-entity": "Hợp đồng liên quan theo thực thể liên kết",
+    "by-owner": "Hợp đồng liên quan theo chủ sở hữu"
+  },
+  "actions": {
+    "create": "Tạo hợp đồng",
+    "closeCreate": "Đóng tạo mới",
+    "open": "Mở chi tiết",
+    "editDraftCore": "Chỉnh sửa nội dung nháp",
+    "assignOwner": "Gán chủ sở hữu",
+    "updateFileReference": "Cập nhật tham chiếu tệp",
+    "mark-pending-signature": "Đánh dấu chờ ký",
+    "markPendingSignature": "Đánh dấu chờ ký",
+    "reopen-draft": "Mở lại nháp",
+    "reopenDraft": "Mở lại nháp",
+    "activate": "Kích hoạt",
+    "expire": "Đánh dấu hết hạn",
+    "terminate": "Kết thúc",
+    "archive": "Lưu trữ"
+  },
+  "table": {
+    "caption": "Danh sách bản ghi hợp đồng",
+    "contractCode": "Mã hợp đồng",
+    "title": "Tiêu đề",
+    "contractKind": "Loại",
+    "linkedEntityKind": "Loại liên kết",
+    "linkedEntityId": "ID liên kết",
+    "ownerEmploymentProfileId": "ID chủ sở hữu",
+    "confidentialityTier": "Cấp bảo mật",
+    "status": "Trạng thái",
+    "effectiveStartDate": "Bắt đầu",
+    "effectiveEndDate": "Kết thúc",
+    "actions": "Hành động"
+  },
+  "detail": {
+    "archivedReadOnly": "Bản ghi hợp đồng đã lưu trữ chỉ đọc.",
+    "identityTitle": "Bản ghi hợp đồng",
+    "contractMetadataTitle": "Metadata hợp đồng",
+    "linkedEntityTitle": "Thực thể liên kết và chủ sở hữu",
+    "fileReferenceTitle": "Metadata tham chiếu tệp",
+    "freeTextTitle": "Mô tả và tham chiếu bên ngoài",
+    "globalOnly": "Chỉ dùng phạm vi toàn cục"
+  },
+  "related": {
+    "navigationTitle": "Điều hướng liên quan",
+    "commissionRules": "Quy tắc hoa hồng theo hợp đồng",
+    "unavailable": "Liên kết không khả dụng"
+  },
+  "states": {
+    "emptyTitle": "Không tìm thấy bản ghi hợp đồng",
+    "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo bản ghi hợp đồng.",
+    "loadErrorTitle": "Không tải được bản ghi hợp đồng",
+    "loadErrorMessage": "Backend đã từ chối yêu cầu hoặc không trả về dữ liệu hợp đồng."
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo bản ghi hợp đồng",
+      "subtitle": "Chỉ tạo metadata pháp lý và vận hành.",
+      "submit": "Tạo",
+      "pending": "Đang tạo"
+    },
+    "draftCore": {
+      "title": "Chỉnh sửa nội dung nháp",
+      "subtitle": "Cập nhật metadata nháp được phép sửa. Chủ sở hữu và tham chiếu tệp dùng hành động riêng.",
+      "submit": "Lưu",
+      "pending": "Đang lưu"
+    },
+    "assignOwner": {
+      "title": "Gán chủ sở hữu",
+      "subtitle": "Thay thế hồ sơ nhân sự đang sở hữu hợp đồng.",
+      "submit": "Gán chủ sở hữu",
+      "pending": "Đang gán"
+    },
+    "fileReference": {
+      "title": "Cập nhật tham chiếu tệp",
+      "subtitle": "Chỉ lưu metadata. Đây không phải chức năng tải lên hoặc tải xuống tệp.",
+      "submit": "Cập nhật tham chiếu tệp",
+      "pending": "Đang cập nhật"
+    },
+    "expire": {
+      "title": "Đánh dấu hợp đồng hết hạn",
+      "subtitle": "Thiết lập ngày hết hạn cho hợp đồng.",
+      "submit": "Đánh dấu hết hạn",
+      "pending": "Đang đánh dấu hết hạn"
+    },
+    "terminate": {
+      "title": "Kết thúc hợp đồng",
+      "subtitle": "Thiết lập ngày kết thúc cho hợp đồng.",
+      "submit": "Kết thúc",
+      "pending": "Đang kết thúc"
+    }
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Nhập mã định danh hợp lệ.",
+    "invalidDate": "Dùng định dạng YYYY-MM-DD.",
+    "kindCompatibility": "Loại hợp đồng và loại thực thể liên kết không tương thích.",
+    "filePair": "ID tham chiếu tệp và tên hiển thị phải được cung cấp hoặc xóa cùng nhau."
+  },
+  "feedback": {
+    "created": "Đã tạo bản ghi hợp đồng.",
+    "updated": "Đã cập nhật bản ghi hợp đồng.",
+    "ownerAssigned": "Đã cập nhật chủ sở hữu.",
+    "fileReferenceUpdated": "Đã cập nhật metadata tham chiếu tệp.",
+    "expired": "Đã đánh dấu hợp đồng hết hạn.",
+    "terminated": "Đã kết thúc hợp đồng.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời hợp đồng."
+  },
+  "confirm": {
+    "markPendingSignature": "Đánh dấu hợp đồng này là đang chờ ký?",
+    "reopenDraft": "Mở lại hợp đồng này ở trạng thái nháp?",
+    "activate": "Kích hoạt hợp đồng này?",
+    "archive": "Lưu trữ hợp đồng này?"
+  },
+  "actionRail": {
+    "title": "Hành động hợp đồng"
+  }
+}

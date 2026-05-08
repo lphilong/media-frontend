@@ -1,0 +1,165 @@
+{
+  "page": {
+    "title": "收入台账",
+    "subtitle": "全局商业收入记录和生命周期控制",
+    "placeholder": "收入台账业务流程已在 Wave 8 实现。"
+  },
+  "sort": {
+    "recognizedAt": "确认时间",
+    "revenueEntryCode": "收入记录编码",
+    "createdAt": "已创建"
+  },
+  "filters": {
+    "searchPlaceholder": "精确编码或标题前缀",
+    "status": "状态",
+    "allStatuses": "所有未归档",
+    "subjectTalentId": "主体艺人",
+    "subjectTalentIdPlaceholder": "艺人ID",
+    "attributionPlatformAccountId": "平台账号",
+    "attributionPlatformAccountIdPlaceholder": "平台ID",
+    "attributionEventId": "活动",
+    "attributionEventIdPlaceholder": "活动ID",
+    "revenueKind": "收入类型",
+    "allRevenueKinds": "任意类型",
+    "entrySource": "录入来源",
+    "allEntrySources": "任意来源",
+    "currencyCode": "币种",
+    "currencyCodePlaceholder": "vnd",
+    "windowStartAt": "窗口开始",
+    "windowEndAt": "窗口结束"
+  },
+  "relatedModes": {
+    "by-talent": "关联收入记录按艺人",
+    "by-platform": "关联收入记录按平台账号",
+    "by-event": "关联收入记录按活动"
+  },
+  "statuses": {
+    "DRAFT": "草稿",
+    "FINALIZED": "已确认",
+    "RECONCILED": "已对账",
+    "VOIDED": "已作废",
+    "ARCHIVED": "已归档"
+  },
+  "revenueKinds": {
+    "PLATFORM_LIVESTREAM": "平台直播",
+    "PLATFORM_CONTENT": "平台内容",
+    "EVENT_OPERATIONAL": "活动运营"
+  },
+  "entrySources": {
+    "MANUAL": "手动"
+  },
+  "fields": {
+    "revenueEntryCode": "收入记录编码",
+    "title": "标题",
+    "subjectTalentId": "主体艺人 ID",
+    "attributionPlatformAccountId": "归因平台账号 ID",
+    "attributionEventId": "归因活动 ID",
+    "revenueKind": "收入类型",
+    "entrySource": "录入来源",
+    "currencyCode": "币种编码",
+    "recognizedAmount": "确认金额",
+    "recognizedAt": "确认时间",
+    "finalizedAt": "确认时间",
+    "reconciledAt": "对账时间",
+    "voidedAt": "作废时间",
+    "reconciliationReference": "对账引用",
+    "description": "描述",
+    "externalRef": "外部引用",
+    "status": "状态",
+    "scopeBoundary": "范围边界",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "table": {
+    "caption": "收入台账记录",
+    "revenueEntryCode": "记录编码",
+    "title": "标题",
+    "subjectTalentId": "艺人",
+    "attributionPlatformAccountId": "平台",
+    "attributionEventId": "活动",
+    "revenueKind": "类型",
+    "entrySource": "来源",
+    "status": "状态",
+    "currencyCode": "币种",
+    "recognizedAmount": "金额",
+    "recognizedAt": "确认时间",
+    "actions": "操作"
+  },
+  "actions": {
+    "create": "新建收入记录",
+    "closeCreate": "关闭新建",
+    "open": "打开",
+    "editDraftCore": "编辑草稿核心",
+    "finalize": "确认",
+    "reconcile": "对账",
+    "void": "作废",
+    "archive": "归档"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建收入记录",
+      "subtitle": "手动创建仅全局收入记录",
+      "submit": "新建",
+      "pending": "新建中"
+    },
+    "draftCore": {
+      "title": "编辑草稿核心",
+      "subtitle": "编码和记录来源在新建后不可变更",
+      "submit": "保存草稿核心信息",
+      "pending": "保存中"
+    },
+    "reconcile": {
+      "title": "对账收入记录",
+      "subtitle": "对账引用仅随此操作提交",
+      "submit": "对账",
+      "pending": "对账中"
+    }
+  },
+  "detail": {
+    "archivedReadOnly": "已归档收入记录只读。",
+    "identityTitle": "记录身份",
+    "globalOnly": "仅全局范围",
+    "revenueTitle": "收入",
+    "attributionTitle": "归因",
+    "lifecycleTitle": "生命周期",
+    "freeTextTitle": "备注"
+  },
+  "related": {
+    "navigationTitle": "关联商业记录",
+    "kpiByTalent": "同一艺人的 KPI",
+    "kpiByPlatform": "同一平台的 KPI",
+    "kpiByEvent": "同一活动的 KPI",
+    "commissionSettlements": "佣金结算按收入记录"
+  },
+  "actionRail": {
+    "title": "收入台账操作"
+  },
+  "states": {
+    "emptyTitle": "否收入记录",
+    "emptyMessage": "没有记录匹配当前筛选。",
+    "loadErrorTitle": "无法加载收入记录",
+    "loadErrorMessage": "无法加载收入记录。"
+  },
+  "confirm": {
+    "finalize": "确认此收入条目？后端仍可能因阻塞项拒绝操作。",
+    "reconcile": "对账此收入条目？",
+    "void": "作废此收入条目？结算依赖可能阻止操作。",
+    "archive": "归档此收入条目？已归档条目仍可查看详情。"
+  },
+  "feedback": {
+    "created": "收入记录已创建",
+    "updated": "收入草稿核心已更新",
+    "reconciled": "收入记录已对账",
+    "lifecycleUpdated": "收入生命周期已更新"
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "只能使用字母、数字、下划线或连字符。",
+    "invalidCurrency": "请使用三个大写币种字母。",
+    "invalidAmount": "请输入最多两位小数的正金额。",
+    "invalidTimestamp": "请输入有效的整数时间戳。",
+    "futureTimestamp": "确认时间不能晚于当前时间。",
+    "attributionPlatformRequired": "平台收入需要平台账号。",
+    "attributionEventRequired": "活动收入需要活动。"
+  }
+}

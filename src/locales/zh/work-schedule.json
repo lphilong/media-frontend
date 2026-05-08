@@ -1,0 +1,915 @@
+{
+  "page": {
+    "title": "工作班次",
+    "subtitle": "用于班次时间、对象和资源的运营排班权威界面。",
+    "placeholder": "Work Schedule 已作为 Wave 6 真实路由实现。"
+  },
+  "fields": {
+    "shiftCode": "班次代码",
+    "shiftCodeOptional": "班次代码（可选）",
+    "title": "标题",
+    "status": "状态",
+    "subjectKind": "对象类型",
+    "subjectId": "对象",
+    "newSubjectKind": "新对象类型",
+    "newSubjectId": "对象",
+    "shiftStartAt": "班次开始 UTC",
+    "shiftEndAt": "班次结束 UTC",
+    "newShiftStartAt": "新班次开始 UTC",
+    "newShiftEndAt": "新班次结束 UTC",
+    "studioResourceIds": "演播室资源",
+    "newStudioResourceIds": "演播室资源",
+    "description": "描述",
+    "externalRef": "外部引用",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间",
+    "requestScope": "请求 scope",
+    "subject": "对象",
+    "studioResources": "演播室资源"
+  },
+  "statuses": {
+    "ACTIVE": "活动",
+    "CANCELLED": "已取消",
+    "ARCHIVED": "已归档"
+  },
+  "subjectKinds": {
+    "EMPLOYMENT_PROFILE": "雇佣档案",
+    "TALENT": "艺人",
+    "TALENT_GROUP": "艺人组"
+  },
+  "scopes": {
+    "omitted": "系统默认",
+    "self": "本人",
+    "team": "团队",
+    "department": "部门",
+    "global": "全局"
+  },
+  "sort": {
+    "shiftStartAt": "班次开始",
+    "shiftCode": "班次代码",
+    "createdAt": "创建时间"
+  },
+  "filters": {
+    "searchPlaceholder": "班次代码或标题前缀",
+    "status": "状态",
+    "allStatuses": "所有活动状态",
+    "subjectKind": "对象类型",
+    "allSubjectKinds": "所有对象类型",
+    "subjectId": "对象",
+    "subjectIdPlaceholder": "对象标识",
+    "studioResourceId": "演播室资源",
+    "studioResourceIdPlaceholder": "资源标识",
+    "scope": "范围",
+    "windowStartAt": "窗口开始 UTC",
+    "windowEndAt": "窗口结束 UTC"
+  },
+  "relatedModes": {
+    "by-subject": "按对象查看相关班次",
+    "by-resource": "按演播室资源查看相关班次"
+  },
+  "actions": {
+    "create": "创建工作班次",
+    "closeCreate": "关闭创建",
+    "adminCreateForm": "管理创建表单",
+    "closeAdminCreate": "关闭管理创建",
+    "scheduleWorkShift": "安排工作班次",
+    "closeGuidedWorkflow": "关闭引导流程",
+    "open": "打开详情",
+    "edit": "编辑",
+    "reschedule": "改期",
+    "reassignSubject": "改派对象",
+    "replaceResources": "替换资源",
+    "cancel": "取消",
+    "archive": "归档",
+    "historicalArchiveEligible": "历史活动班次可在详情页归档"
+  },
+  "table": {
+    "caption": "工作班次列表",
+    "shiftCode": "班次代码",
+    "title": "标题",
+    "subjectKind": "对象类型",
+    "subjectId": "对象",
+    "status": "状态",
+    "shiftStartAt": "开始",
+    "shiftEndAt": "结束",
+    "createdAt": "创建",
+    "actions": "操作",
+    "source": "来源"
+  },
+  "detail": {
+    "archivedReadOnly": "已归档的工作班次只读。",
+    "identityTitle": "工作班次",
+    "scheduleTitle": "排班",
+    "subjectTitle": "对象",
+    "globalOnly": "全局",
+    "referencesTitle": "引用"
+  },
+  "related": {
+    "navigationTitle": "相关导航",
+    "studioResource": "演播室资源",
+    "unavailable": "链接不可用",
+    "noResources": "未分配演播室资源。"
+  },
+  "states": {
+    "emptyTitle": "未找到工作班次",
+    "emptyMessage": "调整筛选条件或创建工作班次。",
+    "loadErrorTitle": "无法加载工作班次",
+    "loadErrorMessage": "系统拒绝或未返回工作班次数据。"
+  },
+  "mutations": {
+    "create": {
+      "title": "创建工作班次",
+      "subtitle": "创建一个带有单一对象身份的排班班次。",
+      "submit": "创建",
+      "pending": "创建中"
+    },
+    "edit": {
+      "title": "编辑工作班次",
+      "subtitle": "仅更新可编辑的描述字段。",
+      "submit": "保存",
+      "pending": "保存中"
+    },
+    "reschedule": {
+      "title": "工作班次改期",
+      "subtitle": "替换 UTC 排班时间窗口。",
+      "submit": "改期",
+      "pending": "改期中"
+    },
+    "reassignSubject": {
+      "title": "改派对象",
+      "subtitle": "替换工作班次对象身份。",
+      "submit": "改派",
+      "pending": "改派中"
+    },
+    "replaceResources": {
+      "title": "替换资源",
+      "subtitle": "提交完整的替换演播室资源集合。",
+      "submit": "替换资源",
+      "pending": "替换中"
+    }
+  },
+  "task": {
+    "title": "安排工作班次",
+    "description": "日常排班请使用此引导表单。管理创建表单仍保留给技术或兼容场景。",
+    "steps": {
+      "details": "第 1/2 步：班次信息",
+      "review": "第 2/2 步：保存前检查"
+    },
+    "authorityNote": "时间按越南时间显示（{{timezone}}，{{offset}}）。保存时，系统会检查操作权限、被排班的人员/团队、演播室资源以及是否有排班冲突。个人、团队、部门等范围只用于员工档案排班。",
+    "generatedShiftCode": "保存后将由系统生成班次代码。",
+    "generatedShiftCodeLabel": "班次代码",
+    "generatedShiftCodeValue": "保存后由系统生成",
+    "generatedShiftCodeHelp": "无需输入此代码。",
+    "subjectPicker": "对象选择器",
+    "resourcesPicker": "演播室资源选择器",
+    "searchPlaceholder": "搜索现有记录",
+    "searchResourcesPlaceholder": "搜索演播室资源",
+    "noPickerResults": "系统未返回可选择记录。",
+    "startVietnamLocal": "开始时间（越南本地时间）",
+    "endVietnamLocal": "结束时间（越南本地时间）",
+    "datetimeHelp": "请按越南时间选择日期和时间。保存前请在确认步骤再次检查时间。",
+    "scopeLabel": "排班范围",
+    "employmentScopeHelp": "员工档案可按全局、本人、团队或部门范围排班。系统会在保存时做最终检查。",
+    "globalScopeHelp": "Talent 和 Talent Group 在此流程中按全局范围排班。",
+    "noResourcesSelected": "未选择演播室资源。",
+    "removeResource": "移除",
+    "additionalInformation": "补充信息",
+    "externalRefLabel": "相关备注或外部引用",
+    "externalRefHelp": "仅当班次需要关联工单、表格、文档或其他系统代码时填写。可以留空。",
+    "reviewAction": "检查信息",
+    "submitAction": "提交工作班次",
+    "submitPending": "正在提交工作班次",
+    "backendRejectedTitle": "无法保存请求",
+    "backendAuthorityWarning": "保存时，系统会检查访问权限、被排班的人员/团队、演播室资源、班次状态以及排班冲突。此流程只会发送上方显示的排班信息。",
+    "none": "无",
+    "localReviewValue": "{{value}} {{timezone}} ({{offset}})",
+    "utcReviewValue": "{{timestamp}} UTC ({{value}})",
+    "validation": {
+      "localDateTime": "请完整选择越南时间的日期和时间。"
+    },
+    "review": {
+      "shiftCode": "班次代码",
+      "title": "标题",
+      "subjectKind": "对象类型",
+      "subjectId": "对象",
+      "scope": "排班范围",
+      "startLocal": "开始，越南本地时间",
+      "startUtc": "开始，UTC timestamp",
+      "endLocal": "结束，越南本地时间",
+      "endUtc": "结束，UTC timestamp",
+      "studioResources": "演播室资源",
+      "description": "描述",
+      "externalRef": "相关备注或引用"
+    }
+  },
+  "placeholders": {
+    "csvIds": "逗号分隔的 ID",
+    "generatedShiftCode": "留空则由系统生成",
+    "optional": "可选"
+  },
+  "validation": {
+    "required": "此字段必填。",
+    "invalidToken": "请输入有效标识符。",
+    "invalidReferenceToken": "请输入逗号分隔的有效标识符。",
+    "invalidWindow": "结束时间必须晚于开始时间。",
+    "invalidScope": "请使用受支持的 Work Schedule 范围。",
+    "nonGlobalEmploymentProfileOnly": "非全局 Work Schedule 范围仅对员工档案对象有效。"
+  },
+  "feedback": {
+    "created": "工作班次已创建。",
+    "updated": "工作班次已更新。",
+    "rescheduled": "工作班次已改期。",
+    "reassigned": "工作班次对象已改派。",
+    "resourcesReplaced": "工作班次资源已替换。",
+    "lifecycleUpdated": "工作班次生命周期已更新。"
+  },
+  "confirm": {
+    "cancel": "取消此工作班次？",
+    "archive": "归档此工作班次？"
+  },
+  "actionRail": {
+    "title": "工作班次操作"
+  },
+  "sourceLabels": {
+    "MANUAL": "手动",
+    "ROSTER_GENERATED": "由月度排班生成"
+  },
+  "sourceDetail": {
+    "title": "工作班次来源",
+    "adminMetadata": "来源管理信息",
+    "fields": {
+      "sourceType": "来源",
+      "sourceRosterId": "月度排班",
+      "sourcePatternId": "工作模式",
+      "sourceExceptionId": "来源例外 ID",
+      "sourceGenerationRunId": "生成运行 ID",
+      "sourceRosterMonth": "排班月份",
+      "sourceDepartmentOrgUnitId": "部门",
+      "sourceRosterLocalDate": "排班本地日期",
+      "sourceRosterSlotKey": "排班槽键"
+    }
+  },
+  "rosterNav": {
+    "label": "排班模块分区",
+    "workShifts": "工作班次",
+    "monthlyRosters": "月度排班",
+    "workPatterns": "工作模式",
+    "holidayCalendars": "假期日历",
+    "notImplemented": "此切片尚未实现"
+  },
+  "patterns": {
+    "page": {
+      "title": "工作模式",
+      "subtitle": "用于月度排班的越南本地工作日和工作时间定义。"
+    },
+    "fields": {
+      "patternCode": "模式代码",
+      "name": "名称",
+      "status": "状态",
+      "timezone": "时区",
+      "startLocalTime": "开始时间",
+      "workingMinutes": "工作分钟数",
+      "breakMinutes": "休息分钟数",
+      "calculatedEndLocalTime": "计算结束时间",
+      "workingDays": "工作日",
+      "description": "描述",
+      "externalRef": "外部引用",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "activatedAt": "启用时间",
+      "archivedAt": "归档时间"
+    },
+    "statuses": {
+      "DRAFT": "草稿",
+      "ACTIVE": "启用",
+      "ARCHIVED": "已归档"
+    },
+    "weekdays": {
+      "MON": "MON",
+      "TUE": "TUE",
+      "WED": "WED",
+      "THU": "THU",
+      "FRI": "FRI",
+      "SAT": "SAT",
+      "SUN": "SUN"
+    },
+    "filters": {
+      "searchPlaceholder": "模式代码或名称前缀",
+      "status": "状态",
+      "defaultStatuses": "草稿和启用"
+    },
+    "actions": {
+      "create": "创建工作模式",
+      "closeCreate": "关闭创建",
+      "open": "打开详情",
+      "edit": "编辑",
+      "activate": "启用",
+      "archive": "归档"
+    },
+    "table": {
+      "caption": "工作模式列表",
+      "patternCode": "模式代码",
+      "name": "名称",
+      "status": "状态",
+      "startLocalTime": "开始时间",
+      "endLocalTime": "计算结束时间",
+      "workingDays": "工作日",
+      "updatedAt": "更新",
+      "actions": "操作"
+    },
+    "detail": {
+      "pageTitle": "工作模式详情",
+      "pageSubtitle": "系统返回的月度排班模式详情。",
+      "archivedReadOnly": "已归档的工作模式只能查看。",
+      "identityTitle": "工作模式",
+      "scheduleTitle": "排班设置",
+      "lifecycleTitle": "生命周期"
+    },
+    "form": {
+      "localEstimate": "{{value}} 为保存前估算值",
+      "noEstimate": "保存后由系统计算",
+      "activeStructuralReadOnly": "已启用模式只允许编辑名称、描述和外部引用。"
+    },
+    "states": {
+      "emptyTitle": "未找到工作模式",
+      "emptyMessage": "调整筛选条件或创建工作模式。",
+      "loadErrorTitle": "无法加载工作模式",
+      "loadErrorMessage": "系统拒绝或未返回工作模式数据。"
+    },
+    "mutations": {
+      "create": {
+        "title": "创建工作模式",
+        "subtitle": "设置工作日、开始时间和时长。保存后系统会生成模式代码。",
+        "submit": "创建",
+        "pending": "正在创建"
+      },
+      "edit": {
+        "title": "编辑工作模式",
+        "subtitle": "草稿模式允许编辑排班设置和说明信息。",
+        "activeSubtitle": "已启用模式只允许编辑说明信息。",
+        "submit": "保存",
+        "pending": "正在保存"
+      }
+    },
+    "validation": {
+      "required": "此字段为必填。",
+      "patternCode": "使用大写字母、数字和下划线。",
+      "time": "请输入支持的本地时间和时长。",
+      "sameDay": "工作模式必须在同一天内结束。",
+      "workingDays": "至少选择一个工作日。"
+    },
+    "feedback": {
+      "created": "已创建工作模式。",
+      "updated": "已更新工作模式。",
+      "lifecycleUpdated": "已更新工作模式生命周期。"
+    },
+    "confirm": {
+      "activate": "启用此工作模式？",
+      "archive": "归档此工作模式？"
+    },
+    "actionRail": {
+      "title": "工作模式操作"
+    }
+  },
+  "holidayCalendars": {
+    "page": {
+      "title": "假期日历",
+      "subtitle": "用于月度排班生成的全局假期和休息日历。"
+    },
+    "fields": {
+      "calendarCode": "日历代码",
+      "name": "名称",
+      "status": "状态",
+      "scopeType": "范围",
+      "timezone": "时区",
+      "description": "描述",
+      "externalRef": "外部引用",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "activatedAt": "启用时间",
+      "archivedAt": "归档时间"
+    },
+    "statuses": {
+      "DRAFT": "草稿",
+      "ACTIVE": "启用",
+      "ARCHIVED": "已归档"
+    },
+    "scopeTypes": {
+      "GLOBAL": "全局"
+    },
+    "entryTypes": {
+      "HOLIDAY": "假期",
+      "COMPANY_OFF_DAY": "公司休息日",
+      "CUSTOM_OFF_DAY": "自定义休息日"
+    },
+    "entryStatuses": {
+      "ACTIVE": "启用",
+      "REMOVED": "已移除"
+    },
+    "filters": {
+      "searchPlaceholder": "日历代码或名称前缀",
+      "status": "状态",
+      "defaultStatuses": "草稿和启用"
+    },
+    "actions": {
+      "create": "创建假期日历",
+      "closeCreate": "关闭创建",
+      "open": "打开详情",
+      "edit": "编辑",
+      "activate": "启用",
+      "archive": "归档"
+    },
+    "table": {
+      "caption": "假期日历列表",
+      "calendarCode": "日历代码",
+      "name": "名称",
+      "status": "状态",
+      "scopeType": "范围",
+      "timezone": "时区",
+      "activeEntryCount": "启用条目",
+      "updatedAt": "更新时间",
+      "actions": "操作"
+    },
+    "detail": {
+      "pageTitle": "假期日历详情",
+      "pageSubtitle": "系统返回的全局假期日历详情。",
+      "archivedReadOnly": "已归档的假期日历只能查看。",
+      "identityTitle": "假期日历",
+      "lifecycleTitle": "生命周期"
+    },
+    "entries": {
+      "title": "条目",
+      "description": "条目只记录日期，并使用日历的固定时区。",
+      "addTitle": "添加假期条目",
+      "editTitle": "编辑假期条目",
+      "subtitle": "日历条目不填写时间或时区。",
+      "date": "日期",
+      "name": "名称",
+      "type": "类型",
+      "status": "状态",
+      "add": "添加条目",
+      "update": "保存条目",
+      "pending": "正在保存条目",
+      "edit": "编辑",
+      "view": "查看",
+      "remove": "移除条目",
+      "confirmRemove": "从启用列表中移除此条目？记录会保留为已移除状态。",
+      "showRemoved": "显示已移除条目（{{count}}）",
+      "empty": "没有可显示的条目。"
+    },
+    "mutations": {
+      "create": {
+        "title": "创建假期日历",
+        "subtitle": "创建全局日历。保存后系统会生成日历代码。",
+        "submit": "创建",
+        "pending": "正在创建"
+      },
+      "edit": {
+        "title": "编辑假期日历",
+        "subtitle": "更新可编辑的说明信息。",
+        "submit": "保存",
+        "pending": "正在保存"
+      }
+    },
+    "validation": {
+      "required": "此字段为必填。",
+      "calendarCode": "使用大写字母、数字和下划线。",
+      "dateOnly": "使用有效的 YYYY-MM-DD 日期。",
+      "duplicate": "已存在使用此代码的假期日历。",
+      "duplicateDate": "此日期已经有启用条目。"
+    },
+    "feedback": {
+      "created": "已创建假期日历。",
+      "updated": "已更新假期日历。",
+      "lifecycleUpdated": "已更新假期日历生命周期。",
+      "entryAdded": "已添加假期条目。",
+      "entryUpdated": "已更新假期条目。",
+      "entryRemoved": "已从启用列表中移除假期条目。"
+    },
+    "confirm": {
+      "activate": "启用此假期日历？",
+      "archive": "归档此假期日历？"
+    },
+    "states": {
+      "emptyTitle": "未找到假期日历",
+      "emptyMessage": "调整筛选条件或创建新记录。",
+      "loadErrorTitle": "无法加载假期日历",
+      "loadErrorMessage": "系统拒绝或未返回假期日历数据。"
+    },
+    "actionRail": {
+      "title": "假期日历操作"
+    }
+  },
+  "monthlyRosters": {
+    "page": {
+      "title": "月度排班",
+      "subtitle": "为精确部门月度排班创建草稿设置。"
+    },
+    "fields": {
+      "rosterCode": "排班代码",
+      "rosterMonth": "排班月份",
+      "departmentOrgUnitId": "部门",
+      "workPatternId": "工作模式",
+      "holidayCalendarId": "节假日日历",
+      "status": "状态",
+      "timezone": "时区",
+      "scope": "排班访问范围",
+      "description": "描述",
+      "externalRef": "外部引用",
+      "exceptionCount": "启用例外",
+      "draftVersion": "草稿版本",
+      "currentPreviewHash": "当前预览校验值",
+      "lastPreviewedAt": "上次预览时间",
+      "publishedAt": "发布时间",
+      "publishedBy": "发布人",
+      "publishGenerationRunId": "发布生成批次 ID",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "archivedAt": "归档时间"
+    },
+    "statuses": {
+      "DRAFT": "草稿",
+      "PUBLISHED": "已发布",
+      "LOCKED": "已锁定",
+      "ARCHIVED": "已归档"
+    },
+    "scopes": {
+      "global": "全局",
+      "department": "部门"
+    },
+    "filters": {
+      "searchPlaceholder": "排班代码前缀",
+      "status": "状态",
+      "defaultStatuses": "草稿、已发布和已锁定",
+      "rosterMonth": "排班月份",
+      "departmentOrgUnitId": "部门",
+      "workPatternId": "工作模式",
+      "holidayCalendarId": "节假日日历",
+      "scope": "范围",
+      "defaultScopes": "系统默认"
+    },
+    "actions": {
+      "create": "创建月度排班",
+      "closeCreate": "关闭创建",
+      "open": "打开详情",
+      "editDraft": "编辑草稿设置",
+      "archive": "归档"
+    },
+    "table": {
+      "caption": "月度排班列表",
+      "rosterCode": "排班代码",
+      "rosterMonth": "月份",
+      "department": "部门",
+      "workPattern": "工作模式",
+      "holidayCalendar": "假期日历",
+      "status": "状态",
+      "updatedAt": "更新时间",
+      "actions": "操作"
+    },
+    "detail": {
+      "pageTitle": "月度排班详情",
+      "pageSubtitle": "系统返回的排班草稿设置界面。",
+      "identityTitle": "月度排班",
+      "setupTitle": "草稿设置",
+      "draftSetupSection": "草稿设置生命周期",
+      "adminMetadataTitle": "管理信息",
+      "readOnlyDraftSetup": "只有草稿状态的排班可以编辑草稿设置。",
+      "structuralLock": "此草稿已有例外。请先移除例外，再更改月份、部门、工作模式或假期日历。"
+    },
+    "preview": {
+      "title": "预览",
+      "copy": {
+        "readOnly": "预览不会创建工作班次。",
+        "noPublish": "检查预览后使用发布审核。"
+      },
+      "summary": {
+        "eligibleProfiles": "符合条件的档案",
+        "standardCandidates": "标准候选班次",
+        "suppressed": "休息日抑制",
+        "exceptions": "例外",
+        "candidatesAfterExceptions": "例外后的候选班次",
+        "specialShift": "额外班次",
+        "changedTime": "改时班次",
+        "workingToOff": "工作日转休息",
+        "conflicts": "冲突",
+        "blockers": "阻断项"
+      },
+      "conflicts": {
+        "title": "冲突和阻断项",
+        "hasIssues": "需要检查",
+        "none": "没有问题",
+        "empty": "未返回冲突或阻断项。",
+        "blocker": "阻断项",
+        "message": "{{title}} 影响行 {{rowId}}",
+        "kinds": {
+          "SUBJECT_OVERLAP": "与现有启用工作班次冲突",
+          "CANDIDATE_SUBJECT_OVERLAP": "候选班次之间冲突"
+        }
+      },
+      "blockers": {
+        "SUBJECT_OVERLAP": "此行与一个现有启用工作班次重叠。"
+      },
+      "filters": {
+        "conflictOnly": "仅冲突或阻断项",
+        "exceptionOnly": "仅例外",
+        "employeeSearch": "员工搜索",
+        "employeeSearchPlaceholder": "雇佣档案 ID",
+        "dateStart": "开始日期",
+        "dateEnd": "结束日期"
+      },
+      "table": {
+        "caption": "月度排班预览行",
+        "employee": "雇佣档案",
+        "date": "日期",
+        "kind": "来源",
+        "status": "候选状态",
+        "time": "本地时间",
+        "exception": "例外 ID",
+        "holiday": "假期/休息日",
+        "issues": "问题",
+        "reason": "摘要"
+      },
+      "rowKinds": {
+        "STANDARD": "标准候选班次",
+        "WORKING_TO_OFF": "工作日转休息",
+        "CHANGE_TIME": "改时",
+        "ADD_SPECIAL_SHIFT": "额外班次",
+        "HOLIDAY_SUPPRESSED": "因假期/休息日抑制"
+      },
+      "rows": {
+        "candidate": "候选",
+        "suppressed": "抑制/休息",
+        "hasIssues": "{{count}} 个问题",
+        "noIssues": "没有问题",
+        "reason": {
+          "standard": "标准排班候选",
+          "holidaySuppressed": "被 {{name}} 抑制",
+          "workingToOff": "标准工作日标记为休息",
+          "changeTime": "开始时间改为 {{startLocalTime}}",
+          "addSpecialShift": "额外班次从 {{startLocalTime}} 开始"
+        }
+      },
+      "detail": {
+        "title": "预览行详情",
+        "rowId": "预览行 ID",
+        "shiftStartAt": "班次开始 UTC",
+        "shiftEndAt": "班次结束 UTC",
+        "slotKey": "排班槽键",
+        "warnings": "警告",
+        "blockers": "阻断项"
+      },
+      "admin": {
+        "title": "预览管理信息",
+        "freshness": "预览新鲜度",
+        "computedPreviewHash": "计算出的预览哈希"
+      },
+      "freshness": {
+        "current": "预览是当前版本",
+        "stale": "预览已过期",
+        "notPreviewed": "预览尚未保存"
+      },
+      "states": {
+        "loadErrorTitle": "无法加载排班预览",
+        "loadErrorMessage": "系统拒绝或未返回排班预览数据。",
+        "archivedUnavailable": "已归档排班不能预览。",
+        "emptyRows": "没有符合当前筛选条件的预览行。"
+      }
+    },
+    "publish": {
+      "title": "发布审核",
+      "copy": {
+        "createShifts": "系统将从此排班创建工作班次。",
+        "reviewPreview": "发布前请先审核预览。",
+        "noUndo": "不能从此屏幕撤销发布。"
+      },
+      "readiness": {
+        "status": "发布就绪状态",
+        "ready": "可以发布",
+        "previewFreshness": "预览新鲜度"
+      },
+      "disabledReasons": {
+        "notDraft": "只有草稿排班可以发布。",
+        "unavailable": "预览不可用。",
+        "loading": "预览仍在加载。",
+        "error": "发布前预览必须成功加载。",
+        "hashUnavailable": "预览哈希不可用。发布前请刷新预览。",
+        "stale": "预览已过期。发布前请刷新预览。",
+        "conflicts": "发布前请先解决预览冲突。",
+        "blockers": "发布前请先解决预览阻断项。"
+      },
+      "confirmation": {
+        "title": "确认发布",
+        "copy": "系统将为可发布的预览行创建真实工作班次。",
+        "eligibleEmployees": "符合条件员工",
+        "generatedCandidates": "生成班次候选",
+        "exceptionCount": "例外",
+        "conflictBlockerCount": "冲突和阻断项",
+        "issueCount": "{{conflicts}} 个冲突，{{blockers}} 个阻断项"
+      },
+      "actions": {
+        "openConfirmation": "发布排班",
+        "confirm": "确认发布",
+        "publishing": "正在发布"
+      },
+      "states": {
+        "alreadyPublished": "此排班已经发布。重复发布不会创建重复工作班次。",
+        "unavailable": "此排班状态不可发布。",
+        "previewErrorTitle": "发布前需要预览"
+      },
+      "summary": {
+        "generatedCount": "生成的工作班次",
+        "suppressedCount": "假期/休息日抑制",
+        "skippedCount": "工作日转休息跳过行",
+        "publishedAt": "发布时间",
+        "publishedBy": "发布人",
+        "generationRunId": "生成运行 ID",
+        "adminMetadata": "发布管理信息"
+      },
+      "feedback": {
+        "success": "月度排班已发布。",
+        "successTitle": "排班已发布"
+      },
+      "errors": {
+        "title": "无法完成发布",
+        "stalePreview": "预览已过期。发布前请刷新预览。",
+        "unauthorized": "当前会话无权发布此排班。",
+        "forbidden": "你没有发布此排班所需的权限或部门访问范围。",
+        "validation": "系统拒绝了发布请求。请检查预览和排班状态。",
+        "conflict": "排班已更改或存在冲突。发布前请刷新预览。",
+        "generic": "无法完成发布请求。"
+      }
+    },
+    "generated": {
+      "title": "生成的工作班次",
+      "copy": "生成的工作班次是普通工作班次，并带有只读的月度排班来源信息。",
+      "states": {
+        "unavailable": "发布后可查看生成的工作班次。"
+      },
+      "fields": {
+        "source": "来源",
+        "sourceRosterId": "月度排班",
+        "generatedShiftIds": "生成的工作班次 ID"
+      },
+      "actions": {
+        "openList": "打开生成的工作班次"
+      }
+    },
+    "mutations": {
+      "create": {
+        "title": "创建月度排班草稿",
+        "subtitle": "为指定部门和 YYYY-MM 月份创建排班草稿。保存后系统会生成排班代码。",
+        "submit": "创建草稿",
+        "pending": "正在创建"
+      },
+      "edit": {
+        "title": "编辑月度排班草稿",
+        "subtitle": "在例外锁定主要字段前，草稿排班允许编辑设置和说明信息。",
+        "submit": "保存草稿",
+        "pending": "正在保存"
+      }
+    },
+    "validation": {
+      "required": "此字段为必填。",
+      "rosterCode": "使用大写字母、数字和下划线。",
+      "month": "使用有效的 YYYY-MM 月份。",
+      "invalidScope": "使用全局或部门排班访问范围。",
+      "duplicateDepartmentMonth": "此部门和月份已存在排班。",
+      "activeExceptionsStructuralLock": "请先移除启用例外，再更改月份、部门、工作模式或假期日历。"
+    },
+    "feedback": {
+      "created": "已创建月度排班草稿。",
+      "updated": "已更新月度排班草稿。",
+      "archived": "已归档月度排班。"
+    },
+    "confirm": {
+      "archive": "归档此月度排班？"
+    },
+    "states": {
+      "emptyTitle": "未找到月度排班",
+      "emptyMessage": "调整筛选条件或创建月度排班草稿。",
+      "loadErrorTitle": "无法加载月度排班",
+      "loadErrorMessage": "系统拒绝或未返回月度排班数据。"
+    },
+    "actionRail": {
+      "title": "月度排班操作"
+    },
+    "exceptions": {
+      "title": "例外",
+      "types": {
+        "WORKING_TO_OFF": "将工作日标记为休息",
+        "CHANGE_TIME": "更改开始时间",
+        "ADD_SPECIAL_SHIFT": "添加额外班次"
+      },
+      "statuses": {
+        "ACTIVE": "启用",
+        "REMOVED": "已移除"
+      },
+      "table": {
+        "caption": "月度排班例外",
+        "employee": "雇佣档案",
+        "date": "日期",
+        "type": "类型",
+        "status": "状态",
+        "summary": "摘要",
+        "reason": "原因或备注",
+        "createdAt": "创建时间",
+        "updatedAt": "更新时间",
+        "removedAt": "移除时间",
+        "actions": "操作"
+      },
+      "fields": {
+        "type": "例外类型",
+        "exceptionDate": "日期",
+        "subjectEmploymentProfileId": "受影响雇佣档案",
+        "employeeSearch": "搜索本部门在职人员",
+        "title": "标题",
+        "startLocalTime": "新的开始时间",
+        "endLocalTime": "结束时间",
+        "workingMinutes": "工作分钟数",
+        "breakMinutes": "休息分钟数",
+        "studioResourceIds": "演播室资源",
+        "csvPlaceholder": "多个 ID 用逗号分隔",
+        "reason": "原因",
+        "sourceNote": "来源备注",
+        "description": "描述",
+        "externalRef": "外部引用",
+        "studioResources": "演播室资源"
+      },
+      "actions": {
+        "add": "添加例外",
+        "edit": "编辑",
+        "remove": "移除",
+        "removing": "正在移除",
+        "showRemoved": "显示已移除例外"
+      },
+      "copy": {
+        "draftOnly": "草稿排班可在发布前添加、编辑和移除例外。",
+        "readOnly": "此排班不是草稿。例外仅可查看。",
+        "previewDeferred": "例外变更会反映在只读排班预览中。",
+        "workingToOffNoTime": "此例外将一个标准工作日标记为休息日，且不会发送时间字段。",
+        "endCalculated": "保存后由系统计算。"
+      },
+      "summary": {
+        "workingToOff": "标准工作日已标记为休息",
+        "changeTime": "开始时间改为 {{startLocalTime}}",
+        "addSpecialShift": "{{startLocalTime}} 的额外班次，工作 {{workingMinutes}} 分钟"
+      },
+      "mutations": {
+        "subtitle": "后端会校验月份、精确部门员工、标准候选班次和冲突。",
+        "add": {
+          "title": "添加排班例外",
+          "submit": "添加例外"
+        },
+        "edit": {
+          "title": "编辑排班例外",
+          "submit": "保存例外"
+        },
+        "pending": "正在保存"
+      },
+      "validation": {
+        "required": "此字段必填。",
+        "date": "使用有效的 YYYY-MM-DD 日期。",
+        "time": "使用有效的 HH:mm 时间。",
+        "dateInMonth": "请选择排班月份内的日期。",
+        "positiveMinutes": "请输入大于 0 的整数分钟数。",
+        "nonNegativeMinutes": "请输入 0 或正整数分钟数。",
+        "invalidType": "使用受支持的例外类型。",
+        "noStandardCandidate": "此例外没有匹配的标准候选班次。",
+        "conflict": "此例外与其他例外或班次冲突。",
+        "inactiveEmploymentProfile": "请选择该排班部门中的在职雇佣档案。",
+        "outsideDepartment": "请选择属于该排班部门的雇佣档案。",
+        "duplicate": "此例外与已有例外重复。"
+      },
+      "feedback": {
+        "added": "已添加排班例外。",
+        "updated": "已更新排班例外。",
+        "removed": "已从草稿中移除例外。"
+      },
+      "confirm": {
+        "remove": "从草稿中移除此例外？已移除的例外不会再影响预览。"
+      },
+      "states": {
+        "emptyActive": "没有启用中的例外。",
+        "emptyAll": "后端未返回例外。"
+      }
+    },
+    "copy": {
+      "setupInvariants": "选择一个活动部门；不包含子部门。排班目标为活动雇佣档案，使用全局节假日日历和 Asia/Ho_Chi_Minh 时区。"
+    },
+    "pickers": {
+      "departmentSearch": "按名称或代码搜索活动部门",
+      "workPatternSearch": "按名称或代码搜索活动工作模式",
+      "holidayCalendarSearch": "按名称或代码搜索活动节假日日历"
+    }
+  },
+  "advanced": {
+    "customCodeTitle": "高级管理员自定义代码",
+    "customShiftCodeHelp": "留空则系统自动生成班次代码。仅在管理员需要保留自定义旧代码时使用。"
+  },
+  "pickers": {
+    "subjectSearch": "按名称或代码搜索",
+    "studioResourceSearch": "按名称或代码搜索演播室资源",
+    "removeSelectedResource": "移除",
+    "noResourcesSelected": "尚未选择演播室资源。"
+  }
+}

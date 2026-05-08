@@ -1,0 +1,125 @@
+{
+  "page": {
+    "title": "演播资源",
+    "subtitle": "管理全局演播资源、可用性和生命周期状态。",
+    "placeholder": "演播资源业务流程尚未在本阶段实现。"
+  },
+  "fields": {
+    "resourceCode": "资源编码",
+    "name": "名称",
+    "resourceClass": "资源类别",
+    "shortName": "简称",
+    "locationLabel": "位置",
+    "maxOccupancy": "最大容量",
+    "description": "描述",
+    "externalRef": "外部引用",
+    "operationalStatus": "状态",
+    "createdAt": "已创建",
+    "updatedAt": "已更新"
+  },
+  "states": {
+    "emptyTitle": "没有演播资源",
+    "emptyMessage": "没有记录匹配当前查询。",
+    "loadErrorTitle": "无法加载演播资源",
+    "loadErrorMessage": "请重试请求或调整当前筛选条件。"
+  },
+  "filters": {
+    "searchPlaceholder": "搜索资源编码、名称或简称",
+    "operationalStatus": "状态",
+    "allStatuses": "所有未归档",
+    "resourceClass": "资源类别",
+    "resourceClassPlaceholder": "space",
+    "hasMaxOccupancy": "容量",
+    "allOccupancyStates": "所有容量状态",
+    "withOccupancy": "有最大容量",
+    "withoutOccupancy": "无最大容量"
+  },
+  "sort": {
+    "resourceCode": "资源编码",
+    "name": "名称",
+    "createdAt": "已创建"
+  },
+  "statuses": {
+    "ACTIVE": "启用",
+    "OUT_OF_SERVICE": "停用服务",
+    "INACTIVE": "停用",
+    "ARCHIVED": "已归档"
+  },
+  "actions": {
+    "create": "新建资源",
+    "closeCreate": "关闭新建",
+    "open": "打开",
+    "edit": "编辑核心字段",
+    "outOfService": "标记停用",
+    "restoreToActive": "恢复启用",
+    "deactivate": "停用",
+    "activate": "启用",
+    "archive": "归档",
+    "openAvailability": "可用性视图",
+    "exitAvailability": "完整列表"
+  },
+  "table": {
+    "caption": "演播资源列表",
+    "resourceCode": "资源编码",
+    "name": "名称",
+    "shortName": "简称",
+    "resourceClass": "资源类别",
+    "operationalStatus": "状态",
+    "locationLabel": "位置",
+    "maxOccupancy": "最大容量",
+    "createdAt": "已创建",
+    "actions": "操作"
+  },
+  "availability": {
+    "caption": "演播资源可用性列表",
+    "modeLabel": "可用性视图使用专用的精简资源 payload。"
+  },
+  "detail": {
+    "identityTitle": "资源身份和容量",
+    "metadataTitle": "描述和元数据",
+    "archivedReadOnly": "已归档演播资源只读。后端详情可用时仍可查看。"
+  },
+  "related": {
+    "navigationTitle": "关联导航",
+    "workShifts": "按资源查看工作班次",
+    "events": "按资源查看活动",
+    "openFilteredList": "打开筛选列表",
+    "unavailable": "没有可用的安全关联路由。"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建演播资源",
+      "subtitle": "使用已记录的身份字段创建全局演播资源记录。",
+      "submit": "新建资源",
+      "pending": "新建中"
+    },
+    "edit": {
+      "title": "编辑演播资源",
+      "subtitle": "仅更新可变元数据。",
+      "submit": "保存更改",
+      "pending": "保存中"
+    }
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "请输入大写 token，例如 SPACE 或 EQUIPMENT。",
+    "invalidPositiveInteger": "请输入正整数。",
+    "maxOccupancySpaceOnly": "最大容量仅适用于 SPACE 资源。"
+  },
+  "feedback": {
+    "created": "演播资源已创建。",
+    "updated": "演播资源已更新。",
+    "availabilityUpdated": "可用性状态已更新。",
+    "lifecycleUpdated": "生命周期状态已更新。"
+  },
+  "confirm": {
+    "outOfService": "将此启用资源标记为停用？后端仍可能因分配阻塞而拒绝请求。",
+    "restoreToActive": "将此资源恢复为启用？",
+    "deactivate": "停用此资源？后端仍可能因分配阻塞而拒绝请求。",
+    "activate": "启用此资源？",
+    "archive": "归档此停用资源？"
+  },
+  "actionRail": {
+    "title": "演播资源操作"
+  }
+}

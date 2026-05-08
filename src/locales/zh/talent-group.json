@@ -1,0 +1,158 @@
+{
+  "page": {
+    "title": "艺人组",
+    "subtitle": "管理艺人组成员和生命周期。",
+    "placeholder": "艺人组业务流程尚未在本阶段实现。"
+  },
+  "fields": {
+    "groupCode": "组编码",
+    "name": "名称",
+    "shortName": "简称",
+    "status": "状态",
+    "displayOrder": "显示顺序",
+    "description": "描述",
+    "externalRef": "外部引用",
+    "talentId": "艺人ID",
+    "lineupOrder": "阵容顺序",
+    "newLineupOrder": "新阵容顺序",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "placeholders": {
+    "optional": "可选"
+  },
+  "states": {
+    "emptyTitle": "未找到艺人组",
+    "emptyMessage": "请尝试更新搜索或筛选条件。",
+    "loadErrorTitle": "无法加载艺人组",
+    "loadErrorMessage": "无法加载艺人组数据。"
+  },
+  "filters": {
+    "searchPlaceholder": "按组编码、名称或简称搜索",
+    "status": "状态",
+    "allStatuses": "所有状态",
+    "containsTalentId": "包含艺人",
+    "containsTalentIdPlaceholder": "艺人ID",
+    "talentId": "艺人ID",
+    "talentIdPlaceholder": "关联艺人ID"
+  },
+  "sort": {
+    "groupCode": "组编码",
+    "name": "名称",
+    "createdAt": "创建时间",
+    "displayOrder": "显示顺序"
+  },
+  "statuses": {
+    "ACTIVE": "启用",
+    "INACTIVE": "停用",
+    "ARCHIVED": "已归档"
+  },
+  "membershipStatuses": {
+    "ACTIVE": "启用",
+    "INACTIVE": "停用",
+    "REMOVED": "已移除"
+  },
+  "actions": {
+    "create": "新建艺人组",
+    "closeCreate": "关闭新建",
+    "exitByTalent": "退出按艺人视图",
+    "open": "打开",
+    "edit": "编辑",
+    "addMember": "添加成员",
+    "updateLineup": "更新阵容",
+    "deactivateMember": "停用成员",
+    "reactivateMember": "重新启用成员",
+    "removeMember": "移除成员",
+    "activate": "启用",
+    "deactivate": "停用",
+    "archive": "归档"
+  },
+  "table": {
+    "caption": "艺人组列表",
+    "groupCode": "组编码",
+    "name": "名称",
+    "shortName": "简称",
+    "status": "状态",
+    "displayOrder": "顺序",
+    "createdAt": "已创建",
+    "updatedAt": "已更新",
+    "actions": "操作"
+  },
+  "membersTable": {
+    "caption": "组成员",
+    "talentId": "艺人ID",
+    "membershipStatus": "成员状态",
+    "lineupOrder": "阵容顺序",
+    "joinedAt": "加入时间",
+    "leftAt": "离开时间",
+    "actions": "操作"
+  },
+  "detail": {
+    "summaryTitle": "组摘要",
+    "metadataTitle": "组元数据"
+  },
+  "related": {
+    "byTalentModeLabel": "按艺人",
+    "navigationTitle": "关联导航",
+    "platformAccounts": "平台账号",
+    "workShifts": "工作班次",
+    "events": "活动",
+    "openFilteredList": "打开筛选列表",
+    "unavailable": "不可用",
+    "membersTitle": "成员名单",
+    "membersEmptyTitle": "没有启用或停用成员",
+    "membersEmptyMessage": "该组当前没有可见成员。"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建艺人组",
+      "subtitle": "新建艺人组。",
+      "submit": "新建",
+      "pending": "新建中..."
+    },
+    "edit": {
+      "title": "编辑艺人组",
+      "subtitle": "更新组可编辑字段。",
+      "submit": "保存",
+      "pending": "保存中..."
+    },
+    "addMember": {
+      "title": "添加成员",
+      "subtitle": "向此组添加艺人。",
+      "submit": "添加",
+      "pending": "添加中..."
+    },
+    "updateLineup": {
+      "title": "更新阵容",
+      "subtitle": "更新成员阵容顺序。",
+      "submit": "更新",
+      "pending": "更新中..."
+    }
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "值只能使用支持的标记字符。",
+    "invalidReferenceToken": "引用 ID 包含不支持的字符。",
+    "invalidDisplayOrder": "显示顺序必须是大于或等于 0 的整数。",
+    "invalidLineupOrder": "阵容顺序必须是大于或等于 0 的整数。"
+  },
+  "feedback": {
+    "created": "艺人组已创建。",
+    "updated": "艺人组已更新。",
+    "memberAdded": "成员已添加。",
+    "lineupUpdated": "阵容已更新。",
+    "lifecycleUpdated": "组生命周期已更新。",
+    "membershipLifecycleUpdated": "成员生命周期已更新。"
+  },
+  "confirm": {
+    "activate": "启用此组？",
+    "deactivate": "停用此组？",
+    "archive": "归档此组？",
+    "deactivateMember": "停用此成员？",
+    "reactivateMember": "重新启用此成员？",
+    "removeMember": "移除此成员？"
+  },
+  "actionRail": {
+    "title": "艺人组操作"
+  }
+}

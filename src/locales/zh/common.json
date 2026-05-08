@@ -1,0 +1,70 @@
+{
+  "app": {
+    "name": "Livestream Admin"
+  },
+  "labels": {
+    "locale": "语言",
+    "breadcrumb": "面包屑导航",
+    "detail": "详情",
+    "recordId": "记录 ID",
+    "waveState": "Wave 状态",
+    "search": "搜索",
+    "sort": "排序",
+    "sortDefault": "默认",
+    "sortAscending": "升序",
+    "sortDescending": "降序"
+  },
+  "locales": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "zh": "中文"
+  },
+  "actions": {
+    "reload": "重新加载",
+    "refresh": "刷新",
+    "retry": "重试",
+    "previous": "上一页",
+    "next": "下一页",
+    "cancel": "取消",
+    "confirm": "确认",
+    "confirmDestructive": "确认操作",
+    "close": "关闭",
+    "search": "搜索",
+    "stubAction": "下一阶段提供操作",
+    "toggleSidebar": "切换侧边栏",
+    "login": "登录",
+    "logout": "退出登录"
+  },
+  "states": {
+    "loading": "加载中"
+  },
+  "auth": {
+    "loginTitle": "管理后台登录",
+    "loginSubtitle": "基础认证缝已为 Auth0 准备"
+  },
+  "session": {
+    "placeholderUser": "管理会话",
+    "statusActive": "运行中"
+  },
+  "placeholders": {
+    "foundationOnlyTitle": "此页面目前仅为基础脚手架",
+    "waveStubSubtitle": "本阶段暂未实现",
+    "waveStubState": "仅占位",
+    "listSectionTitle": "列表区域",
+    "detailSummaryTitle": "记录概览",
+    "detailMetadataTitle": "元数据区域",
+    "relatedSectionTitle": "关联区域",
+    "relatedSectionSubtitle": "为后续模块预留的关联视图",
+    "relatedSectionMessage": "本阶段未实现关联列表行为。",
+    "actionRailTitle": "操作",
+    "actionRailPlaceholder": "详情操作尚未实现。"
+  },
+  "dialogs": {
+    "destructive": {
+      "title": "确认高影响操作"
+    }
+  },
+  "feedback": {
+    "saved": "保存成功"
+  }
+}

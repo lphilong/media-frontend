@@ -1,0 +1,113 @@
+{
+  "page": {
+    "title": "Users",
+    "subtitle": "Admin-only identity and Auth0 linkage surfaces.",
+    "placeholder": "User identity/access implementation is not available."
+  },
+  "fields": {
+    "id": "User id",
+    "authSubject": "Auth0 subject",
+    "authProvider": "Provider",
+    "actorKind": "Actor kind",
+    "accountStatus": "Status",
+    "displayName": "Display name",
+    "email": "Email",
+    "phone": "Phone",
+    "locale": "Locale",
+    "timezone": "Timezone",
+    "contexts": "Contexts",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "activatedAt": "Activated",
+    "disabledAt": "Disabled",
+    "archivedAt": "Archived"
+  },
+  "actorKinds": {
+    "ADMIN": "Admin",
+    "STAFF": "Staff"
+  },
+  "statuses": {
+    "PENDING": "Pending",
+    "ACTIVE": "Active",
+    "DISABLED": "Disabled",
+    "ARCHIVED": "Archived"
+  },
+  "table": {
+    "caption": "Users",
+    "displayName": "Display name",
+    "email": "Email",
+    "actorKind": "Actor kind",
+    "accountStatus": "Status",
+    "updatedAt": "Updated",
+    "actions": "Actions"
+  },
+  "filters": {
+    "searchPlaceholder": "Search display name or email",
+    "state": "State",
+    "allStates": "All states",
+    "actorKind": "Actor kind",
+    "allActorKinds": "All actor kinds"
+  },
+  "actions": {
+    "open": "Open",
+    "create": "Create user",
+    "closeCreate": "Close create",
+    "edit": "Edit profile",
+    "setAuthLinkage": "Set Auth0 linkage",
+    "activate": "Activate",
+    "disable": "Disable",
+    "archive": "Archive"
+  },
+  "actionRail": {
+    "title": "User actions"
+  },
+  "detail": {
+    "identityTitle": "Identity",
+    "authLinkageTitle": "Auth0 linkage metadata",
+    "lifecycleTitle": "Lifecycle",
+    "archivedReadOnly": "Archived users are read-only.",
+    "boundaryNotice": "User screens manage identity profile, preferences, lifecycle, and Auth0 metadata only. Role assignment is owned by Role detail, and Employment Profile linkage is owned by Employment Profile."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create user",
+      "subtitle": "Creates a pending admin-runtime user identity.",
+      "submit": "Create user",
+      "pending": "Creating user"
+    },
+    "update": {
+      "title": "Update profile and preferences",
+      "subtitle": "Only changed supported profile and preference fields are submitted.",
+      "submit": "Update user",
+      "pending": "Updating user"
+    },
+    "authLinkage": {
+      "title": "Set Auth0 linkage metadata",
+      "subtitle": "Updates provider metadata only.",
+      "submit": "Set linkage",
+      "pending": "Setting linkage"
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "maxText": "Text is too long.",
+    "noChangedFields": "Change at least one supported field."
+  },
+  "confirm": {
+    "activate": "Activate this user if backend blockers allow it.",
+    "disable": "Disable this user. The backend may reject current-actor or governance recovery blockers.",
+    "archive": "Archive this user. Active users cannot be archived."
+  },
+  "feedback": {
+    "created": "User created.",
+    "updated": "User updated.",
+    "authLinkageUpdated": "Auth0 linkage metadata updated.",
+    "lifecycleUpdated": "User lifecycle updated."
+  },
+  "states": {
+    "emptyTitle": "No users found",
+    "emptyMessage": "Adjust filters or create a user.",
+    "loadErrorTitle": "Unable to load users",
+    "loadErrorMessage": "The user surface could not be loaded."
+  }
+}

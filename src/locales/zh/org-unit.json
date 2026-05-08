@@ -1,0 +1,142 @@
+{
+  "page": {
+    "title": "组织单元",
+    "subtitle": "管理组织结构和生命周期。",
+    "placeholder": "组织单元列表、筛选和操作尚未在本阶段实现。"
+  },
+  "fields": {
+    "code": "编码",
+    "name": "名称",
+    "type": "类型",
+    "status": "状态",
+    "parentOrgUnitId": "父组织单元 ID",
+    "newParentOrgUnitId": "新父组织单元 ID",
+    "displayOrder": "显示顺序",
+    "depth": "层级深度",
+    "ancestorChain": "上级链",
+    "externalRef": "外部引用",
+    "description": "描述",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "placeholders": {
+    "typeToken": "示例：DEPARTMENT",
+    "parentOrgUnitId": "根单元请留空",
+    "optional": "可选"
+  },
+  "states": {
+    "emptyTitle": "未找到组织单元",
+    "emptyMessage": "请尝试更新搜索或筛选条件。",
+    "loadErrorTitle": "无法加载组织单元",
+    "loadErrorMessage": "无法加载组织单元数据。"
+  },
+  "filters": {
+    "searchPlaceholder": "按编码或名称搜索",
+    "status": "状态",
+    "type": "类型",
+    "typePlaceholder": "筛选按类型标记",
+    "parentOrgUnitId": "父组织单元",
+    "parentOrgUnitIdPlaceholder": "父单元 ID",
+    "rootOnly": "层级模式",
+    "allStatuses": "所有状态",
+    "allRootModes": "所有层级模式",
+    "onlyRoots": "仅根单元",
+    "withParent": "有父单元"
+  },
+  "sort": {
+    "code": "编码",
+    "name": "名称",
+    "createdAt": "创建时间",
+    "displayOrder": "显示顺序"
+  },
+  "statuses": {
+    "ACTIVE": "启用",
+    "INACTIVE": "停用",
+    "ARCHIVED": "已归档"
+  },
+  "actions": {
+    "create": "新建组织单元",
+    "closeCreate": "关闭新建",
+    "open": "打开",
+    "edit": "编辑",
+    "move": "移动",
+    "activate": "启用",
+    "deactivate": "停用",
+    "archive": "归档"
+  },
+  "table": {
+    "caption": "组织单元列表",
+    "code": "编码",
+    "name": "名称",
+    "type": "类型",
+    "status": "状态",
+    "parentOrgUnitId": "父单元",
+    "depth": "层级深度",
+    "displayOrder": "顺序",
+    "createdAt": "已创建",
+    "actions": "操作"
+  },
+  "childrenTable": {
+    "code": "编码",
+    "name": "名称",
+    "type": "类型",
+    "status": "状态",
+    "depth": "层级深度",
+    "displayOrder": "顺序"
+  },
+  "detail": {
+    "summaryTitle": "核心元数据",
+    "hierarchyTitle": "层级",
+    "rootUnit": "根"
+  },
+  "related": {
+    "navigationTitle": "关联导航",
+    "employmentProfiles": "员工档案",
+    "platformAccounts": "平台账号",
+    "openFilteredList": "打开筛选列表",
+    "childrenTitle": "子组织单元",
+    "childrenEmptyTitle": "没有子组织单元",
+    "childrenEmptyMessage": "该组织单元当前没有子记录。"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建组织单元",
+      "subtitle": "新建组织单元记录。",
+      "submit": "新建",
+      "pending": "新建中..."
+    },
+    "edit": {
+      "title": "编辑组织单元",
+      "subtitle": "更新组织单元可编辑字段。",
+      "submit": "保存",
+      "pending": "保存中..."
+    },
+    "move": {
+      "title": "移动组织单元",
+      "subtitle": "通过专用移动操作更改父组织单元。",
+      "submit": "移动",
+      "pending": "移动中..."
+    }
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidDisplayOrder": "显示顺序必须是大于或等于 0 的整数。",
+    "invalidTypeToken": "类型必须是大写 token，例如 DEPARTMENT。",
+    "invalidReferenceToken": "引用 ID 包含不支持的字符。",
+    "moveSelfForbidden": "组织单元不能移动到自身之下。"
+  },
+  "feedback": {
+    "created": "组织单元已创建。",
+    "updated": "组织单元已更新。",
+    "moved": "组织单元已移动。",
+    "lifecycleUpdated": "组织单元生命周期已更新。"
+  },
+  "confirm": {
+    "activate": "启用此组织单元？",
+    "deactivate": "停用此组织单元？",
+    "archive": "归档此组织单元？"
+  },
+  "actionRail": {
+    "title": "组织单元操作"
+  }
+}

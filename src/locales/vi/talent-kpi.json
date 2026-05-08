@@ -1,0 +1,161 @@
+{
+  "page": {
+    "title": "KPI Talent",
+    "subtitle": "Quản lý bản ghi KPI của Talent.",
+    "placeholder": "Luồng nghiệp vụ KPI Talent đã được triển khai trong Wave 8."
+  },
+  "sort": {
+    "periodStartAt": "Bắt đầu kỳ",
+    "kpiRecordCode": "Mã KPI",
+    "createdAt": "Thời điểm tạo"
+  },
+  "filters": {
+    "searchPlaceholder": "Nhập mã KPI",
+    "status": "Trạng thái",
+    "allStatuses": "Tất cả chưa lưu trữ",
+    "subjectTalentId": "ID Talent",
+    "subjectTalentIdPlaceholder": "ID Talent",
+    "attributionPlatformAccountId": "Tài khoản nền tảng",
+    "attributionPlatformAccountIdPlaceholder": "ID tài khoản nền tảng",
+    "attributionEventId": "Sự kiện",
+    "attributionEventIdPlaceholder": "ID sự kiện",
+    "measurementSource": "Nguồn đo lường",
+    "allMeasurementSources": "Bất kỳ nguồn nào",
+    "containsMetricCode": "Mã chỉ số",
+    "allMetricCodes": "Bất kỳ chỉ số nào",
+    "windowStartAt": "Thời gian bắt đầu",
+    "windowEndAt": "Thời gian kết thúc"
+  },
+  "relatedModes": {
+    "by-talent": "Bản ghi KPI liên quan theo Talent",
+    "by-platform": "Bản ghi KPI liên quan theo tài khoản nền tảng",
+    "by-event": "Bản ghi KPI liên quan theo sự kiện"
+  },
+  "statuses": {
+    "DRAFT": "Nháp",
+    "FINALIZED": "Đã chốt",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "measurementSources": {
+    "MANUAL": "Thủ công"
+  },
+  "metricCodes": {
+    "LIVESTREAM_HOURS": "Giờ livestream",
+    "REVENUE_ATTRIBUTED_AMOUNT": "Doanh thu được ghi nhận",
+    "LIVESTREAM_SESSION_COUNT": "Số phiên livestream",
+    "CONTENT_PUBLISH_COUNT": "Số nội dung đã đăng",
+    "EVENT_APPEARANCE_COUNT": "Số lần xuất hiện trong sự kiện",
+    "ENGAGEMENT_COUNT": "Số lượt tương tác",
+    "FOLLOWER_DELTA": "Chênh lệch người theo dõi"
+  },
+  "fields": {
+    "kpiRecordCode": "Mã bản ghi KPI",
+    "title": "Tiêu đề",
+    "subjectTalentId": "ID Talent",
+    "attributionPlatformAccountId": "ID tài khoản nền tảng ghi nhận",
+    "attributionEventId": "ID sự kiện ghi nhận",
+    "measurementSource": "Nguồn đo lường",
+    "periodStartAt": "Bắt đầu kỳ",
+    "periodEndAt": "Kết thúc kỳ",
+    "publishedAt": "Thời điểm công bố",
+    "metricCode": "Mã chỉ số",
+    "numericValue": "Giá trị số",
+    "description": "Mô tả",
+    "externalRef": "Tham chiếu bên ngoài",
+    "status": "Trạng thái",
+    "scopeBoundary": "Ranh giới phạm vi",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật"
+  },
+  "table": {
+    "caption": "Danh sách bản ghi KPI Talent",
+    "kpiRecordCode": "Mã KPI",
+    "title": "Tiêu đề",
+    "subjectTalentId": "Talent",
+    "attributionPlatformAccountId": "Nền tảng",
+    "attributionEventId": "Sự kiện",
+    "measurementSource": "Nguồn",
+    "status": "Trạng thái",
+    "periodStartAt": "Bắt đầu kỳ",
+    "periodEndAt": "Kết thúc kỳ",
+    "publishedAt": "Thời điểm công bố",
+    "actions": "Hành động"
+  },
+  "actions": {
+    "create": "Tạo bản ghi KPI",
+    "closeCreate": "Đóng tạo mới",
+    "open": "Mở",
+    "editDraftCore": "Chỉnh sửa nội dung nháp",
+    "replaceMetrics": "Thay thế chỉ số",
+    "addMetric": "Thêm chỉ số",
+    "removeMetric": "Xóa khỏi danh sách",
+    "finalize": "Chốt",
+    "archive": "Lưu trữ"
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo bản ghi KPI",
+      "subtitle": "Tạo bản ghi KPI thủ công ở phạm vi toàn cục với toàn bộ bộ chỉ số ban đầu.",
+      "submit": "Tạo",
+      "pending": "Đang tạo"
+    },
+    "draftCore": {
+      "title": "Chỉnh sửa nội dung nháp",
+      "subtitle": "Chỉ bản ghi KPI ở trạng thái nháp mới được sửa các trường chính.",
+      "submit": "Lưu nội dung nháp",
+      "pending": "Đang lưu"
+    },
+    "metrics": {
+      "title": "Thay thế chỉ số",
+      "subtitle": "Gửi toàn bộ bộ chỉ số chuẩn hóa; không hỗ trợ cập nhật từng dòng.",
+      "rowsTitle": "Bộ chỉ số",
+      "submit": "Thay thế chỉ số",
+      "pending": "Đang thay thế"
+    }
+  },
+  "detail": {
+    "archivedReadOnly": "Bản ghi KPI đã lưu trữ chỉ đọc.",
+    "identityTitle": "Định danh bản ghi",
+    "globalOnly": "Chỉ dùng phạm vi toàn cục",
+    "measurementTitle": "Khung thời gian đo lường",
+    "attributionTitle": "Ghi nhận",
+    "metricsTitle": "Chỉ số",
+    "freeTextTitle": "Ghi chú"
+  },
+  "related": {
+    "navigationTitle": "Bản ghi thương mại liên quan",
+    "revenueByTalent": "Doanh thu theo cùng Talent",
+    "revenueByPlatform": "Doanh thu theo cùng nền tảng",
+    "revenueByEvent": "Doanh thu theo cùng sự kiện"
+  },
+  "actionRail": {
+    "title": "Hành động KPI Talent"
+  },
+  "states": {
+    "emptyTitle": "Không có bản ghi KPI",
+    "emptyMessage": "Không có bản ghi nào khớp với bộ lọc hiện tại.",
+    "loadErrorTitle": "Không tải được bản ghi KPI",
+    "loadErrorMessage": "Không tải được bản ghi KPI.",
+    "metricsLoadErrorTitle": "Không tải được chỉ số",
+    "metricsLoadErrorMessage": "Không tải được danh sách chỉ số.",
+    "noMetrics": "Không có chỉ số nào được trả về cho bản ghi này."
+  },
+  "confirm": {
+    "finalize": "Chốt bản ghi KPI này? Backend vẫn có thể từ chối nếu còn ràng buộc.",
+    "archive": "Lưu trữ bản ghi KPI này? Bản ghi đã lưu trữ vẫn xem được chi tiết."
+  },
+  "feedback": {
+    "created": "Đã tạo bản ghi KPI.",
+    "updated": "Đã cập nhật nội dung nháp của KPI.",
+    "metricsUpdated": "Đã thay thế bộ chỉ số KPI.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời KPI."
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối.",
+    "invalidTimestamp": "Nhập timestamp số nguyên hợp lệ.",
+    "periodWindow": "Kỳ đo lường phải kết thúc sau thời điểm bắt đầu.",
+    "metricValue": "Giá trị chỉ số không khớp với quy tắc của chỉ số.",
+    "duplicateMetricCode": "Các mã chỉ số không được trùng nhau."
+  }
+}

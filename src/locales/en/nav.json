@@ -1,0 +1,51 @@
+{
+  "landmarks": {
+    "primaryNavigation": "Primary navigation"
+  },
+  "groups": {
+    "overview": "Overview",
+    "identityAccess": "Identity & Access",
+    "organization": "Organization",
+    "talentOwnership": "Talent & Ownership",
+    "operations": "Operations",
+    "commercial": "Commercial"
+  },
+  "items": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "roles": "Roles",
+    "orgUnits": "Org Units",
+    "employmentProfiles": "Employment Profiles",
+    "talents": "Talents",
+    "talentGroups": "Talent Groups",
+    "platformAccounts": "Platform Accounts",
+    "studioResources": "Studio Resources",
+    "workShifts": "Work Shifts",
+    "events": "Events",
+    "contractRegistry": "Contract Registry",
+    "talentKpi": "Talent KPI",
+    "revenueLedger": "Revenue Ledger",
+    "commission": "Commission",
+    "commissionRules": "Commission Rules",
+    "commissionSettlements": "Commission Settlements"
+  },
+  "short": {
+    "dashboard": "DB",
+    "users": "US",
+    "roles": "RO",
+    "orgUnits": "OU",
+    "employmentProfiles": "EP",
+    "talents": "TL",
+    "talentGroups": "TG",
+    "platformAccounts": "PA",
+    "studioResources": "SR",
+    "workShifts": "WS",
+    "events": "EV",
+    "contractRegistry": "CR",
+    "talentKpi": "KPI",
+    "revenueLedger": "RL",
+    "commission": "CM",
+    "commissionRules": "R",
+    "commissionSettlements": "S"
+  }
+}

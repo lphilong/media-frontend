@@ -1,0 +1,199 @@
+{
+  "page": {
+    "title": "Events",
+    "subtitle": "Global operations authority for scheduled events, assignments, and resources.",
+    "placeholder": "Event Assignment is implemented as real Wave 6 routes."
+  },
+  "fields": {
+    "eventCode": "Event code",
+    "title": "Title",
+    "status": "Status",
+    "assignmentKind": "Assignment kind",
+    "assignmentKindIndexed": "Assignment kind {{index}}",
+    "assignmentId": "Assignment subject ID",
+    "assignmentIdIndexed": "Assignment subject ID {{index}}",
+    "eventStartAt": "Event start UTC",
+    "eventEndAt": "Event end UTC",
+    "newEventStartAt": "New event start UTC",
+    "newEventEndAt": "New event end UTC",
+    "studioResourceIds": "Studio resource IDs",
+    "platformAccountIds": "Platform account IDs",
+    "newStudioResourceIds": "Replacement studio resource IDs",
+    "newPlatformAccountIds": "Replacement platform account IDs",
+    "description": "Description",
+    "externalRef": "External reference",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at",
+    "scopeBoundary": "Scope boundary"
+  },
+  "statuses": {
+    "SCHEDULED": "Scheduled",
+    "IN_PROGRESS": "In progress",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled",
+    "ARCHIVED": "Archived"
+  },
+  "assignmentStatuses": {
+    "ACTIVE": "Active"
+  },
+  "assignmentKinds": {
+    "EMPLOYMENT_PROFILE": "Employment profile",
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Talent group"
+  },
+  "sort": {
+    "eventStartAt": "Event start",
+    "eventCode": "Event code",
+    "createdAt": "Created"
+  },
+  "filters": {
+    "searchPlaceholder": "Exact event code or title prefix",
+    "status": "Status",
+    "allStatuses": "All active states",
+    "assignmentKind": "Assignment kind",
+    "allAssignmentKinds": "All assignment kinds",
+    "assignmentId": "Assignment subject ID",
+    "assignmentIdPlaceholder": "Exact assignment subject identifier",
+    "studioResourceId": "Studio resource ID",
+    "studioResourceIdPlaceholder": "Exact resource identifier",
+    "platformAccountId": "Platform account ID",
+    "platformAccountIdPlaceholder": "Exact platform account identifier",
+    "windowStartAt": "Window start UTC",
+    "windowEndAt": "Window end UTC"
+  },
+  "relatedModes": {
+    "by-assignment": "Related events by assignment",
+    "by-resource": "Related events by studio resource",
+    "by-platform": "Related events by platform account"
+  },
+  "actions": {
+    "create": "Create event",
+    "closeCreate": "Close create",
+    "open": "Open detail",
+    "openSubject": "Open subject",
+    "edit": "Edit",
+    "reschedule": "Reschedule",
+    "replaceAssignments": "Replace assignments",
+    "replaceStudioResources": "Replace studio resources",
+    "replacePlatformAccounts": "Replace platform accounts",
+    "addAssignment": "Add assignment",
+    "removeAssignment": "Remove assignment {{index}}",
+    "start": "Start",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "archive": "Archive",
+    "historicalArchiveEligible": "Historical scheduled event can be archived from detail"
+  },
+  "table": {
+    "caption": "Event list",
+    "eventCode": "Event code",
+    "title": "Title",
+    "status": "Status",
+    "eventStartAt": "Start",
+    "eventEndAt": "End",
+    "createdAt": "Created",
+    "actions": "Actions"
+  },
+  "detail": {
+    "archivedReadOnly": "Archived events are read-only.",
+    "identityTitle": "Event",
+    "scheduleTitle": "Schedule",
+    "referencesTitle": "Resource and platform references",
+    "globalOnly": "Global only"
+  },
+  "related": {
+    "navigationTitle": "Related navigation",
+    "studioResource": "Studio resource",
+    "platformAccount": "Platform account",
+    "unavailable": "Link unavailable"
+  },
+  "assignments": {
+    "title": "Active assignments",
+    "caption": "Active event assignments",
+    "emptyTitle": "No active assignments",
+    "emptyMessage": "The event assignment roster is empty.",
+    "emptyReplacementSet": "The replacement set is empty. Add an assignment before submitting if the event needs active assignments.",
+    "replacementRowLabel": "Replacement assignment {{index}}",
+    "loadErrorTitle": "Assignments could not be loaded",
+    "loadErrorMessage": "The active assignment roster is unavailable.",
+    "assignmentKind": "Assignment kind",
+    "subjectId": "Subject ID",
+    "assignmentStatus": "Status",
+    "createdAt": "Created",
+    "actions": "Actions"
+  },
+  "states": {
+    "emptyTitle": "No events found",
+    "emptyMessage": "Adjust filters or create an event.",
+    "loadErrorTitle": "Events could not be loaded",
+    "loadErrorMessage": "The backend rejected or did not return event data."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create event",
+      "subtitle": "Create one global event with at least one active assignment.",
+      "submit": "Create",
+      "pending": "Creating"
+    },
+    "edit": {
+      "title": "Edit event",
+      "subtitle": "Update editable descriptive fields only.",
+      "submit": "Save",
+      "pending": "Saving"
+    },
+    "reschedule": {
+      "title": "Reschedule event",
+      "subtitle": "Replace the scheduled UTC window.",
+      "submit": "Reschedule",
+      "pending": "Rescheduling"
+    },
+    "replaceAssignments": {
+      "title": "Replace assignments",
+      "subtitle": "Send the full replacement assignment set.",
+      "submit": "Replace assignments",
+      "pending": "Replacing"
+    },
+    "replaceStudioResources": {
+      "title": "Replace studio resources",
+      "subtitle": "Send the full replacement studio resource set.",
+      "submit": "Replace studio resources",
+      "pending": "Replacing"
+    },
+    "replacePlatformAccounts": {
+      "title": "Replace platform accounts",
+      "subtitle": "Send the full replacement platform account set.",
+      "submit": "Replace platform accounts",
+      "pending": "Replacing"
+    }
+  },
+  "placeholders": {
+    "csvIds": "Comma-separated IDs",
+    "optional": "Optional"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Use a valid identifier token.",
+    "invalidReferenceToken": "Use comma-separated identifier tokens.",
+    "invalidWindow": "End must be after start.",
+    "noScope": "Event Assignment is global-only and cannot accept scope fields.",
+    "rosterUnavailable": "The active assignment roster is not safely available, so replacement is blocked."
+  },
+  "feedback": {
+    "created": "Event created.",
+    "updated": "Event updated.",
+    "rescheduled": "Event rescheduled.",
+    "assignmentsReplaced": "Event assignments replaced.",
+    "studioResourcesReplaced": "Event studio resources replaced.",
+    "platformAccountsReplaced": "Event platform accounts replaced.",
+    "lifecycleUpdated": "Event lifecycle updated."
+  },
+  "confirm": {
+    "start": "Start this event?",
+    "complete": "Complete this event?",
+    "cancel": "Cancel this event?",
+    "archive": "Archive this event?"
+  },
+  "actionRail": {
+    "title": "Event actions"
+  }
+}

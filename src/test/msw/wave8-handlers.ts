@@ -1,0 +1,1000 @@
+import { http, HttpResponse } from 'msw';
+
+type TalentKpiStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
+type RevenueEntryStatus = 'DRAFT' | 'FINALIZED' | 'RECONCILED' | 'VOIDED' | 'ARCHIVED';
+type RevenueKind = 'PLATFORM_LIVESTREAM' | 'PLATFORM_CONTENT' | 'EVENT_OPERATIONAL';
+type MetricCode =
+  | 'LIVESTREAM_HOURS'
+  | 'REVENUE_ATTRIBUTED_AMOUNT'
+  | 'LIVESTREAM_SESSION_COUNT'
+  | 'CONTENT_PUBLISH_COUNT'
+  | 'EVENT_APPEARANCE_COUNT'
+  | 'ENGAGEMENT_COUNT'
+  | 'FOLLOWER_DELTA';
+
+type TalentKpiMetricRecord = {
+  id: string;
+  metricCode: MetricCode;
+  numericValue: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type TalentKpiRecord = {
+  id: string;
+  kpiRecordCode: string;
+  title: string;
+  subjectTalentId: string;
+  attributionPlatformAccountId?: string | null;
+  attributionEventId?: string | null;
+  measurementSource: 'MANUAL';
+  status: TalentKpiStatus;
+  periodStartAt: number;
+  periodEndAt: number;
+  publishedAt?: number | null;
+  description?: string | null;
+  externalRef?: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type RevenueEntryRecord = {
+  id: string;
+  revenueEntryCode: string;
+  title: string;
+  subjectTalentId: string;
+  attributionPlatformAccountId?: string | null;
+  attributionEventId?: string | null;
+  revenueKind: RevenueKind;
+  entrySource: 'MANUAL';
+  status: RevenueEntryStatus;
+  currencyCode: string;
+  recognizedAmount: number;
+  recognizedAt: number;
+  finalizedAt?: number | null;
+  reconciledAt?: number | null;
+  voidedAt?: number | null;
+  reconciliationReference?: string | null;
+  description?: string | null;
+  externalRef?: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+const now = Date.parse('2026-04-22T00:00:00.000Z');
+const metricCodes: MetricCode[] = [
+  'LIVESTREAM_HOURS',
+  'REVENUE_ATTRIBUTED_AMOUNT',
+  'LIVESTREAM_SESSION_COUNT',
+  'CONTENT_PUBLISH_COUNT',
+  'EVENT_APPEARANCE_COUNT',
+  'ENGAGEMENT_COUNT',
+  'FOLLOWER_DELTA',
+];
+
+const initialTalentKpiRecords: TalentKpiRecord[] = [
+  {
+    id: 'talent-kpi-record-001',
+    kpiRecordCode: 'KPI001',
+    title: 'April livestream performance',
+    subjectTalentId: 'talent-001',
+    attributionPlatformAccountId: 'platform-001',
+    attributionEventId: 'event-001',
+    measurementSource: 'MANUAL',
+    status: 'DRAFT',
+    periodStartAt: now - 86_400_000,
+    periodEndAt: now,
+    publishedAt: null,
+    description: 'Draft KPI record',
+    externalRef: 'KPI-EXT-1',
+    createdAt: now - 10_000,
+    updatedAt: now - 9_000,
+  },
+  {
+    id: 'talent-kpi-record-finalized',
+    kpiRecordCode: 'KPI002',
+    title: 'Finalized KPI record',
+    subjectTalentId: 'talent-002',
+    attributionPlatformAccountId: null,
+    attributionEventId: 'event-001',
+    measurementSource: 'MANUAL',
+    status: 'FINALIZED',
+    periodStartAt: now - 172_800_000,
+    periodEndAt: now - 86_400_000,
+    publishedAt: now - 80_000_000,
+    description: null,
+    externalRef: null,
+    createdAt: now - 8_000,
+    updatedAt: now - 7_000,
+  },
+  {
+    id: 'talent-kpi-record-archived',
+    kpiRecordCode: 'KPI999',
+    title: 'Archived KPI record',
+    subjectTalentId: 'talent-001',
+    attributionPlatformAccountId: 'platform-001',
+    attributionEventId: null,
+    measurementSource: 'MANUAL',
+    status: 'ARCHIVED',
+    periodStartAt: now - 259_200_000,
+    periodEndAt: now - 172_800_000,
+    publishedAt: null,
+    description: null,
+    externalRef: null,
+    createdAt: now - 6_000,
+    updatedAt: now - 5_000,
+  },
+];
+
+const initialTalentKpiMetrics: Record<string, TalentKpiMetricRecord[]> = {
+  'talent-kpi-record-001': [
+    {
+      id: 'metric-001',
+      metricCode: 'ENGAGEMENT_COUNT',
+      numericValue: 120,
+      createdAt: now - 10_000,
+      updatedAt: now - 9_000,
+    },
+  ],
+  'talent-kpi-record-finalized': [
+    {
+      id: 'metric-002',
+      metricCode: 'LIVESTREAM_HOURS',
+      numericValue: 12.5,
+      createdAt: now - 8_000,
+      updatedAt: now - 7_000,
+    },
+  ],
+  'talent-kpi-record-archived': [
+    {
+      id: 'metric-999',
+      metricCode: 'FOLLOWER_DELTA',
+      numericValue: -5,
+      createdAt: now - 6_000,
+      updatedAt: now - 5_000,
+    },
+  ],
+};
+
+const initialRevenueEntries: RevenueEntryRecord[] = [
+  {
+    id: 'revenue-entry-001',
+    revenueEntryCode: 'REV001',
+    title: 'April livestream revenue',
+    subjectTalentId: 'talent-001',
+    attributionPlatformAccountId: 'platform-001',
+    attributionEventId: null,
+    revenueKind: 'PLATFORM_LIVESTREAM',
+    entrySource: 'MANUAL',
+    status: 'DRAFT',
+    currencyCode: 'VND',
+    recognizedAmount: 1250000,
+    recognizedAt: now - 60_000,
+    finalizedAt: null,
+    reconciledAt: null,
+    voidedAt: null,
+    reconciliationReference: null,
+    description: 'Draft revenue entry',
+    externalRef: 'REV-EXT-1',
+    createdAt: now - 10_000,
+    updatedAt: now - 9_000,
+  },
+  {
+    id: 'revenue-entry-finalized',
+    revenueEntryCode: 'REV002',
+    title: 'Finalized event revenue',
+    subjectTalentId: 'talent-002',
+    attributionPlatformAccountId: null,
+    attributionEventId: 'event-001',
+    revenueKind: 'EVENT_OPERATIONAL',
+    entrySource: 'MANUAL',
+    status: 'FINALIZED',
+    currencyCode: 'USD',
+    recognizedAmount: 240.5,
+    recognizedAt: now - 120_000,
+    finalizedAt: now - 100_000,
+    reconciledAt: null,
+    voidedAt: null,
+    reconciliationReference: null,
+    description: null,
+    externalRef: null,
+    createdAt: now - 8_000,
+    updatedAt: now - 7_000,
+  },
+  {
+    id: 'revenue-entry-blocked',
+    revenueEntryCode: 'REV003',
+    title: 'Settlement blocked revenue',
+    subjectTalentId: 'talent-001',
+    attributionPlatformAccountId: 'platform-001',
+    attributionEventId: null,
+    revenueKind: 'PLATFORM_CONTENT',
+    entrySource: 'MANUAL',
+    status: 'FINALIZED',
+    currencyCode: 'USD',
+    recognizedAmount: 99,
+    recognizedAt: now - 180_000,
+    finalizedAt: now - 160_000,
+    reconciledAt: null,
+    voidedAt: null,
+    reconciliationReference: null,
+    description: null,
+    externalRef: null,
+    createdAt: now - 6_000,
+    updatedAt: now - 5_000,
+  },
+  {
+    id: 'revenue-entry-archived',
+    revenueEntryCode: 'REV999',
+    title: 'Archived revenue',
+    subjectTalentId: 'talent-001',
+    attributionPlatformAccountId: null,
+    attributionEventId: null,
+    revenueKind: 'PLATFORM_CONTENT',
+    entrySource: 'MANUAL',
+    status: 'ARCHIVED',
+    currencyCode: 'VND',
+    recognizedAmount: 1000,
+    recognizedAt: now - 300_000,
+    finalizedAt: null,
+    reconciledAt: null,
+    voidedAt: null,
+    reconciliationReference: null,
+    description: null,
+    externalRef: null,
+    createdAt: now - 4_000,
+    updatedAt: now - 3_000,
+  },
+];
+
+let talentKpiSeed = 100;
+let revenueSeed = 100;
+let talentKpiRecords: TalentKpiRecord[] = [];
+let talentKpiMetrics: Record<string, TalentKpiMetricRecord[]> = {};
+let revenueEntries: RevenueEntryRecord[] = [];
+
+const cloneTalentKpis = (): TalentKpiRecord[] =>
+  initialTalentKpiRecords.map((record) => ({ ...record }));
+
+const cloneTalentKpiMetrics = (): Record<string, TalentKpiMetricRecord[]> =>
+  Object.fromEntries(
+    Object.entries(initialTalentKpiMetrics).map(([id, metrics]) => [
+      id,
+      metrics.map((metric) => ({ ...metric })),
+    ]),
+  );
+
+const cloneRevenueEntries = (): RevenueEntryRecord[] =>
+  initialRevenueEntries.map((record) => ({ ...record }));
+
+export const resetWave8MockData = (): void => {
+  talentKpiSeed = 100;
+  revenueSeed = 100;
+  talentKpiRecords = cloneTalentKpis();
+  talentKpiMetrics = cloneTalentKpiMetrics();
+  revenueEntries = cloneRevenueEntries();
+};
+
+resetWave8MockData();
+
+const parsePositiveInt = (value: string | null | undefined): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
+};
+
+const paginate = <TData>(
+  items: TData[],
+  searchParams: URLSearchParams,
+): { data: TData[]; meta?: { nextCursor?: string } } => {
+  const limitParam = parsePositiveInt(searchParams.get('limit'));
+  const limit = Math.min(limitParam ?? 20, 100);
+  const cursorParam = parsePositiveInt(searchParams.get('cursor'));
+  const cursor = cursorParam ?? 0;
+  const start = Math.min(cursor, items.length);
+  const end = Math.min(start + limit, items.length);
+  const data = items.slice(start, end);
+  const nextCursor = end < items.length ? String(end) : undefined;
+
+  return {
+    data,
+    meta: nextCursor ? { nextCursor } : undefined,
+  };
+};
+
+const parseJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
+  if (!request.headers.get('content-type')?.includes('application/json')) {
+    return {};
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return {};
+  }
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    return body as Record<string, unknown>;
+  }
+  return {};
+};
+
+const rejectUnsupportedQuery = (
+  searchParams: URLSearchParams,
+  allowedKeys: readonly string[],
+): Response | undefined => {
+  const allowed = new Set(allowedKeys);
+  for (const key of searchParams.keys()) {
+    if (!allowed.has(key)) {
+      return HttpResponse.json({ message: `Unsupported query key: ${key}` }, { status: 422 });
+    }
+  }
+
+  return undefined;
+};
+
+const rejectUnsupportedBody = (
+  body: Record<string, unknown>,
+  allowedKeys: readonly string[],
+): Response | undefined => {
+  const allowed = new Set(allowedKeys);
+  for (const key of Object.keys(body)) {
+    if (!allowed.has(key)) {
+      return HttpResponse.json({ message: `Unsupported body key: ${key}` }, { status: 422 });
+    }
+  }
+
+  return undefined;
+};
+
+const matchesText = (value: string, search: string): boolean => {
+  const normalizedValue = value.trim().toLowerCase();
+  const normalizedSearch = search.trim().toLowerCase();
+  return normalizedValue === normalizedSearch || normalizedValue.startsWith(normalizedSearch);
+};
+
+const readNumberParam = (searchParams: URLSearchParams, key: string): number | undefined => {
+  const value = searchParams.get(key);
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : undefined;
+};
+
+const metricValueValid = (metricCode: MetricCode, value: unknown): boolean => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return false;
+  }
+
+  if (metricCode === 'LIVESTREAM_HOURS' || metricCode === 'REVENUE_ATTRIBUTED_AMOUNT') {
+    return value >= 0 && /^\d+(\.\d{1,2})?$/.test(String(value));
+  }
+
+  if (
+    metricCode === 'LIVESTREAM_SESSION_COUNT' ||
+    metricCode === 'CONTENT_PUBLISH_COUNT' ||
+    metricCode === 'EVENT_APPEARANCE_COUNT' ||
+    metricCode === 'ENGAGEMENT_COUNT'
+  ) {
+    return Number.isInteger(value) && value >= 0;
+  }
+
+  return Number.isInteger(value);
+};
+
+const validMetricsPayload = (body: Record<string, unknown>): boolean => {
+  if (!Array.isArray(body.metrics) || body.metrics.length === 0) {
+    return false;
+  }
+
+  const seen = new Set<string>();
+  return body.metrics.every((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return false;
+    }
+    const metric = item as Record<string, unknown>;
+    const metricCode = metric.metricCode as MetricCode;
+    if (!metricCodes.includes(metricCode) || seen.has(metricCode)) {
+      return false;
+    }
+    seen.add(metricCode);
+    return metricValueValid(metricCode, metric.numericValue);
+  });
+};
+
+const filterTalentKpis = (records: TalentKpiRecord[], searchParams: URLSearchParams) => {
+  let rows = [...records];
+  const status = searchParams.get('status');
+  const search = searchParams.get('search');
+  const windowStartAt = readNumberParam(searchParams, 'windowStartAt');
+  const windowEndAt = readNumberParam(searchParams, 'windowEndAt');
+  const containsMetricCode = searchParams.get('containsMetricCode');
+
+  rows = status
+    ? rows.filter((item) => item.status === status)
+    : rows.filter((item) => item.status !== 'ARCHIVED');
+  if (search)
+    rows = rows.filter(
+      (item) => matchesText(item.kpiRecordCode, search) || matchesText(item.title, search),
+    );
+  if (searchParams.get('subjectTalentId'))
+    rows = rows.filter((item) => item.subjectTalentId === searchParams.get('subjectTalentId'));
+  if (searchParams.get('attributionPlatformAccountId'))
+    rows = rows.filter(
+      (item) =>
+        item.attributionPlatformAccountId === searchParams.get('attributionPlatformAccountId'),
+    );
+  if (searchParams.get('attributionEventId'))
+    rows = rows.filter(
+      (item) => item.attributionEventId === searchParams.get('attributionEventId'),
+    );
+  if (searchParams.get('measurementSource'))
+    rows = rows.filter((item) => item.measurementSource === searchParams.get('measurementSource'));
+  if (windowStartAt !== undefined) rows = rows.filter((item) => item.periodEndAt > windowStartAt);
+  if (windowEndAt !== undefined) rows = rows.filter((item) => item.periodStartAt < windowEndAt);
+  if (containsMetricCode) {
+    rows = rows.filter((item) =>
+      (talentKpiMetrics[item.id] ?? []).some((metric) => metric.metricCode === containsMetricCode),
+    );
+  }
+
+  return rows.sort(
+    (left, right) => left.periodStartAt - right.periodStartAt || left.id.localeCompare(right.id),
+  );
+};
+
+const hasUnsafeRevenueNarrowSort = (searchParams: URLSearchParams): boolean => {
+  const sortBy = searchParams.get('sortBy');
+  if (sortBy !== 'createdAt' && sortBy !== 'revenueEntryCode') {
+    return false;
+  }
+
+  return [
+    'status',
+    'subjectTalentId',
+    'attributionPlatformAccountId',
+    'attributionEventId',
+    'revenueKind',
+    'entrySource',
+    'currencyCode',
+    'windowStartAt',
+    'windowEndAt',
+    'search',
+  ].some((key) => searchParams.has(key));
+};
+
+const filterRevenueEntries = (records: RevenueEntryRecord[], searchParams: URLSearchParams) => {
+  let rows = [...records];
+  const status = searchParams.get('status');
+  const search = searchParams.get('search');
+  const windowStartAt = readNumberParam(searchParams, 'windowStartAt');
+  const windowEndAt = readNumberParam(searchParams, 'windowEndAt');
+
+  rows = status
+    ? rows.filter((item) => item.status === status)
+    : rows.filter((item) => item.status !== 'ARCHIVED');
+  if (search)
+    rows = rows.filter(
+      (item) => matchesText(item.revenueEntryCode, search) || matchesText(item.title, search),
+    );
+  if (searchParams.get('subjectTalentId'))
+    rows = rows.filter((item) => item.subjectTalentId === searchParams.get('subjectTalentId'));
+  if (searchParams.get('attributionPlatformAccountId'))
+    rows = rows.filter(
+      (item) =>
+        item.attributionPlatformAccountId === searchParams.get('attributionPlatformAccountId'),
+    );
+  if (searchParams.get('attributionEventId'))
+    rows = rows.filter(
+      (item) => item.attributionEventId === searchParams.get('attributionEventId'),
+    );
+  if (searchParams.get('revenueKind'))
+    rows = rows.filter((item) => item.revenueKind === searchParams.get('revenueKind'));
+  if (searchParams.get('entrySource'))
+    rows = rows.filter((item) => item.entrySource === searchParams.get('entrySource'));
+  if (searchParams.get('currencyCode'))
+    rows = rows.filter((item) => item.currencyCode === searchParams.get('currencyCode'));
+  if (windowStartAt !== undefined) rows = rows.filter((item) => item.recognizedAt >= windowStartAt);
+  if (windowEndAt !== undefined) rows = rows.filter((item) => item.recognizedAt < windowEndAt);
+
+  return rows.sort(
+    (left, right) => left.recognizedAt - right.recognizedAt || left.id.localeCompare(right.id),
+  );
+};
+
+const readTalentKpi = (id: string): TalentKpiRecord | undefined =>
+  talentKpiRecords.find((item) => item.id === id);
+
+const readRevenueEntry = (id: string): RevenueEntryRecord | undefined =>
+  revenueEntries.find((item) => item.id === id);
+
+const toTalentKpiListItem = (record: TalentKpiRecord) => ({
+  id: record.id,
+  kpiRecordCode: record.kpiRecordCode,
+  title: record.title,
+  subjectTalentId: record.subjectTalentId,
+  attributionPlatformAccountId: record.attributionPlatformAccountId ?? null,
+  attributionEventId: record.attributionEventId ?? null,
+  measurementSource: record.measurementSource,
+  status: record.status,
+  periodStartAt: record.periodStartAt,
+  periodEndAt: record.periodEndAt,
+  publishedAt: record.publishedAt ?? null,
+  createdAt: record.createdAt,
+});
+
+const toRevenueEntryListItem = (record: RevenueEntryRecord) => ({
+  id: record.id,
+  revenueEntryCode: record.revenueEntryCode,
+  title: record.title,
+  subjectTalentId: record.subjectTalentId,
+  attributionPlatformAccountId: record.attributionPlatformAccountId ?? null,
+  attributionEventId: record.attributionEventId ?? null,
+  revenueKind: record.revenueKind,
+  entrySource: record.entrySource,
+  status: record.status,
+  currencyCode: record.currencyCode,
+  recognizedAmount: record.recognizedAmount,
+  recognizedAt: record.recognizedAt,
+  createdAt: record.createdAt,
+});
+
+const toMetricRecords = (
+  talentKpiRecordId: string,
+  metrics: Array<Record<string, unknown>>,
+): TalentKpiMetricRecord[] =>
+  metrics.map((metric, index) => ({
+    id: `${talentKpiRecordId}-metric-${index + 1}`,
+    metricCode: metric.metricCode as MetricCode,
+    numericValue: Number(metric.numericValue),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }));
+
+const talentKpiFlatKeys = [
+  'status',
+  'subjectTalentId',
+  'attributionPlatformAccountId',
+  'attributionEventId',
+  'measurementSource',
+  'containsMetricCode',
+  'windowStartAt',
+  'windowEndAt',
+  'limit',
+  'cursor',
+  'search',
+  'sortBy',
+  'sortDirection',
+] as const;
+const talentKpiByTalentKeys = [
+  'subjectTalentId',
+  'status',
+  'windowStartAt',
+  'windowEndAt',
+  'limit',
+  'cursor',
+  'sortBy',
+  'sortDirection',
+] as const;
+const talentKpiByPlatformKeys = [
+  'attributionPlatformAccountId',
+  'status',
+  'windowStartAt',
+  'windowEndAt',
+  'limit',
+  'cursor',
+  'sortBy',
+  'sortDirection',
+] as const;
+const talentKpiByEventKeys = [
+  'attributionEventId',
+  'status',
+  'windowStartAt',
+  'windowEndAt',
+  'limit',
+  'cursor',
+  'sortBy',
+  'sortDirection',
+] as const;
+const revenueFlatKeys = [
+  'status',
+  'subjectTalentId',
+  'attributionPlatformAccountId',
+  'attributionEventId',
+  'revenueKind',
+  'entrySource',
+  'currencyCode',
+  'windowStartAt',
+  'windowEndAt',
+  'limit',
+  'cursor',
+  'search',
+  'sortBy',
+  'sortDirection',
+] as const;
+const revenueByTalentKeys = talentKpiByTalentKeys;
+const revenueByPlatformKeys = talentKpiByPlatformKeys;
+const revenueByEventKeys = talentKpiByEventKeys;
+
+export const wave8Handlers = [
+  http.get('*/admin/talent-kpi-records', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, talentKpiFlatKeys);
+    if (unsupported) return unsupported;
+    return HttpResponse.json(
+      paginate(
+        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiListItem),
+        url.searchParams,
+      ),
+    );
+  }),
+  http.get('*/admin/talent-kpi-records/by-talent', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, talentKpiByTalentKeys);
+    if (unsupported) return unsupported;
+    if (!url.searchParams.get('subjectTalentId'))
+      return HttpResponse.json({ message: 'Missing subjectTalentId' }, { status: 422 });
+    return HttpResponse.json(
+      paginate(
+        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiListItem),
+        url.searchParams,
+      ),
+    );
+  }),
+  http.get('*/admin/talent-kpi-records/by-platform', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, talentKpiByPlatformKeys);
+    if (unsupported) return unsupported;
+    if (!url.searchParams.get('attributionPlatformAccountId'))
+      return HttpResponse.json(
+        { message: 'Missing attributionPlatformAccountId' },
+        { status: 422 },
+      );
+    return HttpResponse.json(
+      paginate(
+        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiListItem),
+        url.searchParams,
+      ),
+    );
+  }),
+  http.get('*/admin/talent-kpi-records/by-event', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, talentKpiByEventKeys);
+    if (unsupported) return unsupported;
+    if (!url.searchParams.get('attributionEventId'))
+      return HttpResponse.json({ message: 'Missing attributionEventId' }, { status: 422 });
+    return HttpResponse.json(
+      paginate(
+        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiListItem),
+        url.searchParams,
+      ),
+    );
+  }),
+  http.post('*/admin/talent-kpi-records', async ({ request }) => {
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, [
+      'kpiRecordCode',
+      'title',
+      'subjectTalentId',
+      'attributionPlatformAccountId',
+      'attributionEventId',
+      'measurementSource',
+      'periodStartAt',
+      'periodEndAt',
+      'metrics',
+      'description',
+      'externalRef',
+    ]);
+    if (unsupported) return unsupported;
+    if (!validMetricsPayload(body))
+      return HttpResponse.json({ message: 'Invalid metrics' }, { status: 422 });
+    talentKpiSeed += 1;
+    const id = `talent-kpi-record-${talentKpiSeed}`;
+    const record: TalentKpiRecord = {
+      id,
+      kpiRecordCode: String(body.kpiRecordCode),
+      title: String(body.title),
+      subjectTalentId: String(body.subjectTalentId),
+      attributionPlatformAccountId:
+        (body.attributionPlatformAccountId as string | null | undefined) ?? null,
+      attributionEventId: (body.attributionEventId as string | null | undefined) ?? null,
+      measurementSource: 'MANUAL',
+      status: 'DRAFT',
+      periodStartAt: Number(body.periodStartAt),
+      periodEndAt: Number(body.periodEndAt),
+      publishedAt: null,
+      description: (body.description as string | null | undefined) ?? null,
+      externalRef: (body.externalRef as string | null | undefined) ?? null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    talentKpiRecords.push(record);
+    talentKpiMetrics[id] = toMetricRecords(id, body.metrics as Array<Record<string, unknown>>);
+    return HttpResponse.json({ data: record });
+  }),
+  http.get('*/admin/talent-kpi-records/:talentKpiRecordId/metrics', ({ params }) => {
+    const record = readTalentKpi(String(params.talentKpiRecordId));
+    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    return HttpResponse.json({ data: talentKpiMetrics[record.id] ?? [] });
+  }),
+  http.get('*/admin/talent-kpi-records/:talentKpiRecordId', ({ params }) => {
+    const record = readTalentKpi(String(params.talentKpiRecordId));
+    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    return HttpResponse.json({ data: record });
+  }),
+  http.patch(
+    '*/admin/talent-kpi-records/:talentKpiRecordId/draft-core',
+    async ({ params, request }) => {
+      const record = readTalentKpi(String(params.talentKpiRecordId));
+      if (!record)
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (record.status !== 'DRAFT')
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, [
+        'title',
+        'subjectTalentId',
+        'attributionPlatformAccountId',
+        'attributionEventId',
+        'periodStartAt',
+        'periodEndAt',
+        'description',
+        'externalRef',
+      ]);
+      if (unsupported) return unsupported;
+      Object.assign(record, body, { updatedAt: Date.now() });
+      return HttpResponse.json({ data: record });
+    },
+  ),
+  http.post(
+    '*/admin/talent-kpi-records/:talentKpiRecordId/metrics',
+    async ({ params, request }) => {
+      const record = readTalentKpi(String(params.talentKpiRecordId));
+      if (!record)
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (record.status !== 'DRAFT')
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, ['metrics']);
+      if (unsupported) return unsupported;
+      if (!validMetricsPayload(body))
+        return HttpResponse.json({ message: 'Invalid metrics' }, { status: 422 });
+      talentKpiMetrics[record.id] = toMetricRecords(
+        record.id,
+        body.metrics as Array<Record<string, unknown>>,
+      );
+      record.updatedAt = Date.now();
+      return HttpResponse.json({ data: record });
+    },
+  ),
+  http.post(
+    '*/admin/talent-kpi-records/:talentKpiRecordId/finalize',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, []);
+      if (unsupported) return unsupported;
+      const record = readTalentKpi(String(params.talentKpiRecordId));
+      if (!record)
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (record.status !== 'DRAFT')
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      record.status = 'FINALIZED';
+      record.publishedAt = Date.now();
+      record.updatedAt = Date.now();
+      return HttpResponse.json({ data: record });
+    },
+  ),
+  http.post(
+    '*/admin/talent-kpi-records/:talentKpiRecordId/archive',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, []);
+      if (unsupported) return unsupported;
+      const record = readTalentKpi(String(params.talentKpiRecordId));
+      if (!record)
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (record.status !== 'DRAFT' && record.status !== 'FINALIZED')
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      record.status = 'ARCHIVED';
+      record.updatedAt = Date.now();
+      return HttpResponse.json({ data: record });
+    },
+  ),
+
+  http.get('*/admin/revenue-entries', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, revenueFlatKeys);
+    if (unsupported) return unsupported;
+    if (hasUnsafeRevenueNarrowSort(url.searchParams)) {
+      return HttpResponse.json({ message: 'Invalid revenue sort combination' }, { status: 422 });
+    }
+    return HttpResponse.json(
+      paginate(
+        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryListItem),
+        url.searchParams,
+      ),
+    );
+  }),
+  http.get('*/admin/revenue-entries/by-talent', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, revenueByTalentKeys);
+    if (unsupported) return unsupported;
+    if (!url.searchParams.get('subjectTalentId'))
+      return HttpResponse.json({ message: 'Missing subjectTalentId' }, { status: 422 });
+    if (url.searchParams.get('sortBy') && url.searchParams.get('sortBy') !== 'recognizedAt')
+      return HttpResponse.json({ message: 'Invalid related sort' }, { status: 422 });
+    return HttpResponse.json(
+      paginate(
+        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryListItem),
+        url.searchParams,
+      ),
+    );
+  }),
+  http.get('*/admin/revenue-entries/by-platform', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, revenueByPlatformKeys);
+    if (unsupported) return unsupported;
+    if (!url.searchParams.get('attributionPlatformAccountId'))
+      return HttpResponse.json(
+        { message: 'Missing attributionPlatformAccountId' },
+        { status: 422 },
+      );
+    if (url.searchParams.get('sortBy') && url.searchParams.get('sortBy') !== 'recognizedAt')
+      return HttpResponse.json({ message: 'Invalid related sort' }, { status: 422 });
+    return HttpResponse.json(
+      paginate(
+        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryListItem),
+        url.searchParams,
+      ),
+    );
+  }),
+  http.get('*/admin/revenue-entries/by-event', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, revenueByEventKeys);
+    if (unsupported) return unsupported;
+    if (!url.searchParams.get('attributionEventId'))
+      return HttpResponse.json({ message: 'Missing attributionEventId' }, { status: 422 });
+    if (url.searchParams.get('sortBy') && url.searchParams.get('sortBy') !== 'recognizedAt')
+      return HttpResponse.json({ message: 'Invalid related sort' }, { status: 422 });
+    return HttpResponse.json(
+      paginate(
+        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryListItem),
+        url.searchParams,
+      ),
+    );
+  }),
+  http.post('*/admin/revenue-entries', async ({ request }) => {
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, [
+      'revenueEntryCode',
+      'title',
+      'subjectTalentId',
+      'attributionPlatformAccountId',
+      'attributionEventId',
+      'revenueKind',
+      'entrySource',
+      'currencyCode',
+      'recognizedAmount',
+      'recognizedAt',
+      'description',
+      'externalRef',
+    ]);
+    if (unsupported) return unsupported;
+    revenueSeed += 1;
+    const record: RevenueEntryRecord = {
+      id: `revenue-entry-${revenueSeed}`,
+      revenueEntryCode: String(body.revenueEntryCode),
+      title: String(body.title),
+      subjectTalentId: String(body.subjectTalentId),
+      attributionPlatformAccountId:
+        (body.attributionPlatformAccountId as string | null | undefined) ?? null,
+      attributionEventId: (body.attributionEventId as string | null | undefined) ?? null,
+      revenueKind: body.revenueKind as RevenueKind,
+      entrySource: 'MANUAL',
+      status: 'DRAFT',
+      currencyCode: String(body.currencyCode),
+      recognizedAmount: Number(body.recognizedAmount),
+      recognizedAt: Number(body.recognizedAt),
+      finalizedAt: null,
+      reconciledAt: null,
+      voidedAt: null,
+      reconciliationReference: null,
+      description: (body.description as string | null | undefined) ?? null,
+      externalRef: (body.externalRef as string | null | undefined) ?? null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    revenueEntries.push(record);
+    return HttpResponse.json({ data: record });
+  }),
+  http.get('*/admin/revenue-entries/:revenueEntryId', ({ params }) => {
+    const record = readRevenueEntry(String(params.revenueEntryId));
+    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    return HttpResponse.json({ data: record });
+  }),
+  http.patch('*/admin/revenue-entries/:revenueEntryId/draft-core', async ({ params, request }) => {
+    const record = readRevenueEntry(String(params.revenueEntryId));
+    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (record.status !== 'DRAFT')
+      return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, [
+      'title',
+      'description',
+      'externalRef',
+      'subjectTalentId',
+      'attributionPlatformAccountId',
+      'attributionEventId',
+      'revenueKind',
+      'currencyCode',
+      'recognizedAmount',
+      'recognizedAt',
+    ]);
+    if (unsupported) return unsupported;
+    Object.assign(record, body, { updatedAt: Date.now() });
+    return HttpResponse.json({ data: record });
+  }),
+  http.post('*/admin/revenue-entries/:revenueEntryId/finalize', async ({ params, request }) => {
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, []);
+    if (unsupported) return unsupported;
+    const record = readRevenueEntry(String(params.revenueEntryId));
+    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (record.status !== 'DRAFT')
+      return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+    record.status = 'FINALIZED';
+    record.finalizedAt = Date.now();
+    record.updatedAt = Date.now();
+    return HttpResponse.json({ data: record });
+  }),
+  http.post('*/admin/revenue-entries/:revenueEntryId/reconcile', async ({ params, request }) => {
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, ['reconciliationReference']);
+    if (unsupported) return unsupported;
+    const record = readRevenueEntry(String(params.revenueEntryId));
+    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (record.status !== 'FINALIZED')
+      return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+    record.status = 'RECONCILED';
+    record.reconciledAt = Date.now();
+    record.reconciliationReference =
+      (body.reconciliationReference as string | null | undefined) ?? null;
+    record.updatedAt = Date.now();
+    return HttpResponse.json({ data: record });
+  }),
+  http.post('*/admin/revenue-entries/:revenueEntryId/void', async ({ params, request }) => {
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, []);
+    if (unsupported) return unsupported;
+    const record = readRevenueEntry(String(params.revenueEntryId));
+    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (record.id === 'revenue-entry-blocked')
+      return HttpResponse.json(
+        { message: 'Finalized commission settlement blocks void' },
+        { status: 409 },
+      );
+    if (record.status !== 'FINALIZED')
+      return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+    record.status = 'VOIDED';
+    record.voidedAt = Date.now();
+    record.updatedAt = Date.now();
+    return HttpResponse.json({ data: record });
+  }),
+  http.post('*/admin/revenue-entries/:revenueEntryId/archive', async ({ params, request }) => {
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, []);
+    if (unsupported) return unsupported;
+    const record = readRevenueEntry(String(params.revenueEntryId));
+    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (!['DRAFT', 'RECONCILED', 'VOIDED'].includes(record.status))
+      return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+    record.status = 'ARCHIVED';
+    record.updatedAt = Date.now();
+    return HttpResponse.json({ data: record });
+  }),
+];

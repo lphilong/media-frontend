@@ -1,0 +1,199 @@
+{
+  "page": {
+    "title": "Sự kiện",
+    "subtitle": "Quản trị vận hành toàn cục cho sự kiện, phân công và tài nguyên.",
+    "placeholder": "Event Assignment đã được triển khai bằng route thật của Wave 6."
+  },
+  "fields": {
+    "eventCode": "Mã sự kiện",
+    "title": "Tiêu đề",
+    "status": "Trạng thái",
+    "assignmentKind": "Loại phân công",
+    "assignmentKindIndexed": "Loại phân công {{index}}",
+    "assignmentId": "ID chủ thể phân công",
+    "assignmentIdIndexed": "ID chủ thể phân công {{index}}",
+    "eventStartAt": "Bắt đầu sự kiện theo UTC",
+    "eventEndAt": "Kết thúc sự kiện theo UTC",
+    "newEventStartAt": "Bắt đầu sự kiện mới theo UTC",
+    "newEventEndAt": "Kết thúc sự kiện mới theo UTC",
+    "studioResourceIds": "ID tài nguyên studio",
+    "platformAccountIds": "ID tài khoản nền tảng",
+    "newStudioResourceIds": "Bộ ID tài nguyên studio thay thế",
+    "newPlatformAccountIds": "Bộ ID tài khoản nền tảng thay thế",
+    "description": "Mô tả",
+    "externalRef": "Tham chiếu bên ngoài",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật",
+    "scopeBoundary": "Ranh giới phạm vi"
+  },
+  "statuses": {
+    "SCHEDULED": "Đã lên lịch",
+    "IN_PROGRESS": "Đang diễn ra",
+    "COMPLETED": "Đã hoàn tất",
+    "CANCELLED": "Đã hủy",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "assignmentStatuses": {
+    "ACTIVE": "Đang hoạt động"
+  },
+  "assignmentKinds": {
+    "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Nhóm Talent"
+  },
+  "sort": {
+    "eventStartAt": "Bắt đầu sự kiện",
+    "eventCode": "Mã sự kiện",
+    "createdAt": "Thời điểm tạo"
+  },
+  "filters": {
+    "searchPlaceholder": "Tìm đúng mã sự kiện hoặc tiền tố tiêu đề",
+    "status": "Trạng thái",
+    "allStatuses": "Tất cả trạng thái đang hoạt động",
+    "assignmentKind": "Loại phân công",
+    "allAssignmentKinds": "Tất cả loại phân công",
+    "assignmentId": "ID chủ thể phân công",
+    "assignmentIdPlaceholder": "ID chủ thể phân công chính xác",
+    "studioResourceId": "ID tài nguyên studio",
+    "studioResourceIdPlaceholder": "ID tài nguyên chính xác",
+    "platformAccountId": "ID tài khoản nền tảng",
+    "platformAccountIdPlaceholder": "ID tài khoản nền tảng chính xác",
+    "windowStartAt": "Thời gian bắt đầu UTC",
+    "windowEndAt": "Thời gian kết thúc UTC"
+  },
+  "relatedModes": {
+    "by-assignment": "Sự kiện liên quan theo phân công",
+    "by-resource": "Sự kiện liên quan theo tài nguyên studio",
+    "by-platform": "Sự kiện liên quan theo tài khoản nền tảng"
+  },
+  "actions": {
+    "create": "Tạo sự kiện",
+    "closeCreate": "Đóng tạo mới",
+    "open": "Mở chi tiết",
+    "openSubject": "Mở chủ thể",
+    "edit": "Chỉnh sửa",
+    "reschedule": "Đổi lịch",
+    "replaceAssignments": "Thay phân công",
+    "replaceStudioResources": "Thay tài nguyên studio",
+    "replacePlatformAccounts": "Thay tài khoản nền tảng",
+    "addAssignment": "Thêm phân công",
+    "removeAssignment": "Gỡ phân công {{index}}",
+    "start": "Bắt đầu",
+    "complete": "Hoàn tất",
+    "cancel": "Hủy",
+    "archive": "Lưu trữ",
+    "historicalArchiveEligible": "Sự kiện đã lên lịch nhưng đã qua có thể được lưu trữ từ trang chi tiết"
+  },
+  "table": {
+    "caption": "Danh sách sự kiện",
+    "eventCode": "Mã sự kiện",
+    "title": "Tiêu đề",
+    "status": "Trạng thái",
+    "eventStartAt": "Bắt đầu",
+    "eventEndAt": "Kết thúc",
+    "createdAt": "Thời điểm tạo",
+    "actions": "Hành động"
+  },
+  "detail": {
+    "archivedReadOnly": "Sự kiện đã lưu trữ chỉ đọc.",
+    "identityTitle": "Sự kiện",
+    "scheduleTitle": "Lịch",
+    "referencesTitle": "Tham chiếu tài nguyên và nền tảng",
+    "globalOnly": "Chỉ dùng phạm vi toàn cục"
+  },
+  "related": {
+    "navigationTitle": "Điều hướng liên quan",
+    "studioResource": "Tài nguyên studio",
+    "platformAccount": "Tài khoản nền tảng",
+    "unavailable": "Không có liên kết"
+  },
+  "assignments": {
+    "title": "Phân công đang hoạt động",
+    "caption": "Danh sách phân công đang hoạt động của sự kiện",
+    "emptyTitle": "Không có phân công đang hoạt động",
+    "emptyMessage": "Danh sách phân công của sự kiện đang trống.",
+    "emptyReplacementSet": "Bộ thay thế đang trống. Thêm phân công trước khi gửi nếu sự kiện cần phân công đang hoạt động.",
+    "replacementRowLabel": "Phân công thay thế {{index}}",
+    "loadErrorTitle": "Không tải được phân công",
+    "loadErrorMessage": "Danh sách phân công đang hoạt động chưa sẵn sàng.",
+    "assignmentKind": "Loại phân công",
+    "subjectId": "ID chủ thể",
+    "assignmentStatus": "Trạng thái",
+    "createdAt": "Thời điểm tạo",
+    "actions": "Hành động"
+  },
+  "states": {
+    "emptyTitle": "Không có sự kiện",
+    "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo sự kiện.",
+    "loadErrorTitle": "Không tải được sự kiện",
+    "loadErrorMessage": "Backend đã từ chối hoặc không trả về dữ liệu sự kiện."
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo sự kiện",
+      "subtitle": "Tạo một sự kiện toàn cục với ít nhất một phân công.",
+      "submit": "Tạo",
+      "pending": "Đang tạo"
+    },
+    "edit": {
+      "title": "Chỉnh sửa sự kiện",
+      "subtitle": "Chỉ cập nhật các trường mô tả được phép.",
+      "submit": "Lưu",
+      "pending": "Đang lưu"
+    },
+    "reschedule": {
+      "title": "Đổi lịch sự kiện",
+      "subtitle": "Thay thế khung thời gian UTC.",
+      "submit": "Đổi lịch",
+      "pending": "Đang đổi lịch"
+    },
+    "replaceAssignments": {
+      "title": "Thay phân công",
+      "subtitle": "Gửi toàn bộ bộ phân công thay thế.",
+      "submit": "Thay phân công",
+      "pending": "Đang thay"
+    },
+    "replaceStudioResources": {
+      "title": "Thay tài nguyên studio",
+      "subtitle": "Gửi toàn bộ bộ tài nguyên studio thay thế.",
+      "submit": "Thay tài nguyên studio",
+      "pending": "Đang thay"
+    },
+    "replacePlatformAccounts": {
+      "title": "Thay tài khoản nền tảng",
+      "subtitle": "Gửi toàn bộ bộ tài khoản nền tảng thay thế.",
+      "submit": "Thay tài khoản nền tảng",
+      "pending": "Đang thay"
+    }
+  },
+  "placeholders": {
+    "csvIds": "Các ID cách nhau bằng dấu phẩy",
+    "optional": "Không bắt buộc"
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Dùng token định danh hợp lệ.",
+    "invalidReferenceToken": "Dùng các token định danh hợp lệ, cách nhau bằng dấu phẩy.",
+    "invalidWindow": "Thời điểm kết thúc phải sau thời điểm bắt đầu.",
+    "noScope": "Event Assignment chỉ dùng phạm vi toàn cục và không nhận trường scope.",
+    "rosterUnavailable": "Danh sách phân công đang hoạt động chưa ở trạng thái an toàn, nên thao tác thay thế bị chặn."
+  },
+  "feedback": {
+    "created": "Đã tạo sự kiện.",
+    "updated": "Đã cập nhật sự kiện.",
+    "rescheduled": "Đã đổi lịch sự kiện.",
+    "assignmentsReplaced": "Đã thay phân công của sự kiện.",
+    "studioResourcesReplaced": "Đã thay tài nguyên studio của sự kiện.",
+    "platformAccountsReplaced": "Đã thay tài khoản nền tảng của sự kiện.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời sự kiện."
+  },
+  "confirm": {
+    "start": "Bắt đầu sự kiện này?",
+    "complete": "Hoàn tất sự kiện này?",
+    "cancel": "Hủy sự kiện này?",
+    "archive": "Lưu trữ sự kiện này?"
+  },
+  "actionRail": {
+    "title": "Hành động sự kiện"
+  }
+}

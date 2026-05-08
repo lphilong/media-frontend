@@ -1,0 +1,915 @@
+{
+  "page": {
+    "title": "Work Shifts",
+    "subtitle": "Operational schedule authority for shift windows, subjects, and resources.",
+    "placeholder": "Work Schedule is implemented as real Wave 6 routes."
+  },
+  "fields": {
+    "shiftCode": "Shift code",
+    "shiftCodeOptional": "Shift code (optional)",
+    "title": "Title",
+    "status": "Status",
+    "subjectKind": "Subject kind",
+    "subjectId": "Subject",
+    "newSubjectKind": "New subject kind",
+    "newSubjectId": "Subject",
+    "shiftStartAt": "Shift start UTC",
+    "shiftEndAt": "Shift end UTC",
+    "newShiftStartAt": "New shift start UTC",
+    "newShiftEndAt": "New shift end UTC",
+    "studioResourceIds": "Studio Resources",
+    "newStudioResourceIds": "Studio Resources",
+    "description": "Description",
+    "externalRef": "External reference",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at",
+    "requestScope": "Requested scope",
+    "subject": "Subject",
+    "studioResources": "Studio Resources"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "CANCELLED": "Cancelled",
+    "ARCHIVED": "Archived"
+  },
+  "subjectKinds": {
+    "EMPLOYMENT_PROFILE": "Employment profile",
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Talent group"
+  },
+  "scopes": {
+    "omitted": "System default",
+    "self": "Self",
+    "team": "Team",
+    "department": "Department",
+    "global": "Global"
+  },
+  "sort": {
+    "shiftStartAt": "Shift start",
+    "shiftCode": "Shift code",
+    "createdAt": "Created"
+  },
+  "filters": {
+    "searchPlaceholder": "Shift code or title prefix",
+    "status": "Status",
+    "allStatuses": "All active states",
+    "subjectKind": "Subject kind",
+    "allSubjectKinds": "All subject kinds",
+    "subjectId": "Subject",
+    "subjectIdPlaceholder": "Subject identifier",
+    "studioResourceId": "Studio Resource",
+    "studioResourceIdPlaceholder": "Resource identifier",
+    "scope": "Scope",
+    "windowStartAt": "Window start UTC",
+    "windowEndAt": "Window end UTC"
+  },
+  "relatedModes": {
+    "by-subject": "Related work shifts by subject",
+    "by-resource": "Related work shifts by studio resource"
+  },
+  "actions": {
+    "create": "Create work shift",
+    "closeCreate": "Close create",
+    "adminCreateForm": "Admin create form",
+    "closeAdminCreate": "Close admin create",
+    "scheduleWorkShift": "Schedule work shift",
+    "closeGuidedWorkflow": "Close guided workflow",
+    "open": "Open detail",
+    "edit": "Edit",
+    "reschedule": "Reschedule",
+    "reassignSubject": "Reassign subject",
+    "replaceResources": "Replace resources",
+    "cancel": "Cancel",
+    "archive": "Archive",
+    "historicalArchiveEligible": "Historical active shift can be archived from detail"
+  },
+  "table": {
+    "caption": "Work shift list",
+    "shiftCode": "Shift code",
+    "title": "Title",
+    "subjectKind": "Subject kind",
+    "subjectId": "Subject",
+    "status": "Status",
+    "shiftStartAt": "Start",
+    "shiftEndAt": "End",
+    "createdAt": "Created",
+    "source": "Source",
+    "actions": "Actions"
+  },
+  "detail": {
+    "archivedReadOnly": "Archived work shifts are read-only.",
+    "identityTitle": "Work shift",
+    "scheduleTitle": "Schedule",
+    "subjectTitle": "Subject",
+    "globalOnly": "Global",
+    "referencesTitle": "References"
+  },
+  "related": {
+    "navigationTitle": "Related navigation",
+    "studioResource": "Studio resource",
+    "unavailable": "Link unavailable",
+    "noResources": "No studio resources assigned."
+  },
+  "states": {
+    "emptyTitle": "No work shifts found",
+    "emptyMessage": "Adjust filters or create a work shift.",
+    "loadErrorTitle": "Work shifts could not be loaded",
+    "loadErrorMessage": "The system rejected or did not return work shift data."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create work shift",
+      "subtitle": "Create one scheduled work shift with one subject identity.",
+      "submit": "Create",
+      "pending": "Creating"
+    },
+    "edit": {
+      "title": "Edit work shift",
+      "subtitle": "Update editable descriptive fields only.",
+      "submit": "Save",
+      "pending": "Saving"
+    },
+    "reschedule": {
+      "title": "Reschedule work shift",
+      "subtitle": "Replace the scheduled UTC window.",
+      "submit": "Reschedule",
+      "pending": "Rescheduling"
+    },
+    "reassignSubject": {
+      "title": "Reassign subject",
+      "subtitle": "Replace the work shift subject identity.",
+      "submit": "Reassign",
+      "pending": "Reassigning"
+    },
+    "replaceResources": {
+      "title": "Replace resources",
+      "subtitle": "Send the full replacement studio resource set.",
+      "submit": "Replace resources",
+      "pending": "Replacing"
+    }
+  },
+  "task": {
+    "title": "Schedule work shift",
+    "description": "Use this guided form for normal scheduling. The admin create form remains available for technical or compatibility cases.",
+    "steps": {
+      "details": "Step 1 of 2: Shift details",
+      "review": "Step 2 of 2: Check before saving"
+    },
+    "authorityNote": "Times are shown in Vietnam time ({{timezone}}, {{offset}}). When you save, the system checks whether you can make the change, whether the selected person or group can be scheduled, studio resources, and overlapping shifts. Personal, team, and department ranges are only used when scheduling an Employment Profile.",
+    "generatedShiftCode": "Shift code will be generated after save.",
+    "generatedShiftCodeLabel": "Shift code",
+    "generatedShiftCodeValue": "Generated by the system after save",
+    "generatedShiftCodeHelp": "You do not need to enter this code.",
+    "subjectPicker": "Subject picker",
+    "resourcesPicker": "Studio resource picker",
+    "searchPlaceholder": "Search existing records",
+    "searchResourcesPlaceholder": "Search studio resources",
+    "noPickerResults": "No selectable records returned.",
+    "startVietnamLocal": "Start in Vietnam local time",
+    "endVietnamLocal": "End in Vietnam local time",
+    "datetimeHelp": "Choose the date and time in Vietnam time. Please check the time again in the review step before saving.",
+    "scopeLabel": "Scheduling range",
+    "employmentScopeHelp": "Employment Profile subjects may use everyone, self, team, or department ranges. The system checks final access when you save.",
+    "globalScopeHelp": "Talent and Talent Group subjects are scheduled for everyone in this workflow.",
+    "noResourcesSelected": "No studio resources selected.",
+    "removeResource": "Remove",
+    "additionalInformation": "Additional information",
+    "externalRefLabel": "Related note or external reference",
+    "externalRefHelp": "Use this only when the shift needs to link to a ticket, spreadsheet, document, or code from another system. It can be left blank.",
+    "reviewAction": "Review details",
+    "submitAction": "Submit work shift",
+    "submitPending": "Submitting work shift",
+    "backendRejectedTitle": "Request could not be saved",
+    "backendAuthorityWarning": "When you save, the system checks access, the selected person or group, studio resources, shift status, and overlapping shifts. This workflow only sends the scheduling details shown above.",
+    "none": "None",
+    "localReviewValue": "{{value}} {{timezone}} ({{offset}})",
+    "utcReviewValue": "{{timestamp}} UTC ({{value}})",
+    "validation": {
+      "localDateTime": "Choose both the date and time in Vietnam time."
+    },
+    "review": {
+      "shiftCode": "Shift code",
+      "title": "Title",
+      "subjectKind": "Subject kind",
+      "subjectId": "Subject",
+      "scope": "Scheduling range",
+      "startLocal": "Start, Vietnam local",
+      "startUtc": "Start, UTC timestamp",
+      "endLocal": "End, Vietnam local",
+      "endUtc": "End, UTC timestamp",
+      "studioResources": "Studio resources",
+      "description": "Description",
+      "externalRef": "Related note or reference"
+    }
+  },
+  "placeholders": {
+    "csvIds": "Comma-separated IDs",
+    "generatedShiftCode": "Leave blank to let the system generate it",
+    "optional": "Optional"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Use a valid identifier token.",
+    "invalidReferenceToken": "Use comma-separated identifier tokens.",
+    "invalidWindow": "End must be after start.",
+    "invalidScope": "Use a supported Work Schedule scope.",
+    "nonGlobalEmploymentProfileOnly": "Non-global Work Schedule scope is only valid for Employment Profile subjects."
+  },
+  "feedback": {
+    "created": "Work shift created.",
+    "updated": "Work shift updated.",
+    "rescheduled": "Work shift rescheduled.",
+    "reassigned": "Work shift subject reassigned.",
+    "resourcesReplaced": "Work shift resources replaced.",
+    "lifecycleUpdated": "Work shift lifecycle updated."
+  },
+  "confirm": {
+    "cancel": "Cancel this work shift?",
+    "archive": "Archive this work shift?"
+  },
+  "actionRail": {
+    "title": "Work shift actions"
+  },
+  "sourceLabels": {
+    "MANUAL": "Manual",
+    "ROSTER_GENERATED": "Generated from monthly roster"
+  },
+  "sourceDetail": {
+    "title": "Source",
+    "adminMetadata": "Source admin metadata",
+    "fields": {
+      "sourceType": "Source",
+      "sourceRosterId": "Monthly Roster",
+      "sourcePatternId": "Work Pattern",
+      "sourceExceptionId": "Source exception ID",
+      "sourceGenerationRunId": "Generation run ID",
+      "sourceRosterMonth": "Roster month",
+      "sourceDepartmentOrgUnitId": "Department",
+      "sourceRosterLocalDate": "Roster local date",
+      "sourceRosterSlotKey": "Roster slot key"
+    }
+  },
+  "rosterNav": {
+    "label": "Work Schedule sections",
+    "workShifts": "Work Shifts",
+    "monthlyRosters": "Monthly Rosters",
+    "workPatterns": "Work Patterns",
+    "holidayCalendars": "Holiday Calendars",
+    "notImplemented": "Not implemented in this slice"
+  },
+  "patterns": {
+    "page": {
+      "title": "Work Patterns",
+      "subtitle": "Roster pattern definitions for Vietnam local working days and times."
+    },
+    "fields": {
+      "patternCode": "Pattern code",
+      "name": "Name",
+      "status": "Status",
+      "timezone": "Timezone",
+      "startLocalTime": "Start time",
+      "workingMinutes": "Working minutes",
+      "breakMinutes": "Break minutes",
+      "calculatedEndLocalTime": "Calculated end time",
+      "workingDays": "Working days",
+      "description": "Description",
+      "externalRef": "External reference",
+      "createdAt": "Created at",
+      "updatedAt": "Updated at",
+      "activatedAt": "Activated at",
+      "archivedAt": "Archived at"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "ACTIVE": "Active",
+      "ARCHIVED": "Archived"
+    },
+    "weekdays": {
+      "MON": "MON",
+      "TUE": "TUE",
+      "WED": "WED",
+      "THU": "THU",
+      "FRI": "FRI",
+      "SAT": "SAT",
+      "SUN": "SUN"
+    },
+    "filters": {
+      "searchPlaceholder": "Pattern code or name prefix",
+      "status": "Status",
+      "defaultStatuses": "Draft and active"
+    },
+    "actions": {
+      "create": "Create work pattern",
+      "closeCreate": "Close create",
+      "open": "Open detail",
+      "edit": "Edit",
+      "activate": "Activate",
+      "archive": "Archive"
+    },
+    "table": {
+      "caption": "Work pattern list",
+      "patternCode": "Pattern code",
+      "name": "Name",
+      "status": "Status",
+      "startLocalTime": "Start time",
+      "endLocalTime": "Calculated end time",
+      "workingDays": "Working days",
+      "updatedAt": "Updated",
+      "actions": "Actions"
+    },
+    "detail": {
+      "pageTitle": "Work Pattern Detail",
+      "pageSubtitle": "Backend-authoritative roster pattern detail.",
+      "archivedReadOnly": "Archived work patterns are read-only.",
+      "identityTitle": "Work pattern",
+      "scheduleTitle": "Schedule",
+      "lifecycleTitle": "Lifecycle"
+    },
+    "form": {
+      "localEstimate": "{{value}} local estimate before save",
+      "noEstimate": "Save to calculate",
+      "activeStructuralReadOnly": "Active patterns only allow name, description, and external reference edits."
+    },
+    "states": {
+      "emptyTitle": "No work patterns found",
+      "emptyMessage": "Adjust filters or create a work pattern.",
+      "loadErrorTitle": "Work patterns could not be loaded",
+      "loadErrorMessage": "The system rejected or did not return work pattern data."
+    },
+    "mutations": {
+      "create": {
+        "title": "Create work pattern",
+        "subtitle": "Define working days, start time, and duration. The system generates the pattern code after save.",
+        "submit": "Create",
+        "pending": "Creating"
+      },
+      "edit": {
+        "title": "Edit work pattern",
+        "subtitle": "Draft patterns allow schedule and metadata edits.",
+        "activeSubtitle": "Active patterns only allow metadata edits.",
+        "submit": "Save",
+        "pending": "Saving"
+      }
+    },
+    "validation": {
+      "required": "This field is required.",
+      "patternCode": "Use uppercase letters, numbers, and underscores.",
+      "time": "Use a supported local time and duration.",
+      "sameDay": "The work pattern must finish within the same day.",
+      "workingDays": "Choose at least one working day."
+    },
+    "feedback": {
+      "created": "Work pattern created.",
+      "updated": "Work pattern updated.",
+      "lifecycleUpdated": "Work pattern lifecycle updated."
+    },
+    "confirm": {
+      "activate": "Activate this work pattern?",
+      "archive": "Archive this work pattern?"
+    },
+    "actionRail": {
+      "title": "Work pattern actions"
+    }
+  },
+  "holidayCalendars": {
+    "page": {
+      "title": "Holiday Calendars",
+      "subtitle": "Global holiday calendars for roster generation."
+    },
+    "fields": {
+      "calendarCode": "Calendar code",
+      "name": "Name",
+      "status": "Status",
+      "scopeType": "Scope",
+      "timezone": "Timezone",
+      "description": "Description",
+      "externalRef": "External reference",
+      "createdAt": "Created at",
+      "updatedAt": "Updated at",
+      "activatedAt": "Activated at",
+      "archivedAt": "Archived at"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "ACTIVE": "Active",
+      "ARCHIVED": "Archived"
+    },
+    "scopeTypes": {
+      "GLOBAL": "Global"
+    },
+    "entryTypes": {
+      "HOLIDAY": "Holiday",
+      "COMPANY_OFF_DAY": "Company off day",
+      "CUSTOM_OFF_DAY": "Custom off day"
+    },
+    "entryStatuses": {
+      "ACTIVE": "Active",
+      "REMOVED": "Removed"
+    },
+    "filters": {
+      "searchPlaceholder": "Calendar code or name prefix",
+      "status": "Status",
+      "defaultStatuses": "Draft and active"
+    },
+    "actions": {
+      "create": "Create holiday calendar",
+      "closeCreate": "Close create",
+      "open": "Open detail",
+      "edit": "Edit",
+      "activate": "Activate",
+      "archive": "Archive"
+    },
+    "table": {
+      "caption": "Holiday calendar list",
+      "calendarCode": "Calendar code",
+      "name": "Name",
+      "status": "Status",
+      "scopeType": "Scope",
+      "timezone": "Timezone",
+      "activeEntryCount": "Active entries",
+      "updatedAt": "Updated",
+      "actions": "Actions"
+    },
+    "detail": {
+      "pageTitle": "Holiday Calendar Detail",
+      "pageSubtitle": "Backend-authoritative global holiday calendar detail.",
+      "archivedReadOnly": "Archived holiday calendars are read-only.",
+      "identityTitle": "Holiday calendar",
+      "lifecycleTitle": "Lifecycle"
+    },
+    "entries": {
+      "title": "Entries",
+      "description": "Entries are date-only and use the fixed calendar timezone.",
+      "addTitle": "Add holiday entry",
+      "editTitle": "Edit holiday entry",
+      "subtitle": "No time or timezone is collected for calendar entries.",
+      "date": "Date",
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "add": "Add entry",
+      "update": "Save entry",
+      "pending": "Saving entry",
+      "edit": "Edit",
+      "view": "View",
+      "remove": "Remove entry",
+      "confirmRemove": "Remove this entry from active use? The record is kept as removed.",
+      "showRemoved": "Show removed entries ({{count}})",
+      "empty": "No entries to show."
+    },
+    "mutations": {
+      "create": {
+        "title": "Create holiday calendar",
+        "subtitle": "Create a global calendar. The system generates the calendar code after save.",
+        "submit": "Create",
+        "pending": "Creating"
+      },
+      "edit": {
+        "title": "Edit holiday calendar",
+        "subtitle": "Update editable descriptive fields.",
+        "submit": "Save",
+        "pending": "Saving"
+      }
+    },
+    "validation": {
+      "required": "This field is required.",
+      "calendarCode": "Use uppercase letters, numbers, and underscores.",
+      "dateOnly": "Use a valid YYYY-MM-DD date.",
+      "duplicate": "A holiday calendar with this code already exists.",
+      "duplicateDate": "An active entry already exists for this date."
+    },
+    "feedback": {
+      "created": "Holiday calendar created.",
+      "updated": "Holiday calendar updated.",
+      "lifecycleUpdated": "Holiday calendar lifecycle updated.",
+      "entryAdded": "Holiday entry added.",
+      "entryUpdated": "Holiday entry updated.",
+      "entryRemoved": "Holiday entry removed from active use."
+    },
+    "confirm": {
+      "activate": "Activate this holiday calendar?",
+      "archive": "Archive this holiday calendar?"
+    },
+    "states": {
+      "emptyTitle": "No holiday calendars found",
+      "emptyMessage": "Adjust filters or create a holiday calendar.",
+      "loadErrorTitle": "Holiday calendars could not be loaded",
+      "loadErrorMessage": "The system rejected or did not return holiday calendar data."
+    },
+    "actionRail": {
+      "title": "Holiday calendar actions"
+    }
+  },
+  "monthlyRosters": {
+    "page": {
+      "title": "Monthly Rosters",
+      "subtitle": "Draft roster setup for exact-department monthly schedules."
+    },
+    "fields": {
+      "rosterCode": "Roster code",
+      "rosterMonth": "Roster month",
+      "departmentOrgUnitId": "Department",
+      "workPatternId": "Work Pattern",
+      "holidayCalendarId": "Holiday Calendar",
+      "status": "Status",
+      "timezone": "Timezone",
+      "scope": "Roster access scope",
+      "description": "Description",
+      "externalRef": "External reference",
+      "exceptionCount": "Active exceptions",
+      "draftVersion": "Draft version",
+      "currentPreviewHash": "Current preview hash",
+      "lastPreviewedAt": "Last previewed at",
+      "publishedAt": "Published at",
+      "publishedBy": "Published by",
+      "publishGenerationRunId": "Publish generation run ID",
+      "createdAt": "Created at",
+      "updatedAt": "Updated at",
+      "archivedAt": "Archived at"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "LOCKED": "Locked",
+      "ARCHIVED": "Archived"
+    },
+    "scopes": {
+      "global": "Global",
+      "department": "Department"
+    },
+    "filters": {
+      "searchPlaceholder": "Roster code prefix",
+      "status": "Status",
+      "defaultStatuses": "Draft, published, and locked",
+      "rosterMonth": "Roster month",
+      "departmentOrgUnitId": "Department",
+      "workPatternId": "Work Pattern",
+      "holidayCalendarId": "Holiday Calendar",
+      "scope": "Scope",
+      "defaultScopes": "System default"
+    },
+    "actions": {
+      "create": "Create monthly roster",
+      "closeCreate": "Close create",
+      "open": "Open detail",
+      "editDraft": "Edit draft setup",
+      "archive": "Archive"
+    },
+    "table": {
+      "caption": "Monthly roster list",
+      "rosterCode": "Roster code",
+      "rosterMonth": "Month",
+      "department": "Department",
+      "workPattern": "Work pattern",
+      "holidayCalendar": "Holiday calendar",
+      "status": "Status",
+      "updatedAt": "Updated",
+      "actions": "Actions"
+    },
+    "detail": {
+      "pageTitle": "Monthly Roster Detail",
+      "pageSubtitle": "Backend-authoritative roster draft setup shell.",
+      "identityTitle": "Monthly roster",
+      "setupTitle": "Draft setup",
+      "draftSetupSection": "Draft setup lifecycle",
+      "adminMetadataTitle": "Admin metadata",
+      "readOnlyDraftSetup": "Draft setup is read-only unless the roster is in Draft status.",
+      "structuralLock": "This draft already has exceptions. Remove the exceptions before changing the month, department, pattern, or holiday calendar."
+    },
+    "preview": {
+      "title": "Preview",
+      "copy": {
+        "readOnly": "Preview does not create work shifts.",
+        "noPublish": "Use the publish review after checking this preview."
+      },
+      "summary": {
+        "eligibleProfiles": "Eligible profiles",
+        "standardCandidates": "Standard candidates",
+        "suppressed": "Off-day suppressions",
+        "exceptions": "Exceptions",
+        "candidatesAfterExceptions": "Candidates after exceptions",
+        "specialShift": "Extra shifts",
+        "changedTime": "Changed times",
+        "workingToOff": "Working days off",
+        "conflicts": "Conflicts",
+        "blockers": "Blockers"
+      },
+      "conflicts": {
+        "title": "Conflicts and blockers",
+        "hasIssues": "Needs review",
+        "none": "No issues",
+        "empty": "No conflicts or blockers returned.",
+        "blocker": "Blocker",
+        "message": "{{title}} affects row {{rowId}}",
+        "kinds": {
+          "SUBJECT_OVERLAP": "Existing active Work Shift conflict",
+          "CANDIDATE_SUBJECT_OVERLAP": "Candidate-to-candidate conflict"
+        }
+      },
+      "blockers": {
+        "SUBJECT_OVERLAP": "This row overlaps an existing active Work Shift."
+      },
+      "filters": {
+        "conflictOnly": "Conflict or blocker only",
+        "exceptionOnly": "Exception only",
+        "employeeSearch": "Employee search",
+        "employeeSearchPlaceholder": "Employment Profile ID",
+        "dateStart": "From date",
+        "dateEnd": "To date"
+      },
+      "table": {
+        "caption": "Monthly roster preview rows",
+        "employee": "Employment Profile",
+        "date": "Date",
+        "kind": "Source",
+        "status": "Candidate status",
+        "time": "Local time",
+        "exception": "Exception ID",
+        "holiday": "Holiday/off day",
+        "issues": "Issues",
+        "reason": "Summary"
+      },
+      "rowKinds": {
+        "STANDARD": "Standard candidate",
+        "WORKING_TO_OFF": "Working day off",
+        "CHANGE_TIME": "Changed time",
+        "ADD_SPECIAL_SHIFT": "Extra shift",
+        "HOLIDAY_SUPPRESSED": "Holiday/off-day suppressed"
+      },
+      "rows": {
+        "candidate": "Candidate",
+        "suppressed": "Suppressed/off",
+        "hasIssues": "{{count}} issue(s)",
+        "noIssues": "No issues",
+        "reason": {
+          "standard": "Standard roster candidate",
+          "holidaySuppressed": "Suppressed by {{name}}",
+          "workingToOff": "Standard working day marked as off",
+          "changeTime": "Start changes to {{startLocalTime}}",
+          "addSpecialShift": "Extra shift starts at {{startLocalTime}}"
+        }
+      },
+      "detail": {
+        "title": "Preview row detail",
+        "rowId": "Preview row ID",
+        "shiftStartAt": "Shift start UTC",
+        "shiftEndAt": "Shift end UTC",
+        "slotKey": "Roster slot key",
+        "warnings": "Warnings",
+        "blockers": "Blockers"
+      },
+      "admin": {
+        "title": "Preview admin metadata",
+        "freshness": "Preview freshness",
+        "computedPreviewHash": "Computed preview hash"
+      },
+      "freshness": {
+        "current": "Preview is current",
+        "stale": "Preview is out of date",
+        "notPreviewed": "Preview has not been saved yet"
+      },
+      "states": {
+        "loadErrorTitle": "Roster preview could not be loaded",
+        "loadErrorMessage": "The system rejected or did not return roster preview data.",
+        "archivedUnavailable": "Archived rosters cannot be previewed.",
+        "emptyRows": "No preview rows match the current filters."
+      }
+    },
+    "publish": {
+      "title": "Publish review",
+      "copy": {
+        "createShifts": "The system will create work shifts from this roster.",
+        "reviewPreview": "Review the preview before publishing.",
+        "noUndo": "Publishing cannot be undone from this screen."
+      },
+      "readiness": {
+        "status": "Publish readiness",
+        "ready": "Ready to publish",
+        "previewFreshness": "Preview freshness"
+      },
+      "disabledReasons": {
+        "notDraft": "Only Draft rosters can be published.",
+        "unavailable": "Preview is unavailable.",
+        "loading": "Preview is still loading.",
+        "error": "Preview must load successfully before publishing.",
+        "hashUnavailable": "Preview hash is unavailable. Refresh preview before publishing.",
+        "stale": "Preview is out of date. Refresh preview before publishing.",
+        "conflicts": "Resolve preview conflicts before publishing.",
+        "blockers": "Resolve preview blockers before publishing."
+      },
+      "confirmation": {
+        "title": "Confirm publish",
+        "copy": "Real Work Shifts will be created for the publishable preview rows.",
+        "eligibleEmployees": "Eligible employees",
+        "generatedCandidates": "Generated shift candidates",
+        "exceptionCount": "Exceptions",
+        "conflictBlockerCount": "Conflicts and blockers",
+        "issueCount": "{{conflicts}} conflict(s), {{blockers}} blocker(s)"
+      },
+      "actions": {
+        "openConfirmation": "Publish roster",
+        "confirm": "Confirm publish",
+        "publishing": "Publishing"
+      },
+      "states": {
+        "alreadyPublished": "This roster is already published. Repeating publish does not create duplicate Work Shifts.",
+        "unavailable": "Publish is unavailable for this roster status.",
+        "previewErrorTitle": "Preview is required before publish"
+      },
+      "summary": {
+        "generatedCount": "Generated Work Shifts",
+        "suppressedCount": "Holiday/off-day suppressions",
+        "skippedCount": "Working-to-off skipped rows",
+        "publishedAt": "Published at",
+        "publishedBy": "Published by",
+        "generationRunId": "Generation run ID",
+        "adminMetadata": "Publish admin metadata"
+      },
+      "feedback": {
+        "success": "Monthly roster published.",
+        "successTitle": "Roster published"
+      },
+      "errors": {
+        "title": "Publish could not be completed",
+        "stalePreview": "Preview is out of date. Refresh preview before publishing.",
+        "unauthorized": "Your session is not authorized to publish this roster.",
+        "forbidden": "You do not have permission or department access to publish this roster.",
+        "validation": "The system rejected the publish request. Check the preview and roster status.",
+        "conflict": "The roster changed or has conflicts. Refresh preview before publishing.",
+        "generic": "The publish request could not be completed."
+      }
+    },
+    "generated": {
+      "title": "Generated Work Shifts",
+      "copy": "Generated Work Shifts are normal Work Shifts with read-only monthly roster source metadata.",
+      "states": {
+        "unavailable": "Generated Work Shifts are available after publish."
+      },
+      "fields": {
+        "source": "Source",
+        "sourceRosterId": "Monthly Roster",
+        "generatedShiftIds": "Generated Work Shift IDs"
+      },
+      "actions": {
+        "openList": "Open generated Work Shifts"
+      }
+    },
+    "exceptions": {
+      "title": "Exceptions",
+      "types": {
+        "WORKING_TO_OFF": "Mark working day as off",
+        "CHANGE_TIME": "Change start time",
+        "ADD_SPECIAL_SHIFT": "Add extra shift"
+      },
+      "statuses": {
+        "ACTIVE": "Active",
+        "REMOVED": "Removed"
+      },
+      "table": {
+        "caption": "Monthly roster exceptions",
+        "employee": "Employment Profile",
+        "date": "Date",
+        "type": "Type",
+        "status": "Status",
+        "summary": "Summary",
+        "reason": "Reason or note",
+        "createdAt": "Created",
+        "updatedAt": "Updated",
+        "removedAt": "Removed",
+        "actions": "Actions"
+      },
+      "fields": {
+        "type": "Exception type",
+        "exceptionDate": "Date",
+        "subjectEmploymentProfileId": "Affected Employment Profile",
+        "employeeSearch": "Search active employees in this department",
+        "title": "Title",
+        "startLocalTime": "New start time",
+        "endLocalTime": "End time",
+        "workingMinutes": "Working minutes",
+        "breakMinutes": "Break minutes",
+        "studioResourceIds": "Studio Resources",
+        "csvPlaceholder": "Comma-separated IDs",
+        "reason": "Reason",
+        "sourceNote": "Source note",
+        "description": "Description",
+        "externalRef": "External reference",
+        "studioResources": "Studio Resources"
+      },
+      "actions": {
+        "add": "Add exception",
+        "edit": "Edit",
+        "remove": "Remove",
+        "removing": "Removing",
+        "showRemoved": "Show removed exceptions"
+      },
+      "copy": {
+        "draftOnly": "Draft rosters allow adding, editing, and removing pre-publish exceptions.",
+        "readOnly": "This roster is not a draft. Exceptions are read-only.",
+        "previewDeferred": "Exception changes are reflected in the read-only roster preview.",
+        "workingToOffNoTime": "This exception marks an existing standard working day as off and does not send time fields.",
+        "endCalculated": "Calculated by the system after save."
+      },
+      "summary": {
+        "workingToOff": "Standard working day marked as off",
+        "changeTime": "Start changes to {{startLocalTime}}",
+        "addSpecialShift": "Extra shift at {{startLocalTime}} for {{workingMinutes}} working minutes"
+      },
+      "mutations": {
+        "subtitle": "Backend validates the month, exact department employee, standard candidate, and conflicts.",
+        "add": {
+          "title": "Add roster exception",
+          "submit": "Add exception"
+        },
+        "edit": {
+          "title": "Edit roster exception",
+          "submit": "Save exception"
+        },
+        "pending": "Saving"
+      },
+      "validation": {
+        "required": "This field is required.",
+        "date": "Use a valid YYYY-MM-DD date.",
+        "time": "Use a valid HH:mm time.",
+        "dateInMonth": "Choose a date inside the roster month.",
+        "positiveMinutes": "Enter a positive whole number of minutes.",
+        "nonNegativeMinutes": "Enter zero or a positive whole number of minutes.",
+        "invalidType": "Use a supported exception type.",
+        "noStandardCandidate": "No standard roster candidate exists for this exception.",
+        "conflict": "This exception conflicts with another roster exception or shift.",
+        "inactiveEmploymentProfile": "Choose an active Employment Profile in the roster department.",
+        "outsideDepartment": "Choose an Employment Profile in the roster department.",
+        "duplicate": "This exception duplicates an existing roster exception."
+      },
+      "feedback": {
+        "added": "Roster exception added.",
+        "updated": "Roster exception updated.",
+        "removed": "Roster exception removed from the draft."
+      },
+      "confirm": {
+        "remove": "Remove this exception from the draft? Removed exceptions no longer affect preview."
+      },
+      "states": {
+        "emptyActive": "No active exceptions.",
+        "emptyAll": "No exceptions returned."
+      }
+    },
+    "mutations": {
+      "create": {
+        "title": "Create monthly roster draft",
+        "subtitle": "Create one exact-department roster draft for a YYYY-MM month. The system generates the roster code after save.",
+        "submit": "Create draft",
+        "pending": "Creating"
+      },
+      "edit": {
+        "title": "Edit monthly roster draft",
+        "subtitle": "Draft rosters allow setup and metadata edits until structural fields are locked by exceptions.",
+        "submit": "Save draft",
+        "pending": "Saving"
+      }
+    },
+    "validation": {
+      "required": "This field is required.",
+      "rosterCode": "Use uppercase letters, numbers, and underscores.",
+      "month": "Use a valid YYYY-MM month.",
+      "invalidScope": "Use Global or Department roster access.",
+      "duplicateDepartmentMonth": "A roster already exists for this department and month.",
+      "activeExceptionsStructuralLock": "Remove active exceptions before changing the month, department, pattern, or holiday calendar."
+    },
+    "feedback": {
+      "created": "Monthly roster draft created.",
+      "updated": "Monthly roster draft updated.",
+      "archived": "Monthly roster archived."
+    },
+    "confirm": {
+      "archive": "Archive this monthly roster?"
+    },
+    "states": {
+      "emptyTitle": "No monthly rosters found",
+      "emptyMessage": "Adjust filters or create a monthly roster draft.",
+      "loadErrorTitle": "Monthly rosters could not be loaded",
+      "loadErrorMessage": "The system rejected or did not return monthly roster data."
+    },
+    "actionRail": {
+      "title": "Monthly roster actions"
+    },
+    "copy": {
+      "setupInvariants": "Choose one active department only. Child departments are not included. The roster targets active employees, uses a global Holiday Calendar, and keeps timezone Asia/Ho_Chi_Minh."
+    },
+    "pickers": {
+      "departmentSearch": "Search active departments by name or code",
+      "workPatternSearch": "Search active Work Patterns by name or code",
+      "holidayCalendarSearch": "Search active Holiday Calendars by name or code"
+    }
+  },
+  "advanced": {
+    "customCodeTitle": "Advanced admin custom code",
+    "customShiftCodeHelp": "Leave blank for the system to generate the shift code. Use only when an admin must preserve a custom legacy code."
+  },
+  "pickers": {
+    "subjectSearch": "Search by name or code",
+    "studioResourceSearch": "Search studio resources by name or code",
+    "removeSelectedResource": "Remove",
+    "noResourcesSelected": "No studio resources selected."
+  }
+}

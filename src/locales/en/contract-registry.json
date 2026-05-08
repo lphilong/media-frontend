@@ -1,0 +1,198 @@
+{
+  "page": {
+    "title": "Contract Registry",
+    "subtitle": "Global legal and operational contract metadata.",
+    "placeholder": "Contract Registry is implemented as real Wave 7 routes."
+  },
+  "fields": {
+    "contractCode": "Contract code",
+    "title": "Title",
+    "contractKind": "Contract kind",
+    "linkedEntityKind": "Linked entity kind",
+    "linkedEntityId": "Linked entity ID",
+    "ownerEmploymentProfileId": "Owner Employment Profile ID",
+    "newOwnerEmploymentProfileId": "New owner Employment Profile ID",
+    "confidentialityTier": "Confidentiality tier",
+    "status": "Status",
+    "effectiveStartDate": "Effective start date",
+    "effectiveEndDate": "Effective end date",
+    "expiryDate": "Expiry date",
+    "terminationDate": "Termination date",
+    "fileReferenceId": "File reference ID",
+    "fileDisplayName": "File display name",
+    "newFileReferenceId": "New file reference ID",
+    "newFileDisplayName": "New file display name",
+    "description": "Description",
+    "externalRef": "External reference",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at",
+    "scopeBoundary": "Scope boundary"
+  },
+  "statuses": {
+    "DRAFT": "Draft",
+    "PENDING_SIGNATURE": "Pending signature",
+    "ACTIVE": "Active",
+    "EXPIRED": "Expired",
+    "TERMINATED": "Terminated",
+    "ARCHIVED": "Archived"
+  },
+  "contractKinds": {
+    "EMPLOYMENT": "Employment",
+    "TALENT_SERVICE": "Talent service",
+    "TALENT_MANAGEMENT": "Talent management"
+  },
+  "linkedEntityKinds": {
+    "EMPLOYMENT_PROFILE": "Employment profile",
+    "TALENT": "Talent"
+  },
+  "confidentialityTiers": {
+    "STANDARD": "Standard",
+    "CONFIDENTIAL": "Confidential",
+    "RESTRICTED": "Restricted"
+  },
+  "sort": {
+    "effectiveStartDate": "Effective start",
+    "contractCode": "Contract code",
+    "createdAt": "Created"
+  },
+  "filters": {
+    "searchPlaceholder": "Exact contract code or title prefix",
+    "status": "Status",
+    "allStatuses": "All active states",
+    "contractKind": "Contract kind",
+    "allContractKinds": "All contract kinds",
+    "linkedEntityKind": "Linked entity kind",
+    "allLinkedEntityKinds": "All linked entity kinds",
+    "linkedEntityId": "Linked entity ID",
+    "linkedEntityIdPlaceholder": "Exact linked entity identifier",
+    "ownerEmploymentProfileId": "Owner Employment Profile ID",
+    "ownerEmploymentProfileIdPlaceholder": "Exact owner profile identifier",
+    "confidentialityTier": "Confidentiality tier",
+    "allConfidentialityTiers": "All tiers",
+    "hasFileReference": "File reference",
+    "anyFileReference": "Any file state",
+    "fileReference": {
+      "true": "Has file reference",
+      "false": "No file reference"
+    },
+    "windowStartDate": "Window start date",
+    "windowEndDate": "Window end date"
+  },
+  "relatedModes": {
+    "by-linked-entity": "Related contracts by linked entity",
+    "by-owner": "Related contracts by owner"
+  },
+  "actions": {
+    "create": "Create contract",
+    "closeCreate": "Close create",
+    "open": "Open detail",
+    "editDraftCore": "Edit draft core",
+    "assignOwner": "Assign owner",
+    "updateFileReference": "Update file reference",
+    "mark-pending-signature": "Mark pending signature",
+    "markPendingSignature": "Mark pending signature",
+    "reopen-draft": "Reopen draft",
+    "reopenDraft": "Reopen draft",
+    "activate": "Activate",
+    "expire": "Expire",
+    "terminate": "Terminate",
+    "archive": "Archive"
+  },
+  "table": {
+    "caption": "Contract record list",
+    "contractCode": "Contract code",
+    "title": "Title",
+    "contractKind": "Kind",
+    "linkedEntityKind": "Linked kind",
+    "linkedEntityId": "Linked ID",
+    "ownerEmploymentProfileId": "Owner ID",
+    "confidentialityTier": "Tier",
+    "status": "Status",
+    "effectiveStartDate": "Start",
+    "effectiveEndDate": "End",
+    "actions": "Actions"
+  },
+  "detail": {
+    "archivedReadOnly": "Archived contract records are read-only.",
+    "identityTitle": "Contract record",
+    "contractMetadataTitle": "Contract metadata",
+    "linkedEntityTitle": "Linked entity and owner",
+    "fileReferenceTitle": "File reference metadata",
+    "freeTextTitle": "Description and external reference",
+    "globalOnly": "Global only"
+  },
+  "related": {
+    "navigationTitle": "Related navigation",
+    "commissionRules": "Commission rules by contract",
+    "unavailable": "Link unavailable"
+  },
+  "states": {
+    "emptyTitle": "No contract records found",
+    "emptyMessage": "Adjust filters or create a contract record.",
+    "loadErrorTitle": "Contract records could not be loaded",
+    "loadErrorMessage": "The backend rejected or did not return contract data."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create contract record",
+      "subtitle": "Create legal and operational metadata only.",
+      "submit": "Create",
+      "pending": "Creating"
+    },
+    "draftCore": {
+      "title": "Edit draft core",
+      "subtitle": "Update mutable draft metadata. Owner and file reference are separate actions.",
+      "submit": "Save",
+      "pending": "Saving"
+    },
+    "assignOwner": {
+      "title": "Assign owner",
+      "subtitle": "Replace the owner Employment Profile reference.",
+      "submit": "Assign owner",
+      "pending": "Assigning"
+    },
+    "fileReference": {
+      "title": "Update file reference",
+      "subtitle": "Store metadata only. This is not upload or download management.",
+      "submit": "Update file reference",
+      "pending": "Updating"
+    },
+    "expire": {
+      "title": "Expire contract",
+      "subtitle": "Set the contract expiry date.",
+      "submit": "Expire",
+      "pending": "Expiring"
+    },
+    "terminate": {
+      "title": "Terminate contract",
+      "subtitle": "Set the contract termination date.",
+      "submit": "Terminate",
+      "pending": "Terminating"
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Use a valid identifier token.",
+    "invalidDate": "Use YYYY-MM-DD.",
+    "kindCompatibility": "Contract kind and linked entity kind are not compatible.",
+    "filePair": "File reference ID and display name must be provided or cleared together."
+  },
+  "feedback": {
+    "created": "Contract record created.",
+    "updated": "Contract record updated.",
+    "ownerAssigned": "Owner updated.",
+    "fileReferenceUpdated": "File reference metadata updated.",
+    "expired": "Contract expired.",
+    "terminated": "Contract terminated.",
+    "lifecycleUpdated": "Contract lifecycle updated."
+  },
+  "confirm": {
+    "markPendingSignature": "Mark this contract pending signature?",
+    "reopenDraft": "Reopen this contract as draft?",
+    "activate": "Activate this contract?",
+    "archive": "Archive this contract?"
+  },
+  "actionRail": {
+    "title": "Contract actions"
+  }
+}

@@ -1,0 +1,332 @@
+{
+  "globalOnly": "Chỉ dùng phạm vi toàn cục",
+  "settlementKinds": {
+    "REVENUE_SHARE": "Hoa hồng"
+  },
+  "settlementBases": {
+    "RECOGNIZED_GROSS_REVENUE": "Doanh thu gộp đã ghi nhận"
+  },
+  "beneficiaryKinds": {
+    "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
+    "TALENT": "Talent"
+  },
+  "revenueKinds": {
+    "PLATFORM_LIVESTREAM": "Doanh thu nền tảng livestream",
+    "PLATFORM_CONTENT": "Doanh thu nền tảng nội dung",
+    "EVENT_OPERATIONAL": "Doanh thu vận hành sự kiện"
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối.",
+    "invalidRatePercent": "Tỷ lệ phải lớn hơn 0, không quá 100 và tối đa 4 chữ số thập phân.",
+    "revenueKindsRequired": "Chọn ít nhất một loại doanh thu.",
+    "utcMidnightTimestamp": "Nhập timestamp số nguyên tại nửa đêm UTC.",
+    "effectiveWindow": "Thời điểm kết thúc hiệu lực phải bằng hoặc sau thời điểm bắt đầu hiệu lực.",
+    "beneficiaryExactOne": "Chỉ cung cấp đúng một ID bên hưởng phù hợp.",
+    "revenueShareTalentOnly": "Quy tắc hoa hồng yêu cầu bên hưởng là Talent.",
+    "invalidTimestamp": "Nhập timestamp số nguyên hợp lệ.",
+    "periodWindow": "Kỳ quyết toán phải kết thúc sau thời điểm bắt đầu.",
+    "duplicateRevenueEntry": "Các ID bút toán doanh thu không được trùng nhau."
+  },
+  "rules": {
+    "title": "Hoa Hồng",
+    "subtitle": "Tạo và quản lý quy tắc chia sẻ doanh thu dùng để tính quyết toán.",
+    "placeholder": "Quy tắc hoa hồng",
+    "statuses": {
+      "DRAFT": "Nháp",
+      "INACTIVE": "Không hoạt động",
+      "ACTIVE": "Đang hoạt động",
+      "ARCHIVED": "Đã lưu trữ"
+    },
+    "sort": {
+      "ruleCode": "Mã",
+      "title": "Tiêu đề",
+      "effectiveStartDate": "Bắt đầu hiệu lực",
+      "createdAt": "Thời điểm tạo"
+    },
+    "relatedModes": {
+      "by-beneficiary": "Quy tắc lọc theo bên hưởng",
+      "by-contract": "Quy tắc lọc theo hợp đồng"
+    },
+    "filters": {
+      "searchPlaceholder": "Nhập mã",
+      "status": "Trạng thái",
+      "allStatuses": "Tất cả chưa lưu trữ",
+      "beneficiaryKind": "Bên hưởng",
+      "anyBeneficiaryKind": "Bất kỳ bên hưởng nào",
+      "beneficiaryEmploymentProfileId": "ID hồ sơ nhân sự",
+      "beneficiaryTalentId": "ID Talent",
+      "sourceContractRecordId": "ID hợp đồng",
+      "settlementKind": "Quyết toán",
+      "anySettlementKind": "Bất kỳ quyết toán nào",
+      "appliesToRevenueKind": "Doanh thu áp dụng",
+      "anyRevenueKind": "Bất kỳ doanh thu nào",
+      "windowStartDate": "Thời gian bắt đầu, nửa đêm UTC",
+      "windowEndDate": "Thời gian kết thúc, nửa đêm UTC"
+    },
+    "fields": {
+      "ruleCode": "Mã quy tắc",
+      "title": "Tiêu đề",
+      "settlementKind": "Loại quyết toán",
+      "beneficiaryKind": "Loại bên hưởng",
+      "beneficiaryEmploymentProfileId": "ID hồ sơ nhân sự",
+      "beneficiaryTalentId": "ID Talent",
+      "beneficiaryId": "ID bên hưởng",
+      "sourceContractRecordId": "ID hợp đồng",
+      "settlementBasis": "Cơ sở quyết toán",
+      "ratePercent": "Tỷ lệ phần trăm",
+      "appliesToRevenueKinds": "Loại doanh thu áp dụng",
+      "effectiveStartDate": "Thời gian bắt đầu hiệu lực tại nửa đêm UTC",
+      "effectiveEndDate": "Thời gian kết thúc hiệu lực tại nửa đêm UTC",
+      "status": "Trạng thái",
+      "scopeBoundary": "Ranh giới phạm vi",
+      "description": "Mô tả",
+      "externalRef": "Tham chiếu bên ngoài",
+      "createdAt": "Thời điểm tạo",
+      "updatedAt": "Thời điểm cập nhật"
+    },
+    "table": {
+      "caption": "Danh sách quy tắc hoa hồng",
+      "ruleCode": "Mã quy tắc",
+      "title": "Tiêu đề",
+      "settlementKind": "Loại quyết toán",
+      "beneficiaryKind": "Loại bên hưởng",
+      "beneficiaryId": "ID bên hưởng",
+      "sourceContractRecordId": "Hợp đồng",
+      "ratePercent": "Tỷ lệ",
+      "status": "Trạng thái",
+      "effectiveStartDate": "Bắt đầu hiệu lực",
+      "effectiveEndDate": "Kết thúc hiệu lực",
+      "createdAt": "Thời điểm tạo",
+      "actions": "Hành động"
+    },
+    "actions": {
+      "closeCreate": "Đóng tạo mới",
+      "create": "Tạo quy tắc hoa hồng",
+      "open": "Mở",
+      "editDraftCore": "Chỉnh sửa nội dung nháp",
+      "activate": "Kích hoạt",
+      "deactivate": "Vô hiệu hóa",
+      "archive": "Lưu trữ"
+    },
+    "mutations": {
+      "create": {
+        "title": "Tạo Quy Hoa Hồng",
+        "subtitle": "Tạo quy tắc hoa hồng. Ngày hiệu lực dùng timestamp số nguyên tại nửa đêm UTC.",
+        "submit": "Tạo",
+        "pending": "Đang tạo"
+      },
+      "draftCore": {
+        "title": "Chỉnh sửa nội dung nháp của quy tắc",
+        "subtitle": "Chỉ quy tắc ở trạng thái nháp hoặc không hoạt động mới được sửa các trường soạn thảo.",
+        "submit": "Lưu quy tắc",
+        "pending": "Đang lưu"
+      }
+    },
+    "confirm": {
+      "activate": "Kích hoạt quy tắc hoa hồng này?",
+      "deactivate": "Vô hiệu hóa quy tắc hoa hồng này?",
+      "archive": "Lưu trữ quy tắc hoa hồng này?"
+    },
+    "feedback": {
+      "created": "Đã tạo quy tắc hoa hồng.",
+      "updated": "Đã cập nhật quy tắc hoa hồng.",
+      "lifecycleUpdated": "Đã cập nhật trạng thái vòng đời của quy tắc hoa hồng."
+    },
+    "states": {
+      "emptyTitle": "Không có quy tắc hoa hồng",
+      "emptyMessage": "Không có bản ghi quy tắc nào khớp với truy vấn hiện tại.",
+      "loadErrorTitle": "Không tải được quy tắc hoa hồng",
+      "loadErrorMessage": "Thử lại yêu cầu hoặc điều chỉnh truy vấn."
+    },
+    "detail": {
+      "archivedReadOnly": "Quy tắc đã lưu trữ chỉ đọc.",
+      "activeReadOnly": "Quy tắc đang hoạt động không thể chỉnh sửa, ngoại trừ các hành động vòng đời.",
+      "identityTitle": "Định danh quy tắc",
+      "ruleTermsTitle": "Điều khoản quy tắc",
+      "beneficiaryTitle": "Bên hưởng",
+      "sourceContractTitle": "Hợp đồng nguồn",
+      "lifecycleTitle": "Thông tin vòng đời",
+      "freeTextTitle": "Ghi chú"
+    },
+    "related": {
+      "navigationTitle": "Điều hướng liên quan",
+      "sourceContract": "Hợp đồng nguồn",
+      "beneficiary": "Bên hưởng",
+      "settlementsByRule": "Quyết toán theo quy tắc nguồn"
+    },
+    "actionRail": {
+      "title": "Hành động quy tắc hoa hồng"
+    }
+  },
+  "settlements": {
+    "title": "Quyết toán hoa hồng",
+    "subtitle": "Rà soát và chốt các bản ghi quyết toán hoa hồng do backend tính toán.",
+    "placeholder": "Quyết toán hoa hồng đã được triển khai trong Wave 9.",
+    "statuses": {
+      "DRAFT": "Nháp",
+      "FINALIZED": "Đã chốt",
+      "VOIDED": "Đã hủy hiệu lực",
+      "ARCHIVED": "Đã lưu trữ"
+    },
+    "sort": {
+      "settlementPeriodStartAt": "Bắt đầu kỳ",
+      "settlementCode": "Mã quyết toán",
+      "createdAt": "Thời điểm tạo",
+      "finalizedAt": "Thời điểm chốt"
+    },
+    "relatedModes": {
+      "by-beneficiary": "Quyết toán lọc theo bên hưởng",
+      "by-subject-talent": "Quyết toán lọc theo Talent chủ thể",
+      "by-revenue-entry": "Quyết toán lọc theo bút toán doanh thu"
+    },
+    "filters": {
+      "searchPlaceholder": "Nhập mã quyết toán",
+      "status": "Trạng thái",
+      "allStatuses": "Tất cả chưa lưu trữ",
+      "settlementKindSnapshot": "Loại quyết toán tại thời điểm ghi nhận",
+      "anySettlementKind": "Bất kỳ loại quyết toán nào",
+      "beneficiaryKindSnapshot": "Bên hưởng tại thời điểm ghi nhận",
+      "anyBeneficiaryKind": "Bất kỳ loại bên hưởng nào",
+      "beneficiaryEmploymentProfileIdSnapshot": "ID nhân sự",
+      "beneficiaryTalentIdSnapshot": "ID Talent tại thời điểm ghi nhận",
+      "subjectTalentId": "ID Talent",
+      "sourceRuleId": "ID quy tắc nguồn",
+      "containsRevenueEntryId": "ID bút toán doanh thu",
+      "settlementCurrencyCode": "Tiền tệ",
+      "windowStartAt": "Thời gian bắt đầu",
+      "windowEndAt": "Thời gian kết thúc"
+    },
+    "fields": {
+      "settlementCode": "Mã quyết toán",
+      "title": "Tiêu đề",
+      "sourceRuleId": "ID quy tắc nguồn",
+      "sourceContractRecordIdSnapshot": "ID hợp đồng nguồn tại thời điểm ghi nhận",
+      "settlementKindSnapshot": "Loại quyết toán tại thời điểm ghi nhận",
+      "beneficiaryKindSnapshot": "Loại bên hưởng tại thời điểm ghi nhận",
+      "beneficiaryEmploymentProfileIdSnapshot": "ID hồ sơ nhân sự hưởng tại thời điểm ghi nhận",
+      "beneficiaryTalentIdSnapshot": "ID Talent hưởng tại thời điểm ghi nhận",
+      "beneficiarySnapshotId": "ID bên hưởng tại thời điểm ghi nhận",
+      "subjectTalentId": "ID Talent chủ thể",
+      "settlementBasisSnapshot": "Cơ sở quyết toán tại thời điểm ghi nhận",
+      "ratePercentSnapshot": "Tỷ lệ phần trăm tại thời điểm ghi nhận",
+      "revenueEntryId": "ID bút toán doanh thu",
+      "settlementPeriodStartAt": "Thời gian bắt đầu kỳ quyết toán",
+      "settlementPeriodEndAt": "Thời gian kết thúc kỳ quyết toán",
+      "settlementCurrencyCode": "Tiền tệ quyết toán",
+      "grossRevenueAmount": "Tổng doanh thu gộp",
+      "settlementAmount": "Số tiền quyết toán",
+      "status": "Trạng thái",
+      "scopeBoundary": "Ranh giới phạm vi",
+      "finalizedAt": "Thời điểm chốt",
+      "voidedAt": "Thời điểm hủy hiệu lực",
+      "description": "Mô tả",
+      "externalRef": "Tham chiếu bên ngoài",
+      "createdAt": "Thời điểm tạo",
+      "updatedAt": "Thời điểm cập nhật"
+    },
+    "table": {
+      "caption": "Danh sách quyết toán hoa hồng",
+      "settlementCode": "Mã quyết toán",
+      "title": "Tiêu đề",
+      "sourceRuleId": "Quy tắc nguồn",
+      "settlementKindSnapshot": "Loại ghi nhận",
+      "beneficiaryKindSnapshot": "Loại bên hưởng",
+      "beneficiarySnapshotId": "ID bên hưởng",
+      "subjectTalentId": "Talent",
+      "settlementCurrencyCode": "Tiền tệ",
+      "grossRevenueAmount": "Doanh thu gộp",
+      "settlementAmount": "Số tiền quyết toán",
+      "status": "Trạng thái",
+      "settlementPeriodStartAt": "Bắt đầu kỳ",
+      "settlementPeriodEndAt": "Kết thúc kỳ",
+      "finalizedAt": "Thời điểm chốt",
+      "createdAt": "Thời điểm tạo",
+      "actions": "Hành động"
+    },
+    "actions": {
+      "closeCreate": "Đóng tạo mới",
+      "create": "Tạo quyết toán hoa hồng",
+      "open": "Mở",
+      "editDraftCore": "Chỉnh sửa nội dung nháp",
+      "replaceRevenueEntries": "Thay thế bút toán doanh thu",
+      "addRevenueEntry": "Thêm bút toán doanh thu",
+      "removeRevenueEntry": "Xóa khỏi danh sách",
+      "finalize": "Chốt",
+      "void": "Hủy hiệu lực",
+      "archive": "Lưu trữ"
+    },
+    "mutations": {
+      "create": {
+        "title": "Tạo quyết toán hoa hồng",
+        "subtitle": "Tạo quyết toán nháp với toàn bộ tập bút toán doanh thu được chọn.",
+        "submit": "Tạo",
+        "pending": "Đang tạo"
+      },
+      "draftCore": {
+        "title": "Chỉnh sửa nội dung nháp của quyết toán",
+        "subtitle": "Chỉ quyết toán ở trạng thái nháp mới được sửa các trường soạn thảo.",
+        "submit": "Lưu quyết toán",
+        "pending": "Đang lưu"
+      },
+      "revenueEntries": {
+        "title": "Thay thế bút toán doanh thu",
+        "subtitle": "Gửi toàn bộ tập bút toán doanh thu chuẩn hóa. Dòng quyết toán và tổng tiền do backend tính.",
+        "rowsTitle": "Tập bút toán doanh thu",
+        "submit": "Thay thế tập",
+        "pending": "Đang thay thế"
+      }
+    },
+    "confirm": {
+      "finalize": "Chốt quyết toán hoa hồng này?",
+      "void": "Hủy hiệu lực quyết toán hoa hồng này?",
+      "archive": "Lưu trữ quyết toán hoa hồng này?"
+    },
+    "feedback": {
+      "created": "Đã tạo quyết toán hoa hồng.",
+      "updated": "Đã cập nhật quyết toán hoa hồng.",
+      "revenueEntriesUpdated": "Đã thay thế tập bút toán doanh thu.",
+      "lifecycleUpdated": "Đã cập nhật trạng thái vòng đời của quyết toán hoa hồng."
+    },
+    "states": {
+      "emptyTitle": "Không có quyết toán hoa hồng",
+      "emptyMessage": "Không có bản ghi quyết toán nào khớp với truy vấn hiện tại.",
+      "loadErrorTitle": "Không tải được quyết toán hoa hồng",
+      "loadErrorMessage": "Thử lại yêu cầu hoặc điều chỉnh truy vấn.",
+      "linesLoadErrorTitle": "Không tải được dòng quyết toán",
+      "linesLoadErrorMessage": "Thử lại để tải các dòng do backend tính.",
+      "noLines": "Không có dòng quyết toán nào được trả về."
+    },
+    "detail": {
+      "archivedReadOnly": "Quyết toán đã lưu trữ chỉ đọc.",
+      "derivedReadOnly": "Số tiền, dữ liệu ghi nhận và dòng quyết toán đều do backend sở hữu và chỉ đọc.",
+      "identityTitle": "Định danh quyết toán",
+      "amountsTitle": "Số tiền do backend tính",
+      "sourceTitle": "Dữ liệu nguồn tại thời điểm ghi nhận",
+      "beneficiaryTitle": "Bên hưởng và chủ thể",
+      "periodTitle": "Kỳ quyết toán",
+      "revenueEntriesTitle": "Tập bút toán doanh thu",
+      "linesTitle": "Dòng quyết toán chỉ đọc",
+      "lifecycleTitle": "Thông tin vòng đời",
+      "freeTextTitle": "Ghi chú"
+    },
+    "lines": {
+      "caption": "Dòng quyết toán chỉ đọc",
+      "revenueEntryId": "ID bút toán doanh thu",
+      "revenueEntryCodeSnapshot": "Mã doanh thu tại thời điểm ghi nhận",
+      "revenueKindSnapshot": "Loại doanh thu tại thời điểm ghi nhận",
+      "revenueRecognizedAmountSnapshot": "Số tiền đã ghi nhận tại thời điểm ghi nhận",
+      "lineSettlementAmount": "Số tiền quyết toán"
+    },
+    "related": {
+      "navigationTitle": "Điều hướng liên quan",
+      "sourceRule": "Quy tắc nguồn",
+      "sourceContract": "Hợp đồng nguồn tại thời điểm ghi nhận",
+      "beneficiary": "Bên hưởng tại thời điểm ghi nhận",
+      "subjectTalent": "Talent"
+    },
+    "actionRail": {
+      "title": "Hành động quyết toán hoa hồng"
+    }
+  }
+}

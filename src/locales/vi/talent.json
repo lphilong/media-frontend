@@ -1,0 +1,180 @@
+{
+  "page": {
+    "title": "Talent",
+    "subtitle": "Quản lý định danh, phân công và thời hạn Talent.",
+    "placeholder": "Luồng nghiệp vụ Talent chưa được triển khai."
+  },
+  "fields": {
+    "talentCode": "Mã Talent",
+    "stageName": "Nghệ danh",
+    "legalName": "Họ và tên",
+    "displayShortName": "Tên ngắn hiển thị",
+    "talentOrigin": "Nguồn Talent",
+    "selectTalentOrigin": "Chọn nguồn Talent",
+    "managerEmploymentProfileId": "ID hồ sơ quản lý",
+    "newManagerEmploymentProfileId": "ID hồ sơ quản lý mới",
+    "linkedEmploymentProfileId": "ID hồ sơ nhân sự liên kết",
+    "commercialParticipationStatus": "Trạng thái tham gia thương mại",
+    "newCommercialParticipationStatus": "Trạng thái tham gia thương mại mới",
+    "livestreamEligible": "Đủ điều kiện livestream",
+    "eventEligible": "Đủ điều kiện sự kiện",
+    "externalRef": "Tham chiếu bên ngoài",
+    "profileSummary": "Tóm tắt hồ sơ",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật"
+  },
+  "placeholders": {
+    "optional": "Không bắt buộc",
+    "clearToUnset": "Để trống để xóa gán quản lý"
+  },
+  "states": {
+    "emptyTitle": "Không tìm thấy Talent",
+    "emptyMessage": "Thử cập nhật tìm kiếm hoặc bộ lọc.",
+    "loadErrorTitle": "Không tải được Talent",
+    "loadErrorMessage": "Không thể tải dữ liệu Talent."
+  },
+  "filters": {
+    "searchPlaceholder": "Nhập mã Talent",
+    "operationalStatus": "Trạng thái vận hành",
+    "allOperationalStatuses": "Tất cả trạng thái vận hành",
+    "talentOrigin": "Nguồn Talent",
+    "allTalentOrigins": "Tất cả nguồn Talent",
+    "managerEmploymentProfileId": "Quản lý",
+    "managerEmploymentProfileIdPlaceholder": "ID hồ sơ quản lý",
+    "hasLinkedEmploymentProfile": "Liên kết hồ sơ nhân sự",
+    "allLinkedEmploymentProfileStates": "Tất cả trạng thái liên kết hồ sơ",
+    "linkedOnly": "Đã liên kết",
+    "unlinkedOnly": "Chưa liên kết",
+    "commercialParticipationStatus": "Tham gia thương mại",
+    "allCommercialParticipationStatuses": "Tất cả trạng thái tham gia thương mại",
+    "livestreamEligible": "Đủ điều kiện livestream",
+    "eventEligible": "Đủ điều kiện sự kiện",
+    "allEligibilityStates": "Tất cả trạng thái đủ điều kiện"
+  },
+  "origins": {
+    "INTERNAL": "Nội bộ",
+    "EXTERNAL": "Bên ngoài"
+  },
+  "commercialStatuses": {
+    "ALLOWED": "Được phép",
+    "BLOCKED": "Bị chặn"
+  },
+  "sort": {
+    "talentCode": "Mã Talent",
+    "stageName": "Nghệ danh",
+    "legalName": "Tên pháp lý",
+    "createdAt": "Thời điểm tạo"
+  },
+  "statuses": {
+    "ACTIVE": "Đang hoạt động",
+    "SUSPENDED": "Đã tạm ngưng",
+    "INACTIVE": "Không hoạt động",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "boolean": {
+    "true": "Có",
+    "false": "Không"
+  },
+  "actions": {
+    "create": "Tạo Talent",
+    "closeCreate": "Đóng tạo mới",
+    "open": "Mở",
+    "edit": "Chỉnh sửa",
+    "assignManager": "Gán quản lý",
+    "linkEmploymentProfile": "Liên kết hồ sơ nhân sự",
+    "updateCommercialParticipation": "Cập nhật tham gia thương mại",
+    "suspend": "Tạm ngưng",
+    "reactivate": "Kích hoạt lại",
+    "deactivate": "Vô hiệu hóa",
+    "archive": "Lưu trữ"
+  },
+  "table": {
+    "caption": "Danh sách Talent",
+    "talentCode": "Mã Talent",
+    "stageName": "Nghệ danh",
+    "legalName": "Tên pháp lý",
+    "displayShortName": "Tên ngắn",
+    "talentOrigin": "Nguồn",
+    "operationalStatus": "Trạng thái",
+    "managerEmploymentProfileId": "Quản lý",
+    "linkedEmploymentProfileId": "Hồ sơ liên kết",
+    "commercialParticipationStatus": "Thương mại",
+    "livestreamEligible": "Đủ điều kiện livestream",
+    "eventEligible": "Đủ điều kiện sự kiện",
+    "createdAt": "Thời điểm tạo",
+    "actions": "Hành động"
+  },
+  "detail": {
+    "summaryTitle": "Tóm tắt Talent",
+    "assignmentTitle": "Phân công và cờ thương mại"
+  },
+  "related": {
+    "navigationTitle": "Điều hướng liên quan",
+    "talentGroups": "Nhóm Talent",
+    "platformAccounts": "Tài khoản nền tảng",
+    "workShifts": "Ca làm việc",
+    "events": "Sự kiện",
+    "talentKpi": "KPI Talent",
+    "revenueLedger": "Sổ doanh thu",
+    "commissionSettlements": "Quyết toán hoa hồng",
+    "contractRegistry": "Sổ hợp đồng",
+    "openFilteredList": "Mở danh sách đã lọc",
+    "unavailable": "Không khả dụng"
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo Talent",
+      "subtitle": "Tạo bản ghi Talent mới.",
+      "submit": "Tạo",
+      "pending": "Đang tạo..."
+    },
+    "edit": {
+      "title": "Chỉnh sửa Talent",
+      "subtitle": "Cập nhật các trường Talent được phép chỉnh sửa.",
+      "submit": "Lưu",
+      "pending": "Đang lưu..."
+    },
+    "assignManager": {
+      "title": "Gán quản lý",
+      "subtitle": "Cập nhật quan hệ quản lý.",
+      "submit": "Gán",
+      "pending": "Đang gán..."
+    },
+    "linkEmploymentProfile": {
+      "title": "Liên kết hồ sơ nhân sự",
+      "subtitle": "Gắn hồ sơ nhân sự vào Talent này.",
+      "submit": "Liên kết",
+      "pending": "Đang liên kết..."
+    },
+    "commercialParticipation": {
+      "title": "Cập nhật tham gia thương mại",
+      "subtitle": "Cập nhật trạng thái tham gia thương mại và các cờ đủ điều kiện.",
+      "submit": "Cập nhật",
+      "pending": "Đang cập nhật..."
+    }
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
+    "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
+    "blockedCommercialStatus": "Khi chặn tham gia thương mại, cả hai cờ đủ điều kiện phải là false.",
+    "managerCannotMatchTalentId": "Hồ sơ quản lý không được trùng ID Talent này."
+  },
+  "feedback": {
+    "created": "Đã tạo Talent.",
+    "updated": "Đã cập nhật Talent.",
+    "managerAssigned": "Đã gán quản lý.",
+    "employmentProfileLinked": "Đã liên kết hồ sơ nhân sự.",
+    "commercialParticipationUpdated": "Đã cập nhật tham gia thương mại.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời Talent."
+  },
+  "confirm": {
+    "suspend": "Đình chỉ Talent này?",
+    "reactivate": "Kích hoạt lại Talent này?",
+    "deactivate": "Vô hiệu hóa Talent này?",
+    "archive": "Lưu trữ Talent này?"
+  },
+  "actionRail": {
+    "title": "Hành động Talent"
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "page": {
+    "title": "艺人",
+    "subtitle": "管理艺人身份、分配和生命周期。",
+    "placeholder": "艺人业务流程尚未在本阶段实现。"
+  },
+  "fields": {
+    "talentCode": "艺人编码",
+    "stageName": "艺名",
+    "legalName": "法定名称",
+    "displayShortName": "显示简称",
+    "talentOrigin": "艺人来源",
+    "selectTalentOrigin": "选择艺人来源",
+    "managerEmploymentProfileId": "主管档案 ID",
+    "newManagerEmploymentProfileId": "新主管档案 ID",
+    "linkedEmploymentProfileId": "关联员工档案ID",
+    "commercialParticipationStatus": "商业参与状态",
+    "newCommercialParticipationStatus": "新商业参与状态",
+    "livestreamEligible": "可直播",
+    "eventEligible": "可参与活动",
+    "externalRef": "外部引用",
+    "profileSummary": "档案摘要",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "placeholders": {
+    "optional": "可选",
+    "clearToUnset": "留空以清除主管分配"
+  },
+  "states": {
+    "emptyTitle": "未找到艺人",
+    "emptyMessage": "请尝试更新搜索或筛选条件。",
+    "loadErrorTitle": "无法加载艺人",
+    "loadErrorMessage": "无法加载艺人数据。"
+  },
+  "filters": {
+    "searchPlaceholder": "按艺人编码、艺名、法定名称或简称搜索",
+    "operationalStatus": "运营状态",
+    "allOperationalStatuses": "所有运营状态",
+    "talentOrigin": "艺人来源",
+    "allTalentOrigins": "所有艺人来源",
+    "managerEmploymentProfileId": "主管",
+    "managerEmploymentProfileIdPlaceholder": "主管档案 ID",
+    "hasLinkedEmploymentProfile": "关联员工档案",
+    "allLinkedEmploymentProfileStates": "所有档案关联状态",
+    "linkedOnly": "仅已关联",
+    "unlinkedOnly": "仅未关联",
+    "commercialParticipationStatus": "商业参与",
+    "allCommercialParticipationStatuses": "所有商业参与状态",
+    "livestreamEligible": "可直播",
+    "eventEligible": "可参与活动",
+    "allEligibilityStates": "所有资格状态"
+  },
+  "origins": {
+    "INTERNAL": "内部",
+    "EXTERNAL": "外部"
+  },
+  "commercialStatuses": {
+    "ALLOWED": "允许",
+    "BLOCKED": "已阻止"
+  },
+  "sort": {
+    "talentCode": "艺人编码",
+    "stageName": "艺名",
+    "legalName": "法定名称",
+    "createdAt": "创建时间"
+  },
+  "statuses": {
+    "ACTIVE": "启用",
+    "SUSPENDED": "已暂停",
+    "INACTIVE": "停用",
+    "ARCHIVED": "已归档"
+  },
+  "boolean": {
+    "true": "是",
+    "false": "否"
+  },
+  "actions": {
+    "create": "新建艺人",
+    "closeCreate": "关闭新建",
+    "open": "打开",
+    "edit": "编辑",
+    "assignManager": "分配主管",
+    "linkEmploymentProfile": "关联员工档案",
+    "updateCommercialParticipation": "更新商业参与",
+    "suspend": "暂停",
+    "reactivate": "重新启用",
+    "deactivate": "停用",
+    "archive": "归档"
+  },
+  "table": {
+    "caption": "艺人列表",
+    "talentCode": "艺人编码",
+    "stageName": "艺名",
+    "legalName": "法定名称",
+    "displayShortName": "简称",
+    "talentOrigin": "来源",
+    "operationalStatus": "状态",
+    "managerEmploymentProfileId": "主管",
+    "linkedEmploymentProfileId": "关联档案",
+    "commercialParticipationStatus": "商业",
+    "livestreamEligible": "可直播",
+    "eventEligible": "可参与活动",
+    "createdAt": "已创建",
+    "actions": "操作"
+  },
+  "detail": {
+    "summaryTitle": "艺人摘要",
+    "assignmentTitle": "分配和商业标记"
+  },
+  "related": {
+    "navigationTitle": "关联导航",
+    "talentGroups": "艺人组",
+    "platformAccounts": "平台账号",
+    "workShifts": "工作班次",
+    "events": "活动",
+    "talentKpi": "艺人 KPI",
+    "revenueLedger": "收入台账",
+    "commissionSettlements": "佣金结算",
+    "contractRegistry": "合同登记",
+    "openFilteredList": "打开筛选列表",
+    "unavailable": "不可用"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建艺人",
+      "subtitle": "新建艺人记录。",
+      "submit": "新建",
+      "pending": "新建中..."
+    },
+    "edit": {
+      "title": "编辑艺人",
+      "subtitle": "更新艺人可编辑字段。",
+      "submit": "保存",
+      "pending": "保存中..."
+    },
+    "assignManager": {
+      "title": "分配主管",
+      "subtitle": "更新主管关系。",
+      "submit": "分配",
+      "pending": "分配中..."
+    },
+    "linkEmploymentProfile": {
+      "title": "关联员工档案",
+      "subtitle": "将员工档案关联到此艺人。",
+      "submit": "关联",
+      "pending": "关联中..."
+    },
+    "commercialParticipation": {
+      "title": "更新商业参与",
+      "subtitle": "更新商业参与和资格标记。",
+      "submit": "更新",
+      "pending": "更新中..."
+    }
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "值只能使用支持的标记字符。",
+    "invalidReferenceToken": "引用 ID 包含不支持的字符。",
+    "blockedCommercialStatus": "阻止商业参与时，两个资格标记都必须为 false。",
+    "managerCannotMatchTalentId": "主管档案不能匹配此艺人 ID。"
+  },
+  "feedback": {
+    "created": "艺人已创建。",
+    "updated": "艺人已更新。",
+    "managerAssigned": "主管分配已更新。",
+    "employmentProfileLinked": "员工档案已关联。",
+    "commercialParticipationUpdated": "商业参与已更新。",
+    "lifecycleUpdated": "艺人生命周期已更新。"
+  },
+  "confirm": {
+    "suspend": "暂停此艺人？",
+    "reactivate": "重新启用此艺人？",
+    "deactivate": "停用此艺人？",
+    "archive": "归档此艺人？"
+  },
+  "actionRail": {
+    "title": "艺人操作"
+  }
+}

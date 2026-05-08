@@ -1,0 +1,165 @@
+{
+  "page": {
+    "title": "Sổ doanh thu",
+    "subtitle": "Quản lý bút toán doanh thu thương mại và vòng đời doanh thu ở phạm vi toàn cục.",
+    "placeholder": "Luồng nghiệp vụ sổ doanh thu đã được triển khai trong Wave 8."
+  },
+  "sort": {
+    "recognizedAt": "Thời điểm ghi nhận",
+    "revenueEntryCode": "Mã bút toán doanh thu",
+    "createdAt": "Thời điểm tạo"
+  },
+  "filters": {
+    "searchPlaceholder": "Nhập mã bút toán",
+    "status": "Trạng thái",
+    "allStatuses": "Tất cả chưa lưu trữ",
+    "subjectTalentId": "ID Talent",
+    "subjectTalentIdPlaceholder": "ID Talent",
+    "attributionPlatformAccountId": "Tài khoản nền tảng",
+    "attributionPlatformAccountIdPlaceholder": "ID tài khoản nền tảng",
+    "attributionEventId": "Sự kiện",
+    "attributionEventIdPlaceholder": "ID sự kiện",
+    "revenueKind": "Loại doanh thu",
+    "allRevenueKinds": "Bất kỳ loại doanh thu nào",
+    "entrySource": "Nguồn ghi nhận",
+    "allEntrySources": "Bất kỳ nguồn nào",
+    "currencyCode": "Tiền tệ",
+    "currencyCodePlaceholder": "VND",
+    "windowStartAt": "Thời gian bắt đầu",
+    "windowEndAt": "Thời gian kết thúc"
+  },
+  "relatedModes": {
+    "by-talent": "Bút toán doanh thu liên quan theo Talent",
+    "by-platform": "Bút toán doanh thu liên quan theo tài khoản nền tảng",
+    "by-event": "Bút toán doanh thu liên quan theo sự kiện"
+  },
+  "statuses": {
+    "DRAFT": "Nháp",
+    "FINALIZED": "Đã chốt",
+    "RECONCILED": "Đã đối soát",
+    "VOIDED": "Đã hủy hiệu lực",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "revenueKinds": {
+    "PLATFORM_LIVESTREAM": "Doanh thu livestream nền tảng",
+    "PLATFORM_CONTENT": "Doanh thu nền tảng nội dung",
+    "EVENT_OPERATIONAL": "Doanh thu vận hành sự kiện"
+  },
+  "entrySources": {
+    "MANUAL": "Thủ công"
+  },
+  "fields": {
+    "revenueEntryCode": "Mã bút toán doanh thu",
+    "title": "Tiêu đề",
+    "subjectTalentId": "ID Talent",
+    "attributionPlatformAccountId": "ID tài khoản nền tảng ghi nhận",
+    "attributionEventId": "ID sự kiện ghi nhận",
+    "revenueKind": "Loại doanh thu",
+    "entrySource": "Nguồn ghi nhận",
+    "currencyCode": "Mã tiền tệ",
+    "recognizedAmount": "Số tiền ghi nhận",
+    "recognizedAt": "Thời điểm ghi nhận",
+    "finalizedAt": "Thời điểm chốt",
+    "reconciledAt": "Thời điểm đối soát",
+    "voidedAt": "Thời điểm hủy hiệu lực",
+    "reconciliationReference": "Tham chiếu đối soát",
+    "description": "Mô tả",
+    "externalRef": "Tham chiếu bên ngoài",
+    "status": "Trạng thái",
+    "scopeBoundary": "Ranh giới phạm vi",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật"
+  },
+  "table": {
+    "caption": "Danh sách bút toán doanh thu",
+    "revenueEntryCode": "Mã bút toán",
+    "title": "Tiêu đề",
+    "subjectTalentId": "Talent",
+    "attributionPlatformAccountId": "Nền tảng",
+    "attributionEventId": "Sự kiện",
+    "revenueKind": "Loại",
+    "entrySource": "Nguồn",
+    "status": "Trạng thái",
+    "currencyCode": "Tiền tệ",
+    "recognizedAmount": "Số tiền",
+    "recognizedAt": "Thời điểm ghi nhận",
+    "actions": "Hành động"
+  },
+  "actions": {
+    "create": "Tạo bút toán doanh thu",
+    "closeCreate": "Đóng tạo mới",
+    "open": "Mở",
+    "editDraftCore": "Chỉnh sửa nội dung nháp",
+    "finalize": "Chốt",
+    "reconcile": "Đối soát",
+    "void": "Hủy hiệu lực",
+    "archive": "Lưu trữ"
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo bút toán doanh thu",
+      "subtitle": "Tạo bút toán doanh thu thủ công ở phạm vi toàn cục.",
+      "submit": "Tạo",
+      "pending": "Đang tạo"
+    },
+    "draftCore": {
+      "title": "Chỉnh sửa nội dung nháp",
+      "subtitle": "Mã và nguồn bút toán không thể đổi sau khi tạo.",
+      "submit": "Lưu nội dung nháp",
+      "pending": "Đang lưu"
+    },
+    "reconcile": {
+      "title": "Đối soát bút toán doanh thu",
+      "subtitle": "Tham chiếu đối soát chỉ được gửi trong hành động này.",
+      "submit": "Đối soát",
+      "pending": "Đang đối soát"
+    }
+  },
+  "detail": {
+    "archivedReadOnly": "Bút toán doanh thu đã lưu trữ chỉ đọc.",
+    "identityTitle": "Định danh bút toán",
+    "globalOnly": "Chỉ dùng phạm vi toàn cục",
+    "revenueTitle": "Doanh thu",
+    "attributionTitle": "Ghi nhận",
+    "lifecycleTitle": "Vòng đời",
+    "freeTextTitle": "Ghi chú"
+  },
+  "related": {
+    "navigationTitle": "Bản ghi thương mại liên quan",
+    "kpiByTalent": "KPI theo cùng Talent",
+    "kpiByPlatform": "KPI theo cùng nền tảng",
+    "kpiByEvent": "KPI theo cùng sự kiện",
+    "commissionSettlements": "Quyết toán hoa hồng theo bút toán doanh thu"
+  },
+  "actionRail": {
+    "title": "Hành động sổ doanh thu"
+  },
+  "states": {
+    "emptyTitle": "Không có bút toán doanh thu",
+    "emptyMessage": "Không có bút toán nào khớp với bộ lọc hiện tại.",
+    "loadErrorTitle": "Không tải được bút toán doanh thu",
+    "loadErrorMessage": "Không tải được bút toán doanh thu."
+  },
+  "confirm": {
+    "finalize": "Chốt bút toán doanh thu này? Backend vẫn có thể từ chối nếu còn ràng buộc.",
+    "reconcile": "Đối soát bút toán doanh thu này?",
+    "void": "Hủy hiệu lực bút toán doanh thu này? Các quyết toán phụ thuộc có thể chặn thao tác.",
+    "archive": "Lưu trữ bút toán doanh thu này? Bút toán đã lưu trữ vẫn xem được chi tiết."
+  },
+  "feedback": {
+    "created": "Đã tạo bút toán doanh thu.",
+    "updated": "Đã cập nhật nội dung nháp của bút toán doanh thu.",
+    "reconciled": "Đã đối soát bút toán doanh thu.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời doanh thu."
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối.",
+    "invalidCurrency": "Dùng đúng 3 chữ cái viết hoa cho mã tiền tệ.",
+    "invalidAmount": "Nhập số tiền dương, tối đa 2 chữ số thập phân.",
+    "invalidTimestamp": "Nhập timestamp số nguyên hợp lệ.",
+    "futureTimestamp": "Thời điểm ghi nhận không được nằm trong tương lai.",
+    "attributionPlatformRequired": "Doanh thu nền tảng yêu cầu tài khoản nền tảng.",
+    "attributionEventRequired": "Doanh thu sự kiện yêu cầu sự kiện."
+  }
+}

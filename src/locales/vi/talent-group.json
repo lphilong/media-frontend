@@ -1,0 +1,158 @@
+{
+  "page": {
+    "title": "Nhóm Talent",
+    "subtitle": "Quản lý thành viên và nhóm Talent.",
+    "placeholder": "Luồng nghiệp vụ nhóm Talent chưa được triển khai chủ đích."
+  },
+  "fields": {
+    "groupCode": "Mã nhóm",
+    "name": "Họ và Tên",
+    "shortName": "Tên ngắn",
+    "status": "Trạng thái",
+    "displayOrder": "Thứ tự hiển thị",
+    "description": "Mô tả",
+    "externalRef": "Tham chiếu bên ngoài",
+    "talentId": "ID Talent",
+    "lineupOrder": "Thứ tự đội hình",
+    "newLineupOrder": "Thứ tự đội hình mới",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật"
+  },
+  "placeholders": {
+    "optional": "Không bắt buộc"
+  },
+  "states": {
+    "emptyTitle": "Không tìm thấy nhóm Talent",
+    "emptyMessage": "Thử cập nhật tìm kiếm hoặc bộ lọc.",
+    "loadErrorTitle": "Không tải được nhóm Talent",
+    "loadErrorMessage": "Không thể tải dữ liệu nhóm Talent."
+  },
+  "filters": {
+    "searchPlaceholder": "Tìm theo mã nhóm, tên hoặc tên ngắn",
+    "status": "Trạng thái",
+    "allStatuses": "Tất cả trạng thái",
+    "containsTalentId": "ID Talent",
+    "containsTalentIdPlaceholder": "ID Talent",
+    "talentId": "ID Talent",
+    "talentIdPlaceholder": "ID Talent liên quan"
+  },
+  "sort": {
+    "groupCode": "Mã nhóm",
+    "name": "Tên",
+    "createdAt": "Thời điểm tạo",
+    "displayOrder": "Thứ tự hiển thị"
+  },
+  "statuses": {
+    "ACTIVE": "Đang hoạt động",
+    "INACTIVE": "Không hoạt động",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "membershipStatuses": {
+    "ACTIVE": "Đang hoạt động",
+    "INACTIVE": "Không hoạt động",
+    "REMOVED": "Đã xóa khỏi nhóm"
+  },
+  "actions": {
+    "create": "Tạo nhóm Talent",
+    "closeCreate": "Đóng tạo mới",
+    "exitByTalent": "Thoát chế độ theo Talent",
+    "open": "Mở",
+    "edit": "Chỉnh sửa",
+    "addMember": "Thêm thành viên",
+    "updateLineup": "Cập nhật thứ tự đội hình",
+    "deactivateMember": "Vô hiệu hóa thành viên",
+    "reactivateMember": "Kích hoạt lại thành viên",
+    "removeMember": "Xóa thành viên",
+    "activate": "Kích hoạt",
+    "deactivate": "Vô hiệu hóa",
+    "archive": "Lưu trữ"
+  },
+  "table": {
+    "caption": "Danh sách nhóm Talent",
+    "groupCode": "Mã nhóm",
+    "name": "Tên",
+    "shortName": "Tên ngắn",
+    "status": "Trạng thái",
+    "displayOrder": "Thứ tự",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật",
+    "actions": "Hành động"
+  },
+  "membersTable": {
+    "caption": "Thành viên nhóm",
+    "talentId": "ID Talent",
+    "membershipStatus": "Trạng thái thành viên",
+    "lineupOrder": "Thứ tự đội hình",
+    "joinedAt": "Thời điểm tham gia",
+    "leftAt": "Thời điểm rời nhóm",
+    "actions": "Hành động"
+  },
+  "detail": {
+    "summaryTitle": "Tóm tắt nhóm",
+    "metadataTitle": "Metadata nhóm"
+  },
+  "related": {
+    "byTalentModeLabel": "Theo Talent",
+    "navigationTitle": "Điều hướng liên quan",
+    "platformAccounts": "Tài khoản nền tảng",
+    "workShifts": "Ca làm việc",
+    "events": "Sự kiện",
+    "openFilteredList": "Mở danh sách đã lọc",
+    "unavailable": "Không khả dụng",
+    "membersTitle": "Danh sách thành viên",
+    "membersEmptyTitle": "Không có thành viên đang hoạt động hoặc tạm ngưng",
+    "membersEmptyMessage": "Nhóm này hiện chưa có thành viên hiển thị."
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo nhóm Talent",
+      "subtitle": "Tạo nhóm Talent mới.",
+      "submit": "Tạo",
+      "pending": "Đang tạo..."
+    },
+    "edit": {
+      "title": "Chỉnh sửa nhóm Talent",
+      "subtitle": "Cập nhật các trường nhóm có thể chỉnh sửa.",
+      "submit": "Lưu",
+      "pending": "Đang lưu..."
+    },
+    "addMember": {
+      "title": "Thêm thành viên",
+      "subtitle": "Thêm Talent vào nhóm này.",
+      "submit": "Thêm",
+      "pending": "Đang thêm..."
+    },
+    "updateLineup": {
+      "title": "Cập nhật thứ tự đội hình",
+      "subtitle": "Cập nhật thứ tự hiển thị của thành viên trong nhóm.",
+      "submit": "Cập nhật",
+      "pending": "Đang cập nhật..."
+    }
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
+    "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
+    "invalidDisplayOrder": "Thứ tự hiển thị phải là số nguyên lớn hơn hoặc bằng 0.",
+    "invalidLineupOrder": "Thứ tự đội hình phải là số nguyên lớn hơn hoặc bằng 0."
+  },
+  "feedback": {
+    "created": "Đã tạo nhóm Talent.",
+    "updated": "Đã cập nhật nhóm Talent.",
+    "memberAdded": "Đã thêm thành viên.",
+    "lineupUpdated": "Đã cập nhật thứ tự đội hình.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời nhóm.",
+    "membershipLifecycleUpdated": "Đã cập nhật vòng đời thành viên."
+  },
+  "confirm": {
+    "activate": "Kích hoạt nhóm này?",
+    "deactivate": "Vô hiệu hóa nhóm này?",
+    "archive": "Lưu trữ nhóm này?",
+    "deactivateMember": "Vô hiệu hóa thành viên này?",
+    "reactivateMember": "Kích hoạt lại thành viên này?",
+    "removeMember": "Xóa thành viên này?"
+  },
+  "actionRail": {
+    "title": "Hành động nhóm Talent"
+  }
+}

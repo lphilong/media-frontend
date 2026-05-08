@@ -1,0 +1,573 @@
+import i18n from 'i18next';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+import {
+  fetchEvents,
+  performEventLifecycleAction,
+  replaceEventAssignments,
+} from '@modules/event-assignment/api/event-assignment.api';
+import { createEventActionRailItems } from '@modules/event-assignment/actions/event-assignment-action-rail';
+import {
+  EventCreateSurface,
+  EventEditSurface,
+  EventReplaceAssignmentsSurface,
+  EventReplacePlatformAccountsSurface,
+  EventReplaceStudioResourcesSurface,
+  EventRescheduleSurface,
+} from '@modules/event-assignment/forms/event-assignment-mutation-forms';
+import type {
+  EventAssignmentInput,
+  EventRecord,
+} from '@modules/event-assignment/types/event-assignment.types';
+import { apiRequest } from '@shared/api';
+import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
+import {
+  eventByAssignmentQueryConfig,
+  eventByPlatformQueryConfig,
+  eventByResourceQueryConfig,
+  eventFlatListQueryConfig,
+  parseScreenQueryParams,
+  serializeScreenQueryParams,
+} from '@shared/query';
+
+vi.mock('@shared/api', () => ({
+  apiRequest: vi.fn(),
+}));
+
+const apiRequestMock = vi.mocked(apiRequest);
+
+const eventRecord: EventRecord = {
+  id: 'event-001',
+  eventCode: 'EVT001',
+  title: 'Launch event',
+  studioResourceIds: ['studio-001'],
+  platformAccountIds: ['platform-001'],
+  status: 'SCHEDULED',
+  eventStartAt: 100,
+  eventEndAt: 200,
+  description: null,
+  externalRef: null,
+  createdAt: 1,
+  updatedAt: 2,
+};
+
+const replacementAssignments: EventAssignmentInput[] = [
+  {
+    assignmentKind: 'EMPLOYMENT_PROFILE',
+    assignmentEmploymentProfileId: 'ep-001',
+  },
+  {
+    assignmentKind: 'TALENT',
+    assignmentTalentId: 'talent-001',
+  },
+  {
+    assignmentKind: 'TALENT_GROUP',
+    assignmentTalentGroupId: 'group-001',
+  },
+];
+
+describe('event assignment wave 6 query and payload shaping', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await setLocale(DEFAULT_LOCALE);
+  });
+
+  it('parses and serializes only documented flat-list query keys without scope', () => {
+    const query = parseScreenQueryParams(
+      new URLSearchParams(
+        'status=SCHEDULED&assignmentKind=EMPLOYMENT_PROFILE&assignmentEmploymentProfileId=ep-001&containsStudioResourceId=studio-001&containsPlatformAccountId=platform-001&windowStartAt=&windowEndAt=200&limit=50&cursor=opaque&search=EVT001&sortBy=eventStartAt&sortDirection=desc&page=2&scope=global&scopeGrants=x',
+      ),
+      eventFlatListQueryConfig,
+    );
+
+    expect(query).toEqual({
+      status: 'SCHEDULED',
+      assignmentKind: 'EMPLOYMENT_PROFILE',
+      assignmentEmploymentProfileId: 'ep-001',
+      containsStudioResourceId: 'studio-001',
+      containsPlatformAccountId: 'platform-001',
+      windowEndAt: 200,
+      limit: 50,
+      cursor: 'opaque',
+      search: 'EVT001',
+      sortBy: 'eventStartAt',
+      sortDirection: 'desc',
+    });
+
+    const params = serializeScreenQueryParams(
+      {
+        ...query,
+        page: 2,
+        scope: 'global',
+        scopeGrants: 'x',
+      },
+      eventFlatListQueryConfig,
+    );
+    expect(Array.from(params.keys()).sort()).toEqual([
+      'assignmentEmploymentProfileId',
+      'assignmentKind',
+      'containsPlatformAccountId',
+      'containsStudioResourceId',
+      'cursor',
+      'limit',
+      'search',
+      'sortBy',
+      'sortDirection',
+      'status',
+      'windowEndAt',
+    ]);
+    expect(params.get('scope')).toBeNull();
+    expect(params.get('scopeGrants')).toBeNull();
+    expect(params.get('page')).toBeNull();
+  });
+
+  it('normalizes every related Event query without search or scope', () => {
+    const byAssignment = parseScreenQueryParams(
+      new URLSearchParams(
+        'view=by-assignment&assignmentKind=TALENT&assignmentTalentId=talent-001&search=nope&scope=global',
+      ),
+      eventByAssignmentQueryConfig,
+    );
+    expect(byAssignment).toEqual({
+      view: 'by-assignment',
+      assignmentKind: 'TALENT',
+      assignmentTalentId: 'talent-001',
+    });
+
+    const byResource = parseScreenQueryParams(
+      new URLSearchParams('view=by-resource&studioResourceId=studio-001&search=nope&scope=global'),
+      eventByResourceQueryConfig,
+    );
+    expect(byResource).toEqual({
+      view: 'by-resource',
+      studioResourceId: 'studio-001',
+    });
+
+    const byPlatformParams = serializeScreenQueryParams(
+      {
+        view: 'by-platform',
+        platformAccountId: 'platform-001',
+        status: 'SCHEDULED',
+        search: 'nope',
+        containsPlatformAccountId: 'alias-not-supported',
+        scope: 'global',
+      },
+      eventByPlatformQueryConfig,
+    );
+    expect(Array.from(byPlatformParams.keys()).sort()).toEqual([
+      'platformAccountId',
+      'status',
+      'view',
+    ]);
+  });
+
+  it('never emits Event scope or scopeGrants through the API layer', async () => {
+    apiRequestMock.mockResolvedValue({ data: [], meta: undefined });
+    await fetchEvents({
+      status: 'SCHEDULED',
+      scope: 'global',
+      scopeGrants: ['forbidden'],
+    } as Parameters<typeof fetchEvents>[0]);
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/admin/events',
+        params: {
+          status: 'SCHEDULED',
+          assignmentKind: undefined,
+          assignmentEmploymentProfileId: undefined,
+          assignmentTalentId: undefined,
+          assignmentTalentGroupId: undefined,
+          containsStudioResourceId: undefined,
+          containsPlatformAccountId: undefined,
+          windowStartAt: undefined,
+          windowEndAt: undefined,
+          limit: undefined,
+          cursor: undefined,
+          search: undefined,
+          sortBy: undefined,
+          sortDirection: undefined,
+        },
+      }),
+    );
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].params).not.toHaveProperty('scope');
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].params).not.toHaveProperty('scopeGrants');
+
+    apiRequestMock.mockResolvedValue({ data: eventRecord });
+    await performEventLifecycleAction('event-001', 'start');
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/events/event-001/start',
+        data: {},
+      }),
+    );
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('params');
+  });
+
+  it('sanitizes Event assignment replacement payloads to the exact full-set contract', async () => {
+    apiRequestMock.mockResolvedValue({ data: eventRecord });
+
+    await replaceEventAssignments('event-001', {
+      replacementAssignments: [
+        {
+          assignmentKind: 'EMPLOYMENT_PROFILE',
+          assignmentEmploymentProfileId: 'ep-001',
+          assignmentTalentId: 'talent-forbidden',
+          id: 'assignment-forbidden',
+          assignmentStatus: 'ACTIVE',
+          removedAt: 123,
+          createdAt: 456,
+          scope: 'global',
+          scopeGrants: ['forbidden'],
+        },
+        {
+          assignmentKind: 'TALENT_GROUP',
+          assignmentTalentGroupId: 'group-001',
+          assignmentEmploymentProfileId: 'ep-forbidden',
+        },
+      ],
+      scope: 'global',
+      scopeGrants: ['forbidden'],
+    } as Parameters<typeof replaceEventAssignments>[1]);
+
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/events/event-001/assignments',
+        data: {
+          replacementAssignments: [
+            {
+              assignmentKind: 'EMPLOYMENT_PROFILE',
+              assignmentEmploymentProfileId: 'ep-001',
+            },
+            {
+              assignmentKind: 'TALENT_GROUP',
+              assignmentTalentGroupId: 'group-001',
+            },
+          ],
+        },
+      }),
+    );
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('params');
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('scope');
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('scopeGrants');
+  });
+
+  it('submits the full initialized assignment replacement set when no rows are removed', async () => {
+    const user = userEvent.setup();
+    const onAssignments = vi.fn();
+    render(
+      <EventReplaceAssignmentsSurface
+        initialAssignments={replacementAssignments}
+        onCancel={() => undefined}
+        onSubmit={onAssignments}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:mutations.replaceAssignments.submit'),
+      }),
+    );
+
+    expect(onAssignments).toHaveBeenCalledWith({
+      replacementAssignments,
+    });
+  }, 20_000);
+
+  it('submits create, edit, reschedule, and replacement payloads exactly', async () => {
+    const user = userEvent.setup();
+
+    const onCreate = vi.fn();
+    const createRender = render(
+      <EventCreateSurface onCancel={() => undefined} onSubmit={onCreate} />,
+    );
+    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.eventCode')), 'EVT900');
+    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.title')), 'Wave 6 event');
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentId')),
+      'ep-001',
+    );
+    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.eventStartAt')), '1000');
+    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.eventEndAt')), '2000');
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.studioResourceIds')),
+      'studio-001',
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.platformAccountIds')),
+      'platform-001',
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:mutations.create.submit') }),
+    );
+    expect(onCreate).toHaveBeenCalledWith({
+      eventCode: 'EVT900',
+      title: 'Wave 6 event',
+      assignments: [
+        {
+          assignmentKind: 'EMPLOYMENT_PROFILE',
+          assignmentEmploymentProfileId: 'ep-001',
+        },
+      ],
+      eventStartAt: 1000,
+      eventEndAt: 2000,
+      studioResourceIds: ['studio-001'],
+      platformAccountIds: ['platform-001'],
+      description: null,
+      externalRef: null,
+    });
+    createRender.unmount();
+
+    const onEdit = vi.fn();
+    const editRender = render(
+      <EventEditSurface
+        initialValues={{ title: 'Wave 6 event', description: 'old', externalRef: 'EXT' }}
+        onCancel={() => undefined}
+        onSubmit={onEdit}
+      />,
+    );
+    await user.clear(screen.getByLabelText(i18n.t('event-assignment:fields.description')));
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:mutations.edit.submit') }),
+    );
+    expect(onEdit).toHaveBeenCalledWith({
+      title: 'Wave 6 event',
+      description: null,
+      externalRef: 'EXT',
+    });
+    editRender.unmount();
+
+    const onReschedule = vi.fn();
+    const rescheduleRender = render(
+      <EventRescheduleSurface
+        initialValues={{ eventStartAt: 1000, eventEndAt: 2000 }}
+        onCancel={() => undefined}
+        onSubmit={onReschedule}
+      />,
+    );
+    await user.clear(screen.getByLabelText(i18n.t('event-assignment:fields.newEventStartAt')));
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.newEventStartAt')),
+      '3000',
+    );
+    await user.clear(screen.getByLabelText(i18n.t('event-assignment:fields.newEventEndAt')));
+    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.newEventEndAt')), '4000');
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:mutations.reschedule.submit') }),
+    );
+    expect(onReschedule).toHaveBeenCalledWith({
+      newEventStartAt: 3000,
+      newEventEndAt: 4000,
+    });
+    rescheduleRender.unmount();
+
+    const onAssignments = vi.fn();
+    const assignmentRender = render(
+      <EventReplaceAssignmentsSurface
+        initialAssignments={replacementAssignments}
+        onCancel={() => undefined}
+        onSubmit={onAssignments}
+      />,
+    );
+    expect(
+      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 1 })),
+    ).toHaveValue('ep-001');
+    expect(
+      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 2 })),
+    ).toHaveValue('talent-001');
+    expect(
+      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 3 })),
+    ).toHaveValue('group-001');
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentKindIndexed', { index: 2 })),
+      'TALENT_GROUP',
+    );
+    await user.clear(
+      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 2 })),
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 2 })),
+      'group-001',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:mutations.replaceAssignments.submit'),
+      }),
+    );
+    expect(onAssignments).toHaveBeenCalledWith({
+      replacementAssignments: [
+        {
+          assignmentKind: 'EMPLOYMENT_PROFILE',
+          assignmentEmploymentProfileId: 'ep-001',
+        },
+        {
+          assignmentKind: 'TALENT_GROUP',
+          assignmentTalentGroupId: 'group-001',
+        },
+        {
+          assignmentKind: 'TALENT_GROUP',
+          assignmentTalentGroupId: 'group-001',
+        },
+      ],
+    });
+    assignmentRender.unmount();
+
+    const onResources = vi.fn();
+    const resourcesRender = render(
+      <EventReplaceStudioResourcesSurface
+        initialResourceIds={['studio-001']}
+        onCancel={() => undefined}
+        onSubmit={onResources}
+      />,
+    );
+    await user.clear(screen.getByLabelText(i18n.t('event-assignment:fields.newStudioResourceIds')));
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.newStudioResourceIds')),
+      'studio-002',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:mutations.replaceStudioResources.submit'),
+      }),
+    );
+    expect(onResources).toHaveBeenCalledWith({
+      newStudioResourceIds: ['studio-002'],
+    });
+    resourcesRender.unmount();
+
+    const onPlatforms = vi.fn();
+    render(
+      <EventReplacePlatformAccountsSurface
+        initialPlatformAccountIds={['platform-001']}
+        onCancel={() => undefined}
+        onSubmit={onPlatforms}
+      />,
+    );
+    await user.clear(
+      screen.getByLabelText(i18n.t('event-assignment:fields.newPlatformAccountIds')),
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.newPlatformAccountIds')),
+      'platform-003',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:mutations.replacePlatformAccounts.submit'),
+      }),
+    );
+    expect(onPlatforms).toHaveBeenCalledWith({
+      newPlatformAccountIds: ['platform-003'],
+    });
+  }, 20_000);
+
+  it('makes assignment removal explicit and blocks blind replacement when the roster is unavailable', async () => {
+    const user = userEvent.setup();
+
+    const onAssignments = vi.fn();
+    const assignmentRender = render(
+      <EventReplaceAssignmentsSurface
+        initialAssignments={replacementAssignments}
+        onCancel={() => undefined}
+        onSubmit={onAssignments}
+      />,
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:actions.removeAssignment', { index: 2 }),
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:mutations.replaceAssignments.submit'),
+      }),
+    );
+    expect(onAssignments).toHaveBeenCalledWith({
+      replacementAssignments: [
+        {
+          assignmentKind: 'EMPLOYMENT_PROFILE',
+          assignmentEmploymentProfileId: 'ep-001',
+        },
+        {
+          assignmentKind: 'TALENT_GROUP',
+          assignmentTalentGroupId: 'group-001',
+        },
+      ],
+    });
+    assignmentRender.unmount();
+
+    const blockedSubmit = vi.fn();
+    render(
+      <EventReplaceAssignmentsSurface
+        initialAssignments={[]}
+        rosterAvailable={false}
+        onCancel={() => undefined}
+        onSubmit={blockedSubmit}
+      />,
+    );
+    expect(
+      screen.getByText(i18n.t('event-assignment:validation.rosterUnavailable')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:mutations.replaceAssignments.submit'),
+      }),
+    ).toBeDisabled();
+  }, 20_000);
+
+  it('gates lifecycle actions including empty roster start and archived read-only behavior', () => {
+    const scheduledItems = createEventActionRailItems(i18n.t, eventRecord, {
+      onEdit: vi.fn(),
+      onReschedule: vi.fn(),
+      onReplaceAssignments: vi.fn(),
+      onReplaceStudioResources: vi.fn(),
+      onReplacePlatformAccounts: vi.fn(),
+      onLifecycleAction: vi.fn(),
+      assignmentRosterKnown: true,
+      hasActiveAssignments: true,
+    });
+    expect(scheduledItems.find((item) => item.id === 'start')?.disabled).toBeFalsy();
+
+    const emptyRosterItems = createEventActionRailItems(i18n.t, eventRecord, {
+      onEdit: vi.fn(),
+      onReschedule: vi.fn(),
+      onReplaceAssignments: vi.fn(),
+      onReplaceStudioResources: vi.fn(),
+      onReplacePlatformAccounts: vi.fn(),
+      onLifecycleAction: vi.fn(),
+      assignmentRosterKnown: true,
+      hasActiveAssignments: false,
+    });
+    expect(emptyRosterItems.find((item) => item.id === 'start')?.disabled).toBe(true);
+
+    const unknownRosterItems = createEventActionRailItems(i18n.t, eventRecord, {
+      onEdit: vi.fn(),
+      onReschedule: vi.fn(),
+      onReplaceAssignments: vi.fn(),
+      onReplaceStudioResources: vi.fn(),
+      onReplacePlatformAccounts: vi.fn(),
+      onLifecycleAction: vi.fn(),
+      assignmentRosterKnown: false,
+      hasActiveAssignments: false,
+    });
+    expect(unknownRosterItems.find((item) => item.id === 'replace-assignments')?.disabled).toBe(
+      true,
+    );
+
+    const archivedItems = createEventActionRailItems(
+      i18n.t,
+      { ...eventRecord, status: 'ARCHIVED' },
+      {
+        onEdit: vi.fn(),
+        onReschedule: vi.fn(),
+        onReplaceAssignments: vi.fn(),
+        onReplaceStudioResources: vi.fn(),
+        onReplacePlatformAccounts: vi.fn(),
+        onLifecycleAction: vi.fn(),
+      },
+    );
+    expect(archivedItems.every((item) => item.disabled)).toBe(true);
+  });
+});

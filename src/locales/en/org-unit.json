@@ -1,0 +1,142 @@
+{
+  "page": {
+    "title": "Org Units",
+    "subtitle": "Organization structure and lifecycle management",
+    "placeholder": "Org Unit list/filter/actions are intentionally not implemented yet."
+  },
+  "fields": {
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "parentOrgUnitId": "Parent Org Unit ID",
+    "newParentOrgUnitId": "New Parent Org Unit ID",
+    "displayOrder": "Display Order",
+    "depth": "Depth",
+    "ancestorChain": "Ancestor Chain",
+    "externalRef": "External Reference",
+    "description": "Description",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At"
+  },
+  "placeholders": {
+    "typeToken": "Example: DEPARTMENT",
+    "parentOrgUnitId": "Leave blank for root",
+    "optional": "Optional"
+  },
+  "states": {
+    "emptyTitle": "No org units found",
+    "emptyMessage": "Try updating search or filters.",
+    "loadErrorTitle": "Unable to load org units",
+    "loadErrorMessage": "Org unit data could not be loaded."
+  },
+  "filters": {
+    "searchPlaceholder": "Search by code or name",
+    "status": "Status",
+    "type": "Type",
+    "typePlaceholder": "Filter by type token",
+    "parentOrgUnitId": "Parent Org Unit",
+    "parentOrgUnitIdPlaceholder": "Parent ID",
+    "rootOnly": "Hierarchy Mode",
+    "allStatuses": "All statuses",
+    "allRootModes": "All hierarchy modes",
+    "onlyRoots": "Root only",
+    "withParent": "Has parent"
+  },
+  "sort": {
+    "code": "Code",
+    "name": "Name",
+    "createdAt": "Created At",
+    "displayOrder": "Display Order"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
+  },
+  "actions": {
+    "create": "Create Org Unit",
+    "closeCreate": "Close Create",
+    "open": "Open",
+    "edit": "Edit",
+    "move": "Move",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "archive": "Archive"
+  },
+  "table": {
+    "caption": "Org Unit list",
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "parentOrgUnitId": "Parent",
+    "depth": "Depth",
+    "displayOrder": "Order",
+    "createdAt": "Created",
+    "actions": "Actions"
+  },
+  "childrenTable": {
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "depth": "Depth",
+    "displayOrder": "Order"
+  },
+  "detail": {
+    "summaryTitle": "Core Metadata",
+    "hierarchyTitle": "Hierarchy",
+    "rootUnit": "Root"
+  },
+  "related": {
+    "navigationTitle": "Related Navigation",
+    "employmentProfiles": "Employment Profiles",
+    "platformAccounts": "Platform Accounts",
+    "openFilteredList": "Open filtered list",
+    "childrenTitle": "Child Org Units",
+    "childrenEmptyTitle": "No child org units",
+    "childrenEmptyMessage": "This org unit currently has no child records."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create Org Unit",
+      "subtitle": "Create a new org unit record",
+      "submit": "Create",
+      "pending": "Creating..."
+    },
+    "edit": {
+      "title": "Edit Org Unit",
+      "subtitle": "Update editable org unit fields",
+      "submit": "Save",
+      "pending": "Saving..."
+    },
+    "move": {
+      "title": "Move Org Unit",
+      "subtitle": "Change parent org unit through dedicated move action",
+      "submit": "Move",
+      "pending": "Moving..."
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidDisplayOrder": "Display order must be an integer greater than or equal to 0.",
+    "invalidTypeToken": "Type must be an uppercase token like DEPARTMENT.",
+    "invalidReferenceToken": "Reference ID contains unsupported characters.",
+    "moveSelfForbidden": "An org unit cannot be moved under itself."
+  },
+  "feedback": {
+    "created": "Org unit created successfully.",
+    "updated": "Org unit updated successfully.",
+    "moved": "Org unit moved successfully.",
+    "lifecycleUpdated": "Org unit lifecycle updated successfully."
+  },
+  "confirm": {
+    "activate": "Activate this org unit?",
+    "deactivate": "Deactivate this org unit?",
+    "archive": "Archive this org unit?"
+  },
+  "actionRail": {
+    "title": "Org Unit Actions"
+  }
+}

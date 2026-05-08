@@ -1,0 +1,915 @@
+{
+  "page": {
+    "title": "Ca làm việc",
+    "subtitle": "Quản trị lịch vận hành cho khung giờ, chủ thể và tài nguyên.",
+    "placeholder": "Work Schedule đã được triển khai bằng route thật của Wave 6."
+  },
+  "fields": {
+    "shiftCode": "Mã ca",
+    "shiftCodeOptional": "Mã ca (không bắt buộc)",
+    "title": "Tiêu đề",
+    "status": "Trạng thái",
+    "subjectKind": "Loại chủ thể",
+    "subjectId": "Chủ thể",
+    "newSubjectKind": "Loại chủ thể mới",
+    "newSubjectId": "Chủ thể",
+    "shiftStartAt": "Bắt đầu ca theo UTC",
+    "shiftEndAt": "Kết thúc ca theo UTC",
+    "newShiftStartAt": "Bắt đầu ca mới theo UTC",
+    "newShiftEndAt": "Kết thúc ca mới theo UTC",
+    "studioResourceIds": "Tài nguyên studio",
+    "newStudioResourceIds": "Tài nguyên studio",
+    "description": "Mô tả",
+    "externalRef": "Tham chiếu bên ngoài",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật",
+    "requestScope": "Phạm vi yêu cầu",
+    "subject": "Chủ thể",
+    "studioResources": "Tài nguyên studio"
+  },
+  "statuses": {
+    "ACTIVE": "Đang hoạt động",
+    "CANCELLED": "Đã hủy",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "subjectKinds": {
+    "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Nhóm Talent"
+  },
+  "scopes": {
+    "omitted": "Theo mặc định của hệ thống",
+    "self": "Cá nhân",
+    "team": "Nhóm",
+    "department": "Phòng ban",
+    "global": "Toàn cục"
+  },
+  "sort": {
+    "shiftStartAt": "Bắt đầu ca",
+    "shiftCode": "Mã ca",
+    "createdAt": "Thời điểm tạo"
+  },
+  "filters": {
+    "searchPlaceholder": "Tìm theo mã ca hoặc tiền tố tiêu đề",
+    "status": "Trạng thái",
+    "allStatuses": "Tất cả trạng thái đang hoạt động",
+    "subjectKind": "Loại chủ thể",
+    "allSubjectKinds": "Tất cả loại chủ thể",
+    "subjectId": "Chủ thể",
+    "subjectIdPlaceholder": "Mã định danh chủ thể",
+    "studioResourceId": "Tài nguyên studio",
+    "studioResourceIdPlaceholder": "Mã định danh tài nguyên",
+    "scope": "Phạm vi",
+    "windowStartAt": "Bắt đầu khung thời gian UTC",
+    "windowEndAt": "Kết thúc khung thời gian UTC"
+  },
+  "relatedModes": {
+    "by-subject": "Ca làm liên quan theo chủ thể",
+    "by-resource": "Ca làm liên quan theo tài nguyên studio"
+  },
+  "actions": {
+    "create": "Tạo ca làm",
+    "closeCreate": "Đóng tạo mới",
+    "adminCreateForm": "Biểu mẫu tạo dành cho quản trị",
+    "closeAdminCreate": "Đóng biểu mẫu quản trị",
+    "scheduleWorkShift": "Xếp lịch ca làm",
+    "closeGuidedWorkflow": "Đóng quy trình hướng dẫn",
+    "open": "Mở chi tiết",
+    "edit": "Chỉnh sửa",
+    "reschedule": "Đổi lịch",
+    "reassignSubject": "Đổi chủ thể",
+    "replaceResources": "Thay tài nguyên",
+    "cancel": "Hủy",
+    "archive": "Lưu trữ",
+    "historicalArchiveEligible": "Ca đang hoạt động nhưng đã qua có thể được lưu trữ từ trang chi tiết"
+  },
+  "table": {
+    "caption": "Danh sách ca làm",
+    "shiftCode": "Mã ca",
+    "title": "Tiêu đề",
+    "subjectKind": "Loại chủ thể",
+    "subjectId": "Chủ thể",
+    "status": "Trạng thái",
+    "shiftStartAt": "Bắt đầu",
+    "shiftEndAt": "Kết thúc",
+    "createdAt": "Thời điểm tạo",
+    "source": "Nguồn",
+    "actions": "Hành động"
+  },
+  "detail": {
+    "archivedReadOnly": "Ca làm đã lưu trữ chỉ đọc.",
+    "identityTitle": "Ca làm",
+    "scheduleTitle": "Lịch",
+    "subjectTitle": "Chủ thể",
+    "globalOnly": "Toàn cục",
+    "referencesTitle": "Tham chiếu"
+  },
+  "related": {
+    "navigationTitle": "Điều hướng liên quan",
+    "studioResource": "Tài nguyên studio",
+    "unavailable": "Không có liên kết",
+    "noResources": "Chưa gán tài nguyên studio."
+  },
+  "states": {
+    "emptyTitle": "Không có ca làm",
+    "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo ca làm.",
+    "loadErrorTitle": "Không tải được ca làm",
+    "loadErrorMessage": "Hệ thống đã từ chối hoặc không trả về dữ liệu ca làm."
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo ca làm",
+      "subtitle": "Tạo một ca làm với một định danh chủ thể.",
+      "submit": "Tạo",
+      "pending": "Đang tạo"
+    },
+    "edit": {
+      "title": "Chỉnh sửa ca làm",
+      "subtitle": "Chỉ cập nhật các trường mô tả được phép.",
+      "submit": "Lưu",
+      "pending": "Đang lưu"
+    },
+    "reschedule": {
+      "title": "Đổi lịch ca làm",
+      "subtitle": "Thay thế khung thời gian UTC.",
+      "submit": "Đổi lịch",
+      "pending": "Đang đổi lịch"
+    },
+    "reassignSubject": {
+      "title": "Đổi chủ thể",
+      "subtitle": "Thay thế định danh chủ thể của ca làm.",
+      "submit": "Đổi chủ thể",
+      "pending": "Đang đổi"
+    },
+    "replaceResources": {
+      "title": "Thay tài nguyên",
+      "subtitle": "Gửi toàn bộ bộ tài nguyên studio thay thế.",
+      "submit": "Thay tài nguyên",
+      "pending": "Đang thay"
+    }
+  },
+  "task": {
+    "title": "Xếp lịch ca làm",
+    "description": "Dùng biểu mẫu hướng dẫn này để xếp lịch hằng ngày. Biểu mẫu quản trị vẫn dành cho trường hợp kỹ thuật hoặc cần tương thích.",
+    "steps": {
+      "details": "Bước 1/2: Thông tin ca",
+      "review": "Bước 2/2: Kiểm tra trước khi lưu"
+    },
+    "authorityNote": "Thời gian hiển thị theo giờ Việt Nam ({{timezone}}, {{offset}}). Khi lưu, hệ thống sẽ kiểm tra quyền thao tác, người/nhóm được xếp lịch, tài nguyên studio và lịch bị trùng. Các phạm vi như cá nhân, nhóm, phòng ban chỉ dùng khi xếp lịch cho Hồ sơ nhân sự.",
+    "generatedShiftCode": "Mã ca sẽ được hệ thống tự tạo sau khi lưu.",
+    "generatedShiftCodeLabel": "Mã ca",
+    "generatedShiftCodeValue": "Sẽ được hệ thống tự tạo sau khi lưu",
+    "generatedShiftCodeHelp": "Bạn không cần nhập mã này.",
+    "subjectPicker": "Bộ chọn chủ thể",
+    "resourcesPicker": "Bộ chọn tài nguyên studio",
+    "searchPlaceholder": "Tìm bản ghi hiện có",
+    "searchResourcesPlaceholder": "Tìm tài nguyên studio",
+    "noPickerResults": "Hệ thống không trả về bản ghi có thể chọn.",
+    "startVietnamLocal": "Bắt đầu theo giờ Việt Nam",
+    "endVietnamLocal": "Kết thúc theo giờ Việt Nam",
+    "datetimeHelp": "Chọn ngày và giờ theo giờ Việt Nam. Hãy kiểm tra lại giờ ở bước xem lại trước khi lưu.",
+    "scopeLabel": "Phạm vi xếp lịch",
+    "employmentScopeHelp": "Hồ sơ nhân sự có thể xếp lịch cho toàn bộ, cá nhân, nhóm hoặc phòng ban. Hệ thống sẽ kiểm tra quyền cuối cùng khi lưu.",
+    "globalScopeHelp": "Talent và Nhóm Talent được xếp lịch ở phạm vi toàn cục trong quy trình này.",
+    "noResourcesSelected": "Chưa chọn tài nguyên studio.",
+    "removeResource": "Gỡ",
+    "additionalInformation": "Thông tin bổ sung",
+    "externalRefLabel": "Mã/Ghi chú liên quan",
+    "externalRefHelp": "Chỉ dùng khi ca cần liên kết với phiếu việc, bảng tính, tài liệu hoặc mã từ hệ thống khác. Có thể để trống.",
+    "reviewAction": "Kiểm tra thông tin",
+    "submitAction": "Gửi ca làm",
+    "submitPending": "Đang gửi ca làm",
+    "backendRejectedTitle": "Không thể lưu yêu cầu",
+    "backendAuthorityWarning": "Khi lưu, hệ thống sẽ kiểm tra quyền truy cập, người/nhóm được xếp lịch, tài nguyên studio, trạng thái ca và lịch bị trùng. Quy trình này chỉ gửi các thông tin xếp lịch hiển thị ở trên.",
+    "none": "Không có",
+    "localReviewValue": "{{value}} {{timezone}} ({{offset}})",
+    "utcReviewValue": "{{timestamp}} UTC ({{value}})",
+    "validation": {
+      "localDateTime": "Chọn đầy đủ ngày và giờ theo giờ Việt Nam."
+    },
+    "review": {
+      "shiftCode": "Mã ca",
+      "title": "Tiêu đề",
+      "subjectKind": "Loại chủ thể",
+      "subjectId": "Chủ thể",
+      "scope": "Phạm vi xếp lịch",
+      "startLocal": "Bắt đầu, giờ Việt Nam",
+      "startUtc": "Bắt đầu, timestamp UTC",
+      "endLocal": "Kết thúc, giờ Việt Nam",
+      "endUtc": "Kết thúc, timestamp UTC",
+      "studioResources": "Tài nguyên studio",
+      "description": "Mô tả",
+      "externalRef": "Mã/Ghi chú liên quan"
+    }
+  },
+  "placeholders": {
+    "csvIds": "Các ID cách nhau bằng dấu phẩy",
+    "generatedShiftCode": "Để trống để hệ thống tự tạo",
+    "optional": "Không bắt buộc"
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Dùng token định danh hợp lệ.",
+    "invalidReferenceToken": "Dùng các token định danh hợp lệ, cách nhau bằng dấu phẩy.",
+    "invalidWindow": "Thời điểm kết thúc phải sau thời điểm bắt đầu.",
+    "invalidScope": "Dùng phạm vi Work Schedule được hỗ trợ.",
+    "nonGlobalEmploymentProfileOnly": "Phạm vi Work Schedule không toàn cục chỉ hợp lệ với chủ thể Hồ sơ nhân sự."
+  },
+  "feedback": {
+    "created": "Đã tạo ca làm.",
+    "updated": "Đã cập nhật ca làm.",
+    "rescheduled": "Đã đổi lịch ca làm.",
+    "reassigned": "Đã đổi chủ thể ca làm.",
+    "resourcesReplaced": "Đã thay tài nguyên của ca làm.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời ca làm."
+  },
+  "confirm": {
+    "cancel": "Hủy ca làm này?",
+    "archive": "Lưu trữ ca làm này?"
+  },
+  "actionRail": {
+    "title": "Hành động ca làm"
+  },
+  "sourceLabels": {
+    "MANUAL": "Thủ công",
+    "ROSTER_GENERATED": "Tạo từ bảng phân ca tháng"
+  },
+  "sourceDetail": {
+    "title": "Nguồn",
+    "adminMetadata": "Thông tin nguồn cho quản trị",
+    "fields": {
+      "sourceType": "Nguồn",
+      "sourceRosterId": "Bảng phân ca tháng",
+      "sourcePatternId": "Mẫu ca",
+      "sourceExceptionId": "ID ngoại lệ nguồn",
+      "sourceGenerationRunId": "ID lượt tạo",
+      "sourceRosterMonth": "Tháng phân ca",
+      "sourceDepartmentOrgUnitId": "Phòng ban",
+      "sourceRosterLocalDate": "Ngày trong bảng phân ca",
+      "sourceRosterSlotKey": "Khóa vị trí ca"
+    }
+  },
+  "rosterNav": {
+    "label": "Các phần lịch làm việc",
+    "workShifts": "Ca làm việc",
+    "monthlyRosters": "Bảng lịch tháng",
+    "workPatterns": "Mẫu lịch làm",
+    "holidayCalendars": "Lịch nghỉ lễ",
+    "notImplemented": "Chưa triển khai trong lát cắt này"
+  },
+  "patterns": {
+    "page": {
+      "title": "Mẫu lịch làm",
+      "subtitle": "Định nghĩa ngày làm việc và giờ làm theo giờ Việt Nam cho bảng lịch."
+    },
+    "fields": {
+      "patternCode": "Mã mẫu",
+      "name": "Tên",
+      "status": "Trạng thái",
+      "timezone": "Múi giờ",
+      "startLocalTime": "Giờ bắt đầu",
+      "workingMinutes": "Số phút làm việc",
+      "breakMinutes": "Số phút nghỉ",
+      "calculatedEndLocalTime": "Giờ kết thúc được tính",
+      "workingDays": "Ngày làm việc",
+      "description": "Mô tả",
+      "externalRef": "Tham chiếu bên ngoài",
+      "createdAt": "Tạo lúc",
+      "updatedAt": "Cập nhật lúc",
+      "activatedAt": "Kích hoạt lúc",
+      "archivedAt": "Lưu trữ lúc"
+    },
+    "statuses": {
+      "DRAFT": "Nháp",
+      "ACTIVE": "Đang dùng",
+      "ARCHIVED": "Đã lưu trữ"
+    },
+    "weekdays": {
+      "MON": "MON",
+      "TUE": "TUE",
+      "WED": "WED",
+      "THU": "THU",
+      "FRI": "FRI",
+      "SAT": "SAT",
+      "SUN": "SUN"
+    },
+    "filters": {
+      "searchPlaceholder": "Tiền tố mã mẫu hoặc tên",
+      "status": "Trạng thái",
+      "defaultStatuses": "Nháp và đang dùng"
+    },
+    "actions": {
+      "create": "Tạo mẫu lịch làm",
+      "closeCreate": "Đóng tạo mới",
+      "open": "Mở chi tiết",
+      "edit": "Sửa",
+      "activate": "Kích hoạt",
+      "archive": "Lưu trữ"
+    },
+    "table": {
+      "caption": "Danh sách mẫu lịch làm",
+      "patternCode": "Mã mẫu",
+      "name": "Tên",
+      "status": "Trạng thái",
+      "startLocalTime": "Giờ bắt đầu",
+      "endLocalTime": "Giờ kết thúc được tính",
+      "workingDays": "Ngày làm việc",
+      "updatedAt": "Cập nhật",
+      "actions": "Hành động"
+    },
+    "detail": {
+      "pageTitle": "Chi tiết mẫu lịch làm",
+      "pageSubtitle": "Chi tiết mẫu lịch theo dữ liệu hệ thống.",
+      "archivedReadOnly": "Mẫu lịch đã lưu trữ chỉ có thể xem.",
+      "identityTitle": "Mẫu lịch làm",
+      "scheduleTitle": "Lịch làm",
+      "lifecycleTitle": "Vòng đời"
+    },
+    "form": {
+      "localEstimate": "{{value}} là ước tính trước khi lưu",
+      "noEstimate": "Lưu để hệ thống tính",
+      "activeStructuralReadOnly": "Mẫu đang dùng chỉ cho phép sửa tên, mô tả và tham chiếu bên ngoài."
+    },
+    "states": {
+      "emptyTitle": "Không có mẫu lịch làm",
+      "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo mẫu lịch làm.",
+      "loadErrorTitle": "Không tải được mẫu lịch làm",
+      "loadErrorMessage": "Hệ thống đã từ chối hoặc không trả về dữ liệu mẫu lịch."
+    },
+    "mutations": {
+      "create": {
+        "title": "Tạo mẫu lịch làm",
+        "subtitle": "Thiết lập ngày làm, giờ bắt đầu và thời lượng. Hệ thống sẽ sinh mã mẫu sau khi lưu.",
+        "submit": "Tạo",
+        "pending": "Đang tạo"
+      },
+      "edit": {
+        "title": "Sửa mẫu lịch làm",
+        "subtitle": "Mẫu nháp cho phép sửa lịch làm và thông tin mô tả.",
+        "activeSubtitle": "Mẫu đang dùng chỉ cho phép sửa thông tin mô tả.",
+        "submit": "Lưu",
+        "pending": "Đang lưu"
+      }
+    },
+    "validation": {
+      "required": "Trường này là bắt buộc.",
+      "patternCode": "Dùng chữ in hoa, số và dấu gạch dưới.",
+      "time": "Nhập giờ địa phương và thời lượng được hỗ trợ.",
+      "sameDay": "Mẫu lịch làm phải kết thúc trong cùng ngày.",
+      "workingDays": "Chọn ít nhất một ngày làm việc."
+    },
+    "feedback": {
+      "created": "Đã tạo mẫu lịch làm.",
+      "updated": "Đã cập nhật mẫu lịch làm.",
+      "lifecycleUpdated": "Đã cập nhật vòng đời mẫu lịch làm."
+    },
+    "confirm": {
+      "activate": "Kích hoạt mẫu lịch làm này?",
+      "archive": "Lưu trữ mẫu lịch làm này?"
+    },
+    "actionRail": {
+      "title": "Hành động mẫu lịch làm"
+    }
+  },
+  "holidayCalendars": {
+    "page": {
+      "title": "Lịch nghỉ lễ",
+      "subtitle": "Lịch nghỉ và ngày không làm việc dùng cho tạo bảng lịch."
+    },
+    "fields": {
+      "calendarCode": "Mã lịch",
+      "name": "Tên",
+      "status": "Trạng thái",
+      "scopeType": "Phạm vi",
+      "timezone": "Múi giờ",
+      "description": "Mô tả",
+      "externalRef": "Tham chiếu bên ngoài",
+      "createdAt": "Tạo lúc",
+      "updatedAt": "Cập nhật lúc",
+      "activatedAt": "Kích hoạt lúc",
+      "archivedAt": "Lưu trữ lúc"
+    },
+    "statuses": {
+      "DRAFT": "Nháp",
+      "ACTIVE": "Đang dùng",
+      "ARCHIVED": "Đã lưu trữ"
+    },
+    "scopeTypes": {
+      "GLOBAL": "Toàn hệ thống"
+    },
+    "entryTypes": {
+      "HOLIDAY": "Ngày lễ",
+      "COMPANY_OFF_DAY": "Ngày công ty nghỉ",
+      "CUSTOM_OFF_DAY": "Ngày nghỉ tùy chỉnh"
+    },
+    "entryStatuses": {
+      "ACTIVE": "Đang dùng",
+      "REMOVED": "Đã gỡ"
+    },
+    "filters": {
+      "searchPlaceholder": "Tiền tố mã lịch hoặc tên",
+      "status": "Trạng thái",
+      "defaultStatuses": "Nháp và đang dùng"
+    },
+    "actions": {
+      "create": "Tạo lịch nghỉ lễ",
+      "closeCreate": "Đóng tạo mới",
+      "open": "Mở chi tiết",
+      "edit": "Sửa",
+      "activate": "Kích hoạt",
+      "archive": "Lưu trữ"
+    },
+    "table": {
+      "caption": "Danh sách lịch nghỉ lễ",
+      "calendarCode": "Mã lịch",
+      "name": "Tên",
+      "status": "Trạng thái",
+      "scopeType": "Phạm vi",
+      "timezone": "Múi giờ",
+      "activeEntryCount": "Mục đang dùng",
+      "updatedAt": "Cập nhật",
+      "actions": "Hành động"
+    },
+    "detail": {
+      "pageTitle": "Chi tiết lịch nghỉ lễ",
+      "pageSubtitle": "Chi tiết lịch nghỉ toàn hệ thống theo dữ liệu hệ thống.",
+      "archivedReadOnly": "Lịch nghỉ đã lưu trữ chỉ có thể xem.",
+      "identityTitle": "Lịch nghỉ lễ",
+      "lifecycleTitle": "Vòng đời"
+    },
+    "entries": {
+      "title": "Ngày nghỉ",
+      "description": "Mỗi mục là ngày theo lịch và dùng múi giờ cố định của lịch.",
+      "addTitle": "Thêm ngày nghỉ",
+      "editTitle": "Sửa ngày nghỉ",
+      "subtitle": "Không nhập giờ hoặc múi giờ cho ngày nghỉ.",
+      "date": "Ngày",
+      "name": "Tên",
+      "type": "Loại",
+      "status": "Trạng thái",
+      "add": "Thêm ngày",
+      "update": "Lưu ngày",
+      "pending": "Đang lưu ngày",
+      "edit": "Sửa",
+      "view": "Xem",
+      "remove": "Gỡ ngày",
+      "confirmRemove": "Gỡ ngày này khỏi danh sách đang dùng? Bản ghi vẫn được giữ ở trạng thái đã gỡ.",
+      "showRemoved": "Hiện ngày đã gỡ ({{count}})",
+      "empty": "Không có ngày nào để hiển thị."
+    },
+    "mutations": {
+      "create": {
+        "title": "Tạo lịch nghỉ lễ",
+        "subtitle": "Tạo lịch toàn cục. Hệ thống sẽ sinh mã lịch sau khi lưu.",
+        "submit": "Tạo",
+        "pending": "Đang tạo"
+      },
+      "edit": {
+        "title": "Sửa lịch nghỉ lễ",
+        "subtitle": "Cập nhật các thông tin mô tả có thể chỉnh sửa.",
+        "submit": "Lưu",
+        "pending": "Đang lưu"
+      }
+    },
+    "validation": {
+      "required": "Trường này là bắt buộc.",
+      "calendarCode": "Dùng chữ in hoa, số và dấu gạch dưới.",
+      "dateOnly": "Dùng ngày hợp lệ theo dạng YYYY-MM-DD.",
+      "duplicate": "Đã có lịch nghỉ lễ dùng mã này.",
+      "duplicateDate": "Đã có ngày đang dùng cho ngày này."
+    },
+    "feedback": {
+      "created": "Đã tạo lịch nghỉ lễ.",
+      "updated": "Đã cập nhật lịch nghỉ lễ.",
+      "lifecycleUpdated": "Đã cập nhật vòng đời lịch nghỉ lễ.",
+      "entryAdded": "Đã thêm ngày nghỉ.",
+      "entryUpdated": "Đã cập nhật ngày nghỉ.",
+      "entryRemoved": "Đã gỡ ngày nghỉ khỏi danh sách đang dùng."
+    },
+    "confirm": {
+      "activate": "Kích hoạt lịch nghỉ lễ này?",
+      "archive": "Lưu trữ lịch nghỉ lễ này?"
+    },
+    "states": {
+      "emptyTitle": "Không có lịch nghỉ lễ",
+      "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo lịch nghỉ lễ.",
+      "loadErrorTitle": "Không tải được lịch nghỉ lễ",
+      "loadErrorMessage": "Hệ thống đã từ chối hoặc không trả về dữ liệu lịch nghỉ lễ."
+    },
+    "actionRail": {
+      "title": "Hành động lịch nghỉ lễ"
+    }
+  },
+  "monthlyRosters": {
+    "page": {
+      "title": "Bảng lịch tháng",
+      "subtitle": "Thiết lập bảng lịch nháp hằng tháng cho đúng một phòng ban."
+    },
+    "fields": {
+      "rosterCode": "Mã bảng lịch",
+      "rosterMonth": "Tháng lập lịch",
+      "departmentOrgUnitId": "Phòng ban",
+      "workPatternId": "Mẫu lịch làm",
+      "holidayCalendarId": "Lịch nghỉ lễ",
+      "status": "Trạng thái",
+      "timezone": "Múi giờ",
+      "scope": "Phạm vi truy cập bảng lịch",
+      "description": "Mô tả",
+      "externalRef": "Tham chiếu bên ngoài",
+      "exceptionCount": "Ngoại lệ đang dùng",
+      "draftVersion": "Phiên bản nháp",
+      "currentPreviewHash": "Mã kiểm tra bản xem trước hiện tại",
+      "lastPreviewedAt": "Xem trước lần cuối lúc",
+      "publishedAt": "Công bố lúc",
+      "publishedBy": "Người công bố",
+      "publishGenerationRunId": "ID lượt tạo khi công bố",
+      "createdAt": "Tạo lúc",
+      "updatedAt": "Cập nhật lúc",
+      "archivedAt": "Lưu trữ lúc"
+    },
+    "statuses": {
+      "DRAFT": "Nháp",
+      "PUBLISHED": "Đã công bố",
+      "LOCKED": "Đã khóa",
+      "ARCHIVED": "Đã lưu trữ"
+    },
+    "scopes": {
+      "global": "Toàn hệ thống",
+      "department": "Phòng ban"
+    },
+    "filters": {
+      "searchPlaceholder": "Tiền tố mã bảng lịch",
+      "status": "Trạng thái",
+      "defaultStatuses": "Nháp, đã công bố và đã khóa",
+      "rosterMonth": "Tháng lập lịch",
+      "departmentOrgUnitId": "Phòng ban",
+      "workPatternId": "Mẫu lịch làm",
+      "holidayCalendarId": "Lịch nghỉ lễ",
+      "scope": "Phạm vi",
+      "defaultScopes": "Mặc định hệ thống"
+    },
+    "actions": {
+      "create": "Tạo bảng lịch tháng",
+      "closeCreate": "Đóng tạo mới",
+      "open": "Mở chi tiết",
+      "editDraft": "Sửa thiết lập nháp",
+      "archive": "Lưu trữ"
+    },
+    "table": {
+      "caption": "Danh sách bảng lịch tháng",
+      "rosterCode": "Mã bảng lịch",
+      "rosterMonth": "Tháng",
+      "department": "Phòng ban",
+      "workPattern": "Mẫu lịch làm",
+      "holidayCalendar": "Lịch nghỉ lễ",
+      "status": "Trạng thái",
+      "updatedAt": "Cập nhật",
+      "actions": "Hành động"
+    },
+    "detail": {
+      "pageTitle": "Chi tiết bảng lịch tháng",
+      "pageSubtitle": "Vỏ thiết lập nháp bảng lịch theo dữ liệu hệ thống.",
+      "identityTitle": "Bảng lịch tháng",
+      "setupTitle": "Thiết lập nháp",
+      "draftSetupSection": "Vòng đời thiết lập nháp",
+      "adminMetadataTitle": "Thông tin quản trị",
+      "readOnlyDraftSetup": "Thiết lập nháp chỉ có thể sửa khi bảng lịch ở trạng thái Nháp.",
+      "structuralLock": "Bản nháp này đã có ngoại lệ. Gỡ ngoại lệ trước khi đổi tháng, phòng ban, mẫu lịch hoặc lịch nghỉ lễ."
+    },
+    "preview": {
+      "title": "Xem trước",
+      "copy": {
+        "readOnly": "Xem trước không tạo ca làm.",
+        "noPublish": "Dùng phần rà soát công bố sau khi kiểm tra bản xem trước."
+      },
+      "summary": {
+        "eligibleProfiles": "Hồ sơ đủ điều kiện",
+        "standardCandidates": "Ca chuẩn dự kiến",
+        "suppressed": "Ngày nghỉ bị bỏ qua",
+        "exceptions": "Ngoại lệ",
+        "candidatesAfterExceptions": "Ca dự kiến sau ngoại lệ",
+        "specialShift": "Ca bổ sung",
+        "changedTime": "Ca đổi giờ",
+        "workingToOff": "Ngày làm chuyển nghỉ",
+        "conflicts": "Xung đột",
+        "blockers": "Điểm chặn"
+      },
+      "conflicts": {
+        "title": "Xung đột và điểm chặn",
+        "hasIssues": "Cần xem lại",
+        "none": "Không có vấn đề",
+        "empty": "Không có xung đột hoặc điểm chặn được trả về.",
+        "blocker": "Điểm chặn",
+        "message": "{{title}} ảnh hưởng đến dòng {{rowId}}",
+        "kinds": {
+          "SUBJECT_OVERLAP": "Xung đột với ca làm đang hoạt động",
+          "CANDIDATE_SUBJECT_OVERLAP": "Xung đột giữa các ca dự kiến"
+        }
+      },
+      "blockers": {
+        "SUBJECT_OVERLAP": "Dòng này chồng lấn một ca làm đang hoạt động."
+      },
+      "filters": {
+        "conflictOnly": "Chỉ xung đột hoặc điểm chặn",
+        "exceptionOnly": "Chỉ ngoại lệ",
+        "employeeSearch": "Tìm nhân sự",
+        "employeeSearchPlaceholder": "ID Hồ sơ nhân sự",
+        "dateStart": "Từ ngày",
+        "dateEnd": "Đến ngày"
+      },
+      "table": {
+        "caption": "Các dòng xem trước bảng lịch tháng",
+        "employee": "Hồ sơ nhân sự",
+        "date": "Ngày",
+        "kind": "Nguồn",
+        "status": "Trạng thái dự kiến",
+        "time": "Giờ địa phương",
+        "exception": "ID ngoại lệ",
+        "holiday": "Ngày nghỉ",
+        "issues": "Vấn đề",
+        "reason": "Tóm tắt"
+      },
+      "rowKinds": {
+        "STANDARD": "Ca chuẩn dự kiến",
+        "WORKING_TO_OFF": "Ngày làm chuyển nghỉ",
+        "CHANGE_TIME": "Đổi giờ",
+        "ADD_SPECIAL_SHIFT": "Ca bổ sung",
+        "HOLIDAY_SUPPRESSED": "Bị bỏ qua do ngày nghỉ"
+      },
+      "rows": {
+        "candidate": "Dự kiến",
+        "suppressed": "Bị bỏ qua/nghỉ",
+        "hasIssues": "{{count}} vấn đề",
+        "noIssues": "Không có vấn đề",
+        "reason": {
+          "standard": "Ca chuẩn từ bảng lịch",
+          "holidaySuppressed": "Bị bỏ qua bởi {{name}}",
+          "workingToOff": "Ngày làm chuẩn được đánh dấu nghỉ",
+          "changeTime": "Giờ bắt đầu đổi thành {{startLocalTime}}",
+          "addSpecialShift": "Ca bổ sung bắt đầu lúc {{startLocalTime}}"
+        }
+      },
+      "detail": {
+        "title": "Chi tiết dòng xem trước",
+        "rowId": "ID dòng xem trước",
+        "shiftStartAt": "Bắt đầu ca UTC",
+        "shiftEndAt": "Kết thúc ca UTC",
+        "slotKey": "Khóa ô lịch",
+        "warnings": "Cảnh báo",
+        "blockers": "Điểm chặn"
+      },
+      "admin": {
+        "title": "Thông tin quản trị xem trước",
+        "freshness": "Trạng thái cập nhật",
+        "computedPreviewHash": "Mã băm xem trước vừa tính"
+      },
+      "freshness": {
+        "current": "Bản xem trước đang hiện hành",
+        "stale": "Bản xem trước đã lỗi thời",
+        "notPreviewed": "Bản xem trước chưa được lưu"
+      },
+      "states": {
+        "loadErrorTitle": "Không tải được bản xem trước",
+        "loadErrorMessage": "Hệ thống đã từ chối hoặc không trả về dữ liệu xem trước.",
+        "archivedUnavailable": "Bảng lịch đã lưu trữ không thể xem trước.",
+        "emptyRows": "Không có dòng xem trước phù hợp với bộ lọc hiện tại."
+      }
+    },
+    "publish": {
+      "title": "Rà soát công bố",
+      "copy": {
+        "createShifts": "Hệ thống sẽ tạo ca làm từ bảng phân ca này.",
+        "reviewPreview": "Rà soát bản xem trước trước khi công bố.",
+        "noUndo": "Không thể hoàn tác công bố từ màn hình này."
+      },
+      "readiness": {
+        "status": "Mức sẵn sàng công bố",
+        "ready": "Sẵn sàng công bố",
+        "previewFreshness": "Độ mới của bản xem trước"
+      },
+      "disabledReasons": {
+        "notDraft": "Chỉ bảng phân ca Nháp mới có thể công bố.",
+        "unavailable": "Bản xem trước chưa sẵn sàng.",
+        "loading": "Bản xem trước vẫn đang tải.",
+        "error": "Bản xem trước phải tải thành công trước khi công bố.",
+        "hashUnavailable": "Mã băm xem trước chưa có. Làm mới bản xem trước trước khi công bố.",
+        "stale": "Bản xem trước đã lỗi thời. Làm mới bản xem trước trước khi công bố.",
+        "conflicts": "Xử lý xung đột trong bản xem trước trước khi công bố.",
+        "blockers": "Xử lý các điểm chặn trong bản xem trước trước khi công bố."
+      },
+      "confirmation": {
+        "title": "Xác nhận công bố",
+        "copy": "Các ca làm thật sẽ được tạo cho những dòng xem trước có thể công bố.",
+        "eligibleEmployees": "Nhân sự đủ điều kiện",
+        "generatedCandidates": "Ca làm dự kiến được tạo",
+        "exceptionCount": "Ngoại lệ",
+        "conflictBlockerCount": "Xung đột và điểm chặn",
+        "issueCount": "{{conflicts}} xung đột, {{blockers}} điểm chặn"
+      },
+      "actions": {
+        "openConfirmation": "Công bố bảng phân ca",
+        "confirm": "Xác nhận công bố",
+        "publishing": "Đang công bố"
+      },
+      "states": {
+        "alreadyPublished": "Bảng phân ca này đã được công bố. Công bố lại không tạo ca làm trùng lặp.",
+        "unavailable": "Không thể công bố với trạng thái hiện tại của bảng phân ca.",
+        "previewErrorTitle": "Cần có bản xem trước trước khi công bố"
+      },
+      "summary": {
+        "generatedCount": "Ca làm đã tạo",
+        "suppressedCount": "Dòng bị bỏ qua do ngày nghỉ",
+        "skippedCount": "Dòng ngày làm chuyển nghỉ bị bỏ qua",
+        "publishedAt": "Thời điểm công bố",
+        "publishedBy": "Người công bố",
+        "generationRunId": "ID lượt tạo",
+        "adminMetadata": "Thông tin quản trị công bố"
+      },
+      "feedback": {
+        "success": "Đã công bố bảng phân ca tháng.",
+        "successTitle": "Bảng phân ca đã công bố"
+      },
+      "errors": {
+        "title": "Không thể hoàn tất công bố",
+        "stalePreview": "Bản xem trước đã lỗi thời. Làm mới bản xem trước trước khi công bố.",
+        "unauthorized": "Phiên của bạn không được phép công bố bảng phân ca này.",
+        "forbidden": "Bạn không có quyền hoặc phạm vi phòng ban để công bố bảng phân ca này.",
+        "validation": "Hệ thống đã từ chối yêu cầu công bố. Kiểm tra bản xem trước và trạng thái bảng phân ca.",
+        "conflict": "Bảng phân ca đã thay đổi hoặc có xung đột. Làm mới bản xem trước trước khi công bố.",
+        "generic": "Không thể hoàn tất yêu cầu công bố."
+      }
+    },
+    "generated": {
+      "title": "Ca làm được tạo",
+      "copy": "Ca làm được tạo là ca làm thông thường với thông tin nguồn bảng phân ca tháng chỉ đọc.",
+      "states": {
+        "unavailable": "Ca làm được tạo sẽ hiển thị sau khi công bố."
+      },
+      "fields": {
+        "source": "Nguồn",
+        "sourceRosterId": "Bảng phân ca tháng",
+        "generatedShiftIds": "ID ca làm được tạo"
+      },
+      "actions": {
+        "openList": "Mở ca làm được tạo"
+      }
+    },
+    "mutations": {
+      "create": {
+        "title": "Tạo bảng lịch tháng nháp",
+        "subtitle": "Tạo một bản nháp bảng lịch cho đúng phòng ban và tháng YYYY-MM. Hệ thống sẽ sinh mã bảng lịch sau khi lưu.",
+        "submit": "Tạo nháp",
+        "pending": "Đang tạo"
+      },
+      "edit": {
+        "title": "Sửa bảng lịch tháng nháp",
+        "subtitle": "Bảng lịch nháp cho phép sửa thiết lập và thông tin mô tả cho đến khi có ngoại lệ khóa các trường chính.",
+        "submit": "Lưu nháp",
+        "pending": "Đang lưu"
+      }
+    },
+    "validation": {
+      "required": "Trường này là bắt buộc.",
+      "rosterCode": "Dùng chữ in hoa, số và dấu gạch dưới.",
+      "month": "Dùng tháng hợp lệ theo dạng YYYY-MM.",
+      "invalidScope": "Dùng phạm vi Toàn hệ thống hoặc Phòng ban.",
+      "duplicateDepartmentMonth": "Đã có bảng lịch cho phòng ban và tháng này.",
+      "activeExceptionsStructuralLock": "Gỡ ngoại lệ đang dùng trước khi đổi tháng, phòng ban, mẫu lịch hoặc lịch nghỉ lễ."
+    },
+    "feedback": {
+      "created": "Đã tạo bảng lịch tháng nháp.",
+      "updated": "Đã cập nhật bảng lịch tháng nháp.",
+      "archived": "Đã lưu trữ bảng lịch tháng."
+    },
+    "confirm": {
+      "archive": "Lưu trữ bảng lịch tháng này?"
+    },
+    "states": {
+      "emptyTitle": "Không có bảng lịch tháng",
+      "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo bảng lịch tháng nháp.",
+      "loadErrorTitle": "Không tải được bảng lịch tháng",
+      "loadErrorMessage": "Hệ thống đã từ chối hoặc không trả về dữ liệu bảng lịch tháng."
+    },
+    "actionRail": {
+      "title": "Hành động bảng lịch tháng"
+    },
+    "exceptions": {
+      "title": "Ngoại lệ",
+      "types": {
+        "WORKING_TO_OFF": "Đánh dấu ngày làm việc thành ngày nghỉ",
+        "CHANGE_TIME": "Đổi giờ bắt đầu",
+        "ADD_SPECIAL_SHIFT": "Thêm ca bổ sung"
+      },
+      "statuses": {
+        "ACTIVE": "Đang dùng",
+        "REMOVED": "Đã gỡ"
+      },
+      "table": {
+        "caption": "Ngoại lệ bảng lịch tháng",
+        "employee": "Hồ sơ nhân sự",
+        "date": "Ngày",
+        "type": "Loại",
+        "status": "Trạng thái",
+        "summary": "Tóm tắt",
+        "reason": "Lý do hoặc ghi chú",
+        "createdAt": "Tạo lúc",
+        "updatedAt": "Cập nhật",
+        "removedAt": "Gỡ lúc",
+        "actions": "Thao tác"
+      },
+      "fields": {
+        "type": "Loại ngoại lệ",
+        "exceptionDate": "Ngày",
+        "subjectEmploymentProfileId": "Hồ sơ nhân sự bị ảnh hưởng",
+        "employeeSearch": "Tìm nhân sự đang hoạt động trong phòng ban này",
+        "title": "Tiêu đề",
+        "startLocalTime": "Giờ bắt đầu mới",
+        "endLocalTime": "Giờ kết thúc",
+        "workingMinutes": "Số phút làm việc",
+        "breakMinutes": "Số phút nghỉ",
+        "studioResourceIds": "Tài nguyên studio",
+        "csvPlaceholder": "Các ID cách nhau bằng dấu phẩy",
+        "reason": "Lý do",
+        "sourceNote": "Ghi chú nguồn",
+        "description": "Mô tả",
+        "externalRef": "Tham chiếu bên ngoài",
+        "studioResources": "Tài nguyên studio"
+      },
+      "actions": {
+        "add": "Thêm ngoại lệ",
+        "edit": "Sửa",
+        "remove": "Gỡ",
+        "removing": "Đang gỡ",
+        "showRemoved": "Hiện ngoại lệ đã gỡ"
+      },
+      "copy": {
+        "draftOnly": "Bảng lịch nháp cho phép thêm, sửa và gỡ ngoại lệ trước khi phát hành.",
+        "readOnly": "Bảng lịch này không còn là nháp. Ngoại lệ chỉ để xem.",
+        "previewDeferred": "Thay đổi ngoại lệ được phản ánh trong bản xem trước chỉ đọc của bảng lịch.",
+        "workingToOffNoTime": "Ngoại lệ này đánh dấu một ngày làm chuẩn thành ngày nghỉ và không gửi trường giờ.",
+        "endCalculated": "Hệ thống tính sau khi lưu."
+      },
+      "summary": {
+        "workingToOff": "Ngày làm chuẩn được đánh dấu nghỉ",
+        "changeTime": "Giờ bắt đầu đổi thành {{startLocalTime}}",
+        "addSpecialShift": "Ca bổ sung lúc {{startLocalTime}} với {{workingMinutes}} phút làm việc"
+      },
+      "mutations": {
+        "subtitle": "Backend kiểm tra tháng, nhân sự đúng phòng ban, ca chuẩn và xung đột.",
+        "add": {
+          "title": "Thêm ngoại lệ bảng lịch",
+          "submit": "Thêm ngoại lệ"
+        },
+        "edit": {
+          "title": "Sửa ngoại lệ bảng lịch",
+          "submit": "Lưu ngoại lệ"
+        },
+        "pending": "Đang lưu"
+      },
+      "validation": {
+        "required": "Trường này là bắt buộc.",
+        "date": "Dùng ngày hợp lệ dạng YYYY-MM-DD.",
+        "time": "Dùng giờ hợp lệ dạng HH:mm.",
+        "dateInMonth": "Chọn ngày nằm trong tháng của bảng lịch.",
+        "positiveMinutes": "Nhập số phút nguyên lớn hơn 0.",
+        "nonNegativeMinutes": "Nhập 0 hoặc số phút nguyên lớn hơn 0.",
+        "invalidType": "Dùng loại ngoại lệ được hỗ trợ.",
+        "noStandardCandidate": "Không có ca chuẩn phù hợp cho ngoại lệ này.",
+        "conflict": "Ngoại lệ này xung đột với ngoại lệ hoặc ca làm việc khác.",
+        "inactiveEmploymentProfile": "Chọn Hồ sơ nhân sự đang hoạt động trong phòng ban của bảng lịch.",
+        "outsideDepartment": "Chọn Hồ sơ nhân sự thuộc phòng ban của bảng lịch.",
+        "duplicate": "Ngoại lệ này trùng với ngoại lệ đã có."
+      },
+      "feedback": {
+        "added": "Đã thêm ngoại lệ bảng lịch.",
+        "updated": "Đã cập nhật ngoại lệ bảng lịch.",
+        "removed": "Đã gỡ ngoại lệ khỏi bản nháp."
+      },
+      "confirm": {
+        "remove": "Gỡ ngoại lệ này khỏi bản nháp? Ngoại lệ đã gỡ không còn ảnh hưởng đến bản xem trước."
+      },
+      "states": {
+        "emptyActive": "Chưa có ngoại lệ đang dùng.",
+        "emptyAll": "Backend không trả về ngoại lệ nào."
+      }
+    },
+    "copy": {
+      "setupInvariants": "Chọn đúng một phòng ban đang hoạt động. Không bao gồm phòng ban con. Bảng lịch áp dụng cho nhân sự đang hoạt động, dùng lịch nghỉ lễ toàn cục và múi giờ Asia/Ho_Chi_Minh."
+    },
+    "pickers": {
+      "departmentSearch": "Tìm phòng ban đang hoạt động theo tên hoặc mã",
+      "workPatternSearch": "Tìm mẫu lịch làm đang hoạt động theo tên hoặc mã",
+      "holidayCalendarSearch": "Tìm lịch nghỉ lễ đang hoạt động theo tên hoặc mã"
+    }
+  },
+  "advanced": {
+    "customCodeTitle": "Mã tùy chỉnh dành cho quản trị nâng cao",
+    "customShiftCodeHelp": "Để trống để hệ thống tự sinh mã ca. Chỉ dùng khi quản trị cần giữ mã cũ tùy chỉnh."
+  },
+  "pickers": {
+    "subjectSearch": "Tìm theo tên hoặc mã",
+    "studioResourceSearch": "Tìm tài nguyên studio theo tên hoặc mã",
+    "removeSelectedResource": "Gỡ",
+    "noResourcesSelected": "Chưa chọn tài nguyên studio."
+  }
+}

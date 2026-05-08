@@ -1,0 +1,42 @@
+{
+  "page": {
+    "title": "Dashboard",
+    "subtitle": "Operational snapshot"
+  },
+  "actions": {
+    "refreshing": "Refreshing..."
+  },
+  "meta": {
+    "title": "Snapshot Metadata",
+    "generatedAt": "Generated At (UTC)",
+    "businessDate": "Business Date"
+  },
+  "groups": {
+    "overview": "Overview",
+    "operations": "Operations",
+    "commercial": "Commercial",
+    "attention": "Attention"
+  },
+  "metrics": {
+    "todayEventCount": "Today Event Count",
+    "next7DayEventCount": "Next 7 Days Event Count",
+    "draftTalentKpiCount": "Draft Talent KPI",
+    "finalizedTalentKpiCount30d": "Finalized Talent KPI (30D)",
+    "draftRevenueEntryCount": "Draft Revenue Entries",
+    "finalizedRevenueAmount30d": "Finalized Revenue Amount (30D)",
+    "reconciledRevenueAmount30d": "Reconciled Revenue Amount (30D)",
+    "draftSettlementCount": "Draft Settlements",
+    "finalizedSettlementAmount30d": "Finalized Settlement Amount (30D)",
+    "activeCommissionRuleCount": "Active Commission Rules",
+    "expiringContractCount30d": "Expiring Contracts (30D)",
+    "staleTalentKpiDraftCount": "Stale KPI Drafts",
+    "staleRevenueDraftCount": "Stale Revenue Drafts",
+    "staleSettlementDraftCount": "Stale Settlement Drafts"
+  },
+  "states": {
+    "loadErrorTitle": "Unable To Load Dashboard Snapshot",
+    "loadErrorMessage": "Please retry loading the dashboard snapshot.",
+    "emptyTitle": "No Snapshot Data",
+    "emptyMessage": "The backend returned no dashboard snapshot payload."
+  }
+}

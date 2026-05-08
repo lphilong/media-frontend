@@ -1,0 +1,332 @@
+{
+  "globalOnly": "Global only",
+  "settlementKinds": {
+    "REVENUE_SHARE": "Revenue share"
+  },
+  "settlementBases": {
+    "RECOGNIZED_GROSS_REVENUE": "Recognized gross revenue"
+  },
+  "beneficiaryKinds": {
+    "EMPLOYMENT_PROFILE": "Employment profile",
+    "TALENT": "Talent"
+  },
+  "revenueKinds": {
+    "PLATFORM_LIVESTREAM": "Platform livestream",
+    "PLATFORM_CONTENT": "Platform content",
+    "EVENT_OPERATIONAL": "Event operational"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Use letters, numbers, underscores, or hyphens only.",
+    "invalidRatePercent": "Rate must be greater than 0, at most 100, and use up to 4 decimal places.",
+    "revenueKindsRequired": "Select at least one revenue kind.",
+    "utcMidnightTimestamp": "Enter a UTC-midnight integer timestamp.",
+    "effectiveWindow": "Effective end must be on or after effective start.",
+    "beneficiaryExactOne": "Provide exactly one matching beneficiary ID.",
+    "revenueShareTalentOnly": "Revenue share rules require a Talent beneficiary.",
+    "invalidTimestamp": "Enter an integer timestamp.",
+    "periodWindow": "Settlement period end must be after period start.",
+    "duplicateRevenueEntry": "Revenue entry IDs must be unique."
+  },
+  "rules": {
+    "title": "Commission Rules",
+    "subtitle": "Author revenue-share rule records for global commission settlement calculation.",
+    "placeholder": "Commission Rules are implemented in Wave 9.",
+    "statuses": {
+      "DRAFT": "Draft",
+      "INACTIVE": "Inactive",
+      "ACTIVE": "Active",
+      "ARCHIVED": "Archived"
+    },
+    "sort": {
+      "ruleCode": "Rule code",
+      "title": "Title",
+      "effectiveStartDate": "Effective start",
+      "createdAt": "Created"
+    },
+    "relatedModes": {
+      "by-beneficiary": "Rules filtered by beneficiary",
+      "by-contract": "Rules filtered by source contract"
+    },
+    "filters": {
+      "searchPlaceholder": "Search exact rule code or title prefix",
+      "status": "Status",
+      "allStatuses": "All non-archived",
+      "beneficiaryKind": "Beneficiary kind",
+      "anyBeneficiaryKind": "Any beneficiary kind",
+      "beneficiaryEmploymentProfileId": "Beneficiary Employment Profile ID",
+      "beneficiaryTalentId": "Beneficiary Talent ID",
+      "sourceContractRecordId": "Source contract record ID",
+      "settlementKind": "Settlement kind",
+      "anySettlementKind": "Any settlement kind",
+      "appliesToRevenueKind": "Revenue kind",
+      "anyRevenueKind": "Any revenue kind",
+      "windowStartDate": "Window start UTC midnight",
+      "windowEndDate": "Window end UTC midnight"
+    },
+    "fields": {
+      "ruleCode": "Rule code",
+      "title": "Title",
+      "settlementKind": "Settlement kind",
+      "beneficiaryKind": "Beneficiary kind",
+      "beneficiaryEmploymentProfileId": "Beneficiary Employment Profile ID",
+      "beneficiaryTalentId": "Beneficiary Talent ID",
+      "beneficiaryId": "Beneficiary ID",
+      "sourceContractRecordId": "Source contract record ID",
+      "settlementBasis": "Settlement basis",
+      "ratePercent": "Rate percent",
+      "appliesToRevenueKinds": "Applicable revenue kinds",
+      "effectiveStartDate": "Effective start UTC-midnight timestamp",
+      "effectiveEndDate": "Effective end UTC-midnight timestamp",
+      "status": "Status",
+      "scopeBoundary": "Scope boundary",
+      "description": "Description",
+      "externalRef": "External reference",
+      "createdAt": "Created at",
+      "updatedAt": "Updated at"
+    },
+    "table": {
+      "caption": "Commission rules",
+      "ruleCode": "Rule code",
+      "title": "Title",
+      "settlementKind": "Settlement kind",
+      "beneficiaryKind": "Beneficiary kind",
+      "beneficiaryId": "Beneficiary ID",
+      "sourceContractRecordId": "Source contract",
+      "ratePercent": "Rate",
+      "status": "Status",
+      "effectiveStartDate": "Effective start",
+      "effectiveEndDate": "Effective end",
+      "createdAt": "Created",
+      "actions": "Actions"
+    },
+    "actions": {
+      "closeCreate": "Close create",
+      "create": "Create commission rule",
+      "open": "Open",
+      "editDraftCore": "Edit draft core",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "archive": "Archive"
+    },
+    "mutations": {
+      "create": {
+        "title": "Create commission rule",
+        "subtitle": "Creates a draft global rule. Effective dates are UTC-midnight integer timestamps.",
+        "submit": "Create",
+        "pending": "Creating"
+      },
+      "draftCore": {
+        "title": "Edit rule draft core",
+        "subtitle": "Only draft or inactive rules can change authoring fields.",
+        "submit": "Save rule",
+        "pending": "Saving"
+      }
+    },
+    "confirm": {
+      "activate": "Activate this commission rule?",
+      "deactivate": "Deactivate this commission rule?",
+      "archive": "Archive this commission rule?"
+    },
+    "feedback": {
+      "created": "Commission rule created.",
+      "updated": "Commission rule updated.",
+      "lifecycleUpdated": "Commission rule lifecycle updated."
+    },
+    "states": {
+      "emptyTitle": "No commission rules",
+      "emptyMessage": "No rule records match the current query.",
+      "loadErrorTitle": "Commission rules could not be loaded",
+      "loadErrorMessage": "Retry the request or adjust the query."
+    },
+    "detail": {
+      "archivedReadOnly": "Archived rules are read-only.",
+      "activeReadOnly": "Active rules are immutable except for lifecycle actions.",
+      "identityTitle": "Rule identity",
+      "ruleTermsTitle": "Rule terms",
+      "beneficiaryTitle": "Beneficiary",
+      "sourceContractTitle": "Source contract",
+      "lifecycleTitle": "Lifecycle metadata",
+      "freeTextTitle": "Notes"
+    },
+    "related": {
+      "navigationTitle": "Related navigation",
+      "sourceContract": "Source contract",
+      "beneficiary": "Beneficiary",
+      "settlementsByRule": "Settlements by source rule"
+    },
+    "actionRail": {
+      "title": "Commission rule actions"
+    }
+  },
+  "settlements": {
+    "title": "Commission Settlements",
+    "subtitle": "Review and finalize backend-derived commission settlement records.",
+    "placeholder": "Commission Settlements are implemented in Wave 9.",
+    "statuses": {
+      "DRAFT": "Draft",
+      "FINALIZED": "Finalized",
+      "VOIDED": "Voided",
+      "ARCHIVED": "Archived"
+    },
+    "sort": {
+      "settlementPeriodStartAt": "Period start",
+      "settlementCode": "Settlement code",
+      "createdAt": "Created",
+      "finalizedAt": "Finalized"
+    },
+    "relatedModes": {
+      "by-beneficiary": "Settlements filtered by beneficiary",
+      "by-subject-talent": "Settlements filtered by subject talent",
+      "by-revenue-entry": "Settlements filtered by revenue entry"
+    },
+    "filters": {
+      "searchPlaceholder": "Search exact settlement code or title prefix",
+      "status": "Status",
+      "allStatuses": "All non-archived",
+      "settlementKindSnapshot": "Settlement kind snapshot",
+      "anySettlementKind": "Any settlement kind",
+      "beneficiaryKindSnapshot": "Beneficiary kind snapshot",
+      "anyBeneficiaryKind": "Any beneficiary kind",
+      "beneficiaryEmploymentProfileIdSnapshot": "Beneficiary Employment Profile snapshot ID",
+      "beneficiaryTalentIdSnapshot": "Beneficiary Talent snapshot ID",
+      "subjectTalentId": "Subject talent ID",
+      "sourceRuleId": "Source rule ID",
+      "containsRevenueEntryId": "Revenue entry ID",
+      "settlementCurrencyCode": "Currency",
+      "windowStartAt": "Window start timestamp",
+      "windowEndAt": "Window end timestamp"
+    },
+    "fields": {
+      "settlementCode": "Settlement code",
+      "title": "Title",
+      "sourceRuleId": "Source rule ID",
+      "sourceContractRecordIdSnapshot": "Source contract snapshot ID",
+      "settlementKindSnapshot": "Settlement kind snapshot",
+      "beneficiaryKindSnapshot": "Beneficiary kind snapshot",
+      "beneficiaryEmploymentProfileIdSnapshot": "Beneficiary Employment Profile snapshot ID",
+      "beneficiaryTalentIdSnapshot": "Beneficiary Talent snapshot ID",
+      "beneficiarySnapshotId": "Beneficiary snapshot ID",
+      "subjectTalentId": "Subject talent ID",
+      "settlementBasisSnapshot": "Settlement basis snapshot",
+      "ratePercentSnapshot": "Rate percent snapshot",
+      "revenueEntryId": "Revenue entry ID",
+      "settlementPeriodStartAt": "Settlement period start timestamp",
+      "settlementPeriodEndAt": "Settlement period end timestamp",
+      "settlementCurrencyCode": "Settlement currency",
+      "grossRevenueAmount": "Gross revenue amount",
+      "settlementAmount": "Settlement amount",
+      "status": "Status",
+      "scopeBoundary": "Scope boundary",
+      "finalizedAt": "Finalized at",
+      "voidedAt": "Voided at",
+      "description": "Description",
+      "externalRef": "External reference",
+      "createdAt": "Created at",
+      "updatedAt": "Updated at"
+    },
+    "table": {
+      "caption": "Commission settlements",
+      "settlementCode": "Settlement code",
+      "title": "Title",
+      "sourceRuleId": "Source rule",
+      "settlementKindSnapshot": "Kind snapshot",
+      "beneficiaryKindSnapshot": "Beneficiary kind",
+      "beneficiarySnapshotId": "Beneficiary ID",
+      "subjectTalentId": "Subject talent",
+      "settlementCurrencyCode": "Currency",
+      "grossRevenueAmount": "Gross revenue",
+      "settlementAmount": "Settlement amount",
+      "status": "Status",
+      "settlementPeriodStartAt": "Period start",
+      "settlementPeriodEndAt": "Period end",
+      "finalizedAt": "Finalized",
+      "createdAt": "Created",
+      "actions": "Actions"
+    },
+    "actions": {
+      "closeCreate": "Close create",
+      "create": "Create commission settlement",
+      "open": "Open",
+      "editDraftCore": "Edit draft core",
+      "replaceRevenueEntries": "Replace revenue entries",
+      "addRevenueEntry": "Add revenue entry",
+      "removeRevenueEntry": "Remove",
+      "finalize": "Finalize",
+      "void": "Void",
+      "archive": "Archive"
+    },
+    "mutations": {
+      "create": {
+        "title": "Create commission settlement",
+        "subtitle": "Creates a draft settlement with a full revenue-entry replacement set.",
+        "submit": "Create",
+        "pending": "Creating"
+      },
+      "draftCore": {
+        "title": "Edit settlement draft core",
+        "subtitle": "Only draft settlements can change authoring fields.",
+        "submit": "Save settlement",
+        "pending": "Saving"
+      },
+      "revenueEntries": {
+        "title": "Replace revenue entries",
+        "subtitle": "Submit the entire canonical revenue-entry set. Settlement lines and totals remain backend-derived.",
+        "rowsTitle": "Revenue entry set",
+        "submit": "Replace set",
+        "pending": "Replacing"
+      }
+    },
+    "confirm": {
+      "finalize": "Finalize this commission settlement?",
+      "void": "Void this commission settlement?",
+      "archive": "Archive this commission settlement?"
+    },
+    "feedback": {
+      "created": "Commission settlement created.",
+      "updated": "Commission settlement updated.",
+      "revenueEntriesUpdated": "Revenue-entry set replaced.",
+      "lifecycleUpdated": "Commission settlement lifecycle updated."
+    },
+    "states": {
+      "emptyTitle": "No commission settlements",
+      "emptyMessage": "No settlement records match the current query.",
+      "loadErrorTitle": "Commission settlements could not be loaded",
+      "loadErrorMessage": "Retry the request or adjust the query.",
+      "linesLoadErrorTitle": "Settlement lines could not be loaded",
+      "linesLoadErrorMessage": "Retry loading backend-derived lines.",
+      "noLines": "No settlement lines were returned."
+    },
+    "detail": {
+      "archivedReadOnly": "Archived settlements are read-only.",
+      "derivedReadOnly": "Derived amounts, snapshots, and settlement lines are backend-owned and read-only.",
+      "identityTitle": "Settlement identity",
+      "amountsTitle": "Backend-derived amounts",
+      "sourceTitle": "Source snapshots",
+      "beneficiaryTitle": "Beneficiary and subject",
+      "periodTitle": "Settlement period",
+      "revenueEntriesTitle": "Revenue entry set",
+      "linesTitle": "Read-only settlement lines",
+      "lifecycleTitle": "Lifecycle metadata",
+      "freeTextTitle": "Notes"
+    },
+    "lines": {
+      "caption": "Read-only settlement lines",
+      "revenueEntryId": "Revenue entry ID",
+      "revenueEntryCodeSnapshot": "Revenue code snapshot",
+      "revenueKindSnapshot": "Revenue kind snapshot",
+      "revenueRecognizedAmountSnapshot": "Recognized amount snapshot",
+      "lineSettlementAmount": "Line settlement amount"
+    },
+    "related": {
+      "navigationTitle": "Related navigation",
+      "sourceRule": "Source rule",
+      "sourceContract": "Source contract snapshot",
+      "beneficiary": "Beneficiary snapshot",
+      "subjectTalent": "Subject talent"
+    },
+    "actionRail": {
+      "title": "Commission settlement actions"
+    }
+  }
+}

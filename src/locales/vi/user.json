@@ -1,0 +1,113 @@
+{
+  "page": {
+    "title": "Người dùng",
+    "subtitle": "Quản trị định danh người dùng và metadata liên kết Auth0.",
+    "placeholder": "Luồng định danh và truy cập người dùng chưa khả dụng."
+  },
+  "fields": {
+    "id": "ID người dùng",
+    "authSubject": "Chủ thể Auth0",
+    "authProvider": "Nhà cung cấp",
+    "actorKind": "Loại tác nhân",
+    "accountStatus": "Trạng thái",
+    "displayName": "Tên hiển thị",
+    "email": "Email",
+    "phone": "Điện thoại",
+    "locale": "Ngôn ngữ",
+    "timezone": "Múi giờ",
+    "contexts": "Ngữ cảnh",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật",
+    "activatedAt": "Thời điểm kích hoạt",
+    "disabledAt": "Thời điểm vô hiệu hóa",
+    "archivedAt": "Thời điểm lưu trữ"
+  },
+  "actorKinds": {
+    "ADMIN": "Quản trị viên",
+    "STAFF": "Nhân sự"
+  },
+  "statuses": {
+    "PENDING": "Đang chờ",
+    "ACTIVE": "Đang hoạt động",
+    "DISABLED": "Đã vô hiệu hóa",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "table": {
+    "caption": "Danh sách người dùng",
+    "displayName": "Tên hiển thị",
+    "email": "Email",
+    "actorKind": "Loại tác nhân",
+    "accountStatus": "Trạng thái",
+    "updatedAt": "Thời điểm cập nhật",
+    "actions": "Hành động"
+  },
+  "filters": {
+    "searchPlaceholder": "Tìm theo tên hiển thị hoặc email",
+    "state": "Trạng thái",
+    "allStates": "Tất cả trạng thái",
+    "actorKind": "Loại tác nhân",
+    "allActorKinds": "Tất cả loại tác nhân"
+  },
+  "actions": {
+    "open": "Mở",
+    "create": "Tạo người dùng",
+    "closeCreate": "Đóng tạo mới",
+    "edit": "Chỉnh sửa hồ sơ",
+    "setAuthLinkage": "Thiết lập liên kết Auth0",
+    "activate": "Kích hoạt",
+    "disable": "Vô hiệu hóa",
+    "archive": "Lưu trữ"
+  },
+  "actionRail": {
+    "title": "Hành động người dùng"
+  },
+  "detail": {
+    "identityTitle": "Danh tính",
+    "authLinkageTitle": "Metadata liên kết Auth0",
+    "lifecycleTitle": "Vòng đời",
+    "archivedReadOnly": "Người dùng đã lưu trữ chỉ đọc.",
+    "boundaryNotice": "Màn hình Người dùng chỉ quản lý hồ sơ định danh, tùy chọn, vòng đời và metadata Auth0. Gán vai trò thuộc chi tiết Vai trò, còn liên kết hồ sơ nhân sự thuộc Hồ sơ nhân sự."
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo người dùng",
+      "subtitle": "Tạo định danh người dùng quản trị ở trạng thái đang chờ.",
+      "submit": "Tạo người dùng",
+      "pending": "Đang tạo người dùng"
+    },
+    "update": {
+      "title": "Cập nhật hồ sơ và tùy chọn",
+      "subtitle": "Chỉ gửi các trường hồ sơ và tùy chọn được hỗ trợ đã thay đổi.",
+      "submit": "Cập nhật người dùng",
+      "pending": "Đang cập nhật người dùng"
+    },
+    "authLinkage": {
+      "title": "Thiết lập metadata liên kết Auth0",
+      "subtitle": "Chỉ cập nhật metadata của nhà cung cấp.",
+      "submit": "Thiết lập liên kết",
+      "pending": "Đang thiết lập liên kết"
+    }
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "maxText": "Văn bản quá dài.",
+    "noChangedFields": "Thay đổi ít nhất một trường được hỗ trợ."
+  },
+  "confirm": {
+    "activate": "Kích hoạt người dùng này nếu backend cho phép?",
+    "disable": "Vô hiệu hóa người dùng này? Backend vẫn có thể từ chối do tác nhân hiện tại hoặc ràng buộc khôi phục quản trị.",
+    "archive": "Lưu trữ người dùng này? Không thể lưu trữ người dùng đang hoạt động."
+  },
+  "feedback": {
+    "created": "Đã tạo người dùng.",
+    "updated": "Đã cập nhật người dùng.",
+    "authLinkageUpdated": "Đã cập nhật metadata liên kết Auth0.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời người dùng."
+  },
+  "states": {
+    "emptyTitle": "Không tìm thấy người dùng",
+    "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo người dùng.",
+    "loadErrorTitle": "Không tải được người dùng",
+    "loadErrorMessage": "Không thể tải dữ liệu người dùng."
+  }
+}

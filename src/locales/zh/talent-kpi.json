@@ -1,0 +1,161 @@
+{
+  "page": {
+    "title": "艺人 KPI",
+    "subtitle": "用于艺人绩效测量的全局商业 KPI 记录",
+    "placeholder": "艺人 KPI 业务流程已在 Wave 8 实现。"
+  },
+  "sort": {
+    "periodStartAt": "期间开始",
+    "kpiRecordCode": "KPI 编码",
+    "createdAt": "已创建"
+  },
+  "filters": {
+    "searchPlaceholder": "精确编码或标题前缀",
+    "status": "状态",
+    "allStatuses": "所有未归档",
+    "subjectTalentId": "主体艺人",
+    "subjectTalentIdPlaceholder": "艺人ID",
+    "attributionPlatformAccountId": "平台账号",
+    "attributionPlatformAccountIdPlaceholder": "平台ID",
+    "attributionEventId": "活动",
+    "attributionEventIdPlaceholder": "活动ID",
+    "measurementSource": "测量来源",
+    "allMeasurementSources": "任意来源",
+    "containsMetricCode": "指标编码",
+    "allMetricCodes": "任意指标",
+    "windowStartAt": "窗口开始",
+    "windowEndAt": "窗口结束"
+  },
+  "relatedModes": {
+    "by-talent": "关联KPI记录按艺人",
+    "by-platform": "关联KPI记录按平台账号",
+    "by-event": "关联KPI记录按活动"
+  },
+  "statuses": {
+    "DRAFT": "草稿",
+    "FINALIZED": "已确认",
+    "ARCHIVED": "已归档"
+  },
+  "measurementSources": {
+    "MANUAL": "手动"
+  },
+  "metricCodes": {
+    "LIVESTREAM_HOURS": "Livestream 时长",
+    "REVENUE_ATTRIBUTED_AMOUNT": "归因收入金额",
+    "LIVESTREAM_SESSION_COUNT": "Livestream 场次数",
+    "CONTENT_PUBLISH_COUNT": "内容发布数",
+    "EVENT_APPEARANCE_COUNT": "活动出场数",
+    "ENGAGEMENT_COUNT": "互动数",
+    "FOLLOWER_DELTA": "粉丝变化"
+  },
+  "fields": {
+    "kpiRecordCode": "KPI记录编码",
+    "title": "标题",
+    "subjectTalentId": "主体艺人 ID",
+    "attributionPlatformAccountId": "归因平台账号 ID",
+    "attributionEventId": "归因活动 ID",
+    "measurementSource": "测量来源",
+    "periodStartAt": "期间开始时间戳",
+    "periodEndAt": "期间结束时间戳",
+    "publishedAt": "发布时间",
+    "metricCode": "指标编码",
+    "numericValue": "数值",
+    "description": "描述",
+    "externalRef": "外部引用",
+    "status": "状态",
+    "scopeBoundary": "范围边界",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "table": {
+    "caption": "艺人KPI记录",
+    "kpiRecordCode": "KPI 编码",
+    "title": "标题",
+    "subjectTalentId": "艺人",
+    "attributionPlatformAccountId": "平台",
+    "attributionEventId": "活动",
+    "measurementSource": "来源",
+    "status": "状态",
+    "periodStartAt": "期间开始",
+    "periodEndAt": "期间结束",
+    "publishedAt": "发布时间",
+    "actions": "操作"
+  },
+  "actions": {
+    "create": "新建 KPI 记录",
+    "closeCreate": "关闭新建",
+    "open": "打开",
+    "editDraftCore": "编辑草稿核心",
+    "replaceMetrics": "替换指标",
+    "addMetric": "添加指标",
+    "removeMetric": "移除",
+    "finalize": "确认",
+    "archive": "归档"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建 KPI 记录",
+      "subtitle": "手动创建仅全局 KPI 记录，并提交完整初始指标集合",
+      "submit": "新建",
+      "pending": "新建中"
+    },
+    "draftCore": {
+      "title": "编辑草稿核心",
+      "subtitle": "只有草稿 KPI 记录可变更核心字段",
+      "submit": "保存草稿核心信息",
+      "pending": "保存中"
+    },
+    "metrics": {
+      "title": "替换指标",
+      "subtitle": "提交完整规范指标集合，不支持逐行补丁",
+      "rowsTitle": "指标集合",
+      "submit": "替换指标",
+      "pending": "替换中"
+    }
+  },
+  "detail": {
+    "archivedReadOnly": "已归档 KPI 记录只读。",
+    "identityTitle": "记录身份",
+    "globalOnly": "仅全局范围",
+    "measurementTitle": "测量窗口",
+    "attributionTitle": "归因",
+    "metricsTitle": "指标",
+    "freeTextTitle": "备注"
+  },
+  "related": {
+    "navigationTitle": "关联商业记录",
+    "revenueByTalent": "同一艺人的收入",
+    "revenueByPlatform": "同一平台的收入",
+    "revenueByEvent": "同一活动的收入"
+  },
+  "actionRail": {
+    "title": "艺人KPI操作"
+  },
+  "states": {
+    "emptyTitle": "否KPI记录",
+    "emptyMessage": "没有记录匹配当前筛选。",
+    "loadErrorTitle": "无法加载 KPI 记录",
+    "loadErrorMessage": "无法加载 KPI 记录。",
+    "metricsLoadErrorTitle": "无法加载指标",
+    "metricsLoadErrorMessage": "无法加载指标列表。",
+    "noMetrics": "此记录未返回指标。"
+  },
+  "confirm": {
+    "finalize": "确认此 KPI 记录？后端仍可能因阻塞项拒绝操作。",
+    "archive": "归档此 KPI 记录？已归档记录仍可查看详情。"
+  },
+  "feedback": {
+    "created": "KPI记录已创建",
+    "updated": "KPI草稿核心已更新",
+    "metricsUpdated": "KPI 指标已替换",
+    "lifecycleUpdated": "KPI生命周期已更新"
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "只能使用字母、数字、下划线或连字符。",
+    "invalidTimestamp": "请输入有效的整数时间戳。",
+    "periodWindow": "周期结束必须晚于周期开始。",
+    "metricValue": "指标值与指标规则不匹配。",
+    "duplicateMetricCode": "指标代码必须唯一。"
+  }
+}

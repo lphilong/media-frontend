@@ -1,0 +1,158 @@
+{
+  "page": {
+    "title": "Tài khoản nền tảng",
+    "subtitle": "Quản trị định danh nền tảng, quyền sở hữu, khả năng và trạng thái vòng đời ở phạm vi toàn cục.",
+    "placeholder": "Luồng nghiệp vụ tài khoản nền tảng chưa được triển khai."
+  },
+  "fields": {
+    "accountCode": "Mã tài khoản",
+    "platform": "Nền tảng",
+    "platformSurfaceType": "Loại nền tảng",
+    "displayName": "Tên hiển thị",
+    "ownerKind": "Loại chủ sở hữu",
+    "ownerId": "ID chủ sở hữu",
+    "operationalStatus": "Trạng thái",
+    "handle": "Handle",
+    "externalPlatformId": "ID nền tảng bên ngoài",
+    "profileUrl": "URL hồ sơ",
+    "livestreamEnabled": "Livestream",
+    "contentPublishingEnabled": "Xuất bản nội dung",
+    "monetizationEnabled": "Kiếm tiền",
+    "description": "Mô tả",
+    "externalRef": "Tham chiếu bên ngoài",
+    "createdAt": "Thời điểm tạo",
+    "updatedAt": "Thời điểm cập nhật"
+  },
+  "placeholders": {
+    "optional": "Không bắt buộc"
+  },
+  "states": {
+    "emptyTitle": "Không có tài khoản nền tảng",
+    "emptyMessage": "Không có bản ghi nào khớp với truy vấn hiện tại.",
+    "loadErrorTitle": "Không tải được dữ liệu tài khoản nền tảng",
+    "loadErrorMessage": "Thử lại yêu cầu hoặc điều chỉnh bộ lọc hiện tại."
+  },
+  "filters": {
+    "searchPlaceholder": "Nhập mã tài khoản, tên hiển thị, handle hoặc URL hồ sơ",
+    "operationalStatus": "Trạng thái",
+    "allStatuses": "Tất cả chưa lưu trữ",
+    "platform": "Nền tảng",
+    "platformPlaceholder": "youtube",
+    "platformSurfaceType": "Loại nền tảng",
+    "platformSurfaceTypePlaceholder": "Livestream",
+    "ownerKind": "Loại chủ sở hữu",
+    "allOwnerKinds": "Tất cả loại chủ sở hữu",
+    "ownerId": "ID chủ sở hữu",
+    "ownerIdPlaceholder": "Nhập ID chủ sở hữu",
+    "livestreamEnabled": "Livestream",
+    "contentPublishingEnabled": "Xuất bản nội dung",
+    "monetizationEnabled": "Kiếm tiền",
+    "allCapabilityStates": "Tất cả trạng thái"
+  },
+  "ownerKinds": {
+    "ORG_UNIT": "Đơn vị",
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Nhóm Talent"
+  },
+  "sort": {
+    "accountCode": "Mã tài khoản",
+    "displayName": "Tên hiển thị",
+    "createdAt": "Thời điểm tạo"
+  },
+  "statuses": {
+    "ACTIVE": "Đang hoạt động",
+    "INACTIVE": "Không hoạt động",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "boolean": {
+    "true": "Có",
+    "false": "Không"
+  },
+  "actions": {
+    "create": "Tạo tài khoản",
+    "closeCreate": "Đóng tạo mới",
+    "open": "Mở",
+    "edit": "Chỉnh sửa trường chính",
+    "transferOwnership": "Chuyển quyền sở hữu",
+    "updateCapabilities": "Cập nhật khả năng",
+    "activate": "Kích hoạt",
+    "deactivate": "Vô hiệu hóa",
+    "archive": "Lưu trữ"
+  },
+  "table": {
+    "caption": "Danh sách tài khoản nền tảng",
+    "accountCode": "Mã tài khoản",
+    "platform": "Nền tảng",
+    "platformSurfaceType": "Loại nền tảng",
+    "displayName": "Tên hiển thị",
+    "handle": "Handle",
+    "ownerKind": "Loại chủ sở hữu",
+    "ownerId": "ID chủ sở hữu",
+    "operationalStatus": "Trạng thái",
+    "livestreamEnabled": "Livestream",
+    "contentPublishingEnabled": "Xuất bản nội dung",
+    "monetizationEnabled": "Kiếm tiền",
+    "createdAt": "Thời điểm tạo",
+    "actions": "Hành động"
+  },
+  "detail": {
+    "identityTitle": "Định danh và chủ sở hữu",
+    "locatorsTitle": "Thông tin định vị, khả năng và metadata",
+    "archivedReadOnly": "Tài khoản nền tảng đã lưu trữ chỉ đọc. Vẫn xem được chi tiết khi backend có dữ liệu."
+  },
+  "related": {
+    "navigationTitle": "Điều hướng liên quan",
+    "events": "Sự kiện theo tài khoản nền tảng",
+    "talentKpi": "KPI theo tài khoản nền tảng",
+    "revenueLedger": "Doanh thu theo tài khoản nền tảng",
+    "openFilteredList": "Mở danh sách đã lọc",
+    "unavailable": "Không có tuyến liên quan an toàn."
+  },
+  "mutations": {
+    "create": {
+      "title": "Tạo tài khoản nền tảng",
+      "subtitle": "Tạo bản ghi tài khoản toàn cục bằng các trường định danh và chủ sở hữu đã được hỗ trợ.",
+      "submit": "Tạo tài khoản",
+      "pending": "Đang tạo"
+    },
+    "edit": {
+      "title": "Chỉnh sửa tài khoản nền tảng",
+      "subtitle": "Chỉ cập nhật các trường hiển thị và thông tin định vị được phép chỉnh sửa.",
+      "submit": "Lưu thay đổi",
+      "pending": "Đang lưu"
+    },
+    "transferOwnership": {
+      "title": "Chuyển quyền sở hữu",
+      "subtitle": "Thay đổi chủ sở hữu thông qua tuyến chuyển quyền riêng.",
+      "submit": "Chuyển chủ sở hữu",
+      "pending": "Đang chuyển"
+    },
+    "capabilities": {
+      "title": "Cập nhật khả năng",
+      "subtitle": "Chỉ gửi đúng ba cờ khả năng của tài khoản nền tảng.",
+      "submit": "Cập nhật khả năng",
+      "pending": "Đang cập nhật"
+    }
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc.",
+    "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối theo yêu cầu của trường này.",
+    "invalidReferenceToken": "Nhập ID tham chiếu hợp lệ.",
+    "locatorRequired": "Cần có ít nhất một thông tin định vị."
+  },
+  "feedback": {
+    "created": "Đã tạo tài khoản nền tảng.",
+    "updated": "Đã cập nhật tài khoản nền tảng.",
+    "ownershipTransferred": "Đã chuyển quyền sở hữu.",
+    "capabilitiesUpdated": "Đã cập nhật khả năng.",
+    "lifecycleUpdated": "Đã cập nhật trạng thái vòng đời."
+  },
+  "confirm": {
+    "activate": "Kích hoạt tài khoản nền tảng này?",
+    "deactivate": "Vô hiệu hóa tài khoản nền tảng này? Backend vẫn có thể từ chối nếu còn ràng buộc.",
+    "archive": "Lưu trữ tài khoản nền tảng không hoạt động này? Backend sẽ tắt toàn bộ cờ khả năng khi lưu trữ."
+  },
+  "actionRail": {
+    "title": "Hành động tài khoản nền tảng"
+  }
+}

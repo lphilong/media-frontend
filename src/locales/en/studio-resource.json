@@ -1,0 +1,125 @@
+{
+  "page": {
+    "title": "Studio Resources",
+    "subtitle": "Administer global studio resources, availability, and lifecycle state.",
+    "placeholder": "Studio Resource business flows are intentionally not implemented yet."
+  },
+  "fields": {
+    "resourceCode": "Resource code",
+    "name": "Name",
+    "resourceClass": "Resource class",
+    "shortName": "Short name",
+    "locationLabel": "Location",
+    "maxOccupancy": "Max occupancy",
+    "description": "Description",
+    "externalRef": "External ref",
+    "operationalStatus": "Status",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "states": {
+    "emptyTitle": "No studio resources",
+    "emptyMessage": "No records match the current query.",
+    "loadErrorTitle": "Studio resource data could not load",
+    "loadErrorMessage": "Retry the request or adjust the current filters."
+  },
+  "filters": {
+    "searchPlaceholder": "Search resource code, name, or short name",
+    "operationalStatus": "Status",
+    "allStatuses": "All non-archived",
+    "resourceClass": "Resource class",
+    "resourceClassPlaceholder": "SPACE",
+    "hasMaxOccupancy": "Occupancy",
+    "allOccupancyStates": "All occupancy states",
+    "withOccupancy": "Has max occupancy",
+    "withoutOccupancy": "No max occupancy"
+  },
+  "sort": {
+    "resourceCode": "Resource code",
+    "name": "Name",
+    "createdAt": "Created"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "OUT_OF_SERVICE": "Out of service",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
+  },
+  "actions": {
+    "create": "Create resource",
+    "closeCreate": "Close create",
+    "open": "Open",
+    "edit": "Edit core fields",
+    "outOfService": "Mark out of service",
+    "restoreToActive": "Restore to active",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "archive": "Archive",
+    "openAvailability": "Availability view",
+    "exitAvailability": "Full list"
+  },
+  "table": {
+    "caption": "Studio resource list",
+    "resourceCode": "Resource code",
+    "name": "Name",
+    "shortName": "Short name",
+    "resourceClass": "Resource class",
+    "operationalStatus": "Status",
+    "locationLabel": "Location",
+    "maxOccupancy": "Max occupancy",
+    "createdAt": "Created",
+    "actions": "Actions"
+  },
+  "availability": {
+    "caption": "Studio resource availability list",
+    "modeLabel": "Availability view uses the dedicated thinner resource payload."
+  },
+  "detail": {
+    "identityTitle": "Resource identity and occupancy",
+    "metadataTitle": "Description and metadata",
+    "archivedReadOnly": "Archived studio resources are read-only. Backend detail remains viewable when available."
+  },
+  "related": {
+    "navigationTitle": "Related navigation",
+    "workShifts": "Work shifts by resource",
+    "events": "Events by resource",
+    "openFilteredList": "Open filtered list",
+    "unavailable": "No safe related route is available."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create studio resource",
+      "subtitle": "Creates a global studio resource record using documented identity fields.",
+      "submit": "Create resource",
+      "pending": "Creating"
+    },
+    "edit": {
+      "title": "Edit studio resource",
+      "subtitle": "Updates mutable metadata only.",
+      "submit": "Save changes",
+      "pending": "Saving"
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Use an uppercase token such as SPACE or EQUIPMENT.",
+    "invalidPositiveInteger": "Enter a positive whole number.",
+    "maxOccupancySpaceOnly": "Max occupancy is only valid for SPACE resources."
+  },
+  "feedback": {
+    "created": "Studio resource created.",
+    "updated": "Studio resource updated.",
+    "availabilityUpdated": "Availability state updated.",
+    "lifecycleUpdated": "Lifecycle state updated."
+  },
+  "confirm": {
+    "outOfService": "Mark this active resource out of service? Backend allocation blockers may still reject the request.",
+    "restoreToActive": "Restore this resource to active?",
+    "deactivate": "Deactivate this resource? Backend allocation blockers may still reject the request.",
+    "activate": "Activate this resource?",
+    "archive": "Archive this inactive resource?"
+  },
+  "actionRail": {
+    "title": "Studio resource actions"
+  }
+}

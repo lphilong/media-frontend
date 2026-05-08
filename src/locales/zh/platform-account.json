@@ -1,0 +1,158 @@
+{
+  "page": {
+    "title": "平台账号",
+    "subtitle": "管理全局平台身份、所有权、能力和生命周期状态。",
+    "placeholder": "平台账号业务流程尚未在本阶段实现。"
+  },
+  "fields": {
+    "accountCode": "账号编码",
+    "platform": "平台",
+    "platformSurfaceType": "载体类型",
+    "displayName": "显示名称",
+    "ownerKind": "所有者类型",
+    "ownerId": "所有者 ID",
+    "operationalStatus": "状态",
+    "handle": "账号名",
+    "externalPlatformId": "外部平台ID",
+    "profileUrl": "档案 URL",
+    "livestreamEnabled": "直播",
+    "contentPublishingEnabled": "发布",
+    "monetizationEnabled": "变现",
+    "description": "描述",
+    "externalRef": "外部引用",
+    "createdAt": "已创建",
+    "updatedAt": "已更新"
+  },
+  "placeholders": {
+    "optional": "可选"
+  },
+  "states": {
+    "emptyTitle": "否平台账号",
+    "emptyMessage": "没有记录匹配当前查询。",
+    "loadErrorTitle": "无法加载平台账号",
+    "loadErrorMessage": "请重试请求或调整当前筛选条件。"
+  },
+  "filters": {
+    "searchPlaceholder": "搜索账号编码、显示名称、Handle 或档案 URL",
+    "operationalStatus": "状态",
+    "allStatuses": "所有未归档",
+    "platform": "平台",
+    "platformPlaceholder": "youtube",
+    "platformSurfaceType": "载体类型",
+    "platformSurfaceTypePlaceholder": "livestream",
+    "ownerKind": "所有者类型",
+    "allOwnerKinds": "所有所有者类型",
+    "ownerId": "所有者 ID",
+    "ownerIdPlaceholder": "输入所有者 ID",
+    "livestreamEnabled": "直播",
+    "contentPublishingEnabled": "发布",
+    "monetizationEnabled": "变现",
+    "allCapabilityStates": "所有状态"
+  },
+  "ownerKinds": {
+    "ORG_UNIT": "组织单元",
+    "TALENT": "艺人",
+    "TALENT_GROUP": "艺人组"
+  },
+  "sort": {
+    "accountCode": "账号编码",
+    "displayName": "显示名称",
+    "createdAt": "已创建"
+  },
+  "statuses": {
+    "ACTIVE": "启用",
+    "INACTIVE": "停用",
+    "ARCHIVED": "已归档"
+  },
+  "boolean": {
+    "true": "是",
+    "false": "否"
+  },
+  "actions": {
+    "create": "新建账号",
+    "closeCreate": "关闭新建",
+    "open": "打开",
+    "edit": "编辑核心字段",
+    "transferOwnership": "转移所有权",
+    "updateCapabilities": "更新能力",
+    "activate": "启用",
+    "deactivate": "停用",
+    "archive": "归档"
+  },
+  "table": {
+    "caption": "平台账号列表",
+    "accountCode": "账号编码",
+    "platform": "平台",
+    "platformSurfaceType": "载体类型",
+    "displayName": "显示名称",
+    "handle": "账号名",
+    "ownerKind": "所有者类型",
+    "ownerId": "所有者 ID",
+    "operationalStatus": "状态",
+    "livestreamEnabled": "直播",
+    "contentPublishingEnabled": "发布",
+    "monetizationEnabled": "变现",
+    "createdAt": "已创建",
+    "actions": "操作"
+  },
+  "detail": {
+    "identityTitle": "身份和所有者",
+    "locatorsTitle": "定位信息、能力和元数据",
+    "archivedReadOnly": "已归档平台账号只读。后端详情可用时仍可查看。"
+  },
+  "related": {
+    "navigationTitle": "关联导航",
+    "events": "按平台账号查看活动",
+    "talentKpi": "KPI按平台账号",
+    "revenueLedger": "收入按平台账号",
+    "openFilteredList": "打开筛选列表",
+    "unavailable": "没有可用的安全关联路由。"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建平台账号",
+      "subtitle": "使用已记录的身份和所有者字段创建全局账号记录。",
+      "submit": "新建账号",
+      "pending": "新建中"
+    },
+    "edit": {
+      "title": "编辑平台账号",
+      "subtitle": "仅更新可变显示和定位字段。",
+      "submit": "保存更改",
+      "pending": "保存中"
+    },
+    "transferOwnership": {
+      "title": "转移所有权",
+      "subtitle": "通过专用转移路由变更所有者。",
+      "submit": "转移所有者",
+      "pending": "转移中"
+    },
+    "capabilities": {
+      "title": "更新能力",
+      "subtitle": "准确发送三个平台能力标记。",
+      "submit": "更新能力",
+      "pending": "更新中"
+    }
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidToken": "根据此字段要求使用字母、数字、下划线或连字符。",
+    "invalidReferenceToken": "请输入有效引用 ID。",
+    "locatorRequired": "至少需要一个定位信息。"
+  },
+  "feedback": {
+    "created": "平台账号已创建。",
+    "updated": "平台账号已更新。",
+    "ownershipTransferred": "所有权已转移。",
+    "capabilitiesUpdated": "能力已更新。",
+    "lifecycleUpdated": "生命周期状态已更新。"
+  },
+  "confirm": {
+    "activate": "启用此平台账号？",
+    "deactivate": "停用此平台账号？后端仍可能因阻塞项拒绝请求。",
+    "archive": "归档此停用平台账号？后端归档会强制关闭所有能力标记。"
+  },
+  "actionRail": {
+    "title": "平台账号操作"
+  }
+}

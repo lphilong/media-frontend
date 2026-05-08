@@ -1,0 +1,213 @@
+{
+  "page": {
+    "title": "Employment Profiles",
+    "subtitle": "Employment identity, assignment, and lifecycle management",
+    "placeholder": "Employment Profile business flows are intentionally not implemented yet."
+  },
+  "fields": {
+    "employeeCode": "Employee Code",
+    "legalName": "Legal Name",
+    "displayName": "Display Name",
+    "employmentKind": "Employment Kind",
+    "jobTitle": "Job Title",
+    "orgUnitId": "Org Unit ID",
+    "newOrgUnitId": "New Org Unit ID",
+    "managerEmploymentProfileId": "Manager Profile ID",
+    "newManagerEmploymentProfileId": "New Manager Profile ID",
+    "linkedUserId": "Linked User ID",
+    "contractStatus": "Contract Status",
+    "newContractStatus": "New Contract Status",
+    "employmentStartDate": "Employment Start Date",
+    "employmentEndDate": "Employment End Date",
+    "titleDescription": "Title Description",
+    "externalRef": "External Reference",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At"
+  },
+  "placeholders": {
+    "optional": "Optional",
+    "clearToUnset": "Leave blank to clear manager assignment"
+  },
+  "states": {
+    "emptyTitle": "No employment profiles found",
+    "emptyMessage": "Try updating search or filters.",
+    "loadErrorTitle": "Unable to load employment profiles",
+    "loadErrorMessage": "Employment profile data could not be loaded."
+  },
+  "filters": {
+    "searchPlaceholder": "Search by employee code, legal name, or display name",
+    "employmentStatus": "Employment Status",
+    "contractStatus": "Contract Status",
+    "employmentKind": "Employment Kind",
+    "employmentKindPlaceholder": "Filter by kind token",
+    "orgUnitId": "Org Unit",
+    "orgUnitIdPlaceholder": "Org unit ID",
+    "managerEmploymentProfileId": "Manager",
+    "managerEmploymentProfileIdPlaceholder": "Manager profile ID",
+    "hasLinkedUser": "Linked User",
+    "allEmploymentStatuses": "All employment statuses",
+    "allContractStatuses": "All contract statuses",
+    "allLinkedUserStates": "All linked-user states",
+    "linkedOnly": "Linked only",
+    "unlinkedOnly": "Unlinked only"
+  },
+  "sort": {
+    "employeeCode": "Employee Code",
+    "displayName": "Display Name",
+    "legalName": "Legal Name",
+    "createdAt": "Created At"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "ON_LEAVE": "On Leave",
+    "SUSPENDED": "Suspended",
+    "TERMINATED": "Terminated",
+    "ARCHIVED": "Archived"
+  },
+  "contractStatuses": {
+    "NONE": "None",
+    "PENDING_SIGNATURE": "Pending Signature",
+    "ACTIVE": "Active",
+    "EXPIRED": "Expired",
+    "TERMINATED": "Terminated"
+  },
+  "actions": {
+    "create": "Create Employment Profile",
+    "closeCreate": "Close Create",
+    "open": "Open",
+    "edit": "Edit",
+    "assignOrgUnit": "Assign Org Unit",
+    "assignManager": "Assign Manager",
+    "linkUser": "Link User",
+    "unlinkUser": "Unlink User",
+    "updateContractStatus": "Update Contract Status",
+    "place-on-leave": "Place On Leave",
+    "return-from-leave": "Return From Leave",
+    "suspend": "Suspend",
+    "reactivate": "Reactivate",
+    "terminate": "Terminate",
+    "archive": "Archive"
+  },
+  "table": {
+    "caption": "Employment profile list",
+    "employeeCode": "Employee Code",
+    "displayName": "Display Name",
+    "legalName": "Legal Name",
+    "employmentKind": "Kind",
+    "jobTitle": "Job Title",
+    "orgUnitId": "Org Unit",
+    "managerEmploymentProfileId": "Manager",
+    "linkedUserId": "Linked User",
+    "employmentStatus": "Employment Status",
+    "contractStatus": "Contract Status",
+    "createdAt": "Created",
+    "actions": "Actions"
+  },
+  "directReportsTable": {
+    "employeeCode": "Employee Code",
+    "displayName": "Display Name",
+    "employmentStatus": "Employment Status",
+    "contractStatus": "Contract Status",
+    "orgUnitId": "Org Unit",
+    "managerEmploymentProfileId": "Manager"
+  },
+  "directReports": {
+    "sortBy": "Sort",
+    "sort": {
+      "employeeCode": "Employee Code",
+      "displayName": "Display Name"
+    },
+    "emptyTitle": "No direct reports",
+    "emptyMessage": "This profile currently has no direct reports.",
+    "caption": "Direct reports list"
+  },
+  "detail": {
+    "summaryTitle": "Profile Summary",
+    "assignmentTitle": "Assignment and Dates",
+    "noManager": "No manager assigned"
+  },
+  "related": {
+    "navigationTitle": "Related Navigation",
+    "workShifts": "Work Shifts by Subject",
+    "events": "Events by Assignment",
+    "contractsByOwner": "Contracts by Owner",
+    "contractsByLinkedEntity": "Contracts by Linked Entity",
+    "openFilteredList": "Open filtered list",
+    "unavailable": "Unavailable",
+    "directReportsTitle": "Direct Reports"
+  },
+  "mutations": {
+    "create": {
+      "title": "Create Employment Profile",
+      "subtitle": "Create a new employment profile record",
+      "submit": "Create",
+      "pending": "Creating..."
+    },
+    "edit": {
+      "title": "Edit Employment Profile",
+      "subtitle": "Update editable profile fields",
+      "submit": "Save",
+      "pending": "Saving..."
+    },
+    "assignOrgUnit": {
+      "title": "Assign Org Unit",
+      "subtitle": "Move profile into a different org unit",
+      "submit": "Assign",
+      "pending": "Assigning..."
+    },
+    "assignManager": {
+      "title": "Assign Manager",
+      "subtitle": "Update manager relationship",
+      "submit": "Assign",
+      "pending": "Assigning..."
+    },
+    "linkUser": {
+      "title": "Link User",
+      "subtitle": "Attach a user account to this profile",
+      "submit": "Link",
+      "pending": "Linking..."
+    },
+    "contractStatus": {
+      "title": "Update Contract Status",
+      "subtitle": "Change contract status through dedicated action",
+      "submit": "Update",
+      "pending": "Updating..."
+    },
+    "terminate": {
+      "title": "Terminate Employment",
+      "subtitle": "Set employment end date through terminate action",
+      "submit": "Terminate",
+      "pending": "Terminating..."
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Value must use supported token characters.",
+    "invalidDate": "Date must be a valid YYYY-MM-DD value.",
+    "invalidReferenceToken": "Reference ID contains unsupported characters.",
+    "managerCannotBeSelf": "A profile cannot be its own manager.",
+    "contractStatusTransitionNotAllowed": "This contract-status transition is not allowed."
+  },
+  "feedback": {
+    "created": "Employment profile created successfully.",
+    "updated": "Employment profile updated successfully.",
+    "orgUnitAssigned": "Org unit assignment updated successfully.",
+    "managerAssigned": "Manager assignment updated successfully.",
+    "userLinked": "User linked successfully.",
+    "userUnlinked": "User unlinked successfully.",
+    "contractStatusUpdated": "Contract status updated successfully.",
+    "terminated": "Employment terminated successfully.",
+    "lifecycleUpdated": "Employment lifecycle updated successfully."
+  },
+  "confirm": {
+    "unlinkUser": "Unlink user from this employment profile?",
+    "place-on-leave": "Place this profile on leave?",
+    "return-from-leave": "Return this profile from leave?",
+    "suspend": "Suspend this employment profile?",
+    "reactivate": "Reactivate this employment profile?",
+    "archive": "Archive this employment profile?"
+  },
+  "actionRail": {
+    "title": "Employment Actions"
+  }
+}

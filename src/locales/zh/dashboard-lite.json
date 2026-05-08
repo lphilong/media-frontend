@@ -1,0 +1,42 @@
+{
+  "page": {
+    "title": "仪表盘",
+    "subtitle": "运营快照"
+  },
+  "actions": {
+    "refreshing": "刷新中..."
+  },
+  "meta": {
+    "title": "快照元数据",
+    "generatedAt": "生成时间 (UTC)",
+    "businessDate": "业务日期"
+  },
+  "groups": {
+    "overview": "总览",
+    "operations": "运营",
+    "commercial": "商业",
+    "attention": "关注"
+  },
+  "metrics": {
+    "todayEventCount": "今日活动数量",
+    "next7DayEventCount": "未来 7 天活动数量",
+    "draftTalentKpiCount": "KPI 草稿数",
+    "finalizedTalentKpiCount30d": "KPI 已定稿数 (30 天)",
+    "draftRevenueEntryCount": "收入草稿条目",
+    "finalizedRevenueAmount30d": "已定稿收入金额 (30 天)",
+    "reconciledRevenueAmount30d": "已对账收入金额 (30 天)",
+    "draftSettlementCount": "结算草稿数",
+    "finalizedSettlementAmount30d": "已定稿结算金额 (30 天)",
+    "activeCommissionRuleCount": "生效分佣规则数",
+    "expiringContractCount30d": "即将到期合同数 (30 天)",
+    "staleTalentKpiDraftCount": "滞留 KPI 草稿",
+    "staleRevenueDraftCount": "滞留收入草稿",
+    "staleSettlementDraftCount": "滞留结算草稿"
+  },
+  "states": {
+    "loadErrorTitle": "无法加载仪表盘快照",
+    "loadErrorMessage": "请重试加载仪表盘快照。",
+    "emptyTitle": "没有快照数据",
+    "emptyMessage": "后端未返回仪表盘快照内容。"
+  }
+}

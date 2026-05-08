@@ -1,0 +1,70 @@
+{
+  "app": {
+    "name": "Livestream Admin"
+  },
+  "labels": {
+    "locale": "Ngôn ngữ",
+    "breadcrumb": "Điều hướng trang",
+    "detail": "Chi tiết",
+    "recordId": "Mã bản ghi",
+    "waveState": "Trạng thái wave",
+    "search": "Tìm kiếm",
+    "sort": "Sắp xếp",
+    "sortDefault": "Mặc định",
+    "sortAscending": "Tăng dần",
+    "sortDescending": "Giảm dần"
+  },
+  "locales": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "zh": "中文"
+  },
+  "actions": {
+    "reload": "Tải lại",
+    "refresh": "Làm mới",
+    "retry": "Thử lại",
+    "previous": "Trước",
+    "next": "Tiếp",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "confirmDestructive": "Xác nhận",
+    "close": "Đóng",
+    "search": "Tìm",
+    "stubAction": "Hành động này sẽ có ở wave sau",
+    "toggleSidebar": "Thu gọn thanh bên",
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất"
+  },
+  "states": {
+    "loading": "Đang tải"
+  },
+  "auth": {
+    "loginTitle": "Đăng nhập quản trị",
+    "loginSubtitle": "Lớp xác thực nền tảng đã sẵn sàng cho Auth0"
+  },
+  "session": {
+    "placeholderUser": "Phiên quản trị",
+    "statusActive": "Đang hoạt động"
+  },
+  "placeholders": {
+    "foundationOnlyTitle": "Trang này mới ở mức khung nền tảng",
+    "waveStubSubtitle": "Chưa được triển khai trong wave này",
+    "waveStubState": "Chỉ là khung chờ",
+    "listSectionTitle": "Khu vực danh sách",
+    "detailSummaryTitle": "Tổng quan bản ghi",
+    "detailMetadataTitle": "Khu vực metadata",
+    "relatedSectionTitle": "Liên kết liên quan",
+    "relatedSectionSubtitle": "Khung related-view cho wave tiếp theo",
+    "relatedSectionMessage": "Chưa có hành vi danh sách liên quan trong wave này.",
+    "actionRailTitle": "Hành động",
+    "actionRailPlaceholder": "Hành động chi tiết chưa được triển khai."
+  },
+  "dialogs": {
+    "destructive": {
+      "title": "Xác nhận hành động có ảnh hưởng"
+    }
+  },
+  "feedback": {
+    "saved": "Lưu thành công"
+  }
+}

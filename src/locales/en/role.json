@@ -1,0 +1,174 @@
+{
+  "page": {
+    "title": "Roles",
+    "subtitle": "Admin-only permission templates, assignment rules, and Role-owned user assignments.",
+    "placeholder": "Role identity/access implementation is not available."
+  },
+  "fields": {
+    "roleId": "Role id",
+    "userId": "User id",
+    "code": "Code",
+    "name": "Name",
+    "state": "State",
+    "description": "Description",
+    "delegationBand": "Delegation band",
+    "maxDelegatableBand": "Max delegatable band",
+    "permissions": "Permissions",
+    "assignmentRules": "Assignment rules",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "activatedAt": "Activated",
+    "archivedAt": "Archived",
+    "reason": "Reason"
+  },
+  "states": {
+    "DRAFT": "Draft",
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
+  },
+  "assignmentStates": {
+    "ACTIVE": "Active",
+    "REVOKED": "Revoked"
+  },
+  "delegationBands": {
+    "LIMITED": "Limited",
+    "PRIVILEGED": "Privileged",
+    "FOUNDATION": "Foundation"
+  },
+  "maxDelegatableBands": {
+    "NONE": "None",
+    "LIMITED": "Limited",
+    "PRIVILEGED": "Privileged"
+  },
+  "table": {
+    "caption": "Roles",
+    "code": "Code",
+    "name": "Name",
+    "state": "State",
+    "permissionsSummary": "Permissions",
+    "assignmentCountSummary": "Assignments",
+    "updatedAt": "Updated",
+    "actions": "Actions"
+  },
+  "filters": {
+    "searchPlaceholder": "Search role name or code",
+    "state": "State",
+    "allStates": "All states"
+  },
+  "actions": {
+    "open": "Open",
+    "create": "Create role",
+    "closeCreate": "Close create",
+    "edit": "Edit metadata",
+    "replacePermissions": "Replace permissions",
+    "replaceAssignmentRules": "Replace assignment rules",
+    "assignToUser": "Assign to user",
+    "revokeAssignment": "Revoke",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "archive": "Archive"
+  },
+  "actionRail": {
+    "title": "Role actions"
+  },
+  "detail": {
+    "identityTitle": "Role metadata",
+    "policyTitle": "Permission policy",
+    "permissionMatrixTitle": "Permission matrix",
+    "archivedReadOnly": "Archived roles are immutable.",
+    "boundaryNotice": "Role grants permissions only. Role assignment and revocation remain Role-owned and do not mutate User profile, Auth0 linkage, lifecycle, Employment Profile, or business records."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create role",
+      "subtitle": "Creates a draft permission-template role.",
+      "submit": "Create role",
+      "pending": "Creating role"
+    },
+    "update": {
+      "title": "Update metadata and delegation bands",
+      "subtitle": "Only Role metadata and delegation-band fields are submitted.",
+      "submit": "Update role",
+      "pending": "Updating role"
+    },
+    "permissions": {
+      "title": "Replace permissions",
+      "subtitle": "Full replacement payload is exactly { permissions: [...] }.",
+      "submit": "Replace permissions",
+      "pending": "Replacing permissions"
+    },
+    "assignmentRules": {
+      "title": "Replace assignment rules",
+      "subtitle": "Full replacement payload is exactly { rules: [...] }.",
+      "submit": "Replace rules",
+      "pending": "Replacing rules"
+    },
+    "deactivate": {
+      "title": "Deactivate role",
+      "subtitle": "Active assignments or governance blockers may be rejected by the backend.",
+      "submit": "Deactivate role",
+      "pending": "Deactivating role"
+    },
+    "archive": {
+      "title": "Archive role",
+      "subtitle": "Active roles cannot be archived.",
+      "submit": "Archive role",
+      "pending": "Archiving role"
+    },
+    "assignToUser": {
+      "title": "Assign role to user",
+      "subtitle": "Creates a Role-owned assignment record only.",
+      "submit": "Assign role",
+      "pending": "Assigning role"
+    },
+    "revokeAssignment": {
+      "title": "Revoke role assignment",
+      "subtitle": "Assignment {{assignmentId}} will be updated as a Role-owned assignment record.",
+      "submit": "Revoke assignment",
+      "pending": "Revoking assignment"
+    }
+  },
+  "placeholders": {
+    "permissions": "role:view\nuser:view",
+    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidRulesJson": "Assignment rules must be a JSON array with plain-object or null conditions."
+  },
+  "confirm": {
+    "activate": "Activate this role if backend blockers allow it.",
+    "deactivate": "Deactivate this role if there are no backend blockers.",
+    "archive": "Archive this role if there are no backend blockers."
+  },
+  "feedback": {
+    "created": "Role created.",
+    "updated": "Role updated.",
+    "lifecycleUpdated": "Role lifecycle updated.",
+    "permissionsUpdated": "Role permissions replaced.",
+    "assignmentRulesUpdated": "Role assignment rules replaced.",
+    "assignedToUser": "Role assigned to user.",
+    "assignmentRevoked": "Role assignment revoked."
+  },
+  "statesView": {
+    "emptyTitle": "No roles found",
+    "emptyMessage": "Adjust filters or create a role.",
+    "loadErrorTitle": "Unable to load roles",
+    "loadErrorMessage": "The role surface could not be loaded.",
+    "permissionMatrixUnavailable": "Permission matrix is unavailable."
+  },
+  "assignments": {
+    "title": "Role assignments",
+    "caption": "Role assignments",
+    "assignmentId": "Assignment id",
+    "userId": "User id",
+    "state": "State",
+    "effectiveAt": "Effective",
+    "revokedAt": "Revoked",
+    "reason": "Reason",
+    "allStates": "All assignment states",
+    "emptyTitle": "No assignments found",
+    "emptyMessage": "No Role-owned assignments match the current filter."
+  }
+}

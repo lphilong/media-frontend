@@ -1,0 +1,31 @@
+{
+  "unexpected": {
+    "title": "Unexpected error",
+    "message": "Please retry or reload the page"
+  },
+  "transport": {
+    "generic": "Unable to reach the server"
+  },
+  "auth": {
+    "title": "Authentication error",
+    "loginFailed": "Login redirect failed",
+    "callbackFailed": "Unable to process auth callback",
+    "configMissing": "Auth0 configuration is missing. Set VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID, or set VITE_AUTH_MODE=mock only for local mock auth."
+  },
+  "permission": {
+    "title": "Access denied",
+    "message": "The backend denied this resource"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "message": "This route does not exist in the admin shell"
+  },
+  "validation": {
+    "invalidTransition": "This action is not available for the current status.",
+    "unsupportedPayload": "The request contains unsupported fields.",
+    "unsupportedQuery": "The request contains unsupported filters."
+  },
+  "conflict": {
+    "message": "The request conflicts with an existing record."
+  }
+}

@@ -1,0 +1,132 @@
+import type {
+  ROLE_PERMISSION_LITERALS,
+  roleAssignmentStateValues,
+  roleDelegationBandValues,
+  roleLifecycleActionValues,
+  roleMaxDelegatableBandValues,
+  roleStateValues,
+} from '@modules/role/constants/role.constants';
+
+export type RoleState = (typeof roleStateValues)[number];
+export type RoleAssignmentState = (typeof roleAssignmentStateValues)[number];
+export type RoleDelegationBand = (typeof roleDelegationBandValues)[number];
+export type RoleMaxDelegatableBand = (typeof roleMaxDelegatableBandValues)[number];
+export type RoleLifecycleAction = (typeof roleLifecycleActionValues)[number];
+export type RolePermissionLiteral = (typeof ROLE_PERMISSION_LITERALS)[number];
+
+export type JsonPlainValue = string | number | boolean | null | { [key: string]: JsonPlainValue };
+
+export type RolePermission = {
+  code: string;
+};
+
+export type RoleAssignmentRule = {
+  id?: string;
+  code: string;
+  description?: string | null;
+  state?: string | null;
+  conditions?: Record<string, JsonPlainValue> | null;
+};
+
+export type RoleListItem = {
+  id: string;
+  code: string;
+  name: string;
+  state: RoleState;
+  permissionsSummary?: string | number | null;
+  assignmentCountSummary?: string | number | null;
+  updatedAt: number | string;
+};
+
+export type RoleDetailRecord = {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  state: RoleState;
+  permissions: RolePermission[];
+  delegationBand: RoleDelegationBand;
+  maxDelegatableBand: RoleMaxDelegatableBand;
+  assignmentRules: RoleAssignmentRule[];
+  createdAt?: number | string;
+  updatedAt: number | string;
+  activatedAt?: number | string | null;
+  archivedAt?: number | string | null;
+};
+
+export type RoleAssignmentItem = {
+  assignmentId: string;
+  roleId: string;
+  userId: string;
+  state: RoleAssignmentState;
+  effectiveAt: number | string;
+  revokedAt?: number | string | null;
+  reason?: string | null;
+};
+
+export type RolePermissionMatrix = {
+  roleId: string;
+  roleCode: string;
+  roleState: RoleState;
+  permissions: RolePermission[];
+  delegationBand: RoleDelegationBand;
+  maxDelegatableBand: RoleMaxDelegatableBand;
+};
+
+export type RoleListQuery = {
+  state?: RoleState;
+  limit?: number;
+  cursor?: string;
+  search?: string;
+};
+
+export type RoleAssignmentListQuery = {
+  state?: RoleAssignmentState;
+  limit?: number;
+  cursor?: string;
+};
+
+export type RoleCreatePayload = {
+  name: string;
+  code: string;
+  description?: string | null;
+  initialPermissions?: string[];
+  initialDelegationBand?: RoleDelegationBand;
+  initialMaxDelegatableBand?: RoleMaxDelegatableBand;
+  initialAssignmentRules?: RoleAssignmentRule[];
+};
+
+export type RoleUpdatePayload = {
+  name?: string;
+  description?: string | null;
+  delegationBand?: RoleDelegationBand;
+  maxDelegatableBand?: RoleMaxDelegatableBand;
+};
+
+export type RoleLifecyclePayload = {
+  reason?: string | null;
+};
+
+export type RolePermissionReplacementPayload = {
+  permissions: string[];
+};
+
+export type RoleAssignmentRuleReplacementPayload = {
+  rules: RoleAssignmentRule[];
+};
+
+export type RoleAssignToUserPayload = {
+  userId: string;
+  reason?: string | null;
+};
+
+export type RoleRevokeAssignmentPayload = {
+  reason?: string | null;
+};
+
+export type CursorPagedResponse<TData> = {
+  data: TData[];
+  meta?: {
+    nextCursor?: string;
+  };
+};

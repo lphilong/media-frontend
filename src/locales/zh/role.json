@@ -1,0 +1,174 @@
+{
+  "page": {
+    "title": "角色",
+    "subtitle": "管理权限模板、分配规则和角色拥有的用户分配。",
+    "placeholder": "角色身份/访问实现不可用。"
+  },
+  "fields": {
+    "roleId": "角色ID",
+    "userId": "用户 ID",
+    "code": "编码",
+    "name": "名称",
+    "state": "状态",
+    "description": "描述",
+    "delegationBand": "委派等级",
+    "maxDelegatableBand": "最大可委派等级",
+    "permissions": "权限",
+    "assignmentRules": "分配规则",
+    "createdAt": "已创建",
+    "updatedAt": "已更新",
+    "activatedAt": "已启用",
+    "archivedAt": "已归档",
+    "reason": "原因"
+  },
+  "states": {
+    "DRAFT": "草稿",
+    "ACTIVE": "启用",
+    "INACTIVE": "停用",
+    "ARCHIVED": "已归档"
+  },
+  "assignmentStates": {
+    "ACTIVE": "启用",
+    "REVOKED": "已撤销"
+  },
+  "delegationBands": {
+    "LIMITED": "受限",
+    "PRIVILEGED": "特权",
+    "FOUNDATION": "基础"
+  },
+  "maxDelegatableBands": {
+    "NONE": "无",
+    "LIMITED": "受限",
+    "PRIVILEGED": "特权"
+  },
+  "table": {
+    "caption": "角色",
+    "code": "编码",
+    "name": "名称",
+    "state": "状态",
+    "permissionsSummary": "权限",
+    "assignmentCountSummary": "分配",
+    "updatedAt": "已更新",
+    "actions": "操作"
+  },
+  "filters": {
+    "searchPlaceholder": "搜索角色名称或编码",
+    "state": "状态",
+    "allStates": "所有状态"
+  },
+  "actions": {
+    "open": "打开",
+    "create": "新建角色",
+    "closeCreate": "关闭新建",
+    "edit": "编辑元数据",
+    "replacePermissions": "替换权限",
+    "replaceAssignmentRules": "替换分配规则",
+    "assignToUser": "分配给用户",
+    "revokeAssignment": "撤销分配",
+    "activate": "启用",
+    "deactivate": "停用",
+    "archive": "归档"
+  },
+  "actionRail": {
+    "title": "角色操作"
+  },
+  "detail": {
+    "identityTitle": "角色元数据",
+    "policyTitle": "权限策略",
+    "permissionMatrixTitle": "权限矩阵",
+    "archivedReadOnly": "已归档角色不可变更。",
+    "boundaryNotice": "角色只授予权限。角色分配和撤销仍由角色拥有，不会修改用户档案、Auth0 链接、生命周期、员工档案或业务记录。"
+  },
+  "mutations": {
+    "create": {
+      "title": "新建角色",
+      "subtitle": "创建草稿权限模板角色。",
+      "submit": "新建角色",
+      "pending": "角色创建中"
+    },
+    "update": {
+      "title": "更新元数据和委派等级",
+      "subtitle": "仅提交角色元数据和委派等级字段。",
+      "submit": "更新角色",
+      "pending": "角色更新中"
+    },
+    "permissions": {
+      "title": "替换权限",
+      "subtitle": "完整替换 payload 必须为 { permissions: [...] }。",
+      "submit": "替换权限",
+      "pending": "权限替换中"
+    },
+    "assignmentRules": {
+      "title": "替换分配规则",
+      "subtitle": "完整替换 payload 必须为 { rules: [...] }。",
+      "submit": "替换规则",
+      "pending": "规则替换中"
+    },
+    "deactivate": {
+      "title": "停用角色",
+      "subtitle": "后端可能因启用分配或治理约束而拒绝。",
+      "submit": "停用角色",
+      "pending": "角色停用中"
+    },
+    "archive": {
+      "title": "归档角色",
+      "subtitle": "启用中的角色不能归档。",
+      "submit": "归档角色",
+      "pending": "角色归档中"
+    },
+    "assignToUser": {
+      "title": "向用户分配角色",
+      "subtitle": "仅创建角色拥有的分配记录。",
+      "submit": "分配角色",
+      "pending": "角色分配中"
+    },
+    "revokeAssignment": {
+      "title": "撤销角色分配",
+      "subtitle": "分配 {{assignmentId}} 将作为角色拥有的分配记录更新。",
+      "submit": "撤销分配",
+      "pending": "分配撤销中"
+    }
+  },
+  "placeholders": {
+    "permissions": "role:view user:view",
+    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]"
+  },
+  "validation": {
+    "required": "此字段为必填。",
+    "invalidRulesJson": "分配规则必须是 JSON 数组，conditions 必须是普通对象或 null。"
+  },
+  "confirm": {
+    "activate": "在后端允许时启用此角色。",
+    "deactivate": "在没有后端阻塞项时停用此角色。",
+    "archive": "在没有后端约束时归档此角色。"
+  },
+  "feedback": {
+    "created": "角色已创建。",
+    "updated": "角色已更新。",
+    "lifecycleUpdated": "角色生命周期已更新。",
+    "permissionsUpdated": "角色权限已替换。",
+    "assignmentRulesUpdated": "角色分配规则已替换。",
+    "assignedToUser": "角色已分配给用户。",
+    "assignmentRevoked": "角色分配已撤销。"
+  },
+  "statesView": {
+    "emptyTitle": "未找到角色",
+    "emptyMessage": "调整筛选条件或新建角色。",
+    "loadErrorTitle": "无法加载角色",
+    "loadErrorMessage": "无法加载角色界面。",
+    "permissionMatrixUnavailable": "权限矩阵不可用。"
+  },
+  "assignments": {
+    "title": "角色分配",
+    "caption": "角色分配",
+    "assignmentId": "分配ID",
+    "userId": "用户 ID",
+    "state": "状态",
+    "effectiveAt": "生效",
+    "revokedAt": "已撤销",
+    "reason": "原因",
+    "allStates": "所有分配状态",
+    "emptyTitle": "未找到分配",
+    "emptyMessage": "没有角色拥有的分配与当前筛选匹配。"
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "page": {
+    "title": "Platform Accounts",
+    "subtitle": "Administer global platform identities, ownership, capabilities, and lifecycle state.",
+    "placeholder": "Platform Account business flows are intentionally not implemented yet."
+  },
+  "fields": {
+    "accountCode": "Account code",
+    "platform": "Platform",
+    "platformSurfaceType": "Surface type",
+    "displayName": "Display name",
+    "ownerKind": "Owner kind",
+    "ownerId": "Owner id",
+    "operationalStatus": "Status",
+    "handle": "Handle",
+    "externalPlatformId": "External platform id",
+    "profileUrl": "Profile URL",
+    "livestreamEnabled": "Livestream",
+    "contentPublishingEnabled": "Publishing",
+    "monetizationEnabled": "Monetization",
+    "description": "Description",
+    "externalRef": "External ref",
+    "createdAt": "Created",
+    "updatedAt": "Updated"
+  },
+  "placeholders": {
+    "optional": "Optional"
+  },
+  "states": {
+    "emptyTitle": "No platform accounts",
+    "emptyMessage": "No records match the current query.",
+    "loadErrorTitle": "Platform account data could not load",
+    "loadErrorMessage": "Retry the request or adjust the current filters."
+  },
+  "filters": {
+    "searchPlaceholder": "Search account code, display name, handle, or profile URL",
+    "operationalStatus": "Status",
+    "allStatuses": "All non-archived",
+    "platform": "Platform",
+    "platformPlaceholder": "YOUTUBE",
+    "platformSurfaceType": "Surface type",
+    "platformSurfaceTypePlaceholder": "LIVESTREAM",
+    "ownerKind": "Owner kind",
+    "allOwnerKinds": "All owner kinds",
+    "ownerId": "Owner id",
+    "ownerIdPlaceholder": "Enter owner id",
+    "livestreamEnabled": "Livestream",
+    "contentPublishingEnabled": "Publishing",
+    "monetizationEnabled": "Monetization",
+    "allCapabilityStates": "All states"
+  },
+  "ownerKinds": {
+    "ORG_UNIT": "Org unit",
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Talent group"
+  },
+  "sort": {
+    "accountCode": "Account code",
+    "displayName": "Display name",
+    "createdAt": "Created"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
+  },
+  "boolean": {
+    "true": "Yes",
+    "false": "No"
+  },
+  "actions": {
+    "create": "Create account",
+    "closeCreate": "Close create",
+    "open": "Open",
+    "edit": "Edit core fields",
+    "transferOwnership": "Transfer ownership",
+    "updateCapabilities": "Update capabilities",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "archive": "Archive"
+  },
+  "table": {
+    "caption": "Platform account list",
+    "accountCode": "Account code",
+    "platform": "Platform",
+    "platformSurfaceType": "Surface type",
+    "displayName": "Display name",
+    "handle": "Handle",
+    "ownerKind": "Owner kind",
+    "ownerId": "Owner id",
+    "operationalStatus": "Status",
+    "livestreamEnabled": "Livestream",
+    "contentPublishingEnabled": "Publishing",
+    "monetizationEnabled": "Monetization",
+    "createdAt": "Created",
+    "actions": "Actions"
+  },
+  "detail": {
+    "identityTitle": "Identity and owner",
+    "locatorsTitle": "Locators, capabilities, and metadata",
+    "archivedReadOnly": "Archived platform accounts are read-only. Backend detail remains viewable when available."
+  },
+  "related": {
+    "navigationTitle": "Related navigation",
+    "events": "Events by platform account",
+    "talentKpi": "KPI by platform account",
+    "revenueLedger": "Revenue by platform account",
+    "openFilteredList": "Open filtered list",
+    "unavailable": "No safe related route is available."
+  },
+  "mutations": {
+    "create": {
+      "title": "Create platform account",
+      "subtitle": "Creates a global account record using documented identity and owner fields.",
+      "submit": "Create account",
+      "pending": "Creating"
+    },
+    "edit": {
+      "title": "Edit platform account",
+      "subtitle": "Updates mutable display and locator fields only.",
+      "submit": "Save changes",
+      "pending": "Saving"
+    },
+    "transferOwnership": {
+      "title": "Transfer ownership",
+      "subtitle": "Changes the owner through the dedicated transfer route.",
+      "submit": "Transfer owner",
+      "pending": "Transferring"
+    },
+    "capabilities": {
+      "title": "Update capabilities",
+      "subtitle": "Sends exactly the three platform capability flags.",
+      "submit": "Update capabilities",
+      "pending": "Updating"
+    }
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalidToken": "Use letters, numbers, underscores, or hyphens as required by this field.",
+    "invalidReferenceToken": "Enter a valid reference id.",
+    "locatorRequired": "At least one locator is required."
+  },
+  "feedback": {
+    "created": "Platform account created.",
+    "updated": "Platform account updated.",
+    "ownershipTransferred": "Ownership transferred.",
+    "capabilitiesUpdated": "Capabilities updated.",
+    "lifecycleUpdated": "Lifecycle state updated."
+  },
+  "confirm": {
+    "activate": "Activate this platform account?",
+    "deactivate": "Deactivate this platform account? Backend blockers may still reject the request.",
+    "archive": "Archive this inactive platform account? Backend archiving forces all capability flags off."
+  },
+  "actionRail": {
+    "title": "Platform account actions"
+  }
+}
