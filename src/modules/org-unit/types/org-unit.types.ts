@@ -39,7 +39,7 @@ export type OrgUnitListQuery = {
 };
 
 export type OrgUnitCreatePayload = {
-  code: string;
+  code?: string;
   name: string;
   type: string;
   displayOrder: number;

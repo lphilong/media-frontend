@@ -40,7 +40,7 @@ export type TalentListQuery = {
 };
 
 export type TalentCreatePayload = {
-  talentCode: string;
+  talentCode?: string;
   stageName: string;
   legalName: string;
   talentOrigin: TalentOrigin;

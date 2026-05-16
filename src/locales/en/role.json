@@ -6,7 +6,7 @@
   },
   "fields": {
     "roleId": "Role id",
-    "userId": "User id",
+    "userId": "User",
     "code": "Code",
     "name": "Name",
     "state": "State",
@@ -131,7 +131,11 @@
   },
   "placeholders": {
     "permissions": "role:view\nuser:view",
-    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]"
+    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]",
+    "userSearch": "Search users by name or email"
+  },
+  "referenceHelp": {
+    "userId": "Choose the user account that receives this role assignment."
   },
   "validation": {
     "required": "This field is required.",
@@ -162,7 +166,7 @@
     "title": "Role assignments",
     "caption": "Role assignments",
     "assignmentId": "Assignment id",
-    "userId": "User id",
+    "userId": "User",
     "state": "State",
     "effectiveAt": "Effective",
     "revokedAt": "Revoked",

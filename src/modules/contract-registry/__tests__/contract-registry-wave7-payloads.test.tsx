@@ -35,11 +35,21 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
+vi.mock('@shared/components/reference/admin-reference-options', () => ({
+  loadEmploymentProfileReferenceOptions: vi.fn(async () => [
+    { id: 'ep-001', label: 'Employee One - EP-000001' },
+    { id: 'ep-002', label: 'Employee Two - EP-000002' },
+  ]),
+  loadTalentReferenceOptions: vi.fn(async () => [
+    { id: 'talent-001', label: 'Talent One - TAL-000001' },
+  ]),
+}));
+
 const apiRequestMock = vi.mocked(apiRequest);
 
 const detailRecord: ContractRecord = {
   id: 'contract-record-001',
-  contractCode: 'CON001',
+  contractCode: 'CON-2026-000001',
   title: 'Contract one',
   contractKind: 'EMPLOYMENT',
   linkedEntityKind: 'EMPLOYMENT_PROFILE',
@@ -67,7 +77,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
   it('parses and serializes flat-list query keys without scope or numbered pagination', () => {
     const query = parseScreenQueryParams(
       new URLSearchParams(
-        'status=DRAFT&contractKind=EMPLOYMENT&linkedEntityKind=EMPLOYMENT_PROFILE&linkedEmploymentProfileId=ep-001&ownerEmploymentProfileId=ep-002&confidentialityTier=CONFIDENTIAL&hasFileReference=true&windowStartDate=2026-01-01&windowEndDate=2026-12-31&limit=50&cursor=opaque&search=CON001&sortBy=contractCode&sortDirection=desc&page=2&scope=global&scopeGrants=x',
+        'status=DRAFT&contractKind=EMPLOYMENT&linkedEntityKind=EMPLOYMENT_PROFILE&linkedEmploymentProfileId=ep-001&ownerEmploymentProfileId=ep-002&confidentialityTier=CONFIDENTIAL&hasFileReference=true&windowStartDate=2026-01-01&windowEndDate=2026-12-31&limit=50&cursor=opaque&search=CON-2026-000001&sortBy=contractCode&sortDirection=desc&page=2&scope=global&scopeGrants=x',
       ),
       contractRegistryFlatListQueryConfig,
     );
@@ -84,7 +94,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
       windowEndDate: '2026-12-31',
       limit: 50,
       cursor: 'opaque',
-      search: 'CON001',
+      search: 'CON-2026-000001',
       sortBy: 'contractCode',
       sortDirection: 'desc',
     });
@@ -159,7 +169,6 @@ describe('contract registry wave 7 query and payload shaping', () => {
 
     apiRequestMock.mockResolvedValue({ data: detailRecord });
     await createContractRecord({
-      contractCode: 'CON900',
       title: 'Wave 7 contract',
       contractKind: 'EMPLOYMENT',
       linkedEntityKind: 'EMPLOYMENT_PROFILE',
@@ -177,7 +186,6 @@ describe('contract registry wave 7 query and payload shaping', () => {
       scopeGrants: ['x'],
     } as Parameters<typeof createContractRecord>[0]);
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).toEqual({
-      contractCode: 'CON900',
       title: 'Wave 7 contract',
       contractKind: 'EMPLOYMENT',
       linkedEntityKind: 'EMPLOYMENT_PROFILE',
@@ -191,6 +199,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
       description: null,
       externalRef: null,
     });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('contractCode');
   });
 
   it('submits exact mutation payloads for draft-core, owner, file reference, dates, and zero-body lifecycle', async () => {
@@ -220,6 +229,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
       description: null,
       externalRef: null,
     });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('contractCode');
 
     await assignContractOwner('contract-record-001', {
       newOwnerEmploymentProfileId: 'ep-002',
@@ -255,19 +265,16 @@ describe('contract registry wave 7 query and payload shaping', () => {
     const createRender = render(
       <ContractCreateSurface onCancel={() => undefined} onSubmit={onCreate} />,
     );
-    await user.type(
-      screen.getByLabelText(i18n.t('contract-registry:fields.contractCode')),
-      'CON900',
-    );
+    expect(
+      screen.queryByLabelText(i18n.t('contract-registry:fields.contractCode')),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('contract-registry:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('contract-registry:fields.title')), 'Contract');
-    await user.type(
-      screen.getByLabelText(i18n.t('contract-registry:fields.linkedEntityId')),
-      'ep-001',
-    );
-    await user.type(
-      screen.getByLabelText(i18n.t('contract-registry:fields.ownerEmploymentProfileId')),
-      'ep-001',
-    );
+    const employeeOptions = await screen.findAllByRole('button', { name: /Employee One/ });
+    await user.click(employeeOptions[0]);
+    await user.click(employeeOptions[1]);
     await user.type(
       screen.getByLabelText(i18n.t('contract-registry:fields.effectiveStartDate')),
       '2026-01-01',
@@ -299,27 +306,21 @@ describe('contract registry wave 7 query and payload shaping', () => {
       }),
     );
     expect(onCreate.mock.calls.at(-1)?.[0]).not.toHaveProperty('linkedTalentId');
+    expect(onCreate.mock.calls.at(-1)?.[0]).not.toHaveProperty('contractCode');
     createRender.unmount();
 
     const badCompatibility = vi.fn();
     render(<ContractCreateSurface onCancel={() => undefined} onSubmit={badCompatibility} />);
-    await user.type(
-      screen.getByLabelText(i18n.t('contract-registry:fields.contractCode')),
-      'CON901',
-    );
     await user.type(screen.getByLabelText(i18n.t('contract-registry:fields.title')), 'Bad');
     await user.selectOptions(
       screen.getByLabelText(i18n.t('contract-registry:fields.contractKind')),
       'TALENT_SERVICE',
     );
-    await user.type(
-      screen.getByLabelText(i18n.t('contract-registry:fields.linkedEntityId')),
-      'ep-001',
-    );
-    await user.type(
-      screen.getByLabelText(i18n.t('contract-registry:fields.ownerEmploymentProfileId')),
-      'ep-001',
-    );
+    const compatibilityEmployeeOptions = await screen.findAllByRole('button', {
+      name: /Employee One/,
+    });
+    await user.click(compatibilityEmployeeOptions[0]);
+    await user.click(compatibilityEmployeeOptions[1]);
     await user.type(
       screen.getByLabelText(i18n.t('contract-registry:fields.effectiveStartDate')),
       '2026-01-01',
@@ -344,11 +345,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
       screen.getByLabelText(i18n.t('contract-registry:fields.linkedEntityKind')),
       'TALENT',
     );
-    await user.clear(screen.getByLabelText(i18n.t('contract-registry:fields.linkedEntityId')));
-    await user.type(
-      screen.getByLabelText(i18n.t('contract-registry:fields.linkedEntityId')),
-      'talent-001',
-    );
+    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
     await user.click(
       screen.getByRole('button', { name: i18n.t('contract-registry:mutations.draftCore.submit') }),
     );
@@ -358,6 +355,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
         linkedTalentId: 'talent-001',
       }),
     );
+    expect(onDraftCore.mock.calls.at(-1)?.[0]).not.toHaveProperty('contractCode');
     draftRender.unmount();
 
     const onFile = vi.fn();

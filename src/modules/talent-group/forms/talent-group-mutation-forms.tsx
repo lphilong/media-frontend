@@ -15,8 +15,9 @@ import type {
   TalentGroupUpdateLineupPayload,
   TalentGroupUpdatePayload,
 } from '@modules/talent-group/types/talent-group.types';
+import { loadTalentReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
-import { FormGrid, TextInputField } from '@shared/forms';
+import { FormGrid, GeneratedCodeNotice, ReferencePickerField, TextInputField } from '@shared/forms';
 
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
@@ -66,17 +67,8 @@ const applySchemaErrors = <TValues extends FieldValues>(
   });
 };
 
-const createGroupCreateSchema = (
-  requiredMessage: string,
-  tokenMessage: string,
-  numberMessage: string,
-) => {
+const createGroupCreateSchema = (requiredMessage: string, numberMessage: string) => {
   return z.object({
-    groupCode: z
-      .string()
-      .trim()
-      .min(1, requiredMessage)
-      .regex(/^[A-Z0-9_-]+$/, tokenMessage),
     name: z.string().trim().min(1, requiredMessage),
     displayOrder: z.coerce.number().int(numberMessage).min(0, numberMessage),
     shortName: z.string().trim().optional(),
@@ -117,7 +109,6 @@ const createLineupSchema = (numberMessage: string) => {
 };
 
 type TalentGroupCreateFormValues = {
-  groupCode: string;
   name: string;
   shortName: string;
   description: string;
@@ -133,7 +124,6 @@ export const TalentGroupCreateSurface = ({
   const { t } = useTranslation(['talent-group', 'common']);
   const form = useForm<TalentGroupCreateFormValues>({
     defaultValues: {
-      groupCode: '',
       name: '',
       shortName: '',
       description: '',
@@ -146,7 +136,6 @@ export const TalentGroupCreateSurface = ({
     () =>
       createGroupCreateSchema(
         t('talent-group:validation.required'),
-        t('talent-group:validation.invalidToken'),
         t('talent-group:validation.invalidDisplayOrder'),
       ),
     [t],
@@ -155,12 +144,11 @@ export const TalentGroupCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'groupCode');
+      applySchemaErrors(form.setError, parsed.error, 'name');
       return;
     }
 
     await onSubmit({
-      groupCode: parsed.data.groupCode,
       name: parsed.data.name,
       displayOrder: parsed.data.displayOrder,
       shortName: toNullableText(parsed.data.shortName),
@@ -183,7 +171,11 @@ export const TalentGroupCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="groupCode" label={t('talent-group:fields.groupCode')} />
+          <GeneratedCodeNotice
+            label={t('talent-group:generatedCode.label')}
+            description={t('talent-group:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField name="name" label={t('talent-group:fields.name')} />
           <TextInputField
             name="displayOrder"
@@ -357,7 +349,14 @@ export const TalentGroupAddMemberSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="talentId" label={t('talent-group:fields.talentId')} />
+          <ReferencePickerField
+            name="talentId"
+            label={t('talent-group:fields.talentId')}
+            pickerId="talent-group-member-talent"
+            loadOptions={loadTalentReferenceOptions}
+            helperText={t('talent-group:referenceHelp.talentId')}
+            placeholder={t('talent-group:placeholders.talentSearch')}
+          />
           <TextInputField
             name="lineupOrder"
             label={t('talent-group:fields.lineupOrder')}

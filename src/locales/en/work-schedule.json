@@ -70,8 +70,6 @@
   "actions": {
     "create": "Create work shift",
     "closeCreate": "Close create",
-    "adminCreateForm": "Admin create form",
-    "closeAdminCreate": "Close admin create",
     "scheduleWorkShift": "Schedule work shift",
     "closeGuidedWorkflow": "Close guided workflow",
     "open": "Open detail",
@@ -150,7 +148,7 @@
   },
   "task": {
     "title": "Schedule work shift",
-    "description": "Use this guided form for normal scheduling. The admin create form remains available for technical or compatibility cases.",
+    "description": "Use this guided form for normal scheduling.",
     "steps": {
       "details": "Step 1 of 2: Shift details",
       "review": "Step 2 of 2: Check before saving"

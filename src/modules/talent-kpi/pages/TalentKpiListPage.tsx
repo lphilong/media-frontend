@@ -29,6 +29,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { ReferenceFilterField } from '@shared/components/reference';
+import {
+  loadEventReferenceOptions,
+  loadPlatformAccountReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   createCursorStack,
@@ -354,49 +360,48 @@ export const TalentKpiListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          <label className="flex min-w-[210px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent-kpi:filters.subjectTalentId')}
-            </span>
-            <input
-              value={'subjectTalentId' in activeQuery ? (activeQuery.subjectTalentId ?? '') : ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('talent-kpi:filters.subjectTalentIdPlaceholder')}
-              onChange={(event) => patchQuery({ subjectTalentId: event.target.value || undefined })}
-            />
-          </label>
-          <label className="flex min-w-[230px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent-kpi:filters.attributionPlatformAccountId')}
-            </span>
-            <input
-              value={
-                'attributionPlatformAccountId' in activeQuery
-                  ? (activeQuery.attributionPlatformAccountId ?? '')
-                  : ''
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('talent-kpi:filters.attributionPlatformAccountIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery({ attributionPlatformAccountId: event.target.value || undefined })
-              }
-            />
-          </label>
-          <label className="flex min-w-[210px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent-kpi:filters.attributionEventId')}
-            </span>
-            <input
-              value={
-                'attributionEventId' in activeQuery ? (activeQuery.attributionEventId ?? '') : ''
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('talent-kpi:filters.attributionEventIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery({ attributionEventId: event.target.value || undefined })
-              }
-            />
-          </label>
+          <ReferenceFilterField
+            label={t('talent-kpi:filters.subjectTalentId')}
+            pickerId="talent-kpi-filter-subject-talent"
+            value={
+              'subjectTalentId' in activeQuery
+                ? (activeQuery.subjectTalentId ?? undefined)
+                : undefined
+            }
+            loadOptions={loadTalentReferenceOptions}
+            placeholder={t('talent-kpi:filters.subjectTalentIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            className="min-w-[210px]"
+            onChange={(value) => patchQuery({ subjectTalentId: value })}
+          />
+          <ReferenceFilterField
+            label={t('talent-kpi:filters.attributionPlatformAccountId')}
+            pickerId="talent-kpi-filter-platform-account"
+            value={
+              'attributionPlatformAccountId' in activeQuery
+                ? (activeQuery.attributionPlatformAccountId ?? undefined)
+                : undefined
+            }
+            loadOptions={loadPlatformAccountReferenceOptions}
+            placeholder={t('talent-kpi:filters.attributionPlatformAccountIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            className="min-w-[230px]"
+            onChange={(value) => patchQuery({ attributionPlatformAccountId: value })}
+          />
+          <ReferenceFilterField
+            label={t('talent-kpi:filters.attributionEventId')}
+            pickerId="talent-kpi-filter-event"
+            value={
+              'attributionEventId' in activeQuery
+                ? (activeQuery.attributionEventId ?? undefined)
+                : undefined
+            }
+            loadOptions={loadEventReferenceOptions}
+            placeholder={t('talent-kpi:filters.attributionEventIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            className="min-w-[210px]"
+            onChange={(value) => patchQuery({ attributionEventId: value })}
+          />
           {routeMode === 'flat' ? (
             <>
               <label className="flex min-w-[190px] flex-col gap-1">

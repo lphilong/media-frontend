@@ -7,6 +7,10 @@ import { resetWave8MockData, wave8Handlers } from '@test/msw/wave8-handlers';
 import { resetWave9MockData, wave9Handlers } from '@test/msw/wave9-handlers';
 import { resetWave4MockData, wave4Handlers } from '@test/msw/wave4-handlers';
 import {
+  generatedFixtureCode,
+  providedOrGeneratedFixtureCode,
+} from '@test/msw/generated-code-fixtures';
+import {
   identityAccessHandlers,
   resetIdentityAccessMockData,
 } from '@test/msw/identity-access-handlers';
@@ -136,7 +140,7 @@ const now = Date.parse('2026-04-22T00:00:00.000Z');
 const initialOrgUnits: OrgUnitRecord[] = [
   {
     id: 'ou-root',
-    code: 'ROOT',
+    code: 'OU-000001',
     name: 'Head Office',
     type: 'DEPARTMENT',
     status: 'ACTIVE',
@@ -150,7 +154,7 @@ const initialOrgUnits: OrgUnitRecord[] = [
   },
   {
     id: 'ou-sales',
-    code: 'SALES',
+    code: 'OU-000002',
     name: 'Sales',
     type: 'TEAM',
     status: 'ACTIVE',
@@ -164,7 +168,7 @@ const initialOrgUnits: OrgUnitRecord[] = [
   },
   {
     id: 'ou-ops',
-    code: 'OPS',
+    code: 'OU-000003',
     name: 'Operations',
     type: 'TEAM',
     status: 'INACTIVE',
@@ -178,7 +182,7 @@ const initialOrgUnits: OrgUnitRecord[] = [
   },
   {
     id: 'ou-archive',
-    code: 'ARCHIVE',
+    code: 'OU-999999',
     name: 'Archive Team',
     type: 'TEAM',
     status: 'ARCHIVED',
@@ -195,7 +199,7 @@ const initialOrgUnits: OrgUnitRecord[] = [
 const initialEmploymentProfiles: EmploymentProfileRecord[] = [
   {
     id: 'ep-001',
-    employeeCode: 'EMP001',
+    employeeCode: 'EP-000001',
     legalName: 'Alice Nguyen',
     displayName: 'Alice',
     employmentKind: 'FULL_TIME',
@@ -214,7 +218,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
   },
   {
     id: 'ep-002',
-    employeeCode: 'EMP002',
+    employeeCode: 'EP-000002',
     legalName: 'Bao Tran',
     displayName: 'Bao',
     employmentKind: 'FULL_TIME',
@@ -233,7 +237,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
   },
   {
     id: 'ep-003',
-    employeeCode: 'EMP003',
+    employeeCode: 'EP-000003',
     legalName: 'Chau Le',
     displayName: 'Chau',
     employmentKind: 'CONTRACTOR',
@@ -252,7 +256,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
   },
   {
     id: 'ep-004',
-    employeeCode: 'EMP004',
+    employeeCode: 'EP-000004',
     legalName: 'Dung Pham',
     displayName: 'Dung',
     employmentKind: 'PART_TIME',
@@ -271,7 +275,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
   },
   {
     id: 'ep-archive',
-    employeeCode: 'EMP999',
+    employeeCode: 'EP-999999',
     legalName: 'Archived User',
     displayName: 'Archived',
     employmentKind: 'CONTRACTOR',
@@ -602,7 +606,7 @@ export const handlers = [
 
     const nextRecord: OrgUnitRecord = {
       id,
-      code: String(body.code ?? `ORG${orgUnitSeed}`),
+      code: providedOrGeneratedFixtureCode(body.code, generatedFixtureCode('OU', orgUnitSeed)),
       name: String(body.name ?? `Org Unit ${orgUnitSeed}`),
       type: String(body.type ?? 'TEAM'),
       status: 'ACTIVE',
@@ -791,7 +795,10 @@ export const handlers = [
 
     const nextRecord: EmploymentProfileRecord = {
       id,
-      employeeCode: String(body.employeeCode ?? `EMP${employmentSeed}`),
+      employeeCode: providedOrGeneratedFixtureCode(
+        body.employeeCode,
+        generatedFixtureCode('EP', employmentSeed),
+      ),
       legalName: String(body.legalName ?? `Employee ${employmentSeed}`),
       displayName: String(body.displayName ?? `Employee ${employmentSeed}`),
       employmentKind: String(body.employmentKind ?? 'FULL_TIME'),

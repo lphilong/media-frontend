@@ -21,7 +21,18 @@ import type {
   TalentKpiRecord,
 } from '@modules/talent-kpi/types/talent-kpi.types';
 import { talentKpiMetricCodeValues } from '@modules/talent-kpi/types/talent-kpi.types';
-import { FormGrid, SelectField, TextInputField } from '@shared/forms';
+import {
+  loadEventReferenceOptions,
+  loadPlatformAccountReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
+import {
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseSurfaceProps = {
@@ -49,7 +60,6 @@ type MetricFormRow = {
 };
 
 type TalentKpiCreateFormValues = {
-  kpiRecordCode: string;
   title: string;
   subjectTalentId: string;
   attributionPlatformAccountId: string;
@@ -64,7 +74,7 @@ type TalentKpiCreateFormValues = {
 
 type TalentKpiDraftCoreFormValues = Omit<
   TalentKpiCreateFormValues,
-  'kpiRecordCode' | 'measurementSource' | 'metrics'
+  'measurementSource' | 'metrics'
 >;
 
 type TalentKpiMetricsFormValues = {
@@ -72,7 +82,6 @@ type TalentKpiMetricsFormValues = {
 };
 
 const idRegex = /^[A-Za-z0-9_-]+$/;
-const codeRegex = /^[A-Z][A-Z0-9_]*$/;
 const decimalMetricCodes: TalentKpiMetricCode[] = ['LIVESTREAM_HOURS', 'REVENUE_ATTRIBUTED_AMOUNT'];
 const nonNegativeIntegerMetricCodes: TalentKpiMetricCode[] = [
   'LIVESTREAM_SESSION_COUNT',
@@ -231,7 +240,6 @@ const buildCreateSchema = (messages: {
 }) =>
   z
     .object({
-      kpiRecordCode: z.string().trim().min(1, messages.required).regex(codeRegex, messages.token),
       title: z.string().trim().min(1, messages.required),
       subjectTalentId: z.string().trim().min(1, messages.required).regex(idRegex, messages.token),
       attributionPlatformAccountId: z.string().trim().optional(),
@@ -368,7 +376,6 @@ export const TalentKpiCreateSurface = ({
   const options = useTalentKpiOptions();
   const form = useForm<TalentKpiCreateFormValues>({
     defaultValues: {
-      kpiRecordCode: '',
       title: '',
       subjectTalentId: '',
       attributionPlatformAccountId: '',
@@ -396,12 +403,11 @@ export const TalentKpiCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'kpiRecordCode');
+      applySchemaErrors(form.setError, parsed.error, 'title');
       return;
     }
 
     await onSubmit({
-      kpiRecordCode: parsed.data.kpiRecordCode,
       title: parsed.data.title,
       subjectTalentId: parsed.data.subjectTalentId,
       attributionPlatformAccountId: toNullableText(parsed.data.attributionPlatformAccountId),
@@ -429,16 +435,36 @@ export const TalentKpiCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="kpiRecordCode" label={t('talent-kpi:fields.kpiRecordCode')} />
+          <GeneratedCodeNotice
+            label={t('talent-kpi:generatedCode.label')}
+            description={t('talent-kpi:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField name="title" label={t('talent-kpi:fields.title')} />
-          <TextInputField name="subjectTalentId" label={t('talent-kpi:fields.subjectTalentId')} />
-          <TextInputField
+          <ReferencePickerField
+            name="subjectTalentId"
+            label={t('talent-kpi:fields.subjectTalentId')}
+            pickerId="talent-kpi-subject-talent"
+            loadOptions={loadTalentReferenceOptions}
+            placeholder={t('talent-kpi:placeholders.searchReference')}
+          />
+          <ReferencePickerField
             name="attributionPlatformAccountId"
             label={t('talent-kpi:fields.attributionPlatformAccountId')}
+            pickerId="talent-kpi-platform-account"
+            loadOptions={loadPlatformAccountReferenceOptions}
+            placeholder={t('talent-kpi:placeholders.searchReference')}
+            clearable
+            clearLabel={t('talent-kpi:actions.clearReference')}
           />
-          <TextInputField
+          <ReferencePickerField
             name="attributionEventId"
             label={t('talent-kpi:fields.attributionEventId')}
+            pickerId="talent-kpi-event"
+            loadOptions={loadEventReferenceOptions}
+            placeholder={t('talent-kpi:placeholders.searchReference')}
+            clearable
+            clearLabel={t('talent-kpi:actions.clearReference')}
           />
           <SelectField
             name="measurementSource"
@@ -527,14 +553,30 @@ export const TalentKpiDraftCoreSurface = ({
       >
         <FormGrid columns={2}>
           <TextInputField name="title" label={t('talent-kpi:fields.title')} />
-          <TextInputField name="subjectTalentId" label={t('talent-kpi:fields.subjectTalentId')} />
-          <TextInputField
+          <ReferencePickerField
+            name="subjectTalentId"
+            label={t('talent-kpi:fields.subjectTalentId')}
+            pickerId="talent-kpi-draft-subject-talent"
+            loadOptions={loadTalentReferenceOptions}
+            placeholder={t('talent-kpi:placeholders.searchReference')}
+          />
+          <ReferencePickerField
             name="attributionPlatformAccountId"
             label={t('talent-kpi:fields.attributionPlatformAccountId')}
+            pickerId="talent-kpi-draft-platform-account"
+            loadOptions={loadPlatformAccountReferenceOptions}
+            placeholder={t('talent-kpi:placeholders.searchReference')}
+            clearable
+            clearLabel={t('talent-kpi:actions.clearReference')}
           />
-          <TextInputField
+          <ReferencePickerField
             name="attributionEventId"
             label={t('talent-kpi:fields.attributionEventId')}
+            pickerId="talent-kpi-draft-event"
+            loadOptions={loadEventReferenceOptions}
+            placeholder={t('talent-kpi:placeholders.searchReference')}
+            clearable
+            clearLabel={t('talent-kpi:actions.clearReference')}
           />
           <TextInputField
             name="periodStartAt"

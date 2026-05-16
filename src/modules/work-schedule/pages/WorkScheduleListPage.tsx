@@ -6,7 +6,6 @@ import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import { WorkShiftGuidedWorkflow } from '@modules/work-schedule/components/WorkShiftGuidedWorkflow';
-import { WorkShiftCreateSurface } from '@modules/work-schedule/forms/work-schedule-mutation-forms';
 import {
   useCreateWorkShiftMutation,
   useWorkShiftFlatList,
@@ -15,7 +14,6 @@ import {
   useWorkShiftsBySubject,
 } from '@modules/work-schedule/hooks/use-work-schedule';
 import { createWorkShiftListColumns } from '@modules/work-schedule/tables/work-schedule-columns';
-import { canUseWorkScheduleSubjectInScope } from '@modules/work-schedule/scope-guards';
 import type {
   WorkScheduleScope,
   WorkShiftLifecycleAction,
@@ -179,7 +177,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
   const lifecycleMutation = useWorkShiftLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isGuidedWorkflowOpen, setIsGuidedWorkflowOpen] = useState(false);
   const [guidedWorkflowError, setGuidedWorkflowError] = useState<NormalizedApiError | null>(null);
   const [, setCursorStack] = useState(createCursorStack);
@@ -230,7 +227,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
         type="button"
         onClick={() => {
           setIsGuidedWorkflowOpen((current) => !current);
-          setIsCreateOpen(false);
           setGuidedWorkflowError(null);
         }}
         data-action-priority="primary"
@@ -239,20 +235,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
         {isGuidedWorkflowOpen
           ? t('work-schedule:actions.closeGuidedWorkflow')
           : t('work-schedule:actions.scheduleWorkShift')}
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          setIsCreateOpen((current) => !current);
-          setIsGuidedWorkflowOpen(false);
-          setGuidedWorkflowError(null);
-        }}
-        data-action-priority="secondary"
-        className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted"
-      >
-        {isCreateOpen
-          ? t('work-schedule:actions.closeAdminCreate')
-          : t('work-schedule:actions.adminCreateForm')}
       </button>
     </div>,
   );
@@ -286,33 +268,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
       );
       return nextStack;
     });
-  };
-
-  const onCreateSubmit = async (
-    payload: Parameters<typeof createMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!canUseWorkScheduleSubjectInScope(payload.subjectKind, activeQuery.scope)) {
-      notifyError({
-        status: null,
-        message: 'work-schedule:validation.nonGlobalEmploymentProfileOnly',
-        fieldErrors: {},
-        retryable: false,
-        permissionDenied: false,
-        notFound: false,
-      });
-      return;
-    }
-
-    try {
-      await createMutation.mutateAsync({
-        payload,
-        scope: activeQuery.scope,
-      });
-      notifySuccess('work-schedule:feedback.created');
-      setIsCreateOpen(false);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
   };
 
   const onGuidedWorkflowSubmit = async (
@@ -607,14 +562,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
                 setGuidedWorkflowError(null);
               }}
               onSubmit={onGuidedWorkflowSubmit}
-            />
-          ) : null}
-          {isCreateOpen ? (
-            <WorkShiftCreateSurface
-              currentScope={activeQuery.scope}
-              isPending={createMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
-              onSubmit={onCreateSubmit}
             />
           ) : null}
         </>

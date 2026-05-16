@@ -1,5 +1,10 @@
 import { http, HttpResponse } from 'msw';
 
+import {
+  generatedFixtureMonthCode,
+  providedOrGeneratedFixtureCode,
+} from '@test/msw/generated-code-fixtures';
+
 type WorkShiftSubjectKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
 type WorkShiftStatus = 'ACTIVE' | 'CANCELLED' | 'ARCHIVED';
 type WorkPatternStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
@@ -528,7 +533,7 @@ const initialMonthlyRosters: MonthlyRosterRecord[] = [
 const initialEvents: EventRecord[] = [
   {
     id: 'event-001',
-    eventCode: 'EVT001',
+    eventCode: 'EVT-202605-000001',
     title: 'Launch livestream',
     studioResourceIds: ['studio-001'],
     platformAccountIds: ['platform-001'],
@@ -542,7 +547,7 @@ const initialEvents: EventRecord[] = [
   },
   {
     id: 'event-progress',
-    eventCode: 'EVT002',
+    eventCode: 'EVT-202605-000002',
     title: 'Live event in progress',
     studioResourceIds: ['studio-002'],
     platformAccountIds: ['platform-001'],
@@ -556,7 +561,7 @@ const initialEvents: EventRecord[] = [
   },
   {
     id: 'event-completed',
-    eventCode: 'EVT003',
+    eventCode: 'EVT-202603-000003',
     title: 'Completed event',
     studioResourceIds: [],
     platformAccountIds: ['platform-003'],
@@ -570,7 +575,7 @@ const initialEvents: EventRecord[] = [
   },
   {
     id: 'event-empty',
-    eventCode: 'EVT004',
+    eventCode: 'EVT-202605-000004',
     title: 'Scheduled event without assignments',
     studioResourceIds: [],
     platformAccountIds: [],
@@ -584,7 +589,7 @@ const initialEvents: EventRecord[] = [
   },
   {
     id: 'event-archive',
-    eventCode: 'EVT999',
+    eventCode: 'EVT-202603-999999',
     title: 'Archived event',
     studioResourceIds: [],
     platformAccountIds: [],
@@ -3250,7 +3255,10 @@ export const wave6Handlers = [
     eventSeed += 1;
     const record: EventRecord = {
       id: `event-${eventSeed}`,
-      eventCode: String(body.eventCode),
+      eventCode: providedOrGeneratedFixtureCode(
+        body.eventCode,
+        generatedFixtureMonthCode('EVT', body.eventStartAt, eventSeed),
+      ),
       title: String(body.title),
       studioResourceIds,
       platformAccountIds,

@@ -58,31 +58,19 @@ describe('work schedule guided shift workflow', () => {
     await setLocale(DEFAULT_LOCALE);
   });
 
-  it('renders the guided entry point while preserving the admin create path', async () => {
+  it('renders the guided entry point without exposing the technical admin create path', async () => {
     const user = userEvent.setup();
     renderRoute('/work-shifts');
 
     const guidedAction = await screen.findByRole('button', {
       name: i18n.t('work-schedule:actions.scheduleWorkShift'),
     });
-    const adminCreateAction = screen.getByRole('button', {
-      name: i18n.t('work-schedule:actions.adminCreateForm'),
-    });
     expect(guidedAction).toHaveAttribute('data-action-priority', 'primary');
-    expect(adminCreateAction).toHaveAttribute('data-action-priority', 'secondary');
-
-    await user.click(adminCreateAction);
     expect(
-      await screen.findByRole('heading', {
-        name: i18n.t('work-schedule:mutations.create.title'),
-      }),
-    ).toBeInTheDocument();
+      screen.queryByRole('button', { name: /admin|technical|kỹ thuật|ky thuat/i }),
+    ).not.toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('work-schedule:actions.scheduleWorkShift'),
-      }),
-    );
+    await user.click(guidedAction);
     expect(
       await screen.findByRole('heading', { name: i18n.t('work-schedule:task.title') }),
     ).toBeInTheDocument();
@@ -124,7 +112,7 @@ describe('work schedule guided shift workflow', () => {
     await user.selectOptions(employmentScopeSelect, 'team');
 
     const subjectPicker = await findPicker('work-shift-subject-EMPLOYMENT_PROFILE');
-    await user.click(await within(subjectPicker).findByText(/EMP001/));
+    await user.click(await within(subjectPicker).findByText(/EP-000001/));
 
     await user.type(
       screen.getByLabelText(i18n.t('work-schedule:task.startVietnamLocal')),
@@ -136,7 +124,7 @@ describe('work schedule guided shift workflow', () => {
     );
 
     const resourcePicker = await findPicker('work-shift-studio-resources');
-    await user.click(await within(resourcePicker).findByText(/STUDIO001/));
+    await user.click(await within(resourcePicker).findByText(/SR-000001/));
     await user.type(
       screen.getByLabelText(i18n.t('work-schedule:fields.description')),
       'Operator note',
@@ -201,7 +189,7 @@ describe('work schedule guided shift workflow', () => {
 
     await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Optional ref');
     const subjectPicker = await findPicker('work-shift-subject-EMPLOYMENT_PROFILE');
-    await user.click(await within(subjectPicker).findByText(/EMP001/));
+    await user.click(await within(subjectPicker).findByText(/EP-000001/));
     await user.type(
       screen.getByLabelText(i18n.t('work-schedule:task.startVietnamLocal')),
       '2026-05-03T08:30',
@@ -221,8 +209,8 @@ describe('work schedule guided shift workflow', () => {
   }, 20_000);
 
   it.each([
-    ['TALENT', 'TAL001', 'talent-001', 'subjectTalentId'],
-    ['TALENT_GROUP', 'GRP001', 'group-001', 'subjectTalentGroupId'],
+    ['TALENT', 'TAL-000001', 'talent-001', 'subjectTalentId'],
+    ['TALENT_GROUP', 'TG-000001', 'group-001', 'subjectTalentGroupId'],
   ] as const)(
     'forces global scope for %s subject selection',
     async (subjectKind, optionText, expectedId, payloadField) => {

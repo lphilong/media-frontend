@@ -1,5 +1,10 @@
 import { http, HttpResponse } from 'msw';
 
+import {
+  generatedFixtureMonthCode,
+  providedOrGeneratedFixtureCode,
+} from '@test/msw/generated-code-fixtures';
+
 type TalentKpiStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
 type RevenueEntryStatus = 'DRAFT' | 'FINALIZED' | 'RECONCILED' | 'VOIDED' | 'ARCHIVED';
 type RevenueKind = 'PLATFORM_LIVESTREAM' | 'PLATFORM_CONTENT' | 'EVENT_OPERATIONAL';
@@ -75,7 +80,7 @@ const metricCodes: MetricCode[] = [
 const initialTalentKpiRecords: TalentKpiRecord[] = [
   {
     id: 'talent-kpi-record-001',
-    kpiRecordCode: 'KPI001',
+    kpiRecordCode: 'KPI-202604-000001',
     title: 'April livestream performance',
     subjectTalentId: 'talent-001',
     attributionPlatformAccountId: 'platform-001',
@@ -92,7 +97,7 @@ const initialTalentKpiRecords: TalentKpiRecord[] = [
   },
   {
     id: 'talent-kpi-record-finalized',
-    kpiRecordCode: 'KPI002',
+    kpiRecordCode: 'KPI-202604-000002',
     title: 'Finalized KPI record',
     subjectTalentId: 'talent-002',
     attributionPlatformAccountId: null,
@@ -109,7 +114,7 @@ const initialTalentKpiRecords: TalentKpiRecord[] = [
   },
   {
     id: 'talent-kpi-record-archived',
-    kpiRecordCode: 'KPI999',
+    kpiRecordCode: 'KPI-202604-999999',
     title: 'Archived KPI record',
     subjectTalentId: 'talent-001',
     attributionPlatformAccountId: 'platform-001',
@@ -159,7 +164,7 @@ const initialTalentKpiMetrics: Record<string, TalentKpiMetricRecord[]> = {
 const initialRevenueEntries: RevenueEntryRecord[] = [
   {
     id: 'revenue-entry-001',
-    revenueEntryCode: 'REV001',
+    revenueEntryCode: 'REV-202604-000001',
     title: 'April livestream revenue',
     subjectTalentId: 'talent-001',
     attributionPlatformAccountId: 'platform-001',
@@ -181,7 +186,7 @@ const initialRevenueEntries: RevenueEntryRecord[] = [
   },
   {
     id: 'revenue-entry-finalized',
-    revenueEntryCode: 'REV002',
+    revenueEntryCode: 'REV-202604-000002',
     title: 'Finalized event revenue',
     subjectTalentId: 'talent-002',
     attributionPlatformAccountId: null,
@@ -203,7 +208,7 @@ const initialRevenueEntries: RevenueEntryRecord[] = [
   },
   {
     id: 'revenue-entry-blocked',
-    revenueEntryCode: 'REV003',
+    revenueEntryCode: 'REV-202604-000003',
     title: 'Settlement blocked revenue',
     subjectTalentId: 'talent-001',
     attributionPlatformAccountId: 'platform-001',
@@ -225,7 +230,7 @@ const initialRevenueEntries: RevenueEntryRecord[] = [
   },
   {
     id: 'revenue-entry-archived',
-    revenueEntryCode: 'REV999',
+    revenueEntryCode: 'REV-202604-999999',
     title: 'Archived revenue',
     subjectTalentId: 'talent-001',
     attributionPlatformAccountId: null,
@@ -697,7 +702,10 @@ export const wave8Handlers = [
     const id = `talent-kpi-record-${talentKpiSeed}`;
     const record: TalentKpiRecord = {
       id,
-      kpiRecordCode: String(body.kpiRecordCode),
+      kpiRecordCode: providedOrGeneratedFixtureCode(
+        body.kpiRecordCode,
+        generatedFixtureMonthCode('KPI', body.periodStartAt, talentKpiSeed),
+      ),
       title: String(body.title),
       subjectTalentId: String(body.subjectTalentId),
       attributionPlatformAccountId:
@@ -888,7 +896,10 @@ export const wave8Handlers = [
     revenueSeed += 1;
     const record: RevenueEntryRecord = {
       id: `revenue-entry-${revenueSeed}`,
-      revenueEntryCode: String(body.revenueEntryCode),
+      revenueEntryCode: providedOrGeneratedFixtureCode(
+        body.revenueEntryCode,
+        generatedFixtureMonthCode('REV', body.recognizedAt, revenueSeed),
+      ),
       title: String(body.title),
       subjectTalentId: String(body.subjectTalentId),
       attributionPlatformAccountId:

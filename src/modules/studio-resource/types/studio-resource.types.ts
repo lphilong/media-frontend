@@ -45,7 +45,7 @@ export type StudioResourceAvailabilityQuery = StudioResourceListQuery & {
 };
 
 export type StudioResourceCreatePayload = {
-  resourceCode: string;
+  resourceCode?: string;
   name: string;
   resourceClass: string;
   shortName?: string | null;

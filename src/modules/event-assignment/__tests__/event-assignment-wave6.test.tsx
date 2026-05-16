@@ -26,7 +26,7 @@ describe('event assignment wave 6 surfaces', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('event-assignment:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('EVT001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('EVT-202605-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.queryByText('Archived event')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/scope/i)).not.toBeInTheDocument();
     const main = screen.getByTestId('admin-shell-main');
@@ -42,7 +42,7 @@ describe('event assignment wave 6 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('event-assignment:actionRail.title')),
     ).toBeInTheDocument();
-    expect(screen.getByText('EVT001')).toBeInTheDocument();
+    expect(screen.getByText('EVT-202605-000001')).toBeInTheDocument();
     expect(screen.getByText('Launch livestream')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('event-assignment:assignments.title'))).toBeInTheDocument();
     expect(screen.getByText('ep-001')).toBeInTheDocument();
@@ -59,12 +59,8 @@ describe('event assignment wave 6 surfaces', () => {
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.replaceAssignments') }),
     );
-    expect(
-      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 1 })),
-    ).toHaveValue('ep-001');
-    expect(
-      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 2 })),
-    ).toHaveValue('talent-002');
+    expect(screen.getByText('ep-001')).toBeInTheDocument();
+    expect(screen.getByText('talent-002')).toBeInTheDocument();
   });
 
   it('keeps archived events read-only and does not present unsupported event surfaces', async () => {
@@ -108,9 +104,12 @@ describe('event assignment wave 6 surfaces', () => {
     }
 
     const scope = within(createSurface);
-    await user.type(scope.getByLabelText(i18n.t('event-assignment:fields.eventCode')), 'EVT901');
+    expect(scope.queryByLabelText(i18n.t('event-assignment:fields.eventCode'))).toBeNull();
+    expect(
+      scope.getByText(i18n.t('event-assignment:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(scope.getByLabelText(i18n.t('event-assignment:fields.title')), 'Wave 6 event');
-    await user.type(scope.getByLabelText(i18n.t('event-assignment:fields.assignmentId')), 'ep-001');
+    await user.click(await scope.findByRole('button', { name: /Alice/ }));
     await user.type(
       scope.getByLabelText(i18n.t('event-assignment:fields.eventStartAt')),
       '1900000000000',
@@ -119,20 +118,20 @@ describe('event assignment wave 6 surfaces', () => {
       scope.getByLabelText(i18n.t('event-assignment:fields.eventEndAt')),
       '1900003600000',
     );
-    await user.type(
-      scope.getByLabelText(i18n.t('event-assignment:fields.studioResourceIds')),
-      'studio-001',
+    await user.click(
+      scope.getByRole('button', { name: i18n.t('event-assignment:actions.addStudioResource') }),
     );
-    await user.type(
-      scope.getByLabelText(i18n.t('event-assignment:fields.platformAccountIds')),
-      'platform-001',
+    await user.click(await scope.findByRole('button', { name: /Main Studio/ }));
+    await user.click(
+      scope.getByRole('button', { name: i18n.t('event-assignment:actions.addPlatformAccount') }),
     );
+    await user.click(await scope.findByRole('button', { name: /Mina Live/ }));
     await user.click(
       scope.getByRole('button', { name: i18n.t('event-assignment:mutations.create.submit') }),
     );
 
-    expect(await screen.findByText('EVT901', {}, { timeout: 3000 })).toBeInTheDocument();
-    const row = screen.getByText('EVT901').closest('tr');
+    expect(await screen.findByText('EVT-203003-000801', {}, { timeout: 3000 })).toBeInTheDocument();
+    const row = screen.getByText('EVT-203003-000801').closest('tr');
     expect(row).not.toBeNull();
     if (!row) {
       return;

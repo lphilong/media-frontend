@@ -206,7 +206,7 @@ export const TalentKpiDetailPage = (): JSX.Element => {
               fields={[
                 {
                   key: 'code',
-                  label: t('talent-kpi:fields.kpiRecordCode'),
+                  label: t('talent-kpi:generatedCode.label'),
                   value: <ReferenceChip label={record.kpiRecordCode} />,
                 },
                 {

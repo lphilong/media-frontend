@@ -29,7 +29,8 @@ import type {
   RoleRevokeAssignmentPayload,
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
-import { FormGrid, SelectField, TextInputField } from '@shared/forms';
+import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { FormGrid, ReferencePickerField, SelectField, TextInputField } from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseMutationSurfaceProps = {
@@ -582,7 +583,14 @@ export const RoleAssignUserSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="userId" label={t('role:fields.userId')} />
+          <ReferencePickerField
+            name="userId"
+            label={t('role:fields.userId')}
+            pickerId="role-assignment-user"
+            loadOptions={loadUserReferenceOptions}
+            helperText={t('role:referenceHelp.userId')}
+            placeholder={t('role:placeholders.userSearch')}
+          />
           <TextInputField name="reason" label={t('role:fields.reason')} />
         </FormGrid>
       </ModuleMutationSurface>

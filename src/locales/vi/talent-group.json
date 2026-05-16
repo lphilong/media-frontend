@@ -12,14 +12,22 @@
     "displayOrder": "Thứ tự hiển thị",
     "description": "Mô tả",
     "externalRef": "Tham chiếu bên ngoài",
-    "talentId": "ID Talent",
+    "talentId": "Talent",
     "lineupOrder": "Thứ tự đội hình",
     "newLineupOrder": "Thứ tự đội hình mới",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
   },
+  "generatedCode": {
+    "label": "Mã hệ thống",
+    "description": "Mã nhóm sẽ được hệ thống tạo sau khi tạo bản ghi."
+  },
   "placeholders": {
-    "optional": "Không bắt buộc"
+    "optional": "Không bắt buộc",
+    "talentSearch": "Tìm Talent theo tên hoặc mã"
+  },
+  "referenceHelp": {
+    "talentId": "Chọn Talent cần thêm vào nhóm này."
   },
   "states": {
     "emptyTitle": "Không tìm thấy nhóm Talent",
@@ -31,10 +39,10 @@
     "searchPlaceholder": "Tìm theo mã nhóm, tên hoặc tên ngắn",
     "status": "Trạng thái",
     "allStatuses": "Tất cả trạng thái",
-    "containsTalentId": "ID Talent",
-    "containsTalentIdPlaceholder": "ID Talent",
-    "talentId": "ID Talent",
-    "talentIdPlaceholder": "ID Talent liên quan"
+    "containsTalentId": "Talent",
+    "containsTalentIdPlaceholder": "Talent",
+    "talentId": "Talent",
+    "talentIdPlaceholder": "Talent liên quan"
   },
   "sort": {
     "groupCode": "Mã nhóm",
@@ -80,7 +88,7 @@
   },
   "membersTable": {
     "caption": "Thành viên nhóm",
-    "talentId": "ID Talent",
+    "talentId": "Talent",
     "membershipStatus": "Trạng thái thành viên",
     "lineupOrder": "Thứ tự đội hình",
     "joinedAt": "Thời điểm tham gia",

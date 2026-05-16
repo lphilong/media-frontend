@@ -19,8 +19,19 @@ import type {
   EmploymentProfileUpdatePayload,
   EmploymentProfileUserLinkPayload,
 } from '@modules/employment-profile/types/employment-profile.types';
+import {
+  loadEmploymentProfileReferenceOptions,
+  loadOrgUnitReferenceOptions,
+  loadUserReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
-import { FormGrid, SelectField, TextInputField } from '@shared/forms';
+import {
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
@@ -116,7 +127,6 @@ const createEmploymentCreateSchema = (
   dateMessage: string,
 ) => {
   return z.object({
-    employeeCode: z.string().trim().min(1, requiredMessage),
     legalName: z.string().trim().min(1, requiredMessage),
     displayName: z.string().trim().min(1, requiredMessage),
     employmentKind: z
@@ -218,7 +228,6 @@ const contractStatusOptions: Array<{
 ];
 
 type EmploymentProfileCreateFormValues = {
-  employeeCode: string;
   legalName: string;
   displayName: string;
   employmentKind: string;
@@ -240,7 +249,6 @@ export const EmploymentProfileCreateSurface = ({
   const { t } = useTranslation(['employment-profile', 'common']);
   const form = useForm<EmploymentProfileCreateFormValues>({
     defaultValues: {
-      employeeCode: '',
       legalName: '',
       displayName: '',
       employmentKind: '',
@@ -268,12 +276,11 @@ export const EmploymentProfileCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'employeeCode');
+      applySchemaErrors(form.setError, parsed.error, 'legalName');
       return;
     }
 
     await onSubmit({
-      employeeCode: parsed.data.employeeCode,
       legalName: parsed.data.legalName,
       displayName: parsed.data.displayName,
       employmentKind: parsed.data.employmentKind,
@@ -302,7 +309,11 @@ export const EmploymentProfileCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="employeeCode" label={t('employment-profile:fields.employeeCode')} />
+          <GeneratedCodeNotice
+            label={t('employment-profile:generatedCode.label')}
+            description={t('employment-profile:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField
             name="employmentKind"
             label={t('employment-profile:fields.employmentKind')}
@@ -310,7 +321,14 @@ export const EmploymentProfileCreateSurface = ({
           <TextInputField name="legalName" label={t('employment-profile:fields.legalName')} />
           <TextInputField name="displayName" label={t('employment-profile:fields.displayName')} />
           <TextInputField name="jobTitle" label={t('employment-profile:fields.jobTitle')} />
-          <TextInputField name="orgUnitId" label={t('employment-profile:fields.orgUnitId')} />
+          <ReferencePickerField
+            name="orgUnitId"
+            label={t('employment-profile:fields.orgUnitId')}
+            pickerId="employment-profile-org-unit"
+            loadOptions={loadOrgUnitReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.orgUnitId')}
+            placeholder={t('employment-profile:placeholders.orgUnitSearch')}
+          />
           <SelectField
             name="contractStatus"
             label={t('employment-profile:fields.contractStatus')}
@@ -324,15 +342,25 @@ export const EmploymentProfileCreateSurface = ({
             label={t('employment-profile:fields.employmentStartDate')}
             type="date"
           />
-          <TextInputField
+          <ReferencePickerField
             name="managerEmploymentProfileId"
             label={t('employment-profile:fields.managerEmploymentProfileId')}
-            placeholder={t('employment-profile:placeholders.optional')}
+            pickerId="employment-profile-manager"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.managerEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearManager')}
           />
-          <TextInputField
+          <ReferencePickerField
             name="linkedUserId"
             label={t('employment-profile:fields.linkedUserId')}
-            placeholder={t('employment-profile:placeholders.optional')}
+            pickerId="employment-profile-linked-user"
+            loadOptions={loadUserReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.linkedUserId')}
+            placeholder={t('employment-profile:placeholders.userSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearLinkedUser')}
           />
           <TextInputField
             name="externalRef"
@@ -487,7 +515,14 @@ export const EmploymentProfileOrgAssignmentSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <TextInputField name="newOrgUnitId" label={t('employment-profile:fields.newOrgUnitId')} />
+        <ReferencePickerField
+          name="newOrgUnitId"
+          label={t('employment-profile:fields.newOrgUnitId')}
+          pickerId="employment-profile-new-org-unit"
+          loadOptions={loadOrgUnitReferenceOptions}
+          helperText={t('employment-profile:referenceHelp.newOrgUnitId')}
+          placeholder={t('employment-profile:placeholders.orgUnitSearch')}
+        />
       </ModuleMutationSurface>
     </FormProvider>
   );
@@ -546,10 +581,15 @@ export const EmploymentProfileManagerAssignmentSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <TextInputField
+        <ReferencePickerField
           name="newManagerEmploymentProfileId"
           label={t('employment-profile:fields.newManagerEmploymentProfileId')}
-          placeholder={t('employment-profile:placeholders.clearToUnset')}
+          pickerId="employment-profile-new-manager"
+          loadOptions={loadEmploymentProfileReferenceOptions}
+          helperText={t('employment-profile:referenceHelp.newManagerEmploymentProfileId')}
+          placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+          clearable
+          clearLabel={t('employment-profile:actions.clearManager')}
         />
       </ModuleMutationSurface>
     </FormProvider>
@@ -606,7 +646,14 @@ export const EmploymentProfileUserLinkSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <TextInputField name="linkedUserId" label={t('employment-profile:fields.linkedUserId')} />
+        <ReferencePickerField
+          name="linkedUserId"
+          label={t('employment-profile:fields.linkedUserId')}
+          pickerId="employment-profile-link-user"
+          loadOptions={loadUserReferenceOptions}
+          helperText={t('employment-profile:referenceHelp.linkedUserId')}
+          placeholder={t('employment-profile:placeholders.userSearch')}
+        />
       </ModuleMutationSurface>
     </FormProvider>
   );

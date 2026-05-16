@@ -10,6 +10,7 @@ import {
   StudioResourceReferencePicker,
   TalentGroupReferencePicker,
   TalentReferencePicker,
+  UserReferencePicker,
 } from '@shared/components/reference';
 import { setLocale } from '@shared/i18n/i18n';
 
@@ -131,5 +132,8 @@ describe('AsyncReferencePicker', () => {
       'data-picker-id',
       'studio-resource',
     );
+
+    rerender(<UserReferencePicker {...sharedProps} />);
+    expect(screen.getByTestId('picker-surface')).toHaveAttribute('data-picker-id', 'user');
   });
 });

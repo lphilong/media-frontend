@@ -44,7 +44,7 @@ const openAddSurface = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 const selectEmploymentProfile = async (user: ReturnType<typeof userEvent.setup>) => {
-  await user.click(await screen.findByRole('button', { name: /EMP001/ }, { timeout: 5000 }));
+  await user.click(await screen.findByRole('button', { name: /EP-000001/ }, { timeout: 5000 }));
 };
 
 const findPicker = async (pickerId: string): Promise<HTMLElement> => {
@@ -271,8 +271,8 @@ describe('monthly roster slice C exception editor', () => {
     await user.type(form.getByLabelText(t('fields.workingMinutes')), '240');
     await user.clear(form.getByLabelText(t('fields.breakMinutes')));
     await user.type(form.getByLabelText(t('fields.breakMinutes')), '15');
-    await selectPickerOption(user, 'monthly-roster-exception-studio-resources', /STUDIO001/);
-    await selectPickerOption(user, 'monthly-roster-exception-studio-resources', /CAMERA001/);
+    await selectPickerOption(user, 'monthly-roster-exception-studio-resources', /SR-000001/);
+    await selectPickerOption(user, 'monthly-roster-exception-studio-resources', /SR-000002/);
     await user.click(form.getByRole('button', { name: t('mutations.add.submit') }));
 
     await waitFor(() => expect(capturedBody).not.toBeNull());

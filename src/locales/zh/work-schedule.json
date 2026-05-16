@@ -70,8 +70,6 @@
   "actions": {
     "create": "创建工作班次",
     "closeCreate": "关闭创建",
-    "adminCreateForm": "管理创建表单",
-    "closeAdminCreate": "关闭管理创建",
     "scheduleWorkShift": "安排工作班次",
     "closeGuidedWorkflow": "关闭引导流程",
     "open": "打开详情",
@@ -150,7 +148,7 @@
   },
   "task": {
     "title": "安排工作班次",
-    "description": "日常排班请使用此引导表单。管理创建表单仍保留给技术或兼容场景。",
+    "description": "日常排班请使用此引导表单。",
     "steps": {
       "details": "第 1/2 步：班次信息",
       "review": "第 2/2 步：保存前检查"

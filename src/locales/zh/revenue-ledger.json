@@ -14,11 +14,11 @@
     "status": "状态",
     "allStatuses": "所有未归档",
     "subjectTalentId": "主体艺人",
-    "subjectTalentIdPlaceholder": "艺人ID",
+    "subjectTalentIdPlaceholder": "选择艺人",
     "attributionPlatformAccountId": "平台账号",
-    "attributionPlatformAccountIdPlaceholder": "平台ID",
+    "attributionPlatformAccountIdPlaceholder": "选择平台账号",
     "attributionEventId": "活动",
-    "attributionEventIdPlaceholder": "活动ID",
+    "attributionEventIdPlaceholder": "选择活动",
     "revenueKind": "收入类型",
     "allRevenueKinds": "任意类型",
     "entrySource": "录入来源",
@@ -51,9 +51,9 @@
   "fields": {
     "revenueEntryCode": "收入记录编码",
     "title": "标题",
-    "subjectTalentId": "主体艺人 ID",
-    "attributionPlatformAccountId": "归因平台账号 ID",
-    "attributionEventId": "归因活动 ID",
+    "subjectTalentId": "主体艺人",
+    "attributionPlatformAccountId": "归因平台账号",
+    "attributionEventId": "归因活动",
     "revenueKind": "收入类型",
     "entrySource": "录入来源",
     "currencyCode": "币种编码",
@@ -69,6 +69,10 @@
     "scopeBoundary": "范围边界",
     "createdAt": "创建时间",
     "updatedAt": "更新时间"
+  },
+  "generatedCode": {
+    "label": "系统编码",
+    "description": "创建后，系统将生成收入记录编码。"
   },
   "table": {
     "caption": "收入台账记录",
@@ -93,7 +97,8 @@
     "finalize": "确认",
     "reconcile": "对账",
     "void": "作废",
-    "archive": "归档"
+    "archive": "归档",
+    "clearReference": "清除选择"
   },
   "mutations": {
     "create": {
@@ -114,6 +119,9 @@
       "submit": "对账",
       "pending": "对账中"
     }
+  },
+  "placeholders": {
+    "searchReference": "按名称或代码搜索"
   },
   "detail": {
     "archivedReadOnly": "已归档收入记录只读。",

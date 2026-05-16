@@ -12,14 +12,22 @@
     "displayOrder": "显示顺序",
     "description": "描述",
     "externalRef": "外部引用",
-    "talentId": "艺人ID",
+    "talentId": "艺人",
     "lineupOrder": "阵容顺序",
     "newLineupOrder": "新阵容顺序",
     "createdAt": "创建时间",
     "updatedAt": "更新时间"
   },
+  "generatedCode": {
+    "label": "系统代码",
+    "description": "组代码将在创建后由系统生成。"
+  },
   "placeholders": {
-    "optional": "可选"
+    "optional": "可选",
+    "talentSearch": "按姓名或编码搜索艺人"
+  },
+  "referenceHelp": {
+    "talentId": "选择要添加到此组的艺人。"
   },
   "states": {
     "emptyTitle": "未找到艺人组",
@@ -32,9 +40,9 @@
     "status": "状态",
     "allStatuses": "所有状态",
     "containsTalentId": "包含艺人",
-    "containsTalentIdPlaceholder": "艺人ID",
-    "talentId": "艺人ID",
-    "talentIdPlaceholder": "关联艺人ID"
+    "containsTalentIdPlaceholder": "艺人",
+    "talentId": "艺人",
+    "talentIdPlaceholder": "关联艺人"
   },
   "sort": {
     "groupCode": "组编码",
@@ -80,7 +88,7 @@
   },
   "membersTable": {
     "caption": "组成员",
-    "talentId": "艺人ID",
+    "talentId": "艺人",
     "membershipStatus": "成员状态",
     "lineupOrder": "阵容顺序",
     "joinedAt": "加入时间",

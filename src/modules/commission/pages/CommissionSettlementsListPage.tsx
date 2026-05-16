@@ -39,6 +39,13 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { ReferenceFilterField } from '@shared/components/reference';
+import {
+  loadCommissionRuleReferenceOptions,
+  loadEmploymentProfileReferenceOptions,
+  loadRevenueEntryReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   commissionSettlementsByBeneficiaryQueryConfig,
@@ -430,96 +437,90 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
                   ))}
                 </select>
               </label>
-              <label className="flex min-w-[260px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:settlements.filters.beneficiaryEmploymentProfileIdSnapshot')}
-                </span>
-                <input
-                  value={
-                    'beneficiaryEmploymentProfileIdSnapshot' in activeQuery
-                      ? (activeQuery.beneficiaryEmploymentProfileIdSnapshot ?? '')
-                      : ''
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      beneficiaryKindSnapshot: event.target.value
-                        ? 'EMPLOYMENT_PROFILE'
-                        : undefined,
-                      beneficiaryEmploymentProfileIdSnapshot: event.target.value || undefined,
-                      beneficiaryTalentIdSnapshot: undefined,
-                    })
-                  }
-                />
-              </label>
-              <label className="flex min-w-[230px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:settlements.filters.beneficiaryTalentIdSnapshot')}
-                </span>
-                <input
-                  value={
-                    'beneficiaryTalentIdSnapshot' in activeQuery
-                      ? (activeQuery.beneficiaryTalentIdSnapshot ?? '')
-                      : ''
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      beneficiaryKindSnapshot: event.target.value ? 'TALENT' : undefined,
-                      beneficiaryTalentIdSnapshot: event.target.value || undefined,
-                      beneficiaryEmploymentProfileIdSnapshot: undefined,
-                    })
-                  }
-                />
-              </label>
+              <ReferenceFilterField
+                label={t('commission:settlements.filters.beneficiaryEmploymentProfileIdSnapshot')}
+                pickerId="commission-settlement-filter-beneficiary-employment"
+                value={
+                  'beneficiaryEmploymentProfileIdSnapshot' in activeQuery
+                    ? (activeQuery.beneficiaryEmploymentProfileIdSnapshot ?? undefined)
+                    : undefined
+                }
+                loadOptions={loadEmploymentProfileReferenceOptions}
+                placeholder={t('commission:settlements.placeholders.searchReference')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[260px]"
+                onChange={(value) =>
+                  patchQuery({
+                    beneficiaryKindSnapshot: value ? 'EMPLOYMENT_PROFILE' : undefined,
+                    beneficiaryEmploymentProfileIdSnapshot: value,
+                    beneficiaryTalentIdSnapshot: undefined,
+                  })
+                }
+              />
+              <ReferenceFilterField
+                label={t('commission:settlements.filters.beneficiaryTalentIdSnapshot')}
+                pickerId="commission-settlement-filter-beneficiary-talent"
+                value={
+                  'beneficiaryTalentIdSnapshot' in activeQuery
+                    ? (activeQuery.beneficiaryTalentIdSnapshot ?? undefined)
+                    : undefined
+                }
+                loadOptions={loadTalentReferenceOptions}
+                placeholder={t('commission:settlements.placeholders.searchReference')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[230px]"
+                onChange={(value) =>
+                  patchQuery({
+                    beneficiaryKindSnapshot: value ? 'TALENT' : undefined,
+                    beneficiaryTalentIdSnapshot: value,
+                    beneficiaryEmploymentProfileIdSnapshot: undefined,
+                  })
+                }
+              />
             </>
           ) : null}
           {routeMode === 'flat' ? (
-            <label className="flex min-w-[220px] flex-col gap-1">
-              <span className="text-xs font-medium uppercase text-muted">
-                {t('commission:settlements.filters.containsRevenueEntryId')}
-              </span>
-              <input
-                value={
-                  'containsRevenueEntryId' in activeQuery
-                    ? (activeQuery.containsRevenueEntryId ?? '')
-                    : ''
-                }
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                onChange={(event) =>
-                  patchQuery({ containsRevenueEntryId: event.target.value || undefined })
-                }
-              />
-            </label>
+            <ReferenceFilterField
+              label={t('commission:settlements.filters.containsRevenueEntryId')}
+              pickerId="commission-settlement-filter-revenue-entry"
+              value={
+                'containsRevenueEntryId' in activeQuery
+                  ? (activeQuery.containsRevenueEntryId ?? undefined)
+                  : undefined
+              }
+              loadOptions={loadRevenueEntryReferenceOptions}
+              placeholder={t('commission:settlements.placeholders.searchReference')}
+              clearLabel={t('common:actions.clear')}
+              onChange={(value) => patchQuery({ containsRevenueEntryId: value })}
+            />
           ) : null}
           {routeMode === 'flat' ? (
-            <label className="flex min-w-[210px] flex-col gap-1">
-              <span className="text-xs font-medium uppercase text-muted">
-                {t('commission:settlements.filters.subjectTalentId')}
-              </span>
-              <input
-                value={'subjectTalentId' in activeQuery ? (activeQuery.subjectTalentId ?? '') : ''}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                onChange={(event) =>
-                  patchQuery({ subjectTalentId: event.target.value || undefined })
-                }
-              />
-            </label>
+            <ReferenceFilterField
+              label={t('commission:settlements.filters.subjectTalentId')}
+              pickerId="commission-settlement-filter-subject-talent"
+              value={
+                'subjectTalentId' in activeQuery
+                  ? (activeQuery.subjectTalentId ?? undefined)
+                  : undefined
+              }
+              loadOptions={loadTalentReferenceOptions}
+              placeholder={t('commission:settlements.placeholders.searchReference')}
+              clearLabel={t('common:actions.clear')}
+              className="min-w-[210px]"
+              onChange={(value) => patchQuery({ subjectTalentId: value })}
+            />
           ) : null}
           {routeMode === 'flat' ? (
             <>
-              <label className="flex min-w-[220px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:settlements.filters.sourceRuleId')}
-                </span>
-                <input
-                  value={flatListQuery.sourceRuleId ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({ sourceRuleId: event.target.value || undefined })
-                  }
-                />
-              </label>
+              <ReferenceFilterField
+                label={t('commission:settlements.filters.sourceRuleId')}
+                pickerId="commission-settlement-filter-rule"
+                value={flatListQuery.sourceRuleId ?? undefined}
+                loadOptions={loadCommissionRuleReferenceOptions}
+                placeholder={t('commission:settlements.placeholders.searchReference')}
+                clearLabel={t('common:actions.clear')}
+                onChange={(value) => patchQuery({ sourceRuleId: value })}
+              />
               <label className="flex min-w-[220px] flex-col gap-1">
                 <span className="text-xs font-medium uppercase text-muted">
                   {t('commission:settlements.filters.settlementKindSnapshot')}

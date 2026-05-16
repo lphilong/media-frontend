@@ -13,12 +13,12 @@
     "searchPlaceholder": "Nhập mã KPI",
     "status": "Trạng thái",
     "allStatuses": "Tất cả chưa lưu trữ",
-    "subjectTalentId": "ID Talent",
-    "subjectTalentIdPlaceholder": "ID Talent",
+    "subjectTalentId": "Talent",
+    "subjectTalentIdPlaceholder": "Chọn Talent",
     "attributionPlatformAccountId": "Tài khoản nền tảng",
-    "attributionPlatformAccountIdPlaceholder": "ID tài khoản nền tảng",
+    "attributionPlatformAccountIdPlaceholder": "Chọn tài khoản nền tảng",
     "attributionEventId": "Sự kiện",
-    "attributionEventIdPlaceholder": "ID sự kiện",
+    "attributionEventIdPlaceholder": "Chọn sự kiện",
     "measurementSource": "Nguồn đo lường",
     "allMeasurementSources": "Bất kỳ nguồn nào",
     "containsMetricCode": "Mã chỉ số",
@@ -51,9 +51,9 @@
   "fields": {
     "kpiRecordCode": "Mã bản ghi KPI",
     "title": "Tiêu đề",
-    "subjectTalentId": "ID Talent",
-    "attributionPlatformAccountId": "ID tài khoản nền tảng ghi nhận",
-    "attributionEventId": "ID sự kiện ghi nhận",
+    "subjectTalentId": "Talent",
+    "attributionPlatformAccountId": "Tài khoản nền tảng ghi nhận",
+    "attributionEventId": "Sự kiện ghi nhận",
     "measurementSource": "Nguồn đo lường",
     "periodStartAt": "Bắt đầu kỳ",
     "periodEndAt": "Kết thúc kỳ",
@@ -66,6 +66,10 @@
     "scopeBoundary": "Ranh giới phạm vi",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
+  },
+  "generatedCode": {
+    "label": "Mã hệ thống",
+    "description": "Mã bản ghi KPI sẽ được hệ thống tạo sau khi tạo bản ghi."
   },
   "table": {
     "caption": "Danh sách bản ghi KPI Talent",
@@ -89,6 +93,7 @@
     "replaceMetrics": "Thay thế chỉ số",
     "addMetric": "Thêm chỉ số",
     "removeMetric": "Xóa khỏi danh sách",
+    "clearReference": "Xóa lựa chọn",
     "finalize": "Chốt",
     "archive": "Lưu trữ"
   },
@@ -112,6 +117,9 @@
       "submit": "Thay thế chỉ số",
       "pending": "Đang thay thế"
     }
+  },
+  "placeholders": {
+    "searchReference": "Tìm theo tên hoặc mã"
   },
   "detail": {
     "archivedReadOnly": "Bản ghi KPI đã lưu trữ chỉ đọc.",

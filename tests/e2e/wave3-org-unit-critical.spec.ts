@@ -1,0 +1,176 @@
+import { expect, test } from '@playwright/test';
+
+type OrgUnitStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+
+type OrgUnitRecord = {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  status: OrgUnitStatus;
+  parentOrgUnitId: string | null;
+  depth: number;
+  displayOrder: number;
+  description: string | null;
+  externalRef: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+const toOrgUnitDetail = (record: OrgUnitRecord) => {
+  return {
+    id: record.id,
+    code: record.code,
+    name: record.name,
+    type: record.type,
+    status: record.status,
+    parentOrgUnitId: record.parentOrgUnitId,
+    depth: record.depth,
+    description: record.description,
+    externalRef: record.externalRef,
+    displayOrder: record.displayOrder,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    hierarchy: {
+      id: record.id,
+      parentOrgUnitId: record.parentOrgUnitId,
+      depth: record.depth,
+      ancestorChain: record.parentOrgUnitId ? [record.parentOrgUnitId] : [],
+    },
+  };
+};
+
+const generatedCode = (prefix: string, seed: number): string =>
+  `${prefix}-${String(seed).padStart(6, '0')}`;
+
+test('wave 3 org-unit critical flow: create then deactivate', async ({ page }) => {
+  let counter = 10;
+  const now = Date.parse('2026-04-22T00:00:00.000Z');
+  const orgUnits: OrgUnitRecord[] = [
+    {
+      id: 'ou-root',
+      code: 'ROOT',
+      name: 'Head Office',
+      type: 'DEPARTMENT',
+      status: 'ACTIVE',
+      parentOrgUnitId: null,
+      depth: 0,
+      displayOrder: 1,
+      description: 'Main organization root',
+      externalRef: null,
+      createdAt: now - 10_000,
+      updatedAt: now - 9_000,
+    },
+  ];
+
+  await page.route('**/admin/org-units**', async (route) => {
+    const request = route.request();
+    const method = request.method();
+    const url = new URL(request.url());
+
+    if (method === 'GET' && url.pathname.endsWith('/admin/org-units')) {
+      const data = orgUnits
+        .filter((item) => item.status !== 'ARCHIVED')
+        .map((item) => ({
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          type: item.type,
+          status: item.status,
+          parentOrgUnitId: item.parentOrgUnitId,
+          depth: item.depth,
+          displayOrder: item.displayOrder,
+          createdAt: item.createdAt,
+        }));
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data }),
+      });
+      return;
+    }
+
+    if (method === 'POST' && url.pathname.endsWith('/admin/org-units')) {
+      const payload = (request.postDataJSON() ?? {}) as Record<string, unknown>;
+      expect(payload).not.toHaveProperty('code');
+      counter += 1;
+      const nextRecord: OrgUnitRecord = {
+        id: `ou-${counter}`,
+        code: String(payload.code ?? generatedCode('OU', counter)),
+        name: String(payload.name ?? `Org ${counter}`),
+        type: String(payload.type ?? 'TEAM'),
+        status: 'ACTIVE',
+        parentOrgUnitId:
+          typeof payload.parentOrgUnitId === 'string' && payload.parentOrgUnitId.length > 0
+            ? payload.parentOrgUnitId
+            : null,
+        depth: 1,
+        displayOrder: Number(payload.displayOrder ?? 0),
+        description: (payload.description as string | null | undefined) ?? null,
+        externalRef: (payload.externalRef as string | null | undefined) ?? null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      orgUnits.push(nextRecord);
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: toOrgUnitDetail(nextRecord) }),
+      });
+      return;
+    }
+
+    if (method === 'POST' && /\/admin\/org-units\/[^/]+\/deactivate$/.test(url.pathname)) {
+      const id = url.pathname.split('/').at(-2);
+      const record = orgUnits.find((item) => item.id === id);
+      if (!record) {
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'errors:notFound.message' }),
+        });
+        return;
+      }
+
+      record.status = 'INACTIVE';
+      record.updatedAt = Date.now();
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: toOrgUnitDetail(record) }),
+      });
+      return;
+    }
+
+    await route.fallback();
+  });
+
+  await page.goto('/org-units');
+
+  await expect(page.getByRole('heading', { name: 'Org Units' })).toBeVisible();
+  await page.getByRole('button', { name: 'Create Org Unit' }).click();
+
+  const createSurface = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Create Org Unit' }) })
+    .first();
+
+  await expect(
+    createSurface.getByText('Code will be generated by the system after create.'),
+  ).toBeVisible();
+  await createSurface.getByLabel('Name').fill('Wave 3 E2E Org');
+  await createSurface.getByLabel('Type').fill('TEAM');
+  await createSurface.getByLabel('Display Order').fill('5');
+  await createSurface.getByRole('button', { name: 'Create' }).click();
+
+  await expect(page.getByText('OU-000011')).toBeVisible();
+
+  const createdRow = page.locator('tr', { hasText: 'OU-000011' });
+  await createdRow.getByRole('button', { name: 'Deactivate' }).click();
+  await page.getByTestId('confirm-dialog-confirm').click();
+
+  await expect(createdRow.getByText(/inactive/i)).toBeVisible();
+});

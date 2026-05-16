@@ -10,11 +10,11 @@
     "displayName": "显示名称",
     "employmentKind": "员工类型",
     "jobTitle": "职位",
-    "orgUnitId": "组织单元 ID",
-    "newOrgUnitId": "新组织单元 ID",
-    "managerEmploymentProfileId": "主管档案 ID",
-    "newManagerEmploymentProfileId": "新主管档案 ID",
-    "linkedUserId": "关联用户ID",
+    "orgUnitId": "组织单元",
+    "newOrgUnitId": "组织单元",
+    "managerEmploymentProfileId": "主管",
+    "newManagerEmploymentProfileId": "主管",
+    "linkedUserId": "关联用户",
     "contractStatus": "合同状态",
     "newContractStatus": "新合同状态",
     "employmentStartDate": "员工开始日期",
@@ -24,9 +24,23 @@
     "createdAt": "创建时间",
     "updatedAt": "更新时间"
   },
+  "generatedCode": {
+    "label": "系统代码",
+    "description": "员工代码将在创建后由系统生成。"
+  },
   "placeholders": {
     "optional": "可选",
+    "orgUnitSearch": "按名称或编码搜索组织单元",
+    "employmentProfileSearch": "按姓名或员工编码搜索员工档案",
+    "userSearch": "按姓名或邮箱搜索用户",
     "clearToUnset": "留空以清除主管分配"
+  },
+  "referenceHelp": {
+    "orgUnitId": "选择此档案所属的组织单元。",
+    "newOrgUnitId": "选择此档案要调入的组织单元。",
+    "managerEmploymentProfileId": "选择主管员工档案；无主管时可不选择。",
+    "newManagerEmploymentProfileId": "选择主管员工档案，或清除选择以移除主管。",
+    "linkedUserId": "选择要关联到此员工档案的用户账号。"
   },
   "states": {
     "emptyTitle": "未找到员工档案",
@@ -41,9 +55,9 @@
     "employmentKind": "员工类型",
     "employmentKindPlaceholder": "筛选按类型标记",
     "orgUnitId": "组织单元",
-    "orgUnitIdPlaceholder": "组织单元 ID",
+    "orgUnitIdPlaceholder": "选择组织单元",
     "managerEmploymentProfileId": "主管",
-    "managerEmploymentProfileIdPlaceholder": "主管档案 ID",
+    "managerEmploymentProfileIdPlaceholder": "选择主管",
     "hasLinkedUser": "已关联用户",
     "allEmploymentStatuses": "所有员工状态",
     "allContractStatuses": "所有合同状态",
@@ -86,7 +100,9 @@
     "suspend": "暂停",
     "reactivate": "重新启用",
     "terminate": "终止",
-    "archive": "归档"
+    "archive": "归档",
+    "clearManager": "清除主管",
+    "clearLinkedUser": "清除关联用户"
   },
   "table": {
     "caption": "员工档案列表",

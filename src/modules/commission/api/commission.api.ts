@@ -240,7 +240,6 @@ export const sanitizeCommissionRuleCreatePayload = (
   payload: CommissionRuleCreatePayload,
 ): CommissionRuleCreatePayload => {
   const sanitized: CommissionRuleCreatePayload = {
-    ruleCode: payload.ruleCode,
     title: payload.title,
     settlementKind: payload.settlementKind,
     beneficiaryKind: payload.beneficiaryKind,
@@ -253,6 +252,11 @@ export const sanitizeCommissionRuleCreatePayload = (
     description: payload.description ?? null,
     externalRef: payload.externalRef ?? null,
   };
+
+  const ruleCode = payload.ruleCode?.trim();
+  if (ruleCode) {
+    sanitized.ruleCode = ruleCode;
+  }
 
   if (payload.beneficiaryKind === 'EMPLOYMENT_PROFILE' && payload.beneficiaryEmploymentProfileId) {
     sanitized.beneficiaryEmploymentProfileId = payload.beneficiaryEmploymentProfileId;
@@ -287,16 +291,24 @@ export const sanitizeCommissionRuleDraftCorePayload = (
 
 export const sanitizeCommissionSettlementCreatePayload = (
   payload: CommissionSettlementCreatePayload,
-): CommissionSettlementCreatePayload => ({
-  settlementCode: payload.settlementCode,
-  title: payload.title,
-  sourceRuleId: payload.sourceRuleId,
-  settlementPeriodStartAt: payload.settlementPeriodStartAt,
-  settlementPeriodEndAt: payload.settlementPeriodEndAt,
-  revenueEntryIds: payload.revenueEntryIds,
-  description: payload.description ?? null,
-  externalRef: payload.externalRef ?? null,
-});
+): CommissionSettlementCreatePayload => {
+  const sanitized: CommissionSettlementCreatePayload = {
+    title: payload.title,
+    sourceRuleId: payload.sourceRuleId,
+    settlementPeriodStartAt: payload.settlementPeriodStartAt,
+    settlementPeriodEndAt: payload.settlementPeriodEndAt,
+    revenueEntryIds: payload.revenueEntryIds,
+    description: payload.description ?? null,
+    externalRef: payload.externalRef ?? null,
+  };
+
+  const settlementCode = payload.settlementCode?.trim();
+  if (settlementCode) {
+    sanitized.settlementCode = settlementCode;
+  }
+
+  return sanitized;
+};
 
 export const sanitizeCommissionSettlementDraftCorePayload = (
   payload: CommissionSettlementDraftCorePayload,

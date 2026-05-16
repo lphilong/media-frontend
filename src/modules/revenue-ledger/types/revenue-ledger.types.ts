@@ -158,7 +158,7 @@ export type RevenueLedgerByEventQuery = Pick<
 };
 
 export type RevenueEntryCreatePayload = {
-  revenueEntryCode: string;
+  revenueEntryCode?: string;
   title: string;
   subjectTalentId: string;
   attributionPlatformAccountId?: string | null;

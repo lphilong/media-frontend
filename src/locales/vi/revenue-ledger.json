@@ -13,12 +13,12 @@
     "searchPlaceholder": "Nhập mã bút toán",
     "status": "Trạng thái",
     "allStatuses": "Tất cả chưa lưu trữ",
-    "subjectTalentId": "ID Talent",
-    "subjectTalentIdPlaceholder": "ID Talent",
+    "subjectTalentId": "Talent",
+    "subjectTalentIdPlaceholder": "Chọn Talent",
     "attributionPlatformAccountId": "Tài khoản nền tảng",
-    "attributionPlatformAccountIdPlaceholder": "ID tài khoản nền tảng",
+    "attributionPlatformAccountIdPlaceholder": "Chọn tài khoản nền tảng",
     "attributionEventId": "Sự kiện",
-    "attributionEventIdPlaceholder": "ID sự kiện",
+    "attributionEventIdPlaceholder": "Chọn sự kiện",
     "revenueKind": "Loại doanh thu",
     "allRevenueKinds": "Bất kỳ loại doanh thu nào",
     "entrySource": "Nguồn ghi nhận",
@@ -51,9 +51,9 @@
   "fields": {
     "revenueEntryCode": "Mã bút toán doanh thu",
     "title": "Tiêu đề",
-    "subjectTalentId": "ID Talent",
-    "attributionPlatformAccountId": "ID tài khoản nền tảng ghi nhận",
-    "attributionEventId": "ID sự kiện ghi nhận",
+    "subjectTalentId": "Talent",
+    "attributionPlatformAccountId": "Tài khoản nền tảng ghi nhận",
+    "attributionEventId": "Sự kiện ghi nhận",
     "revenueKind": "Loại doanh thu",
     "entrySource": "Nguồn ghi nhận",
     "currencyCode": "Mã tiền tệ",
@@ -69,6 +69,10 @@
     "scopeBoundary": "Ranh giới phạm vi",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
+  },
+  "generatedCode": {
+    "label": "Mã hệ thống",
+    "description": "Mã bút toán doanh thu sẽ được hệ thống tạo sau khi tạo bản ghi."
   },
   "table": {
     "caption": "Danh sách bút toán doanh thu",
@@ -93,7 +97,8 @@
     "finalize": "Chốt",
     "reconcile": "Đối soát",
     "void": "Hủy hiệu lực",
-    "archive": "Lưu trữ"
+    "archive": "Lưu trữ",
+    "clearReference": "Xóa lựa chọn"
   },
   "mutations": {
     "create": {
@@ -114,6 +119,9 @@
       "submit": "Đối soát",
       "pending": "Đang đối soát"
     }
+  },
+  "placeholders": {
+    "searchReference": "Tìm theo tên hoặc mã"
   },
   "detail": {
     "archivedReadOnly": "Bút toán doanh thu đã lưu trữ chỉ đọc.",

@@ -22,8 +22,16 @@ import type {
   TalentOrigin,
   TalentUpdatePayload,
 } from '@modules/talent/types/talent.types';
+import { loadEmploymentProfileReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
-import { CheckboxField, FormGrid, SelectField, TextInputField } from '@shared/forms';
+import {
+  CheckboxField,
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
@@ -104,11 +112,6 @@ const createTalentCreateSchema = (
 ) => {
   return z
     .object({
-      talentCode: z
-        .string()
-        .trim()
-        .min(1, requiredMessage)
-        .regex(/^[A-Z0-9_-]+$/, tokenMessage),
       stageName: z.string().trim().min(1, requiredMessage),
       legalName: z.string().trim().min(1, requiredMessage),
       talentOrigin: z.preprocess(
@@ -231,7 +234,6 @@ const createCommercialParticipationSchema = (
 };
 
 type TalentCreateFormValues = {
-  talentCode: string;
   stageName: string;
   legalName: string;
   talentOrigin: TalentOrigin | '';
@@ -271,7 +273,6 @@ export const TalentCreateSurface = ({
   );
   const form = useForm<TalentCreateFormValues>({
     defaultValues: {
-      talentCode: '',
       stageName: '',
       legalName: '',
       talentOrigin: '',
@@ -299,12 +300,11 @@ export const TalentCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'talentCode');
+      applySchemaErrors(form.setError, parsed.error, 'stageName');
       return;
     }
 
     await onSubmit({
-      talentCode: parsed.data.talentCode,
       stageName: parsed.data.stageName,
       legalName: parsed.data.legalName,
       talentOrigin: parsed.data.talentOrigin,
@@ -333,7 +333,11 @@ export const TalentCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="talentCode" label={t('talent:fields.talentCode')} />
+          <GeneratedCodeNotice
+            label={t('talent:generatedCode.label')}
+            description={t('talent:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <SelectField
             name="talentOrigin"
             label={t('talent:fields.talentOrigin')}
@@ -346,15 +350,25 @@ export const TalentCreateSurface = ({
             label={t('talent:fields.commercialParticipationStatus')}
             options={commercialParticipationOptions}
           />
-          <TextInputField
+          <ReferencePickerField
             name="managerEmploymentProfileId"
             label={t('talent:fields.managerEmploymentProfileId')}
-            placeholder={t('talent:placeholders.optional')}
+            pickerId="talent-manager"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('talent:referenceHelp.managerEmploymentProfileId')}
+            placeholder={t('talent:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('talent:actions.clearManager')}
           />
-          <TextInputField
+          <ReferencePickerField
             name="linkedEmploymentProfileId"
             label={t('talent:fields.linkedEmploymentProfileId')}
-            placeholder={t('talent:placeholders.optional')}
+            pickerId="talent-linked-employment-profile"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('talent:referenceHelp.linkedEmploymentProfileId')}
+            placeholder={t('talent:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('talent:actions.clearLinkedEmploymentProfile')}
           />
           <TextInputField
             name="displayShortName"
@@ -514,10 +528,15 @@ export const TalentManagerAssignmentSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <TextInputField
+        <ReferencePickerField
           name="newManagerEmploymentProfileId"
           label={t('talent:fields.newManagerEmploymentProfileId')}
-          placeholder={t('talent:placeholders.clearToUnset')}
+          pickerId="talent-new-manager"
+          loadOptions={loadEmploymentProfileReferenceOptions}
+          helperText={t('talent:referenceHelp.newManagerEmploymentProfileId')}
+          placeholder={t('talent:placeholders.employmentProfileSearch')}
+          clearable
+          clearLabel={t('talent:actions.clearManager')}
         />
       </ModuleMutationSurface>
     </FormProvider>
@@ -575,9 +594,13 @@ export const TalentEmploymentLinkSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <TextInputField
+        <ReferencePickerField
           name="linkedEmploymentProfileId"
           label={t('talent:fields.linkedEmploymentProfileId')}
+          pickerId="talent-link-employment-profile"
+          loadOptions={loadEmploymentProfileReferenceOptions}
+          helperText={t('talent:referenceHelp.linkedEmploymentProfileId')}
+          placeholder={t('talent:placeholders.employmentProfileSearch')}
         />
       </ModuleMutationSurface>
     </FormProvider>

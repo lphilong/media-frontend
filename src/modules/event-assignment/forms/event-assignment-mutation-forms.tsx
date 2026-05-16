@@ -3,6 +3,7 @@ import {
   FormProvider,
   useFieldArray,
   useForm,
+  useFormContext,
   type FieldValues,
   type Path,
   type UseFormSetError,
@@ -20,7 +21,21 @@ import type {
   EventReschedulePayload,
   EventUpdatePayload,
 } from '@modules/event-assignment/types/event-assignment.types';
-import { FormGrid, SelectField, TextInputField } from '@shared/forms';
+import {
+  loadEmploymentProfileReferenceOptions,
+  loadPlatformAccountReferenceOptions,
+  loadStudioResourceReferenceOptions,
+  loadTalentGroupReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
+import {
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferenceIdSetEditor,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseSurfaceProps = {
@@ -67,26 +82,25 @@ type EventReplacePlatformAccountsSurfaceProps = BaseSurfaceProps & {
 
 const assignmentKindValues = ['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP'] as const;
 const tokenRegex = /^[A-Za-z0-9_-]+$/;
-const upperTokenRegex = /^[A-Z][A-Z0-9_]*$/;
 
 const toNullableText = (value?: string): string | null => {
   const trimmed = value?.trim();
   return trimmed && trimmed.length > 0 ? trimmed : null;
 };
 
-const parseCsvIds = (value?: string): string[] => {
-  if (!value) {
-    return [];
+const idsFromRows = (rows: IdRow[]): string[] =>
+  Array.from(new Set(rows.map((row) => row.id.trim()).filter(Boolean)));
+
+const loadAssignmentOptions = (assignmentKind: EventAssignmentKind, search: string) => {
+  if (assignmentKind === 'EMPLOYMENT_PROFILE') {
+    return loadEmploymentProfileReferenceOptions(search);
   }
 
-  return Array.from(
-    new Set(
-      value
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
-  );
+  if (assignmentKind === 'TALENT') {
+    return loadTalentReferenceOptions(search);
+  }
+
+  return loadTalentGroupReferenceOptions(search);
 };
 
 const assignmentKindToPayload = (
@@ -170,16 +184,19 @@ const createRescheduleSchema = (requiredMessage: string, rangeMessage: string) =
     });
 
 type EventCreateFormValues = {
-  eventCode: string;
   title: string;
   assignmentKind: EventAssignmentKind;
   assignmentId: string;
   eventStartAt: string;
   eventEndAt: string;
-  studioResourceIds: string;
-  platformAccountIds: string;
+  studioResourceIds: IdRow[];
+  platformAccountIds: IdRow[];
   description: string;
   externalRef: string;
+};
+
+type IdRow = {
+  id: string;
 };
 
 type EventReplacementAssignmentFormValue = {
@@ -211,14 +228,17 @@ const createCreateSchema = (
 ) =>
   z
     .object({
-      eventCode: z.string().trim().min(1, requiredMessage).regex(upperTokenRegex, tokenMessage),
       title: z.string().trim().min(1, requiredMessage),
       assignmentKind: createAssignmentKindSchema(requiredMessage),
       assignmentId: z.string().trim().min(1, requiredMessage).regex(tokenRegex, tokenMessage),
       eventStartAt: timestampField(requiredMessage),
       eventEndAt: timestampField(requiredMessage),
-      studioResourceIds: z.string().trim().optional(),
-      platformAccountIds: z.string().trim().optional(),
+      studioResourceIds: z.array(
+        z.object({ id: z.string().trim().regex(tokenRegex, tokenMessage) }),
+      ),
+      platformAccountIds: z.array(
+        z.object({ id: z.string().trim().regex(tokenRegex, tokenMessage) }),
+      ),
       description: z.string().trim().optional(),
       externalRef: z.string().trim().optional(),
     })
@@ -231,18 +251,15 @@ const createCreateSchema = (
         });
       }
 
-      const studioResourceIds = parseCsvIds(value.studioResourceIds);
-      const platformAccountIds = parseCsvIds(value.platformAccountIds);
-      if (
-        studioResourceIds.some((id) => !tokenRegex.test(id)) ||
-        platformAccountIds.some((id) => !tokenRegex.test(id))
-      ) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['studioResourceIds'],
-          message: referenceMessage,
-        });
-      }
+      [...value.studioResourceIds, ...value.platformAccountIds].forEach((row) => {
+        if (row.id && !tokenRegex.test(row.id)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['studioResourceIds'],
+            message: referenceMessage,
+          });
+        }
+      });
     });
 
 const createReplacementSchema = (requiredMessage: string, tokenMessage: string) =>
@@ -264,14 +281,13 @@ export const EventCreateSurface = ({
   const assignmentKindOptions = useAssignmentKindOptions();
   const form = useForm<EventCreateFormValues>({
     defaultValues: {
-      eventCode: '',
       title: '',
       assignmentKind: 'EMPLOYMENT_PROFILE',
       assignmentId: '',
       eventStartAt: '',
       eventEndAt: '',
-      studioResourceIds: '',
-      platformAccountIds: '',
+      studioResourceIds: [],
+      platformAccountIds: [],
       description: '',
       externalRef: '',
     },
@@ -291,18 +307,17 @@ export const EventCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'eventCode');
+      applySchemaErrors(form.setError, parsed.error, 'title');
       return;
     }
 
     await onSubmit({
-      eventCode: parsed.data.eventCode,
       title: parsed.data.title,
       assignments: [assignmentKindToPayload(parsed.data.assignmentKind, parsed.data.assignmentId)],
       eventStartAt: parsed.data.eventStartAt,
       eventEndAt: parsed.data.eventEndAt,
-      studioResourceIds: parseCsvIds(parsed.data.studioResourceIds),
-      platformAccountIds: parseCsvIds(parsed.data.platformAccountIds),
+      studioResourceIds: idsFromRows(parsed.data.studioResourceIds),
+      platformAccountIds: idsFromRows(parsed.data.platformAccountIds),
       description: toNullableText(parsed.data.description),
       externalRef: toNullableText(parsed.data.externalRef),
     });
@@ -322,14 +337,18 @@ export const EventCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="eventCode" label={t('event-assignment:fields.eventCode')} />
+          <GeneratedCodeNotice
+            label={t('event-assignment:generatedCode.label')}
+            description={t('event-assignment:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField name="title" label={t('event-assignment:fields.title')} />
           <SelectField
             name="assignmentKind"
             label={t('event-assignment:fields.assignmentKind')}
             options={assignmentKindOptions}
           />
-          <TextInputField name="assignmentId" label={t('event-assignment:fields.assignmentId')} />
+          <EventAssignmentReferenceField name="assignmentId" kindName="assignmentKind" />
           <TextInputField
             name="eventStartAt"
             label={t('event-assignment:fields.eventStartAt')}
@@ -341,21 +360,35 @@ export const EventCreateSurface = ({
             type="number"
           />
           <TextInputField
-            name="studioResourceIds"
-            label={t('event-assignment:fields.studioResourceIds')}
-            placeholder={t('event-assignment:placeholders.csvIds')}
-          />
-          <TextInputField
-            name="platformAccountIds"
-            label={t('event-assignment:fields.platformAccountIds')}
-            placeholder={t('event-assignment:placeholders.csvIds')}
-          />
-          <TextInputField
             name="externalRef"
             label={t('event-assignment:fields.externalRef')}
             placeholder={t('event-assignment:placeholders.optional')}
           />
         </FormGrid>
+        <ReferenceIdSetEditor
+          name="studioResourceIds"
+          idFieldName="id"
+          pickerId="event-studio-resource"
+          loadOptions={loadStudioResourceReferenceOptions}
+          title={t('event-assignment:fields.studioResources')}
+          fieldLabel={t('event-assignment:fields.studioResource')}
+          addLabel={t('event-assignment:actions.addStudioResource')}
+          removeLabel={(index) => t('event-assignment:actions.removeStudioResource', { index })}
+          emptyLabel={t('event-assignment:assignments.emptyStudioResourceSet')}
+          placeholder={t('event-assignment:placeholders.searchReference')}
+        />
+        <ReferenceIdSetEditor
+          name="platformAccountIds"
+          idFieldName="id"
+          pickerId="event-platform-account"
+          loadOptions={loadPlatformAccountReferenceOptions}
+          title={t('event-assignment:fields.platformAccounts')}
+          fieldLabel={t('event-assignment:fields.platformAccount')}
+          addLabel={t('event-assignment:actions.addPlatformAccount')}
+          removeLabel={(index) => t('event-assignment:actions.removePlatformAccount', { index })}
+          emptyLabel={t('event-assignment:assignments.emptyPlatformAccountSet')}
+          placeholder={t('event-assignment:placeholders.searchReference')}
+        />
         <TextInputField
           name="description"
           label={t('event-assignment:fields.description')}
@@ -363,6 +396,34 @@ export const EventCreateSurface = ({
         />
       </ModuleMutationSurface>
     </FormProvider>
+  );
+};
+
+const EventAssignmentReferenceField = ({
+  name,
+  kindName,
+  indexedLabel,
+}: {
+  name: string;
+  kindName: string;
+  indexedLabel?: string;
+}): JSX.Element => {
+  const { t } = useTranslation(['event-assignment']);
+  const { watch } = useFormContext();
+  const assignmentKind = watch(kindName) as EventAssignmentKind;
+  const loadOptions = useMemo(
+    () => (search: string) => loadAssignmentOptions(assignmentKind, search),
+    [assignmentKind],
+  );
+
+  return (
+    <ReferencePickerField
+      name={name}
+      label={indexedLabel ?? t('event-assignment:fields.assignment')}
+      pickerId={`event-assignment-${name}`}
+      loadOptions={loadOptions}
+      placeholder={t('event-assignment:placeholders.searchReference')}
+    />
   );
 };
 
@@ -575,9 +636,12 @@ export const EventReplaceAssignmentsSurface = ({
                   label={t('event-assignment:fields.assignmentKindIndexed', { index: index + 1 })}
                   options={assignmentKindOptions}
                 />
-                <TextInputField
+                <EventAssignmentReferenceField
                   name={`replacementAssignments.${index}.assignmentId`}
-                  label={t('event-assignment:fields.assignmentIdIndexed', { index: index + 1 })}
+                  kindName={`replacementAssignments.${index}.assignmentKind`}
+                  indexedLabel={t('event-assignment:fields.assignmentIndexed', {
+                    index: index + 1,
+                  })}
                 />
               </FormGrid>
               <button
@@ -615,14 +679,14 @@ export const EventReplaceStudioResourcesSurface = ({
   isPending = false,
 }: EventReplaceStudioResourcesSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['event-assignment', 'common']);
-  const form = useForm<{ newStudioResourceIds: string }>({
+  const form = useForm<{ newStudioResourceIds: IdRow[] }>({
     defaultValues: {
-      newStudioResourceIds: initialResourceIds.join(', '),
+      newStudioResourceIds: initialResourceIds.map((id) => ({ id })),
     },
   });
   const handleSubmit = form.handleSubmit(async (values) => {
     await onSubmit({
-      newStudioResourceIds: parseCsvIds(values.newStudioResourceIds),
+      newStudioResourceIds: idsFromRows(values.newStudioResourceIds),
     });
   });
 
@@ -639,10 +703,17 @@ export const EventReplaceStudioResourcesSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <TextInputField
+        <ReferenceIdSetEditor
           name="newStudioResourceIds"
-          label={t('event-assignment:fields.newStudioResourceIds')}
-          placeholder={t('event-assignment:placeholders.csvIds')}
+          idFieldName="id"
+          pickerId="event-replacement-studio-resource"
+          loadOptions={loadStudioResourceReferenceOptions}
+          title={t('event-assignment:fields.studioResources')}
+          fieldLabel={t('event-assignment:fields.studioResource')}
+          addLabel={t('event-assignment:actions.addStudioResource')}
+          removeLabel={(index) => t('event-assignment:actions.removeStudioResource', { index })}
+          emptyLabel={t('event-assignment:assignments.emptyStudioResourceSet')}
+          placeholder={t('event-assignment:placeholders.searchReference')}
         />
       </ModuleMutationSurface>
     </FormProvider>
@@ -656,14 +727,14 @@ export const EventReplacePlatformAccountsSurface = ({
   isPending = false,
 }: EventReplacePlatformAccountsSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['event-assignment', 'common']);
-  const form = useForm<{ newPlatformAccountIds: string }>({
+  const form = useForm<{ newPlatformAccountIds: IdRow[] }>({
     defaultValues: {
-      newPlatformAccountIds: initialPlatformAccountIds.join(', '),
+      newPlatformAccountIds: initialPlatformAccountIds.map((id) => ({ id })),
     },
   });
   const handleSubmit = form.handleSubmit(async (values) => {
     await onSubmit({
-      newPlatformAccountIds: parseCsvIds(values.newPlatformAccountIds),
+      newPlatformAccountIds: idsFromRows(values.newPlatformAccountIds),
     });
   });
 
@@ -680,10 +751,17 @@ export const EventReplacePlatformAccountsSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <TextInputField
+        <ReferenceIdSetEditor
           name="newPlatformAccountIds"
-          label={t('event-assignment:fields.newPlatformAccountIds')}
-          placeholder={t('event-assignment:placeholders.csvIds')}
+          idFieldName="id"
+          pickerId="event-replacement-platform-account"
+          loadOptions={loadPlatformAccountReferenceOptions}
+          title={t('event-assignment:fields.platformAccounts')}
+          fieldLabel={t('event-assignment:fields.platformAccount')}
+          addLabel={t('event-assignment:actions.addPlatformAccount')}
+          removeLabel={(index) => t('event-assignment:actions.removePlatformAccount', { index })}
+          emptyLabel={t('event-assignment:assignments.emptyPlatformAccountSet')}
+          placeholder={t('event-assignment:placeholders.searchReference')}
         />
       </ModuleMutationSurface>
     </FormProvider>

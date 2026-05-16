@@ -71,7 +71,7 @@ export type CursorPagedResponse<TData> = {
 };
 
 export type EmploymentProfileCreatePayload = {
-  employeeCode: string;
+  employeeCode?: string;
   legalName: string;
   displayName: string;
   employmentKind: string;

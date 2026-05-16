@@ -68,7 +68,7 @@ export type TalentGroupMembersQuery = {
 };
 
 export type TalentGroupCreatePayload = {
-  groupCode: string;
+  groupCode?: string;
   name: string;
   displayOrder: number;
   shortName?: string | null;

@@ -6,7 +6,7 @@
   },
   "fields": {
     "roleId": "角色ID",
-    "userId": "用户 ID",
+    "userId": "用户",
     "code": "编码",
     "name": "名称",
     "state": "状态",
@@ -131,7 +131,11 @@
   },
   "placeholders": {
     "permissions": "role:view user:view",
-    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]"
+    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]",
+    "userSearch": "按姓名或邮箱搜索用户"
+  },
+  "referenceHelp": {
+    "userId": "选择要接收此角色分配的用户账号。"
   },
   "validation": {
     "required": "此字段为必填。",
@@ -162,7 +166,7 @@
     "title": "角色分配",
     "caption": "角色分配",
     "assignmentId": "分配ID",
-    "userId": "用户 ID",
+    "userId": "用户",
     "state": "状态",
     "effectiveAt": "生效",
     "revokedAt": "已撤销",

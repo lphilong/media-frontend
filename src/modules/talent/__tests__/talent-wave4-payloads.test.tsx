@@ -1,6 +1,7 @@
 import i18n from 'i18next';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 
 import {
   TalentCommercialParticipationSurface,
@@ -11,8 +12,51 @@ import {
 } from '@modules/talent/forms/talent-mutation-forms';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 
+vi.mock('@shared/components/reference/admin-reference-options', () => ({
+  loadEmploymentProfileReferenceOptions: vi.fn(async () => [
+    {
+      id: 'ep-001',
+      label: 'Manager One - EP-000001',
+      description: 'ACTIVE',
+      href: '/employment-profiles/ep-001',
+    },
+    {
+      id: 'ep-010',
+      label: 'Profile Ten - EP-000010',
+      description: 'ACTIVE',
+      href: '/employment-profiles/ep-010',
+    },
+  ]),
+}));
+
 const renderWithProviders = (ui: JSX.Element) => {
-  return render(ui);
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+};
+
+const findPicker = async (pickerId: string): Promise<HTMLElement> => {
+  await waitFor(() => {
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some((surface) => surface.getAttribute('data-picker-id') === pickerId),
+    ).toBe(true);
+  });
+  const picker = screen
+    .getAllByTestId('picker-surface')
+    .find((surface) => surface.getAttribute('data-picker-id') === pickerId);
+  if (!picker) {
+    throw new Error(`Picker not found: ${pickerId}`);
+  }
+  return picker;
+};
+
+const selectPickerOption = async (
+  user: ReturnType<typeof userEvent.setup>,
+  pickerId: string,
+  optionText: RegExp,
+): Promise<void> => {
+  const picker = await findPicker(pickerId);
+  await user.click(await within(picker).findByText(optionText));
 };
 
 describe('talent wave 4 mutation payloads', () => {
@@ -21,6 +65,10 @@ describe('talent wave 4 mutation payloads', () => {
     const onSubmit = vi.fn();
 
     renderWithProviders(<TalentCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
+    expect(screen.queryByLabelText(i18n.t('talent:fields.talentCode'))).toBeNull();
+    expect(screen.getByText(i18n.t('talent:generatedCode.description'))).toBeInTheDocument();
+    await within(await findPicker('talent-manager')).findByText(/EP-000001/);
+    await within(await findPicker('talent-linked-employment-profile')).findByText(/EP-000010/);
 
     const originOptions = Array.from(
       screen.getByLabelText(i18n.t('talent:fields.talentOrigin')).querySelectorAll('option'),
@@ -33,6 +81,35 @@ describe('talent wave 4 mutation payloads', () => {
 
     expect(originOptions).toEqual(['', 'INTERNAL', 'EXTERNAL']);
     expect(commercialOptions).toEqual(['ALLOWED', 'BLOCKED']);
+  });
+
+  it('omits talentCode from the normal create payload while preserving external references', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+
+    renderWithProviders(<TalentCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
+
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('talent:fields.talentOrigin')),
+      'INTERNAL',
+    );
+    await user.type(screen.getByLabelText(i18n.t('talent:fields.stageName')), 'Generated Talent');
+    await user.type(screen.getByLabelText(i18n.t('talent:fields.legalName')), 'Generated Legal');
+    await user.type(screen.getByLabelText(i18n.t('talent:fields.externalRef')), 'EXT-TAL');
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('talent:mutations.create.submit'),
+      }),
+    );
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stageName: 'Generated Talent',
+        externalRef: 'EXT-TAL',
+      }),
+    );
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('talentCode');
   });
 
   it('maps manager assignment blank input to an explicit null payload', async () => {
@@ -49,10 +126,7 @@ describe('talent wave 4 mutation payloads', () => {
       />,
     );
 
-    const managerField = screen.getByLabelText(
-      i18n.t('talent:fields.newManagerEmploymentProfileId'),
-    );
-    await user.clear(managerField);
+    await user.click(screen.getByRole('button', { name: i18n.t('talent:actions.clearManager') }));
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('talent:mutations.assignManager.submit'),
@@ -73,10 +147,7 @@ describe('talent wave 4 mutation payloads', () => {
       <TalentEmploymentLinkSurface onCancel={() => undefined} onSubmit={onSubmit} />,
     );
 
-    await user.type(
-      screen.getByLabelText(i18n.t('talent:fields.linkedEmploymentProfileId')),
-      'ep-010',
-    );
+    await selectPickerOption(user, 'talent-link-employment-profile', /EP-000010/);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('talent:mutations.linkEmploymentProfile.submit'),

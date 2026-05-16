@@ -21,7 +21,17 @@ import type {
   ContractRecord,
   ContractTerminatePayload,
 } from '@modules/contract-registry/types/contract-registry.types';
-import { FormGrid, SelectField, TextInputField } from '@shared/forms';
+import {
+  loadEmploymentProfileReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
+import {
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 import { formatUtcMidnightDateLike } from '@shared/formatting/formatters';
 import { ModuleMutationSurface } from '@shared/modules';
 
@@ -56,7 +66,6 @@ type DateActionSurfaceProps = BaseSurfaceProps & {
 };
 
 const idRegex = /^[A-Za-z0-9_-]+$/;
-const codeRegex = /^[A-Z][A-Z0-9_]*$/;
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
 const contractKindOptions: ContractKind[] = ['EMPLOYMENT', 'TALENT_SERVICE', 'TALENT_MANAGEMENT'];
@@ -138,6 +147,14 @@ const linkedPayload = (
   return { linkedEntityKind, linkedTalentId: linkedEntityId };
 };
 
+const loadLinkedEntityOptions = (kind: ContractLinkedEntityKind, search: string) => {
+  if (kind === 'EMPLOYMENT_PROFILE') {
+    return loadEmploymentProfileReferenceOptions(search);
+  }
+
+  return loadTalentReferenceOptions(search);
+};
+
 const createSchema = (messages: {
   required: string;
   token: string;
@@ -147,7 +164,6 @@ const createSchema = (messages: {
 }) =>
   z
     .object({
-      contractCode: z.string().trim().min(1, messages.required).regex(codeRegex, messages.token),
       title: z.string().trim().min(1, messages.required),
       contractKind: z.enum(contractKindOptions as [ContractKind, ...ContractKind[]]),
       linkedEntityKind: z.enum(
@@ -207,7 +223,6 @@ const draftCoreSchema = (messages: { required: string; token: string; date: stri
   });
 
 type ContractCoreFormValues = {
-  contractCode: string;
   title: string;
   contractKind: ContractKind;
   linkedEntityKind: ContractLinkedEntityKind;
@@ -249,7 +264,6 @@ export const ContractCreateSurface = ({
   const options = useContractOptions();
   const form = useForm<ContractCoreFormValues>({
     defaultValues: {
-      contractCode: '',
       title: '',
       contractKind: 'EMPLOYMENT',
       linkedEntityKind: 'EMPLOYMENT_PROFILE',
@@ -275,15 +289,19 @@ export const ContractCreateSurface = ({
       }),
     [t],
   );
+  const linkedEntityKind = form.watch('linkedEntityKind');
+  const loadLinkedOptions = useMemo(
+    () => (search: string) => loadLinkedEntityOptions(linkedEntityKind, search),
+    [linkedEntityKind],
+  );
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'contractCode');
+      applySchemaErrors(form.setError, parsed.error, 'title');
       return;
     }
 
     await onSubmit({
-      contractCode: parsed.data.contractCode,
       title: parsed.data.title,
       contractKind: parsed.data.contractKind,
       ...linkedPayload(parsed.data.linkedEntityKind, parsed.data.linkedEntityId),
@@ -312,7 +330,11 @@ export const ContractCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="contractCode" label={t('contract-registry:fields.contractCode')} />
+          <GeneratedCodeNotice
+            label={t('contract-registry:generatedCode.label')}
+            description={t('contract-registry:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField name="title" label={t('contract-registry:fields.title')} />
           <SelectField
             name="contractKind"
@@ -324,13 +346,19 @@ export const ContractCreateSurface = ({
             label={t('contract-registry:fields.linkedEntityKind')}
             options={options.linkedEntityKinds}
           />
-          <TextInputField
+          <ReferencePickerField
             name="linkedEntityId"
             label={t('contract-registry:fields.linkedEntityId')}
+            pickerId="contract-linked-entity"
+            loadOptions={loadLinkedOptions}
+            placeholder={t('contract-registry:placeholders.searchReference')}
           />
-          <TextInputField
+          <ReferencePickerField
             name="ownerEmploymentProfileId"
             label={t('contract-registry:fields.ownerEmploymentProfileId')}
+            pickerId="contract-owner-employment-profile"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            placeholder={t('contract-registry:placeholders.searchReference')}
           />
           <SelectField
             name="confidentialityTier"
@@ -405,6 +433,11 @@ export const ContractDraftCoreSurface = ({
       }),
     [t],
   );
+  const linkedEntityKind = form.watch('linkedEntityKind');
+  const loadLinkedOptions = useMemo(
+    () => (search: string) => loadLinkedEntityOptions(linkedEntityKind, search),
+    [linkedEntityKind],
+  );
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
@@ -443,9 +476,12 @@ export const ContractDraftCoreSurface = ({
             label={t('contract-registry:fields.linkedEntityKind')}
             options={options.linkedEntityKinds}
           />
-          <TextInputField
+          <ReferencePickerField
             name="linkedEntityId"
             label={t('contract-registry:fields.linkedEntityId')}
+            pickerId="contract-draft-linked-entity"
+            loadOptions={loadLinkedOptions}
+            placeholder={t('contract-registry:placeholders.searchReference')}
           />
           <SelectField
             name="confidentialityTier"
@@ -497,9 +533,12 @@ export const ContractAssignOwnerSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <TextInputField
+        <ReferencePickerField
           name="newOwnerEmploymentProfileId"
           label={t('contract-registry:fields.newOwnerEmploymentProfileId')}
+          pickerId="contract-new-owner-employment-profile"
+          loadOptions={loadEmploymentProfileReferenceOptions}
+          placeholder={t('contract-registry:placeholders.searchReference')}
         />
       </ModuleMutationSurface>
     </FormProvider>

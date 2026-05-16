@@ -23,7 +23,7 @@ describe('talent wave 4 surfaces', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('talent:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('TAL002', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('TAL-000002', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(await screen.findByText('BaoStar', {}, { timeout: 3000 })).toBeInTheDocument();
   });
 
@@ -32,7 +32,7 @@ describe('talent wave 4 surfaces', () => {
     renderRoute('/talents/talent-001');
 
     expect(await screen.findByText(i18n.t('talent:actionRail.title'))).toBeInTheDocument();
-    expect(screen.getByText('TAL001')).toBeInTheDocument();
+    expect(screen.getByText('TAL-000001')).toBeInTheDocument();
 
     const relatedLinks = screen.getAllByRole('link', {
       name: i18n.t('talent:related.openFilteredList'),
@@ -88,10 +88,10 @@ describe('talent wave 4 surfaces', () => {
     }
 
     const createSurfaceScope = within(createSurface);
-    await user.type(
-      createSurfaceScope.getByLabelText(i18n.t('talent:fields.talentCode')),
-      'WAVE4TAL',
-    );
+    expect(createSurfaceScope.queryByLabelText(i18n.t('talent:fields.talentCode'))).toBeNull();
+    expect(
+      createSurfaceScope.getByText(i18n.t('talent:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(
       createSurfaceScope.getByLabelText(i18n.t('talent:fields.stageName')),
       'Wave 4 Talent',
@@ -110,9 +110,9 @@ describe('talent wave 4 surfaces', () => {
       }),
     );
 
-    expect(await screen.findByText('WAVE4TAL', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('TAL-001001', {}, { timeout: 3000 })).toBeInTheDocument();
 
-    const row = screen.getByText('WAVE4TAL').closest('tr');
+    const row = screen.getByText('TAL-001001').closest('tr');
     expect(row).not.toBeNull();
     if (!row) {
       return;
@@ -127,7 +127,7 @@ describe('talent wave 4 surfaces', () => {
 
     await waitFor(
       () => {
-        const refreshedRow = screen.getByText('WAVE4TAL').closest('tr');
+        const refreshedRow = screen.getByText('TAL-001001').closest('tr');
         expect(refreshedRow).not.toBeNull();
         if (!refreshedRow) {
           return;

@@ -212,7 +212,7 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
               fields={[
                 {
                   key: 'contract-code',
-                  label: t('contract-registry:fields.contractCode'),
+                  label: t('contract-registry:generatedCode.label'),
                   value: <ReferenceChip label={record.contractCode} />,
                 },
                 {

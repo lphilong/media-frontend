@@ -22,10 +22,6 @@ wave*-test-output.txt
 *-test-output.txt
 
 docs/
-tests/
 
 .codex/
 **/.codex/
-
-**/*.test.ts
-**/*.spec.ts

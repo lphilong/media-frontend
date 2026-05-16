@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
+  createEvent,
   fetchEvents,
   performEventLifecycleAction,
   replaceEventAssignments,
@@ -35,11 +36,31 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
+vi.mock('@shared/components/reference/admin-reference-options', () => ({
+  loadEmploymentProfileReferenceOptions: vi.fn(async () => [
+    { id: 'ep-001', label: 'Employee One - EP-000001' },
+  ]),
+  loadTalentReferenceOptions: vi.fn(async () => [
+    { id: 'talent-001', label: 'Talent One - TAL-000001' },
+  ]),
+  loadTalentGroupReferenceOptions: vi.fn(async () => [
+    { id: 'group-001', label: 'Group One - TG-000001' },
+  ]),
+  loadStudioResourceReferenceOptions: vi.fn(async () => [
+    { id: 'studio-001', label: 'Studio One - SR-000001' },
+    { id: 'studio-002', label: 'Studio Two - SR-000002' },
+  ]),
+  loadPlatformAccountReferenceOptions: vi.fn(async () => [
+    { id: 'platform-001', label: 'Platform One - PA-000001' },
+    { id: 'platform-003', label: 'Platform Three - PA-000003' },
+  ]),
+}));
+
 const apiRequestMock = vi.mocked(apiRequest);
 
 const eventRecord: EventRecord = {
   id: 'event-001',
-  eventCode: 'EVT001',
+  eventCode: 'EVT-202605-000001',
   title: 'Launch event',
   studioResourceIds: ['studio-001'],
   platformAccountIds: ['platform-001'],
@@ -76,7 +97,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
   it('parses and serializes only documented flat-list query keys without scope', () => {
     const query = parseScreenQueryParams(
       new URLSearchParams(
-        'status=SCHEDULED&assignmentKind=EMPLOYMENT_PROFILE&assignmentEmploymentProfileId=ep-001&containsStudioResourceId=studio-001&containsPlatformAccountId=platform-001&windowStartAt=&windowEndAt=200&limit=50&cursor=opaque&search=EVT001&sortBy=eventStartAt&sortDirection=desc&page=2&scope=global&scopeGrants=x',
+        'status=SCHEDULED&assignmentKind=EMPLOYMENT_PROFILE&assignmentEmploymentProfileId=ep-001&containsStudioResourceId=studio-001&containsPlatformAccountId=platform-001&windowStartAt=&windowEndAt=200&limit=50&cursor=opaque&search=EVT-202605-000001&sortBy=eventStartAt&sortDirection=desc&page=2&scope=global&scopeGrants=x',
       ),
       eventFlatListQueryConfig,
     );
@@ -90,7 +111,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
       windowEndAt: 200,
       limit: 50,
       cursor: 'opaque',
-      search: 'EVT001',
+      search: 'EVT-202605-000001',
       sortBy: 'eventStartAt',
       sortDirection: 'desc',
     });
@@ -284,27 +305,28 @@ describe('event assignment wave 6 query and payload shaping', () => {
     const createRender = render(
       <EventCreateSurface onCancel={() => undefined} onSubmit={onCreate} />,
     );
-    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.eventCode')), 'EVT900');
+    expect(
+      screen.queryByLabelText(i18n.t('event-assignment:fields.eventCode')),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('event-assignment:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.title')), 'Wave 6 event');
-    await user.type(
-      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentId')),
-      'ep-001',
-    );
+    await user.click(await screen.findByRole('button', { name: /Employee One/ }));
     await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.eventStartAt')), '1000');
     await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.eventEndAt')), '2000');
-    await user.type(
-      screen.getByLabelText(i18n.t('event-assignment:fields.studioResourceIds')),
-      'studio-001',
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:actions.addStudioResource') }),
     );
-    await user.type(
-      screen.getByLabelText(i18n.t('event-assignment:fields.platformAccountIds')),
-      'platform-001',
+    await user.click(await screen.findByRole('button', { name: /Studio One/ }));
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:actions.addPlatformAccount') }),
     );
+    await user.click(await screen.findByRole('button', { name: /Platform One/ }));
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:mutations.create.submit') }),
     );
     expect(onCreate).toHaveBeenCalledWith({
-      eventCode: 'EVT900',
       title: 'Wave 6 event',
       assignments: [
         {
@@ -319,6 +341,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
       description: null,
       externalRef: null,
     });
+    expect(onCreate.mock.calls.at(-1)?.[0]).not.toHaveProperty('eventCode');
     createRender.unmount();
 
     const onEdit = vi.fn();
@@ -338,6 +361,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
       description: null,
       externalRef: 'EXT',
     });
+    expect(onEdit.mock.calls.at(-1)?.[0]).not.toHaveProperty('eventCode');
     editRender.unmount();
 
     const onReschedule = vi.fn();
@@ -362,6 +386,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
       newEventStartAt: 3000,
       newEventEndAt: 4000,
     });
+    expect(onReschedule.mock.calls.at(-1)?.[0]).not.toHaveProperty('eventCode');
     rescheduleRender.unmount();
 
     const onAssignments = vi.fn();
@@ -372,26 +397,15 @@ describe('event assignment wave 6 query and payload shaping', () => {
         onSubmit={onAssignments}
       />,
     );
-    expect(
-      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 1 })),
-    ).toHaveValue('ep-001');
-    expect(
-      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 2 })),
-    ).toHaveValue('talent-001');
-    expect(
-      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 3 })),
-    ).toHaveValue('group-001');
+    expect(screen.getByText('ep-001')).toBeInTheDocument();
+    expect(screen.getByText('talent-001')).toBeInTheDocument();
+    expect(screen.getByText('group-001')).toBeInTheDocument();
     await user.selectOptions(
       screen.getByLabelText(i18n.t('event-assignment:fields.assignmentKindIndexed', { index: 2 })),
       'TALENT_GROUP',
     );
-    await user.clear(
-      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 2 })),
-    );
-    await user.type(
-      screen.getByLabelText(i18n.t('event-assignment:fields.assignmentIdIndexed', { index: 2 })),
-      'group-001',
-    );
+    const groupOptions = await screen.findAllByRole('button', { name: /Group One/ });
+    await user.click(groupOptions[0]);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('event-assignment:mutations.replaceAssignments.submit'),
@@ -423,11 +437,13 @@ describe('event assignment wave 6 query and payload shaping', () => {
         onSubmit={onResources}
       />,
     );
-    await user.clear(screen.getByLabelText(i18n.t('event-assignment:fields.newStudioResourceIds')));
-    await user.type(
-      screen.getByLabelText(i18n.t('event-assignment:fields.newStudioResourceIds')),
-      'studio-002',
+    await user.click(
+      screen.getByRole('button', { name: /Gỡ tài nguyên studio 1|Remove studio resource 1/ }),
     );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:actions.addStudioResource') }),
+    );
+    await user.click(await screen.findByRole('button', { name: /Studio Two/ }));
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('event-assignment:mutations.replaceStudioResources.submit'),
@@ -446,13 +462,13 @@ describe('event assignment wave 6 query and payload shaping', () => {
         onSubmit={onPlatforms}
       />,
     );
-    await user.clear(
-      screen.getByLabelText(i18n.t('event-assignment:fields.newPlatformAccountIds')),
+    await user.click(
+      screen.getByRole('button', { name: /Gỡ tài khoản nền tảng 1|Remove platform account 1/ }),
     );
-    await user.type(
-      screen.getByLabelText(i18n.t('event-assignment:fields.newPlatformAccountIds')),
-      'platform-003',
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:actions.addPlatformAccount') }),
     );
+    await user.click(await screen.findByRole('button', { name: /Platform Three/ }));
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('event-assignment:mutations.replacePlatformAccounts.submit'),
@@ -462,6 +478,35 @@ describe('event assignment wave 6 query and payload shaping', () => {
       newPlatformAccountIds: ['platform-003'],
     });
   }, 20_000);
+
+  it('omits Event code by default while preserving explicit internal custom-code payloads', async () => {
+    apiRequestMock.mockResolvedValue({ data: eventRecord });
+
+    await createEvent({
+      title: 'Generated event',
+      assignments: replacementAssignments.slice(0, 1),
+      eventStartAt: 1000,
+      eventEndAt: 2000,
+      studioResourceIds: [],
+      platformAccountIds: [],
+      description: null,
+      externalRef: null,
+    });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('eventCode');
+
+    await createEvent({
+      eventCode: 'EVTCUSTOM',
+      title: 'Custom event',
+      assignments: replacementAssignments.slice(0, 1),
+      eventStartAt: 1000,
+      eventEndAt: 2000,
+      studioResourceIds: [],
+      platformAccountIds: [],
+      description: null,
+      externalRef: null,
+    });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).toHaveProperty('eventCode', 'EVTCUSTOM');
+  });
 
   it('makes assignment removal explicit and blocks blind replacement when the roster is unavailable', async () => {
     const user = userEvent.setup();

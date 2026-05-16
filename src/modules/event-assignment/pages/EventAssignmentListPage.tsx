@@ -31,6 +31,14 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { ReferenceFilterField } from '@shared/components/reference';
+import {
+  loadEmploymentProfileReferenceOptions,
+  loadPlatformAccountReferenceOptions,
+  loadStudioResourceReferenceOptions,
+  loadTalentGroupReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   createCursorStack,
@@ -327,6 +335,33 @@ export const EventAssignmentListPage = (): JSX.Element => {
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
+  const activeAssignmentKind =
+    'assignmentKind' in activeQuery
+      ? (activeQuery.assignmentKind as EventAssignmentKind | undefined)
+      : undefined;
+  const selectedAssignmentId =
+    'assignmentEmploymentProfileId' in activeQuery
+      ? (activeQuery.assignmentEmploymentProfileId ??
+        activeQuery.assignmentTalentId ??
+        activeQuery.assignmentTalentGroupId ??
+        undefined)
+      : undefined;
+  const loadAssignmentFilterOptions = useCallback(
+    (search: string) => {
+      if (activeAssignmentKind === 'EMPLOYMENT_PROFILE') {
+        return loadEmploymentProfileReferenceOptions(search);
+      }
+      if (activeAssignmentKind === 'TALENT') {
+        return loadTalentReferenceOptions(search);
+      }
+      if (activeAssignmentKind === 'TALENT_GROUP') {
+        return loadTalentGroupReferenceOptions(search);
+      }
+
+      return Promise.resolve([]);
+    },
+    [activeAssignmentKind],
+  );
   const shellState = useMemo(() => {
     if (listQueryResult.isPending) {
       return 'loading' as const;
@@ -419,81 +454,64 @@ export const EventAssignmentListPage = (): JSX.Element => {
                   ))}
                 </select>
               </label>
-              <label className="flex min-w-[220px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('event-assignment:filters.assignmentId')}
-                </span>
-                <input
-                  value={
-                    'assignmentEmploymentProfileId' in activeQuery
-                      ? (activeQuery.assignmentEmploymentProfileId ??
-                        activeQuery.assignmentTalentId ??
-                        activeQuery.assignmentTalentGroupId ??
-                        '')
-                      : ''
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  placeholder={t('event-assignment:filters.assignmentIdPlaceholder')}
-                  onChange={(event) => {
-                    const value = event.target.value || undefined;
-                    const assignmentKind =
-                      'assignmentKind' in activeQuery
-                        ? (activeQuery.assignmentKind as EventAssignmentKind | undefined)
-                        : undefined;
-                    patchQuery({
-                      assignmentEmploymentProfileId:
-                        assignmentKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
-                      assignmentTalentId: assignmentKind === 'TALENT' ? value : undefined,
-                      assignmentTalentGroupId:
-                        assignmentKind === 'TALENT_GROUP' ? value : undefined,
-                    });
-                  }}
-                />
-              </label>
+              <ReferenceFilterField
+                label={t('event-assignment:filters.assignmentId')}
+                pickerId="event-assignment-filter-assignment"
+                value={selectedAssignmentId}
+                loadOptions={loadAssignmentFilterOptions}
+                placeholder={t('event-assignment:filters.assignmentIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                disabled={!activeAssignmentKind}
+                onChange={(value) =>
+                  patchQuery({
+                    assignmentEmploymentProfileId:
+                      activeAssignmentKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
+                    assignmentTalentId: activeAssignmentKind === 'TALENT' ? value : undefined,
+                    assignmentTalentGroupId:
+                      activeAssignmentKind === 'TALENT_GROUP' ? value : undefined,
+                  })
+                }
+              />
             </>
           ) : null}
-          <label className="flex min-w-[220px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('event-assignment:filters.studioResourceId')}
-            </span>
-            <input
-              value={
+          <ReferenceFilterField
+            label={t('event-assignment:filters.studioResourceId')}
+            pickerId="event-assignment-filter-studio-resource"
+            value={
+              routeMode === 'by-resource'
+                ? (byResourceQuery.studioResourceId ?? undefined)
+                : (flatListQuery.containsStudioResourceId ?? undefined)
+            }
+            loadOptions={loadStudioResourceReferenceOptions}
+            placeholder={t('event-assignment:filters.studioResourceIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            onChange={(value) =>
+              patchQuery(
                 routeMode === 'by-resource'
-                  ? (byResourceQuery.studioResourceId ?? '')
-                  : (flatListQuery.containsStudioResourceId ?? '')
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('event-assignment:filters.studioResourceIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery(
-                  routeMode === 'by-resource'
-                    ? { studioResourceId: event.target.value || undefined }
-                    : { containsStudioResourceId: event.target.value || undefined },
-                )
-              }
-            />
-          </label>
-          <label className="flex min-w-[220px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('event-assignment:filters.platformAccountId')}
-            </span>
-            <input
-              value={
+                  ? { studioResourceId: value }
+                  : { containsStudioResourceId: value },
+              )
+            }
+          />
+          <ReferenceFilterField
+            label={t('event-assignment:filters.platformAccountId')}
+            pickerId="event-assignment-filter-platform-account"
+            value={
+              routeMode === 'by-platform'
+                ? (byPlatformQuery.platformAccountId ?? undefined)
+                : (flatListQuery.containsPlatformAccountId ?? undefined)
+            }
+            loadOptions={loadPlatformAccountReferenceOptions}
+            placeholder={t('event-assignment:filters.platformAccountIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            onChange={(value) =>
+              patchQuery(
                 routeMode === 'by-platform'
-                  ? (byPlatformQuery.platformAccountId ?? '')
-                  : (flatListQuery.containsPlatformAccountId ?? '')
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('event-assignment:filters.platformAccountIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery(
-                  routeMode === 'by-platform'
-                    ? { platformAccountId: event.target.value || undefined }
-                    : { containsPlatformAccountId: event.target.value || undefined },
-                )
-              }
-            />
-          </label>
+                  ? { platformAccountId: value }
+                  : { containsPlatformAccountId: value },
+              )
+            }
+          />
           <label className="flex min-w-[170px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">
               {t('event-assignment:filters.windowStartAt')}

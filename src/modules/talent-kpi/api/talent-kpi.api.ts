@@ -146,22 +146,29 @@ const sanitizeByEventQuery = (
   sortDirection: query.sortDirection,
 });
 
-const sanitizeCreatePayload = (payload: TalentKpiCreatePayload): TalentKpiCreatePayload => ({
-  kpiRecordCode: payload.kpiRecordCode,
-  title: payload.title,
-  subjectTalentId: payload.subjectTalentId,
-  attributionPlatformAccountId: payload.attributionPlatformAccountId ?? null,
-  attributionEventId: payload.attributionEventId ?? null,
-  measurementSource: payload.measurementSource,
-  periodStartAt: payload.periodStartAt,
-  periodEndAt: payload.periodEndAt,
-  metrics: payload.metrics.map((metric) => ({
-    metricCode: metric.metricCode,
-    numericValue: metric.numericValue,
-  })),
-  description: payload.description ?? null,
-  externalRef: payload.externalRef ?? null,
-});
+const sanitizeCreatePayload = (payload: TalentKpiCreatePayload): TalentKpiCreatePayload => {
+  const sanitized: TalentKpiCreatePayload = {
+    title: payload.title,
+    subjectTalentId: payload.subjectTalentId,
+    attributionPlatformAccountId: payload.attributionPlatformAccountId ?? null,
+    attributionEventId: payload.attributionEventId ?? null,
+    measurementSource: payload.measurementSource,
+    periodStartAt: payload.periodStartAt,
+    periodEndAt: payload.periodEndAt,
+    metrics: payload.metrics.map((metric) => ({
+      metricCode: metric.metricCode,
+      numericValue: metric.numericValue,
+    })),
+    description: payload.description ?? null,
+    externalRef: payload.externalRef ?? null,
+  };
+
+  if (payload.kpiRecordCode !== undefined) {
+    sanitized.kpiRecordCode = payload.kpiRecordCode;
+  }
+
+  return sanitized;
+};
 
 const sanitizeDraftCorePayload = (
   payload: TalentKpiDraftCorePayload,

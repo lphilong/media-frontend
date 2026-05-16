@@ -1,5 +1,10 @@
 import { http, HttpResponse } from 'msw';
 
+import {
+  generatedFixtureCode,
+  providedOrGeneratedFixtureCode,
+} from '@test/msw/generated-code-fixtures';
+
 type PlatformAccountStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 type PlatformAccountOwnerKind = 'ORG_UNIT' | 'TALENT' | 'TALENT_GROUP';
 
@@ -53,7 +58,7 @@ let studioSeed = initialStudioSeed;
 const initialPlatformAccounts: PlatformAccountRecord[] = [
   {
     id: 'platform-001',
-    accountCode: 'PA001',
+    accountCode: 'PA-000001',
     platform: 'YOUTUBE',
     platformSurfaceType: 'LIVESTREAM',
     displayName: 'Mina Live',
@@ -75,7 +80,7 @@ const initialPlatformAccounts: PlatformAccountRecord[] = [
   },
   {
     id: 'platform-002',
-    accountCode: 'PA002',
+    accountCode: 'PA-000002',
     platform: 'TIKTOK',
     platformSurfaceType: 'SHORT_VIDEO',
     displayName: 'Sales Channel',
@@ -97,7 +102,7 @@ const initialPlatformAccounts: PlatformAccountRecord[] = [
   },
   {
     id: 'platform-003',
-    accountCode: 'PA003',
+    accountCode: 'PA-000003',
     platform: 'INSTAGRAM',
     platformSurfaceType: 'PROFILE',
     displayName: 'A Team Social',
@@ -119,7 +124,7 @@ const initialPlatformAccounts: PlatformAccountRecord[] = [
   },
   {
     id: 'platform-archive',
-    accountCode: 'PA999',
+    accountCode: 'PA-999999',
     platform: 'YOUTUBE',
     platformSurfaceType: 'LIVESTREAM',
     displayName: 'Archived Platform',
@@ -144,7 +149,7 @@ const initialPlatformAccounts: PlatformAccountRecord[] = [
 const initialStudioResources: StudioResourceRecord[] = [
   {
     id: 'studio-001',
-    resourceCode: 'STUDIO001',
+    resourceCode: 'SR-000001',
     name: 'Main Studio',
     shortName: 'Main',
     resourceClass: 'SPACE',
@@ -158,7 +163,7 @@ const initialStudioResources: StudioResourceRecord[] = [
   },
   {
     id: 'studio-002',
-    resourceCode: 'CAMERA001',
+    resourceCode: 'SR-000002',
     name: 'Camera Kit',
     shortName: 'Cam Kit',
     resourceClass: 'EQUIPMENT',
@@ -172,7 +177,7 @@ const initialStudioResources: StudioResourceRecord[] = [
   },
   {
     id: 'studio-003',
-    resourceCode: 'STUDIO002',
+    resourceCode: 'SR-000003',
     name: 'Podcast Room',
     shortName: null,
     resourceClass: 'SPACE',
@@ -186,7 +191,7 @@ const initialStudioResources: StudioResourceRecord[] = [
   },
   {
     id: 'studio-archive',
-    resourceCode: 'STUDIO999',
+    resourceCode: 'SR-999999',
     name: 'Archived Studio',
     shortName: null,
     resourceClass: 'SPACE',
@@ -541,7 +546,10 @@ export const wave5Handlers = [
     platformSeed += 1;
     const nextRecord: PlatformAccountRecord = {
       id: `platform-${platformSeed}`,
-      accountCode: String(body.accountCode ?? `PA${platformSeed}`),
+      accountCode: providedOrGeneratedFixtureCode(
+        body.accountCode,
+        generatedFixtureCode('PA', platformSeed),
+      ),
       platform: String(body.platform ?? 'YOUTUBE'),
       platformSurfaceType: String(body.platformSurfaceType ?? 'LIVESTREAM'),
       displayName: String(body.displayName ?? `Platform ${platformSeed}`),
@@ -726,7 +734,10 @@ export const wave5Handlers = [
     studioSeed += 1;
     const nextRecord: StudioResourceRecord = {
       id: `studio-${studioSeed}`,
-      resourceCode: String(body.resourceCode ?? `STUDIO${studioSeed}`),
+      resourceCode: providedOrGeneratedFixtureCode(
+        body.resourceCode,
+        generatedFixtureCode('SR', studioSeed),
+      ),
       name: String(body.name ?? `Studio ${studioSeed}`),
       shortName: toNullableText(body.shortName),
       resourceClass,

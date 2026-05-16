@@ -33,6 +33,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { ReferenceFilterField } from '@shared/components/reference';
+import {
+  loadEventReferenceOptions,
+  loadPlatformAccountReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   createCursorStack,
@@ -433,49 +439,48 @@ export const RevenueLedgerListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          <label className="flex min-w-[210px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('revenue-ledger:filters.subjectTalentId')}
-            </span>
-            <input
-              value={'subjectTalentId' in activeQuery ? (activeQuery.subjectTalentId ?? '') : ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('revenue-ledger:filters.subjectTalentIdPlaceholder')}
-              onChange={(event) => patchQuery({ subjectTalentId: event.target.value || undefined })}
-            />
-          </label>
-          <label className="flex min-w-[230px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('revenue-ledger:filters.attributionPlatformAccountId')}
-            </span>
-            <input
-              value={
-                'attributionPlatformAccountId' in activeQuery
-                  ? (activeQuery.attributionPlatformAccountId ?? '')
-                  : ''
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('revenue-ledger:filters.attributionPlatformAccountIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery({ attributionPlatformAccountId: event.target.value || undefined })
-              }
-            />
-          </label>
-          <label className="flex min-w-[210px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('revenue-ledger:filters.attributionEventId')}
-            </span>
-            <input
-              value={
-                'attributionEventId' in activeQuery ? (activeQuery.attributionEventId ?? '') : ''
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('revenue-ledger:filters.attributionEventIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery({ attributionEventId: event.target.value || undefined })
-              }
-            />
-          </label>
+          <ReferenceFilterField
+            label={t('revenue-ledger:filters.subjectTalentId')}
+            pickerId="revenue-ledger-filter-subject-talent"
+            value={
+              'subjectTalentId' in activeQuery
+                ? (activeQuery.subjectTalentId ?? undefined)
+                : undefined
+            }
+            loadOptions={loadTalentReferenceOptions}
+            placeholder={t('revenue-ledger:filters.subjectTalentIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            className="min-w-[210px]"
+            onChange={(value) => patchQuery({ subjectTalentId: value })}
+          />
+          <ReferenceFilterField
+            label={t('revenue-ledger:filters.attributionPlatformAccountId')}
+            pickerId="revenue-ledger-filter-platform-account"
+            value={
+              'attributionPlatformAccountId' in activeQuery
+                ? (activeQuery.attributionPlatformAccountId ?? undefined)
+                : undefined
+            }
+            loadOptions={loadPlatformAccountReferenceOptions}
+            placeholder={t('revenue-ledger:filters.attributionPlatformAccountIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            className="min-w-[230px]"
+            onChange={(value) => patchQuery({ attributionPlatformAccountId: value })}
+          />
+          <ReferenceFilterField
+            label={t('revenue-ledger:filters.attributionEventId')}
+            pickerId="revenue-ledger-filter-event"
+            value={
+              'attributionEventId' in activeQuery
+                ? (activeQuery.attributionEventId ?? undefined)
+                : undefined
+            }
+            loadOptions={loadEventReferenceOptions}
+            placeholder={t('revenue-ledger:filters.attributionEventIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            className="min-w-[210px]"
+            onChange={(value) => patchQuery({ attributionEventId: value })}
+          />
           {routeMode === 'flat' ? (
             <>
               <label className="flex min-w-[210px] flex-col gap-1">

@@ -9,9 +9,9 @@
     "title": "标题",
     "contractKind": "合同类型",
     "linkedEntityKind": "关联实体类型",
-    "linkedEntityId": "关联实体 ID",
-    "ownerEmploymentProfileId": "所有者员工档案 ID",
-    "newOwnerEmploymentProfileId": "新所有者员工档案ID",
+    "linkedEntityId": "关联实体",
+    "ownerEmploymentProfileId": "所有者员工档案",
+    "newOwnerEmploymentProfileId": "新所有者员工档案",
     "confidentialityTier": "保密等级",
     "status": "状态",
     "effectiveStartDate": "生效开始日期",
@@ -27,6 +27,10 @@
     "createdAt": "创建时间",
     "updatedAt": "更新时间",
     "scopeBoundary": "范围边界"
+  },
+  "generatedCode": {
+    "label": "系统编码",
+    "description": "创建后，系统将生成合同编码。"
   },
   "statuses": {
     "DRAFT": "草稿",
@@ -63,10 +67,10 @@
     "allContractKinds": "所有合同类型",
     "linkedEntityKind": "关联实体类型",
     "allLinkedEntityKinds": "所有关联实体类型",
-    "linkedEntityId": "关联实体 ID",
-    "linkedEntityIdPlaceholder": "精确关联实体标识",
-    "ownerEmploymentProfileId": "所有者员工档案 ID",
-    "ownerEmploymentProfileIdPlaceholder": "精确所有者档案标识",
+    "linkedEntityId": "关联实体",
+    "linkedEntityIdPlaceholder": "选择关联实体",
+    "ownerEmploymentProfileId": "所有者员工档案",
+    "ownerEmploymentProfileIdPlaceholder": "选择所有者档案",
     "confidentialityTier": "保密等级",
     "allConfidentialityTiers": "所有等级",
     "hasFileReference": "文件引用",
@@ -104,8 +108,8 @@
     "title": "标题",
     "contractKind": "类型",
     "linkedEntityKind": "关联类型",
-    "linkedEntityId": "关联ID",
-    "ownerEmploymentProfileId": "所有者ID",
+    "linkedEntityId": "关联实体",
+    "ownerEmploymentProfileId": "所有者",
     "confidentialityTier": "保密等级",
     "status": "状态",
     "effectiveStartDate": "开始",
@@ -170,9 +174,12 @@
       "pending": "终止中"
     }
   },
+  "placeholders": {
+    "searchReference": "按名称或代码搜索"
+  },
   "validation": {
     "required": "此字段为必填。",
-    "invalidToken": "请输入有效标识符 token。",
+    "invalidToken": "请输入有效引用 token。",
     "invalidDate": "使用 YYYY-MM-DD 格式。",
     "kindCompatibility": "合同类型和关联实体类型不兼容。",
     "filePair": "文件引用 ID 和显示名称必须同时提供或同时清除。"

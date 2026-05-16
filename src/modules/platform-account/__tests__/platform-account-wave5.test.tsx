@@ -23,7 +23,7 @@ describe('platform-account wave 5 surfaces', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('platform-account:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('PA001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('PA-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('Mina Live')).toBeInTheDocument();
     expect(screen.queryByText('Archived Platform')).not.toBeInTheDocument();
   });
@@ -35,7 +35,7 @@ describe('platform-account wave 5 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('platform-account:actionRail.title')),
     ).toBeInTheDocument();
-    expect(screen.getByText('PA001')).toBeInTheDocument();
+    expect(screen.getByText('PA-000001')).toBeInTheDocument();
     expect(screen.getByText('@mina')).toBeInTheDocument();
 
     const relatedLinks = screen.getAllByRole('link', {
@@ -97,10 +97,12 @@ describe('platform-account wave 5 surfaces', () => {
     expect(screen.queryByText(/credential|token/i)).not.toBeInTheDocument();
 
     const createSurfaceScope = within(createSurface);
-    await user.type(
-      createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.accountCode')),
-      'WAVE5PA',
-    );
+    expect(
+      createSurfaceScope.queryByLabelText(i18n.t('platform-account:fields.accountCode')),
+    ).toBeNull();
+    expect(
+      createSurfaceScope.getByText(i18n.t('platform-account:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(
       createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.platform')),
       'YOUTUBE',
@@ -117,9 +119,15 @@ describe('platform-account wave 5 surfaces', () => {
       createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.ownerKind')),
       'TALENT',
     );
-    await user.type(
-      createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.ownerId')),
-      'talent-001',
+    const ownerPicker = createSurface.querySelector(
+      '[data-picker-id="platform-account-owner-talent"]',
+    );
+    expect(ownerPicker).not.toBeNull();
+    if (!ownerPicker) {
+      return;
+    }
+    await user.click(
+      await within(ownerPicker as HTMLElement).findByRole('button', { name: /TAL-000001/ }),
     );
     await user.type(
       createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.handle')),
@@ -131,9 +139,9 @@ describe('platform-account wave 5 surfaces', () => {
       }),
     );
 
-    expect(await screen.findByText('WAVE5PA', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('PA-000501', {}, { timeout: 3000 })).toBeInTheDocument();
 
-    const row = screen.getByText('WAVE5PA').closest('tr');
+    const row = screen.getByText('PA-000501').closest('tr');
     expect(row).not.toBeNull();
     if (!row) {
       return;
@@ -148,7 +156,7 @@ describe('platform-account wave 5 surfaces', () => {
 
     await waitFor(
       () => {
-        const refreshedRow = screen.getByText('WAVE5PA').closest('tr');
+        const refreshedRow = screen.getByText('PA-000501').closest('tr');
         expect(refreshedRow).not.toBeNull();
         if (!refreshedRow) {
           return;

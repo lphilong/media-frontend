@@ -26,8 +26,8 @@ describe('contract registry wave 7 surfaces', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('contract-registry:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('CON001', {}, { timeout: 3000 })).toBeInTheDocument();
-    const activeRow = screen.getByText('CON002').closest('tr');
+    expect(await screen.findByText('CON-2026-000001', {}, { timeout: 3000 })).toBeInTheDocument();
+    const activeRow = screen.getByText('CON-2026-000002').closest('tr');
     expect(activeRow).not.toBeNull();
     if (!activeRow) {
       return;
@@ -52,7 +52,7 @@ describe('contract registry wave 7 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('contract-registry:actionRail.title')),
     ).toBeInTheDocument();
-    expect(screen.getByText('CON001')).toBeInTheDocument();
+    expect(screen.getByText('CON-2026-000001')).toBeInTheDocument();
     expect(screen.getByText('alice-contract.pdf')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'ep-001' })).toHaveLength(2);
     expect(screen.getAllByRole('link', { name: 'ep-001' })[0]).toHaveAttribute(
@@ -114,22 +114,17 @@ describe('contract registry wave 7 surfaces', () => {
     }
 
     const scope = within(createSurface);
-    await user.type(
-      scope.getByLabelText(i18n.t('contract-registry:fields.contractCode')),
-      'CON901',
-    );
+    expect(scope.queryByLabelText(i18n.t('contract-registry:fields.contractCode'))).toBeNull();
+    expect(
+      scope.getByText(i18n.t('contract-registry:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(
       scope.getByLabelText(i18n.t('contract-registry:fields.title')),
       'Wave 7 contract',
     );
-    await user.type(
-      scope.getByLabelText(i18n.t('contract-registry:fields.linkedEntityId')),
-      'ep-001',
-    );
-    await user.type(
-      scope.getByLabelText(i18n.t('contract-registry:fields.ownerEmploymentProfileId')),
-      'ep-001',
-    );
+    const employeeOptions = await scope.findAllByRole('button', { name: /Alice/ });
+    await user.click(employeeOptions[0]);
+    await user.click(employeeOptions[1]);
     await user.type(
       scope.getByLabelText(i18n.t('contract-registry:fields.effectiveStartDate')),
       '2026-01-01',
@@ -138,8 +133,8 @@ describe('contract registry wave 7 surfaces', () => {
       scope.getByRole('button', { name: i18n.t('contract-registry:mutations.create.submit') }),
     );
 
-    expect(await screen.findByText('CON901', {}, { timeout: 3000 })).toBeInTheDocument();
-    const row = screen.getByText('CON901').closest('tr');
+    expect(await screen.findByText('CON-2026-000101', {}, { timeout: 3000 })).toBeInTheDocument();
+    const row = screen.getByText('CON-2026-000101').closest('tr');
     expect(row).not.toBeNull();
     if (!row) {
       return;
@@ -156,7 +151,7 @@ describe('contract registry wave 7 surfaces', () => {
 
     await waitFor(
       () => {
-        const refreshedRow = screen.getByText('CON901').closest('tr');
+        const refreshedRow = screen.getByText('CON-2026-000101').closest('tr');
         expect(refreshedRow).not.toBeNull();
         if (!refreshedRow) {
           return;
@@ -173,8 +168,8 @@ describe('contract registry wave 7 surfaces', () => {
     const user = userEvent.setup();
     renderRoute('/contract-records');
 
-    expect(await screen.findByText('CON002', {}, { timeout: 3000 })).toBeInTheDocument();
-    const activeRow = screen.getByText('CON002').closest('tr');
+    expect(await screen.findByText('CON-2026-000002', {}, { timeout: 3000 })).toBeInTheDocument();
+    const activeRow = screen.getByText('CON-2026-000002').closest('tr');
     expect(activeRow).not.toBeNull();
     if (!activeRow) {
       return;
@@ -204,7 +199,7 @@ describe('contract registry wave 7 surfaces', () => {
 
     await waitFor(
       () => {
-        const refreshedRow = screen.getByText('CON002').closest('tr');
+        const refreshedRow = screen.getByText('CON-2026-000002').closest('tr');
         expect(refreshedRow).not.toBeNull();
         if (!refreshedRow) {
           return;

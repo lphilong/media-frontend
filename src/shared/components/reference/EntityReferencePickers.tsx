@@ -21,5 +21,6 @@ export const TalentReferencePicker = createEntityReferencePicker('talent');
 export const TalentGroupReferencePicker = createEntityReferencePicker('talent-group');
 export const PlatformAccountReferencePicker = createEntityReferencePicker('platform-account');
 export const StudioResourceReferencePicker = createEntityReferencePicker('studio-resource');
+export const UserReferencePicker = createEntityReferencePicker('user');
 
 export type { EntityReferencePickerProps };

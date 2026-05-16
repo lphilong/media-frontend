@@ -1,0 +1,804 @@
+import {
+  commissionRulesByBeneficiaryQueryConfig,
+  commissionRulesByContractQueryConfig,
+  commissionRulesFlatListQueryConfig,
+  commissionSettlementsByBeneficiaryQueryConfig,
+  commissionSettlementsByRevenueEntryQueryConfig,
+  commissionSettlementsBySubjectTalentQueryConfig,
+  commissionSettlementsFlatListQueryConfig,
+  contractRegistryByLinkedEntityQueryConfig,
+  contractRegistryByOwnerQueryConfig,
+  contractRegistryFlatListQueryConfig,
+  mergeScreenQueryParams,
+  employmentProfileDirectReportsQueryConfig,
+  employmentProfileFlatListQueryConfig,
+  orgUnitFlatListQueryConfig,
+  parseScreenQueryParams,
+  revenueLedgerByEventQueryConfig,
+  revenueLedgerByPlatformQueryConfig,
+  revenueLedgerByTalentQueryConfig,
+  revenueLedgerFlatListQueryConfig,
+  serializeScreenQueryParams,
+  talentKpiByEventQueryConfig,
+  talentKpiByPlatformQueryConfig,
+  talentKpiByTalentQueryConfig,
+  talentKpiFlatListQueryConfig,
+  talentFlatListQueryConfig,
+  talentGroupByTalentQueryConfig,
+  talentGroupFlatListQueryConfig,
+  type QueryParamSchema,
+  type QueryShape,
+  type ScreenQueryConfig,
+} from '@shared/query';
+import * as sharedQuery from '@shared/query';
+import {
+  workShiftByResourceQueryConfig,
+  workShiftFlatListQueryConfig,
+} from '@modules/work-schedule/screen-query/work-schedule-query';
+
+describe('shared query seam hardening', () => {
+  it('drops unsupported params and related-route search during parse/build', () => {
+    const parsed = parseScreenQueryParams(
+      new URLSearchParams(
+        'view=by-talent&subjectTalentId=talent-01&search=leak&unexpected=value&sortBy=recognizedAt',
+      ),
+      revenueLedgerByTalentQueryConfig,
+    );
+    const serialized = serializeScreenQueryParams(parsed, revenueLedgerByTalentQueryConfig);
+
+    expect(serialized.get('view')).toBe('by-talent');
+    expect(serialized.get('subjectTalentId')).toBe('talent-01');
+    expect(serialized.get('sortBy')).toBe('recognizedAt');
+    expect(serialized.get('search')).toBeNull();
+    expect(serialized.get('unexpected')).toBeNull();
+  });
+
+  it('enforces Org Unit flat-list filters and drops conflicting root/parent combinations', () => {
+    const serialized = serializeScreenQueryParams(
+      {
+        rootOnly: true,
+        parentOrgUnitId: 'ou-root',
+        status: 'ACTIVE',
+        sortDirection: 'desc',
+      },
+      orgUnitFlatListQueryConfig,
+    );
+
+    expect(serialized.get('rootOnly')).toBe('true');
+    expect(serialized.get('parentOrgUnitId')).toBeNull();
+    expect(serialized.get('status')).toBe('ACTIVE');
+    expect(serialized.get('sortDirection')).toBeNull();
+  });
+
+  it('enforces Employment Profile flat-list query booleans and enum constraints', () => {
+    const parsed = parseScreenQueryParams(
+      new URLSearchParams(
+        'employmentStatus=ACTIVE&contractStatus=ACTIVE&hasLinkedUser=true&unsupported=value',
+      ),
+      employmentProfileFlatListQueryConfig,
+    );
+    const serialized = serializeScreenQueryParams(parsed, employmentProfileFlatListQueryConfig);
+
+    expect(serialized.get('employmentStatus')).toBe('ACTIVE');
+    expect(serialized.get('contractStatus')).toBe('ACTIVE');
+    expect(serialized.get('hasLinkedUser')).toBe('true');
+    expect(serialized.get('unsupported')).toBeNull();
+  });
+
+  it('enforces Talent flat-list query booleans, exact enum filters, and supported sort keys', () => {
+    const parsed = parseScreenQueryParams(
+      new URLSearchParams(
+        'operationalStatus=ACTIVE&talentOrigin=INTERNAL&commercialParticipationStatus=ALLOWED&hasLinkedEmploymentProfile=true&livestreamEligible=false&eventEligible=true&sortBy=stageName&unsupported=value',
+      ),
+      talentFlatListQueryConfig,
+    );
+    const invalidSerialized = serializeScreenQueryParams(
+      {
+        talentOrigin: 'PARTNER',
+        commercialParticipationStatus: 'PENDING_REVIEW',
+      },
+      talentFlatListQueryConfig,
+    );
+    const serialized = serializeScreenQueryParams(parsed, talentFlatListQueryConfig);
+
+    expect(serialized.get('operationalStatus')).toBe('ACTIVE');
+    expect(serialized.get('talentOrigin')).toBe('INTERNAL');
+    expect(serialized.get('commercialParticipationStatus')).toBe('ALLOWED');
+    expect(serialized.get('hasLinkedEmploymentProfile')).toBe('true');
+    expect(serialized.get('livestreamEligible')).toBe('false');
+    expect(serialized.get('eventEligible')).toBe('true');
+    expect(serialized.get('sortBy')).toBe('stageName');
+    expect(serialized.get('unsupported')).toBeNull();
+    expect(invalidSerialized.get('talentOrigin')).toBeNull();
+    expect(invalidSerialized.get('commercialParticipationStatus')).toBeNull();
+  });
+
+  it('enforces Talent Group flat-list and by-talent related query restrictions', () => {
+    const flatSerialized = serializeScreenQueryParams(
+      {
+        status: 'INACTIVE',
+        containsTalentId: 'talent-01',
+        search: 'alpha',
+        sortBy: 'displayOrder',
+      },
+      talentGroupFlatListQueryConfig,
+    );
+    const relatedSerialized = serializeScreenQueryParams(
+      {
+        view: 'by-talent',
+        talentId: 'talent-01',
+        status: 'ACTIVE',
+        search: 'not-allowed',
+        sortBy: 'name',
+      },
+      talentGroupByTalentQueryConfig,
+    );
+    const relatedMissingIdentity = serializeScreenQueryParams(
+      {
+        view: 'by-talent',
+      },
+      talentGroupByTalentQueryConfig,
+    );
+
+    expect(flatSerialized.get('status')).toBe('INACTIVE');
+    expect(flatSerialized.get('containsTalentId')).toBe('talent-01');
+    expect(flatSerialized.get('search')).toBe('alpha');
+    expect(flatSerialized.get('sortBy')).toBe('displayOrder');
+    expect(relatedSerialized.get('view')).toBe('by-talent');
+    expect(relatedSerialized.get('talentId')).toBe('talent-01');
+    expect(relatedSerialized.get('status')).toBe('ACTIVE');
+    expect(relatedSerialized.get('search')).toBeNull();
+    expect(relatedSerialized.get('sortBy')).toBe('name');
+    expect(relatedMissingIdentity.get('view')).toBeNull();
+    expect(relatedMissingIdentity.get('talentId')).toBeNull();
+  });
+
+  it('keeps Employment Profile direct-reports query fail-closed with no search support', () => {
+    const serialized = serializeScreenQueryParams(
+      {
+        view: 'direct-reports',
+        search: 'leak',
+        sortBy: 'displayName',
+        sortDirection: 'desc',
+      },
+      employmentProfileDirectReportsQueryConfig,
+    );
+
+    expect(serialized.get('view')).toBe('direct-reports');
+    expect(serialized.get('sortBy')).toBe('displayName');
+    expect(serialized.get('sortDirection')).toBe('desc');
+    expect(serialized.get('search')).toBeNull();
+  });
+
+  it('fails closed on invalid enum and format values for commercial query filters', () => {
+    const parsedRules = parseScreenQueryParams(
+      new URLSearchParams(
+        'status=BROKEN&settlementKind=UNSUPPORTED&appliesToRevenueKind=UNKNOWN&sortBy=invalid&sortDirection=sideways&search=rule',
+      ),
+      commissionRulesFlatListQueryConfig,
+    );
+    const serializedRules = serializeScreenQueryParams(
+      parsedRules,
+      commissionRulesFlatListQueryConfig,
+    );
+    const invalidRevenue = serializeScreenQueryParams(
+      {
+        revenueKind: 'UNKNOWN_KIND',
+        entrySource: 'AUTO',
+        currencyCode: 'usd',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const validRevenue = serializeScreenQueryParams(
+      {
+        revenueKind: 'EVENT_OPERATIONAL',
+        entrySource: 'MANUAL',
+        currencyCode: 'USD',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const invalidContract = serializeScreenQueryParams(
+      {
+        contractKind: 'UNKNOWN_KIND',
+        confidentialityTier: 'internal only',
+      },
+      contractRegistryFlatListQueryConfig,
+    );
+    const validContract = serializeScreenQueryParams(
+      {
+        contractKind: 'TALENT_SERVICE',
+        confidentialityTier: 'CONFIDENTIAL',
+      },
+      contractRegistryFlatListQueryConfig,
+    );
+    const invalidSettlement = serializeScreenQueryParams(
+      {
+        settlementKindSnapshot: 'UNSUPPORTED',
+        settlementCurrencyCode: 'vnd',
+      },
+      commissionSettlementsFlatListQueryConfig,
+    );
+
+    expect(serializedRules.get('search')).toBe('rule');
+    expect(serializedRules.get('status')).toBeNull();
+    expect(serializedRules.get('settlementKind')).toBeNull();
+    expect(serializedRules.get('appliesToRevenueKind')).toBeNull();
+    expect(serializedRules.get('sortBy')).toBeNull();
+    expect(serializedRules.get('sortDirection')).toBeNull();
+    expect(invalidRevenue.get('revenueKind')).toBeNull();
+    expect(invalidRevenue.get('entrySource')).toBeNull();
+    expect(invalidRevenue.get('currencyCode')).toBeNull();
+    expect(validRevenue.get('revenueKind')).toBe('EVENT_OPERATIONAL');
+    expect(validRevenue.get('entrySource')).toBe('MANUAL');
+    expect(validRevenue.get('currencyCode')).toBe('USD');
+    expect(invalidContract.get('contractKind')).toBeNull();
+    expect(invalidContract.get('confidentialityTier')).toBeNull();
+    expect(validContract.get('contractKind')).toBe('TALENT_SERVICE');
+    expect(validContract.get('confidentialityTier')).toBe('CONFIDENTIAL');
+    expect(invalidSettlement.get('settlementKindSnapshot')).toBeNull();
+    expect(invalidSettlement.get('settlementCurrencyCode')).toBeNull();
+  });
+
+  it('enforces Talent KPI flat-list and related query contracts', () => {
+    const flat = serializeScreenQueryParams(
+      {
+        status: 'DRAFT',
+        subjectTalentId: 'talent-01',
+        attributionPlatformAccountId: 'platform-01',
+        attributionEventId: 'event-01',
+        measurementSource: 'MANUAL',
+        containsMetricCode: 'ENGAGEMENT_COUNT',
+        windowStartAt: 1000,
+        windowEndAt: 2000,
+        search: 'KPI001',
+        sortBy: 'periodStartAt',
+        sortDirection: 'desc',
+        scope: 'global',
+      },
+      talentKpiFlatListQueryConfig,
+    );
+    const related = serializeScreenQueryParams(
+      {
+        view: 'by-platform',
+        attributionPlatformAccountId: 'platform-01',
+        search: 'not-supported',
+        sortBy: 'kpiRecordCode',
+      },
+      talentKpiByPlatformQueryConfig,
+    );
+
+    expect(flat.get('status')).toBe('DRAFT');
+    expect(flat.get('measurementSource')).toBe('MANUAL');
+    expect(flat.get('containsMetricCode')).toBe('ENGAGEMENT_COUNT');
+    expect(flat.get('windowStartAt')).toBe('1000');
+    expect(flat.get('windowEndAt')).toBe('2000');
+    expect(flat.get('search')).toBe('KPI001');
+    expect(flat.get('sortBy')).toBe('periodStartAt');
+    expect(flat.get('scope')).toBeNull();
+    expect(related.get('view')).toBe('by-platform');
+    expect(related.get('attributionPlatformAccountId')).toBe('platform-01');
+    expect(related.get('search')).toBeNull();
+    expect(related.get('sortBy')).toBe('kpiRecordCode');
+  });
+
+  it('keeps Wave 8 flat identity filters flat unless an explicit related view is present', () => {
+    const talentKpiSubject = serializeScreenQueryParams(
+      {
+        subjectTalentId: 'talent-01',
+        search: 'KPI001',
+      },
+      talentKpiFlatListQueryConfig,
+    );
+    const talentKpiSubjectThroughRelated = serializeScreenQueryParams(
+      {
+        subjectTalentId: 'talent-01',
+        search: 'KPI001',
+      },
+      talentKpiByTalentQueryConfig,
+    );
+    const talentKpiPlatformThroughRelated = serializeScreenQueryParams(
+      {
+        attributionPlatformAccountId: 'platform-01',
+      },
+      talentKpiByPlatformQueryConfig,
+    );
+    const talentKpiEventThroughRelated = serializeScreenQueryParams(
+      {
+        attributionEventId: 'event-01',
+      },
+      talentKpiByEventQueryConfig,
+    );
+    const revenueSubject = serializeScreenQueryParams(
+      {
+        subjectTalentId: 'talent-01',
+        search: 'REV001',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const revenueSubjectThroughRelated = serializeScreenQueryParams(
+      {
+        subjectTalentId: 'talent-01',
+        search: 'REV001',
+      },
+      revenueLedgerByTalentQueryConfig,
+    );
+    const revenuePlatformThroughRelated = serializeScreenQueryParams(
+      {
+        attributionPlatformAccountId: 'platform-01',
+      },
+      revenueLedgerByPlatformQueryConfig,
+    );
+    const revenueEventThroughRelated = serializeScreenQueryParams(
+      {
+        attributionEventId: 'event-01',
+      },
+      revenueLedgerByEventQueryConfig,
+    );
+    const explicitTalentKpiRelated = serializeScreenQueryParams(
+      {
+        view: 'by-talent',
+        subjectTalentId: 'talent-01',
+        search: 'not-supported',
+      },
+      talentKpiByTalentQueryConfig,
+    );
+    const explicitRevenueRelated = serializeScreenQueryParams(
+      {
+        view: 'by-platform',
+        attributionPlatformAccountId: 'platform-01',
+        search: 'not-supported',
+      },
+      revenueLedgerByPlatformQueryConfig,
+    );
+
+    expect(talentKpiSubject.get('view')).toBeNull();
+    expect(talentKpiSubject.get('subjectTalentId')).toBe('talent-01');
+    expect(talentKpiSubject.get('search')).toBe('KPI001');
+    expect(talentKpiSubjectThroughRelated.get('view')).toBeNull();
+    expect(talentKpiPlatformThroughRelated.get('view')).toBeNull();
+    expect(talentKpiEventThroughRelated.get('view')).toBeNull();
+    expect(revenueSubject.get('view')).toBeNull();
+    expect(revenueSubject.get('subjectTalentId')).toBe('talent-01');
+    expect(revenueSubject.get('search')).toBe('REV001');
+    expect(revenueSubjectThroughRelated.get('view')).toBeNull();
+    expect(revenuePlatformThroughRelated.get('view')).toBeNull();
+    expect(revenueEventThroughRelated.get('view')).toBeNull();
+    expect(explicitTalentKpiRelated.get('view')).toBe('by-talent');
+    expect(explicitTalentKpiRelated.get('subjectTalentId')).toBe('talent-01');
+    expect(explicitTalentKpiRelated.get('search')).toBeNull();
+    expect(explicitRevenueRelated.get('view')).toBe('by-platform');
+    expect(explicitRevenueRelated.get('attributionPlatformAccountId')).toBe('platform-01');
+    expect(explicitRevenueRelated.get('search')).toBeNull();
+  });
+
+  it('resets cursor when effective query shape changes', () => {
+    const current = serializeScreenQueryParams(
+      {
+        search: 'revenue',
+        cursor: 'opaque-cursor',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const next = mergeScreenQueryParams(
+      current,
+      {
+        search: 'settlement',
+      },
+      revenueLedgerFlatListQueryConfig,
+      {
+        resetCursorOnChange: true,
+      },
+    );
+
+    expect(next.get('search')).toBe('settlement');
+    expect(next.get('cursor')).toBeNull();
+  });
+
+  it('keeps cursor when only cursor changes', () => {
+    const current = serializeScreenQueryParams(
+      {
+        search: 'revenue',
+        cursor: 'opaque-cursor',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const next = mergeScreenQueryParams(
+      current,
+      {
+        cursor: 'opaque-next',
+      },
+      revenueLedgerFlatListQueryConfig,
+      {
+        resetCursorOnChange: true,
+      },
+    );
+
+    expect(next.get('search')).toBe('revenue');
+    expect(next.get('cursor')).toBe('opaque-next');
+  });
+
+  it('rejects invalid Contract Registry date filters and invalid date windows', () => {
+    const invalidDateFormat = serializeScreenQueryParams(
+      {
+        windowStartDate: '2026-02-30',
+        windowEndDate: '2026-03-05',
+      },
+      contractRegistryFlatListQueryConfig,
+    );
+    const invalidDateWindow = serializeScreenQueryParams(
+      {
+        windowStartDate: '2026-03-10',
+        windowEndDate: '2026-03-01',
+      },
+      contractRegistryFlatListQueryConfig,
+    );
+
+    expect(invalidDateFormat.get('windowStartDate')).toBeNull();
+    expect(invalidDateFormat.get('windowEndDate')).toBe('2026-03-05');
+    expect(invalidDateWindow.get('windowStartDate')).toBeNull();
+    expect(invalidDateWindow.get('windowEndDate')).toBeNull();
+  });
+
+  it('rejects invalid timestamp windows and invalid UTC-midnight rule windows', () => {
+    const invalidRevenueWindow = serializeScreenQueryParams(
+      {
+        windowStartAt: 1000,
+        windowEndAt: 1000,
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const invalidUtcMidnight = serializeScreenQueryParams(
+      {
+        windowStartDate: 1735689600001,
+        windowEndDate: 1735776000000,
+      },
+      commissionRulesFlatListQueryConfig,
+    );
+    const invalidUtcWindow = serializeScreenQueryParams(
+      {
+        windowStartDate: 1735776000000,
+        windowEndDate: 1735689600000,
+      },
+      commissionRulesFlatListQueryConfig,
+    );
+
+    expect(invalidRevenueWindow.get('windowStartAt')).toBeNull();
+    expect(invalidRevenueWindow.get('windowEndAt')).toBeNull();
+    expect(invalidUtcMidnight.get('windowStartDate')).toBeNull();
+    expect(invalidUtcMidnight.get('windowEndDate')).toBe('1735776000000');
+    expect(invalidUtcWindow.get('windowStartDate')).toBeNull();
+    expect(invalidUtcWindow.get('windowEndDate')).toBeNull();
+  });
+
+  it('treats blank numeric and timestamp query values as absent before coercion', () => {
+    const parsedRevenue = parseScreenQueryParams(
+      new URLSearchParams('windowStartAt=&windowEndAt=%20%20%20&limit=%20%20'),
+      revenueLedgerFlatListQueryConfig,
+    );
+    const revenueSerialized = serializeScreenQueryParams(
+      parsedRevenue,
+      revenueLedgerFlatListQueryConfig,
+    );
+    const parsedRuleWindow = parseScreenQueryParams(
+      new URLSearchParams('windowStartDate=&windowEndDate=%20'),
+      commissionRulesFlatListQueryConfig,
+    );
+    const parsedTalentKpi = parseScreenQueryParams(
+      new URLSearchParams('windowStartAt=&windowEndAt=%20%20&limit=%20'),
+      talentKpiFlatListQueryConfig,
+    );
+    const ruleWindowSerialized = serializeScreenQueryParams(
+      parsedRuleWindow,
+      commissionRulesFlatListQueryConfig,
+    );
+    const talentKpiSerialized = serializeScreenQueryParams(
+      parsedTalentKpi,
+      talentKpiFlatListQueryConfig,
+    );
+    const invalidNumericValues = serializeScreenQueryParams(
+      {
+        windowStartAt: 'not-a-number',
+        windowEndAt: 'NaN',
+        limit: 'fifty',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+
+    expect(revenueSerialized.get('windowStartAt')).toBeNull();
+    expect(revenueSerialized.get('windowEndAt')).toBeNull();
+    expect(revenueSerialized.get('limit')).toBeNull();
+    expect(ruleWindowSerialized.get('windowStartDate')).toBeNull();
+    expect(ruleWindowSerialized.get('windowEndDate')).toBeNull();
+    expect(talentKpiSerialized.get('windowStartAt')).toBeNull();
+    expect(talentKpiSerialized.get('windowEndAt')).toBeNull();
+    expect(talentKpiSerialized.get('limit')).toBeNull();
+    expect(invalidNumericValues.get('windowStartAt')).toBeNull();
+    expect(invalidNumericValues.get('windowEndAt')).toBeNull();
+    expect(invalidNumericValues.get('limit')).toBeNull();
+  });
+
+  it('enforces Revenue Ledger flat-list narrow sort rules', () => {
+    const allowedSort = serializeScreenQueryParams(
+      {
+        sortBy: 'createdAt',
+        sortDirection: 'desc',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const blockedSort = serializeScreenQueryParams(
+      {
+        sortBy: 'createdAt',
+        sortDirection: 'desc',
+        search: 'draft',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const blockedByExplicitStatus = serializeScreenQueryParams(
+      {
+        sortBy: 'revenueEntryCode',
+        sortDirection: 'asc',
+        status: 'DRAFT',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const blockedByAttribution = serializeScreenQueryParams(
+      {
+        sortBy: 'createdAt',
+        subjectTalentId: 'talent-01',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const blockedByWindow = serializeScreenQueryParams(
+      {
+        sortBy: 'revenueEntryCode',
+        windowStartAt: 1000,
+        windowEndAt: 2000,
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const blockedByZeroWindowStart = serializeScreenQueryParams(
+      {
+        sortBy: 'createdAt',
+        windowStartAt: 0,
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const blockedByZeroWindowEnd = serializeScreenQueryParams(
+      {
+        sortBy: 'revenueEntryCode',
+        windowEndAt: 0,
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+
+    expect(allowedSort.get('sortBy')).toBe('createdAt');
+    expect(allowedSort.get('sortDirection')).toBe('desc');
+    expect(blockedSort.get('sortBy')).toBe('recognizedAt');
+    expect(blockedSort.get('sortDirection')).toBe('desc');
+    expect(blockedSort.get('search')).toBe('draft');
+    expect(blockedByExplicitStatus.get('status')).toBe('DRAFT');
+    expect(blockedByExplicitStatus.get('sortBy')).toBe('recognizedAt');
+    expect(blockedByExplicitStatus.get('sortDirection')).toBe('asc');
+    expect(blockedByAttribution.get('sortBy')).toBe('recognizedAt');
+    expect(blockedByWindow.get('sortBy')).toBe('recognizedAt');
+    expect(blockedByZeroWindowStart.get('windowStartAt')).toBe('0');
+    expect(blockedByZeroWindowStart.get('sortBy')).toBe('recognizedAt');
+    expect(blockedByZeroWindowEnd.get('windowEndAt')).toBe('0');
+    expect(blockedByZeroWindowEnd.get('sortBy')).toBe('recognizedAt');
+  });
+
+  it('enforces Revenue Ledger related-route restrictions', () => {
+    const relatedQuery = serializeScreenQueryParams(
+      {
+        view: 'by-event',
+        attributionEventId: 'event-01',
+        search: 'not-supported',
+        sortBy: 'createdAt',
+        sortDirection: 'desc',
+      },
+      revenueLedgerByEventQueryConfig,
+    );
+
+    expect(relatedQuery.get('view')).toBe('by-event');
+    expect(relatedQuery.get('attributionEventId')).toBe('event-01');
+    expect(relatedQuery.get('search')).toBeNull();
+    expect(relatedQuery.get('sortBy')).toBeNull();
+    expect(relatedQuery.get('sortDirection')).toBeNull();
+  });
+
+  it('keeps commercial global-only query configs from parsing or emitting scope fields', () => {
+    const expectNoScope = <TSchema extends QueryParamSchema>(
+      config: ScreenQueryConfig<TSchema>,
+      validQuery: QueryShape,
+    ) => {
+      const parsed = parseScreenQueryParams(
+        new URLSearchParams('scope=global&scopeGrants=x'),
+        config,
+      );
+      const serialized = serializeScreenQueryParams(
+        {
+          ...validQuery,
+          scope: 'global',
+          scopeGrants: 'x',
+        },
+        config,
+      );
+
+      expect(parsed).not.toHaveProperty('scope');
+      expect(parsed).not.toHaveProperty('scopeGrants');
+      expect(serialized.get('scope')).toBeNull();
+      expect(serialized.get('scopeGrants')).toBeNull();
+    };
+
+    expectNoScope(talentKpiByTalentQueryConfig, {
+      view: 'by-talent',
+      subjectTalentId: 'talent-01',
+    });
+    expectNoScope(talentKpiFlatListQueryConfig, {
+      status: 'DRAFT',
+    });
+    expectNoScope(talentKpiByPlatformQueryConfig, {
+      view: 'by-platform',
+      attributionPlatformAccountId: 'platform-01',
+    });
+    expectNoScope(talentKpiByEventQueryConfig, {
+      view: 'by-event',
+      attributionEventId: 'event-01',
+    });
+    expectNoScope(revenueLedgerFlatListQueryConfig, { status: 'DRAFT' });
+    expectNoScope(revenueLedgerByTalentQueryConfig, {
+      view: 'by-talent',
+      subjectTalentId: 'talent-01',
+    });
+    expectNoScope(revenueLedgerByPlatformQueryConfig, {
+      view: 'by-platform',
+      attributionPlatformAccountId: 'platform-01',
+    });
+    expectNoScope(revenueLedgerByEventQueryConfig, {
+      view: 'by-event',
+      attributionEventId: 'event-01',
+    });
+    expectNoScope(commissionRulesFlatListQueryConfig, { status: 'DRAFT' });
+    expectNoScope(commissionRulesByBeneficiaryQueryConfig, {
+      view: 'by-beneficiary',
+      beneficiaryKind: 'TALENT',
+      beneficiaryTalentId: 'talent-01',
+    });
+    expectNoScope(commissionRulesByContractQueryConfig, {
+      view: 'by-contract',
+      sourceContractRecordId: 'contract-01',
+    });
+    expectNoScope(commissionSettlementsFlatListQueryConfig, { status: 'DRAFT' });
+    expectNoScope(commissionSettlementsByBeneficiaryQueryConfig, {
+      view: 'by-beneficiary',
+      beneficiaryKindSnapshot: 'EMPLOYMENT_PROFILE',
+      beneficiaryEmploymentProfileIdSnapshot: 'ep-01',
+    });
+    expectNoScope(commissionSettlementsBySubjectTalentQueryConfig, {
+      view: 'by-subject-talent',
+      subjectTalentId: 'talent-01',
+    });
+    expectNoScope(commissionSettlementsByRevenueEntryQueryConfig, {
+      view: 'by-revenue-entry',
+      revenueEntryId: 'revenue-01',
+    });
+    expectNoScope(contractRegistryFlatListQueryConfig, { status: 'DRAFT' });
+    expectNoScope(contractRegistryByLinkedEntityQueryConfig, {
+      view: 'by-linked-entity',
+      linkedEntityKind: 'TALENT',
+      linkedTalentId: 'talent-01',
+    });
+    expectNoScope(contractRegistryByOwnerQueryConfig, {
+      view: 'by-owner',
+      ownerEmploymentProfileId: 'ep-01',
+    });
+  });
+
+  it('preserves Work Schedule as the only valid frontend scope query behavior', () => {
+    const flat = serializeScreenQueryParams(
+      {
+        subjectKind: 'EMPLOYMENT_PROFILE',
+        subjectEmploymentProfileId: 'ep-01',
+        scope: 'team',
+      },
+      workShiftFlatListQueryConfig,
+    );
+    const byResource = serializeScreenQueryParams(
+      {
+        view: 'by-resource',
+        studioResourceId: 'studio-01',
+        scope: 'global',
+      },
+      workShiftByResourceQueryConfig,
+    );
+
+    expect(flat.get('scope')).toBe('team');
+    expect(byResource.get('scope')).toBe('global');
+  });
+
+  it('enforces Contract Registry linked-entity filter matching', () => {
+    const flat = serializeScreenQueryParams(
+      {
+        linkedEntityKind: 'EMPLOYMENT_PROFILE',
+        linkedEmploymentProfileId: 'ep-01',
+        linkedTalentId: 'talent-01',
+      },
+      contractRegistryFlatListQueryConfig,
+    );
+    const relatedInvalid = serializeScreenQueryParams(
+      {
+        view: 'by-linked-entity',
+        linkedEntityKind: 'EMPLOYMENT_PROFILE',
+        linkedTalentId: 'talent-01',
+      },
+      contractRegistryByLinkedEntityQueryConfig,
+    );
+
+    expect(flat.get('linkedEntityKind')).toBe('EMPLOYMENT_PROFILE');
+    expect(flat.get('linkedEmploymentProfileId')).toBe('ep-01');
+    expect(flat.get('linkedTalentId')).toBeNull();
+    expect(relatedInvalid.get('view')).toBeNull();
+    expect(relatedInvalid.get('linkedEntityKind')).toBeNull();
+    expect(relatedInvalid.get('linkedEmploymentProfileId')).toBeNull();
+    expect(relatedInvalid.get('linkedTalentId')).toBeNull();
+  });
+
+  it('enforces Commission beneficiary matching rules across rule and settlement routes', () => {
+    const rulesInvalid = serializeScreenQueryParams(
+      {
+        view: 'by-beneficiary',
+        beneficiaryKind: 'TALENT',
+        beneficiaryEmploymentProfileId: 'ep-01',
+      },
+      commissionRulesByBeneficiaryQueryConfig,
+    );
+    const settlementsInvalid = serializeScreenQueryParams(
+      {
+        view: 'by-beneficiary',
+        beneficiaryKindSnapshot: 'EMPLOYMENT_PROFILE',
+        beneficiaryTalentIdSnapshot: 'talent-01',
+      },
+      commissionSettlementsByBeneficiaryQueryConfig,
+    );
+
+    expect(rulesInvalid.get('view')).toBeNull();
+    expect(rulesInvalid.get('beneficiaryKind')).toBeNull();
+    expect(rulesInvalid.get('beneficiaryEmploymentProfileId')).toBeNull();
+    expect(rulesInvalid.get('beneficiaryTalentId')).toBeNull();
+    expect(settlementsInvalid.get('view')).toBeNull();
+    expect(settlementsInvalid.get('beneficiaryKindSnapshot')).toBeNull();
+    expect(settlementsInvalid.get('beneficiaryEmploymentProfileIdSnapshot')).toBeNull();
+    expect(settlementsInvalid.get('beneficiaryTalentIdSnapshot')).toBeNull();
+  });
+
+  it('drops related views when required target identities are missing', () => {
+    const missingTarget = serializeScreenQueryParams(
+      {
+        view: 'by-talent',
+      },
+      revenueLedgerByTalentQueryConfig,
+    );
+
+    expect(missingTarget.get('view')).toBeNull();
+    expect(missingTarget.get('subjectTalentId')).toBeNull();
+  });
+
+  it('drops unsupported keys from related-route builders by schema', () => {
+    const query = serializeScreenQueryParams(
+      {
+        view: 'by-contract',
+        sourceContractRecordId: 'contract-01',
+        search: 'no-search-on-related',
+      },
+      commissionRulesByContractQueryConfig,
+    );
+
+    expect(query.get('view')).toBe('by-contract');
+    expect(query.get('sourceContractRecordId')).toBe('contract-01');
+    expect(query.get('search')).toBeNull();
+  });
+
+  it('does not expose a generic screen href builder in the shared query barrel', () => {
+    expect((sharedQuery as Record<string, unknown>).buildScreenHref).toBeUndefined();
+  });
+});

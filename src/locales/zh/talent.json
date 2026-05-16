@@ -11,9 +11,9 @@
     "displayShortName": "显示简称",
     "talentOrigin": "艺人来源",
     "selectTalentOrigin": "选择艺人来源",
-    "managerEmploymentProfileId": "主管档案 ID",
-    "newManagerEmploymentProfileId": "新主管档案 ID",
-    "linkedEmploymentProfileId": "关联员工档案ID",
+    "managerEmploymentProfileId": "主管",
+    "newManagerEmploymentProfileId": "主管",
+    "linkedEmploymentProfileId": "关联员工档案",
     "commercialParticipationStatus": "商业参与状态",
     "newCommercialParticipationStatus": "新商业参与状态",
     "livestreamEligible": "可直播",
@@ -23,9 +23,19 @@
     "createdAt": "创建时间",
     "updatedAt": "更新时间"
   },
+  "generatedCode": {
+    "label": "系统代码",
+    "description": "艺人代码将在创建后由系统生成。"
+  },
   "placeholders": {
     "optional": "可选",
+    "employmentProfileSearch": "按姓名或员工编码搜索员工档案",
     "clearToUnset": "留空以清除主管分配"
+  },
+  "referenceHelp": {
+    "managerEmploymentProfileId": "选择此艺人的主管员工档案。",
+    "newManagerEmploymentProfileId": "选择主管员工档案，或清除选择以移除主管。",
+    "linkedEmploymentProfileId": "选择要关联到此艺人的员工档案。"
   },
   "states": {
     "emptyTitle": "未找到艺人",
@@ -40,7 +50,7 @@
     "talentOrigin": "艺人来源",
     "allTalentOrigins": "所有艺人来源",
     "managerEmploymentProfileId": "主管",
-    "managerEmploymentProfileIdPlaceholder": "主管档案 ID",
+    "managerEmploymentProfileIdPlaceholder": "选择主管",
     "hasLinkedEmploymentProfile": "关联员工档案",
     "allLinkedEmploymentProfileStates": "所有档案关联状态",
     "linkedOnly": "仅已关联",
@@ -86,7 +96,9 @@
     "suspend": "暂停",
     "reactivate": "重新启用",
     "deactivate": "停用",
-    "archive": "归档"
+    "archive": "归档",
+    "clearManager": "清除主管",
+    "clearLinkedEmploymentProfile": "清除关联档案"
   },
   "table": {
     "caption": "艺人列表",

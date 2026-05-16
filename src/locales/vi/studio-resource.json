@@ -17,6 +17,10 @@
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
   },
+  "generatedCode": {
+    "label": "Mã hệ thống",
+    "description": "Mã tài nguyên sẽ được hệ thống tạo sau khi tạo bản ghi."
+  },
   "states": {
     "emptyTitle": "Không có tài nguyên studio",
     "emptyMessage": "Không có bản ghi khớp với truy vấn hiện tại.",

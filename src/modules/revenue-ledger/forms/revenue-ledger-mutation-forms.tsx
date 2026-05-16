@@ -17,7 +17,18 @@ import type {
   RevenueKind,
 } from '@modules/revenue-ledger/types/revenue-ledger.types';
 import { revenueKindValues } from '@modules/revenue-ledger/types/revenue-ledger.types';
-import { FormGrid, SelectField, TextInputField } from '@shared/forms';
+import {
+  loadEventReferenceOptions,
+  loadPlatformAccountReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
+import {
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseSurfaceProps = {
@@ -40,7 +51,6 @@ type RevenueEntryReconcileSurfaceProps = BaseSurfaceProps & {
 };
 
 type RevenueEntryCreateFormValues = {
-  revenueEntryCode: string;
   title: string;
   subjectTalentId: string;
   attributionPlatformAccountId: string;
@@ -54,17 +64,13 @@ type RevenueEntryCreateFormValues = {
   externalRef: string;
 };
 
-type RevenueEntryDraftCoreFormValues = Omit<
-  RevenueEntryCreateFormValues,
-  'revenueEntryCode' | 'entrySource'
->;
+type RevenueEntryDraftCoreFormValues = Omit<RevenueEntryCreateFormValues, 'entrySource'>;
 
 type RevenueEntryReconcileFormValues = {
   reconciliationReference: string;
 };
 
 const idRegex = /^[A-Za-z0-9_-]+$/;
-const codeRegex = /^[A-Z][A-Z0-9_]*$/;
 const currencyRegex = /^[A-Z]{3}$/;
 const amountRegex = /^(?!0+(?:\.0{1,2})?$)\d+(?:\.\d{1,2})?$/;
 
@@ -186,11 +192,6 @@ const buildCoreSchema = (messages: {
 const buildCreateSchema = (messages: Parameters<typeof buildCoreSchema>[0]) =>
   z
     .object({
-      revenueEntryCode: z
-        .string()
-        .trim()
-        .min(1, messages.required)
-        .regex(codeRegex, messages.token),
       title: z.string().trim().min(1, messages.required),
       subjectTalentId: z.string().trim().min(1, messages.required).regex(idRegex, messages.token),
       attributionPlatformAccountId: z.string().trim().optional(),
@@ -304,7 +305,6 @@ export const RevenueEntryCreateSurface = ({
   const options = useRevenueOptions();
   const form = useForm<RevenueEntryCreateFormValues>({
     defaultValues: {
-      revenueEntryCode: '',
       title: '',
       subjectTalentId: '',
       attributionPlatformAccountId: '',
@@ -322,13 +322,12 @@ export const RevenueEntryCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'revenueEntryCode');
+      applySchemaErrors(form.setError, parsed.error, 'title');
       return;
     }
 
     const corePayload = toCorePayload(parsed.data);
     await onSubmit({
-      revenueEntryCode: parsed.data.revenueEntryCode,
       title: corePayload.title ?? parsed.data.title,
       subjectTalentId: corePayload.subjectTalentId ?? parsed.data.subjectTalentId,
       attributionPlatformAccountId: corePayload.attributionPlatformAccountId ?? null,
@@ -357,27 +356,41 @@ export const RevenueEntryCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField
-            name="revenueEntryCode"
-            label={t('revenue-ledger:fields.revenueEntryCode')}
+          <GeneratedCodeNotice
+            label={t('revenue-ledger:generatedCode.label')}
+            description={t('revenue-ledger:generatedCode.description')}
+            className="md:col-span-2"
           />
           <TextInputField name="title" label={t('revenue-ledger:fields.title')} />
-          <TextInputField
+          <ReferencePickerField
             name="subjectTalentId"
             label={t('revenue-ledger:fields.subjectTalentId')}
+            pickerId="revenue-ledger-subject-talent"
+            loadOptions={loadTalentReferenceOptions}
+            placeholder={t('revenue-ledger:placeholders.searchReference')}
           />
           <SelectField
             name="revenueKind"
             label={t('revenue-ledger:fields.revenueKind')}
             options={options.revenueKinds}
           />
-          <TextInputField
+          <ReferencePickerField
             name="attributionPlatformAccountId"
             label={t('revenue-ledger:fields.attributionPlatformAccountId')}
+            pickerId="revenue-ledger-platform-account"
+            loadOptions={loadPlatformAccountReferenceOptions}
+            placeholder={t('revenue-ledger:placeholders.searchReference')}
+            clearable
+            clearLabel={t('revenue-ledger:actions.clearReference')}
           />
-          <TextInputField
+          <ReferencePickerField
             name="attributionEventId"
             label={t('revenue-ledger:fields.attributionEventId')}
+            pickerId="revenue-ledger-event"
+            loadOptions={loadEventReferenceOptions}
+            placeholder={t('revenue-ledger:placeholders.searchReference')}
+            clearable
+            clearLabel={t('revenue-ledger:actions.clearReference')}
           />
           <SelectField
             name="entrySource"
@@ -453,22 +466,35 @@ export const RevenueEntryDraftCoreSurface = ({
       >
         <FormGrid columns={2}>
           <TextInputField name="title" label={t('revenue-ledger:fields.title')} />
-          <TextInputField
+          <ReferencePickerField
             name="subjectTalentId"
             label={t('revenue-ledger:fields.subjectTalentId')}
+            pickerId="revenue-ledger-draft-subject-talent"
+            loadOptions={loadTalentReferenceOptions}
+            placeholder={t('revenue-ledger:placeholders.searchReference')}
           />
           <SelectField
             name="revenueKind"
             label={t('revenue-ledger:fields.revenueKind')}
             options={options.revenueKinds}
           />
-          <TextInputField
+          <ReferencePickerField
             name="attributionPlatformAccountId"
             label={t('revenue-ledger:fields.attributionPlatformAccountId')}
+            pickerId="revenue-ledger-draft-platform-account"
+            loadOptions={loadPlatformAccountReferenceOptions}
+            placeholder={t('revenue-ledger:placeholders.searchReference')}
+            clearable
+            clearLabel={t('revenue-ledger:actions.clearReference')}
           />
-          <TextInputField
+          <ReferencePickerField
             name="attributionEventId"
             label={t('revenue-ledger:fields.attributionEventId')}
+            pickerId="revenue-ledger-draft-event"
+            loadOptions={loadEventReferenceOptions}
+            placeholder={t('revenue-ledger:placeholders.searchReference')}
+            clearable
+            clearLabel={t('revenue-ledger:actions.clearReference')}
           />
           <TextInputField name="currencyCode" label={t('revenue-ledger:fields.currencyCode')} />
           <TextInputField

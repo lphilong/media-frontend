@@ -137,20 +137,27 @@ const sanitizeByEventQuery = (
 
 export const sanitizeRevenueEntryCreatePayload = (
   payload: RevenueEntryCreatePayload,
-): RevenueEntryCreatePayload => ({
-  revenueEntryCode: payload.revenueEntryCode,
-  title: payload.title,
-  subjectTalentId: payload.subjectTalentId,
-  attributionPlatformAccountId: payload.attributionPlatformAccountId ?? null,
-  attributionEventId: payload.attributionEventId ?? null,
-  revenueKind: payload.revenueKind,
-  entrySource: payload.entrySource,
-  currencyCode: payload.currencyCode,
-  recognizedAmount: payload.recognizedAmount,
-  recognizedAt: payload.recognizedAt,
-  description: payload.description ?? null,
-  externalRef: payload.externalRef ?? null,
-});
+): RevenueEntryCreatePayload => {
+  const sanitized: RevenueEntryCreatePayload = {
+    title: payload.title,
+    subjectTalentId: payload.subjectTalentId,
+    attributionPlatformAccountId: payload.attributionPlatformAccountId ?? null,
+    attributionEventId: payload.attributionEventId ?? null,
+    revenueKind: payload.revenueKind,
+    entrySource: payload.entrySource,
+    currencyCode: payload.currencyCode,
+    recognizedAmount: payload.recognizedAmount,
+    recognizedAt: payload.recognizedAt,
+    description: payload.description ?? null,
+    externalRef: payload.externalRef ?? null,
+  };
+
+  if (payload.revenueEntryCode !== undefined) {
+    sanitized.revenueEntryCode = payload.revenueEntryCode;
+  }
+
+  return sanitized;
+};
 
 export const sanitizeRevenueEntryDraftCorePayload = (
   payload: RevenueEntryDraftCorePayload,

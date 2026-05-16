@@ -9,8 +9,8 @@
     "name": "名称",
     "type": "类型",
     "status": "状态",
-    "parentOrgUnitId": "父组织单元 ID",
-    "newParentOrgUnitId": "新父组织单元 ID",
+    "parentOrgUnitId": "父组织单元",
+    "newParentOrgUnitId": "新父组织单元",
     "displayOrder": "显示顺序",
     "depth": "层级深度",
     "ancestorChain": "上级链",
@@ -19,10 +19,19 @@
     "createdAt": "创建时间",
     "updatedAt": "更新时间"
   },
+  "generatedCode": {
+    "label": "系统代码",
+    "description": "代码将在创建后由系统生成。"
+  },
   "placeholders": {
     "typeToken": "示例：DEPARTMENT",
     "parentOrgUnitId": "根单元请留空",
+    "parentOrgUnitSearch": "按名称或编码搜索组织单元",
     "optional": "可选"
+  },
+  "referenceHelp": {
+    "parentOrgUnitId": "从列表中选择父组织单元。保存时只提交所选组织单元引用。",
+    "newParentOrgUnitId": "选择新的父组织单元。清除选择可移至根级。"
   },
   "states": {
     "emptyTitle": "未找到组织单元",
@@ -62,7 +71,8 @@
     "move": "移动",
     "activate": "启用",
     "deactivate": "停用",
-    "archive": "归档"
+    "archive": "归档",
+    "clearParent": "清除父单元"
   },
   "table": {
     "caption": "组织单元列表",

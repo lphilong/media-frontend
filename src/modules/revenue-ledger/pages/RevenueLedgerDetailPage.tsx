@@ -206,7 +206,7 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
               fields={[
                 {
                   key: 'code',
-                  label: t('revenue-ledger:fields.revenueEntryCode'),
+                  label: t('revenue-ledger:generatedCode.label'),
                   value: <ReferenceChip label={record.revenueEntryCode} />,
                 },
                 {

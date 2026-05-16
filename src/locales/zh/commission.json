@@ -1,5 +1,9 @@
 {
   "globalOnly": "仅全局范围",
+  "generatedCode": {
+    "label": "系统编码",
+    "description": "编码将在创建后由系统生成。"
+  },
   "settlementKinds": {
     "REVENUE_SHARE": "收入分成"
   },
@@ -20,13 +24,13 @@
     "invalidToken": "只能使用字母、数字、下划线或连字符。",
     "invalidRatePercent": "比例必须大于 0、最多为 100，并且最多 4 位小数。",
     "revenueKindsRequired": "请选择至少一种收入类型。",
-    "utcMidnightTimestamp": "请输入 UTC 零点整数时间戳。",
+    "utcMidnightTimestamp": "请输入有效生效日期。",
     "effectiveWindow": "生效结束必须不早于生效开始。",
-    "beneficiaryExactOne": "请提供一个且仅一个匹配的受益方 ID。",
+    "beneficiaryExactOne": "请提供一个且仅一个匹配的受益方。",
     "revenueShareTalentOnly": "收入分成规则要求受益方为艺人。",
     "invalidTimestamp": "请输入整数时间戳。",
     "periodWindow": "结算周期结束必须晚于开始。",
-    "duplicateRevenueEntry": "收入条目 ID 必须唯一。"
+    "duplicateRevenueEntry": "收入条目必须唯一。"
   },
   "rules": {
     "title": "佣金规则",
@@ -54,9 +58,9 @@
       "allStatuses": "所有未归档",
       "beneficiaryKind": "受益方类型",
       "anyBeneficiaryKind": "任意受益方类型",
-      "beneficiaryEmploymentProfileId": "受益员工档案 ID",
-      "beneficiaryTalentId": "受益艺人 ID",
-      "sourceContractRecordId": "来源合同记录 ID",
+      "beneficiaryEmploymentProfileId": "受益员工档案",
+      "beneficiaryTalentId": "受益艺人",
+      "sourceContractRecordId": "来源合同",
       "settlementKind": "结算类型",
       "anySettlementKind": "任意结算类型",
       "appliesToRevenueKind": "收入类型",
@@ -69,15 +73,15 @@
       "title": "标题",
       "settlementKind": "结算类型",
       "beneficiaryKind": "受益方类型",
-      "beneficiaryEmploymentProfileId": "受益员工档案 ID",
-      "beneficiaryTalentId": "受益艺人 ID",
-      "beneficiaryId": "受益方 ID",
-      "sourceContractRecordId": "来源合同记录 ID",
+      "beneficiaryEmploymentProfileId": "受益员工档案",
+      "beneficiaryTalentId": "受益艺人",
+      "beneficiaryId": "受益方",
+      "sourceContractRecordId": "来源合同",
       "settlementBasis": "结算依据",
       "ratePercent": "比例",
       "appliesToRevenueKinds": "适用收入类型",
-      "effectiveStartDate": "生效开始 UTC 零点时间戳",
-      "effectiveEndDate": "生效结束 UTC 零点时间戳",
+      "effectiveStartDate": "生效开始日期",
+      "effectiveEndDate": "生效结束日期",
       "status": "状态",
       "scopeBoundary": "范围边界",
       "description": "描述",
@@ -91,7 +95,7 @@
       "title": "标题",
       "settlementKind": "结算类型",
       "beneficiaryKind": "受益方类型",
-      "beneficiaryId": "受益方 ID",
+      "beneficiaryId": "受益方",
       "sourceContractRecordId": "来源合同",
       "ratePercent": "比例",
       "status": "状态",
@@ -112,7 +116,7 @@
     "mutations": {
       "create": {
         "title": "新建佣金规则",
-        "subtitle": "创建草稿全局规则。生效日期使用 UTC 零点整数时间戳。",
+        "subtitle": "创建草稿全局规则。生效日期按后端规范日期格式保存。",
         "submit": "新建",
         "pending": "新建中"
       },
@@ -138,6 +142,9 @@
       "emptyMessage": "没有规则记录匹配当前查询。",
       "loadErrorTitle": "无法加载佣金规则",
       "loadErrorMessage": "请重试请求或调整查询。"
+    },
+    "placeholders": {
+      "searchReference": "按名称或代码搜索"
     },
     "detail": {
       "archivedReadOnly": "已归档规则只读。",
@@ -188,11 +195,11 @@
       "anySettlementKind": "任意结算类型",
       "beneficiaryKindSnapshot": "受益方类型快照",
       "anyBeneficiaryKind": "任意受益方类型",
-      "beneficiaryEmploymentProfileIdSnapshot": "受益员工档案快照 ID",
-      "beneficiaryTalentIdSnapshot": "受益艺人快照 ID",
-      "subjectTalentId": "主体艺人 ID",
-      "sourceRuleId": "来源规则 ID",
-      "containsRevenueEntryId": "收入记录 ID",
+      "beneficiaryEmploymentProfileIdSnapshot": "受益员工档案快照",
+      "beneficiaryTalentIdSnapshot": "受益艺人快照",
+      "subjectTalentId": "主体艺人",
+      "sourceRuleId": "来源规则",
+      "containsRevenueEntryId": "收入记录",
       "settlementCurrencyCode": "币种",
       "windowStartAt": "窗口开始时间戳",
       "windowEndAt": "窗口结束时间戳"
@@ -200,17 +207,18 @@
     "fields": {
       "settlementCode": "结算编码",
       "title": "标题",
-      "sourceRuleId": "来源规则 ID",
-      "sourceContractRecordIdSnapshot": "来源合同快照 ID",
+      "sourceRuleId": "来源规则",
+      "sourceContractRecordIdSnapshot": "来源合同快照",
       "settlementKindSnapshot": "结算类型快照",
       "beneficiaryKindSnapshot": "受益方类型快照",
-      "beneficiaryEmploymentProfileIdSnapshot": "受益员工档案快照 ID",
-      "beneficiaryTalentIdSnapshot": "受益艺人快照 ID",
-      "beneficiarySnapshotId": "受益方快照 ID",
-      "subjectTalentId": "主体艺人 ID",
+      "beneficiaryEmploymentProfileIdSnapshot": "受益员工档案快照",
+      "beneficiaryTalentIdSnapshot": "受益艺人快照",
+      "beneficiarySnapshotId": "受益方快照",
+      "subjectTalentId": "主体艺人",
       "settlementBasisSnapshot": "结算依据快照",
       "ratePercentSnapshot": "比例快照",
-      "revenueEntryId": "收入记录 ID",
+      "revenueEntryId": "收入记录",
+      "revenueEntry": "收入记录",
       "settlementPeriodStartAt": "结算期间开始时间戳",
       "settlementPeriodEndAt": "结算期间结束时间戳",
       "settlementCurrencyCode": "结算币种",
@@ -232,8 +240,8 @@
       "sourceRuleId": "来源规则",
       "settlementKindSnapshot": "类型快照",
       "beneficiaryKindSnapshot": "受益方类型",
-      "beneficiarySnapshotId": "受益方 ID",
-      "subjectTalentId": "主体艺人",
+      "beneficiarySnapshotId": "受益方",
+      "subjectTalentId": "艺人",
       "settlementCurrencyCode": "币种",
       "grossRevenueAmount": "总收入",
       "settlementAmount": "结算金额",
@@ -297,6 +305,9 @@
       "linesLoadErrorMessage": "重试加载后端派生行。",
       "noLines": "未返回结算行。"
     },
+    "placeholders": {
+      "searchReference": "按代码或标题搜索"
+    },
     "detail": {
       "archivedReadOnly": "已归档结算只读。",
       "derivedReadOnly": "派生金额、快照和结算行由后端拥有且只读。",
@@ -312,7 +323,7 @@
     },
     "lines": {
       "caption": "只读结算行",
-      "revenueEntryId": "收入记录 ID",
+      "revenueEntryId": "收入记录",
       "revenueEntryCodeSnapshot": "收入编码快照",
       "revenueKindSnapshot": "收入类型快照",
       "revenueRecognizedAmountSnapshot": "已确认金额快照",

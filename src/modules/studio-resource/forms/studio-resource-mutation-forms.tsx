@@ -13,7 +13,7 @@ import type {
   StudioResourceCreatePayload,
   StudioResourceUpdatePayload,
 } from '@modules/studio-resource/types/studio-resource.types';
-import { FormGrid, TextInputField } from '@shared/forms';
+import { FormGrid, GeneratedCodeNotice, TextInputField } from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseMutationSurfaceProps = {
@@ -91,7 +91,6 @@ const createStudioResourceCreateSchema = (
 ) => {
   return z
     .object({
-      resourceCode: z.string().trim().min(1, requiredMessage).regex(upperTokenRegex, tokenMessage),
       name: z.string().trim().min(1, requiredMessage),
       resourceClass: z.string().trim().min(1, requiredMessage).regex(upperTokenRegex, tokenMessage),
       shortName: z.string().trim().optional(),
@@ -123,7 +122,6 @@ const createStudioResourceEditSchema = (requiredMessage: string, integerMessage:
 };
 
 type StudioResourceCreateFormValues = {
-  resourceCode: string;
   name: string;
   resourceClass: string;
   shortName: string;
@@ -141,7 +139,6 @@ export const StudioResourceCreateSurface = ({
   const { t } = useTranslation(['studio-resource', 'common']);
   const form = useForm<StudioResourceCreateFormValues>({
     defaultValues: {
-      resourceCode: '',
       name: '',
       resourceClass: 'SPACE',
       shortName: '',
@@ -166,12 +163,11 @@ export const StudioResourceCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'resourceCode');
+      applySchemaErrors(form.setError, parsed.error, 'name');
       return;
     }
 
     await onSubmit({
-      resourceCode: parsed.data.resourceCode,
       name: parsed.data.name,
       resourceClass: parsed.data.resourceClass,
       shortName: toNullableText(parsed.data.shortName),
@@ -196,7 +192,11 @@ export const StudioResourceCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="resourceCode" label={t('studio-resource:fields.resourceCode')} />
+          <GeneratedCodeNotice
+            label={t('studio-resource:generatedCode.label')}
+            description={t('studio-resource:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField name="resourceClass" label={t('studio-resource:fields.resourceClass')} />
           <TextInputField name="name" label={t('studio-resource:fields.name')} />
           <TextInputField name="shortName" label={t('studio-resource:fields.shortName')} />

@@ -23,11 +23,23 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
+vi.mock('@shared/components/reference/admin-reference-options', () => ({
+  loadTalentReferenceOptions: vi.fn(async () => [
+    { id: 'talent-001', label: 'Talent One - TAL-000001' },
+  ]),
+  loadPlatformAccountReferenceOptions: vi.fn(async () => [
+    { id: 'platform-001', label: 'Platform One - PLA001' },
+  ]),
+  loadEventReferenceOptions: vi.fn(async () => [
+    { id: 'event-001', label: 'Event One - EVT-202605-000001' },
+  ]),
+}));
+
 const now = Date.parse('2026-04-22T00:00:00.000Z');
 
 const kpiDetail: TalentKpiRecord = {
   id: 'talent-kpi-record-001',
-  kpiRecordCode: 'KPI001',
+  kpiRecordCode: 'KPI-202604-000001',
   title: 'April KPI',
   subjectTalentId: 'talent-001',
   attributionPlatformAccountId: 'platform-001',
@@ -57,12 +69,12 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
 
     render(<TalentKpiCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
 
-    await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.kpiRecordCode')), 'KPIW8');
+    expect(
+      screen.queryByLabelText(i18n.t('talent-kpi:fields.kpiRecordCode')),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t('talent-kpi:generatedCode.description'))).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.title')), 'Wave 8 KPI');
-    await user.type(
-      screen.getByLabelText(i18n.t('talent-kpi:fields.subjectTalentId')),
-      'talent-001',
-    );
+    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
     await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodStartAt')), '1000');
     await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodEndAt')), '2000');
     await user.click(
@@ -72,7 +84,6 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
     );
 
     expect(onSubmit).toHaveBeenCalledWith({
-      kpiRecordCode: 'KPIW8',
       title: 'Wave 8 KPI',
       subjectTalentId: 'talent-001',
       attributionPlatformAccountId: null,
@@ -84,6 +95,7 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
       description: null,
       externalRef: null,
     });
+    expect(onSubmit.mock.calls.at(-1)?.[0]).not.toHaveProperty('kpiRecordCode');
   });
 
   it('rejects duplicate metric codes and invalid metric-specific numeric values', async () => {
@@ -93,12 +105,8 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
 
     render(<TalentKpiCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
 
-    await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.kpiRecordCode')), 'KPIBAD');
     await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.title')), 'Bad KPI');
-    await user.type(
-      screen.getByLabelText(i18n.t('talent-kpi:fields.subjectTalentId')),
-      'talent-001',
-    );
+    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
     await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodStartAt')), '1000');
     await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodEndAt')), '2000');
     await user.click(screen.getByRole('button', { name: i18n.t('talent-kpi:actions.addMetric') }));
@@ -142,7 +150,6 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
     mockedApiRequest.mockResolvedValue({ data: kpiDetail });
 
     await createTalentKpiRecord({
-      kpiRecordCode: 'KPIAPI',
       title: 'API KPI',
       subjectTalentId: 'talent-001',
       attributionPlatformAccountId: undefined,
@@ -173,7 +180,6 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
       method: 'POST',
       url: '/admin/talent-kpi-records',
       data: {
-        kpiRecordCode: 'KPIAPI',
         title: 'API KPI',
         subjectTalentId: 'talent-001',
         attributionPlatformAccountId: null,
@@ -186,6 +192,7 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
         externalRef: null,
       },
     });
+    expect(mockedApiRequest.mock.calls[0]?.[0].data).not.toHaveProperty('kpiRecordCode');
     expect(mockedApiRequest).toHaveBeenNthCalledWith(3, {
       method: 'POST',
       url: '/admin/talent-kpi-records/talent-kpi-record-001/metrics',
@@ -198,6 +205,7 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
       url: '/admin/talent-kpi-records/talent-kpi-record-001/finalize',
       data: {},
     });
+    expect(mockedApiRequest.mock.calls[1]?.[0].data).not.toHaveProperty('kpiRecordCode');
   });
 
   it('never sends scope, scopeGrants, or related-search from Talent KPI query builders', async () => {
@@ -205,7 +213,7 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
 
     await fetchTalentKpiRecords({
       subjectTalentId: 'talent-001',
-      search: 'KPI001',
+      search: 'KPI-202604-000001',
       scope: 'global',
       scopeGrants: 'x',
     } as never);
@@ -219,7 +227,7 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
 
     expect(mockedApiRequest.mock.calls[0]?.[0].params).toMatchObject({
       subjectTalentId: 'talent-001',
-      search: 'KPI001',
+      search: 'KPI-202604-000001',
     });
     expect(mockedApiRequest.mock.calls[0]?.[0].params).not.toHaveProperty('scope');
     expect(mockedApiRequest.mock.calls[0]?.[0].params).not.toHaveProperty('scopeGrants');

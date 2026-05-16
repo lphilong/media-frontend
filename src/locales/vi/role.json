@@ -6,7 +6,7 @@
   },
   "fields": {
     "roleId": "ID vai trò",
-    "userId": "ID người dùng",
+    "userId": "Người dùng",
     "code": "Mã",
     "name": "Họ và Tên",
     "state": "Trạng thái",
@@ -131,7 +131,11 @@
   },
   "placeholders": {
     "permissions": "role:view user:view",
-    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]"
+    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]",
+    "userSearch": "Tìm người dùng theo tên hoặc email"
+  },
+  "referenceHelp": {
+    "userId": "Chọn tài khoản người dùng sẽ nhận vai trò này."
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
@@ -162,7 +166,7 @@
     "title": "Gán vai trò",
     "caption": "Danh sách gán vai trò",
     "assignmentId": "ID bản ghi gán",
-    "userId": "ID người dùng",
+    "userId": "Người dùng",
     "state": "Trạng thái",
     "effectiveAt": "Thời điểm có hiệu lực",
     "revokedAt": "Thời điểm thu hồi",

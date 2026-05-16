@@ -157,7 +157,6 @@ const sanitizeByOwnerQuery = (
 
 const sanitizeCreatePayload = (payload: ContractCreatePayload): ContractCreatePayload => {
   const base: ContractCreatePayload = {
-    contractCode: payload.contractCode,
     title: payload.title,
     contractKind: payload.contractKind,
     linkedEntityKind: payload.linkedEntityKind,
@@ -168,6 +167,10 @@ const sanitizeCreatePayload = (payload: ContractCreatePayload): ContractCreatePa
     description: payload.description,
     externalRef: payload.externalRef,
   };
+
+  if (payload.contractCode !== undefined) {
+    base.contractCode = payload.contractCode;
+  }
 
   if (payload.linkedEntityKind === 'EMPLOYMENT_PROFILE') {
     base.linkedEmploymentProfileId = payload.linkedEmploymentProfileId;

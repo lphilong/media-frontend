@@ -239,7 +239,7 @@ export type CommissionSettlementsByRevenueEntryQuery = Pick<
 };
 
 export type CommissionRuleCreatePayload = {
-  ruleCode: string;
+  ruleCode?: string;
   title: string;
   settlementKind: CommissionSettlementKind;
   beneficiaryKind: CommissionBeneficiaryKind;
@@ -266,7 +266,7 @@ export type CommissionRuleDraftCorePayload = {
 };
 
 export type CommissionSettlementCreatePayload = {
-  settlementCode: string;
+  settlementCode?: string;
   title: string;
   sourceRuleId: string;
   settlementPeriodStartAt: number;

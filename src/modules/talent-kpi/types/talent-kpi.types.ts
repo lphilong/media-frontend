@@ -165,7 +165,7 @@ export type TalentKpiMetricInput = {
 };
 
 export type TalentKpiCreatePayload = {
-  kpiRecordCode: string;
+  kpiRecordCode?: string;
   title: string;
   subjectTalentId: string;
   attributionPlatformAccountId?: string | null;

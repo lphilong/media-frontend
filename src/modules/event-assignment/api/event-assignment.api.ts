@@ -177,17 +177,24 @@ const sanitizeAssignmentInput = (assignment: EventAssignmentInput): EventAssignm
   };
 };
 
-const sanitizeCreatePayload = (payload: EventCreatePayload): EventCreatePayload => ({
-  eventCode: payload.eventCode,
-  title: payload.title,
-  assignments: payload.assignments.map(sanitizeAssignmentInput),
-  eventStartAt: payload.eventStartAt,
-  eventEndAt: payload.eventEndAt,
-  studioResourceIds: payload.studioResourceIds,
-  platformAccountIds: payload.platformAccountIds,
-  description: payload.description,
-  externalRef: payload.externalRef,
-});
+const sanitizeCreatePayload = (payload: EventCreatePayload): EventCreatePayload => {
+  const sanitized: EventCreatePayload = {
+    title: payload.title,
+    assignments: payload.assignments.map(sanitizeAssignmentInput),
+    eventStartAt: payload.eventStartAt,
+    eventEndAt: payload.eventEndAt,
+    studioResourceIds: payload.studioResourceIds,
+    platformAccountIds: payload.platformAccountIds,
+    description: payload.description,
+    externalRef: payload.externalRef,
+  };
+
+  if (payload.eventCode !== undefined) {
+    sanitized.eventCode = payload.eventCode;
+  }
+
+  return sanitized;
+};
 
 const sanitizeReplaceAssignmentsPayload = (
   payload: EventReplaceAssignmentsPayload,

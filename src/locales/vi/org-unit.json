@@ -9,8 +9,8 @@
     "name": "Tên",
     "type": "Loại",
     "status": "Trạng thái",
-    "parentOrgUnitId": "ID đơn vị tổ chức cha",
-    "newParentOrgUnitId": "ID đơn vị tổ chức cha mới",
+    "parentOrgUnitId": "Đơn vị tổ chức cha",
+    "newParentOrgUnitId": "Đơn vị tổ chức cha mới",
     "displayOrder": "Thứ tự hiển thị",
     "depth": "Độ sâu",
     "ancestorChain": "Chuỗi cấp trên",
@@ -19,10 +19,19 @@
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
   },
+  "generatedCode": {
+    "label": "Mã hệ thống",
+    "description": "Mã sẽ được hệ thống tạo sau khi tạo bản ghi."
+  },
   "placeholders": {
     "typeToken": "Ví dụ: DEPARTMENT",
     "parentOrgUnitId": "Để trống nếu là đơn vị gốc",
+    "parentOrgUnitSearch": "Tìm đơn vị tổ chức theo tên hoặc mã",
     "optional": "Không bắt buộc"
+  },
+  "referenceHelp": {
+    "parentOrgUnitId": "Chọn đơn vị tổ chức cha từ danh sách. Bản ghi lưu tham chiếu đơn vị đã chọn.",
+    "newParentOrgUnitId": "Chọn đơn vị tổ chức cha mới. Xóa lựa chọn để chuyển đơn vị này về gốc."
   },
   "states": {
     "emptyTitle": "Không tìm thấy đơn vị tổ chức",
@@ -36,7 +45,7 @@
     "type": "Loại",
     "typePlaceholder": "Lọc theo token loại",
     "parentOrgUnitId": "Đơn vị tổ chức cha",
-    "parentOrgUnitIdPlaceholder": "ID đơn vị cha",
+    "parentOrgUnitIdPlaceholder": "Chọn đơn vị cha",
     "rootOnly": "Chế độ phân cấp",
     "allStatuses": "Tất cả trạng thái",
     "allRootModes": "Tất cả chế độ phân cấp",
@@ -62,7 +71,8 @@
     "move": "Di chuyển",
     "activate": "Kích hoạt",
     "deactivate": "Vô hiệu hóa",
-    "archive": "Lưu trữ"
+    "archive": "Lưu trữ",
+    "clearParent": "Xóa đơn vị cha"
   },
   "table": {
     "caption": "Danh sách đơn vị tổ chức",

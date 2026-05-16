@@ -69,7 +69,10 @@ describe('studio-resource wave 5 query and payload seams', () => {
       <StudioResourceCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />,
     );
 
-    await user.type(screen.getByLabelText(i18n.t('studio-resource:fields.resourceCode')), 'SRWAVE');
+    expect(screen.queryByLabelText(i18n.t('studio-resource:fields.resourceCode'))).toBeNull();
+    expect(
+      screen.getByText(i18n.t('studio-resource:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('studio-resource:fields.name')), 'Wave Studio');
     await user.type(screen.getByLabelText(i18n.t('studio-resource:fields.shortName')), 'Wave');
     await user.type(
@@ -78,6 +81,7 @@ describe('studio-resource wave 5 query and payload seams', () => {
     );
     await user.clear(screen.getByLabelText(i18n.t('studio-resource:fields.maxOccupancy')));
     await user.type(screen.getByLabelText(i18n.t('studio-resource:fields.maxOccupancy')), '9');
+    await user.type(screen.getByLabelText(i18n.t('studio-resource:fields.externalRef')), 'EXT-SR');
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('studio-resource:mutations.create.submit'),
@@ -85,15 +89,15 @@ describe('studio-resource wave 5 query and payload seams', () => {
     );
 
     expect(onSubmit).toHaveBeenCalledWith({
-      resourceCode: 'SRWAVE',
       name: 'Wave Studio',
       resourceClass: 'SPACE',
       shortName: 'Wave',
       locationLabel: 'Room W',
       description: null,
-      externalRef: null,
+      externalRef: 'EXT-SR',
       maxOccupancy: 9,
     });
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('resourceCode');
 
     onSubmit.mockReset();
     await user.clear(screen.getByLabelText(i18n.t('studio-resource:fields.resourceClass')));
@@ -179,7 +183,7 @@ describe('studio-resource wave 5 query and payload seams', () => {
     mockedApiRequest.mockResolvedValue({
       data: {
         id: 'studio-001',
-        resourceCode: 'STUDIO001',
+        resourceCode: 'SR-000001',
         name: 'Main Studio',
         shortName: 'Main',
         resourceClass: 'SPACE',

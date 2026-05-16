@@ -44,7 +44,7 @@ const mockReferencePickerRequests = (): void => {
         data: [
           {
             id: 'ep-001',
-            employeeCode: 'EMP001',
+            employeeCode: 'EP-000001',
             legalName: 'Employee One',
             displayName: 'Employee One',
             employmentKind: 'FULL_TIME',
@@ -65,7 +65,7 @@ const mockReferencePickerRequests = (): void => {
         data: [
           {
             id: 'talent-001',
-            talentCode: 'TAL001',
+            talentCode: 'TAL-000001',
             legalName: 'Talent One',
             stageName: 'Talent One',
             displayShortName: 'Talent',
@@ -88,7 +88,7 @@ const mockReferencePickerRequests = (): void => {
         data: [
           {
             id: 'group-001',
-            groupCode: 'GRP001',
+            groupCode: 'TG-000001',
             name: 'Group One',
             shortName: 'Group',
             status: 'ACTIVE',
@@ -105,7 +105,7 @@ const mockReferencePickerRequests = (): void => {
         data: [
           {
             id: 'studio-001',
-            resourceCode: 'STUDIO001',
+            resourceCode: 'SR-000001',
             name: 'Studio One',
             shortName: 'Studio 1',
             resourceClass: 'ROOM',
@@ -116,7 +116,7 @@ const mockReferencePickerRequests = (): void => {
           },
           {
             id: 'studio-002',
-            resourceCode: 'STUDIO002',
+            resourceCode: 'SR-000002',
             name: 'Studio Two',
             shortName: 'Studio 2',
             resourceClass: 'ROOM',
@@ -127,7 +127,7 @@ const mockReferencePickerRequests = (): void => {
           },
           {
             id: 'studio-003',
-            resourceCode: 'STUDIO003',
+            resourceCode: 'SR-000003',
             name: 'Studio Three',
             shortName: 'Studio 3',
             resourceClass: 'ROOM',
@@ -436,7 +436,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
         />,
       );
       await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Scoped shift');
-      await selectPickerOption(user, 'work-shift-admin-subject', /EMP001/);
+      await selectPickerOption(user, 'work-shift-admin-subject', /EP-000001/);
       await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')), '1000');
       await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')), '2000');
       await user.click(
@@ -467,7 +467,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
         await selectPickerOption(
           user,
           'work-shift-admin-subject',
-          subjectKind === 'TALENT' ? /TAL001/ : /GRP001/,
+          subjectKind === 'TALENT' ? /TAL-000001/ : /TG-000001/,
         );
         await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')), '1000');
         await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')), '2000');
@@ -527,7 +527,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
         await selectPickerOption(
           user,
           'work-shift-reassign-subject',
-          subjectKind === 'TALENT' ? /TAL001/ : /GRP001/,
+          subjectKind === 'TALENT' ? /TAL-000001/ : /TG-000001/,
         );
         await user.click(
           screen.getByRole('button', {
@@ -562,7 +562,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
         screen.getByLabelText(i18n.t('work-schedule:fields.subjectKind')),
         'TALENT',
       );
-      await selectPickerOption(user, 'work-shift-admin-subject', /TAL001/);
+      await selectPickerOption(user, 'work-shift-admin-subject', /TAL-000001/);
       await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')), '1000');
       await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')), '2000');
       await user.click(
@@ -586,7 +586,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
         screen.getByLabelText(i18n.t('work-schedule:fields.newSubjectKind')),
         'TALENT_GROUP',
       );
-      await selectPickerOption(user, 'work-shift-reassign-subject', /GRP001/);
+      await selectPickerOption(user, 'work-shift-reassign-subject', /TG-000001/);
       await user.click(
         screen.getByRole('button', {
           name: i18n.t('work-schedule:mutations.reassignSubject.submit'),
@@ -609,11 +609,11 @@ describe('work schedule wave 6 query and payload shaping', () => {
       <WorkShiftCreateSurface onCancel={() => undefined} onSubmit={onCreate} />,
     );
     await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Wave 6 shift');
-    await selectPickerOption(user, 'work-shift-admin-subject', /EMP001/);
+    await selectPickerOption(user, 'work-shift-admin-subject', /EP-000001/);
     await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')), '1000');
     await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')), '2000');
-    await selectPickerOption(user, 'work-shift-admin-studio-resources', /STUDIO001/);
-    await selectPickerOption(user, 'work-shift-admin-studio-resources', /STUDIO002/);
+    await selectPickerOption(user, 'work-shift-admin-studio-resources', /SR-000001/);
+    await selectPickerOption(user, 'work-shift-admin-studio-resources', /SR-000002/);
     await user.click(
       screen.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
     );
@@ -681,7 +681,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
       screen.getByLabelText(i18n.t('work-schedule:fields.newSubjectKind')),
       'TALENT_GROUP',
     );
-    await selectPickerOption(user, 'work-shift-reassign-subject', /GRP001/);
+    await selectPickerOption(user, 'work-shift-reassign-subject', /TG-000001/);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('work-schedule:mutations.reassignSubject.submit'),
@@ -701,7 +701,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
         onSubmit={onReplace}
       />,
     );
-    await selectPickerOption(user, 'work-shift-replace-studio-resources', /STUDIO003/);
+    await selectPickerOption(user, 'work-shift-replace-studio-resources', /SR-000003/);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('work-schedule:mutations.replaceResources.submit'),

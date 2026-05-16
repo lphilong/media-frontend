@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import {
   FormProvider,
-  useFieldArray,
   useForm,
   useFormContext,
   type FieldValues,
@@ -28,12 +27,25 @@ import {
   commissionSettlementBasisValues,
   commissionSettlementKindValues,
 } from '@modules/commission/types/commission.types';
-import { FormGrid, SelectField, TextInputField } from '@shared/forms';
+import {
+  loadCommissionRuleReferenceOptions,
+  loadContractReferenceOptions,
+  loadEmploymentProfileReferenceOptions,
+  loadRevenueEntryReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
+import {
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferenceIdSetEditor,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const idRegex = /^[A-Za-z0-9_-]+$/;
-const codeRegex = /^[A-Z][A-Z0-9_]*$/;
 const rateRegex = /^(?:\d+|\d+\.\d{1,4})$/;
 const integerTimestampRegex = /^-?\d+$/;
 
@@ -68,7 +80,6 @@ type CommissionSettlementRevenueEntriesSurfaceProps = BaseSurfaceProps & {
 type RevenueKindSelection = Record<CommissionRevenueKind, boolean>;
 
 type CommissionRuleCreateFormValues = {
-  ruleCode: string;
   title: string;
   settlementKind: 'REVENUE_SHARE';
   beneficiaryKind: CommissionBeneficiaryKind;
@@ -100,7 +111,6 @@ type RevenueEntryRow = {
 };
 
 type CommissionSettlementCreateFormValues = {
-  settlementCode: string;
   title: string;
   sourceRuleId: string;
   settlementPeriodStartAt: string;
@@ -112,7 +122,7 @@ type CommissionSettlementCreateFormValues = {
 
 type CommissionSettlementDraftCoreFormValues = Omit<
   CommissionSettlementCreateFormValues,
-  'settlementCode' | 'sourceRuleId' | 'revenueEntryIds'
+  'sourceRuleId' | 'revenueEntryIds'
 >;
 
 type CommissionSettlementRevenueEntriesFormValues = {
@@ -273,7 +283,6 @@ const buildRuleCreateSchema = (
 ) =>
   z
     .object({
-      ruleCode: z.string().trim().min(1, messages.required).regex(codeRegex, messages.token),
       title: z.string().trim().min(1, messages.required),
       settlementKind: z.literal('REVENUE_SHARE'),
       beneficiaryKind: z.enum(['EMPLOYMENT_PROFILE', 'TALENT']),
@@ -438,7 +447,6 @@ const buildSettlementCreateSchema = (
 ) =>
   z
     .object({
-      settlementCode: z.string().trim().min(1, messages.required).regex(codeRegex, messages.token),
       title: z.string().trim().min(1, messages.required),
       sourceRuleId: z.string().trim().min(1, messages.required).regex(idRegex, messages.token),
       settlementPeriodStartAt: z.string().trim().min(1, messages.timestamp),
@@ -545,56 +553,19 @@ const RevenueKindCheckboxes = ({
 
 const RevenueEntrySetEditor = (): JSX.Element => {
   const { t } = useTranslation(['commission']);
-  const { control, register, formState } = useFormContext<
-    CommissionSettlementCreateFormValues | CommissionSettlementRevenueEntriesFormValues
-  >();
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'revenueEntryIds',
-  });
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-text">
-            {t('commission:settlements.mutations.revenueEntries.rowsTitle')}
-          </h3>
-        </div>
-        <button
-          type="button"
-          className="rounded border border-border px-2 py-1 text-xs"
-          onClick={() => append({ revenueEntryId: '' })}
-        >
-          {t('commission:settlements.actions.addRevenueEntry')}
-        </button>
-      </div>
-      {fields.map((field, index) => {
-        const fieldError = formState.errors.revenueEntryIds?.[index]?.revenueEntryId?.message;
-
-        return (
-          <div key={field.id} className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium uppercase text-muted">
-                {t('commission:settlements.fields.revenueEntryId')}
-              </span>
-              <input
-                {...register(`revenueEntryIds.${index}.revenueEntryId`)}
-                className="rounded border border-border bg-panel px-3 py-2 text-sm outline-none ring-accent focus:ring-2"
-              />
-              {fieldError ? <span className="text-xs text-danger">{fieldError}</span> : null}
-            </label>
-            <button
-              type="button"
-              className="self-end rounded border border-border px-2 py-2 text-xs"
-              onClick={() => remove(index)}
-            >
-              {t('commission:settlements.actions.removeRevenueEntry')}
-            </button>
-          </div>
-        );
-      })}
-    </div>
+    <ReferenceIdSetEditor
+      name="revenueEntryIds"
+      idFieldName="revenueEntryId"
+      pickerId="commission-settlement-revenue-entry"
+      loadOptions={loadRevenueEntryReferenceOptions}
+      title={t('commission:settlements.mutations.revenueEntries.rowsTitle')}
+      fieldLabel={t('commission:settlements.fields.revenueEntry')}
+      addLabel={t('commission:settlements.actions.addRevenueEntry')}
+      removeLabel={() => t('commission:settlements.actions.removeRevenueEntry')}
+      placeholder={t('commission:settlements.placeholders.searchReference')}
+    />
   );
 };
 
@@ -677,7 +648,6 @@ export const CommissionRuleCreateSurface = ({
   const options = useCommissionOptions();
   const form = useForm<CommissionRuleCreateFormValues>({
     defaultValues: {
-      ruleCode: '',
       title: '',
       settlementKind: 'REVENUE_SHARE',
       beneficiaryKind: 'TALENT',
@@ -694,16 +664,23 @@ export const CommissionRuleCreateSurface = ({
     },
   });
   const schema = useMemo(() => buildRuleCreateSchema(ruleValidationMessages(t)), [t]);
+  const beneficiaryKind = form.watch('beneficiaryKind');
   const handleSubmit = form.handleSubmit(async (values) => {
-    const parsed = schema.safeParse(values);
+    const parsed = schema.safeParse({
+      ...values,
+      beneficiaryEmploymentProfileId:
+        values.beneficiaryKind === 'EMPLOYMENT_PROFILE'
+          ? values.beneficiaryEmploymentProfileId
+          : '',
+      beneficiaryTalentId: values.beneficiaryKind === 'TALENT' ? values.beneficiaryTalentId : '',
+    });
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'ruleCode');
+      applySchemaErrors(form.setError, parsed.error, 'title');
       return;
     }
 
     const corePayload = toRuleCorePayload(parsed.data);
     await onSubmit({
-      ruleCode: parsed.data.ruleCode,
       title: parsed.data.title,
       settlementKind: 'REVENUE_SHARE',
       beneficiaryKind: parsed.data.beneficiaryKind,
@@ -738,7 +715,11 @@ export const CommissionRuleCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="ruleCode" label={t('commission:rules.fields.ruleCode')} />
+          <GeneratedCodeNotice
+            label={t('commission:generatedCode.label')}
+            description={t('commission:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField name="title" label={t('commission:rules.fields.title')} />
           <SelectField
             name="settlementKind"
@@ -750,17 +731,29 @@ export const CommissionRuleCreateSurface = ({
             label={t('commission:rules.fields.beneficiaryKind')}
             options={options.beneficiaryKinds}
           />
-          <TextInputField
-            name="beneficiaryEmploymentProfileId"
-            label={t('commission:rules.fields.beneficiaryEmploymentProfileId')}
-          />
-          <TextInputField
-            name="beneficiaryTalentId"
-            label={t('commission:rules.fields.beneficiaryTalentId')}
-          />
-          <TextInputField
+          {beneficiaryKind === 'EMPLOYMENT_PROFILE' ? (
+            <ReferencePickerField
+              name="beneficiaryEmploymentProfileId"
+              label={t('commission:rules.fields.beneficiaryEmploymentProfileId')}
+              pickerId="commission-rule-beneficiary-employment-profile"
+              loadOptions={loadEmploymentProfileReferenceOptions}
+              placeholder={t('commission:rules.placeholders.searchReference')}
+            />
+          ) : (
+            <ReferencePickerField
+              name="beneficiaryTalentId"
+              label={t('commission:rules.fields.beneficiaryTalentId')}
+              pickerId="commission-rule-beneficiary-talent"
+              loadOptions={loadTalentReferenceOptions}
+              placeholder={t('commission:rules.placeholders.searchReference')}
+            />
+          )}
+          <ReferencePickerField
             name="sourceContractRecordId"
             label={t('commission:rules.fields.sourceContractRecordId')}
+            pickerId="commission-rule-source-contract"
+            loadOptions={loadContractReferenceOptions}
+            placeholder={t('commission:rules.placeholders.searchReference')}
           />
           <SelectField
             name="settlementBasis"
@@ -871,7 +864,6 @@ export const CommissionSettlementCreateSurface = ({
   const { t } = useTranslation(['commission', 'common']);
   const form = useForm<CommissionSettlementCreateFormValues>({
     defaultValues: {
-      settlementCode: '',
       title: '',
       sourceRuleId: '',
       settlementPeriodStartAt: '',
@@ -885,13 +877,12 @@ export const CommissionSettlementCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'settlementCode');
+      applySchemaErrors(form.setError, parsed.error, 'title');
       return;
     }
 
     const corePayload = toSettlementCorePayload(parsed.data);
     await onSubmit({
-      settlementCode: parsed.data.settlementCode,
       title: parsed.data.title,
       sourceRuleId: parsed.data.sourceRuleId,
       settlementPeriodStartAt: corePayload.settlementPeriodStartAt ?? 0,
@@ -916,14 +907,18 @@ export const CommissionSettlementCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField
-            name="settlementCode"
-            label={t('commission:settlements.fields.settlementCode')}
+          <GeneratedCodeNotice
+            label={t('commission:generatedCode.label')}
+            description={t('commission:generatedCode.description')}
+            className="md:col-span-2"
           />
           <TextInputField name="title" label={t('commission:settlements.fields.title')} />
-          <TextInputField
+          <ReferencePickerField
             name="sourceRuleId"
             label={t('commission:settlements.fields.sourceRuleId')}
+            pickerId="commission-settlement-source-rule"
+            loadOptions={loadCommissionRuleReferenceOptions}
+            placeholder={t('commission:settlements.placeholders.searchReference')}
           />
           <TextInputField
             name="settlementPeriodStartAt"
@@ -1066,7 +1061,6 @@ export const parseCommissionRuleCreateForTest = (
   const parsed = buildRuleCreateSchema(ruleValidationMessagesForTest).parse(values);
   const core = toRuleCorePayload(parsed);
   return {
-    ruleCode: parsed.ruleCode,
     title: parsed.title,
     settlementKind: 'REVENUE_SHARE',
     beneficiaryKind: parsed.beneficiaryKind,
@@ -1103,7 +1097,6 @@ export const parseCommissionSettlementCreateForTest = (
 ): CommissionSettlementCreatePayload => {
   const core = toSettlementCorePayload(values);
   return {
-    settlementCode: values.settlementCode,
     title: values.title,
     sourceRuleId: values.sourceRuleId,
     settlementPeriodStartAt: core.settlementPeriodStartAt ?? 0,

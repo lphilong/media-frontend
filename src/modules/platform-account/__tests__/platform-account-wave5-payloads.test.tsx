@@ -1,6 +1,7 @@
 import i18n from 'i18next';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 
 import {
   PlatformAccountCapabilitiesSurface,
@@ -24,7 +25,61 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-const renderWithProviders = (ui: JSX.Element) => render(ui);
+vi.mock('@shared/components/reference/admin-reference-options', () => ({
+  loadPlatformOwnerReferenceOptions: vi.fn(async (ownerKind: string) => {
+    if (ownerKind === 'TALENT') {
+      return [
+        {
+          id: 'talent-001',
+          label: 'Mina - TAL-000001',
+          description: 'ACTIVE',
+          href: '/talents/talent-001',
+        },
+      ];
+    }
+    if (ownerKind === 'TALENT_GROUP') {
+      return [
+        {
+          id: 'group-001',
+          label: 'Main Group - TG-000001',
+          description: 'ACTIVE',
+          href: '/talent-groups/group-001',
+        },
+      ];
+    }
+    return [
+      {
+        id: 'ou-sales',
+        label: 'Sales - OU-SALES',
+        description: 'ACTIVE',
+        href: '/org-units/ou-sales',
+      },
+    ];
+  }),
+}));
+
+const renderWithProviders = (ui: JSX.Element) => render(<MemoryRouter>{ui}</MemoryRouter>);
+
+const selectPickerOption = async (
+  user: ReturnType<typeof userEvent.setup>,
+  pickerId: string,
+  optionText: RegExp,
+): Promise<void> => {
+  await waitFor(() => {
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some((surface) => surface.getAttribute('data-picker-id') === pickerId),
+    ).toBe(true);
+  });
+  const picker = screen
+    .getAllByTestId('picker-surface')
+    .find((surface) => surface.getAttribute('data-picker-id') === pickerId);
+  if (!picker) {
+    throw new Error(`Picker not found: ${pickerId}`);
+  }
+  await user.click(await within(picker).findByText(optionText));
+};
 
 describe('platform-account wave 5 query and payload seams', () => {
   const mockedApiRequest = vi.mocked(apiRequest);
@@ -67,7 +122,10 @@ describe('platform-account wave 5 query and payload seams', () => {
       <PlatformAccountCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />,
     );
 
-    await user.type(screen.getByLabelText(i18n.t('platform-account:fields.accountCode')), 'PAWAVE');
+    expect(screen.queryByLabelText(i18n.t('platform-account:fields.accountCode'))).toBeNull();
+    expect(
+      screen.getByText(i18n.t('platform-account:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('platform-account:fields.platform')), 'YOUTUBE');
     await user.type(
       screen.getByLabelText(i18n.t('platform-account:fields.platformSurfaceType')),
@@ -81,11 +139,16 @@ describe('platform-account wave 5 query and payload seams', () => {
       screen.getByLabelText(i18n.t('platform-account:fields.ownerKind')),
       'TALENT_GROUP',
     );
-    await user.type(screen.getByLabelText(i18n.t('platform-account:fields.ownerId')), 'group-001');
+    await selectPickerOption(user, 'platform-account-owner-talent_group', /TG-000001/);
     await user.type(
       screen.getByLabelText(i18n.t('platform-account:fields.profileUrl')),
       'https://p.test/wave',
     );
+    await user.type(
+      screen.getByLabelText(i18n.t('platform-account:fields.externalPlatformId')),
+      'yt-wave',
+    );
+    await user.type(screen.getByLabelText(i18n.t('platform-account:fields.externalRef')), 'EXT-PA');
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('platform-account:mutations.create.submit'),
@@ -93,7 +156,6 @@ describe('platform-account wave 5 query and payload seams', () => {
     );
 
     expect(onSubmit).toHaveBeenCalledWith({
-      accountCode: 'PAWAVE',
       platform: 'YOUTUBE',
       platformSurfaceType: 'LIVESTREAM',
       displayName: 'Wave Account',
@@ -103,11 +165,12 @@ describe('platform-account wave 5 query and payload seams', () => {
       contentPublishingEnabled: true,
       monetizationEnabled: false,
       handle: null,
-      externalPlatformId: null,
+      externalPlatformId: 'yt-wave',
       profileUrl: 'https://p.test/wave',
       description: null,
-      externalRef: null,
+      externalRef: 'EXT-PA',
     });
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('accountCode');
   });
 
   it('blocks create submission when all locator fields are empty', async () => {
@@ -119,7 +182,6 @@ describe('platform-account wave 5 query and payload seams', () => {
       <PlatformAccountCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />,
     );
 
-    await user.type(screen.getByLabelText(i18n.t('platform-account:fields.accountCode')), 'PANOL');
     await user.type(screen.getByLabelText(i18n.t('platform-account:fields.platform')), 'YOUTUBE');
     await user.type(
       screen.getByLabelText(i18n.t('platform-account:fields.platformSurfaceType')),
@@ -129,7 +191,7 @@ describe('platform-account wave 5 query and payload seams', () => {
       screen.getByLabelText(i18n.t('platform-account:fields.displayName')),
       'No Locator',
     );
-    await user.type(screen.getByLabelText(i18n.t('platform-account:fields.ownerId')), 'ou-sales');
+    await selectPickerOption(user, 'platform-account-owner-org_unit', /OU-SALES/);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('platform-account:mutations.create.submit'),
@@ -203,8 +265,7 @@ describe('platform-account wave 5 query and payload seams', () => {
       screen.getByLabelText(i18n.t('platform-account:fields.ownerKind')),
       'TALENT',
     );
-    await user.clear(screen.getByLabelText(i18n.t('platform-account:fields.ownerId')));
-    await user.type(screen.getByLabelText(i18n.t('platform-account:fields.ownerId')), 'talent-001');
+    await selectPickerOption(user, 'platform-account-transfer-owner-talent', /TAL-000001/);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('platform-account:mutations.transferOwnership.submit'),
@@ -249,7 +310,7 @@ describe('platform-account wave 5 query and payload seams', () => {
     mockedApiRequest.mockResolvedValue({
       data: {
         id: 'platform-001',
-        accountCode: 'PA001',
+        accountCode: 'PA-000001',
         platform: 'YOUTUBE',
         platformSurfaceType: 'LIVESTREAM',
         displayName: 'Mina Live',

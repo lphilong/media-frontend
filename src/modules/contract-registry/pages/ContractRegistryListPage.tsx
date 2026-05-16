@@ -35,6 +35,11 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { ReferenceFilterField } from '@shared/components/reference';
+import {
+  loadEmploymentProfileReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   contractRegistryByLinkedEntityQueryConfig,
@@ -348,6 +353,23 @@ export const ContractRegistryListPage = (): JSX.Element => {
     'linkedEntityKind' in activeQuery
       ? (activeQuery.linkedEntityKind as ContractLinkedEntityKind | undefined)
       : undefined;
+  const selectedLinkedEntityId =
+    'linkedEmploymentProfileId' in activeQuery
+      ? (activeQuery.linkedEmploymentProfileId ?? activeQuery.linkedTalentId ?? undefined)
+      : undefined;
+  const loadLinkedEntityFilterOptions = useCallback(
+    (search: string) => {
+      if (linkedKind === 'EMPLOYMENT_PROFILE') {
+        return loadEmploymentProfileReferenceOptions(search);
+      }
+      if (linkedKind === 'TALENT') {
+        return loadTalentReferenceOptions(search);
+      }
+
+      return Promise.resolve([]);
+    },
+    [linkedKind],
+  );
 
   return (
     <ModuleListScreenShell
@@ -448,47 +470,37 @@ export const ContractRegistryListPage = (): JSX.Element => {
                   ))}
                 </select>
               </label>
-              <label className="flex min-w-[220px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('contract-registry:filters.linkedEntityId')}
-                </span>
-                <input
-                  value={
-                    'linkedEmploymentProfileId' in activeQuery
-                      ? (activeQuery.linkedEmploymentProfileId ?? activeQuery.linkedTalentId ?? '')
-                      : ''
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  placeholder={t('contract-registry:filters.linkedEntityIdPlaceholder')}
-                  onChange={(event) => {
-                    const value = event.target.value || undefined;
-                    patchQuery({
-                      linkedEmploymentProfileId:
-                        linkedKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
-                      linkedTalentId: linkedKind === 'TALENT' ? value : undefined,
-                    });
-                  }}
-                />
-              </label>
+              <ReferenceFilterField
+                label={t('contract-registry:filters.linkedEntityId')}
+                pickerId="contract-registry-filter-linked-entity"
+                value={selectedLinkedEntityId}
+                loadOptions={loadLinkedEntityFilterOptions}
+                placeholder={t('contract-registry:filters.linkedEntityIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                disabled={!linkedKind}
+                onChange={(value) =>
+                  patchQuery({
+                    linkedEmploymentProfileId:
+                      linkedKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
+                    linkedTalentId: linkedKind === 'TALENT' ? value : undefined,
+                  })
+                }
+              />
             </>
           ) : null}
-          <label className="flex min-w-[220px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('contract-registry:filters.ownerEmploymentProfileId')}
-            </span>
-            <input
-              value={
-                'ownerEmploymentProfileId' in activeQuery
-                  ? (activeQuery.ownerEmploymentProfileId ?? '')
-                  : ''
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('contract-registry:filters.ownerEmploymentProfileIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery({ ownerEmploymentProfileId: event.target.value || undefined })
-              }
-            />
-          </label>
+          <ReferenceFilterField
+            label={t('contract-registry:filters.ownerEmploymentProfileId')}
+            pickerId="contract-registry-filter-owner"
+            value={
+              'ownerEmploymentProfileId' in activeQuery
+                ? (activeQuery.ownerEmploymentProfileId ?? undefined)
+                : undefined
+            }
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            placeholder={t('contract-registry:filters.ownerEmploymentProfileIdPlaceholder')}
+            clearLabel={t('common:actions.clear')}
+            onChange={(value) => patchQuery({ ownerEmploymentProfileId: value })}
+          />
           {routeMode === 'flat' ? (
             <>
               <label className="flex min-w-[190px] flex-col gap-1">

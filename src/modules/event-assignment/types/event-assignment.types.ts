@@ -86,7 +86,7 @@ export type EventByPlatformQuery = Pick<
 };
 
 export type EventCreatePayload = {
-  eventCode: string;
+  eventCode?: string;
   title: string;
   assignments: EventAssignmentInput[];
   eventStartAt: number;

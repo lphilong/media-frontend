@@ -126,7 +126,7 @@ export type ContractByOwnerQuery = Pick<
 };
 
 export type ContractCreatePayload = {
-  contractCode: string;
+  contractCode?: string;
   title: string;
   contractKind: ContractKind;
   linkedEntityKind: ContractLinkedEntityKind;

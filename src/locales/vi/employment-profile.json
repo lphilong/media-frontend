@@ -10,11 +10,11 @@
     "displayName": "Tên hiển thị",
     "employmentKind": "Loại nhân sự",
     "jobTitle": "Chức danh",
-    "orgUnitId": "ID đơn vị tổ chức",
-    "newOrgUnitId": "ID đơn vị tổ chức mới",
-    "managerEmploymentProfileId": "ID hồ sơ quản lý",
-    "newManagerEmploymentProfileId": "ID hồ sơ quản lý mới",
-    "linkedUserId": "ID người dùng liên kết",
+    "orgUnitId": "Đơn vị tổ chức",
+    "newOrgUnitId": "Đơn vị tổ chức",
+    "managerEmploymentProfileId": "Quản lý",
+    "newManagerEmploymentProfileId": "Quản lý",
+    "linkedUserId": "Người dùng liên kết",
     "contractStatus": "Trạng thái hợp đồng",
     "newContractStatus": "Trạng thái hợp đồng mới",
     "employmentStartDate": "Ngày bắt đầu làm việc",
@@ -24,9 +24,23 @@
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
   },
+  "generatedCode": {
+    "label": "Mã hệ thống",
+    "description": "Mã nhân viên sẽ được hệ thống tạo sau khi tạo bản ghi."
+  },
   "placeholders": {
     "optional": "Không bắt buộc",
+    "orgUnitSearch": "Tìm đơn vị tổ chức theo tên hoặc mã",
+    "employmentProfileSearch": "Tìm hồ sơ nhân sự theo tên hoặc mã nhân viên",
+    "userSearch": "Tìm người dùng theo tên hoặc email",
     "clearToUnset": "Để trống để xóa quản lý đang gán"
+  },
+  "referenceHelp": {
+    "orgUnitId": "Chọn đơn vị tổ chức của hồ sơ này.",
+    "newOrgUnitId": "Chọn đơn vị tổ chức mới cho hồ sơ này.",
+    "managerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc để chưa chọn nếu không có.",
+    "newManagerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc xóa lựa chọn để bỏ quản lý.",
+    "linkedUserId": "Chọn tài khoản người dùng cần liên kết với hồ sơ nhân sự này."
   },
   "states": {
     "emptyTitle": "Không tìm thấy hồ sơ nhân sự",
@@ -41,9 +55,9 @@
     "employmentKind": "Loại nhân sự",
     "employmentKindPlaceholder": "Lọc theo token loại nhân sự",
     "orgUnitId": "Đơn vị tổ chức",
-    "orgUnitIdPlaceholder": "ID đơn vị tổ chức",
+    "orgUnitIdPlaceholder": "Chọn đơn vị tổ chức",
     "managerEmploymentProfileId": "Quản lý",
-    "managerEmploymentProfileIdPlaceholder": "ID hồ sơ quản lý",
+    "managerEmploymentProfileIdPlaceholder": "Chọn quản lý",
     "hasLinkedUser": "Trạng thái liên kết người dùng",
     "allEmploymentStatuses": "Tất cả trạng thái nhân sự",
     "allContractStatuses": "Tất cả trạng thái hợp đồng",
@@ -86,7 +100,9 @@
     "suspend": "Tạm ngưng",
     "reactivate": "Kích hoạt lại",
     "terminate": "Kết thúc",
-    "archive": "Lưu trữ"
+    "archive": "Lưu trữ",
+    "clearManager": "Xóa quản lý",
+    "clearLinkedUser": "Xóa người dùng liên kết"
   },
   "table": {
     "caption": "Danh sách hồ sơ nhân sự",

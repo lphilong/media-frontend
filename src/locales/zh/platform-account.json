@@ -10,7 +10,7 @@
     "platformSurfaceType": "载体类型",
     "displayName": "显示名称",
     "ownerKind": "所有者类型",
-    "ownerId": "所有者 ID",
+    "ownerId": "所有者",
     "operationalStatus": "状态",
     "handle": "账号名",
     "externalPlatformId": "外部平台ID",
@@ -23,8 +23,16 @@
     "createdAt": "已创建",
     "updatedAt": "已更新"
   },
+  "generatedCode": {
+    "label": "系统代码",
+    "description": "账户代码将在创建后由系统生成。"
+  },
   "placeholders": {
-    "optional": "可选"
+    "optional": "可选",
+    "ownerSearch": "按所选所有者类型搜索"
+  },
+  "referenceHelp": {
+    "ownerId": "按所选所有者类型从列表中选择所有者。"
   },
   "states": {
     "emptyTitle": "否平台账号",
@@ -42,8 +50,8 @@
     "platformSurfaceTypePlaceholder": "livestream",
     "ownerKind": "所有者类型",
     "allOwnerKinds": "所有所有者类型",
-    "ownerId": "所有者 ID",
-    "ownerIdPlaceholder": "输入所有者 ID",
+    "ownerId": "所有者",
+    "ownerIdPlaceholder": "选择所有者",
     "livestreamEnabled": "直播",
     "contentPublishingEnabled": "发布",
     "monetizationEnabled": "变现",
@@ -87,7 +95,7 @@
     "displayName": "显示名称",
     "handle": "账号名",
     "ownerKind": "所有者类型",
-    "ownerId": "所有者 ID",
+    "ownerId": "所有者",
     "operationalStatus": "状态",
     "livestreamEnabled": "直播",
     "contentPublishingEnabled": "发布",

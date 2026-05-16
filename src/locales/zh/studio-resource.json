@@ -17,6 +17,10 @@
     "createdAt": "已创建",
     "updatedAt": "已更新"
   },
+  "generatedCode": {
+    "label": "系统代码",
+    "description": "资源代码将在创建后由系统生成。"
+  },
   "states": {
     "emptyTitle": "没有演播资源",
     "emptyMessage": "没有记录匹配当前查询。",

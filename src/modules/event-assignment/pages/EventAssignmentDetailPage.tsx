@@ -275,7 +275,7 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
               fields={[
                 {
                   key: 'event-code',
-                  label: t('event-assignment:fields.eventCode'),
+                  label: t('event-assignment:generatedCode.label'),
                   value: <ReferenceChip label={record.eventCode} />,
                 },
                 {

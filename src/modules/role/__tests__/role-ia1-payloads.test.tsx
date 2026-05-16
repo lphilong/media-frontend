@@ -1,6 +1,7 @@
 import i18n from 'i18next';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 
 import {
   assignRoleToUser,
@@ -43,7 +44,39 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
+vi.mock('@shared/components/reference/admin-reference-options', () => ({
+  loadUserReferenceOptions: vi.fn(async () => [
+    {
+      id: 'user-admin',
+      label: 'Admin User - admin@example.com',
+      description: 'ACTIVE',
+      href: '/users/user-admin',
+    },
+  ]),
+}));
+
 const apiRequestMock = vi.mocked(apiRequest);
+
+const selectPickerOption = async (
+  user: ReturnType<typeof userEvent.setup>,
+  pickerId: string,
+  optionText: RegExp,
+): Promise<void> => {
+  await waitFor(() => {
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some((surface) => surface.getAttribute('data-picker-id') === pickerId),
+    ).toBe(true);
+  });
+  const picker = screen
+    .getAllByTestId('picker-surface')
+    .find((surface) => surface.getAttribute('data-picker-id') === pickerId);
+  if (!picker) {
+    throw new Error(`Picker not found: ${pickerId}`);
+  }
+  await user.click(await within(picker).findByText(optionText));
+};
 
 const roleDetail: RoleDetailRecord = {
   id: 'role-admin',
@@ -421,9 +454,11 @@ describe('role IA-1 query and payload shaping', () => {
     rulesRender.unmount();
 
     const assignRender = render(
-      <RoleAssignUserSurface onCancel={() => undefined} onSubmit={onAssign} />,
+      <MemoryRouter>
+        <RoleAssignUserSurface onCancel={() => undefined} onSubmit={onAssign} />
+      </MemoryRouter>,
     );
-    await user.type(screen.getByLabelText(i18n.t('role:fields.userId')), 'user-admin');
+    await selectPickerOption(user, 'role-assignment-user', /Admin User/);
     await user.click(
       screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
     );

@@ -70,8 +70,6 @@
   "actions": {
     "create": "Tạo ca làm",
     "closeCreate": "Đóng tạo mới",
-    "adminCreateForm": "Biểu mẫu tạo dành cho quản trị",
-    "closeAdminCreate": "Đóng biểu mẫu quản trị",
     "scheduleWorkShift": "Xếp lịch ca làm",
     "closeGuidedWorkflow": "Đóng quy trình hướng dẫn",
     "open": "Mở chi tiết",
@@ -150,7 +148,7 @@
   },
   "task": {
     "title": "Xếp lịch ca làm",
-    "description": "Dùng biểu mẫu hướng dẫn này để xếp lịch hằng ngày. Biểu mẫu quản trị vẫn dành cho trường hợp kỹ thuật hoặc cần tương thích.",
+    "description": "Dùng biểu mẫu hướng dẫn này để xếp lịch hằng ngày.",
     "steps": {
       "details": "Bước 1/2: Thông tin ca",
       "review": "Bước 2/2: Kiểm tra trước khi lưu"

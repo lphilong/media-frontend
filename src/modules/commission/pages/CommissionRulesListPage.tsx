@@ -38,6 +38,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { ReferenceFilterField } from '@shared/components/reference';
+import {
+  loadContractReferenceOptions,
+  loadEmploymentProfileReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   commissionRulesByBeneficiaryQueryConfig,
@@ -357,65 +363,63 @@ export const CommissionRulesListPage = (): JSX.Element => {
                   ))}
                 </select>
               </label>
-              <label className="flex min-w-[230px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:rules.filters.beneficiaryEmploymentProfileId')}
-                </span>
-                <input
-                  value={
-                    'beneficiaryEmploymentProfileId' in activeQuery
-                      ? (activeQuery.beneficiaryEmploymentProfileId ?? '')
-                      : ''
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      beneficiaryKind: event.target.value ? 'EMPLOYMENT_PROFILE' : undefined,
-                      beneficiaryEmploymentProfileId: event.target.value || undefined,
-                      beneficiaryTalentId: undefined,
-                    })
-                  }
-                />
-              </label>
-              <label className="flex min-w-[210px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:rules.filters.beneficiaryTalentId')}
-                </span>
-                <input
-                  value={
-                    'beneficiaryTalentId' in activeQuery
-                      ? (activeQuery.beneficiaryTalentId ?? '')
-                      : ''
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      beneficiaryKind: event.target.value ? 'TALENT' : undefined,
-                      beneficiaryTalentId: event.target.value || undefined,
-                      beneficiaryEmploymentProfileId: undefined,
-                    })
-                  }
-                />
-              </label>
+              <ReferenceFilterField
+                label={t('commission:rules.filters.beneficiaryEmploymentProfileId')}
+                pickerId="commission-rule-filter-beneficiary-employment"
+                value={
+                  'beneficiaryEmploymentProfileId' in activeQuery
+                    ? (activeQuery.beneficiaryEmploymentProfileId ?? undefined)
+                    : undefined
+                }
+                loadOptions={loadEmploymentProfileReferenceOptions}
+                placeholder={t('commission:rules.placeholders.searchReference')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[230px]"
+                onChange={(value) =>
+                  patchQuery({
+                    beneficiaryKind: value ? 'EMPLOYMENT_PROFILE' : undefined,
+                    beneficiaryEmploymentProfileId: value,
+                    beneficiaryTalentId: undefined,
+                  })
+                }
+              />
+              <ReferenceFilterField
+                label={t('commission:rules.filters.beneficiaryTalentId')}
+                pickerId="commission-rule-filter-beneficiary-talent"
+                value={
+                  'beneficiaryTalentId' in activeQuery
+                    ? (activeQuery.beneficiaryTalentId ?? undefined)
+                    : undefined
+                }
+                loadOptions={loadTalentReferenceOptions}
+                placeholder={t('commission:rules.placeholders.searchReference')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[210px]"
+                onChange={(value) =>
+                  patchQuery({
+                    beneficiaryKind: value ? 'TALENT' : undefined,
+                    beneficiaryTalentId: value,
+                    beneficiaryEmploymentProfileId: undefined,
+                  })
+                }
+              />
             </>
           ) : null}
           {routeMode !== 'by-beneficiary' ? (
-            <label className="flex min-w-[230px] flex-col gap-1">
-              <span className="text-xs font-medium uppercase text-muted">
-                {t('commission:rules.filters.sourceContractRecordId')}
-              </span>
-              <input
-                value={
-                  'sourceContractRecordId' in activeQuery
-                    ? (activeQuery.sourceContractRecordId ?? '')
-                    : ''
-                }
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                onChange={(event) =>
-                  patchQuery({ sourceContractRecordId: event.target.value || undefined })
-                }
-              />
-            </label>
+            <ReferenceFilterField
+              label={t('commission:rules.filters.sourceContractRecordId')}
+              pickerId="commission-rule-filter-source-contract"
+              value={
+                'sourceContractRecordId' in activeQuery
+                  ? (activeQuery.sourceContractRecordId ?? undefined)
+                  : undefined
+              }
+              loadOptions={loadContractReferenceOptions}
+              placeholder={t('commission:rules.placeholders.searchReference')}
+              clearLabel={t('common:actions.clear')}
+              className="min-w-[230px]"
+              onChange={(value) => patchQuery({ sourceContractRecordId: value })}
+            />
           ) : null}
           {routeMode === 'flat' ? (
             <>

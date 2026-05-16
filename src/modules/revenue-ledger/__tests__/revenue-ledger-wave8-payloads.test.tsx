@@ -23,11 +23,23 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
+vi.mock('@shared/components/reference/admin-reference-options', () => ({
+  loadTalentReferenceOptions: vi.fn(async () => [
+    { id: 'talent-001', label: 'Talent One - TAL-000001' },
+  ]),
+  loadPlatformAccountReferenceOptions: vi.fn(async () => [
+    { id: 'platform-001', label: 'Platform One - PLA001' },
+  ]),
+  loadEventReferenceOptions: vi.fn(async () => [
+    { id: 'event-001', label: 'Event One - EVT-202605-000001' },
+  ]),
+}));
+
 const now = Date.parse('2026-04-22T00:00:00.000Z');
 
 const revenueDetail: RevenueEntryRecord = {
   id: 'revenue-entry-001',
-  revenueEntryCode: 'REV001',
+  revenueEntryCode: 'REV-202604-000001',
   title: 'April revenue',
   subjectTalentId: 'talent-001',
   attributionPlatformAccountId: 'platform-001',
@@ -62,15 +74,14 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
 
     render(<RevenueEntryCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
 
-    await user.type(
-      screen.getByLabelText(i18n.t('revenue-ledger:fields.revenueEntryCode')),
-      'REVERR',
-    );
+    expect(
+      screen.queryByLabelText(i18n.t('revenue-ledger:fields.revenueEntryCode')),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('revenue-ledger:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.title')), 'Bad revenue');
-    await user.type(
-      screen.getByLabelText(i18n.t('revenue-ledger:fields.subjectTalentId')),
-      'talent-001',
-    );
+    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
     await user.clear(screen.getByLabelText(i18n.t('revenue-ledger:fields.currencyCode')));
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.currencyCode')), 'usd');
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAmount')), '0');
@@ -117,7 +128,6 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
     mockedApiRequest.mockResolvedValue({ data: revenueDetail });
 
     await createRevenueEntry({
-      revenueEntryCode: 'REVAPI',
       title: 'API revenue',
       subjectTalentId: 'talent-001',
       attributionPlatformAccountId: 'platform-001',
@@ -149,7 +159,6 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
       method: 'POST',
       url: '/admin/revenue-entries',
       data: {
-        revenueEntryCode: 'REVAPI',
         title: 'API revenue',
         subjectTalentId: 'talent-001',
         attributionPlatformAccountId: 'platform-001',
@@ -163,6 +172,7 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
         externalRef: null,
       },
     });
+    expect(mockedApiRequest.mock.calls[0]?.[0].data).not.toHaveProperty('revenueEntryCode');
     expect(mockedApiRequest).toHaveBeenNthCalledWith(3, {
       method: 'POST',
       url: '/admin/revenue-entries/revenue-entry-001/reconcile',
@@ -173,6 +183,7 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
       url: '/admin/revenue-entries/revenue-entry-001/void',
       data: {},
     });
+    expect(mockedApiRequest.mock.calls[1]?.[0].data).not.toHaveProperty('revenueEntryCode');
   });
 
   it('never sends scope, scopeGrants, or related-search from Revenue Ledger query builders', async () => {
@@ -180,7 +191,7 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
 
     await fetchRevenueEntries({
       subjectTalentId: 'talent-001',
-      search: 'REV001',
+      search: 'REV-202604-000001',
       scope: 'global',
       scopeGrants: 'x',
     } as never);
@@ -194,7 +205,7 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
 
     expect(mockedApiRequest.mock.calls[0]?.[0].params).toMatchObject({
       subjectTalentId: 'talent-001',
-      search: 'REV001',
+      search: 'REV-202604-000001',
     });
     expect(mockedApiRequest.mock.calls[0]?.[0].params).not.toHaveProperty('scope');
     expect(mockedApiRequest.mock.calls[0]?.[0].params).not.toHaveProperty('scopeGrants');

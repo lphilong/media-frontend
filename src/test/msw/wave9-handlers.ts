@@ -1,5 +1,11 @@
 import { http, HttpResponse } from 'msw';
 
+import {
+  generatedFixtureCode,
+  generatedFixtureMonthCode,
+  providedOrGeneratedFixtureCode,
+} from '@test/msw/generated-code-fixtures';
+
 type CommissionRuleStatus = 'DRAFT' | 'INACTIVE' | 'ACTIVE' | 'ARCHIVED';
 type CommissionSettlementStatus = 'DRAFT' | 'FINALIZED' | 'VOIDED' | 'ARCHIVED';
 type CommissionBeneficiaryKind = 'EMPLOYMENT_PROFILE' | 'TALENT';
@@ -76,7 +82,7 @@ const revenueKinds: RevenueKind[] = [
 const initialRules: CommissionRuleRecord[] = [
   {
     id: 'commission-rule-001',
-    ruleCode: 'CRULE001',
+    ruleCode: 'CRULE-000001',
     title: 'April livestream revenue share',
     settlementKind: 'REVENUE_SHARE',
     beneficiaryKind: 'TALENT',
@@ -96,7 +102,7 @@ const initialRules: CommissionRuleRecord[] = [
   },
   {
     id: 'commission-rule-active',
-    ruleCode: 'CRULE002',
+    ruleCode: 'CRULE-000002',
     title: 'Active content revenue share',
     settlementKind: 'REVENUE_SHARE',
     beneficiaryKind: 'TALENT',
@@ -116,7 +122,7 @@ const initialRules: CommissionRuleRecord[] = [
   },
   {
     id: 'commission-rule-archived',
-    ruleCode: 'CRULE999',
+    ruleCode: 'CRULE-999999',
     title: 'Archived rule',
     settlementKind: 'REVENUE_SHARE',
     beneficiaryKind: 'TALENT',
@@ -139,7 +145,7 @@ const initialRules: CommissionRuleRecord[] = [
 const initialSettlements: CommissionSettlementRecord[] = [
   {
     id: 'commission-settlement-001',
-    settlementCode: 'CSET001',
+    settlementCode: 'CS-202604-000001',
     title: 'April livestream settlement',
     sourceRuleId: 'commission-rule-001',
     sourceContractRecordIdSnapshot: 'contract-record-001',
@@ -166,7 +172,7 @@ const initialSettlements: CommissionSettlementRecord[] = [
   },
   {
     id: 'commission-settlement-finalized',
-    settlementCode: 'CSET002',
+    settlementCode: 'CS-202604-000002',
     title: 'Finalized settlement',
     sourceRuleId: 'commission-rule-active',
     sourceContractRecordIdSnapshot: 'contract-record-001',
@@ -193,7 +199,7 @@ const initialSettlements: CommissionSettlementRecord[] = [
   },
   {
     id: 'commission-settlement-archived',
-    settlementCode: 'CSET999',
+    settlementCode: 'CS-202604-999999',
     title: 'Archived settlement',
     sourceRuleId: 'commission-rule-001',
     sourceContractRecordIdSnapshot: 'contract-record-001',
@@ -225,7 +231,7 @@ const initialLines: Record<string, CommissionSettlementLineRecord[]> = {
     {
       id: 'commission-line-001',
       revenueEntryId: 'revenue-entry-001',
-      revenueEntryCodeSnapshot: 'REV001',
+      revenueEntryCodeSnapshot: 'REV-202604-000001',
       revenueKindSnapshot: 'PLATFORM_LIVESTREAM',
       revenueCurrencyCodeSnapshot: 'VND',
       revenueRecognizedAmountSnapshot: 1250000,
@@ -237,7 +243,7 @@ const initialLines: Record<string, CommissionSettlementLineRecord[]> = {
     {
       id: 'commission-line-002',
       revenueEntryId: 'revenue-entry-finalized',
-      revenueEntryCodeSnapshot: 'REV002',
+      revenueEntryCodeSnapshot: 'REV-202604-000002',
       revenueKindSnapshot: 'PLATFORM_CONTENT',
       revenueCurrencyCodeSnapshot: 'USD',
       revenueRecognizedAmountSnapshot: 200,
@@ -430,7 +436,8 @@ const validRuleCreatePayload = (body: Record<string, unknown>): boolean => {
 
   const effectiveEndDate = body.effectiveEndDate;
   return (
-    typeof body.ruleCode === 'string' &&
+    (body.ruleCode === undefined ||
+      (typeof body.ruleCode === 'string' && body.ruleCode.trim().length > 0)) &&
     typeof body.title === 'string' &&
     typeof body.sourceContractRecordId === 'string' &&
     isRatePercent(body.ratePercent) &&
@@ -478,7 +485,8 @@ const validRuleDraftCorePayload = (body: Record<string, unknown>): boolean => {
 
 const validSettlementCreatePayload = (body: Record<string, unknown>): boolean => {
   return (
-    typeof body.settlementCode === 'string' &&
+    (body.settlementCode === undefined ||
+      (typeof body.settlementCode === 'string' && body.settlementCode.trim().length > 0)) &&
     typeof body.title === 'string' &&
     typeof body.sourceRuleId === 'string' &&
     isIntegerTimestamp(body.settlementPeriodStartAt) &&
@@ -840,7 +848,10 @@ export const wave9Handlers = [
     ruleSeed += 1;
     const record: CommissionRuleRecord = {
       id: `commission-rule-${ruleSeed}`,
-      ruleCode: String(body.ruleCode),
+      ruleCode: providedOrGeneratedFixtureCode(
+        body.ruleCode,
+        generatedFixtureCode('CRULE', ruleSeed),
+      ),
       title: String(body.title),
       settlementKind: 'REVENUE_SHARE',
       beneficiaryKind: 'TALENT',
@@ -1006,7 +1017,10 @@ export const wave9Handlers = [
     const ratePercent = sourceRule?.ratePercent ?? 10;
     const record: CommissionSettlementRecord = {
       id: `commission-settlement-${settlementSeed}`,
-      settlementCode: String(body.settlementCode),
+      settlementCode: providedOrGeneratedFixtureCode(
+        body.settlementCode,
+        generatedFixtureMonthCode('CS', body.settlementPeriodStartAt, settlementSeed),
+      ),
       title: String(body.title),
       sourceRuleId: String(body.sourceRuleId),
       sourceContractRecordIdSnapshot: sourceRule?.sourceContractRecordId ?? 'contract-record-001',

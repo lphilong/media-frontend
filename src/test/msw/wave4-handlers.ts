@@ -1,5 +1,10 @@
 import { http, HttpResponse } from 'msw';
 
+import {
+  generatedFixtureCode,
+  providedOrGeneratedFixtureCode,
+} from '@test/msw/generated-code-fixtures';
+
 type TalentOperationalStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE' | 'ARCHIVED';
 type TalentOrigin = 'INTERNAL' | 'EXTERNAL';
 type TalentCommercialParticipationStatus = 'ALLOWED' | 'BLOCKED';
@@ -63,7 +68,7 @@ let membershipSeed = initialMembershipSeed;
 const initialTalents: TalentRecord[] = [
   {
     id: 'talent-001',
-    talentCode: 'TAL001',
+    talentCode: 'TAL-000001',
     stageName: 'Mina',
     legalName: 'Minh An',
     displayShortName: 'Mina',
@@ -81,7 +86,7 @@ const initialTalents: TalentRecord[] = [
   },
   {
     id: 'talent-002',
-    talentCode: 'TAL002',
+    talentCode: 'TAL-000002',
     stageName: 'BaoStar',
     legalName: 'Bao Tran',
     displayShortName: null,
@@ -99,7 +104,7 @@ const initialTalents: TalentRecord[] = [
   },
   {
     id: 'talent-003',
-    talentCode: 'TAL003',
+    talentCode: 'TAL-000003',
     stageName: 'ChauLive',
     legalName: 'Chau Le',
     displayShortName: 'Chau',
@@ -117,7 +122,7 @@ const initialTalents: TalentRecord[] = [
   },
   {
     id: 'talent-archive',
-    talentCode: 'TAL999',
+    talentCode: 'TAL-999999',
     stageName: 'ArchiveTalent',
     legalName: 'Archived Talent',
     displayShortName: null,
@@ -138,7 +143,7 @@ const initialTalents: TalentRecord[] = [
 const initialTalentGroups: TalentGroupRecord[] = [
   {
     id: 'group-001',
-    groupCode: 'GRP001',
+    groupCode: 'TG-000001',
     name: 'A Team',
     shortName: 'ATeam',
     status: 'ACTIVE',
@@ -150,7 +155,7 @@ const initialTalentGroups: TalentGroupRecord[] = [
   },
   {
     id: 'group-002',
-    groupCode: 'GRP002',
+    groupCode: 'TG-000002',
     name: 'B Team',
     shortName: null,
     status: 'INACTIVE',
@@ -162,7 +167,7 @@ const initialTalentGroups: TalentGroupRecord[] = [
   },
   {
     id: 'group-archive',
-    groupCode: 'GRP999',
+    groupCode: 'TG-999999',
     name: 'Archived Group',
     shortName: null,
     status: 'ARCHIVED',
@@ -602,7 +607,10 @@ export const wave4Handlers = [
     talentSeed += 1;
     const nextRecord: TalentRecord = {
       id: `talent-${talentSeed}`,
-      talentCode: String(body.talentCode ?? `TAL${talentSeed}`),
+      talentCode: providedOrGeneratedFixtureCode(
+        body.talentCode,
+        generatedFixtureCode('TAL', talentSeed),
+      ),
       stageName: String(body.stageName ?? `Talent ${talentSeed}`),
       legalName: String(body.legalName ?? `Talent Legal ${talentSeed}`),
       displayShortName:
@@ -908,7 +916,10 @@ export const wave4Handlers = [
 
     const nextRecord: TalentGroupRecord = {
       id: `group-${groupSeed}`,
-      groupCode: String(body.groupCode ?? `GRP${groupSeed}`),
+      groupCode: providedOrGeneratedFixtureCode(
+        body.groupCode,
+        generatedFixtureCode('TG', groupSeed),
+      ),
       name: String(body.name ?? `Group ${groupSeed}`),
       shortName:
         body.shortName === null || body.shortName === undefined ? null : String(body.shortName),

@@ -35,13 +35,13 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
   });
 
   it.each([
-    ['subjectTalentId', '/revenue-entries?subjectTalentId=talent-001', 'REV001'],
+    ['subjectTalentId', '/revenue-entries?subjectTalentId=talent-001', 'REV-202604-000001'],
     [
       'attributionPlatformAccountId',
       '/revenue-entries?attributionPlatformAccountId=platform-001',
-      'REV001',
+      'REV-202604-000001',
     ],
-    ['attributionEventId', '/revenue-entries?attributionEventId=event-001', 'REV002'],
+    ['attributionEventId', '/revenue-entries?attributionEventId=event-001', 'REV-202604-000002'],
   ])('keeps flat %s identity filters in flat-list mode', async (_label, path, expectedCode) => {
     renderRoute(path);
 
@@ -64,24 +64,30 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
   });
 
   it('allows flat identity filters to coexist with flat-list search', async () => {
-    renderRoute('/revenue-entries?subjectTalentId=talent-001&search=REV001');
+    renderRoute('/revenue-entries?subjectTalentId=talent-001&search=REV-202604-000001');
 
-    expect(await screen.findByText('REV001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('REV-202604-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText(i18n.t('revenue-ledger:filters.searchPlaceholder')),
-    ).toHaveValue('REV001');
+    ).toHaveValue('REV-202604-000001');
     expect(
       screen.queryByText(i18n.t('revenue-ledger:relatedModes.by-talent')),
     ).not.toBeInTheDocument();
   });
 
   it.each([
-    ['by-talent', '/revenue-entries?view=by-talent&subjectTalentId=talent-001&search=REV001'],
+    [
+      'by-talent',
+      '/revenue-entries?view=by-talent&subjectTalentId=talent-001&search=REV-202604-000001',
+    ],
     [
       'by-platform',
-      '/revenue-entries?view=by-platform&attributionPlatformAccountId=platform-001&search=REV001',
+      '/revenue-entries?view=by-platform&attributionPlatformAccountId=platform-001&search=REV-202604-000001',
     ],
-    ['by-event', '/revenue-entries?view=by-event&attributionEventId=event-001&search=REV001'],
+    [
+      'by-event',
+      '/revenue-entries?view=by-event&attributionEventId=event-001&search=REV-202604-000001',
+    ],
   ])('uses explicit %s related mode without related search', async (mode, path) => {
     renderRoute(path);
 
@@ -101,14 +107,14 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
       ),
     );
 
-    renderRoute('/revenue-entries?search=REV001&sortBy=recognizedAt&sortDirection=desc');
+    renderRoute('/revenue-entries?search=REV-202604-000001&sortBy=recognizedAt&sortDirection=desc');
 
     expect(
       await screen.findByText(i18n.t('revenue-ledger:states.loadErrorTitle')),
     ).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText(i18n.t('revenue-ledger:filters.searchPlaceholder')),
-    ).toHaveValue('REV001');
+    ).toHaveValue('REV-202604-000001');
     expect(screen.getByLabelText(i18n.t('common:labels.sort'))).toHaveValue('recognizedAt');
 
     await user.click(screen.getByRole('button', { name: i18n.t('revenue-ledger:actions.create') }));

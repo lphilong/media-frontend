@@ -20,13 +20,13 @@ describe('Talent KPI Wave 8 query mode selection', () => {
   });
 
   it.each([
-    ['subjectTalentId', '/talent-kpi-records?subjectTalentId=talent-001', 'KPI001'],
+    ['subjectTalentId', '/talent-kpi-records?subjectTalentId=talent-001', 'KPI-202604-000001'],
     [
       'attributionPlatformAccountId',
       '/talent-kpi-records?attributionPlatformAccountId=platform-001',
-      'KPI001',
+      'KPI-202604-000001',
     ],
-    ['attributionEventId', '/talent-kpi-records?attributionEventId=event-001', 'KPI001'],
+    ['attributionEventId', '/talent-kpi-records?attributionEventId=event-001', 'KPI-202604-000001'],
   ])('keeps flat %s identity filters in flat-list mode', async (_label, path, expectedCode) => {
     renderRoute(path);
 
@@ -45,22 +45,28 @@ describe('Talent KPI Wave 8 query mode selection', () => {
   });
 
   it('allows flat identity filters to coexist with flat-list search', async () => {
-    renderRoute('/talent-kpi-records?subjectTalentId=talent-001&search=KPI001');
+    renderRoute('/talent-kpi-records?subjectTalentId=talent-001&search=KPI-202604-000001');
 
-    expect(await screen.findByText('KPI001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('KPI-202604-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(i18n.t('talent-kpi:filters.searchPlaceholder'))).toHaveValue(
-      'KPI001',
+      'KPI-202604-000001',
     );
     expect(screen.queryByText(i18n.t('talent-kpi:relatedModes.by-talent'))).not.toBeInTheDocument();
   });
 
   it.each([
-    ['by-talent', '/talent-kpi-records?view=by-talent&subjectTalentId=talent-001&search=KPI001'],
+    [
+      'by-talent',
+      '/talent-kpi-records?view=by-talent&subjectTalentId=talent-001&search=KPI-202604-000001',
+    ],
     [
       'by-platform',
-      '/talent-kpi-records?view=by-platform&attributionPlatformAccountId=platform-001&search=KPI001',
+      '/talent-kpi-records?view=by-platform&attributionPlatformAccountId=platform-001&search=KPI-202604-000001',
     ],
-    ['by-event', '/talent-kpi-records?view=by-event&attributionEventId=event-001&search=KPI001'],
+    [
+      'by-event',
+      '/talent-kpi-records?view=by-event&attributionEventId=event-001&search=KPI-202604-000001',
+    ],
   ])('uses explicit %s related mode without related search', async (mode, path) => {
     renderRoute(path);
 

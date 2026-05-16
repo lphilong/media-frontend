@@ -9,9 +9,9 @@
     "title": "Tiêu đề",
     "contractKind": "Loại hợp đồng",
     "linkedEntityKind": "Loại thực thể liên kết",
-    "linkedEntityId": "ID thực thể liên kết",
-    "ownerEmploymentProfileId": "ID hồ sơ nhân sự sở hữu",
-    "newOwnerEmploymentProfileId": "ID hồ sơ nhân sự sở hữu mới",
+    "linkedEntityId": "Thực thể liên kết",
+    "ownerEmploymentProfileId": "Hồ sơ nhân sự sở hữu",
+    "newOwnerEmploymentProfileId": "Hồ sơ nhân sự sở hữu mới",
     "confidentialityTier": "Cấp bảo mật",
     "status": "Trạng thái",
     "effectiveStartDate": "Ngày bắt đầu hiệu lực",
@@ -27,6 +27,10 @@
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
     "scopeBoundary": "Ranh giới phạm vi"
+  },
+  "generatedCode": {
+    "label": "Mã hệ thống",
+    "description": "Mã hợp đồng sẽ được hệ thống tạo sau khi tạo bản ghi."
   },
   "statuses": {
     "DRAFT": "Nháp",
@@ -63,10 +67,10 @@
     "allContractKinds": "Tất cả loại hợp đồng",
     "linkedEntityKind": "Loại thực thể liên kết",
     "allLinkedEntityKinds": "Tất cả loại thực thể liên kết",
-    "linkedEntityId": "ID thực thể liên kết",
-    "linkedEntityIdPlaceholder": "Nhập ID thực thể liên kết",
-    "ownerEmploymentProfileId": "ID hồ sơ nhân sự sở hữu",
-    "ownerEmploymentProfileIdPlaceholder": "Nhập ID hồ sơ nhân sự sở hữu",
+    "linkedEntityId": "Thực thể liên kết",
+    "linkedEntityIdPlaceholder": "Chọn thực thể liên kết",
+    "ownerEmploymentProfileId": "Hồ sơ nhân sự sở hữu",
+    "ownerEmploymentProfileIdPlaceholder": "Chọn hồ sơ nhân sự sở hữu",
     "confidentialityTier": "Cấp bảo mật",
     "allConfidentialityTiers": "Tất cả cấp bảo mật",
     "hasFileReference": "Tham chiếu tệp",
@@ -104,8 +108,8 @@
     "title": "Tiêu đề",
     "contractKind": "Loại",
     "linkedEntityKind": "Loại liên kết",
-    "linkedEntityId": "ID liên kết",
-    "ownerEmploymentProfileId": "ID chủ sở hữu",
+    "linkedEntityId": "Thực thể liên kết",
+    "ownerEmploymentProfileId": "Chủ sở hữu",
     "confidentialityTier": "Cấp bảo mật",
     "status": "Trạng thái",
     "effectiveStartDate": "Bắt đầu",
@@ -170,9 +174,12 @@
       "pending": "Đang kết thúc"
     }
   },
+  "placeholders": {
+    "searchReference": "Tìm theo tên hoặc mã"
+  },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidToken": "Nhập mã định danh hợp lệ.",
+    "invalidToken": "Nhập token tham chiếu hợp lệ.",
     "invalidDate": "Dùng định dạng YYYY-MM-DD.",
     "kindCompatibility": "Loại hợp đồng và loại thực thể liên kết không tương thích.",
     "filePair": "ID tham chiếu tệp và tên hiển thị phải được cung cấp hoặc xóa cùng nhau."

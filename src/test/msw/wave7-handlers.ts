@@ -1,5 +1,10 @@
 import { http, HttpResponse } from 'msw';
 
+import {
+  generatedFixtureYearCode,
+  providedOrGeneratedFixtureCode,
+} from '@test/msw/generated-code-fixtures';
+
 type ContractStatus =
   | 'DRAFT'
   | 'PENDING_SIGNATURE'
@@ -42,7 +47,7 @@ const inputDateToTimestamp = (value: string): number => Date.parse(`${value}T00:
 const initialContracts: ContractRecord[] = [
   {
     id: 'contract-record-001',
-    contractCode: 'CON001',
+    contractCode: 'CON-2026-000001',
     title: 'Alice employment contract',
     contractKind: 'EMPLOYMENT',
     linkedEntityKind: 'EMPLOYMENT_PROFILE',
@@ -62,7 +67,7 @@ const initialContracts: ContractRecord[] = [
   },
   {
     id: 'contract-record-active',
-    contractCode: 'CON002',
+    contractCode: 'CON-2026-000002',
     title: 'Talent service contract',
     contractKind: 'TALENT_SERVICE',
     linkedEntityKind: 'TALENT',
@@ -82,7 +87,7 @@ const initialContracts: ContractRecord[] = [
   },
   {
     id: 'contract-record-archived',
-    contractCode: 'CON999',
+    contractCode: 'CON-2025-999999',
     title: 'Archived contract record',
     contractKind: 'EMPLOYMENT',
     linkedEntityKind: 'EMPLOYMENT_PROFILE',
@@ -485,7 +490,16 @@ export const wave7Handlers = [
     contractSeed += 1;
     const next: ContractRecord = {
       id: `contract-record-${contractSeed}`,
-      contractCode: String(body.contractCode),
+      contractCode: providedOrGeneratedFixtureCode(
+        body.contractCode,
+        generatedFixtureYearCode(
+          'CON',
+          typeof body.effectiveStartDate === 'string'
+            ? inputDateToTimestamp(body.effectiveStartDate)
+            : undefined,
+          contractSeed,
+        ),
+      ),
       title: String(body.title),
       contractKind,
       linkedEntityKind,

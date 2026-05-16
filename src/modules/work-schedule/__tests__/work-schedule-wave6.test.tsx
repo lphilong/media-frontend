@@ -90,12 +90,15 @@ describe('work schedule wave 6 surfaces', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: i18n.t('work-schedule:actions.adminCreateForm'),
+        name: i18n.t('work-schedule:actions.scheduleWorkShift'),
       }),
     );
+    expect(
+      screen.queryByRole('button', { name: /admin|technical|kỹ thuật|ky thuat/i }),
+    ).not.toBeInTheDocument();
 
     const createHeading = await screen.findByRole('heading', {
-      name: i18n.t('work-schedule:mutations.create.title'),
+      name: i18n.t('work-schedule:task.title'),
     });
     const createSurface = createHeading.closest('section');
     expect(createSurface).not.toBeNull();
@@ -109,21 +112,26 @@ describe('work schedule wave 6 surfaces', () => {
       'Wave 6 work shift',
     );
     await user.click(
-      await within(await findPicker('work-shift-admin-subject')).findByText(/EMP001/),
+      await within(await findPicker('work-shift-subject-EMPLOYMENT_PROFILE')).findByText(
+        /EP-000001/,
+      ),
     );
     await user.type(
-      scope.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')),
-      '1900000000000',
+      scope.getByLabelText(i18n.t('work-schedule:task.startVietnamLocal')),
+      '2026-05-03T08:30',
     );
     await user.type(
-      scope.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')),
-      '1900003600000',
+      scope.getByLabelText(i18n.t('work-schedule:task.endVietnamLocal')),
+      '2026-05-03T10:00',
     );
     await user.click(
-      await within(await findPicker('work-shift-admin-studio-resources')).findByText(/STUDIO001/),
+      await within(await findPicker('work-shift-studio-resources')).findByText(/SR-000001/),
     );
     await user.click(
-      scope.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
+      scope.getByRole('button', { name: i18n.t('work-schedule:task.reviewAction') }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('work-schedule:task.submitAction') }),
     );
 
     expect(await screen.findByText('Wave 6 work shift', {}, { timeout: 3000 })).toBeInTheDocument();

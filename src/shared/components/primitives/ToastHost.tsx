@@ -1,5 +1,6 @@
 import {
   createContext,
+  useEffect,
   useRef,
   useCallback,
   useContext,
@@ -31,15 +32,27 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export const ToastProvider = ({ children }: PropsWithChildren): JSX.Element => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const idSequenceRef = useRef(0);
+  const timeoutIdsRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const timeoutIds = timeoutIdsRef.current;
+
+    return () => {
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      timeoutIds.clear();
+    };
+  }, []);
 
   const pushToast = useCallback((message: string, tone: ToastTone = 'info') => {
     idSequenceRef.current += 1;
     const id = idSequenceRef.current;
     setToasts((prev) => [...prev, { id, message, tone }]);
 
-    window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
+      timeoutIdsRef.current.delete(timeoutId);
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, 3500);
+    timeoutIdsRef.current.add(timeoutId);
   }, []);
 
   const value = useMemo<ToastContextValue>(() => ({ pushToast }), [pushToast]);

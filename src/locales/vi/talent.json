@@ -11,9 +11,9 @@
     "displayShortName": "Tên ngắn hiển thị",
     "talentOrigin": "Nguồn Talent",
     "selectTalentOrigin": "Chọn nguồn Talent",
-    "managerEmploymentProfileId": "ID hồ sơ quản lý",
-    "newManagerEmploymentProfileId": "ID hồ sơ quản lý mới",
-    "linkedEmploymentProfileId": "ID hồ sơ nhân sự liên kết",
+    "managerEmploymentProfileId": "Quản lý",
+    "newManagerEmploymentProfileId": "Quản lý",
+    "linkedEmploymentProfileId": "Hồ sơ nhân sự liên kết",
     "commercialParticipationStatus": "Trạng thái tham gia thương mại",
     "newCommercialParticipationStatus": "Trạng thái tham gia thương mại mới",
     "livestreamEligible": "Đủ điều kiện livestream",
@@ -23,9 +23,19 @@
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
   },
+  "generatedCode": {
+    "label": "Mã hệ thống",
+    "description": "Mã Talent sẽ được hệ thống tạo sau khi tạo bản ghi."
+  },
   "placeholders": {
     "optional": "Không bắt buộc",
+    "employmentProfileSearch": "Tìm hồ sơ nhân sự theo tên hoặc mã nhân viên",
     "clearToUnset": "Để trống để xóa gán quản lý"
+  },
+  "referenceHelp": {
+    "managerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý cho Talent này.",
+    "newManagerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc xóa lựa chọn để bỏ quản lý.",
+    "linkedEmploymentProfileId": "Chọn hồ sơ nhân sự cần liên kết với Talent này."
   },
   "states": {
     "emptyTitle": "Không tìm thấy Talent",
@@ -40,7 +50,7 @@
     "talentOrigin": "Nguồn Talent",
     "allTalentOrigins": "Tất cả nguồn Talent",
     "managerEmploymentProfileId": "Quản lý",
-    "managerEmploymentProfileIdPlaceholder": "ID hồ sơ quản lý",
+    "managerEmploymentProfileIdPlaceholder": "Chọn quản lý",
     "hasLinkedEmploymentProfile": "Liên kết hồ sơ nhân sự",
     "allLinkedEmploymentProfileStates": "Tất cả trạng thái liên kết hồ sơ",
     "linkedOnly": "Đã liên kết",
@@ -86,7 +96,9 @@
     "suspend": "Tạm ngưng",
     "reactivate": "Kích hoạt lại",
     "deactivate": "Vô hiệu hóa",
-    "archive": "Lưu trữ"
+    "archive": "Lưu trữ",
+    "clearManager": "Xóa quản lý",
+    "clearLinkedEmploymentProfile": "Xóa hồ sơ liên kết"
   },
   "table": {
     "caption": "Danh sách Talent",
@@ -158,7 +170,7 @@
     "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
     "blockedCommercialStatus": "Khi chặn tham gia thương mại, cả hai cờ đủ điều kiện phải là false.",
-    "managerCannotMatchTalentId": "Hồ sơ quản lý không được trùng ID Talent này."
+    "managerCannotMatchTalentId": "Hồ sơ quản lý không được trùng Talent này."
   },
   "feedback": {
     "created": "Đã tạo Talent.",

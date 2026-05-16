@@ -14,8 +14,9 @@ import type {
   OrgUnitMovePayload,
   OrgUnitUpdatePayload,
 } from '@modules/org-unit/types/org-unit.types';
+import { loadOrgUnitReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
-import { FormGrid, TextInputField } from '@shared/forms';
+import { FormGrid, GeneratedCodeNotice, ReferencePickerField, TextInputField } from '@shared/forms';
 
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
@@ -72,7 +73,6 @@ const createOrgUnitCreateFormSchema = (
   tokenMessage: string,
 ) => {
   return z.object({
-    code: z.string().trim().min(1, requiredMessage),
     name: z.string().trim().min(1, requiredMessage),
     type: z
       .string()
@@ -121,7 +121,6 @@ const createOrgUnitMoveFormSchema = (
 };
 
 type OrgUnitCreateFormValues = {
-  code: string;
   name: string;
   type: string;
   displayOrder: string;
@@ -138,7 +137,6 @@ export const OrgUnitCreateSurface = ({
   const { t } = useTranslation(['org-unit', 'common']);
   const form = useForm<OrgUnitCreateFormValues>({
     defaultValues: {
-      code: '',
       name: '',
       type: '',
       displayOrder: '0',
@@ -161,12 +159,11 @@ export const OrgUnitCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'code');
+      applySchemaErrors(form.setError, parsed.error, 'name');
       return;
     }
 
     await onSubmit({
-      code: parsed.data.code,
       name: parsed.data.name,
       type: parsed.data.type,
       displayOrder: parsed.data.displayOrder,
@@ -190,7 +187,11 @@ export const OrgUnitCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="code" label={t('org-unit:fields.code')} />
+          <GeneratedCodeNotice
+            label={t('org-unit:generatedCode.label')}
+            description={t('org-unit:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField name="name" label={t('org-unit:fields.name')} />
           <TextInputField
             name="type"
@@ -203,14 +204,19 @@ export const OrgUnitCreateSurface = ({
             type="number"
           />
           <TextInputField
-            name="parentOrgUnitId"
-            label={t('org-unit:fields.parentOrgUnitId')}
-            placeholder={t('org-unit:placeholders.parentOrgUnitId')}
-          />
-          <TextInputField
             name="externalRef"
             label={t('org-unit:fields.externalRef')}
             placeholder={t('org-unit:placeholders.optional')}
+          />
+          <ReferencePickerField
+            name="parentOrgUnitId"
+            label={t('org-unit:fields.parentOrgUnitId')}
+            pickerId="org-unit-parent"
+            loadOptions={loadOrgUnitReferenceOptions}
+            helperText={t('org-unit:referenceHelp.parentOrgUnitId')}
+            placeholder={t('org-unit:placeholders.parentOrgUnitSearch')}
+            clearable
+            clearLabel={t('org-unit:actions.clearParent')}
           />
         </FormGrid>
         <TextInputField
@@ -359,10 +365,15 @@ export const OrgUnitMoveSurface = ({
         onCancel={onCancel}
         isPending={isPending}
       >
-        <TextInputField
+        <ReferencePickerField
           name="newParentOrgUnitId"
           label={t('org-unit:fields.newParentOrgUnitId')}
-          placeholder={t('org-unit:placeholders.parentOrgUnitId')}
+          pickerId="org-unit-new-parent"
+          loadOptions={loadOrgUnitReferenceOptions}
+          helperText={t('org-unit:referenceHelp.newParentOrgUnitId')}
+          placeholder={t('org-unit:placeholders.parentOrgUnitSearch')}
+          clearable
+          clearLabel={t('org-unit:actions.clearParent')}
         />
       </ModuleMutationSurface>
     </FormProvider>

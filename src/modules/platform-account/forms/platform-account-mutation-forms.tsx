@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   FormProvider,
   useForm,
@@ -17,7 +17,15 @@ import type {
   PlatformAccountUpdatePayload,
 } from '@modules/platform-account/types/platform-account.types';
 import { ownerKindValues } from '@modules/platform-account/tables/platform-account-columns';
-import { CheckboxField, FormGrid, SelectField, TextInputField } from '@shared/forms';
+import { loadPlatformOwnerReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import {
+  CheckboxField,
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseMutationSurfaceProps = {
@@ -133,7 +141,6 @@ const createPlatformAccountCreateSchema = (
 ) => {
   return createBaseOwnerSchema(requiredMessage, tokenMessage)
     .extend({
-      accountCode: z.string().trim().min(1, requiredMessage).regex(upperTokenRegex, tokenMessage),
       platform: z.string().trim().min(1, requiredMessage).regex(upperTokenRegex, tokenMessage),
       platformSurfaceType: z
         .string()
@@ -177,7 +184,6 @@ const createPlatformAccountEditSchema = (requiredMessage: string) => {
 };
 
 type PlatformAccountCreateFormValues = {
-  accountCode: string;
   platform: string;
   platformSurfaceType: string;
   displayName: string;
@@ -205,6 +211,17 @@ const useOwnerKindOptions = () => {
   );
 };
 
+const useOwnerKindReset = (ownerKind: PlatformAccountOwnerKind, resetOwnerId: () => void): void => {
+  const previousOwnerKindRef = useRef(ownerKind);
+
+  useEffect(() => {
+    if (previousOwnerKindRef.current !== ownerKind) {
+      resetOwnerId();
+      previousOwnerKindRef.current = ownerKind;
+    }
+  }, [ownerKind, resetOwnerId]);
+};
+
 export const PlatformAccountCreateSurface = ({
   onCancel,
   onSubmit,
@@ -214,7 +231,6 @@ export const PlatformAccountCreateSurface = ({
   const ownerKindOptions = useOwnerKindOptions();
   const form = useForm<PlatformAccountCreateFormValues>({
     defaultValues: {
-      accountCode: '',
       platform: '',
       platformSurfaceType: '',
       displayName: '',
@@ -240,16 +256,29 @@ export const PlatformAccountCreateSurface = ({
       ),
     [t],
   );
+  const { setValue } = form;
+  const selectedOwnerKind = form.watch('ownerKind');
+  const resetOwnerId = useCallback(() => {
+    setValue('ownerId', '', {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }, [setValue]);
+  useOwnerKindReset(selectedOwnerKind, resetOwnerId);
+  const loadOwnerOptions = useCallback(
+    (search: string) => loadPlatformOwnerReferenceOptions(selectedOwnerKind, search),
+    [selectedOwnerKind],
+  );
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'accountCode');
+      applySchemaErrors(form.setError, parsed.error, 'platform');
       return;
     }
 
     await onSubmit({
-      accountCode: parsed.data.accountCode,
       platform: parsed.data.platform,
       platformSurfaceType: parsed.data.platformSurfaceType,
       displayName: parsed.data.displayName,
@@ -280,7 +309,11 @@ export const PlatformAccountCreateSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="accountCode" label={t('platform-account:fields.accountCode')} />
+          <GeneratedCodeNotice
+            label={t('platform-account:generatedCode.label')}
+            description={t('platform-account:generatedCode.description')}
+            className="md:col-span-2"
+          />
           <TextInputField name="platform" label={t('platform-account:fields.platform')} />
           <TextInputField
             name="platformSurfaceType"
@@ -292,7 +325,14 @@ export const PlatformAccountCreateSurface = ({
             label={t('platform-account:fields.ownerKind')}
             options={ownerKindOptions}
           />
-          <TextInputField name="ownerId" label={t('platform-account:fields.ownerId')} />
+          <ReferencePickerField
+            name="ownerId"
+            label={t('platform-account:fields.ownerId')}
+            pickerId={`platform-account-owner-${selectedOwnerKind.toLowerCase()}`}
+            loadOptions={loadOwnerOptions}
+            helperText={t('platform-account:referenceHelp.ownerId')}
+            placeholder={t('platform-account:placeholders.ownerSearch')}
+          />
           <TextInputField
             name="handle"
             label={t('platform-account:fields.handle')}
@@ -444,6 +484,20 @@ export const PlatformAccountOwnershipTransferSurface = ({
       ),
     [t],
   );
+  const { setValue } = form;
+  const selectedOwnerKind = form.watch('ownerKind');
+  const resetOwnerId = useCallback(() => {
+    setValue('ownerId', '', {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }, [setValue]);
+  useOwnerKindReset(selectedOwnerKind, resetOwnerId);
+  const loadOwnerOptions = useCallback(
+    (search: string) => loadPlatformOwnerReferenceOptions(selectedOwnerKind, search),
+    [selectedOwnerKind],
+  );
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
@@ -477,7 +531,14 @@ export const PlatformAccountOwnershipTransferSurface = ({
             label={t('platform-account:fields.ownerKind')}
             options={ownerKindOptions}
           />
-          <TextInputField name="ownerId" label={t('platform-account:fields.ownerId')} />
+          <ReferencePickerField
+            name="ownerId"
+            label={t('platform-account:fields.ownerId')}
+            pickerId={`platform-account-transfer-owner-${selectedOwnerKind.toLowerCase()}`}
+            loadOptions={loadOwnerOptions}
+            helperText={t('platform-account:referenceHelp.ownerId')}
+            placeholder={t('platform-account:placeholders.ownerSearch')}
+          />
         </FormGrid>
       </ModuleMutationSurface>
     </FormProvider>

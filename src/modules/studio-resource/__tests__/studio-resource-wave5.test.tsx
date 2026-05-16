@@ -23,7 +23,7 @@ describe('studio-resource wave 5 surfaces', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('studio-resource:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('STUDIO001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('SR-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('Main Studio')).toBeInTheDocument();
     expect(screen.queryByText('Archived Studio')).not.toBeInTheDocument();
   });
@@ -35,7 +35,7 @@ describe('studio-resource wave 5 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('studio-resource:availability.modeLabel')),
     ).toBeInTheDocument();
-    expect(await screen.findByText('STUDIO001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('SR-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.queryByText('Room A')).not.toBeInTheDocument();
   });
 
@@ -44,7 +44,7 @@ describe('studio-resource wave 5 surfaces', () => {
     renderRoute('/studio-resources/studio-001');
 
     expect(await screen.findByText(i18n.t('studio-resource:actionRail.title'))).toBeInTheDocument();
-    expect(screen.getByText('STUDIO001')).toBeInTheDocument();
+    expect(screen.getByText('SR-000001')).toBeInTheDocument();
     expect(screen.getByText('Room A')).toBeInTheDocument();
 
     const relatedLinks = screen.getAllByRole('link', {
@@ -107,10 +107,12 @@ describe('studio-resource wave 5 surfaces', () => {
     expect(screen.queryByText(/booking|calendar|maintenance|bulk/i)).not.toBeInTheDocument();
 
     const createSurfaceScope = within(createSurface);
-    await user.type(
-      createSurfaceScope.getByLabelText(i18n.t('studio-resource:fields.resourceCode')),
-      'WAVE5STUDIO',
-    );
+    expect(
+      createSurfaceScope.queryByLabelText(i18n.t('studio-resource:fields.resourceCode')),
+    ).toBeNull();
+    expect(
+      createSurfaceScope.getByText(i18n.t('studio-resource:generatedCode.description')),
+    ).toBeInTheDocument();
     await user.type(
       createSurfaceScope.getByLabelText(i18n.t('studio-resource:fields.name')),
       'Wave 5 Studio',
@@ -128,9 +130,9 @@ describe('studio-resource wave 5 surfaces', () => {
       }),
     );
 
-    expect(await screen.findByText('WAVE5STUDIO', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('SR-000701', {}, { timeout: 3000 })).toBeInTheDocument();
 
-    const row = screen.getByText('WAVE5STUDIO').closest('tr');
+    const row = screen.getByText('SR-000701').closest('tr');
     expect(row).not.toBeNull();
     if (!row) {
       return;

@@ -23,7 +23,7 @@ describe('talent-group wave 4 surfaces', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('talent-group:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('GRP002', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('TG-000002', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(await screen.findByText('B Team', {}, { timeout: 3000 })).toBeInTheDocument();
   });
 
@@ -34,8 +34,8 @@ describe('talent-group wave 4 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('talent-group:related.byTalentModeLabel')),
     ).toBeInTheDocument();
-    expect(await screen.findByText('GRP002')).toBeInTheDocument();
-    expect(screen.queryByText('GRP001')).not.toBeInTheDocument();
+    expect(await screen.findByText('TG-000002')).toBeInTheDocument();
+    expect(screen.queryByText('TG-000001')).not.toBeInTheDocument();
   });
 
   it('renders detail roster/links and status gating for group lifecycle', async () => {

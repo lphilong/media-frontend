@@ -14,11 +14,11 @@
     "status": "状态",
     "allStatuses": "所有未归档",
     "subjectTalentId": "主体艺人",
-    "subjectTalentIdPlaceholder": "艺人ID",
+    "subjectTalentIdPlaceholder": "选择艺人",
     "attributionPlatformAccountId": "平台账号",
-    "attributionPlatformAccountIdPlaceholder": "平台ID",
+    "attributionPlatformAccountIdPlaceholder": "选择平台账号",
     "attributionEventId": "活动",
-    "attributionEventIdPlaceholder": "活动ID",
+    "attributionEventIdPlaceholder": "选择活动",
     "measurementSource": "测量来源",
     "allMeasurementSources": "任意来源",
     "containsMetricCode": "指标编码",
@@ -51,9 +51,9 @@
   "fields": {
     "kpiRecordCode": "KPI记录编码",
     "title": "标题",
-    "subjectTalentId": "主体艺人 ID",
-    "attributionPlatformAccountId": "归因平台账号 ID",
-    "attributionEventId": "归因活动 ID",
+    "subjectTalentId": "主体艺人",
+    "attributionPlatformAccountId": "归因平台账号",
+    "attributionEventId": "归因活动",
     "measurementSource": "测量来源",
     "periodStartAt": "期间开始时间戳",
     "periodEndAt": "期间结束时间戳",
@@ -66,6 +66,10 @@
     "scopeBoundary": "范围边界",
     "createdAt": "创建时间",
     "updatedAt": "更新时间"
+  },
+  "generatedCode": {
+    "label": "系统编码",
+    "description": "创建后，系统将生成 KPI 记录编码。"
   },
   "table": {
     "caption": "艺人KPI记录",
@@ -89,6 +93,7 @@
     "replaceMetrics": "替换指标",
     "addMetric": "添加指标",
     "removeMetric": "移除",
+    "clearReference": "清除选择",
     "finalize": "确认",
     "archive": "归档"
   },
@@ -112,6 +117,9 @@
       "submit": "替换指标",
       "pending": "替换中"
     }
+  },
+  "placeholders": {
+    "searchReference": "按名称或代码搜索"
   },
   "detail": {
     "archivedReadOnly": "已归档 KPI 记录只读。",

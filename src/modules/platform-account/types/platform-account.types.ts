@@ -43,7 +43,7 @@ export type PlatformAccountListQuery = {
 };
 
 export type PlatformAccountCreatePayload = {
-  accountCode: string;
+  accountCode?: string;
   platform: string;
   platformSurfaceType: string;
   displayName: string;

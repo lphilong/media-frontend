@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { appRoutes } from '@app/router/router';
@@ -16,7 +16,9 @@ describe('app router foundation', () => {
       initialEntries: ['/dashboard'],
     });
 
-    renderAppWithProviders(<RouterProvider router={router} />);
+    await act(async () => {
+      renderAppWithProviders(<RouterProvider router={router} />);
+    });
 
     expect(
       await screen.findByRole(
@@ -48,7 +50,7 @@ describe('app router foundation', () => {
 
     renderAppWithProviders(<RouterProvider router={router} />);
 
-    expect(await screen.findByText('CRULE001')).toBeInTheDocument();
+    expect(await screen.findByText('CRULE-000001')).toBeInTheDocument();
     expect(screen.queryByText(i18n.t('common:actions.stubAction'))).not.toBeInTheDocument();
   });
 });
