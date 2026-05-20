@@ -21,6 +21,12 @@
     "label": "系统代码",
     "description": "资源代码将在创建后由系统生成。"
   },
+  "placeholders": {
+    "locationLabel": "楼栋 / 楼层 / 房间，例如 HQ 3F - Studio A"
+  },
+  "help": {
+    "locationLabel": "楼栋 / 楼层 / 房间，例如 HQ 3F - Studio A"
+  },
   "states": {
     "emptyTitle": "没有演播资源",
     "emptyMessage": "没有记录匹配当前查询。",
@@ -33,6 +39,7 @@
     "allStatuses": "所有未归档",
     "resourceClass": "资源类别",
     "resourceClassPlaceholder": "space",
+    "allResourceClasses": "所有资源类别",
     "hasMaxOccupancy": "容量",
     "allOccupancyStates": "所有容量状态",
     "withOccupancy": "有最大容量",
@@ -48,6 +55,11 @@
     "OUT_OF_SERVICE": "停用服务",
     "INACTIVE": "停用",
     "ARCHIVED": "已归档"
+  },
+  "resourceClasses": {
+    "SPACE": "空间",
+    "EQUIPMENT": "设备",
+    "KIT": "套件"
   },
   "actions": {
     "create": "新建资源",
@@ -76,7 +88,7 @@
   },
   "availability": {
     "caption": "演播资源可用性列表",
-    "modeLabel": "可用性视图使用专用的精简资源 payload。"
+    "modeLabel": "按可用状态显示资源，便于排期。"
   },
   "detail": {
     "identityTitle": "资源身份和容量",

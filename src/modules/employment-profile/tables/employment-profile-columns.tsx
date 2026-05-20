@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { readReferenceDisplay } from '@shared/formatting/formatters';
 import type {
   EmploymentProfileDirectReport,
   EmploymentProfileListItem,
@@ -57,25 +57,22 @@ export const createEmploymentProfileListColumns = (
     {
       accessorKey: 'orgUnitId',
       header: t('employment-profile:table.orgUnitId'),
-      cell: (context) => (
-        <span className="font-mono text-xs">{String(context.getValue() ?? '-')}</span>
-      ),
+      cell: ({ row }) => readReferenceDisplay(row.original.orgUnitRef, row.original.orgUnitId),
     },
     {
       accessorKey: 'managerEmploymentProfileId',
       header: t('employment-profile:table.managerEmploymentProfileId'),
-      cell: (context) => {
-        const value = context.getValue() as string | null | undefined;
-        return <span className="font-mono text-xs">{value ?? '-'}</span>;
-      },
+      cell: ({ row }) =>
+        readReferenceDisplay(
+          row.original.managerEmploymentProfileRef,
+          row.original.managerEmploymentProfileId,
+        ),
     },
     {
       accessorKey: 'linkedUserId',
       header: t('employment-profile:table.linkedUserId'),
-      cell: (context) => {
-        const value = context.getValue() as string | null | undefined;
-        return <span className="font-mono text-xs">{value ?? '-'}</span>;
-      },
+      cell: ({ row }) =>
+        readReferenceDisplay(row.original.linkedUserRef, row.original.linkedUserId),
     },
     {
       accessorKey: 'employmentStatus',
@@ -98,11 +95,6 @@ export const createEmploymentProfileListColumns = (
           toneByStatus={contractStatusToneMap}
         />
       ),
-    },
-    {
-      accessorKey: 'createdAt',
-      header: t('employment-profile:table.createdAt'),
-      cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
     },
     {
       id: 'actions',
@@ -163,17 +155,16 @@ export const createEmploymentDirectReportsColumns = (
     {
       accessorKey: 'orgUnitId',
       header: t('employment-profile:directReportsTable.orgUnitId'),
-      cell: (context) => (
-        <span className="font-mono text-xs">{String(context.getValue() ?? '-')}</span>
-      ),
+      cell: ({ row }) => readReferenceDisplay(row.original.orgUnitRef, row.original.orgUnitId),
     },
     {
       accessorKey: 'managerEmploymentProfileId',
       header: t('employment-profile:directReportsTable.managerEmploymentProfileId'),
-      cell: (context) => {
-        const value = context.getValue() as string | null | undefined;
-        return <span className="font-mono text-xs">{value ?? '-'}</span>;
-      },
+      cell: ({ row }) =>
+        readReferenceDisplay(
+          row.original.managerEmploymentProfileRef,
+          row.original.managerEmploymentProfileId,
+        ),
     },
   ];
 };

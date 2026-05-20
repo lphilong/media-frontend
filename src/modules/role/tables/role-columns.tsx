@@ -4,12 +4,13 @@ import type { TFunction } from 'i18next';
 import { APP_PATHS } from '@app/router/paths';
 import type {
   RoleAssignmentItem,
+  RoleAssignmentScopeGrants,
   RoleLifecycleAction,
   RoleListItem,
   RoleState,
 } from '@modules/role/types/role.types';
 import { ReferenceChip, StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 
 type RoleListColumnHandlers = {
   onOpenDetail: (roleId: string) => void;
@@ -19,6 +20,8 @@ type RoleListColumnHandlers = {
 
 type RoleAssignmentColumnHandlers = {
   roleState?: RoleState;
+  canRevokeAssignment?: boolean;
+  revokeDisabledReason?: string;
   onRevokeAssignment: (assignment: RoleAssignmentItem) => void;
   isActionPending?: (assignmentId: string) => boolean;
 };
@@ -45,6 +48,45 @@ const readLifecycleActions = (record: RoleListItem): RoleLifecycleAction[] => {
   }
 
   return [];
+};
+
+const scopeModuleLabels: Record<keyof RoleAssignmentScopeGrants, string> = {
+  workSchedule: 'Work Schedule',
+  eventAssignment: 'Event Assignment',
+  contractRegistry: 'Contract Registry',
+  talentKpi: 'Talent KPI',
+  revenueLedger: 'Revenue Ledger',
+  commission: 'Commission',
+  dashboardLite: 'Dashboard Lite',
+};
+
+const scopeOrder: Array<keyof RoleAssignmentScopeGrants> = [
+  'workSchedule',
+  'eventAssignment',
+  'contractRegistry',
+  'talentKpi',
+  'revenueLedger',
+  'commission',
+  'dashboardLite',
+];
+
+const toScopeLabel = (value: string): string => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+
+export const formatAssignmentScopeSummary = (
+  scopeGrants?: RoleAssignmentScopeGrants | null,
+): string => {
+  if (!scopeGrants) {
+    return '-';
+  }
+
+  const entries = scopeOrder.flatMap((module) => {
+    const scopes = scopeGrants[module] ?? [];
+    return scopes.length > 0
+      ? [`${scopeModuleLabels[module]}: ${scopes.map(toScopeLabel).join(', ')}`]
+      : [];
+  });
+
+  return entries.length > 0 ? entries.join('; ') : '-';
 };
 
 export const createRoleListColumns = (
@@ -84,7 +126,7 @@ export const createRoleListColumns = (
   {
     accessorKey: 'updatedAt',
     header: t('role:table.updatedAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     id: 'actions',
@@ -130,16 +172,18 @@ export const createRoleAssignmentColumns = (
   handlers: RoleAssignmentColumnHandlers,
 ): ColumnDef<RoleAssignmentItem>[] => [
   {
-    accessorKey: 'assignmentId',
-    header: t('role:assignments.assignmentId'),
-    cell: (context) => <span className="font-mono">{String(context.getValue() ?? '-')}</span>,
-  },
-  {
     accessorKey: 'userId',
     header: t('role:assignments.userId'),
-    cell: (context) => {
-      const userId = String(context.getValue() ?? '');
-      return userId ? <ReferenceChip label={userId} to={APP_PATHS.userDetail(userId)} /> : '-';
+    cell: ({ row }) => {
+      const userId = row.original.userId;
+      return userId ? (
+        <ReferenceChip
+          label={readReferenceDisplay(row.original.userRef, userId)}
+          to={APP_PATHS.userDetail(userId)}
+        />
+      ) : (
+        '-'
+      );
     },
   },
   {
@@ -156,15 +200,20 @@ export const createRoleAssignmentColumns = (
   {
     accessorKey: 'effectiveAt',
     header: t('role:assignments.effectiveAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     accessorKey: 'revokedAt',
     header: t('role:assignments.revokedAt'),
     cell: (context) => {
       const value = context.getValue() as number | string | null | undefined;
-      return value === null || value === undefined ? '-' : formatUtcTimestamp(value);
+      return value === null || value === undefined ? '-' : formatBusinessTimestamp(value);
     },
+  },
+  {
+    id: 'scopeGrants',
+    header: t('role:assignments.scopeGrants'),
+    cell: ({ row }) => formatAssignmentScopeSummary(row.original.scopeGrants),
   },
   {
     accessorKey: 'reason',
@@ -177,16 +226,36 @@ export const createRoleAssignmentColumns = (
     cell: ({ row }) => {
       const assignment = row.original;
       const canRevoke = handlers.roleState === 'ACTIVE' && assignment.state === 'ACTIVE';
+      const capabilityAllowsRevoke = handlers.canRevokeAssignment !== false;
+      const disabledReason = !canRevoke
+        ? t('common:capabilities.invalidStatus')
+        : !capabilityAllowsRevoke
+          ? handlers.revokeDisabledReason
+          : undefined;
+      const reasonId = `role-assignment-${assignment.assignmentId}-revoke-disabled-reason`;
 
       return (
-        <button
-          type="button"
-          className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={!canRevoke || handlers.isActionPending?.(assignment.assignmentId)}
-          onClick={() => handlers.onRevokeAssignment(assignment)}
-        >
-          {t('role:actions.revokeAssignment')}
-        </button>
+        <div className="space-y-1">
+          <button
+            type="button"
+            className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={
+              !canRevoke ||
+              !capabilityAllowsRevoke ||
+              handlers.isActionPending?.(assignment.assignmentId)
+            }
+            aria-describedby={disabledReason ? reasonId : undefined}
+            title={disabledReason}
+            onClick={() => handlers.onRevokeAssignment(assignment)}
+          >
+            {t('role:actions.revokeAssignment')}
+          </button>
+          {disabledReason ? (
+            <p id={reasonId} className="text-xs leading-5 text-muted">
+              {disabledReason}
+            </p>
+          ) : null}
+        </div>
       );
     },
   },

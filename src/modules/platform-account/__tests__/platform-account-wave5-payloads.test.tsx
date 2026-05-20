@@ -126,10 +126,13 @@ describe('platform-account wave 5 query and payload seams', () => {
     expect(
       screen.getByText(i18n.t('platform-account:generatedCode.description')),
     ).toBeInTheDocument();
-    await user.type(screen.getByLabelText(i18n.t('platform-account:fields.platform')), 'YOUTUBE');
-    await user.type(
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('platform-account:fields.platform')),
+      'YOUTUBE',
+    );
+    await user.selectOptions(
       screen.getByLabelText(i18n.t('platform-account:fields.platformSurfaceType')),
-      'LIVESTREAM',
+      'ACCOUNT',
     );
     await user.type(
       screen.getByLabelText(i18n.t('platform-account:fields.displayName')),
@@ -157,7 +160,7 @@ describe('platform-account wave 5 query and payload seams', () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       platform: 'YOUTUBE',
-      platformSurfaceType: 'LIVESTREAM',
+      platformSurfaceType: 'ACCOUNT',
       displayName: 'Wave Account',
       ownerKind: 'TALENT_GROUP',
       ownerTalentGroupId: 'group-001',
@@ -182,10 +185,13 @@ describe('platform-account wave 5 query and payload seams', () => {
       <PlatformAccountCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />,
     );
 
-    await user.type(screen.getByLabelText(i18n.t('platform-account:fields.platform')), 'YOUTUBE');
-    await user.type(
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('platform-account:fields.platform')),
+      'YOUTUBE',
+    );
+    await user.selectOptions(
       screen.getByLabelText(i18n.t('platform-account:fields.platformSurfaceType')),
-      'LIVESTREAM',
+      'ACCOUNT',
     );
     await user.type(
       screen.getByLabelText(i18n.t('platform-account:fields.displayName')),
@@ -312,7 +318,7 @@ describe('platform-account wave 5 query and payload seams', () => {
         id: 'platform-001',
         accountCode: 'PA-000001',
         platform: 'YOUTUBE',
-        platformSurfaceType: 'LIVESTREAM',
+        platformSurfaceType: 'ACCOUNT',
         displayName: 'Mina Live',
         handle: '@mina',
         externalPlatformId: null,

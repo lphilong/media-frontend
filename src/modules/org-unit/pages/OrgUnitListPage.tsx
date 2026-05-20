@@ -14,16 +14,22 @@ import { createOrgUnitListColumns } from '@modules/org-unit/tables/org-unit-colu
 import type { OrgUnitLifecycleAction } from '@modules/org-unit/types/org-unit.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
 } from '@shared/components/primitives';
 import { useDestructiveConfirm, useMutationFeedback } from '@shared/components/primitives';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
+import { loadOrgUnitReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { readReferenceDisplayForId } from '@shared/formatting/reference-display';
 import {
   createCursorStack,
   moveNextCursor,
@@ -58,6 +64,7 @@ const sortOptions = [
 ] as const;
 
 const statusOptions = ['', 'ACTIVE', 'INACTIVE', 'ARCHIVED'] as const;
+const orgUnitTypeOptions = ['', 'DEPARTMENT', 'TEAM', 'BUSINESS_UNIT', 'SUPPORT_UNIT'] as const;
 
 const readLifecycleConfirmKey = (action: OrgUnitLifecycleAction): string => {
   switch (action) {
@@ -85,6 +92,8 @@ export const OrgUnitListPage = (): JSX.Element => {
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(() => {
@@ -217,10 +226,106 @@ export const OrgUnitListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const rememberFilterOption = useCallback((key: string, option: ReferenceOption | undefined) => {
+    setFilterOptionLabels((current) => {
+      if (option?.label) {
+        return current[key] === option.label ? current : { ...current, [key]: option.label };
+      }
+
+      if (!(key in current)) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }, []);
+  const moreFilterCount = [query.parentOrgUnitId].filter(
+    (value) => value !== undefined && value !== '',
+  ).length;
+  const clearOrgUnitFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      type: undefined,
+      parentOrgUnitId: undefined,
+      rootOnly: undefined,
+    });
+  }, [patchQuery]);
+  const parentOrgUnitFilterLabel = useMemo(
+    () =>
+      readReferenceDisplayForId(
+        query.parentOrgUnitId,
+        (listQueryResult.data?.data ?? []).map((record) => record.parentOrgUnitRef),
+      ),
+    [listQueryResult.data?.data, query.parentOrgUnitId],
+  );
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (query.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: query.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (query.status) {
+      items.push({
+        id: 'status',
+        label: t('org-unit:filters.status'),
+        value: t(`org-unit:statuses.${query.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    if (query.type) {
+      items.push({
+        id: 'type',
+        label: t('org-unit:filters.type'),
+        value: query.type,
+        onClear: () => patchQuery({ type: undefined }),
+      });
+    }
+
+    if (query.rootOnly !== undefined) {
+      items.push({
+        id: 'root-only',
+        label: t('org-unit:filters.rootOnly'),
+        value: query.rootOnly ? t('org-unit:filters.onlyRoots') : t('org-unit:filters.withParent'),
+        onClear: () => patchQuery({ rootOnly: undefined }),
+      });
+    }
+
+    if (query.parentOrgUnitId) {
+      items.push({
+        id: 'parent-org-unit',
+        label: t('org-unit:filters.parentOrgUnitId'),
+        value: filterOptionLabels.parentOrgUnit ?? parentOrgUnitFilterLabel,
+        onClear: () => patchQuery({ parentOrgUnitId: undefined }),
+      });
+    }
+
+    return items;
+  }, [
+    filterOptionLabels.parentOrgUnit,
+    parentOrgUnitFilterLabel,
+    patchQuery,
+    query.parentOrgUnitId,
+    query.rootOnly,
+    query.search,
+    query.status,
+    query.type,
+    t,
+  ]);
+
   return (
     <ModuleListScreenShell
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             <SearchBoxSeam
               value={query.search ?? ''}
@@ -246,6 +351,52 @@ export const OrgUnitListPage = (): JSX.Element => {
                   sortDirection,
                 })
               }
+            />
+          }
+          moreFiltersTrigger={
+            <button
+              type="button"
+              aria-expanded={isMoreFiltersOpen}
+              aria-controls="org-unit-more-filters"
+              onClick={() => setIsMoreFiltersOpen((current) => !current)}
+              className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+            >
+              {t('common:filters.moreFilters')}
+              {moreFilterCount > 0 ? ` (${moreFilterCount})` : ''}
+            </button>
+          }
+          moreFiltersPanel={
+            <MoreFiltersPanel
+              id="org-unit-more-filters"
+              title={t('common:filters.moreFilters')}
+              closeLabel={t('common:actions.close')}
+              isOpen={isMoreFiltersOpen}
+              onClose={() => setIsMoreFiltersOpen(false)}
+            >
+              <ReferenceFilterField
+                label={t('org-unit:filters.parentOrgUnitId')}
+                pickerId="org-unit-filter-parent"
+                value={query.parentOrgUnitId}
+                loadOptions={loadOrgUnitReferenceOptions}
+                placeholder={t('org-unit:placeholders.parentOrgUnitSearch')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[240px]"
+                onSelectedOptionChange={(option) => rememberFilterOption('parentOrgUnit', option)}
+                onChange={(nextId) => {
+                  patchQuery({
+                    parentOrgUnitId: nextId,
+                  });
+                }}
+              />
+            </MoreFiltersPanel>
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              onClearAll={appliedFilterChips.length > 0 ? clearOrgUnitFilters : undefined}
             />
           }
         >
@@ -275,31 +426,21 @@ export const OrgUnitListPage = (): JSX.Element => {
             <span className="text-xs font-medium uppercase text-muted">
               {t('org-unit:filters.type')}
             </span>
-            <input
+            <select
               value={query.type ?? ''}
-              placeholder={t('org-unit:filters.typePlaceholder')}
               className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
               onChange={(event) => {
                 patchQuery({
                   type: event.target.value || undefined,
                 });
               }}
-            />
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('org-unit:filters.parentOrgUnitId')}
-            </span>
-            <input
-              value={query.parentOrgUnitId ?? ''}
-              placeholder={t('org-unit:filters.parentOrgUnitIdPlaceholder')}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) => {
-                patchQuery({
-                  parentOrgUnitId: event.target.value || undefined,
-                });
-              }}
-            />
+            >
+              {orgUnitTypeOptions.map((typeOption) => (
+                <option key={typeOption || 'all'} value={typeOption}>
+                  {typeOption ? t(`org-unit:types.${typeOption}`) : t('org-unit:filters.allTypes')}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="flex min-w-[180px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">
@@ -320,7 +461,7 @@ export const OrgUnitListPage = (): JSX.Element => {
               <option value="false">{t('org-unit:filters.withParent')}</option>
             </select>
           </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>

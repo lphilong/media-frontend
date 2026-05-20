@@ -2,11 +2,10 @@ import type { TFunction } from 'i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { readReferenceDisplay } from '@shared/formatting/formatters';
 import type {
   TalentCommercialParticipationStatus,
   TalentLifecycleAction,
-  TalentOrigin,
   TalentRecord,
 } from '@modules/talent/types/talent.types';
 
@@ -24,9 +23,10 @@ const operationalStatusToneMap = {
 } as const;
 
 const commercialStatusToneMap = {
-  ALLOWED: 'success',
+  ELIGIBLE: 'success',
+  RESTRICTED: 'warning',
   BLOCKED: 'danger',
-} as const satisfies Record<TalentCommercialParticipationStatus, 'success' | 'danger'>;
+} as const satisfies Record<TalentCommercialParticipationStatus, 'success' | 'warning' | 'danger'>;
 
 const readLifecycleActions = (record: TalentRecord): TalentLifecycleAction[] => {
   if (record.operationalStatus === 'ACTIVE') {
@@ -68,11 +68,6 @@ export const createTalentListColumns = (
       cell: (context) => String(context.getValue() ?? '-'),
     },
     {
-      accessorKey: 'talentOrigin',
-      header: t('talent:table.talentOrigin'),
-      cell: (context) => t(`talent:origins.${String(context.getValue() as TalentOrigin)}`),
-    },
-    {
       accessorKey: 'operationalStatus',
       header: t('talent:table.operationalStatus'),
       cell: (context) => (
@@ -86,18 +81,11 @@ export const createTalentListColumns = (
     {
       accessorKey: 'managerEmploymentProfileId',
       header: t('talent:table.managerEmploymentProfileId'),
-      cell: (context) => {
-        const value = context.getValue() as string | null | undefined;
-        return <span className="font-mono text-xs">{value ?? '-'}</span>;
-      },
-    },
-    {
-      accessorKey: 'linkedEmploymentProfileId',
-      header: t('talent:table.linkedEmploymentProfileId'),
-      cell: (context) => {
-        const value = context.getValue() as string | null | undefined;
-        return <span className="font-mono text-xs">{value ?? '-'}</span>;
-      },
+      cell: ({ row }) =>
+        readReferenceDisplay(
+          row.original.managerEmploymentProfileRef,
+          row.original.managerEmploymentProfileId,
+        ),
     },
     {
       accessorKey: 'commercialParticipationStatus',
@@ -124,11 +112,6 @@ export const createTalentListColumns = (
       header: t('talent:table.eventEligible'),
       cell: (context) =>
         context.getValue() === true ? t('talent:boolean.true') : t('talent:boolean.false'),
-    },
-    {
-      accessorKey: 'createdAt',
-      header: t('talent:table.createdAt'),
-      cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
     },
     {
       id: 'actions',

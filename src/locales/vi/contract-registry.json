@@ -30,12 +30,12 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã hợp đồng sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã hợp đồng sẽ được tạo tự động"
   },
   "statuses": {
     "DRAFT": "Nháp",
     "PENDING_SIGNATURE": "Chờ ký",
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "EXPIRED": "Đã hết hạn",
     "TERMINATED": "Đã kết thúc",
     "ARCHIVED": "Đã lưu trữ"
@@ -50,7 +50,7 @@
     "TALENT": "Talent"
   },
   "confidentialityTiers": {
-    "STANDARD": "Tiêu chuẩn",
+    "INTERNAL": "Nội bộ",
     "CONFIDENTIAL": "Bảo mật",
     "RESTRICTED": "Hạn chế"
   },

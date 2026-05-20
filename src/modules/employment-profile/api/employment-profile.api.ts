@@ -33,10 +33,55 @@ const contractStatusSchema = z.enum([
   'EXPIRED',
   'TERMINATED',
 ]);
-const canonicalDateSchema = z
-  .string()
-  .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+    handle: z.string().optional(),
+    platform: z.string().optional(),
+    status: z.string().optional(),
+  })
+  .strict();
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const isUtcMidnightTimestamp = (value: number): boolean => {
+  if (!Number.isFinite(value) || !Number.isSafeInteger(value) || value < 0) {
+    return false;
+  }
+
+  const date = new Date(value);
+
+  return !Number.isNaN(date.getTime()) && value % MS_PER_DAY === 0;
+};
+
+const parseCanonicalDateToUtcMidnight = (value: string): number => {
+  const [yearText, monthText, dayText] = value.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const utcMidnight = Date.UTC(year, month - 1, day);
+  const date = new Date(utcMidnight);
+
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? utcMidnight
+    : Number.NaN;
+};
+
+const isCanonicalDate = (value: string): boolean =>
+  /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(parseCanonicalDateToUtcMidnight(value));
+
+const canonicalDateSchema = z.string().trim().refine(isCanonicalDate);
+
+const utcMidnightDateLikeSchema = z.union([
+  z.number().refine(isUtcMidnightTimestamp),
+  canonicalDateSchema.transform(parseCanonicalDateToUtcMidnight),
+]);
 
 const employmentProfileListItemSchema = z
   .object({
@@ -47,8 +92,11 @@ const employmentProfileListItemSchema = z
     employmentKind: z.string().trim().min(1),
     jobTitle: z.string().trim().min(1),
     orgUnitId: z.string().trim().min(1),
+    orgUnitRef: referenceSummarySchema.nullable().optional(),
     managerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
+    managerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     linkedUserId: z.string().trim().min(1).nullable().optional(),
+    linkedUserRef: referenceSummarySchema.nullable().optional(),
     employmentStatus: employmentStatusSchema,
     contractStatus: contractStatusSchema,
     createdAt: z.union([z.number(), z.string()]),
@@ -66,12 +114,15 @@ const employmentProfileDetailSchema = z
     titleDescription: z.string().nullable().optional(),
     externalRef: z.string().nullable().optional(),
     orgUnitId: z.string().trim().min(1),
+    orgUnitRef: referenceSummarySchema.nullable().optional(),
     managerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
+    managerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     linkedUserId: z.string().trim().min(1).nullable().optional(),
+    linkedUserRef: referenceSummarySchema.nullable().optional(),
     employmentStatus: employmentStatusSchema,
     contractStatus: contractStatusSchema,
-    employmentStartDate: canonicalDateSchema,
-    employmentEndDate: canonicalDateSchema.nullable().optional(),
+    employmentStartDate: utcMidnightDateLikeSchema,
+    employmentEndDate: utcMidnightDateLikeSchema.nullable().optional(),
     createdAt: z.union([z.number(), z.string()]),
     updatedAt: z.union([z.number(), z.string()]),
   })
@@ -85,7 +136,9 @@ const employmentProfileDirectReportSchema = z
     employmentStatus: employmentStatusSchema,
     contractStatus: contractStatusSchema,
     orgUnitId: z.string().trim().min(1),
+    orgUnitRef: referenceSummarySchema.nullable().optional(),
     managerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
+    managerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
   })
   .strict();
 

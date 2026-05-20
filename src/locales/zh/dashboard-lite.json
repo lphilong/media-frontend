@@ -4,38 +4,74 @@
     "subtitle": "运营快照"
   },
   "actions": {
-    "refreshing": "刷新中..."
+    "refreshing": "刷新中…"
   },
   "meta": {
     "title": "快照元数据",
     "generatedAt": "生成时间 (UTC)",
+    "lastUpdated": "最后更新",
+    "autoRefreshHelper": "每 10 分钟自动刷新。",
     "businessDate": "业务日期"
   },
+  "sectionNav": {
+    "label": "\u4eea\u8868\u76d8\u5206\u533a"
+  },
+  "severityBadges": {
+    "needsReview": "\u9700\u8981\u67e5\u770b",
+    "pending": "\u5f85\u5904\u7406",
+    "finalized": "\u5df2\u5b8c\u6210",
+    "active": "\u751f\u6548\u4e2d",
+    "upcoming": "\u5373\u5c06\u5230\u6765"
+  },
   "groups": {
-    "overview": "总览",
-    "operations": "运营",
-    "commercial": "商业",
-    "attention": "关注"
+    "needsReview": "需要查看",
+    "workInProgress": "进行中",
+    "finalizedResults": "已完成结果",
+    "upcomingDates": "即将到来的日期"
+  },
+  "groupDescriptions": {
+    "needsReview": "可能需要跟进的项目。",
+    "workInProgress": "已保存但尚未最终确认的记录。",
+    "finalizedResults": "当前报告窗口中已完成或正在生效的数据。",
+    "upcomingDates": "接近当前业务日期的活动和合同。"
   },
   "metrics": {
-    "todayEventCount": "今日活动数量",
-    "next7DayEventCount": "未来 7 天活动数量",
-    "draftTalentKpiCount": "KPI 草稿数",
-    "finalizedTalentKpiCount30d": "KPI 已定稿数 (30 天)",
+    "todayEventCount": "今日活动",
+    "next7DayEventCount": "未来 7 天活动",
+    "draftTalentKpiCount": "KPI 草稿记录",
+    "finalizedTalentKpiCount30d": "已最终确认的 KPI 记录",
     "draftRevenueEntryCount": "收入草稿条目",
-    "finalizedRevenueAmount30d": "已定稿收入金额 (30 天)",
-    "reconciledRevenueAmount30d": "已对账收入金额 (30 天)",
-    "draftSettlementCount": "结算草稿数",
-    "finalizedSettlementAmount30d": "已定稿结算金额 (30 天)",
-    "activeCommissionRuleCount": "生效分佣规则数",
-    "expiringContractCount30d": "即将到期合同数 (30 天)",
+    "finalizedRevenueAmount30d": "已最终确认收入",
+    "reconciledRevenueAmount30d": "已对账收入",
+    "draftSettlementCount": "结算草稿",
+    "finalizedSettlementAmount30d": "已最终确认结算",
+    "activeCommissionRuleCount": "生效中的分佣规则",
+    "expiringContractCount30d": "即将结束的合同",
     "staleTalentKpiDraftCount": "滞留 KPI 草稿",
     "staleRevenueDraftCount": "滞留收入草稿",
     "staleSettlementDraftCount": "滞留结算草稿"
   },
+  "metricDescriptions": {
+    "todayEventCount": "安排在当前业务日期的活动。",
+    "next7DayEventCount": "安排在未来七天内的活动。",
+    "draftTalentKpiCount": "已保存但尚未最终确认的 KPI 记录。",
+    "finalizedTalentKpiCount30d": "仪表盘报告窗口中已最终确认的 KPI 记录。",
+    "draftRevenueEntryCount": "已保存但尚未最终确认的收入条目。",
+    "finalizedRevenueAmount30d": "仪表盘报告窗口中已最终确认的收入。",
+    "reconciledRevenueAmount30d": "报告窗口中标记为已对账的收入条目。",
+    "draftSettlementCount": "已保存但尚未最终确认的结算记录。",
+    "finalizedSettlementAmount30d": "报告窗口中已最终确认的结算金额。",
+    "activeCommissionRuleCount": "当前生效的分佣规则。",
+    "expiringContractCount30d": "结束日期位于仪表盘到期窗口内的有效合同。",
+    "staleTalentKpiDraftCount": "因打开时间过长而可能需要查看的草稿。",
+    "staleRevenueDraftCount": "因打开时间过长而可能需要查看的草稿。",
+    "staleSettlementDraftCount": "因打开时间过长而可能需要查看的草稿。"
+  },
   "states": {
     "loadErrorTitle": "无法加载仪表盘快照",
     "loadErrorMessage": "请重试加载仪表盘快照。",
+    "refreshingInline": "刷新中…",
+    "refreshErrorInline": "无法刷新仪表盘。正在显示上次加载的数据。",
     "emptyTitle": "没有快照数据",
     "emptyMessage": "后端未返回仪表盘快照内容。"
   }

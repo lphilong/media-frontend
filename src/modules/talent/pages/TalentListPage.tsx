@@ -18,17 +18,22 @@ import {
 } from '@modules/talent/types/talent.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
+import { loadEmploymentProfileReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import {
   createCursorStack,
   moveNextCursor,
@@ -97,6 +102,8 @@ export const TalentListPage = (): JSX.Element => {
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(() => {
@@ -229,10 +236,137 @@ export const TalentListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const rememberFilterOption = useCallback((key: string, option: ReferenceOption | undefined) => {
+    setFilterOptionLabels((current) => {
+      if (option?.label) {
+        return current[key] === option.label ? current : { ...current, [key]: option.label };
+      }
+
+      if (!(key in current)) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }, []);
+  const moreFilterCount = [
+    query.talentOrigin,
+    query.managerEmploymentProfileId,
+    query.hasLinkedEmploymentProfile,
+    query.commercialParticipationStatus,
+    query.livestreamEligible,
+    query.eventEligible,
+  ].filter((value) => value !== undefined && value !== '').length;
+  const clearTalentFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      operationalStatus: undefined,
+      talentOrigin: undefined,
+      managerEmploymentProfileId: undefined,
+      hasLinkedEmploymentProfile: undefined,
+      commercialParticipationStatus: undefined,
+      livestreamEligible: undefined,
+      eventEligible: undefined,
+    });
+  }, [patchQuery]);
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (query.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: query.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (query.operationalStatus) {
+      items.push({
+        id: 'operational-status',
+        label: t('talent:filters.operationalStatus'),
+        value: t(`talent:statuses.${query.operationalStatus}`),
+        onClear: () => patchQuery({ operationalStatus: undefined }),
+      });
+    }
+
+    if (query.talentOrigin) {
+      items.push({
+        id: 'talent-origin',
+        label: t('talent:filters.talentOrigin'),
+        value: t(`talent:origins.${query.talentOrigin}`),
+        onClear: () => patchQuery({ talentOrigin: undefined }),
+      });
+    }
+
+    if (query.managerEmploymentProfileId) {
+      items.push({
+        id: 'manager',
+        label: t('talent:filters.managerEmploymentProfileId'),
+        value: filterOptionLabels.manager ?? query.managerEmploymentProfileId,
+        onClear: () => patchQuery({ managerEmploymentProfileId: undefined }),
+      });
+    }
+
+    if (query.hasLinkedEmploymentProfile !== undefined) {
+      items.push({
+        id: 'linked-employment-profile',
+        label: t('talent:filters.hasLinkedEmploymentProfile'),
+        value: query.hasLinkedEmploymentProfile
+          ? t('talent:filters.linkedOnly')
+          : t('talent:filters.unlinkedOnly'),
+        onClear: () => patchQuery({ hasLinkedEmploymentProfile: undefined }),
+      });
+    }
+
+    if (query.commercialParticipationStatus) {
+      items.push({
+        id: 'commercial-participation-status',
+        label: t('talent:filters.commercialParticipationStatus'),
+        value: t(`talent:commercialStatuses.${query.commercialParticipationStatus}`),
+        onClear: () => patchQuery({ commercialParticipationStatus: undefined }),
+      });
+    }
+
+    if (query.livestreamEligible !== undefined) {
+      items.push({
+        id: 'livestream-eligible',
+        label: t('talent:filters.livestreamEligible'),
+        value: t(`talent:boolean.${query.livestreamEligible ? 'true' : 'false'}`),
+        onClear: () => patchQuery({ livestreamEligible: undefined }),
+      });
+    }
+
+    if (query.eventEligible !== undefined) {
+      items.push({
+        id: 'event-eligible',
+        label: t('talent:filters.eventEligible'),
+        value: t(`talent:boolean.${query.eventEligible ? 'true' : 'false'}`),
+        onClear: () => patchQuery({ eventEligible: undefined }),
+      });
+    }
+
+    return items;
+  }, [
+    filterOptionLabels.manager,
+    patchQuery,
+    query.commercialParticipationStatus,
+    query.eventEligible,
+    query.hasLinkedEmploymentProfile,
+    query.livestreamEligible,
+    query.managerEmploymentProfileId,
+    query.operationalStatus,
+    query.search,
+    query.talentOrigin,
+    t,
+  ]);
+
   return (
     <ModuleListScreenShell
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             <SearchBoxSeam
               value={query.search ?? ''}
@@ -260,6 +394,167 @@ export const TalentListPage = (): JSX.Element => {
               }
             />
           }
+          moreFiltersTrigger={
+            <button
+              type="button"
+              aria-expanded={isMoreFiltersOpen}
+              aria-controls="talent-more-filters"
+              onClick={() => setIsMoreFiltersOpen((current) => !current)}
+              className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+            >
+              {t('common:filters.moreFilters')}
+              {moreFilterCount > 0 ? ` (${moreFilterCount})` : ''}
+            </button>
+          }
+          moreFiltersPanel={
+            <MoreFiltersPanel
+              id="talent-more-filters"
+              title={t('common:filters.moreFilters')}
+              closeLabel={t('common:actions.close')}
+              isOpen={isMoreFiltersOpen}
+              onClose={() => setIsMoreFiltersOpen(false)}
+            >
+              <label className="flex min-w-[180px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('talent:filters.talentOrigin')}
+                </span>
+                <select
+                  value={query.talentOrigin ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({
+                      talentOrigin: event.target.value || undefined,
+                    })
+                  }
+                >
+                  {talentOriginOptions.map((option) => (
+                    <option key={option || 'all'} value={option}>
+                      {option
+                        ? t(`talent:origins.${option}`)
+                        : t('talent:filters.allTalentOrigins')}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <ReferenceFilterField
+                label={t('talent:filters.managerEmploymentProfileId')}
+                pickerId="talent-filter-manager"
+                value={query.managerEmploymentProfileId}
+                loadOptions={loadEmploymentProfileReferenceOptions}
+                placeholder={t('talent:placeholders.employmentProfileSearch')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[240px]"
+                onSelectedOptionChange={(option) => rememberFilterOption('manager', option)}
+                onChange={(nextId) =>
+                  patchQuery({
+                    managerEmploymentProfileId: nextId,
+                  })
+                }
+              />
+              <label className="flex min-w-[180px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('talent:filters.hasLinkedEmploymentProfile')}
+                </span>
+                <select
+                  value={
+                    query.hasLinkedEmploymentProfile === undefined
+                      ? ''
+                      : query.hasLinkedEmploymentProfile
+                        ? 'true'
+                        : 'false'
+                  }
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    patchQuery({
+                      hasLinkedEmploymentProfile: value === '' ? undefined : value === 'true',
+                    });
+                  }}
+                >
+                  <option value="">{t('talent:filters.allLinkedEmploymentProfileStates')}</option>
+                  <option value="true">{t('talent:filters.linkedOnly')}</option>
+                  <option value="false">{t('talent:filters.unlinkedOnly')}</option>
+                </select>
+              </label>
+              <label className="flex min-w-[180px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('talent:filters.commercialParticipationStatus')}
+                </span>
+                <select
+                  value={query.commercialParticipationStatus ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({
+                      commercialParticipationStatus: event.target.value || undefined,
+                    })
+                  }
+                >
+                  {commercialParticipationStatusOptions.map((option) => (
+                    <option key={option || 'all'} value={option}>
+                      {option
+                        ? t(`talent:commercialStatuses.${option}`)
+                        : t('talent:filters.allCommercialParticipationStatuses')}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex min-w-[180px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('talent:filters.livestreamEligible')}
+                </span>
+                <select
+                  value={
+                    query.livestreamEligible === undefined
+                      ? ''
+                      : query.livestreamEligible
+                        ? 'true'
+                        : 'false'
+                  }
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    patchQuery({
+                      livestreamEligible: value === '' ? undefined : value === 'true',
+                    });
+                  }}
+                >
+                  <option value="">{t('talent:filters.allEligibilityStates')}</option>
+                  <option value="true">{t('talent:boolean.true')}</option>
+                  <option value="false">{t('talent:boolean.false')}</option>
+                </select>
+              </label>
+              <label className="flex min-w-[180px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('talent:filters.eventEligible')}
+                </span>
+                <select
+                  value={
+                    query.eventEligible === undefined ? '' : query.eventEligible ? 'true' : 'false'
+                  }
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    patchQuery({
+                      eventEligible: value === '' ? undefined : value === 'true',
+                    });
+                  }}
+                >
+                  <option value="">{t('talent:filters.allEligibilityStates')}</option>
+                  <option value="true">{t('talent:boolean.true')}</option>
+                  <option value="false">{t('talent:boolean.false')}</option>
+                </select>
+              </label>
+            </MoreFiltersPanel>
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              onClearAll={appliedFilterChips.length > 0 ? clearTalentFilters : undefined}
+            />
+          }
         >
           <label className="flex min-w-[180px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">
@@ -284,135 +579,7 @@ export const TalentListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent:filters.talentOrigin')}
-            </span>
-            <select
-              value={query.talentOrigin ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  talentOrigin: event.target.value || undefined,
-                })
-              }
-            >
-              {talentOriginOptions.map((option) => (
-                <option key={option || 'all'} value={option}>
-                  {option ? t(`talent:origins.${option}`) : t('talent:filters.allTalentOrigins')}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent:filters.managerEmploymentProfileId')}
-            </span>
-            <input
-              value={query.managerEmploymentProfileId ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('talent:filters.managerEmploymentProfileIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery({
-                  managerEmploymentProfileId: event.target.value || undefined,
-                })
-              }
-            />
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent:filters.hasLinkedEmploymentProfile')}
-            </span>
-            <select
-              value={
-                query.hasLinkedEmploymentProfile === undefined
-                  ? ''
-                  : query.hasLinkedEmploymentProfile
-                    ? 'true'
-                    : 'false'
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) => {
-                const value = event.target.value;
-                patchQuery({
-                  hasLinkedEmploymentProfile: value === '' ? undefined : value === 'true',
-                });
-              }}
-            >
-              <option value="">{t('talent:filters.allLinkedEmploymentProfileStates')}</option>
-              <option value="true">{t('talent:filters.linkedOnly')}</option>
-              <option value="false">{t('talent:filters.unlinkedOnly')}</option>
-            </select>
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent:filters.commercialParticipationStatus')}
-            </span>
-            <select
-              value={query.commercialParticipationStatus ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  commercialParticipationStatus: event.target.value || undefined,
-                })
-              }
-            >
-              {commercialParticipationStatusOptions.map((option) => (
-                <option key={option || 'all'} value={option}>
-                  {option
-                    ? t(`talent:commercialStatuses.${option}`)
-                    : t('talent:filters.allCommercialParticipationStatuses')}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent:filters.livestreamEligible')}
-            </span>
-            <select
-              value={
-                query.livestreamEligible === undefined
-                  ? ''
-                  : query.livestreamEligible
-                    ? 'true'
-                    : 'false'
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) => {
-                const value = event.target.value;
-                patchQuery({
-                  livestreamEligible: value === '' ? undefined : value === 'true',
-                });
-              }}
-            >
-              <option value="">{t('talent:filters.allEligibilityStates')}</option>
-              <option value="true">{t('talent:boolean.true')}</option>
-              <option value="false">{t('talent:boolean.false')}</option>
-            </select>
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('talent:filters.eventEligible')}
-            </span>
-            <select
-              value={
-                query.eventEligible === undefined ? '' : query.eventEligible ? 'true' : 'false'
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) => {
-                const value = event.target.value;
-                patchQuery({
-                  eventEligible: value === '' ? undefined : value === 'true',
-                });
-              }}
-            >
-              <option value="">{t('talent:filters.allEligibilityStates')}</option>
-              <option value="true">{t('talent:boolean.true')}</option>
-              <option value="false">{t('talent:boolean.false')}</option>
-            </select>
-          </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>

@@ -14,7 +14,7 @@ describe('apiRequest', () => {
     setAccessTokenProvider(async () => 'foundation-smoke-token');
 
     server.use(
-      http.get('http://localhost:3000/foundation-smoke', ({ request }) => {
+      http.get('*/foundation-smoke', ({ request }) => {
         return HttpResponse.json({
           ok: true,
           authorization: request.headers.get('authorization'),
@@ -70,7 +70,7 @@ describe('apiRequest', () => {
     'normalizes backend canonical $status error envelopes',
     async ({ status, code, message, permissionDenied, notFound, retryable }) => {
       server.use(
-        http.get(`http://localhost:3000/canonical-error-${status}`, () => {
+        http.get(`*/canonical-error-${status}`, () => {
           return HttpResponse.json(
             {
               error: {
@@ -106,7 +106,7 @@ describe('apiRequest', () => {
 
   it('normalizes backend canonical 422 validation details into field errors safely', async () => {
     server.use(
-      http.post('http://localhost:3000/canonical-validation-error', () => {
+      http.post('*/canonical-validation-error', () => {
         return HttpResponse.json(
           {
             error: {
@@ -156,7 +156,7 @@ describe('apiRequest', () => {
 
   it('normalizes backend canonical conflict envelopes without requiring details', async () => {
     server.use(
-      http.post('http://localhost:3000/canonical-conflict-error', () => {
+      http.post('*/canonical-conflict-error', () => {
         return HttpResponse.json(
           {
             error: {
@@ -188,7 +188,7 @@ describe('apiRequest', () => {
 
   it('keeps legacy root-style error envelopes compatible', async () => {
     server.use(
-      http.patch('http://localhost:3000/legacy-error', () => {
+      http.patch('*/legacy-error', () => {
         return HttpResponse.json(
           {
             code: 'LEGACY_VALIDATION_ERROR',

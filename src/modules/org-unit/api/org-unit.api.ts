@@ -14,6 +14,18 @@ import type {
 } from '@modules/org-unit/types/org-unit.types';
 
 const orgUnitStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+    handle: z.string().optional(),
+    platform: z.string().optional(),
+    status: z.string().optional(),
+  })
+  .strict();
 
 const listOrgUnitSchema = z
   .object({
@@ -23,6 +35,7 @@ const listOrgUnitSchema = z
     type: z.string().trim().min(1),
     status: orgUnitStatusSchema,
     parentOrgUnitId: z.string().trim().min(1).nullable().optional(),
+    parentOrgUnitRef: referenceSummarySchema.nullable().optional(),
     depth: z.number().int().nonnegative(),
     displayOrder: z.number().int(),
     createdAt: z.union([z.number(), z.string()]),
@@ -37,6 +50,7 @@ const detailOrgUnitSchema = z
     type: z.string().trim().min(1),
     status: orgUnitStatusSchema,
     parentOrgUnitId: z.string().trim().min(1).nullable().optional(),
+    parentOrgUnitRef: referenceSummarySchema.nullable().optional(),
     depth: z.number().int().nonnegative(),
     displayOrder: z.number().int(),
     description: z.string().nullable().optional(),
@@ -62,6 +76,7 @@ const childrenOrgUnitSchema = z
     type: z.string().trim().min(1),
     status: orgUnitStatusSchema,
     parentOrgUnitId: z.string().trim().min(1).nullable().optional(),
+    parentOrgUnitRef: referenceSummarySchema.nullable().optional(),
     depth: z.number().int().nonnegative(),
     displayOrder: z.number().int(),
   })

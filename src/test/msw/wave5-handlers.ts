@@ -8,6 +8,14 @@ import {
 type PlatformAccountStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 type PlatformAccountOwnerKind = 'ORG_UNIT' | 'TALENT' | 'TALENT_GROUP';
 
+type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  displayName?: string;
+  status?: string;
+};
+
 type PlatformAccountRecord = {
   id: string;
   accountCode: string;
@@ -293,6 +301,32 @@ const readPlatformAccount = (platformAccountId: string): PlatformAccountRecord |
 const readStudioResource = (studioResourceId: string): StudioResourceRecord | undefined =>
   studioResources.find((item) => item.id === studioResourceId);
 
+const ownerRefs = {
+  orgUnits: new Map<string, ReferenceSummary>([
+    ['ou-sales', { id: 'ou-sales', code: 'OU-000002', name: 'Sales', status: 'ACTIVE' }],
+  ]),
+  talents: new Map<string, ReferenceSummary>([
+    ['talent-001', { id: 'talent-001', code: 'TAL-000001', name: 'Mina', status: 'ACTIVE' }],
+  ]),
+  talentGroups: new Map<string, ReferenceSummary>([
+    ['group-001', { id: 'group-001', code: 'TG-000001', name: 'A Team', status: 'ACTIVE' }],
+  ]),
+};
+
+const readOwnerRef = (record: PlatformAccountRecord): ReferenceSummary | null => {
+  if (record.ownerKind === 'ORG_UNIT') {
+    return record.ownerOrgUnitId ? (ownerRefs.orgUnits.get(record.ownerOrgUnitId) ?? null) : null;
+  }
+
+  if (record.ownerKind === 'TALENT') {
+    return record.ownerTalentId ? (ownerRefs.talents.get(record.ownerTalentId) ?? null) : null;
+  }
+
+  return record.ownerTalentGroupId
+    ? (ownerRefs.talentGroups.get(record.ownerTalentGroupId) ?? null)
+    : null;
+};
+
 const toPlatformListItem = (record: PlatformAccountRecord) => {
   return {
     id: record.id,
@@ -307,6 +341,7 @@ const toPlatformListItem = (record: PlatformAccountRecord) => {
     ownerOrgUnitId: record.ownerOrgUnitId,
     ownerTalentId: record.ownerTalentId,
     ownerTalentGroupId: record.ownerTalentGroupId,
+    ownerRef: readOwnerRef(record),
     operationalStatus: record.operationalStatus,
     livestreamEnabled: record.livestreamEnabled,
     contentPublishingEnabled: record.contentPublishingEnabled,

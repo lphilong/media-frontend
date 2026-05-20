@@ -12,7 +12,7 @@
     "ownerKind": "所有者类型",
     "ownerId": "所有者",
     "operationalStatus": "状态",
-    "handle": "账号名",
+    "handle": "公开账号名",
     "externalPlatformId": "外部平台ID",
     "profileUrl": "档案 URL",
     "livestreamEnabled": "直播",
@@ -29,7 +29,13 @@
   },
   "placeholders": {
     "optional": "可选",
-    "ownerSearch": "按所选所有者类型搜索"
+    "ownerSearch": "按所选所有者类型搜索",
+    "selectPlatform": "选择平台",
+    "selectSurfaceType": "选择载体类型",
+    "handle": "my_channel"
+  },
+  "help": {
+    "handle": "平台上的公开用户名，通常不带 @。示例：my_channel。"
   },
   "referenceHelp": {
     "ownerId": "按所选所有者类型从列表中选择所有者。"
@@ -46,8 +52,10 @@
     "allStatuses": "所有未归档",
     "platform": "平台",
     "platformPlaceholder": "youtube",
+    "allPlatforms": "所有平台",
     "platformSurfaceType": "载体类型",
     "platformSurfaceTypePlaceholder": "livestream",
+    "allSurfaceTypes": "所有载体类型",
     "ownerKind": "所有者类型",
     "allOwnerKinds": "所有所有者类型",
     "ownerId": "所有者",
@@ -61,6 +69,17 @@
     "ORG_UNIT": "组织单元",
     "TALENT": "艺人",
     "TALENT_GROUP": "艺人组"
+  },
+  "platforms": {
+    "TIKTOK": "TikTok",
+    "YOUTUBE": "YouTube",
+    "FACEBOOK": "Facebook",
+    "INSTAGRAM": "Instagram"
+  },
+  "surfaceTypes": {
+    "ACCOUNT": "账号",
+    "CHANNEL": "频道",
+    "PAGE": "主页"
   },
   "sort": {
     "accountCode": "账号编码",
@@ -93,7 +112,7 @@
     "platform": "平台",
     "platformSurfaceType": "载体类型",
     "displayName": "显示名称",
-    "handle": "账号名",
+    "handle": "公开账号名",
     "ownerKind": "所有者类型",
     "ownerId": "所有者",
     "operationalStatus": "状态",

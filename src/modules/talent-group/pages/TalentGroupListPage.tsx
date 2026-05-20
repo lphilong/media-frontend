@@ -21,17 +21,22 @@ import type {
 } from '@modules/talent-group/types/talent-group.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
+import { loadTalentReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import {
   createCursorStack,
   mergeScreenQueryParams,
@@ -43,6 +48,10 @@ import {
   talentGroupFlatListQueryConfig,
 } from '@shared/query';
 import { ModuleListScreenShell } from '@shared/modules';
+import {
+  readReferenceDisplay,
+  readReferenceDisplayForId,
+} from '@shared/formatting/reference-display';
 
 type RoutePatchOptions = {
   replace?: boolean;
@@ -152,6 +161,8 @@ export const TalentGroupListPage = (): JSX.Element => {
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(() => {
@@ -326,6 +337,85 @@ export const TalentGroupListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const rememberFilterOption = useCallback((key: string, option: ReferenceOption | undefined) => {
+    setFilterOptionLabels((current) => {
+      if (option?.label) {
+        return current[key] === option.label ? current : { ...current, [key]: option.label };
+      }
+
+      if (!(key in current)) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }, []);
+  const moreFilterCount = !isByTalentView && flatListQuery.containsTalentId ? 1 : 0;
+  const clearTalentGroupFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      containsTalentId: undefined,
+    });
+  }, [patchQuery]);
+  const containsTalentFilterLabel = useMemo(
+    () => readReferenceDisplay(undefined, flatListQuery.containsTalentId),
+    [flatListQuery.containsTalentId],
+  );
+  const relatedTalentLabel = useMemo(
+    () =>
+      readReferenceDisplayForId(
+        byTalentQuery.talentId,
+        (byTalentListQueryResult.data?.data ?? []).map((record) => record.talentRef),
+      ),
+    [byTalentListQueryResult.data?.data, byTalentQuery.talentId],
+  );
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (!isByTalentView && flatListQuery.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: flatListQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    const activeStatus = isByTalentView ? byTalentQuery.status : flatListQuery.status;
+    if (activeStatus) {
+      items.push({
+        id: 'status',
+        label: t('talent-group:filters.status'),
+        value: t(`talent-group:statuses.${activeStatus}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    if (!isByTalentView && flatListQuery.containsTalentId) {
+      items.push({
+        id: 'contains-talent',
+        label: t('talent-group:filters.containsTalentId'),
+        value: filterOptionLabels.containsTalent ?? containsTalentFilterLabel,
+        onClear: () => patchQuery({ containsTalentId: undefined }),
+      });
+    }
+
+    return items;
+  }, [
+    byTalentQuery.status,
+    containsTalentFilterLabel,
+    filterOptionLabels.containsTalent,
+    flatListQuery.containsTalentId,
+    flatListQuery.search,
+    flatListQuery.status,
+    isByTalentView,
+    patchQuery,
+    t,
+  ]);
+
   return (
     <ModuleListScreenShell
       mode={isByTalentView ? 'related-list' : 'flat-list'}
@@ -333,12 +423,12 @@ export const TalentGroupListPage = (): JSX.Element => {
         isByTalentView ? (
           <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-text">
             <span className="font-medium">{t('talent-group:related.byTalentModeLabel')}</span>{' '}
-            <span className="font-mono">{byTalentQuery.talentId ?? '-'}</span>
+            <span>{relatedTalentLabel}</span>
           </div>
         ) : undefined
       }
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             !isByTalentView ? (
               <SearchBoxSeam
@@ -370,6 +460,58 @@ export const TalentGroupListPage = (): JSX.Element => {
               }
             />
           }
+          moreFiltersTrigger={
+            !isByTalentView ? (
+              <button
+                type="button"
+                aria-expanded={isMoreFiltersOpen}
+                aria-controls="talent-group-more-filters"
+                onClick={() => setIsMoreFiltersOpen((current) => !current)}
+                className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+              >
+                {t('common:filters.moreFilters')}
+                {moreFilterCount > 0 ? ` (${moreFilterCount})` : ''}
+              </button>
+            ) : undefined
+          }
+          moreFiltersPanel={
+            !isByTalentView ? (
+              <MoreFiltersPanel
+                id="talent-group-more-filters"
+                title={t('common:filters.moreFilters')}
+                closeLabel={t('common:actions.close')}
+                isOpen={isMoreFiltersOpen}
+                onClose={() => setIsMoreFiltersOpen(false)}
+              >
+                <ReferenceFilterField
+                  label={t('talent-group:filters.containsTalentId')}
+                  pickerId="talent-group-filter-contains-talent"
+                  value={flatListQuery.containsTalentId}
+                  loadOptions={loadTalentReferenceOptions}
+                  placeholder={t('talent-group:placeholders.talentSearch')}
+                  clearLabel={t('common:actions.clear')}
+                  className="min-w-[240px]"
+                  onSelectedOptionChange={(option) =>
+                    rememberFilterOption('containsTalent', option)
+                  }
+                  onChange={(nextId) =>
+                    patchQuery({
+                      containsTalentId: nextId,
+                    })
+                  }
+                />
+              </MoreFiltersPanel>
+            ) : undefined
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              onClearAll={appliedFilterChips.length > 0 ? clearTalentGroupFilters : undefined}
+            />
+          }
         >
           <label className="flex min-w-[180px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">
@@ -393,24 +535,7 @@ export const TalentGroupListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          {!isByTalentView ? (
-            <label className="flex min-w-[220px] flex-col gap-1">
-              <span className="text-xs font-medium uppercase text-muted">
-                {t('talent-group:filters.containsTalentId')}
-              </span>
-              <input
-                value={flatListQuery.containsTalentId ?? ''}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                placeholder={t('talent-group:filters.containsTalentIdPlaceholder')}
-                onChange={(event) =>
-                  patchQuery({
-                    containsTalentId: event.target.value || undefined,
-                  })
-                }
-              />
-            </label>
-          ) : null}
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>

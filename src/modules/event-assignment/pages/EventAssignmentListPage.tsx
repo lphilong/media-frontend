@@ -20,18 +20,21 @@ import type {
 } from '@modules/event-assignment/types/event-assignment.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  AppliedFilterChips,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
   useDestructiveConfirm,
   useMutationFeedback,
+  type AppliedFilterChipItem,
 } from '@shared/components/primitives';
-import { ReferenceFilterField } from '@shared/components/reference';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import {
   loadEmploymentProfileReferenceOptions,
   loadPlatformAccountReferenceOptions,
@@ -73,6 +76,8 @@ const statusOptions = [
   'ARCHIVED',
 ] as const;
 const assignmentKindOptions = ['', 'EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP'] as const;
+
+type FilterLabelKey = 'assignment' | 'studioResource' | 'platformAccount';
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -215,6 +220,8 @@ export const EventAssignmentListPage = (): JSX.Element => {
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterLabels, setFilterLabels] = useState<Partial<Record<FilterLabelKey, string>>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(() => {
@@ -374,6 +381,193 @@ export const EventAssignmentListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const rememberFilterLabel = useCallback(
+    (key: FilterLabelKey) => (option: ReferenceOption | undefined) => {
+      if (!option) {
+        return;
+      }
+
+      setFilterLabels((current) => ({ ...current, [key]: option.label }));
+    },
+    [],
+  );
+
+  const activeFilterChips = useMemo(() => {
+    const chips: AppliedFilterChipItem[] = [];
+
+    if (routeMode === 'flat' && flatListQuery.search) {
+      chips.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: flatListQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (activeQuery.status) {
+      chips.push({
+        id: 'status',
+        label: t('event-assignment:filters.status'),
+        value: t(`event-assignment:statuses.${activeQuery.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    if ('statusGroup' in activeQuery && activeQuery.statusGroup === 'ACTIVE') {
+      chips.push({
+        id: 'statusGroup',
+        label: 'Status group',
+        value: 'Active',
+        onClear: () => patchQuery({ statusGroup: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && 'assignmentKind' in activeQuery && activeQuery.assignmentKind) {
+      chips.push({
+        id: 'assignmentKind',
+        label: t('event-assignment:filters.assignmentKind'),
+        value: t(`event-assignment:assignmentKinds.${activeQuery.assignmentKind}`),
+        onClear: () =>
+          patchQuery({
+            assignmentKind: undefined,
+            assignmentEmploymentProfileId: undefined,
+            assignmentTalentId: undefined,
+            assignmentTalentGroupId: undefined,
+          }),
+      });
+    }
+
+    if (routeMode === 'flat' && selectedAssignmentId) {
+      chips.push({
+        id: 'assignment',
+        label: t('event-assignment:filters.assignmentId'),
+        value: filterLabels.assignment ?? selectedAssignmentId,
+        onClear: () =>
+          patchQuery({
+            assignmentEmploymentProfileId: undefined,
+            assignmentTalentId: undefined,
+            assignmentTalentGroupId: undefined,
+          }),
+      });
+    }
+
+    const studioResourceId =
+      routeMode === 'by-resource'
+        ? (byResourceQuery.studioResourceId ?? undefined)
+        : (flatListQuery.containsStudioResourceId ?? undefined);
+    if (routeMode === 'flat' && studioResourceId) {
+      chips.push({
+        id: 'studioResource',
+        label: t('event-assignment:filters.studioResourceId'),
+        value: filterLabels.studioResource ?? studioResourceId,
+        onClear: () => patchQuery({ containsStudioResourceId: undefined }),
+      });
+    }
+
+    const platformAccountId =
+      routeMode === 'by-platform'
+        ? (byPlatformQuery.platformAccountId ?? undefined)
+        : (flatListQuery.containsPlatformAccountId ?? undefined);
+    if (routeMode === 'flat' && platformAccountId) {
+      chips.push({
+        id: 'platformAccount',
+        label: t('event-assignment:filters.platformAccountId'),
+        value: filterLabels.platformAccount ?? platformAccountId,
+        onClear: () => patchQuery({ containsPlatformAccountId: undefined }),
+      });
+    }
+
+    if (activeQuery.windowStartAt !== undefined) {
+      chips.push({
+        id: 'windowStartAt',
+        label: t('event-assignment:filters.windowStartAt'),
+        value: String(activeQuery.windowStartAt),
+        onClear: () => patchQuery({ windowStartAt: undefined }),
+      });
+    }
+
+    if (activeQuery.windowEndAt !== undefined) {
+      chips.push({
+        id: 'windowEndAt',
+        label: t('event-assignment:filters.windowEndAt'),
+        value: String(activeQuery.windowEndAt),
+        onClear: () => patchQuery({ windowEndAt: undefined }),
+      });
+    }
+
+    if ('eventOverlapStartAt' in activeQuery && activeQuery.eventOverlapStartAt !== undefined) {
+      chips.push({
+        id: 'eventOverlapStartAt',
+        label: 'Event overlaps from',
+        value: String(activeQuery.eventOverlapStartAt),
+        onClear: () => patchQuery({ eventOverlapStartAt: undefined }),
+      });
+    }
+
+    if ('eventOverlapEndAt' in activeQuery && activeQuery.eventOverlapEndAt !== undefined) {
+      chips.push({
+        id: 'eventOverlapEndAt',
+        label: 'Event overlaps until',
+        value: String(activeQuery.eventOverlapEndAt),
+        onClear: () => patchQuery({ eventOverlapEndAt: undefined }),
+      });
+    }
+
+    if ('eventStartFromAt' in activeQuery && activeQuery.eventStartFromAt !== undefined) {
+      chips.push({
+        id: 'eventStartFromAt',
+        label: 'Event starts from',
+        value: String(activeQuery.eventStartFromAt),
+        onClear: () => patchQuery({ eventStartFromAt: undefined }),
+      });
+    }
+
+    if ('eventStartToAt' in activeQuery && activeQuery.eventStartToAt !== undefined) {
+      chips.push({
+        id: 'eventStartToAt',
+        label: 'Event starts until',
+        value: String(activeQuery.eventStartToAt),
+        onClear: () => patchQuery({ eventStartToAt: undefined }),
+      });
+    }
+
+    return chips;
+  }, [
+    activeQuery,
+    byPlatformQuery.platformAccountId,
+    byResourceQuery.studioResourceId,
+    filterLabels.assignment,
+    filterLabels.platformAccount,
+    filterLabels.studioResource,
+    flatListQuery.containsPlatformAccountId,
+    flatListQuery.containsStudioResourceId,
+    flatListQuery.search,
+    patchQuery,
+    routeMode,
+    selectedAssignmentId,
+    t,
+  ]);
+
+  const clearAllFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      statusGroup: undefined,
+      assignmentKind: undefined,
+      assignmentEmploymentProfileId: undefined,
+      assignmentTalentId: undefined,
+      assignmentTalentGroupId: undefined,
+      containsStudioResourceId: undefined,
+      containsPlatformAccountId: undefined,
+      windowStartAt: undefined,
+      windowEndAt: undefined,
+      eventOverlapStartAt: undefined,
+      eventOverlapEndAt: undefined,
+      eventStartFromAt: undefined,
+      eventStartToAt: undefined,
+    });
+  }, [patchQuery]);
+
   return (
     <ModuleListScreenShell
       mode={routeMode === 'flat' ? 'flat-list' : 'related-list'}
@@ -387,7 +581,7 @@ export const EventAssignmentListPage = (): JSX.Element => {
         </div>
       }
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             routeMode === 'flat' ? (
               <SearchBoxSeam
@@ -408,6 +602,157 @@ export const EventAssignmentListPage = (): JSX.Element => {
               onChange={(sortBy, sortDirection) => patchQuery({ sortBy, sortDirection })}
             />
           }
+          moreFiltersTrigger={
+            <button
+              type="button"
+              aria-expanded={isMoreFiltersOpen}
+              aria-controls="event-assignment-more-filters"
+              onClick={() => setIsMoreFiltersOpen((current) => !current)}
+              className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+            >
+              {t('common:filters.moreFilters')}
+            </button>
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              emptyLabel={t('common:filters.noFiltersApplied')}
+              items={activeFilterChips}
+              onClearAll={activeFilterChips.length > 0 ? clearAllFilters : undefined}
+            />
+          }
+          moreFiltersPanel={
+            <MoreFiltersPanel
+              id="event-assignment-more-filters"
+              title={t('common:filters.moreFilters')}
+              isOpen={isMoreFiltersOpen}
+              closeLabel={t('common:actions.close')}
+              onClose={() => setIsMoreFiltersOpen(false)}
+            >
+              {routeMode === 'flat' || routeMode === 'by-assignment' ? (
+                <>
+                  <label className="flex min-w-[210px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('event-assignment:filters.assignmentKind')}
+                    </span>
+                    <select
+                      value={
+                        'assignmentKind' in activeQuery ? (activeQuery.assignmentKind ?? '') : ''
+                      }
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({
+                          assignmentKind: event.target.value || undefined,
+                          assignmentEmploymentProfileId: undefined,
+                          assignmentTalentId: undefined,
+                          assignmentTalentGroupId: undefined,
+                        })
+                      }
+                    >
+                      {assignmentKindOptions.map((kind) => (
+                        <option key={kind || 'all'} value={kind}>
+                          {kind
+                            ? t(`event-assignment:assignmentKinds.${kind}`)
+                            : t('event-assignment:filters.allAssignmentKinds')}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <ReferenceFilterField
+                    label={t('event-assignment:filters.assignmentId')}
+                    pickerId="event-assignment-filter-assignment"
+                    value={selectedAssignmentId}
+                    loadOptions={loadAssignmentFilterOptions}
+                    placeholder={t('event-assignment:filters.assignmentIdPlaceholder')}
+                    clearLabel={t('common:actions.clear')}
+                    disabled={!activeAssignmentKind}
+                    onSelectedOptionChange={rememberFilterLabel('assignment')}
+                    onChange={(value) =>
+                      patchQuery({
+                        assignmentEmploymentProfileId:
+                          activeAssignmentKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
+                        assignmentTalentId: activeAssignmentKind === 'TALENT' ? value : undefined,
+                        assignmentTalentGroupId:
+                          activeAssignmentKind === 'TALENT_GROUP' ? value : undefined,
+                      })
+                    }
+                  />
+                </>
+              ) : null}
+              <ReferenceFilterField
+                label={t('event-assignment:filters.studioResourceId')}
+                pickerId="event-assignment-filter-studio-resource"
+                value={
+                  routeMode === 'by-resource'
+                    ? (byResourceQuery.studioResourceId ?? undefined)
+                    : (flatListQuery.containsStudioResourceId ?? undefined)
+                }
+                loadOptions={loadStudioResourceReferenceOptions}
+                placeholder={t('event-assignment:filters.studioResourceIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                onSelectedOptionChange={rememberFilterLabel('studioResource')}
+                onChange={(value) =>
+                  patchQuery(
+                    routeMode === 'by-resource'
+                      ? { studioResourceId: value }
+                      : { containsStudioResourceId: value },
+                  )
+                }
+              />
+              <ReferenceFilterField
+                label={t('event-assignment:filters.platformAccountId')}
+                pickerId="event-assignment-filter-platform-account"
+                value={
+                  routeMode === 'by-platform'
+                    ? (byPlatformQuery.platformAccountId ?? undefined)
+                    : (flatListQuery.containsPlatformAccountId ?? undefined)
+                }
+                loadOptions={loadPlatformAccountReferenceOptions}
+                placeholder={t('event-assignment:filters.platformAccountIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                onSelectedOptionChange={rememberFilterLabel('platformAccount')}
+                onChange={(value) =>
+                  patchQuery(
+                    routeMode === 'by-platform'
+                      ? { platformAccountId: value }
+                      : { containsPlatformAccountId: value },
+                  )
+                }
+              />
+              <label className="flex min-w-[170px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('event-assignment:filters.windowStartAt')}
+                </span>
+                <input
+                  type="number"
+                  value={activeQuery.windowStartAt ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({
+                      windowStartAt: event.target.value ? Number(event.target.value) : undefined,
+                    })
+                  }
+                />
+              </label>
+              <label className="flex min-w-[170px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('event-assignment:filters.windowEndAt')}
+                </span>
+                <input
+                  type="number"
+                  value={activeQuery.windowEndAt ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({
+                      windowEndAt: event.target.value ? Number(event.target.value) : undefined,
+                    })
+                  }
+                />
+              </label>
+            </MoreFiltersPanel>
+          }
         >
           <label className="flex min-w-[180px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">
@@ -427,122 +772,7 @@ export const EventAssignmentListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          {routeMode === 'flat' || routeMode === 'by-assignment' ? (
-            <>
-              <label className="flex min-w-[210px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('event-assignment:filters.assignmentKind')}
-                </span>
-                <select
-                  value={'assignmentKind' in activeQuery ? (activeQuery.assignmentKind ?? '') : ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      assignmentKind: event.target.value || undefined,
-                      assignmentEmploymentProfileId: undefined,
-                      assignmentTalentId: undefined,
-                      assignmentTalentGroupId: undefined,
-                    })
-                  }
-                >
-                  {assignmentKindOptions.map((kind) => (
-                    <option key={kind || 'all'} value={kind}>
-                      {kind
-                        ? t(`event-assignment:assignmentKinds.${kind}`)
-                        : t('event-assignment:filters.allAssignmentKinds')}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <ReferenceFilterField
-                label={t('event-assignment:filters.assignmentId')}
-                pickerId="event-assignment-filter-assignment"
-                value={selectedAssignmentId}
-                loadOptions={loadAssignmentFilterOptions}
-                placeholder={t('event-assignment:filters.assignmentIdPlaceholder')}
-                clearLabel={t('common:actions.clear')}
-                disabled={!activeAssignmentKind}
-                onChange={(value) =>
-                  patchQuery({
-                    assignmentEmploymentProfileId:
-                      activeAssignmentKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
-                    assignmentTalentId: activeAssignmentKind === 'TALENT' ? value : undefined,
-                    assignmentTalentGroupId:
-                      activeAssignmentKind === 'TALENT_GROUP' ? value : undefined,
-                  })
-                }
-              />
-            </>
-          ) : null}
-          <ReferenceFilterField
-            label={t('event-assignment:filters.studioResourceId')}
-            pickerId="event-assignment-filter-studio-resource"
-            value={
-              routeMode === 'by-resource'
-                ? (byResourceQuery.studioResourceId ?? undefined)
-                : (flatListQuery.containsStudioResourceId ?? undefined)
-            }
-            loadOptions={loadStudioResourceReferenceOptions}
-            placeholder={t('event-assignment:filters.studioResourceIdPlaceholder')}
-            clearLabel={t('common:actions.clear')}
-            onChange={(value) =>
-              patchQuery(
-                routeMode === 'by-resource'
-                  ? { studioResourceId: value }
-                  : { containsStudioResourceId: value },
-              )
-            }
-          />
-          <ReferenceFilterField
-            label={t('event-assignment:filters.platformAccountId')}
-            pickerId="event-assignment-filter-platform-account"
-            value={
-              routeMode === 'by-platform'
-                ? (byPlatformQuery.platformAccountId ?? undefined)
-                : (flatListQuery.containsPlatformAccountId ?? undefined)
-            }
-            loadOptions={loadPlatformAccountReferenceOptions}
-            placeholder={t('event-assignment:filters.platformAccountIdPlaceholder')}
-            clearLabel={t('common:actions.clear')}
-            onChange={(value) =>
-              patchQuery(
-                routeMode === 'by-platform'
-                  ? { platformAccountId: value }
-                  : { containsPlatformAccountId: value },
-              )
-            }
-          />
-          <label className="flex min-w-[170px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('event-assignment:filters.windowStartAt')}
-            </span>
-            <input
-              type="number"
-              value={activeQuery.windowStartAt ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  windowStartAt: event.target.value ? Number(event.target.value) : undefined,
-                })
-              }
-            />
-          </label>
-          <label className="flex min-w-[170px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('event-assignment:filters.windowEndAt')}
-            </span>
-            <input
-              type="number"
-              value={activeQuery.windowEndAt ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  windowEndAt: event.target.value ? Number(event.target.value) : undefined,
-                })
-              }
-            />
-          </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>

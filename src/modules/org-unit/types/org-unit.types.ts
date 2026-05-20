@@ -1,3 +1,5 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type OrgUnitStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
 export type OrgUnitRecord = {
@@ -7,6 +9,7 @@ export type OrgUnitRecord = {
   type: string;
   status: OrgUnitStatus;
   parentOrgUnitId?: string | null;
+  parentOrgUnitRef?: ReferenceSummary | null;
   depth: number;
   displayOrder: number;
   description?: string | null;

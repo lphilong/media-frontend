@@ -3,6 +3,17 @@ export type TalentKpiMeasurementSource = 'MANUAL';
 export type TalentKpiSortBy = 'periodStartAt' | 'kpiRecordCode' | 'createdAt';
 export type SortDirection = 'asc' | 'desc';
 
+export type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  title?: string;
+  displayName?: string;
+  handle?: string;
+  platform?: string;
+  status?: string;
+};
+
 export type TalentKpiMetricCode =
   | 'LIVESTREAM_HOURS'
   | 'REVENUE_ATTRIBUTED_AMOUNT'
@@ -29,6 +40,9 @@ export type TalentKpiRecord = {
   subjectTalentId: string;
   attributionPlatformAccountId?: string | null;
   attributionEventId?: string | null;
+  subjectTalentRef?: ReferenceSummary | null;
+  attributionPlatformAccountRef?: ReferenceSummary | null;
+  attributionEventRef?: ReferenceSummary | null;
   measurementSource: TalentKpiMeasurementSource;
   status: TalentKpiStatus;
   periodStartAt: number | string;
@@ -48,6 +62,9 @@ export type TalentKpiListItem = Pick<
   | 'subjectTalentId'
   | 'attributionPlatformAccountId'
   | 'attributionEventId'
+  | 'subjectTalentRef'
+  | 'attributionPlatformAccountRef'
+  | 'attributionEventRef'
   | 'measurementSource'
   | 'status'
   | 'periodStartAt'
@@ -110,6 +127,9 @@ export type TalentKpiFlatListQuery = {
   containsMetricCode?: TalentKpiMetricCode;
   windowStartAt?: number;
   windowEndAt?: number;
+  createdBeforeAt?: number;
+  publishedFromAt?: number;
+  publishedToAt?: number;
   limit?: number;
   cursor?: string;
   search?: string;

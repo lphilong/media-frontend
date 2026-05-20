@@ -33,7 +33,8 @@
     "orgUnitSearch": "按名称或编码搜索组织单元",
     "employmentProfileSearch": "按姓名或员工编码搜索员工档案",
     "userSearch": "按姓名或邮箱搜索用户",
-    "clearToUnset": "留空以清除主管分配"
+    "clearToUnset": "留空以清除主管分配",
+    "selectEmploymentKind": "选择用工类型"
   },
   "referenceHelp": {
     "orgUnitId": "选择此档案所属的组织单元。",
@@ -54,6 +55,7 @@
     "contractStatus": "合同状态",
     "employmentKind": "员工类型",
     "employmentKindPlaceholder": "筛选按类型标记",
+    "allEmploymentKinds": "所有用工类型",
     "orgUnitId": "组织单元",
     "orgUnitIdPlaceholder": "选择组织单元",
     "managerEmploymentProfileId": "主管",
@@ -84,6 +86,12 @@
     "ACTIVE": "启用",
     "EXPIRED": "已过期",
     "TERMINATED": "已终止"
+  },
+  "employmentKinds": {
+    "EMPLOYEE": "员工",
+    "CONTRACTOR": "承包方",
+    "PART_TIME": "兼职",
+    "INTERN": "实习生"
   },
   "actions": {
     "create": "新建员工档案",

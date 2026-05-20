@@ -15,6 +15,7 @@ const renderRoute = (path: string) => {
   });
 
   renderAppWithProviders(<RouterProvider router={router} />);
+  return router;
 };
 
 const findPicker = async (pickerId: string): Promise<HTMLElement> => {
@@ -125,7 +126,9 @@ describe('monthly roster slice B shell surfaces', () => {
   });
 
   it('renders list rows and emits only backend-supported query params', async () => {
+    const user = userEvent.setup();
     let capturedKeys: string[] = [];
+    useRosterReferenceHandlers();
     server.use(
       http.get('*/admin/work-schedule/rosters', ({ request }) => {
         const url = new URL(request.url);
@@ -149,6 +152,81 @@ describe('monthly roster slice B shell surfaces', () => {
       'status',
       'workPatternId',
     ]);
+    expect(
+      screen.getByLabelText(i18n.t('work-schedule:monthlyRosters.filters.status')),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', {
+        name: (name) => name.includes(i18n.t('common:filters.moreFilters')),
+      }),
+    );
+    expect(
+      screen.getByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
+    ).toBeInTheDocument();
+    expect(
+      await within(await findPicker('monthly-roster-filter-department')).findAllByText(/SALES/),
+    ).not.toHaveLength(0);
+    expect(
+      await within(await findPicker('monthly-roster-filter-work-pattern')).findAllByText(
+        /PATTERN_ACTIVE/,
+      ),
+    ).not.toHaveLength(0);
+    expect(
+      await within(await findPicker('monthly-roster-filter-holiday-calendar')).findAllByText(
+        /VN_ACTIVE/,
+      ),
+    ).not.toHaveLength(0);
+  }, 10_000);
+
+  it('selects and clears Monthly Roster reference filters without changing query keys', async () => {
+    const user = userEvent.setup();
+    useRosterReferenceHandlers();
+    server.use(
+      http.get('*/admin/work-schedule/rosters', () => {
+        return HttpResponse.json({ data: [baseRosterListItem()] });
+      }),
+    );
+
+    const router = renderRoute('/work-schedule/rosters?departmentOrgUnitId=ou-sales');
+
+    expect(await screen.findByText('ROSTER_DRAFT', {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', {
+        name: (name) => name.includes(i18n.t('common:filters.moreFilters')),
+      }),
+    );
+    expect(
+      await within(await findPicker('monthly-roster-filter-department')).findAllByText(/SALES/),
+    ).not.toHaveLength(0);
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'work-schedule:monthlyRosters.filters.departmentOrgUnitId',
+        )}`,
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('departmentOrgUnitId'),
+      ).toBeNull();
+    });
+
+    await selectPickerOption(user, 'monthly-roster-filter-work-pattern', /PATTERN_ACTIVE/);
+    await waitFor(() => {
+      const query = new URLSearchParams(router.state.location.search);
+      expect(query.get('workPatternId')).toBe('pattern-active');
+      expect(query.get('workPatternId')).not.toBe('PATTERN_ACTIVE');
+    });
+    expect(screen.getAllByText(/PATTERN_ACTIVE/).length).toBeGreaterThan(0);
+
+    await selectPickerOption(user, 'monthly-roster-filter-holiday-calendar', /VN_ACTIVE/);
+    await waitFor(() => {
+      const query = new URLSearchParams(router.state.location.search);
+      expect(query.get('holidayCalendarId')).toBe('holiday-calendar-active');
+      expect(query.get('holidayCalendarId')).not.toBe('VN_ACTIVE');
+    });
   });
 
   it('rejects legacy EXACT roster target mode instead of treating it as a backend alias', async () => {

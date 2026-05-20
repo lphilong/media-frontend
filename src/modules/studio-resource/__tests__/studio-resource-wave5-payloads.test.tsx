@@ -100,8 +100,7 @@ describe('studio-resource wave 5 query and payload seams', () => {
     expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('resourceCode');
 
     onSubmit.mockReset();
-    await user.clear(screen.getByLabelText(i18n.t('studio-resource:fields.resourceClass')));
-    await user.type(
+    await user.selectOptions(
       screen.getByLabelText(i18n.t('studio-resource:fields.resourceClass')),
       'EQUIPMENT',
     );

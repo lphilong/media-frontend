@@ -21,6 +21,7 @@ describe('event assignment wave 6 surfaces', () => {
   });
 
   it('renders Event list rows, filters archived by default, and exposes no scope UI', async () => {
+    const user = userEvent.setup();
     renderRoute('/events?scope=global&status=SCHEDULED');
 
     expect(
@@ -29,10 +30,49 @@ describe('event assignment wave 6 surfaces', () => {
     expect(await screen.findByText('EVT-202605-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.queryByText('Archived event')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/scope/i)).not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getAllByText(i18n.t('event-assignment:statuses.SCHEDULED')).length,
+    ).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
+    expect(
+      screen.getByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('event-assignment:filters.assignmentKind') }),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'event-assignment:filters.status',
+        )}`,
+      }),
+    );
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('event-assignment:filters.status') }),
+    ).toHaveValue('');
     const main = screen.getByTestId('admin-shell-main');
     expect(
       within(main).queryByText(/removed|attendance|recurrence|work shift|bulk|delete|unarchive/i),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders target timestamp filter chips with readable UTC timestamps', async () => {
+    renderRoute(
+      '/events?statusGroup=ACTIVE&eventOverlapStartAt=1777507200000&eventOverlapEndAt=1777593600000&eventStartFromAt=1777507200000&eventStartToAt=1778112000000',
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('event-assignment:page.title') }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Event overlaps from:')).toBeInTheDocument();
+    expect(screen.getByText('Event overlaps until:')).toBeInTheDocument();
+    expect(screen.getByText('Event starts from:')).toBeInTheDocument();
+    expect(screen.getByText('Event starts until:')).toBeInTheDocument();
+    expect(screen.getAllByText(/00:00 30-04-2026/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/00:00 01-05-2026/)).toBeInTheDocument();
+    expect(screen.getByText(/00:00 07-05-2026/)).toBeInTheDocument();
+    expect(screen.queryByText(/1777507200000|1777593600000|1778112000000/)).not.toBeInTheDocument();
   });
 
   it('renders detail and active assignment roster from the roster endpoint', async () => {
@@ -44,23 +84,30 @@ describe('event assignment wave 6 surfaces', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('EVT-202605-000001')).toBeInTheDocument();
     expect(screen.getByText('Launch livestream')).toBeInTheDocument();
+    expect(screen.getByText('16:06 12-05-2026')).toBeInTheDocument();
+    expect(screen.getByText('19:06 12-05-2026')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('event-assignment:assignments.title'))).toBeInTheDocument();
-    expect(screen.getByText('ep-001')).toBeInTheDocument();
-    expect(screen.getByText('talent-002')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'studio-001' })).toHaveAttribute(
+    expect(screen.getByText('Alice Nguyen')).toBeInTheDocument();
+    expect(screen.getByText('Luna')).toBeInTheDocument();
+    expect(screen.queryByText('ep-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('talent-002')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Main Studio' })).toHaveAttribute(
       'href',
       '/studio-resources/studio-001',
     );
-    expect(screen.getByRole('link', { name: 'platform-001' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Mina Live' })).toHaveAttribute(
       'href',
       '/platform-accounts/platform-001',
     );
+    const main = screen.getByTestId('admin-shell-main');
+    expect(within(main).queryByText('studio-001')).not.toBeInTheDocument();
+    expect(within(main).queryByText('platform-001')).not.toBeInTheDocument();
 
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.replaceAssignments') }),
     );
-    expect(screen.getByText('ep-001')).toBeInTheDocument();
-    expect(screen.getByText('talent-002')).toBeInTheDocument();
+    expect(screen.getByText('Alice Nguyen')).toBeInTheDocument();
+    expect(screen.getByText('Luna')).toBeInTheDocument();
   });
 
   it('keeps archived events read-only and does not present unsupported event surfaces', async () => {
@@ -112,11 +159,11 @@ describe('event assignment wave 6 surfaces', () => {
     await user.click(await scope.findByRole('button', { name: /Alice/ }));
     await user.type(
       scope.getByLabelText(i18n.t('event-assignment:fields.eventStartAt')),
-      '1900000000000',
+      '2030-03-18T00:46',
     );
     await user.type(
       scope.getByLabelText(i18n.t('event-assignment:fields.eventEndAt')),
-      '1900003600000',
+      '2030-03-18T01:46',
     );
     await user.click(
       scope.getByRole('button', { name: i18n.t('event-assignment:actions.addStudioResource') }),
@@ -143,7 +190,7 @@ describe('event assignment wave 6 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('event-assignment:assignments.title')),
     ).toBeInTheDocument();
-    expect(screen.getByText('ep-001')).toBeInTheDocument();
+    expect(screen.getByText('Alice Nguyen')).toBeInTheDocument();
 
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.start') }),

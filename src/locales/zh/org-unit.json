@@ -11,7 +11,7 @@
     "status": "状态",
     "parentOrgUnitId": "父组织单元",
     "newParentOrgUnitId": "新父组织单元",
-    "displayOrder": "显示顺序",
+    "displayOrder": "排序优先级",
     "depth": "层级深度",
     "ancestorChain": "上级链",
     "externalRef": "外部引用",
@@ -25,6 +25,7 @@
   },
   "placeholders": {
     "typeToken": "示例：DEPARTMENT",
+    "selectType": "选择类型",
     "parentOrgUnitId": "根单元请留空",
     "parentOrgUnitSearch": "按名称或编码搜索组织单元",
     "optional": "可选"
@@ -44,6 +45,7 @@
     "status": "状态",
     "type": "类型",
     "typePlaceholder": "筛选按类型标记",
+    "allTypes": "所有类型",
     "parentOrgUnitId": "父组织单元",
     "parentOrgUnitIdPlaceholder": "父单元 ID",
     "rootOnly": "层级模式",
@@ -56,7 +58,16 @@
     "code": "编码",
     "name": "名称",
     "createdAt": "创建时间",
-    "displayOrder": "显示顺序"
+    "displayOrder": "排序优先级"
+  },
+  "types": {
+    "DEPARTMENT": "部门",
+    "TEAM": "团队",
+    "BUSINESS_UNIT": "业务单元",
+    "SUPPORT_UNIT": "支持单元"
+  },
+  "help": {
+    "displayOrder": "数字越小越靠前。像 10、20、30 这样的间隔便于以后在现有项目之间插入新项目。例如：使用 15 可将项目放在 10 和 20 之间。"
   },
   "statuses": {
     "ACTIVE": "启用",
@@ -82,7 +93,7 @@
     "status": "状态",
     "parentOrgUnitId": "父单元",
     "depth": "层级深度",
-    "displayOrder": "顺序",
+    "displayOrder": "排序优先级",
     "createdAt": "已创建",
     "actions": "操作"
   },
@@ -92,7 +103,7 @@
     "type": "类型",
     "status": "状态",
     "depth": "层级深度",
-    "displayOrder": "顺序"
+    "displayOrder": "排序优先级"
   },
   "detail": {
     "summaryTitle": "核心元数据",
@@ -130,7 +141,7 @@
   },
   "validation": {
     "required": "此字段为必填。",
-    "invalidDisplayOrder": "显示顺序必须是大于或等于 0 的整数。",
+    "invalidDisplayOrder": "排序优先级必须是大于或等于 0 的整数。",
     "invalidTypeToken": "类型必须是大写 token，例如 DEPARTMENT。",
     "invalidReferenceToken": "引用 ID 包含不支持的字符。",
     "moveSelfForbidden": "组织单元不能移动到自身之下。"

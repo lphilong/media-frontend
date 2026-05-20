@@ -4,38 +4,74 @@
     "subtitle": "Ảnh chụp vận hành"
   },
   "actions": {
-    "refreshing": "Đang làm mới..."
+    "refreshing": "Đang làm mới…"
   },
   "meta": {
     "title": "Thông tin ảnh chụp",
     "generatedAt": "Thời điểm tạo (UTC)",
+    "lastUpdated": "Cập nhật lần cuối",
+    "autoRefreshHelper": "Tự động làm mới mỗi 10 phút.",
     "businessDate": "Ngày nghiệp vụ"
   },
+  "sectionNav": {
+    "label": "C\u00e1c ph\u1ea7n b\u1ea3ng \u0111i\u1ec1u khi\u1ec3n"
+  },
+  "severityBadges": {
+    "needsReview": "C\u1ea7n xem x\u00e9t",
+    "pending": "Ch\u1edd x\u1eed l\u00fd",
+    "finalized": "\u0110\u00e3 ch\u1ed1t",
+    "active": "\u0110ang ho\u1ea1t \u0111\u1ed9ng",
+    "upcoming": "S\u1eafp t\u1edbi"
+  },
   "groups": {
-    "overview": "Tổng quan",
-    "operations": "Vận hành",
-    "commercial": "Thương mại",
-    "attention": "Cần xử lý"
+    "needsReview": "Cần xem xét",
+    "workInProgress": "Đang xử lý",
+    "finalizedResults": "Kết quả đã chốt",
+    "upcomingDates": "Ngày sắp tới"
+  },
+  "groupDescriptions": {
+    "needsReview": "Các mục có thể cần theo dõi.",
+    "workInProgress": "Bản ghi đã lưu nhưng chưa chốt.",
+    "finalizedResults": "Số liệu đã hoàn tất hoặc đang hoạt động trong kỳ báo cáo hiện tại.",
+    "upcomingDates": "Sự kiện và hợp đồng gần ngày nghiệp vụ hiện tại."
   },
   "metrics": {
-    "todayEventCount": "Số sự kiện hôm nay",
-    "next7DayEventCount": "Số sự kiện trong 7 ngày tới",
-    "draftTalentKpiCount": "KPI nháp",
-    "finalizedTalentKpiCount30d": "KPI đã chốt (30 ngày)",
+    "todayEventCount": "Sự kiện hôm nay",
+    "next7DayEventCount": "Sự kiện trong 7 ngày tới",
+    "draftTalentKpiCount": "Bản ghi KPI nháp",
+    "finalizedTalentKpiCount30d": "Bản ghi KPI đã chốt",
     "draftRevenueEntryCount": "Bút toán doanh thu nháp",
-    "finalizedRevenueAmount30d": "Doanh thu đã chốt (30 ngày)",
-    "reconciledRevenueAmount30d": "Doanh thu đã đối soát (30 ngày)",
+    "finalizedRevenueAmount30d": "Doanh thu đã chốt",
+    "reconciledRevenueAmount30d": "Doanh thu đã đối soát",
     "draftSettlementCount": "Quyết toán nháp",
-    "finalizedSettlementAmount30d": "Giá trị quyết toán đã chốt (30 ngày)",
+    "finalizedSettlementAmount30d": "Quyết toán đã chốt",
     "activeCommissionRuleCount": "Quy tắc hoa hồng đang hoạt động",
-    "expiringContractCount30d": "Hợp đồng sắp hết hạn (30 ngày)",
-    "staleTalentKpiDraftCount": "KPI nháp quá hạn",
-    "staleRevenueDraftCount": "Bút toán doanh thu nháp quá hạn",
-    "staleSettlementDraftCount": "Quyết toán nháp quá hạn"
+    "expiringContractCount30d": "Hợp đồng sắp kết thúc",
+    "staleTalentKpiDraftCount": "KPI nháp tồn đọng",
+    "staleRevenueDraftCount": "Doanh thu nháp tồn đọng",
+    "staleSettlementDraftCount": "Quyết toán nháp tồn đọng"
+  },
+  "metricDescriptions": {
+    "todayEventCount": "Sự kiện được lên lịch cho ngày nghiệp vụ hiện tại.",
+    "next7DayEventCount": "Sự kiện được lên lịch trong bảy ngày tới.",
+    "draftTalentKpiCount": "Bản ghi KPI đã lưu nhưng chưa chốt.",
+    "finalizedTalentKpiCount30d": "Bản ghi KPI đã chốt trong kỳ báo cáo của bảng điều khiển.",
+    "draftRevenueEntryCount": "Bút toán doanh thu đã lưu nhưng chưa chốt.",
+    "finalizedRevenueAmount30d": "Doanh thu đã chốt trong kỳ báo cáo của bảng điều khiển.",
+    "reconciledRevenueAmount30d": "Bút toán doanh thu được đánh dấu là đã đối soát trong kỳ báo cáo.",
+    "draftSettlementCount": "Bản ghi quyết toán đã lưu nhưng chưa chốt.",
+    "finalizedSettlementAmount30d": "Giá trị quyết toán đã chốt trong kỳ báo cáo.",
+    "activeCommissionRuleCount": "Quy tắc hoa hồng hiện đang hoạt động.",
+    "expiringContractCount30d": "Hợp đồng đang hoạt động có ngày kết thúc trong cửa sổ hết hạn của bảng điều khiển.",
+    "staleTalentKpiDraftCount": "Bản nháp có thể cần xem xét vì đã mở quá lâu.",
+    "staleRevenueDraftCount": "Bản nháp có thể cần xem xét vì đã mở quá lâu.",
+    "staleSettlementDraftCount": "Bản nháp có thể cần xem xét vì đã mở quá lâu."
   },
   "states": {
     "loadErrorTitle": "Không tải được ảnh chụp bảng điều khiển",
     "loadErrorMessage": "Vui lòng thử lại để tải ảnh chụp bảng điều khiển.",
+    "refreshingInline": "Đang làm mới…",
+    "refreshErrorInline": "Không thể làm mới bảng điều khiển. Đang hiển thị dữ liệu đã tải gần nhất.",
     "emptyTitle": "Không có dữ liệu ảnh chụp",
     "emptyMessage": "Backend chưa trả về dữ liệu ảnh chụp bảng điều khiển."
   }

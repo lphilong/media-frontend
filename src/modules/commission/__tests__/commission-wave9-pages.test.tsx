@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -22,9 +22,9 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
   loadEmploymentProfileReferenceOptions: vi.fn(async () => [
     { id: 'ep-001', label: 'Employee One - EP-000001' },
   ]),
-  loadTalentReferenceOptions: vi.fn(async () => [
-    { id: 'talent-001', label: 'Talent One - TAL-000001' },
-  ]),
+  loadTalentReferenceOptions: vi.fn(async (search: string) =>
+    search === 'missing-reference' ? [] : [{ id: 'talent-001', label: 'Talent One - TAL-000001' }],
+  ),
   loadContractReferenceOptions: vi.fn(async () => [
     { id: 'contract-record-001', label: 'Contract One - CON-2026-000001' },
   ]),
@@ -81,6 +81,7 @@ describe('commission Wave 9 pages', () => {
   });
 
   it('renders the Commission Rules list from the rules list API', async () => {
+    const user = userEvent.setup();
     await renderRoute('/commission/rules');
 
     expect(
@@ -89,7 +90,62 @@ describe('commission Wave 9 pages', () => {
     expect(await screen.findByText('CRULE-000001', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.getByText('April livestream revenue share')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('commission:rules.table.beneficiaryId'))).toBeInTheDocument();
+    expect(screen.getByText('Luna')).toBeInTheDocument();
+    expect(screen.getAllByText('Alice employment contract').length).toBeGreaterThan(0);
+    expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.noFiltersApplied'))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('commission:rules.filters.settlementKind') }),
+    ).toBeInTheDocument();
     expectUnsupportedCommercialControlsAbsent();
+  });
+
+  it('renders Commission Rules applied chips and clears exact flat filter keys', async () => {
+    const user = userEvent.setup();
+    await renderRoute('/commission/rules?settlementKind=REVENUE_SHARE');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('commission:rules.title') }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('commission:rules.filters.settlementKind') }),
+    ).toHaveValue('REVENUE_SHARE');
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'commission:rules.filters.settlementKind',
+        )}`,
+      }),
+    );
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('commission:rules.filters.settlementKind') }),
+    ).toHaveValue('');
+  });
+
+  it('clears stale Commission Rules selected reference labels when the option becomes unavailable', async () => {
+    const user = userEvent.setup();
+    await renderRoute('/commission/rules?beneficiaryTalentId=talent-001');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('commission:rules.title') }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
+
+    const appliedFilters = screen.getByLabelText(i18n.t('common:filters.appliedFilters'));
+    expect(await within(appliedFilters).findByText(/Talent One - TAL-000001/)).toBeInTheDocument();
+
+    await user.type(
+      screen.getAllByPlaceholderText(i18n.t('commission:rules.placeholders.searchReference'))[1],
+      'missing-reference',
+    );
+
+    await waitFor(() => {
+      expect(appliedFilters).toHaveTextContent('Luna');
+      expect(appliedFilters).not.toHaveTextContent('Talent One - TAL-000001');
+    });
   });
 
   it('renders Commission Rule detail from the detail API and keeps archived rules read-only', async () => {
@@ -97,8 +153,16 @@ describe('commission Wave 9 pages', () => {
 
     expect(await screen.findByText('CRULE-000001')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('commission:rules.actionRail.title'))).toBeInTheDocument();
-    expect(screen.getByText('contract-record-001')).toBeInTheDocument();
-    expect(screen.getAllByText('talent-001').length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Alice employment contract' })).toHaveAttribute(
+      'href',
+      '/contract-records/contract-record-001',
+    );
+    expect(screen.getByRole('link', { name: 'Luna' })).toHaveAttribute(
+      'href',
+      '/talents/talent-001',
+    );
+    expect(screen.queryByText('contract-record-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: i18n.t('commission:rules.related.settlementsByRule') }),
     ).toHaveAttribute('href', '/commission/settlements?sourceRuleId=commission-rule-001');
@@ -129,13 +193,31 @@ describe('commission Wave 9 pages', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('CS-202604-000001')).toBeInTheDocument();
     expect(screen.getByText('April livestream settlement')).toBeInTheDocument();
+    expect(screen.getByText('April livestream revenue share')).toBeInTheDocument();
+    expect(screen.getByText('Luna')).toBeInTheDocument();
     expect(
       screen.getByText(i18n.t('commission:settlements.table.settlementAmount')),
     ).toBeInTheDocument();
     expectUnsupportedCommercialControlsAbsent();
   });
 
+  it('keeps settlement target timestamp filters hidden but active through the flat-list URL', async () => {
+    await renderRoute(
+      '/commission/settlements?status=FINALIZED&createdBeforeAt=1780000000000&finalizedFromAt=1770000000000&finalizedToAt=1780000000000',
+    );
+
+    expect(await screen.findByText('CS-202604-000002')).toBeInTheDocument();
+    expect(screen.getByText('Created before:')).toBeInTheDocument();
+    expect(screen.getByText('Finalized from:')).toBeInTheDocument();
+    expect(screen.getByText('Finalized until:')).toBeInTheDocument();
+    expect(screen.getAllByText(/20:26 28-05-2026/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/02:40 02-02-2026/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/1770000000000|1780000000000/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Finalized from' })).not.toBeInTheDocument();
+  });
+
   it('exposes the documented flat-list filters on the Commission Settlements list', async () => {
+    const user = userEvent.setup();
     await renderRoute('/commission/settlements');
 
     expect(
@@ -150,6 +232,7 @@ describe('commission Wave 9 pages', () => {
         name: i18n.t('commission:settlements.filters.status'),
       }),
     ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
     expect(
       screen.getByRole('combobox', {
         name: i18n.t('commission:settlements.filters.beneficiaryKindSnapshot'),
@@ -195,6 +278,7 @@ describe('commission Wave 9 pages', () => {
   });
 
   it('hides unsupported settlement filters in by-beneficiary related mode', async () => {
+    const user = userEvent.setup();
     await renderRoute(
       '/commission/settlements?view=by-beneficiary&beneficiaryKindSnapshot=TALENT&beneficiaryTalentIdSnapshot=talent-001&subjectTalentId=talent-002&containsRevenueEntryId=revenue-entry-001&search=CS-202604-000001',
     );
@@ -204,11 +288,13 @@ describe('commission Wave 9 pages', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('CS-202604-000001')).toBeInTheDocument();
     expectSettlementFilterAbsent(i18n.t('common:labels.search'));
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
     expectSettlementFilterAbsent(i18n.t('commission:settlements.filters.subjectTalentId'));
     expectSettlementFilterAbsent(i18n.t('commission:settlements.filters.containsRevenueEntryId'));
   });
 
   it('hides unsupported settlement filters in by-subject-talent related mode', async () => {
+    const user = userEvent.setup();
     await renderRoute(
       '/commission/settlements?view=by-subject-talent&subjectTalentId=talent-001&containsRevenueEntryId=revenue-entry-001&beneficiaryKindSnapshot=TALENT&beneficiaryTalentIdSnapshot=talent-002&search=CS-202604-000001',
     );
@@ -218,6 +304,7 @@ describe('commission Wave 9 pages', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('CS-202604-000001')).toBeInTheDocument();
     expectSettlementFilterAbsent(i18n.t('common:labels.search'));
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
     expectSettlementFilterAbsent(i18n.t('commission:settlements.filters.containsRevenueEntryId'));
     expectSettlementFilterAbsent(i18n.t('commission:settlements.filters.beneficiaryKindSnapshot'));
     expectSettlementFilterAbsent(
@@ -229,6 +316,7 @@ describe('commission Wave 9 pages', () => {
   });
 
   it('hides unsupported settlement filters in by-revenue-entry related mode', async () => {
+    const user = userEvent.setup();
     await renderRoute(
       '/commission/settlements?view=by-revenue-entry&revenueEntryId=revenue-entry-001&subjectTalentId=talent-001&beneficiaryKindSnapshot=TALENT&beneficiaryTalentIdSnapshot=talent-001&search=CS-202604-000001',
     );
@@ -238,6 +326,7 @@ describe('commission Wave 9 pages', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('CS-202604-000001')).toBeInTheDocument();
     expectSettlementFilterAbsent(i18n.t('common:labels.search'));
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
     expectSettlementFilterAbsent(i18n.t('commission:settlements.filters.subjectTalentId'));
     expectSettlementFilterAbsent(i18n.t('commission:settlements.filters.beneficiaryKindSnapshot'));
     expectSettlementFilterAbsent(
@@ -256,8 +345,20 @@ describe('commission Wave 9 pages', () => {
     expect(
       screen.getAllByText(i18n.t('commission:settlements.detail.linesTitle')).length,
     ).toBeGreaterThan(0);
+    const linesTable = screen.getByRole('table', {
+      name: i18n.t('commission:settlements.lines.caption'),
+    });
+    expect(within(linesTable).getByRole('link', { name: 'REV-202604-000001' })).toHaveAttribute(
+      'href',
+      '/revenue-entries/revenue-entry-001',
+    );
+    expect(within(linesTable).queryByText('revenue-entry-001')).not.toBeInTheDocument();
     expect(screen.getByText('REV-202604-000001')).toBeInTheDocument();
-    expect(screen.getAllByText('revenue-entry-001').length).toBeGreaterThan(0);
+    expect(screen.getByText('April livestream revenue')).toBeInTheDocument();
+    expect(screen.getByText('07:00 21-04-2026')).toBeInTheDocument();
+    expect(screen.getByText('07:00 22-04-2026')).toBeInTheDocument();
+    expect(screen.getByText('21-04-2026')).toBeInTheDocument();
+    expect(screen.queryByText('revenue-entry-001')).not.toBeInTheDocument();
     expect(
       screen.getByText(i18n.t('commission:settlements.lines.lineSettlementAmount')),
     ).toBeInTheDocument();
@@ -300,7 +401,7 @@ describe('commission Wave 9 pages', () => {
     await user.type(screen.getByLabelText(i18n.t('commission:rules.fields.ratePercent')), '12.5');
     await user.type(
       screen.getByLabelText(i18n.t('commission:rules.fields.effectiveStartDate')),
-      String(effectiveStartDate),
+      '2026-04-01',
     );
     await user.click(
       screen.getByRole('button', { name: i18n.t('commission:rules.mutations.create.submit') }),
@@ -335,11 +436,11 @@ describe('commission Wave 9 pages', () => {
     await user.click(await screen.findByRole('button', { name: /Rule One/ }));
     await user.type(
       screen.getByLabelText(i18n.t('commission:settlements.fields.settlementPeriodStartAt')),
-      '1900000000000',
+      '2030-03-18T00:46',
     );
     await user.type(
       screen.getByLabelText(i18n.t('commission:settlements.fields.settlementPeriodEndAt')),
-      '1900003600000',
+      '2030-03-18T01:46',
     );
     await user.click(await screen.findByRole('button', { name: /Revenue One/ }));
     await user.click(

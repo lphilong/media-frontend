@@ -31,6 +31,18 @@ const metricCodeSchema = z.enum([
   'FOLLOWER_DELTA',
 ]);
 const timestampSchema = z.union([z.number(), z.string()]);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1).optional(),
+    title: z.string().trim().min(1).optional(),
+    displayName: z.string().trim().min(1).optional(),
+    handle: z.string().trim().min(1).optional(),
+    platform: z.string().trim().min(1).optional(),
+    status: z.string().trim().min(1).optional(),
+  })
+  .strict();
 
 const listItemSchema = z
   .object({
@@ -40,12 +52,55 @@ const listItemSchema = z
     subjectTalentId: z.string().trim().min(1),
     attributionPlatformAccountId: z.string().nullable().optional(),
     attributionEventId: z.string().nullable().optional(),
+    subjectTalentRef: referenceSummarySchema.nullable().optional(),
+    attributionPlatformAccountRef: referenceSummarySchema.nullable().optional(),
+    attributionEventRef: referenceSummarySchema.nullable().optional(),
     measurementSource: measurementSourceSchema,
     status: statusSchema,
     periodStartAt: timestampSchema,
     periodEndAt: timestampSchema,
     publishedAt: timestampSchema.nullable().optional(),
     createdAt: timestampSchema,
+  })
+  .strict();
+
+const byTalentItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    kpiRecordCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    subjectTalentId: z.string().trim().min(1),
+    status: statusSchema,
+    measurementSource: measurementSourceSchema,
+    periodStartAt: timestampSchema,
+    periodEndAt: timestampSchema,
+    publishedAt: timestampSchema.nullable().optional(),
+  })
+  .strict();
+
+const byPlatformItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    kpiRecordCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    subjectTalentId: z.string().trim().min(1),
+    attributionPlatformAccountId: z.string().trim().min(1),
+    status: statusSchema,
+    periodStartAt: timestampSchema,
+    periodEndAt: timestampSchema,
+  })
+  .strict();
+
+const byEventItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    kpiRecordCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    subjectTalentId: z.string().trim().min(1),
+    attributionEventId: z.string().trim().min(1),
+    status: statusSchema,
+    periodStartAt: timestampSchema,
+    periodEndAt: timestampSchema,
   })
   .strict();
 
@@ -78,13 +133,13 @@ const listResponseSchema = z
   .object({ data: z.array(listItemSchema), meta: cursorMetaSchema })
   .strict();
 const byTalentResponseSchema = z
-  .object({ data: z.array(listItemSchema), meta: cursorMetaSchema })
+  .object({ data: z.array(byTalentItemSchema), meta: cursorMetaSchema })
   .strict();
 const byPlatformResponseSchema = z
-  .object({ data: z.array(listItemSchema), meta: cursorMetaSchema })
+  .object({ data: z.array(byPlatformItemSchema), meta: cursorMetaSchema })
   .strict();
 const byEventResponseSchema = z
-  .object({ data: z.array(listItemSchema), meta: cursorMetaSchema })
+  .object({ data: z.array(byEventItemSchema), meta: cursorMetaSchema })
   .strict();
 const detailResponseSchema = z.object({ data: detailSchema }).strict();
 const metricsResponseSchema = z.object({ data: z.array(metricSchema) }).strict();
@@ -100,6 +155,9 @@ const sanitizeFlatListQuery = (
   containsMetricCode: query.containsMetricCode,
   windowStartAt: query.windowStartAt,
   windowEndAt: query.windowEndAt,
+  createdBeforeAt: query.createdBeforeAt,
+  publishedFromAt: query.publishedFromAt,
+  publishedToAt: query.publishedToAt,
   limit: query.limit,
   cursor: query.cursor,
   search: query.search,

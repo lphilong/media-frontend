@@ -34,6 +34,14 @@ vi.mock('@shared/api', () => ({
 }));
 
 const apiRequestMock = vi.mocked(apiRequest);
+const businessStartInput = '2026-05-20T14:14';
+const businessEndInput = '2026-05-20T15:14';
+const rescheduleStartInput = '2026-05-21T09:30';
+const rescheduleEndInput = '2026-05-21T10:30';
+const businessStartUtcMs = Date.parse('2026-05-20T07:14:00.000Z');
+const businessEndUtcMs = Date.parse('2026-05-20T08:14:00.000Z');
+const rescheduleStartUtcMs = Date.parse('2026-05-21T02:30:00.000Z');
+const rescheduleEndUtcMs = Date.parse('2026-05-21T03:30:00.000Z');
 
 const renderWithRouter = (ui: ReactElement) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
@@ -73,7 +81,7 @@ const mockReferencePickerRequests = (): void => {
             operationalStatus: 'ACTIVE',
             managerEmploymentProfileId: null,
             linkedEmploymentProfileId: null,
-            commercialParticipationStatus: 'ALLOWED',
+            commercialParticipationStatus: 'ELIGIBLE',
             livestreamEligible: true,
             eventEligible: true,
             createdAt: 1,
@@ -437,8 +445,14 @@ describe('work schedule wave 6 query and payload shaping', () => {
       );
       await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Scoped shift');
       await selectPickerOption(user, 'work-shift-admin-subject', /EP-000001/);
-      await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')), '1000');
-      await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')), '2000');
+      await user.type(
+        screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')),
+        businessStartInput,
+      );
+      await user.type(
+        screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')),
+        businessEndInput,
+      );
       await user.click(
         screen.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
       );
@@ -469,8 +483,14 @@ describe('work schedule wave 6 query and payload shaping', () => {
           'work-shift-admin-subject',
           subjectKind === 'TALENT' ? /TAL-000001/ : /TG-000001/,
         );
-        await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')), '1000');
-        await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')), '2000');
+        await user.type(
+          screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')),
+          businessStartInput,
+        );
+        await user.type(
+          screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')),
+          businessEndInput,
+        );
         await user.click(
           screen.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
         );
@@ -563,8 +583,14 @@ describe('work schedule wave 6 query and payload shaping', () => {
         'TALENT',
       );
       await selectPickerOption(user, 'work-shift-admin-subject', /TAL-000001/);
-      await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')), '1000');
-      await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')), '2000');
+      await user.type(
+        screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')),
+        businessStartInput,
+      );
+      await user.type(
+        screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')),
+        businessEndInput,
+      );
       await user.click(
         screen.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
       );
@@ -610,8 +636,14 @@ describe('work schedule wave 6 query and payload shaping', () => {
     );
     await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Wave 6 shift');
     await selectPickerOption(user, 'work-shift-admin-subject', /EP-000001/);
-    await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')), '1000');
-    await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')), '2000');
+    await user.type(
+      screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')),
+      businessStartInput,
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')),
+      businessEndInput,
+    );
     await selectPickerOption(user, 'work-shift-admin-studio-resources', /SR-000001/);
     await selectPickerOption(user, 'work-shift-admin-studio-resources', /SR-000002/);
     await user.click(
@@ -621,8 +653,8 @@ describe('work schedule wave 6 query and payload shaping', () => {
       title: 'Wave 6 shift',
       subjectKind: 'EMPLOYMENT_PROFILE',
       subjectEmploymentProfileId: 'ep-001',
-      shiftStartAt: 1000,
-      shiftEndAt: 2000,
+      shiftStartAt: businessStartUtcMs,
+      shiftEndAt: businessEndUtcMs,
       studioResourceIds: ['studio-001', 'studio-002'],
       description: null,
       externalRef: null,
@@ -651,21 +683,30 @@ describe('work schedule wave 6 query and payload shaping', () => {
     const onReschedule = vi.fn();
     const rescheduleRender = renderWithRouter(
       <WorkShiftRescheduleSurface
-        initialValues={{ shiftStartAt: 1000, shiftEndAt: 2000 }}
+        initialValues={{ shiftStartAt: businessStartUtcMs, shiftEndAt: businessEndUtcMs }}
         onCancel={() => undefined}
         onSubmit={onReschedule}
       />,
     );
+    expect(screen.getByLabelText(i18n.t('work-schedule:fields.newShiftStartAt'))).toHaveValue(
+      businessStartInput,
+    );
     await user.clear(screen.getByLabelText(i18n.t('work-schedule:fields.newShiftStartAt')));
-    await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.newShiftStartAt')), '3000');
+    await user.type(
+      screen.getByLabelText(i18n.t('work-schedule:fields.newShiftStartAt')),
+      rescheduleStartInput,
+    );
     await user.clear(screen.getByLabelText(i18n.t('work-schedule:fields.newShiftEndAt')));
-    await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.newShiftEndAt')), '4000');
+    await user.type(
+      screen.getByLabelText(i18n.t('work-schedule:fields.newShiftEndAt')),
+      rescheduleEndInput,
+    );
     await user.click(
       screen.getByRole('button', { name: i18n.t('work-schedule:mutations.reschedule.submit') }),
     );
     expect(onReschedule).toHaveBeenCalledWith({
-      newShiftStartAt: 3000,
-      newShiftEndAt: 4000,
+      newShiftStartAt: rescheduleStartUtcMs,
+      newShiftEndAt: rescheduleEndUtcMs,
     });
     rescheduleRender.unmount();
 

@@ -72,7 +72,7 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã bút toán doanh thu sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã bút toán doanh thu sẽ được tạo tự động"
   },
   "table": {
     "caption": "Danh sách bút toán doanh thu",

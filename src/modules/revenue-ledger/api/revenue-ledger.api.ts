@@ -22,6 +22,18 @@ const statusSchema = z.enum(['DRAFT', 'FINALIZED', 'RECONCILED', 'VOIDED', 'ARCH
 const revenueKindSchema = z.enum(['PLATFORM_LIVESTREAM', 'PLATFORM_CONTENT', 'EVENT_OPERATIONAL']);
 const entrySourceSchema = z.literal('MANUAL');
 const timestampSchema = z.union([z.number(), z.string()]);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1).optional(),
+    title: z.string().trim().min(1).optional(),
+    displayName: z.string().trim().min(1).optional(),
+    handle: z.string().trim().min(1).optional(),
+    platform: z.string().trim().min(1).optional(),
+    status: z.string().trim().min(1).optional(),
+  })
+  .strict();
 
 const listItemSchema = z
   .object({
@@ -31,6 +43,9 @@ const listItemSchema = z
     subjectTalentId: z.string().trim().min(1),
     attributionPlatformAccountId: z.string().nullable().optional(),
     attributionEventId: z.string().nullable().optional(),
+    subjectTalentRef: referenceSummarySchema.nullable().optional(),
+    attributionPlatformAccountRef: referenceSummarySchema.nullable().optional(),
+    attributionEventRef: referenceSummarySchema.nullable().optional(),
     revenueKind: revenueKindSchema,
     entrySource: entrySourceSchema,
     status: statusSchema,
@@ -41,6 +56,59 @@ const listItemSchema = z
     recognizedAmount: z.number(),
     recognizedAt: timestampSchema,
     createdAt: timestampSchema,
+  })
+  .strict();
+
+const byTalentItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    revenueEntryCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    subjectTalentId: z.string().trim().min(1),
+    revenueKind: revenueKindSchema,
+    status: statusSchema,
+    currencyCode: z
+      .string()
+      .trim()
+      .regex(/^[A-Z]{3}$/),
+    recognizedAmount: z.number(),
+    recognizedAt: timestampSchema,
+  })
+  .strict();
+
+const byPlatformItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    revenueEntryCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    subjectTalentId: z.string().trim().min(1),
+    attributionPlatformAccountId: z.string().trim().min(1),
+    revenueKind: revenueKindSchema,
+    status: statusSchema,
+    currencyCode: z
+      .string()
+      .trim()
+      .regex(/^[A-Z]{3}$/),
+    recognizedAmount: z.number(),
+    recognizedAt: timestampSchema,
+  })
+  .strict();
+
+const byEventItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    revenueEntryCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    subjectTalentId: z.string().trim().min(1),
+    attributionEventId: z.string().trim().min(1),
+    revenueKind: revenueKindSchema,
+    status: statusSchema,
+    currencyCode: z
+      .string()
+      .trim()
+      .regex(/^[A-Z]{3}$/),
+    recognizedAmount: z.number(),
+    recognizedAt: timestampSchema,
   })
   .strict();
 
@@ -67,13 +135,13 @@ const listResponseSchema = z
   .object({ data: z.array(listItemSchema), meta: cursorMetaSchema })
   .strict();
 const byTalentResponseSchema = z
-  .object({ data: z.array(listItemSchema), meta: cursorMetaSchema })
+  .object({ data: z.array(byTalentItemSchema), meta: cursorMetaSchema })
   .strict();
 const byPlatformResponseSchema = z
-  .object({ data: z.array(listItemSchema), meta: cursorMetaSchema })
+  .object({ data: z.array(byPlatformItemSchema), meta: cursorMetaSchema })
   .strict();
 const byEventResponseSchema = z
-  .object({ data: z.array(listItemSchema), meta: cursorMetaSchema })
+  .object({ data: z.array(byEventItemSchema), meta: cursorMetaSchema })
   .strict();
 const detailResponseSchema = z.object({ data: detailSchema }).strict();
 
@@ -89,6 +157,11 @@ const sanitizeFlatListQuery = (
   currencyCode: query.currencyCode,
   windowStartAt: query.windowStartAt,
   windowEndAt: query.windowEndAt,
+  createdBeforeAt: query.createdBeforeAt,
+  finalizedFromAt: query.finalizedFromAt,
+  finalizedToAt: query.finalizedToAt,
+  reconciledFromAt: query.reconciledFromAt,
+  reconciledToAt: query.reconciledToAt,
   limit: query.limit,
   cursor: query.cursor,
   search: query.search,

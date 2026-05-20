@@ -13,6 +13,36 @@ const renderRoute = (path: string) => {
   });
 
   renderAppWithProviders(<RouterProvider router={router} />);
+
+  return router;
+};
+
+const findPicker = async (pickerId: string): Promise<HTMLElement> => {
+  await waitFor(() => {
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some((surface) => surface.getAttribute('data-picker-id') === pickerId),
+    ).toBe(true);
+  });
+  const picker = screen
+    .getAllByTestId('picker-surface')
+    .find((surface) => surface.getAttribute('data-picker-id') === pickerId);
+  if (!picker) {
+    throw new Error(`Picker not found: ${pickerId}`);
+  }
+  return picker;
+};
+
+const openMoreFilters = async (user: ReturnType<typeof userEvent.setup>): Promise<void> => {
+  await user.click(
+    screen.getByRole('button', {
+      name: new RegExp(i18n.t('common:filters.moreFilters')),
+    }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
+  ).toBeInTheDocument();
 };
 
 describe('talent wave 4 surfaces', () => {
@@ -25,6 +55,100 @@ describe('talent wave 4 surfaces', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('TAL-000002', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(await screen.findByText('BaoStar', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('Alice Nguyen')).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('talent:table.talentOrigin'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('talent:table.linkedEmploymentProfileId')),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses a manager selector for the relationship filter while preserving the internal id', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const router = renderRoute(
+      '/talents?operationalStatus=ACTIVE&managerEmploymentProfileId=ep-001',
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('talent:page.title') }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(i18n.t('talent:filters.managerEmploymentProfileIdPlaceholder')),
+    ).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(i18n.t('talent:filters.searchPlaceholder'))).toBeTruthy();
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('talent:filters.operationalStatus') }),
+    ).toHaveValue('ACTIVE');
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'talent:filters.managerEmploymentProfileId',
+        )}`,
+      }),
+    ).toBeInTheDocument();
+
+    await openMoreFilters(user);
+
+    const picker = await findPicker('talent-filter-manager');
+    expect(await within(picker).findAllByText(/EP-000001/)).not.toHaveLength(0);
+
+    await user.click(await within(picker).findByRole('button', { name: /EP-000001/ }));
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).toBe('ep-001');
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).not.toBe('EP-000001');
+    });
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'talent:filters.managerEmploymentProfileId',
+        )}`,
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).toBeNull();
+    });
+
+    await user.click(await within(picker).findByRole('button', { name: /EP-000001/ }));
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).toBe('ep-001');
+    });
+
+    const field = picker.closest('fieldset');
+    expect(field).not.toBeNull();
+    if (!field) {
+      return;
+    }
+
+    await user.click(within(field).getByRole('button', { name: i18n.t('common:actions.clear') }));
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).toBeNull();
+    });
+
+    await user.click(await within(picker).findByRole('button', { name: /EP-000001/ }));
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).toBe('ep-001');
+    });
+
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search);
+      expect(params.get('operationalStatus')).toBeNull();
+      expect(params.get('managerEmploymentProfileId')).toBeNull();
+    });
   });
 
   it('renders detail sections and constrained related navigation links', async () => {
@@ -33,6 +157,14 @@ describe('talent wave 4 surfaces', () => {
 
     expect(await screen.findByText(i18n.t('talent:actionRail.title'))).toBeInTheDocument();
     expect(screen.getByText('TAL-000001')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Alice Nguyen' })).toHaveAttribute(
+      'href',
+      '/employment-profiles/ep-001',
+    );
+    expect(screen.getByRole('link', { name: 'Bao Tran' })).toHaveAttribute(
+      'href',
+      '/employment-profiles/ep-002',
+    );
 
     const relatedLinks = screen.getAllByRole('link', {
       name: i18n.t('talent:related.openFilteredList'),

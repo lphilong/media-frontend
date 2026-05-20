@@ -4,15 +4,52 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { appRoutes } from '@app/router/router';
+import {
+  TalentGroupCreateSurface,
+  TalentGroupEditSurface,
+} from '@modules/talent-group/forms/talent-group-mutation-forms';
+import { fetchTalentGroupsByTalent } from '@modules/talent-group/api/talent-group.api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 
-const renderRoute = (path: string) => {
+type RouteEntry = string | { pathname: string; search?: string; state?: unknown };
+
+const renderRoute = (path: RouteEntry) => {
   const router = createMemoryRouter(appRoutes, {
     initialEntries: [path],
   });
 
   renderAppWithProviders(<RouterProvider router={router} />);
+
+  return router;
+};
+
+const findPicker = async (pickerId: string): Promise<HTMLElement> => {
+  await waitFor(() => {
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some((surface) => surface.getAttribute('data-picker-id') === pickerId),
+    ).toBe(true);
+  });
+  const picker = screen
+    .getAllByTestId('picker-surface')
+    .find((surface) => surface.getAttribute('data-picker-id') === pickerId);
+  if (!picker) {
+    throw new Error(`Picker not found: ${pickerId}`);
+  }
+  return picker;
+};
+
+const openMoreFilters = async (user: ReturnType<typeof userEvent.setup>): Promise<void> => {
+  await user.click(
+    screen.getByRole('button', {
+      name: new RegExp(i18n.t('common:filters.moreFilters')),
+    }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
+  ).toBeInTheDocument();
 };
 
 describe('talent-group wave 4 surfaces', () => {
@@ -24,7 +61,95 @@ describe('talent-group wave 4 surfaces', () => {
       await screen.findByRole('heading', { name: i18n.t('talent-group:page.title') }),
     ).toBeInTheDocument();
     expect(await screen.findByText('TG-000002', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(await screen.findByText('B Team', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect((await screen.findAllByText('B Team', {}, { timeout: 3000 })).length).toBeGreaterThan(0);
+    expect(screen.getByText(i18n.t('talent-group:sort.displayOrder'))).toBeInTheDocument();
+    expect(screen.queryByText('displayOrder')).not.toBeInTheDocument();
+    expect(screen.queryByText(/sortPriority\(/i)).not.toBeInTheDocument();
+  });
+
+  it('uses a talent selector for the contains-talent relationship filter', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const router = renderRoute('/talent-groups?status=ACTIVE&containsTalentId=talent-001');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('talent-group:page.title') }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(i18n.t('talent-group:filters.containsTalentIdPlaceholder')),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(i18n.t('talent-group:filters.searchPlaceholder')),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('talent-group:filters.status') }),
+    ).toHaveValue('ACTIVE');
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'talent-group:filters.containsTalentId',
+        )}`,
+      }),
+    ).toBeInTheDocument();
+
+    await openMoreFilters(user);
+
+    const picker = await findPicker('talent-group-filter-contains-talent');
+    expect(await within(picker).findAllByText(/TAL-000001/)).not.toHaveLength(0);
+
+    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBe(
+        'talent-001',
+      );
+      expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).not.toBe(
+        'TAL-000001',
+      );
+    });
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'talent-group:filters.containsTalentId',
+        )}`,
+      }),
+    );
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBeNull();
+    });
+
+    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBe(
+        'talent-001',
+      );
+    });
+
+    const field = picker.closest('fieldset');
+    expect(field).not.toBeNull();
+    if (!field) {
+      return;
+    }
+
+    await user.click(within(field).getByRole('button', { name: i18n.t('common:actions.clear') }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBeNull();
+    });
+
+    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBe(
+        'talent-001',
+      );
+    });
+
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search);
+      expect(params.get('status')).toBeNull();
+      expect(params.get('containsTalentId')).toBeNull();
+    });
   });
 
   it('renders by-talent related mode and excludes removed memberships', async () => {
@@ -34,8 +159,38 @@ describe('talent-group wave 4 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('talent-group:related.byTalentModeLabel')),
     ).toBeInTheDocument();
+    expect(await screen.findByText('Chau')).toBeInTheDocument();
+    expect(screen.queryByText('talent-003')).not.toBeInTheDocument();
     expect(await screen.findByText('TG-000002')).toBeInTheDocument();
     expect(screen.queryByText('TG-000001')).not.toBeInTheDocument();
+  });
+
+  it('shortens missing related talent labels while keeping the URL id-only', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const talentId = '018f9f2b-4d6f-75f1-ae2a-780d515d5d2a';
+    const router = renderRoute(`/talent-groups?view=by-talent&talentId=${talentId}`);
+
+    expect(
+      await screen.findByText(i18n.t('talent-group:related.byTalentModeLabel')),
+    ).toBeInTheDocument();
+    expect(screen.getByText('018f9f2b...5d2a')).toBeInTheDocument();
+    expect(screen.queryByText(talentId)).not.toBeInTheDocument();
+    expect(new URLSearchParams(router.state.location.search).get('talentId')).toBe(talentId);
+  });
+
+  it('parses by-talent related rows with backend groupId while opening by internal id', async () => {
+    const response = await fetchTalentGroupsByTalent({ talentId: 'talent-003', limit: 10 });
+    const item = response.data[0];
+
+    expect(item).toMatchObject({
+      id: 'group-002',
+      groupId: 'group-002',
+      groupCode: 'TG-000002',
+      membershipId: 'membership-003',
+      talentId: 'talent-003',
+    });
+    expect(item?.groupId).toBe(item?.id);
+    expect(item?.id).not.toBe(item?.groupCode);
   });
 
   it('renders detail roster/links and status gating for group lifecycle', async () => {
@@ -43,8 +198,10 @@ describe('talent-group wave 4 surfaces', () => {
     renderRoute('/talent-groups/group-001');
 
     expect(await screen.findByText(i18n.t('talent-group:actionRail.title'))).toBeInTheDocument();
-    expect(await screen.findByText('talent-001')).toBeInTheDocument();
-    expect(screen.getByText('talent-002')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('talent-group:fields.displayOrder'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('talent-group:help.displayOrder'))).toBeInTheDocument();
+    expect(await screen.findByText('Mina')).toBeInTheDocument();
+    expect(screen.getByText('BaoStar')).toBeInTheDocument();
     expect(screen.queryByText('talent-003')).not.toBeInTheDocument();
 
     expect(
@@ -61,6 +218,45 @@ describe('talent-group wave 4 surfaces', () => {
       name: i18n.t('talent-group:related.openFilteredList'),
     });
     expect(relatedLinks.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('keeps Talent Group sort priority visible in create/edit surfaces without changing values', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const onCreate = vi.fn();
+    const onEdit = vi.fn();
+
+    const createRender = renderAppWithProviders(
+      <TalentGroupCreateSurface onCancel={() => undefined} onSubmit={onCreate} />,
+    );
+
+    expect(screen.getByLabelText(i18n.t('talent-group:fields.displayOrder'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('talent-group:help.displayOrder'))).toBeInTheDocument();
+    createRender.unmount();
+
+    renderAppWithProviders(
+      <TalentGroupEditSurface
+        initialValues={{
+          name: 'A Team',
+          displayOrder: 30,
+        }}
+        onCancel={() => undefined}
+        onSubmit={onEdit}
+      />,
+    );
+
+    expect(screen.getByLabelText(i18n.t('talent-group:fields.displayOrder'))).toHaveValue(30);
+    expect(screen.getByText(i18n.t('talent-group:help.displayOrder'))).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('talent-group:mutations.edit.submit') }),
+    );
+
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        displayOrder: 30,
+      }),
+    );
   });
 
   it('supports membership actions and detail-first mutation surfaces', async () => {
@@ -80,7 +276,7 @@ describe('talent-group wave 4 surfaces', () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: i18n.t('common:actions.cancel') }));
 
-    const activeMemberRow = screen.getByText('talent-001').closest('tr');
+    const activeMemberRow = screen.getByText('Mina').closest('tr');
     expect(activeMemberRow).not.toBeNull();
     if (!activeMemberRow) {
       return;
@@ -97,7 +293,7 @@ describe('talent-group wave 4 surfaces', () => {
 
     await waitFor(
       () => {
-        const refreshedRow = screen.getByText('talent-001').closest('tr');
+        const refreshedRow = screen.getByText('Mina').closest('tr');
         expect(refreshedRow).not.toBeNull();
         if (!refreshedRow) {
           return;

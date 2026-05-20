@@ -5,6 +5,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
+import {
+  loadMonthlyRosterDepartmentFilterOptions,
+  loadMonthlyRosterHolidayCalendarFilterOptions,
+  loadMonthlyRosterWorkPatternFilterOptions,
+} from '@modules/work-schedule/components/work-schedule-reference-options';
 import { MonthlyRosterCreateSurface } from '@modules/work-schedule/forms/monthly-roster-mutation-forms';
 import {
   useArchiveMonthlyRosterMutation,
@@ -14,12 +19,16 @@ import {
 import { createMonthlyRosterListColumns } from '@modules/work-schedule/tables/monthly-roster-columns';
 import type { MonthlyRosterScope } from '@modules/work-schedule/types/work-schedule.types';
 import type { NormalizedApiError } from '@shared/api';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   useDestructiveConfirm,
@@ -96,6 +105,8 @@ export const MonthlyRosterListPage = (): JSX.Element => {
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
   usePageActions(
@@ -202,18 +213,232 @@ export const MonthlyRosterListPage = (): JSX.Element => {
 
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
+  const loadDepartmentFilterOptions = useCallback(
+    (search: string) =>
+      loadMonthlyRosterDepartmentFilterOptions(search, listQuery.departmentOrgUnitId),
+    [listQuery.departmentOrgUnitId],
+  );
+  const loadWorkPatternFilterOptions = useCallback(
+    (search: string) => loadMonthlyRosterWorkPatternFilterOptions(search, listQuery.workPatternId),
+    [listQuery.workPatternId],
+  );
+  const loadHolidayCalendarFilterOptions = useCallback(
+    (search: string) =>
+      loadMonthlyRosterHolidayCalendarFilterOptions(search, listQuery.holidayCalendarId),
+    [listQuery.holidayCalendarId],
+  );
+  const rememberFilterOption = useCallback(
+    (key: string, option: ReferenceOption | undefined): void => {
+      setFilterOptionLabels((current) => {
+        if (option?.label) {
+          return current[key] === option.label ? current : { ...current, [key]: option.label };
+        }
+
+        if (!(key in current)) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
+    },
+    [],
+  );
+  const moreFilterCount = [
+    listQuery.departmentOrgUnitId,
+    listQuery.workPatternId,
+    listQuery.holidayCalendarId,
+    listQuery.scope,
+  ].filter((value) => value !== undefined && value !== '').length;
+  const clearMonthlyRosterFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      rosterMonth: undefined,
+      departmentOrgUnitId: undefined,
+      workPatternId: undefined,
+      holidayCalendarId: undefined,
+      scope: undefined,
+    });
+  }, [patchQuery]);
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (listQuery.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: listQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (listQuery.status) {
+      items.push({
+        id: 'status',
+        label: t('work-schedule:monthlyRosters.filters.status'),
+        value: t(`work-schedule:monthlyRosters.statuses.${listQuery.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    if (listQuery.rosterMonth) {
+      items.push({
+        id: 'roster-month',
+        label: t('work-schedule:monthlyRosters.filters.rosterMonth'),
+        value: listQuery.rosterMonth,
+        onClear: () => patchQuery({ rosterMonth: undefined }),
+      });
+    }
+
+    if (listQuery.departmentOrgUnitId) {
+      items.push({
+        id: 'department',
+        label: t('work-schedule:monthlyRosters.filters.departmentOrgUnitId'),
+        value: filterOptionLabels.department ?? t('work-schedule:filterChips.selectedDepartment'),
+        onClear: () => patchQuery({ departmentOrgUnitId: undefined }),
+      });
+    }
+
+    if (listQuery.workPatternId) {
+      items.push({
+        id: 'work-pattern',
+        label: t('work-schedule:monthlyRosters.filters.workPatternId'),
+        value: filterOptionLabels.workPattern ?? t('work-schedule:filterChips.selectedWorkPattern'),
+        onClear: () => patchQuery({ workPatternId: undefined }),
+      });
+    }
+
+    if (listQuery.holidayCalendarId) {
+      items.push({
+        id: 'holiday-calendar',
+        label: t('work-schedule:monthlyRosters.filters.holidayCalendarId'),
+        value:
+          filterOptionLabels.holidayCalendar ??
+          t('work-schedule:filterChips.selectedHolidayCalendar'),
+        onClear: () => patchQuery({ holidayCalendarId: undefined }),
+      });
+    }
+
+    if (listQuery.scope) {
+      items.push({
+        id: 'scope',
+        label: t('work-schedule:monthlyRosters.filters.scope'),
+        value: t(`work-schedule:monthlyRosters.scopes.${listQuery.scope}`),
+        onClear: () => patchQuery({ scope: undefined }),
+      });
+    }
+
+    return items;
+  }, [
+    filterOptionLabels.department,
+    filterOptionLabels.holidayCalendar,
+    filterOptionLabels.workPattern,
+    listQuery.departmentOrgUnitId,
+    listQuery.holidayCalendarId,
+    listQuery.rosterMonth,
+    listQuery.scope,
+    listQuery.search,
+    listQuery.status,
+    listQuery.workPatternId,
+    patchQuery,
+    t,
+  ]);
 
   return (
     <ModuleListScreenShell
       mode="flat-list"
       banner={<WorkScheduleSubnavigation active="monthly-rosters" />}
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             <SearchBoxSeam
               value={listQuery.search ?? ''}
               placeholder={t('work-schedule:monthlyRosters.filters.searchPlaceholder')}
               onApply={(value) => patchQuery({ search: value || undefined })}
+            />
+          }
+          moreFiltersTrigger={
+            <button
+              type="button"
+              aria-expanded={isMoreFiltersOpen}
+              aria-controls="monthly-roster-more-filters"
+              onClick={() => setIsMoreFiltersOpen((current) => !current)}
+              className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+            >
+              {t('common:filters.moreFilters')}
+              {moreFilterCount > 0 ? ` (${moreFilterCount})` : ''}
+            </button>
+          }
+          moreFiltersPanel={
+            <MoreFiltersPanel
+              id="monthly-roster-more-filters"
+              title={t('common:filters.moreFilters')}
+              closeLabel={t('common:actions.close')}
+              isOpen={isMoreFiltersOpen}
+              onClose={() => setIsMoreFiltersOpen(false)}
+            >
+              <ReferenceFilterField
+                label={t('work-schedule:monthlyRosters.filters.departmentOrgUnitId')}
+                pickerId="monthly-roster-filter-department"
+                value={listQuery.departmentOrgUnitId}
+                loadOptions={loadDepartmentFilterOptions}
+                onChange={(value) => patchQuery({ departmentOrgUnitId: value })}
+                placeholder={t('work-schedule:monthlyRosters.pickers.departmentSearch')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[240px]"
+                onSelectedOptionChange={(option) => rememberFilterOption('department', option)}
+              />
+              <ReferenceFilterField
+                label={t('work-schedule:monthlyRosters.filters.workPatternId')}
+                pickerId="monthly-roster-filter-work-pattern"
+                value={listQuery.workPatternId}
+                loadOptions={loadWorkPatternFilterOptions}
+                onChange={(value) => patchQuery({ workPatternId: value })}
+                placeholder={t('work-schedule:monthlyRosters.pickers.workPatternSearch')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[240px]"
+                onSelectedOptionChange={(option) => rememberFilterOption('workPattern', option)}
+              />
+              <ReferenceFilterField
+                label={t('work-schedule:monthlyRosters.filters.holidayCalendarId')}
+                pickerId="monthly-roster-filter-holiday-calendar"
+                value={listQuery.holidayCalendarId}
+                loadOptions={loadHolidayCalendarFilterOptions}
+                onChange={(value) => patchQuery({ holidayCalendarId: value })}
+                placeholder={t('work-schedule:monthlyRosters.pickers.holidayCalendarSearch')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[240px]"
+                onSelectedOptionChange={(option) => rememberFilterOption('holidayCalendar', option)}
+              />
+              <label className="flex min-w-[160px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('work-schedule:monthlyRosters.filters.scope')}
+                </span>
+                <select
+                  value={listQuery.scope ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) => patchQuery({ scope: event.target.value || undefined })}
+                >
+                  {scopeOptions.map((scope) => (
+                    <option key={scope || 'default'} value={scope}>
+                      {scope
+                        ? t(`work-schedule:monthlyRosters.scopes.${scope}`)
+                        : t('work-schedule:monthlyRosters.filters.defaultScopes')}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </MoreFiltersPanel>
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              onClearAll={appliedFilterChips.length > 0 ? clearMonthlyRosterFilters : undefined}
             />
           }
         >
@@ -246,59 +471,7 @@ export const MonthlyRosterListPage = (): JSX.Element => {
               onChange={(event) => patchQuery({ rosterMonth: event.target.value || undefined })}
             />
           </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('work-schedule:monthlyRosters.filters.departmentOrgUnitId')}
-            </span>
-            <input
-              value={listQuery.departmentOrgUnitId ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({ departmentOrgUnitId: event.target.value || undefined })
-              }
-            />
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('work-schedule:monthlyRosters.filters.workPatternId')}
-            </span>
-            <input
-              value={listQuery.workPatternId ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) => patchQuery({ workPatternId: event.target.value || undefined })}
-            />
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('work-schedule:monthlyRosters.filters.holidayCalendarId')}
-            </span>
-            <input
-              value={listQuery.holidayCalendarId ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({ holidayCalendarId: event.target.value || undefined })
-              }
-            />
-          </label>
-          <label className="flex min-w-[160px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('work-schedule:monthlyRosters.filters.scope')}
-            </span>
-            <select
-              value={listQuery.scope ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) => patchQuery({ scope: event.target.value || undefined })}
-            >
-              {scopeOptions.map((scope) => (
-                <option key={scope || 'default'} value={scope}>
-                  {scope
-                    ? t(`work-schedule:monthlyRosters.scopes.${scope}`)
-                    : t('work-schedule:monthlyRosters.filters.defaultScopes')}
-                </option>
-              ))}
-            </select>
-          </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         isCreateOpen ? (

@@ -13,7 +13,7 @@ import type {
   StudioResourceCreatePayload,
   StudioResourceUpdatePayload,
 } from '@modules/studio-resource/types/studio-resource.types';
-import { FormGrid, GeneratedCodeNotice, TextInputField } from '@shared/forms';
+import { FormGrid, GeneratedCodeNotice, SelectField, TextInputField } from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseMutationSurfaceProps = {
@@ -38,7 +38,7 @@ type StudioResourceEditSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: StudioResourceUpdatePayload) => Promise<void> | void;
 };
 
-const upperTokenRegex = /^[A-Z][A-Z0-9_]*$/;
+const resourceClassValues = ['SPACE', 'EQUIPMENT', 'KIT'] as const;
 
 const toNullableText = (value?: string): string | null => {
   const trimmed = value?.trim();
@@ -85,14 +85,13 @@ const maxOccupancyFieldSchema = (integerMessage: string) => {
 
 const createStudioResourceCreateSchema = (
   requiredMessage: string,
-  tokenMessage: string,
   integerMessage: string,
   spaceOnlyMessage: string,
 ) => {
   return z
     .object({
       name: z.string().trim().min(1, requiredMessage),
-      resourceClass: z.string().trim().min(1, requiredMessage).regex(upperTokenRegex, tokenMessage),
+      resourceClass: z.enum(resourceClassValues, { required_error: requiredMessage }),
       shortName: z.string().trim().optional(),
       locationLabel: z.string().trim().optional(),
       description: z.string().trim().optional(),
@@ -153,7 +152,6 @@ export const StudioResourceCreateSurface = ({
     () =>
       createStudioResourceCreateSchema(
         t('studio-resource:validation.required'),
-        t('studio-resource:validation.invalidToken'),
         t('studio-resource:validation.invalidPositiveInteger'),
         t('studio-resource:validation.maxOccupancySpaceOnly'),
       ),
@@ -197,10 +195,22 @@ export const StudioResourceCreateSurface = ({
             description={t('studio-resource:generatedCode.description')}
             className="md:col-span-2"
           />
-          <TextInputField name="resourceClass" label={t('studio-resource:fields.resourceClass')} />
+          <SelectField
+            name="resourceClass"
+            label={t('studio-resource:fields.resourceClass')}
+            options={resourceClassValues.map((value) => ({
+              value,
+              label: t(`studio-resource:resourceClasses.${value}`),
+            }))}
+          />
           <TextInputField name="name" label={t('studio-resource:fields.name')} />
           <TextInputField name="shortName" label={t('studio-resource:fields.shortName')} />
-          <TextInputField name="locationLabel" label={t('studio-resource:fields.locationLabel')} />
+          <TextInputField
+            name="locationLabel"
+            label={t('studio-resource:fields.locationLabel')}
+            placeholder={t('studio-resource:placeholders.locationLabel')}
+            helperText={t('studio-resource:help.locationLabel')}
+          />
           <TextInputField
             name="maxOccupancy"
             label={t('studio-resource:fields.maxOccupancy')}
@@ -290,7 +300,12 @@ export const StudioResourceEditSurface = ({
         <FormGrid columns={2}>
           <TextInputField name="name" label={t('studio-resource:fields.name')} />
           <TextInputField name="shortName" label={t('studio-resource:fields.shortName')} />
-          <TextInputField name="locationLabel" label={t('studio-resource:fields.locationLabel')} />
+          <TextInputField
+            name="locationLabel"
+            label={t('studio-resource:fields.locationLabel')}
+            placeholder={t('studio-resource:placeholders.locationLabel')}
+            helperText={t('studio-resource:help.locationLabel')}
+          />
           {canEditOccupancy ? (
             <TextInputField
               name="maxOccupancy"

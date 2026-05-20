@@ -2,7 +2,7 @@
   "globalOnly": "Chỉ dùng phạm vi toàn cục",
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã sẽ được tạo tự động"
   },
   "settlementKinds": {
     "REVENUE_SHARE": "Hoa hồng"
@@ -39,7 +39,7 @@
     "statuses": {
       "DRAFT": "Nháp",
       "INACTIVE": "Không hoạt động",
-      "ACTIVE": "Đang hoạt động",
+      "ACTIVE": "Hoạt động",
       "ARCHIVED": "Đã lưu trữ"
     },
     "sort": {

@@ -349,9 +349,10 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
 
     renderRoute('/work-shifts?sourceRosterId=roster-clean&unsupportedFilter=1');
 
+    expect(await screen.findByText('SHIFT-MANUAL')).toBeInTheDocument();
     expect(
-      await screen.findByText(i18n.t('work-schedule:sourceLabels.ROSTER_GENERATED')),
-    ).toBeInTheDocument();
+      screen.getAllByText(i18n.t('work-schedule:sourceLabels.ROSTER_GENERATED')).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText(i18n.t('work-schedule:sourceLabels.MANUAL'))).toBeInTheDocument();
     expect(capturedListSearch).toContain('sourceType=ROSTER_GENERATED');
     expect(capturedListSearch).toContain('sourceRosterId=roster-clean');

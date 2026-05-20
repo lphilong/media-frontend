@@ -276,7 +276,7 @@ export const TalentCreateSurface = ({
       stageName: '',
       legalName: '',
       talentOrigin: '',
-      commercialParticipationStatus: 'ALLOWED',
+      commercialParticipationStatus: 'ELIGIBLE',
       livestreamEligible: true,
       eventEligible: true,
       managerEmploymentProfileId: '',

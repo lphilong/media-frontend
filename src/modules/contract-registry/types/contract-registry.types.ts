@@ -1,3 +1,5 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type ContractStatus =
   | 'DRAFT'
   | 'PENDING_SIGNATURE'
@@ -8,7 +10,7 @@ export type ContractStatus =
 
 export type ContractKind = 'EMPLOYMENT' | 'TALENT_SERVICE' | 'TALENT_MANAGEMENT';
 export type ContractLinkedEntityKind = 'EMPLOYMENT_PROFILE' | 'TALENT';
-export type ContractConfidentialityTier = 'STANDARD' | 'CONFIDENTIAL' | 'RESTRICTED';
+export type ContractConfidentialityTier = 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED';
 export type ContractSortBy = 'effectiveStartDate' | 'contractCode' | 'createdAt';
 export type SortDirection = 'asc' | 'desc';
 
@@ -21,6 +23,9 @@ export type ContractRecord = {
   linkedEmploymentProfileId?: string | null;
   linkedTalentId?: string | null;
   ownerEmploymentProfileId: string;
+  linkedEmploymentProfileRef?: ReferenceSummary | null;
+  linkedTalentRef?: ReferenceSummary | null;
+  ownerEmploymentProfileRef?: ReferenceSummary | null;
   confidentialityTier: ContractConfidentialityTier;
   status: ContractStatus;
   effectiveStartDate: number | string;
@@ -43,6 +48,9 @@ export type ContractListItem = Pick<
   | 'linkedEmploymentProfileId'
   | 'linkedTalentId'
   | 'ownerEmploymentProfileId'
+  | 'linkedEmploymentProfileRef'
+  | 'linkedTalentRef'
+  | 'ownerEmploymentProfileRef'
   | 'confidentialityTier'
   | 'status'
   | 'effectiveStartDate'
@@ -59,6 +67,8 @@ export type ContractByLinkedEntityItem = Pick<
   | 'linkedEntityKind'
   | 'linkedEmploymentProfileId'
   | 'linkedTalentId'
+  | 'linkedEmploymentProfileRef'
+  | 'linkedTalentRef'
   | 'status'
   | 'effectiveStartDate'
   | 'effectiveEndDate'
@@ -71,6 +81,7 @@ export type ContractByOwnerItem = Pick<
   | 'title'
   | 'contractKind'
   | 'ownerEmploymentProfileId'
+  | 'ownerEmploymentProfileRef'
   | 'confidentialityTier'
   | 'status'
   | 'effectiveStartDate'
@@ -88,6 +99,8 @@ export type ContractFlatListQuery = {
   hasFileReference?: boolean;
   windowStartDate?: string;
   windowEndDate?: string;
+  effectiveEndDateFrom?: string;
+  effectiveEndDateTo?: string;
   limit?: number;
   cursor?: string;
   search?: string;

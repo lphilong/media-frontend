@@ -121,18 +121,13 @@ const isCanonicalDate = (value: string): boolean => {
   );
 };
 
-const createEmploymentCreateSchema = (
-  requiredMessage: string,
-  tokenMessage: string,
-  dateMessage: string,
-) => {
+const employmentKindValues = ['EMPLOYEE', 'CONTRACTOR', 'PART_TIME', 'INTERN'] as const;
+
+const createEmploymentCreateSchema = (requiredMessage: string, dateMessage: string) => {
   return z.object({
     legalName: z.string().trim().min(1, requiredMessage),
     displayName: z.string().trim().min(1, requiredMessage),
-    employmentKind: z
-      .string()
-      .trim()
-      .regex(/^[A-Z][A-Z0-9_]*$/, tokenMessage),
+    employmentKind: z.enum(employmentKindValues, { required_error: requiredMessage }),
     jobTitle: z.string().trim().min(1, requiredMessage),
     orgUnitId: z.string().trim().min(1, requiredMessage),
     contractStatus: z.enum(['NONE', 'PENDING_SIGNATURE', 'ACTIVE', 'EXPIRED', 'TERMINATED']),
@@ -144,14 +139,11 @@ const createEmploymentCreateSchema = (
   });
 };
 
-const createEmploymentEditSchema = (requiredMessage: string, tokenMessage: string) => {
+const createEmploymentEditSchema = (requiredMessage: string) => {
   return z.object({
     legalName: z.string().trim().min(1, requiredMessage),
     displayName: z.string().trim().min(1, requiredMessage),
-    employmentKind: z
-      .string()
-      .trim()
-      .regex(/^[A-Z][A-Z0-9_]*$/, tokenMessage),
+    employmentKind: z.enum(employmentKindValues, { required_error: requiredMessage }),
     jobTitle: z.string().trim().min(1, requiredMessage),
     externalRef: z.string().trim().optional(),
     titleDescription: z.string().trim().optional(),
@@ -267,7 +259,6 @@ export const EmploymentProfileCreateSurface = ({
     () =>
       createEmploymentCreateSchema(
         t('employment-profile:validation.required'),
-        t('employment-profile:validation.invalidToken'),
         t('employment-profile:validation.invalidDate'),
       ),
     [t],
@@ -314,9 +305,14 @@ export const EmploymentProfileCreateSurface = ({
             description={t('employment-profile:generatedCode.description')}
             className="md:col-span-2"
           />
-          <TextInputField
+          <SelectField
             name="employmentKind"
             label={t('employment-profile:fields.employmentKind')}
+            placeholder={t('employment-profile:placeholders.selectEmploymentKind')}
+            options={employmentKindValues.map((value) => ({
+              value,
+              label: t(`employment-profile:employmentKinds.${value}`),
+            }))}
           />
           <TextInputField name="legalName" label={t('employment-profile:fields.legalName')} />
           <TextInputField name="displayName" label={t('employment-profile:fields.displayName')} />
@@ -406,11 +402,7 @@ export const EmploymentProfileEditSurface = ({
   });
 
   const schema = useMemo(
-    () =>
-      createEmploymentEditSchema(
-        t('employment-profile:validation.required'),
-        t('employment-profile:validation.invalidToken'),
-      ),
+    () => createEmploymentEditSchema(t('employment-profile:validation.required')),
     [t],
   );
 
@@ -447,9 +439,13 @@ export const EmploymentProfileEditSurface = ({
         <FormGrid columns={2}>
           <TextInputField name="legalName" label={t('employment-profile:fields.legalName')} />
           <TextInputField name="displayName" label={t('employment-profile:fields.displayName')} />
-          <TextInputField
+          <SelectField
             name="employmentKind"
             label={t('employment-profile:fields.employmentKind')}
+            options={employmentKindValues.map((value) => ({
+              value,
+              label: t(`employment-profile:employmentKinds.${value}`),
+            }))}
           />
           <TextInputField name="jobTitle" label={t('employment-profile:fields.jobTitle')} />
           <TextInputField

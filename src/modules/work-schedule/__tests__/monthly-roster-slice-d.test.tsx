@@ -122,7 +122,8 @@ describe('monthly roster slice D preview', () => {
     await user.click(screen.getByLabelText(pt('filters.exceptionOnly')));
     await user.type(screen.getByLabelText(pt('filters.employeeSearch')), 'ep-002');
     expect(within(table).queryByText('ep-001')).not.toBeInTheDocument();
-    expect(within(table).getAllByText('ep-002').length).toBeGreaterThan(0);
+    expect(within(table).queryByText('ep-002')).not.toBeInTheDocument();
+    expect(within(table).getAllByText('Binh Tran').length).toBeGreaterThan(0);
 
     await user.type(screen.getByLabelText(pt('filters.dateStart')), '2026-05-21');
     expect(screen.getByText(pt('states.emptyRows'))).toBeInTheDocument();

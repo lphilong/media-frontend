@@ -7,7 +7,7 @@ import type {
   MonthlyRosterScope,
 } from '@modules/work-schedule/types/work-schedule.types';
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 
 type MonthlyRosterListColumnHandlers = {
   onOpenDetail: (monthlyRosterId: string, scope?: MonthlyRosterScope) => void;
@@ -39,17 +39,20 @@ export const createMonthlyRosterListColumns = (
   {
     accessorKey: 'departmentOrgUnitId',
     header: t('work-schedule:monthlyRosters.table.department'),
-    cell: (context) => <span className="font-mono">{String(context.getValue() ?? '-')}</span>,
+    cell: ({ row }) =>
+      readReferenceDisplay(row.original.departmentOrgUnitRef, row.original.departmentOrgUnitId),
   },
   {
     accessorKey: 'workPatternId',
     header: t('work-schedule:monthlyRosters.table.workPattern'),
-    cell: (context) => <span className="font-mono">{String(context.getValue() ?? '-')}</span>,
+    cell: ({ row }) =>
+      readReferenceDisplay(row.original.workPatternRef, row.original.workPatternId),
   },
   {
     accessorKey: 'holidayCalendarId',
     header: t('work-schedule:monthlyRosters.table.holidayCalendar'),
-    cell: (context) => <span className="font-mono">{String(context.getValue() ?? '-')}</span>,
+    cell: ({ row }) =>
+      readReferenceDisplay(row.original.holidayCalendarRef, row.original.holidayCalendarId),
   },
   {
     accessorKey: 'status',
@@ -65,7 +68,7 @@ export const createMonthlyRosterListColumns = (
   {
     accessorKey: 'updatedAt',
     header: t('work-schedule:monthlyRosters.table.updatedAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     id: 'actions',

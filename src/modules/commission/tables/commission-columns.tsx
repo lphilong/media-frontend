@@ -18,8 +18,9 @@ import {
   formatCurrency,
   formatDecimal,
   formatUtcMidnightDateLike,
-  formatUtcTimestamp,
+  formatBusinessTimestamp,
 } from '@shared/formatting/formatters';
+import { readReferenceDisplay, type ReferenceSummary } from '@shared/formatting/reference-display';
 
 type RuleColumnHandlers = {
   onOpenDetail: (commissionRuleId: string) => void;
@@ -66,7 +67,7 @@ const renderNullableTimestamp = (value: unknown): string => {
     return '-';
   }
 
-  return formatUtcTimestamp(value as string | number);
+  return formatBusinessTimestamp(value as string | number);
 };
 
 const renderNullableUtcDate = (value: unknown): string => {
@@ -82,12 +83,20 @@ const readRuleBeneficiaryId = (record: CommissionRuleListItem): string | null | 
     ? record.beneficiaryEmploymentProfileId
     : record.beneficiaryTalentId;
 
+const readRuleBeneficiaryRef = (
+  record: CommissionRuleListItem,
+): ReferenceSummary | null | undefined => record.beneficiaryRef;
+
 const readSettlementBeneficiaryId = (
   record: CommissionSettlementListItem,
 ): string | null | undefined =>
   record.beneficiaryKindSnapshot === 'EMPLOYMENT_PROFILE'
     ? record.beneficiaryEmploymentProfileIdSnapshot
     : record.beneficiaryTalentIdSnapshot;
+
+const readSettlementBeneficiaryRef = (
+  record: CommissionSettlementListItem,
+): ReferenceSummary | null | undefined => record.beneficiaryRef;
 
 export const createCommissionRuleColumns = (
   t: TFunction,
@@ -115,12 +124,20 @@ export const createCommissionRuleColumns = (
   {
     id: 'beneficiaryId',
     header: t('commission:rules.table.beneficiaryId'),
-    cell: ({ row }) => renderMono(readRuleBeneficiaryId(row.original)),
+    cell: ({ row }) =>
+      readReferenceDisplay(
+        readRuleBeneficiaryRef(row.original),
+        readRuleBeneficiaryId(row.original),
+      ),
   },
   {
     accessorKey: 'sourceContractRecordId',
     header: t('commission:rules.table.sourceContractRecordId'),
-    cell: (context) => renderMono(context.getValue()),
+    cell: ({ row }) =>
+      readReferenceDisplay(
+        row.original.sourceContractRecordRef,
+        row.original.sourceContractRecordId,
+      ),
   },
   {
     accessorKey: 'ratePercent',
@@ -147,11 +164,6 @@ export const createCommissionRuleColumns = (
     accessorKey: 'effectiveEndDate',
     header: t('commission:rules.table.effectiveEndDate'),
     cell: (context) => renderNullableUtcDate(context.getValue()),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: t('commission:rules.table.createdAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as string | number),
   },
   {
     id: 'actions',
@@ -208,7 +220,7 @@ export const createCommissionSettlementColumns = (
   {
     accessorKey: 'sourceRuleId',
     header: t('commission:settlements.table.sourceRuleId'),
-    cell: (context) => renderMono(context.getValue()),
+    cell: ({ row }) => readReferenceDisplay(row.original.sourceRuleRef, row.original.sourceRuleId),
   },
   {
     accessorKey: 'settlementKindSnapshot',
@@ -223,7 +235,11 @@ export const createCommissionSettlementColumns = (
   {
     id: 'beneficiarySnapshotId',
     header: t('commission:settlements.table.beneficiarySnapshotId'),
-    cell: ({ row }) => renderMono(readSettlementBeneficiaryId(row.original)),
+    cell: ({ row }) =>
+      readReferenceDisplay(
+        readSettlementBeneficiaryRef(row.original),
+        readSettlementBeneficiaryId(row.original),
+      ),
   },
   {
     accessorKey: 'subjectTalentId',
@@ -261,22 +277,17 @@ export const createCommissionSettlementColumns = (
   {
     accessorKey: 'settlementPeriodStartAt',
     header: t('commission:settlements.table.settlementPeriodStartAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as string | number),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as string | number),
   },
   {
     accessorKey: 'settlementPeriodEndAt',
     header: t('commission:settlements.table.settlementPeriodEndAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as string | number),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as string | number),
   },
   {
     accessorKey: 'finalizedAt',
     header: t('commission:settlements.table.finalizedAt'),
     cell: (context) => renderNullableTimestamp(context.getValue()),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: t('commission:settlements.table.createdAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as string | number),
   },
   {
     id: 'actions',

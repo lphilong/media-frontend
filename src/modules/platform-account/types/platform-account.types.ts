@@ -1,3 +1,5 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type PlatformAccountOperationalStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 export type PlatformAccountOwnerKind = 'ORG_UNIT' | 'TALENT' | 'TALENT_GROUP';
 
@@ -14,6 +16,7 @@ export type PlatformAccountRecord = {
   ownerOrgUnitId?: string | null;
   ownerTalentId?: string | null;
   ownerTalentGroupId?: string | null;
+  ownerRef?: ReferenceSummary | null;
   operationalStatus: PlatformAccountOperationalStatus;
   livestreamEnabled: boolean;
   contentPublishingEnabled: boolean;

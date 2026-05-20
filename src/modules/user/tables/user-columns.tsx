@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 
 import type { UserLifecycleAction, UserListItem } from '@modules/user/types/user.types';
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type UserListColumnHandlers = {
   onOpenDetail: (userId: string) => void;
@@ -66,7 +66,7 @@ export const createUserListColumns = (
   {
     accessorKey: 'updatedAt',
     header: t('user:table.updatedAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     id: 'actions',

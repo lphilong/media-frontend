@@ -65,7 +65,8 @@ type PlatformAccountCapabilitiesSurfaceProps = BaseMutationSurfaceProps & {
 };
 
 const tokenRegex = /^[A-Za-z0-9_-]+$/;
-const upperTokenRegex = /^[A-Z][A-Z0-9_]*$/;
+const platformValues = ['TIKTOK', 'YOUTUBE', 'FACEBOOK', 'INSTAGRAM'] as const;
+const platformSurfaceTypeValues = ['ACCOUNT', 'CHANNEL', 'PAGE'] as const;
 
 const toNullableText = (value?: string): string | null => {
   const trimmed = value?.trim();
@@ -141,12 +142,10 @@ const createPlatformAccountCreateSchema = (
 ) => {
   return createBaseOwnerSchema(requiredMessage, tokenMessage)
     .extend({
-      platform: z.string().trim().min(1, requiredMessage).regex(upperTokenRegex, tokenMessage),
-      platformSurfaceType: z
-        .string()
-        .trim()
-        .min(1, requiredMessage)
-        .regex(upperTokenRegex, tokenMessage),
+      platform: z.enum(platformValues, { required_error: requiredMessage }),
+      platformSurfaceType: z.enum(platformSurfaceTypeValues, {
+        required_error: requiredMessage,
+      }),
       displayName: z.string().trim().min(1, requiredMessage),
       handle: z.string().trim().optional(),
       externalPlatformId: z.string().trim().optional(),
@@ -314,10 +313,23 @@ export const PlatformAccountCreateSurface = ({
             description={t('platform-account:generatedCode.description')}
             className="md:col-span-2"
           />
-          <TextInputField name="platform" label={t('platform-account:fields.platform')} />
-          <TextInputField
+          <SelectField
+            name="platform"
+            label={t('platform-account:fields.platform')}
+            placeholder={t('platform-account:placeholders.selectPlatform')}
+            options={platformValues.map((value) => ({
+              value,
+              label: t(`platform-account:platforms.${value}`),
+            }))}
+          />
+          <SelectField
             name="platformSurfaceType"
             label={t('platform-account:fields.platformSurfaceType')}
+            placeholder={t('platform-account:placeholders.selectSurfaceType')}
+            options={platformSurfaceTypeValues.map((value) => ({
+              value,
+              label: t(`platform-account:surfaceTypes.${value}`),
+            }))}
           />
           <TextInputField name="displayName" label={t('platform-account:fields.displayName')} />
           <SelectField
@@ -336,7 +348,8 @@ export const PlatformAccountCreateSurface = ({
           <TextInputField
             name="handle"
             label={t('platform-account:fields.handle')}
-            placeholder={t('platform-account:placeholders.optional')}
+            placeholder={t('platform-account:placeholders.handle')}
+            helperText={t('platform-account:help.handle')}
           />
           <TextInputField
             name="externalPlatformId"
@@ -442,7 +455,12 @@ export const PlatformAccountEditSurface = ({
       >
         <FormGrid columns={2}>
           <TextInputField name="displayName" label={t('platform-account:fields.displayName')} />
-          <TextInputField name="handle" label={t('platform-account:fields.handle')} />
+          <TextInputField
+            name="handle"
+            label={t('platform-account:fields.handle')}
+            placeholder={t('platform-account:placeholders.handle')}
+            helperText={t('platform-account:help.handle')}
+          />
           <TextInputField
             name="externalPlatformId"
             label={t('platform-account:fields.externalPlatformId')}

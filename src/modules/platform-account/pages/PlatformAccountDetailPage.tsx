@@ -41,7 +41,11 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCreatedDate,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveMutationSurface = 'edit' | 'transfer-ownership' | 'capabilities' | null;
@@ -306,7 +310,14 @@ export const PlatformAccountDetailPage = (): JSX.Element => {
                 {
                   key: 'owner-id',
                   label: t('platform-account:fields.ownerId'),
-                  value: ownerId ? <ReferenceChip label={ownerId} to={ownerHref} /> : '-',
+                  value: ownerId ? (
+                    <ReferenceChip
+                      label={readReferenceDisplay(record.ownerRef, ownerId)}
+                      to={ownerHref}
+                    />
+                  ) : (
+                    '-'
+                  ),
                 },
               ]}
               columns={2}
@@ -368,12 +379,12 @@ export const PlatformAccountDetailPage = (): JSX.Element => {
                 {
                   key: 'created-at',
                   label: t('platform-account:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('platform-account:fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}

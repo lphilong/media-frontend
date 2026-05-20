@@ -29,6 +29,7 @@ import type {
   RoleAssignmentItem,
   RoleAssignmentListQuery,
   RoleLifecycleAction,
+  RoleTemplateCode,
 } from '@modules/role/types/role.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
@@ -47,7 +48,14 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
+import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import { ModuleDetailScreenShell } from '@shared/modules';
 import {
   createCursorStack,
@@ -92,10 +100,23 @@ const readErrorMessage = (
 };
 
 const formatOptionalTimestamp = (value?: number | string | null): string =>
-  value === null || value === undefined ? '-' : formatUtcTimestamp(value);
+  value === null || value === undefined ? '-' : formatBusinessTimestamp(value);
 
 const readPermissionCodes = (permissions: Array<{ code: string }>): string =>
   permissions.length === 0 ? '-' : permissions.map((permission) => permission.code).join(', ');
+
+const roleTemplateDisplayNames: Record<RoleTemplateCode, string> = {
+  ADMIN_FULL: 'Admin Full',
+  HR_OPERATIONS: 'HR Operations',
+  TEAM_MANAGER: 'Team Manager',
+  PRODUCTION_OPS: 'Production Ops',
+  COMMERCIAL_FINANCE: 'Commercial Finance',
+  TALENT_STAFF_SELF: 'Talent/Staff Self',
+  VIEWER_AUDITOR: 'Viewer/Auditor',
+};
+
+const readTemplateDisplay = (templateCode?: RoleTemplateCode | null): string =>
+  templateCode ? `${roleTemplateDisplayNames[templateCode]} (${templateCode})` : '-';
 
 export const RoleDetailPage = (): JSX.Element => {
   const { roleId } = useParams<{ roleId: string }>();
@@ -105,6 +126,7 @@ export const RoleDetailPage = (): JSX.Element => {
   const detailQuery = useRoleDetail(roleId);
   const assignmentsQuery = useRoleAssignments(roleId, query);
   const permissionMatrixQuery = useRolePermissionMatrix(roleId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateRoleMutation();
   const lifecycleMutation = useRoleLifecycleMutation();
   const permissionsMutation = useRolePermissionReplacementMutation();
@@ -117,6 +139,15 @@ export const RoleDetailPage = (): JSX.Element => {
   const [activeSurface, setActiveSurface] = useState<ActiveMutationSurface>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<RoleAssignmentItem | null>(null);
   const [, setCursorStack] = useState(createCursorStack);
+
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const queryShapeSignature = useMemo(
     () =>
@@ -332,23 +363,118 @@ export const RoleDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createRoleActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onPermissions: () => setActiveSurface('permissions'),
-      onAssignmentRules: () => setActiveSurface('assignment-rules'),
-      onAssignToUser: () => setActiveSurface('assign-to-user'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.roleId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    return applyActionCapabilityHints(
+      createRoleActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onPermissions: () => setActiveSurface('permissions'),
+        onAssignmentRules: () => setActiveSurface('assignment-rules'),
+        onAssignToUser: () => setActiveSurface('assign-to-user'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.roleId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_UPDATE },
+          capabilityCopy,
+        ),
+        permissions: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_PERMISSION_ASSIGN },
+          capabilityCopy,
+        ),
+        'assignment-rules': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_ASSIGNMENT_RULE_SET },
+          capabilityCopy,
+        ),
+        'assign-to-user': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_ASSIGN_TO_USER },
+          capabilityCopy,
+        ),
+        activate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_ACTIVATE },
+          capabilityCopy,
+        ),
+        deactivate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_DEACTIVATE },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_ARCHIVE },
+          capabilityCopy,
+        ),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   const assignmentColumns = useMemo(
     () =>
       createRoleAssignmentColumns(t, {
         roleState: record?.state,
+        canRevokeAssignment: !createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_REVOKE_FROM_USER },
+          capabilityCopy,
+        ).disabled,
+        revokeDisabledReason: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ROLE_REVOKE_FROM_USER },
+          capabilityCopy,
+        ).disabledReason,
         onRevokeAssignment: (assignment) => {
           setSelectedAssignment(assignment);
           setActiveSurface('revoke-assignment');
@@ -357,7 +483,16 @@ export const RoleDetailPage = (): JSX.Element => {
           revokeAssignmentMutation.isPending &&
           revokeAssignmentMutation.variables?.assignmentId === assignmentId,
       }),
-    [record?.state, revokeAssignmentMutation.isPending, revokeAssignmentMutation.variables, t],
+    [
+      capabilityCopy,
+      capabilitiesQuery.data,
+      capabilitiesQuery.isError,
+      capabilitiesQuery.isLoading,
+      record?.state,
+      revokeAssignmentMutation.isPending,
+      revokeAssignmentMutation.variables,
+      t,
+    ],
   );
 
   const matrix = permissionMatrixQuery.data;
@@ -428,6 +563,24 @@ export const RoleDetailPage = (): JSX.Element => {
               <ReadOnlyFieldGrid
                 fields={[
                   {
+                    key: 'templateCode',
+                    label: t('role:templates.basedOnTemplate'),
+                    value: record.templateCode
+                      ? readTemplateDisplay(record.templateCode)
+                      : t('role:templates.custom'),
+                    description: t('role:templates.permissionsRemainExplicit'),
+                  },
+                  {
+                    key: 'templateVersion',
+                    label: t('role:templates.templateVersion'),
+                    value: record.templateVersion ?? '-',
+                  },
+                  {
+                    key: 'templateAppliedAt',
+                    label: t('role:templates.templateAppliedAt'),
+                    value: formatOptionalTimestamp(record.templateAppliedAt),
+                  },
+                  {
                     key: 'permissions',
                     label: t('role:fields.permissions'),
                     value: readPermissionCodes(record.permissions),
@@ -440,12 +593,15 @@ export const RoleDetailPage = (): JSX.Element => {
                   {
                     key: 'createdAt',
                     label: t('role:fields.createdAt'),
-                    value: formatOptionalTimestamp(record.createdAt),
+                    value:
+                      record.createdAt === null || record.createdAt === undefined
+                        ? '-'
+                        : formatCreatedDate(record.createdAt),
                   },
                   {
                     key: 'updatedAt',
                     label: t('role:fields.updatedAt'),
-                    value: formatUtcTimestamp(record.updatedAt),
+                    value: formatBusinessTimestamp(record.updatedAt),
                   },
                   {
                     key: 'activatedAt',

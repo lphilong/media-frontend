@@ -22,18 +22,21 @@ import type {
 import { revenueKindValues } from '@modules/revenue-ledger/types/revenue-ledger.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  AppliedFilterChips,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
   useDestructiveConfirm,
   useMutationFeedback,
+  type AppliedFilterChipItem,
 } from '@shared/components/primitives';
-import { ReferenceFilterField } from '@shared/components/reference';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import {
   loadEventReferenceOptions,
   loadPlatformAccountReferenceOptions,
@@ -52,6 +55,7 @@ import {
   revenueLedgerFlatListQueryConfig,
   serializeScreenQueryParams,
 } from '@shared/query';
+import { readReferenceDisplayForId } from '@shared/formatting/reference-display';
 
 type RoutePatchOptions = {
   replace?: boolean;
@@ -67,6 +71,21 @@ const allSortOptions = [
 const broadSortOptions = [allSortOptions[0]] as const;
 const statusOptions = ['', 'DRAFT', 'FINALIZED', 'RECONCILED', 'VOIDED', 'ARCHIVED'] as const;
 const entrySourceOptions = ['', 'MANUAL'] as const;
+
+type FilterLabelKey = 'subjectTalent' | 'platformAccount' | 'event';
+type FilterLabelEntry = {
+  id: string;
+  label: string;
+};
+
+const readCachedFilterLabel = (
+  labels: Partial<Record<FilterLabelKey, FilterLabelEntry>>,
+  key: FilterLabelKey,
+  activeId: string | undefined,
+): string | undefined => {
+  const cached = labels[key];
+  return cached && cached.id === activeId ? cached.label : undefined;
+};
 
 const hasPresentValue = (value: unknown): boolean => {
   if (value === undefined || value === null) {
@@ -91,7 +110,12 @@ export const isRevenueLedgerNarrowFlatSortMode = (query: RevenueLedgerFlatListQu
     hasPresentValue(query.entrySource) ||
     hasPresentValue(query.currencyCode) ||
     hasPresentValue(query.windowStartAt) ||
-    hasPresentValue(query.windowEndAt)
+    hasPresentValue(query.windowEndAt) ||
+    hasPresentValue(query.createdBeforeAt) ||
+    hasPresentValue(query.finalizedFromAt) ||
+    hasPresentValue(query.finalizedToAt) ||
+    hasPresentValue(query.reconciledFromAt) ||
+    hasPresentValue(query.reconciledToAt)
   );
 };
 
@@ -248,6 +272,10 @@ export const RevenueLedgerListPage = (): JSX.Element => {
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterLabels, setFilterLabels] = useState<
+    Partial<Record<FilterLabelKey, FilterLabelEntry>>
+  >({});
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(() => {
@@ -386,6 +414,264 @@ export const RevenueLedgerListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const rememberFilterLabel = useCallback(
+    (key: FilterLabelKey, activeId: string | undefined) =>
+      (option: ReferenceOption | undefined) => {
+        setFilterLabels((current) => {
+          if (!option) {
+            if (!current[key] || (activeId && current[key]?.id !== activeId)) {
+              return current;
+            }
+
+            const next = { ...current };
+            delete next[key];
+            return next;
+          }
+
+          if (current[key]?.id === option.id && current[key]?.label === option.label) {
+            return current;
+          }
+
+          return { ...current, [key]: { id: option.id, label: option.label } };
+        });
+      },
+    [],
+  );
+  const subjectTalentFilterLabel = useMemo(
+    () =>
+      readReferenceDisplayForId(
+        'subjectTalentId' in activeQuery ? activeQuery.subjectTalentId : undefined,
+        (listQueryResult.data?.data ?? []).map((record) =>
+          'subjectTalentRef' in record ? record.subjectTalentRef : undefined,
+        ),
+      ),
+    [activeQuery, listQueryResult.data?.data],
+  );
+  const platformAccountFilterLabel = useMemo(
+    () =>
+      readReferenceDisplayForId(
+        'attributionPlatformAccountId' in activeQuery
+          ? activeQuery.attributionPlatformAccountId
+          : undefined,
+        (listQueryResult.data?.data ?? []).map((record) =>
+          'attributionPlatformAccountRef' in record
+            ? record.attributionPlatformAccountRef
+            : undefined,
+        ),
+      ),
+    [activeQuery, listQueryResult.data?.data],
+  );
+  const eventFilterLabel = useMemo(
+    () =>
+      readReferenceDisplayForId(
+        'attributionEventId' in activeQuery ? activeQuery.attributionEventId : undefined,
+        (listQueryResult.data?.data ?? []).map((record) =>
+          'attributionEventRef' in record ? record.attributionEventRef : undefined,
+        ),
+      ),
+    [activeQuery, listQueryResult.data?.data],
+  );
+
+  const activeFilterChips = useMemo(() => {
+    const chips: AppliedFilterChipItem[] = [];
+
+    if (routeMode === 'flat' && flatListQuery.search) {
+      chips.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: flatListQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (activeQuery.status) {
+      chips.push({
+        id: 'status',
+        label: t('revenue-ledger:filters.status'),
+        value: t(`revenue-ledger:statuses.${activeQuery.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    const subjectTalentId =
+      'subjectTalentId' in activeQuery ? (activeQuery.subjectTalentId ?? undefined) : undefined;
+    if (routeMode === 'flat' && subjectTalentId) {
+      chips.push({
+        id: 'subjectTalentId',
+        label: t('revenue-ledger:filters.subjectTalentId'),
+        value:
+          readCachedFilterLabel(filterLabels, 'subjectTalent', subjectTalentId) ??
+          subjectTalentFilterLabel,
+        onClear: () => patchQuery({ subjectTalentId: undefined }),
+      });
+    }
+
+    const attributionPlatformAccountId =
+      'attributionPlatformAccountId' in activeQuery
+        ? (activeQuery.attributionPlatformAccountId ?? undefined)
+        : undefined;
+    if (routeMode === 'flat' && attributionPlatformAccountId) {
+      chips.push({
+        id: 'attributionPlatformAccountId',
+        label: t('revenue-ledger:filters.attributionPlatformAccountId'),
+        value:
+          readCachedFilterLabel(filterLabels, 'platformAccount', attributionPlatformAccountId) ??
+          platformAccountFilterLabel,
+        onClear: () => patchQuery({ attributionPlatformAccountId: undefined }),
+      });
+    }
+
+    const attributionEventId =
+      'attributionEventId' in activeQuery
+        ? (activeQuery.attributionEventId ?? undefined)
+        : undefined;
+    if (routeMode === 'flat' && attributionEventId) {
+      chips.push({
+        id: 'attributionEventId',
+        label: t('revenue-ledger:filters.attributionEventId'),
+        value: readCachedFilterLabel(filterLabels, 'event', attributionEventId) ?? eventFilterLabel,
+        onClear: () => patchQuery({ attributionEventId: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.revenueKind) {
+      chips.push({
+        id: 'revenueKind',
+        label: t('revenue-ledger:filters.revenueKind'),
+        value: t(`revenue-ledger:revenueKinds.${flatListQuery.revenueKind}`),
+        onClear: () => patchQuery({ revenueKind: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.entrySource) {
+      chips.push({
+        id: 'entrySource',
+        label: t('revenue-ledger:filters.entrySource'),
+        value: t(`revenue-ledger:entrySources.${flatListQuery.entrySource}`),
+        onClear: () => patchQuery({ entrySource: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.currencyCode) {
+      chips.push({
+        id: 'currencyCode',
+        label: t('revenue-ledger:filters.currencyCode'),
+        value: flatListQuery.currencyCode,
+        onClear: () => patchQuery({ currencyCode: undefined }),
+      });
+    }
+
+    if (activeQuery.windowStartAt !== undefined) {
+      chips.push({
+        id: 'windowStartAt',
+        label: t('revenue-ledger:filters.windowStartAt'),
+        value: String(activeQuery.windowStartAt),
+        onClear: () => patchQuery({ windowStartAt: undefined }),
+      });
+    }
+
+    if (activeQuery.windowEndAt !== undefined) {
+      chips.push({
+        id: 'windowEndAt',
+        label: t('revenue-ledger:filters.windowEndAt'),
+        value: String(activeQuery.windowEndAt),
+        onClear: () => patchQuery({ windowEndAt: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.createdBeforeAt !== undefined) {
+      chips.push({
+        id: 'createdBeforeAt',
+        label: 'Created before',
+        value: String(flatListQuery.createdBeforeAt),
+        onClear: () => patchQuery({ createdBeforeAt: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.finalizedFromAt !== undefined) {
+      chips.push({
+        id: 'finalizedFromAt',
+        label: 'Finalized from',
+        value: String(flatListQuery.finalizedFromAt),
+        onClear: () => patchQuery({ finalizedFromAt: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.finalizedToAt !== undefined) {
+      chips.push({
+        id: 'finalizedToAt',
+        label: 'Finalized until',
+        value: String(flatListQuery.finalizedToAt),
+        onClear: () => patchQuery({ finalizedToAt: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.reconciledFromAt !== undefined) {
+      chips.push({
+        id: 'reconciledFromAt',
+        label: 'Reconciled from',
+        value: String(flatListQuery.reconciledFromAt),
+        onClear: () => patchQuery({ reconciledFromAt: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.reconciledToAt !== undefined) {
+      chips.push({
+        id: 'reconciledToAt',
+        label: 'Reconciled until',
+        value: String(flatListQuery.reconciledToAt),
+        onClear: () => patchQuery({ reconciledToAt: undefined }),
+      });
+    }
+
+    return chips;
+  }, [
+    activeQuery,
+    eventFilterLabel,
+    filterLabels,
+    flatListQuery.currencyCode,
+    flatListQuery.entrySource,
+    flatListQuery.createdBeforeAt,
+    flatListQuery.finalizedFromAt,
+    flatListQuery.finalizedToAt,
+    flatListQuery.revenueKind,
+    flatListQuery.reconciledFromAt,
+    flatListQuery.reconciledToAt,
+    flatListQuery.search,
+    patchQuery,
+    platformAccountFilterLabel,
+    routeMode,
+    subjectTalentFilterLabel,
+    t,
+  ]);
+
+  const clearAllFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      subjectTalentId: routeMode === 'by-talent' ? byTalentQuery.subjectTalentId : undefined,
+      attributionPlatformAccountId:
+        routeMode === 'by-platform' ? byPlatformQuery.attributionPlatformAccountId : undefined,
+      attributionEventId: routeMode === 'by-event' ? byEventQuery.attributionEventId : undefined,
+      revenueKind: undefined,
+      entrySource: undefined,
+      currencyCode: undefined,
+      windowStartAt: undefined,
+      windowEndAt: undefined,
+      createdBeforeAt: undefined,
+      finalizedFromAt: undefined,
+      finalizedToAt: undefined,
+      reconciledFromAt: undefined,
+      reconciledToAt: undefined,
+    });
+  }, [
+    byEventQuery.attributionEventId,
+    byPlatformQuery.attributionPlatformAccountId,
+    byTalentQuery.subjectTalentId,
+    patchQuery,
+    routeMode,
+  ]);
+
   return (
     <ModuleListScreenShell
       mode={routeMode === 'flat' ? 'flat-list' : 'related-list'}
@@ -399,7 +685,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
         </div>
       }
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             routeMode === 'flat' ? (
               <SearchBoxSeam
@@ -420,6 +706,183 @@ export const RevenueLedgerListPage = (): JSX.Element => {
               onChange={(sortBy, sortDirection) => patchQuery({ sortBy, sortDirection })}
             />
           }
+          moreFiltersTrigger={
+            <button
+              type="button"
+              aria-expanded={isMoreFiltersOpen}
+              aria-controls="revenue-ledger-more-filters"
+              onClick={() => setIsMoreFiltersOpen((current) => !current)}
+              className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+            >
+              {t('common:filters.moreFilters')}
+            </button>
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              emptyLabel={t('common:filters.noFiltersApplied')}
+              items={activeFilterChips}
+              onClearAll={activeFilterChips.length > 0 ? clearAllFilters : undefined}
+            />
+          }
+          moreFiltersPanel={
+            <MoreFiltersPanel
+              id="revenue-ledger-more-filters"
+              title={t('common:filters.moreFilters')}
+              isOpen={isMoreFiltersOpen}
+              closeLabel={t('common:actions.close')}
+              onClose={() => setIsMoreFiltersOpen(false)}
+            >
+              <ReferenceFilterField
+                label={t('revenue-ledger:filters.subjectTalentId')}
+                pickerId="revenue-ledger-filter-subject-talent"
+                value={
+                  'subjectTalentId' in activeQuery
+                    ? (activeQuery.subjectTalentId ?? undefined)
+                    : undefined
+                }
+                loadOptions={loadTalentReferenceOptions}
+                placeholder={t('revenue-ledger:filters.subjectTalentIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[210px]"
+                onSelectedOptionChange={rememberFilterLabel(
+                  'subjectTalent',
+                  'subjectTalentId' in activeQuery
+                    ? (activeQuery.subjectTalentId ?? undefined)
+                    : undefined,
+                )}
+                onChange={(value) => patchQuery({ subjectTalentId: value })}
+              />
+              <ReferenceFilterField
+                label={t('revenue-ledger:filters.attributionPlatformAccountId')}
+                pickerId="revenue-ledger-filter-platform-account"
+                value={
+                  'attributionPlatformAccountId' in activeQuery
+                    ? (activeQuery.attributionPlatformAccountId ?? undefined)
+                    : undefined
+                }
+                loadOptions={loadPlatformAccountReferenceOptions}
+                placeholder={t('revenue-ledger:filters.attributionPlatformAccountIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[230px]"
+                onSelectedOptionChange={rememberFilterLabel(
+                  'platformAccount',
+                  'attributionPlatformAccountId' in activeQuery
+                    ? (activeQuery.attributionPlatformAccountId ?? undefined)
+                    : undefined,
+                )}
+                onChange={(value) => patchQuery({ attributionPlatformAccountId: value })}
+              />
+              <ReferenceFilterField
+                label={t('revenue-ledger:filters.attributionEventId')}
+                pickerId="revenue-ledger-filter-event"
+                value={
+                  'attributionEventId' in activeQuery
+                    ? (activeQuery.attributionEventId ?? undefined)
+                    : undefined
+                }
+                loadOptions={loadEventReferenceOptions}
+                placeholder={t('revenue-ledger:filters.attributionEventIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[210px]"
+                onSelectedOptionChange={rememberFilterLabel(
+                  'event',
+                  'attributionEventId' in activeQuery
+                    ? (activeQuery.attributionEventId ?? undefined)
+                    : undefined,
+                )}
+                onChange={(value) => patchQuery({ attributionEventId: value })}
+              />
+              {routeMode === 'flat' ? (
+                <>
+                  <label className="flex min-w-[210px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('revenue-ledger:filters.revenueKind')}
+                    </span>
+                    <select
+                      value={flatListQuery.revenueKind ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({ revenueKind: event.target.value || undefined })
+                      }
+                    >
+                      <option value="">{t('revenue-ledger:filters.allRevenueKinds')}</option>
+                      {revenueKindValues.map((kind) => (
+                        <option key={kind} value={kind}>
+                          {t(`revenue-ledger:revenueKinds.${kind}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex min-w-[170px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('revenue-ledger:filters.entrySource')}
+                    </span>
+                    <select
+                      value={flatListQuery.entrySource ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({ entrySource: event.target.value || undefined })
+                      }
+                    >
+                      {entrySourceOptions.map((source) => (
+                        <option key={source || 'all'} value={source}>
+                          {source
+                            ? t(`revenue-ledger:entrySources.${source}`)
+                            : t('revenue-ledger:filters.allEntrySources')}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex min-w-[150px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('revenue-ledger:filters.currencyCode')}
+                    </span>
+                    <input
+                      value={flatListQuery.currencyCode ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      placeholder={t('revenue-ledger:filters.currencyCodePlaceholder')}
+                      onChange={(event) =>
+                        patchQuery({ currencyCode: event.target.value || undefined })
+                      }
+                    />
+                  </label>
+                </>
+              ) : null}
+              <label className="flex min-w-[180px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('revenue-ledger:filters.windowStartAt')}
+                </span>
+                <input
+                  type="number"
+                  value={activeQuery.windowStartAt ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({
+                      windowStartAt: event.target.value ? Number(event.target.value) : undefined,
+                    })
+                  }
+                />
+              </label>
+              <label className="flex min-w-[180px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('revenue-ledger:filters.windowEndAt')}
+                </span>
+                <input
+                  type="number"
+                  value={activeQuery.windowEndAt ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({
+                      windowEndAt: event.target.value ? Number(event.target.value) : undefined,
+                    })
+                  }
+                />
+              </label>
+            </MoreFiltersPanel>
+          }
         >
           <label className="flex min-w-[180px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">
@@ -439,131 +902,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          <ReferenceFilterField
-            label={t('revenue-ledger:filters.subjectTalentId')}
-            pickerId="revenue-ledger-filter-subject-talent"
-            value={
-              'subjectTalentId' in activeQuery
-                ? (activeQuery.subjectTalentId ?? undefined)
-                : undefined
-            }
-            loadOptions={loadTalentReferenceOptions}
-            placeholder={t('revenue-ledger:filters.subjectTalentIdPlaceholder')}
-            clearLabel={t('common:actions.clear')}
-            className="min-w-[210px]"
-            onChange={(value) => patchQuery({ subjectTalentId: value })}
-          />
-          <ReferenceFilterField
-            label={t('revenue-ledger:filters.attributionPlatformAccountId')}
-            pickerId="revenue-ledger-filter-platform-account"
-            value={
-              'attributionPlatformAccountId' in activeQuery
-                ? (activeQuery.attributionPlatformAccountId ?? undefined)
-                : undefined
-            }
-            loadOptions={loadPlatformAccountReferenceOptions}
-            placeholder={t('revenue-ledger:filters.attributionPlatformAccountIdPlaceholder')}
-            clearLabel={t('common:actions.clear')}
-            className="min-w-[230px]"
-            onChange={(value) => patchQuery({ attributionPlatformAccountId: value })}
-          />
-          <ReferenceFilterField
-            label={t('revenue-ledger:filters.attributionEventId')}
-            pickerId="revenue-ledger-filter-event"
-            value={
-              'attributionEventId' in activeQuery
-                ? (activeQuery.attributionEventId ?? undefined)
-                : undefined
-            }
-            loadOptions={loadEventReferenceOptions}
-            placeholder={t('revenue-ledger:filters.attributionEventIdPlaceholder')}
-            clearLabel={t('common:actions.clear')}
-            className="min-w-[210px]"
-            onChange={(value) => patchQuery({ attributionEventId: value })}
-          />
-          {routeMode === 'flat' ? (
-            <>
-              <label className="flex min-w-[210px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('revenue-ledger:filters.revenueKind')}
-                </span>
-                <select
-                  value={flatListQuery.revenueKind ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) => patchQuery({ revenueKind: event.target.value || undefined })}
-                >
-                  <option value="">{t('revenue-ledger:filters.allRevenueKinds')}</option>
-                  {revenueKindValues.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {t(`revenue-ledger:revenueKinds.${kind}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex min-w-[170px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('revenue-ledger:filters.entrySource')}
-                </span>
-                <select
-                  value={flatListQuery.entrySource ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) => patchQuery({ entrySource: event.target.value || undefined })}
-                >
-                  {entrySourceOptions.map((source) => (
-                    <option key={source || 'all'} value={source}>
-                      {source
-                        ? t(`revenue-ledger:entrySources.${source}`)
-                        : t('revenue-ledger:filters.allEntrySources')}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex min-w-[150px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('revenue-ledger:filters.currencyCode')}
-                </span>
-                <input
-                  value={flatListQuery.currencyCode ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  placeholder={t('revenue-ledger:filters.currencyCodePlaceholder')}
-                  onChange={(event) =>
-                    patchQuery({ currencyCode: event.target.value || undefined })
-                  }
-                />
-              </label>
-            </>
-          ) : null}
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('revenue-ledger:filters.windowStartAt')}
-            </span>
-            <input
-              type="number"
-              value={activeQuery.windowStartAt ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  windowStartAt: event.target.value ? Number(event.target.value) : undefined,
-                })
-              }
-            />
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('revenue-ledger:filters.windowEndAt')}
-            </span>
-            <input
-              type="number"
-              value={activeQuery.windowEndAt ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  windowEndAt: event.target.value ? Number(event.target.value) : undefined,
-                })
-              }
-            />
-          </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>

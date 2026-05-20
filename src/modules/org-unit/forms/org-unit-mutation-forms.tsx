@@ -16,7 +16,13 @@ import type {
 } from '@modules/org-unit/types/org-unit.types';
 import { loadOrgUnitReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
-import { FormGrid, GeneratedCodeNotice, ReferencePickerField, TextInputField } from '@shared/forms';
+import {
+  FormGrid,
+  GeneratedCodeNotice,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
@@ -53,6 +59,8 @@ const toOptionalText = (value?: string): string | undefined => {
   return trimmed && trimmed.length > 0 ? trimmed : undefined;
 };
 
+const orgUnitTypeValues = ['DEPARTMENT', 'TEAM', 'BUSINESS_UNIT', 'SUPPORT_UNIT'] as const;
+
 const applySchemaErrors = <TValues extends FieldValues>(
   setError: UseFormSetError<TValues>,
   error: z.ZodError,
@@ -67,17 +75,10 @@ const applySchemaErrors = <TValues extends FieldValues>(
   });
 };
 
-const createOrgUnitCreateFormSchema = (
-  requiredMessage: string,
-  numberMessage: string,
-  tokenMessage: string,
-) => {
+const createOrgUnitCreateFormSchema = (requiredMessage: string, numberMessage: string) => {
   return z.object({
     name: z.string().trim().min(1, requiredMessage),
-    type: z
-      .string()
-      .trim()
-      .regex(/^[A-Z][A-Z0-9_]*$/, tokenMessage),
+    type: z.enum(orgUnitTypeValues, { required_error: requiredMessage }),
     displayOrder: z.coerce.number().int(numberMessage).min(0, numberMessage),
     parentOrgUnitId: z.string().trim().optional(),
     description: z.string().trim().optional(),
@@ -151,7 +152,6 @@ export const OrgUnitCreateSurface = ({
       createOrgUnitCreateFormSchema(
         t('org-unit:validation.required'),
         t('org-unit:validation.invalidDisplayOrder'),
-        t('org-unit:validation.invalidTypeToken'),
       ),
     [t],
   );
@@ -193,15 +193,20 @@ export const OrgUnitCreateSurface = ({
             className="md:col-span-2"
           />
           <TextInputField name="name" label={t('org-unit:fields.name')} />
-          <TextInputField
+          <SelectField
             name="type"
             label={t('org-unit:fields.type')}
-            placeholder={t('org-unit:placeholders.typeToken')}
+            placeholder={t('org-unit:placeholders.selectType')}
+            options={orgUnitTypeValues.map((value) => ({
+              value,
+              label: t(`org-unit:types.${value}`),
+            }))}
           />
           <TextInputField
             name="displayOrder"
             label={t('org-unit:fields.displayOrder')}
             type="number"
+            helperText={t('org-unit:help.displayOrder')}
           />
           <TextInputField
             name="externalRef"
@@ -295,6 +300,7 @@ export const OrgUnitEditSurface = ({
             name="displayOrder"
             label={t('org-unit:fields.displayOrder')}
             type="number"
+            helperText={t('org-unit:help.displayOrder')}
           />
           <TextInputField
             name="externalRef"

@@ -2,10 +2,12 @@ import i18n from 'i18next';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { http, HttpResponse } from 'msw';
 
 import { appRoutes } from '@app/router/router';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
+import { server } from '@test/msw/server';
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {
@@ -38,15 +40,68 @@ describe('role IA-1 surfaces', () => {
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
     expect(screen.getByText('Admin role')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:detail.permissionMatrixTitle'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:templates.basedOnTemplate'))).toBeInTheDocument();
+    expect(screen.getByText(/Admin Full \(ADMIN_FULL\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Work Schedule: Self, Team/)).toBeInTheDocument();
+    expect(screen.getByText(/Dashboard Lite: Global/)).toBeInTheDocument();
     expect(screen.getAllByText(/role:view/).length).toBeGreaterThan(0);
-    expect(await screen.findByText('assignment-1', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.queryByText('assignment-1')).not.toBeInTheDocument();
 
-    const userLink = screen.getByRole('link', { name: 'user-admin' });
+    const userLink = await screen.findByRole(
+      'link',
+      { name: /admin@example.test/ },
+      { timeout: 3000 },
+    );
     expect(userLink).toHaveAttribute('href', '/users/user-admin');
+    expect(screen.queryByText('user-admin')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /grant scope/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /rename permission/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /set auth0 linkage/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /user lifecycle/i })).not.toBeInTheDocument();
+  });
+
+  it('shows capability reasons for Role actions when permissions are missing', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({
+          data: {
+            id: 'user-admin',
+            type: 'admin',
+            context: 'ADMIN',
+            isActive: true,
+            roles: ['role-admin'],
+            permissions: ['role:view', 'role:assignment:view'],
+            scopeGrants: {},
+            generatedAt: '2026-05-20T00:00:00.000Z',
+          },
+        }),
+      ),
+    );
+
+    renderRoute('/roles/role-admin');
+
+    const edit = await screen.findByRole('button', { name: i18n.t('role:actions.edit') });
+    const assign = screen.getByRole('button', { name: i18n.t('role:actions.assignToUser') });
+    const assignmentRow = (await screen.findByRole('link', { name: /admin@example.test/ })).closest(
+      'tr',
+    );
+
+    expect(edit).toBeDisabled();
+    await waitFor(() =>
+      expect(edit).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission')),
+    );
+    expect(assign).toBeDisabled();
+    expect(assign).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission'));
+    expect(assignmentRow).not.toBeNull();
+    if (!assignmentRow) {
+      return;
+    }
+    expect(
+      within(assignmentRow).getByRole('button', {
+        name: i18n.t('role:actions.revokeAssignment'),
+      }),
+    ).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission'));
   });
 
   it('supports Role-owned assignment revocation from the assignment list', async () => {
@@ -55,7 +110,9 @@ describe('role IA-1 surfaces', () => {
     renderRoute('/roles/role-admin');
 
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
-    const assignmentRow = (await screen.findByText('assignment-1')).closest('tr');
+    const assignmentRow = (await screen.findByRole('link', { name: /admin@example.test/ })).closest(
+      'tr',
+    );
     expect(assignmentRow).not.toBeNull();
     if (!assignmentRow) {
       return;
@@ -85,7 +142,7 @@ describe('role IA-1 surfaces', () => {
 
     await waitFor(
       () => {
-        const refreshedRow = screen.getByText('assignment-1').closest('tr');
+        const refreshedRow = screen.getByRole('link', { name: /admin@example.test/ }).closest('tr');
         expect(refreshedRow).not.toBeNull();
         if (!refreshedRow) {
           return;
@@ -99,6 +156,15 @@ describe('role IA-1 surfaces', () => {
     );
   }, 15_000);
 
+  it('shows Custom fallback when template metadata is absent', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    renderRoute('/roles/role-draft');
+
+    expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
+    expect(screen.getByText('Operations role')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:templates.custom'))).toBeInTheDocument();
+  });
+
   it('keeps archived roles immutable and excludes scope, rename, and User mutation controls', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/roles/role-archived');
@@ -106,6 +172,9 @@ describe('role IA-1 surfaces', () => {
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:detail.archivedReadOnly'))).toBeInTheDocument();
     expect(screen.getByRole('button', { name: i18n.t('role:actions.edit') })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: i18n.t('role:actions.edit') }),
+    ).toHaveAccessibleDescription(i18n.t('common:capabilities.invalidStatus'));
     expect(
       screen.getByRole('button', { name: i18n.t('role:actions.replacePermissions') }),
     ).toBeDisabled();

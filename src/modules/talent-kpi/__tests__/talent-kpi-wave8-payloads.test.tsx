@@ -36,6 +36,10 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
 }));
 
 const now = Date.parse('2026-04-22T00:00:00.000Z');
+const periodStartInput = '2026-04-01T00:00';
+const periodEndInput = '2026-05-01T00:00';
+const periodStartUtcMs = Date.parse('2026-03-31T17:00:00.000Z');
+const periodEndUtcMs = Date.parse('2026-04-30T17:00:00.000Z');
 
 const kpiDetail: TalentKpiRecord = {
   id: 'talent-kpi-record-001',
@@ -75,8 +79,11 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
     expect(screen.getByText(i18n.t('talent-kpi:generatedCode.description'))).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.title')), 'Wave 8 KPI');
     await user.click(await screen.findByRole('button', { name: /Talent One/ }));
-    await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodStartAt')), '1000');
-    await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodEndAt')), '2000');
+    await user.type(
+      screen.getByLabelText(i18n.t('talent-kpi:fields.periodStartAt')),
+      periodStartInput,
+    );
+    await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodEndAt')), periodEndInput);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('talent-kpi:mutations.create.submit'),
@@ -89,8 +96,8 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
       attributionPlatformAccountId: null,
       attributionEventId: null,
       measurementSource: 'MANUAL',
-      periodStartAt: 1000,
-      periodEndAt: 2000,
+      periodStartAt: periodStartUtcMs,
+      periodEndAt: periodEndUtcMs,
       metrics: [{ metricCode: 'ENGAGEMENT_COUNT', numericValue: 0 }],
       description: null,
       externalRef: null,
@@ -107,8 +114,11 @@ describe('Talent KPI Wave 8 payloads and lifecycle seams', () => {
 
     await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.title')), 'Bad KPI');
     await user.click(await screen.findByRole('button', { name: /Talent One/ }));
-    await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodStartAt')), '1000');
-    await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodEndAt')), '2000');
+    await user.type(
+      screen.getByLabelText(i18n.t('talent-kpi:fields.periodStartAt')),
+      periodStartInput,
+    );
+    await user.type(screen.getByLabelText(i18n.t('talent-kpi:fields.periodEndAt')), periodEndInput);
     await user.click(screen.getByRole('button', { name: i18n.t('talent-kpi:actions.addMetric') }));
     await user.click(
       screen.getByRole('button', {

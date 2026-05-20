@@ -36,6 +36,8 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
 }));
 
 const now = Date.parse('2026-04-22T00:00:00.000Z');
+const recognizedInput = '2026-04-21T14:00';
+const recognizedUtcMs = Date.parse('2026-04-21T07:00:00.000Z');
 
 const revenueDetail: RevenueEntryRecord = {
   id: 'revenue-entry-001',
@@ -85,7 +87,10 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
     await user.clear(screen.getByLabelText(i18n.t('revenue-ledger:fields.currencyCode')));
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.currencyCode')), 'usd');
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAmount')), '0');
-    await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAt')), '1000');
+    await user.type(
+      screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAt')),
+      recognizedInput,
+    );
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('revenue-ledger:mutations.create.submit'),
@@ -100,6 +105,34 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
     expect(
       screen.getByText(i18n.t('revenue-ledger:validation.attributionPlatformRequired')),
     ).toBeInTheDocument();
+  });
+
+  it('converts recognizedAt from business datetime input to UTC milliseconds', async () => {
+    await setLocale('en');
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+
+    render(<RevenueEntryCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.title')), 'Good revenue');
+    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
+    await user.click(await screen.findByRole('button', { name: /Platform One/ }));
+    await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAmount')), '100');
+    await user.type(
+      screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAt')),
+      recognizedInput,
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('revenue-ledger:mutations.create.submit'),
+      }),
+    );
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recognizedAt: recognizedUtcMs,
+      }),
+    );
   });
 
   it('submits reconcile as its own optional-reference action surface', async () => {

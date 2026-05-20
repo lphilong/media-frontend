@@ -66,7 +66,8 @@
     "EXTERNAL": "外部"
   },
   "commercialStatuses": {
-    "ALLOWED": "允许",
+    "ELIGIBLE": "符合条件",
+    "RESTRICTED": "受限",
     "BLOCKED": "已阻止"
   },
   "sort": {

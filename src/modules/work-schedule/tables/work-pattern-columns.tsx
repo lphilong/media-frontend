@@ -10,7 +10,7 @@ import type {
   WorkPatternRecord,
 } from '@modules/work-schedule/types/work-schedule.types';
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type WorkPatternListColumnHandlers = {
   onOpenDetail: (workPatternId: string) => void;
@@ -81,7 +81,7 @@ export const createWorkPatternListColumns = (
   {
     accessorKey: 'updatedAt',
     header: t('work-schedule:patterns.table.updatedAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     id: 'actions',

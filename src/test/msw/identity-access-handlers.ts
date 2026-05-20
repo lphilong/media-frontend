@@ -4,6 +4,36 @@ type UserStatus = 'PENDING' | 'ACTIVE' | 'DISABLED' | 'ARCHIVED';
 type UserActorKind = 'ADMIN' | 'STAFF';
 type RoleState = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 type RoleAssignmentState = 'ACTIVE' | 'REVOKED';
+type RoleTemplateCode =
+  | 'ADMIN_FULL'
+  | 'HR_OPERATIONS'
+  | 'TEAM_MANAGER'
+  | 'PRODUCTION_OPS'
+  | 'COMMERCIAL_FINANCE'
+  | 'TALENT_STAFF_SELF'
+  | 'VIEWER_AUDITOR';
+type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
+
+type RoleAssignmentScopeGrants = {
+  workSchedule?: Array<'self' | 'team' | 'department' | 'global'>;
+  eventAssignment?: Array<'global'>;
+  contractRegistry?: Array<'global'>;
+  talentKpi?: Array<'global'>;
+  revenueLedger?: Array<'global'>;
+  commission?: Array<'global'>;
+  dashboardLite?: Array<'global'>;
+};
+
+type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  title?: string;
+  displayName?: string;
+  handle?: string;
+  platform?: string;
+  status?: string;
+};
 
 type UserRecord = {
   id: string;
@@ -42,6 +72,9 @@ type RoleRecord = {
   delegationBand: 'LIMITED' | 'PRIVILEGED' | 'FOUNDATION';
   maxDelegatableBand: 'NONE' | 'LIMITED' | 'PRIVILEGED';
   assignmentRules: Array<Record<string, unknown>>;
+  templateCode?: RoleTemplateCode | null;
+  templateVersion?: string | null;
+  templateAppliedAt?: number | null;
   createdAt: number;
   updatedAt: number;
   activatedAt: number | null;
@@ -52,13 +85,47 @@ type RoleAssignmentRecord = {
   assignmentId: string;
   roleId: string;
   userId: string;
+  userRef?: ReferenceSummary | null;
+  scopeGrants?: RoleAssignmentScopeGrants;
   state: RoleAssignmentState;
   effectiveAt: number;
   revokedAt: number | null;
   reason: string | null;
 };
 
+type RoleTemplateScopePlanEntry = {
+  module: string;
+  scopes: string[];
+  status: RoleTemplateStatus;
+  note: string;
+};
+
+type RoleTemplateRecord = {
+  code: RoleTemplateCode;
+  version: string;
+  name: string;
+  description: string;
+  category: string;
+  permissions: Array<{ code: string }>;
+  scopePlan: RoleTemplateScopePlanEntry[];
+  warnings: string[];
+  implementationNotes: string[];
+  status: RoleTemplateStatus;
+};
+
+type CurrentActorCapabilitiesRecord = {
+  id: string;
+  type: 'admin';
+  context: 'ADMIN';
+  isActive: boolean;
+  roles: string[];
+  permissions: string[];
+  scopeGrants: RoleAssignmentScopeGrants;
+  generatedAt: string;
+};
+
 const now = Date.parse('2026-04-22T00:00:00.000Z');
+const templateVersion = '2026-05-20';
 const initialUserSeed = 900;
 const initialRoleSeed = 800;
 const initialAssignmentSeed = 300;
@@ -112,6 +179,187 @@ const initialUsers: UserRecord[] = [
   },
 ];
 
+const roleTemplates: RoleTemplateRecord[] = [
+  {
+    code: 'ADMIN_FULL',
+    version: templateVersion,
+    name: 'Admin Full',
+    description: 'Full explicit permission preset for administrative operators.',
+    category: 'ADMINISTRATION',
+    permissions: [
+      { code: 'role:view' },
+      { code: 'role:create' },
+      { code: 'role:assign-to-user' },
+      { code: 'user:view' },
+      { code: 'dashboard-lite:read' },
+    ],
+    scopePlan: [
+      {
+        module: 'Work Schedule',
+        scopes: ['global'],
+        status: 'PREVIEW_ONLY',
+        note: 'Preview-only scope plan; assignment scopes are chosen separately.',
+      },
+      {
+        module: 'Dashboard Lite',
+        scopes: ['global'],
+        status: 'PREVIEW_ONLY',
+        note: 'Preview-only scope plan; assignment scopes are chosen separately.',
+      },
+    ],
+    warnings: [
+      'Scope plans are preview-only and do not create assignment grants.',
+      'Generated permissions remain explicit role permissions.',
+    ],
+    implementationNotes: ['Includes current administrative permission examples.'],
+    status: 'PREVIEW_ONLY',
+  },
+  {
+    code: 'HR_OPERATIONS',
+    version: templateVersion,
+    name: 'HR Operations',
+    description: 'People, organization, employment, talent, and talent-group operations preset.',
+    category: 'PEOPLE_OPERATIONS',
+    permissions: [{ code: 'user:view' }, { code: 'talent:read' }, { code: 'work-schedule:read' }],
+    scopePlan: [
+      {
+        module: 'Work Schedule',
+        scopes: ['department'],
+        status: 'PREVIEW_ONLY',
+        note: 'Department scope can be requested at assignment time.',
+      },
+    ],
+    warnings: [
+      'Revenue, commission, finance lifecycle, and role-management permissions are excluded.',
+    ],
+    implementationNotes: ['Uses current people-operation permission examples.'],
+    status: 'REQUIRES_FUTURE_SCOPE',
+  },
+  {
+    code: 'TEAM_MANAGER',
+    version: templateVersion,
+    name: 'Team Manager',
+    description:
+      'Conservative team operations preset for schedules, assignments, and KPI management.',
+    category: 'MANAGEMENT',
+    permissions: [
+      { code: 'work-schedule:read' },
+      { code: 'work-schedule:update' },
+      { code: 'event:read' },
+      { code: 'talent-kpi:read' },
+    ],
+    scopePlan: [
+      {
+        module: 'Work Schedule',
+        scopes: ['self', 'team', 'department'],
+        status: 'PREVIEW_ONLY',
+        note: 'Current scope support exists primarily for work schedule routes.',
+      },
+    ],
+    warnings: [
+      'Event Assignment and Talent KPI permissions may be global-only until object scope is implemented.',
+    ],
+    implementationNotes: ['Includes work-schedule lifecycle permission examples.'],
+    status: 'REQUIRES_FUTURE_SCOPE',
+  },
+  {
+    code: 'PRODUCTION_OPS',
+    version: templateVersion,
+    name: 'Production Ops',
+    description: 'Production operations preset for events, resources, schedules, and references.',
+    category: 'PRODUCTION',
+    permissions: [
+      { code: 'event:read' },
+      { code: 'studio-resource:read' },
+      { code: 'work-schedule:read' },
+    ],
+    scopePlan: [
+      {
+        module: 'Work Schedule',
+        scopes: ['department'],
+        status: 'PREVIEW_ONLY',
+        note: 'Work Schedule has current department scope vocabulary.',
+      },
+    ],
+    warnings: ['Event and studio scope is not materialized by this template.'],
+    implementationNotes: ['Uses production operation permission examples.'],
+    status: 'REQUIRES_FUTURE_SCOPE',
+  },
+  {
+    code: 'COMMERCIAL_FINANCE',
+    version: templateVersion,
+    name: 'Commercial Finance',
+    description:
+      'Commercial finance preset for revenue, commission, settlement, contract, and dashboard workflows.',
+    category: 'FINANCE',
+    permissions: [
+      { code: 'revenue-ledger:read' },
+      { code: 'commission-settlement:read' },
+      { code: 'contract-registry:read' },
+      { code: 'dashboard-lite:read' },
+    ],
+    scopePlan: [
+      {
+        module: 'Commercial Finance',
+        scopes: ['global'],
+        status: 'REQUIRES_FUTURE_SCOPE',
+        note: 'Current commercial finance route scope is mostly global-only.',
+      },
+    ],
+    warnings: ['No assignment scope or scope grants are persisted by this template.'],
+    implementationNotes: ['Includes commercial finance permission examples.'],
+    status: 'REQUIRES_FUTURE_SCOPE',
+  },
+  {
+    code: 'TALENT_STAFF_SELF',
+    version: templateVersion,
+    name: 'Talent Staff Self',
+    description: 'Read-only self-intended baseline for talent-facing staff access.',
+    category: 'SELF_SERVICE',
+    permissions: [
+      { code: 'work-schedule:read' },
+      { code: 'event:read' },
+      { code: 'talent-kpi:read' },
+    ],
+    scopePlan: [
+      {
+        module: 'Self Service',
+        scopes: ['self'],
+        status: 'REQUIRES_FUTURE_SCOPE',
+        note: 'Self-facing object scope is mostly not implemented outside Work Schedule.',
+      },
+    ],
+    warnings: [
+      'Self-scope intent is preview-only and does not limit generated permissions by itself.',
+    ],
+    implementationNotes: ['Includes read-only self-service permission examples.'],
+    status: 'REQUIRES_FUTURE_SCOPE',
+  },
+  {
+    code: 'VIEWER_AUDITOR',
+    version: templateVersion,
+    name: 'Viewer Auditor',
+    description: 'Read-only auditor preset across operational and commercial modules.',
+    category: 'AUDIT',
+    permissions: [
+      { code: 'work-schedule:read' },
+      { code: 'contract-registry:read' },
+      { code: 'dashboard-lite:read' },
+    ],
+    scopePlan: [
+      {
+        module: 'Read Only Audit',
+        scopes: ['global'],
+        status: 'REQUIRES_FUTURE_SCOPE',
+        note: 'Final auditor scope policy must be product-confirmed per module.',
+      },
+    ],
+    warnings: ['No create, update, lifecycle, finalize, or reconcile permissions are included.'],
+    implementationNotes: ['Uses current read-only permission examples.'],
+    status: 'REQUIRES_FUTURE_SCOPE',
+  },
+];
+
 const initialRoles: RoleRecord[] = [
   {
     id: 'role-admin',
@@ -123,6 +371,9 @@ const initialRoles: RoleRecord[] = [
     delegationBand: 'PRIVILEGED',
     maxDelegatableBand: 'LIMITED',
     assignmentRules: [{ id: 'rule-1', code: 'ALLOW_ADMIN', conditions: null }],
+    templateCode: 'ADMIN_FULL',
+    templateVersion,
+    templateAppliedAt: now - 9_500,
     createdAt: now - 10_000,
     updatedAt: now - 9_000,
     activatedAt: now - 9_000,
@@ -165,12 +416,49 @@ const initialAssignments: RoleAssignmentRecord[] = [
     assignmentId: 'assignment-1',
     roleId: 'role-admin',
     userId: 'user-admin',
+    scopeGrants: {
+      workSchedule: ['self', 'team'],
+      dashboardLite: ['global'],
+    },
     state: 'ACTIVE',
     effectiveAt: now - 8_000,
     revokedAt: null,
     reason: null,
   },
 ];
+
+const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
+  id: 'user-admin',
+  type: 'admin',
+  context: 'ADMIN',
+  isActive: true,
+  roles: ['role-admin'],
+  permissions: [
+    'role:update',
+    'role:activate',
+    'role:deactivate',
+    'role:archive',
+    'role:permission:assign',
+    'role:assignment_rule:set',
+    'role:assign_to_user',
+    'role:revoke_from_user',
+    'user:edit',
+    'user:activate',
+    'user:disable',
+    'user:archive',
+    'user:auth_linkage:set',
+    'revenueLedger.update',
+    'revenueLedger.manageLifecycle',
+    'revenueLedger.reconcile',
+  ],
+  scopeGrants: {
+    revenueLedger: ['global'],
+    commission: ['global'],
+    dashboardLite: ['global'],
+    workSchedule: ['self', 'team', 'department'],
+  },
+  generatedAt: '2026-05-20T00:00:00.000Z',
+};
 
 let users = initialUsers.map((record) => ({
   ...record,
@@ -268,6 +556,23 @@ const toNullableText = (value: unknown): string | null => {
 const readUser = (userId: string): UserRecord | undefined =>
   users.find((record) => record.id === userId);
 
+const toUserRef = (userId: string): ReferenceSummary | null => {
+  const user = readUser(userId);
+  return user
+    ? {
+        id: user.id,
+        displayName: user.profile.displayName,
+        name: user.profile.email ?? undefined,
+        status: user.accountStatus,
+      }
+    : null;
+};
+
+const toRoleAssignmentItem = (assignment: RoleAssignmentRecord): RoleAssignmentRecord => ({
+  ...assignment,
+  userRef: toUserRef(assignment.userId),
+});
+
 const readRole = (roleId: string): RoleRecord | undefined =>
   roles.find((record) => record.id === roleId);
 
@@ -293,12 +598,63 @@ const toRoleListItem = (record: RoleRecord) => ({
       (assignment) => assignment.roleId === record.id && assignment.state === 'ACTIVE',
     ).length,
   ),
+  templateCode: record.templateCode ?? null,
+  templateVersion: record.templateVersion ?? null,
+  templateAppliedAt: record.templateAppliedAt ?? null,
   updatedAt: record.updatedAt,
 });
 
 const toRoleDetail = (record: RoleRecord) => ({ ...record });
 
+const toRoleTemplateListItem = (template: RoleTemplateRecord) => ({
+  code: template.code,
+  version: template.version,
+  name: template.name,
+  description: template.description,
+  category: template.category,
+  permissionCount: template.permissions.length,
+  scopePlan: template.scopePlan,
+  warnings: template.warnings,
+  implementationNotes: template.implementationNotes,
+  status: template.status,
+});
+
+const readRoleTemplate = (templateCode: string): RoleTemplateRecord | undefined =>
+  roleTemplates.find((template) => template.code === templateCode.trim().toUpperCase());
+
 export const identityAccessHandlers = [
+  http.get('*/admin/me/capabilities', () => {
+    return HttpResponse.json({
+      data: currentActorCapabilities,
+    });
+  }),
+
+  http.get('*/admin/role-templates', () => {
+    return HttpResponse.json({ data: roleTemplates.map(toRoleTemplateListItem) });
+  }),
+
+  http.post('*/admin/role-templates/:templateCode/preview', ({ params }) => {
+    const template = readRoleTemplate(String(params.templateCode));
+    if (!template) {
+      return HttpResponse.json({ message: 'Unknown role template code' }, { status: 400 });
+    }
+
+    return HttpResponse.json({
+      data: {
+        template: {
+          ...toRoleTemplateListItem(template),
+          permissions: template.permissions,
+        },
+        permissions: template.permissions,
+        scopePlan: template.scopePlan,
+        warnings: template.warnings,
+        unsupportedScopeNotes: template.scopePlan
+          .filter((entry) => entry.status === 'REQUIRES_FUTURE_SCOPE')
+          .map((entry) => entry.note),
+      },
+    });
+  }),
+
   http.get('*/admin/users', ({ request }) => {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
@@ -442,7 +798,7 @@ export const identityAccessHandlers = [
       rows = rows.filter((assignment) => assignment.state === state);
     }
 
-    return HttpResponse.json(paginate(rows, url.searchParams));
+    return HttpResponse.json(paginate(rows.map(toRoleAssignmentItem), url.searchParams));
   }),
 
   http.post(
@@ -461,7 +817,7 @@ export const identityAccessHandlers = [
       assignment.state = 'REVOKED';
       assignment.revokedAt = Date.now();
       assignment.reason = toNullableText(body.reason);
-      return HttpResponse.json({ data: assignment });
+      return HttpResponse.json({ data: toRoleAssignmentItem(assignment) });
     },
   ),
 
@@ -477,13 +833,18 @@ export const identityAccessHandlers = [
       assignmentId: `assignment-${assignmentSeed}`,
       roleId: role.id,
       userId: String(body.userId ?? ''),
+      ...(body.scopeGrants &&
+      typeof body.scopeGrants === 'object' &&
+      !Array.isArray(body.scopeGrants)
+        ? { scopeGrants: body.scopeGrants as RoleAssignmentScopeGrants }
+        : {}),
       state: 'ACTIVE',
       effectiveAt: Date.now(),
       revokedAt: null,
       reason: toNullableText(body.reason),
     };
     assignments.push(assignment);
-    return HttpResponse.json({ data: assignment });
+    return HttpResponse.json({ data: toRoleAssignmentItem(assignment) });
   }),
 
   http.get('*/admin/roles/:roleId/permission-matrix', ({ params }) => {
@@ -523,6 +884,36 @@ export const identityAccessHandlers = [
     rows.sort((left, right) => right.updatedAt - left.updatedAt || left.id.localeCompare(right.id));
 
     return HttpResponse.json(paginate(rows.map(toRoleListItem), searchParams));
+  }),
+
+  http.post('*/admin/roles/from-template', async ({ request }) => {
+    const body = await parseJsonBody(request);
+    const template = readRoleTemplate(String(body.templateCode ?? ''));
+    if (!template) {
+      return HttpResponse.json({ message: 'Unknown role template code' }, { status: 400 });
+    }
+
+    roleSeed += 1;
+    const role: RoleRecord = {
+      id: `role-${roleSeed}`,
+      code: String(body.code ?? `ROLE${roleSeed}`).toUpperCase(),
+      name: String(body.name ?? template.name),
+      description: toNullableText(body.description),
+      state: 'DRAFT',
+      permissions: template.permissions.map((permission) => ({ ...permission })),
+      delegationBand: 'LIMITED',
+      maxDelegatableBand: 'NONE',
+      assignmentRules: [],
+      templateCode: template.code,
+      templateVersion: template.version,
+      templateAppliedAt: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      activatedAt: null,
+      archivedAt: null,
+    };
+    roles.push(role);
+    return HttpResponse.json({ data: toRoleDetail(role) });
   }),
 
   http.post('*/admin/roles', async ({ request }) => {

@@ -19,7 +19,13 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã tài nguyên sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã tài nguyên sẽ được tạo tự động"
+  },
+  "placeholders": {
+    "locationLabel": "Tòa nhà / tầng / phòng, ví dụ HQ 3F - Studio A"
+  },
+  "help": {
+    "locationLabel": "Tòa nhà / tầng / phòng, ví dụ HQ 3F - Studio A"
   },
   "states": {
     "emptyTitle": "Không có tài nguyên studio",
@@ -33,6 +39,7 @@
     "allStatuses": "Tất cả chưa lưu trữ",
     "resourceClass": "Loại tài nguyên",
     "resourceClassPlaceholder": "SPACE",
+    "allResourceClasses": "Tất cả loại tài nguyên",
     "hasMaxOccupancy": "Sức chứa",
     "allOccupancyStates": "Trạng thái sức chứa",
     "withOccupancy": "Có sức chứa tối đa",
@@ -44,10 +51,15 @@
     "createdAt": "Thời điểm tạo"
   },
   "statuses": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "OUT_OF_SERVICE": "Ngừng phục vụ",
     "INACTIVE": "Không hoạt động",
     "ARCHIVED": "Đã lưu trữ"
+  },
+  "resourceClasses": {
+    "SPACE": "Không gian",
+    "EQUIPMENT": "Thiết bị",
+    "KIT": "Bộ thiết bị"
   },
   "actions": {
     "create": "Tạo tài nguyên",
@@ -76,7 +88,7 @@
   },
   "availability": {
     "caption": "Danh sách trạng thái khả dụng của tài nguyên studio",
-    "modeLabel": "Chế độ xem khả dụng dùng payload tài nguyên rút gọn chuyên biệt."
+    "modeLabel": "Hiển thị tài nguyên theo trạng thái khả dụng để phục vụ xếp lịch."
   },
   "detail": {
     "identityTitle": "Định danh và sức chứa",

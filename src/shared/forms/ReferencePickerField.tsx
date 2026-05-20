@@ -71,6 +71,7 @@ export const ReferencePickerField = ({
         disabled={disabled}
         exactOneId={false}
         placeholder={placeholder}
+        resourceLabel={label}
       />
       {clearable && value ? (
         <button

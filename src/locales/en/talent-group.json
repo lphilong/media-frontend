@@ -9,7 +9,7 @@
     "name": "Name",
     "shortName": "Short Name",
     "status": "Status",
-    "displayOrder": "Display Order",
+    "displayOrder": "Sort priority",
     "description": "Description",
     "externalRef": "External Reference",
     "talentId": "Talent",
@@ -28,6 +28,9 @@
   },
   "referenceHelp": {
     "talentId": "Choose the talent to add to this group."
+  },
+  "help": {
+    "displayOrder": "Lower numbers appear first. Gaps like 10, 20, 30 make it easier to insert new items between existing ones. Example: use 15 to place an item between 10 and 20."
   },
   "states": {
     "emptyTitle": "No talent groups found",
@@ -48,7 +51,7 @@
     "groupCode": "Group Code",
     "name": "Name",
     "createdAt": "Created At",
-    "displayOrder": "Display Order"
+    "displayOrder": "Sort priority"
   },
   "statuses": {
     "ACTIVE": "Active",
@@ -81,7 +84,7 @@
     "name": "Name",
     "shortName": "Short Name",
     "status": "Status",
-    "displayOrder": "Order",
+    "displayOrder": "Sort priority",
     "createdAt": "Created",
     "updatedAt": "Updated",
     "actions": "Actions"
@@ -141,7 +144,7 @@
     "required": "This field is required.",
     "invalidToken": "Value must use supported token characters.",
     "invalidReferenceToken": "Reference ID contains unsupported characters.",
-    "invalidDisplayOrder": "Display order must be an integer greater than or equal to 0.",
+    "invalidDisplayOrder": "Sort priority must be an integer greater than or equal to 0.",
     "invalidLineupOrder": "Lineup order must be an integer greater than or equal to 0."
   },
   "feedback": {

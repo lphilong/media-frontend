@@ -72,6 +72,7 @@ const sortOptions = [
 ] as const;
 
 const operationalStatusOptions = ['', 'ACTIVE', 'OUT_OF_SERVICE', 'INACTIVE', 'ARCHIVED'] as const;
+const resourceClassOptions = ['', 'SPACE', 'EQUIPMENT', 'KIT'] as const;
 
 const readLifecycleConfirmKey = (action: StudioResourceLifecycleAction): string => {
   switch (action) {
@@ -413,12 +414,19 @@ export const StudioResourceListPage = (): JSX.Element => {
             <span className="text-xs font-medium uppercase text-muted">
               {t('studio-resource:filters.resourceClass')}
             </span>
-            <input
+            <select
               value={activeQuery.resourceClass ?? ''}
               className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('studio-resource:filters.resourceClassPlaceholder')}
               onChange={(event) => patchQuery({ resourceClass: event.target.value || undefined })}
-            />
+            >
+              {resourceClassOptions.map((classOption) => (
+                <option key={classOption || 'all'} value={classOption}>
+                  {classOption
+                    ? t(`studio-resource:resourceClasses.${classOption}`)
+                    : t('studio-resource:filters.allResourceClasses')}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="flex min-w-[190px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">

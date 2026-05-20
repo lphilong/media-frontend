@@ -21,7 +21,7 @@ import {
   StatusBadge,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type MonthlyRosterPublishReviewProps = {
   roster: MonthlyRosterRecord;
@@ -35,7 +35,7 @@ const formatNullable = (value?: string | number | null): string =>
   value === null || value === undefined || value === '' ? '-' : String(value);
 
 const formatNullableTimestamp = (value?: string | number | null): string =>
-  value ? formatUtcTimestamp(value) : '-';
+  value ? formatBusinessTimestamp(value) : '-';
 
 const resolveFreshness = (preview: MonthlyRosterPreview): Freshness => {
   if (!preview.currentPreviewHash) {

@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import {
   FormProvider,
   get,
@@ -19,7 +19,9 @@ import type {
   JsonPlainValue,
   RoleAssignmentRule,
   RoleAssignmentRuleReplacementPayload,
+  RoleAssignmentScopeGrants,
   RoleAssignToUserPayload,
+  RoleCreateFromTemplatePayload,
   RoleCreatePayload,
   RoleDelegationBand,
   RoleDetailRecord,
@@ -27,10 +29,19 @@ import type {
   RoleMaxDelegatableBand,
   RolePermissionReplacementPayload,
   RoleRevokeAssignmentPayload,
+  RoleTemplateListItem,
+  RoleTemplatePreview,
   RoleUpdatePayload,
+  WorkScheduleAssignmentScope,
 } from '@modules/role/types/role.types';
 import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
-import { FormGrid, ReferencePickerField, SelectField, TextInputField } from '@shared/forms';
+import {
+  CheckboxField,
+  FormGrid,
+  ReferencePickerField,
+  SelectField,
+  TextInputField,
+} from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseMutationSurfaceProps = {
@@ -40,6 +51,10 @@ type BaseMutationSurfaceProps = {
 
 type RoleCreateSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: RoleCreatePayload) => Promise<void> | void;
+  onTemplateSubmit: (payload: RoleCreateFromTemplatePayload) => Promise<void> | void;
+  onPreviewTemplate: (templateCode: string) => Promise<RoleTemplatePreview>;
+  templateCatalog: RoleTemplateListItem[];
+  isTemplateCatalogLoading?: boolean;
 };
 
 type RoleEditSurfaceProps = BaseMutationSurfaceProps & {
@@ -72,6 +87,8 @@ type RoleRevokeAssignmentSurfaceProps = BaseMutationSurfaceProps & {
 };
 
 type RoleCreateFormValues = {
+  mode: 'template' | 'custom';
+  templateCode: string;
   name: string;
   code: string;
   description: string;
@@ -103,6 +120,15 @@ type RoleReasonFormValues = {
 type RoleAssignUserFormValues = {
   userId: string;
   reason: string;
+  scopeGrants: {
+    workSchedule: Record<WorkScheduleAssignmentScope, boolean>;
+    eventAssignment: boolean;
+    contractRegistry: boolean;
+    talentKpi: boolean;
+    revenueLedger: boolean;
+    commission: boolean;
+    dashboardLite: boolean;
+  };
 };
 
 const toNullableText = (value?: string | null): string | null => {
@@ -131,6 +157,71 @@ const parsePermissionText = (text: string): string[] => {
     .filter((item) => item.length > 0);
 
   return Array.from(new Set(values));
+};
+
+const templateCodeFallbackLabels: Record<string, string> = {
+  ADMIN_FULL: 'Admin Full',
+  HR_OPERATIONS: 'HR Operations',
+  TEAM_MANAGER: 'Team Manager',
+  PRODUCTION_OPS: 'Production Ops',
+  COMMERCIAL_FINANCE: 'Commercial Finance',
+  TALENT_STAFF_SELF: 'Talent/Staff Self',
+  VIEWER_AUDITOR: 'Viewer/Auditor',
+};
+
+const scopeModuleLabels = {
+  workSchedule: 'Work Schedule',
+  eventAssignment: 'Event Assignment',
+  contractRegistry: 'Contract Registry',
+  talentKpi: 'Talent KPI',
+  revenueLedger: 'Revenue Ledger',
+  commission: 'Commission',
+  dashboardLite: 'Dashboard Lite',
+} as const;
+
+const workScheduleScopeValues: WorkScheduleAssignmentScope[] = [
+  'self',
+  'team',
+  'department',
+  'global',
+];
+
+const toTitle = (value: string): string => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+
+const readTemplateLabel = (template: Pick<RoleTemplateListItem, 'code' | 'name'>): string =>
+  template.name || templateCodeFallbackLabels[template.code] || template.code;
+
+const buildScopeGrants = (
+  values: RoleAssignUserFormValues['scopeGrants'],
+): RoleAssignmentScopeGrants | undefined => {
+  const scopeGrants: RoleAssignmentScopeGrants = {};
+
+  const selectedWorkSchedule = workScheduleScopeValues.filter(
+    (scope) => values.workSchedule[scope],
+  );
+  if (selectedWorkSchedule.length > 0) {
+    scopeGrants.workSchedule = selectedWorkSchedule;
+  }
+  if (values.eventAssignment) {
+    scopeGrants.eventAssignment = ['global'];
+  }
+  if (values.contractRegistry) {
+    scopeGrants.contractRegistry = ['global'];
+  }
+  if (values.talentKpi) {
+    scopeGrants.talentKpi = ['global'];
+  }
+  if (values.revenueLedger) {
+    scopeGrants.revenueLedger = ['global'];
+  }
+  if (values.commission) {
+    scopeGrants.commission = ['global'];
+  }
+  if (values.dashboardLite) {
+    scopeGrants.dashboardLite = ['global'];
+  }
+
+  return Object.keys(scopeGrants).length > 0 ? scopeGrants : undefined;
 };
 
 const isPlainJsonObject = (value: unknown): value is Record<string, JsonPlainValue> => {
@@ -201,6 +292,8 @@ const parseAssignmentRules = (text: string, errorMessage: string): RoleAssignmen
 
 const createRoleCreateSchema = (requiredMessage: string) =>
   z.object({
+    mode: z.enum(['template', 'custom']),
+    templateCode: z.string(),
     name: z.string().trim().min(1, requiredMessage),
     code: z.string().trim().min(1, requiredMessage),
     description: z.string().trim().optional(),
@@ -248,13 +341,22 @@ const formatRulesJson = (rules: RoleAssignmentRule[]): string =>
 export const RoleCreateSurface = ({
   onCancel,
   onSubmit,
+  onTemplateSubmit,
+  onPreviewTemplate,
+  templateCatalog,
+  isTemplateCatalogLoading = false,
   isPending = false,
 }: RoleCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['role', 'common']);
   const delegationBandOptions = useDelegationBandOptions();
   const maxDelegatableBandOptions = useMaxDelegatableBandOptions();
+  const [templatePreview, setTemplatePreview] = useState<RoleTemplatePreview | null>(null);
+  const [templatePreviewError, setTemplatePreviewError] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const form = useForm<RoleCreateFormValues>({
     defaultValues: {
+      mode: 'template',
+      templateCode: '',
       name: '',
       code: '',
       description: '',
@@ -266,11 +368,78 @@ export const RoleCreateSurface = ({
   });
 
   const schema = useMemo(() => createRoleCreateSchema(t('role:validation.required')), [t]);
+  const mode = form.watch('mode');
+  const templateCode = form.watch('templateCode');
+
+  const templateOptions = useMemo(
+    () =>
+      templateCatalog.map((template) => ({
+        value: template.code,
+        label: readTemplateLabel(template),
+      })),
+    [templateCatalog],
+  );
+
+  useEffect(() => {
+    if (mode !== 'template' || !templateCode) {
+      setTemplatePreview(null);
+      setTemplatePreviewError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsPreviewLoading(true);
+    setTemplatePreviewError(null);
+
+    onPreviewTemplate(templateCode)
+      .then((preview) => {
+        if (cancelled) {
+          return;
+        }
+        setTemplatePreview(preview);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        setTemplatePreview(null);
+        setTemplatePreviewError(
+          error instanceof Error ? error.message : t('role:templates.previewError'),
+        );
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsPreviewLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, onPreviewTemplate, t, templateCode]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
       applySchemaErrors(form.setError, parsed.error, 'name');
+      return;
+    }
+
+    if (parsed.data.mode === 'template') {
+      if (!parsed.data.templateCode) {
+        form.setError('templateCode', {
+          type: 'validate',
+          message: t('role:validation.required'),
+        });
+        return;
+      }
+
+      await onTemplateSubmit({
+        templateCode: parsed.data.templateCode as RoleCreateFromTemplatePayload['templateCode'],
+        name: parsed.data.name,
+        code: parsed.data.code.toUpperCase(),
+        description: toNullableText(parsed.data.description),
+      });
       return;
     }
 
@@ -312,33 +481,150 @@ export const RoleCreateSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
+        <div className="flex flex-wrap gap-2">
+          <label className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm">
+            <input type="radio" value="template" {...form.register('mode')} />
+            {t('role:templates.templateMode')}
+          </label>
+          <label className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm">
+            <input type="radio" value="custom" {...form.register('mode')} />
+            {t('role:templates.customMode')}
+          </label>
+        </div>
         <FormGrid columns={2}>
           <TextInputField name="name" label={t('role:fields.name')} />
           <TextInputField name="code" label={t('role:fields.code')} />
-          <SelectField
-            name="initialDelegationBand"
-            label={t('role:fields.delegationBand')}
-            options={delegationBandOptions}
-          />
-          <SelectField
-            name="initialMaxDelegatableBand"
-            label={t('role:fields.maxDelegatableBand')}
-            options={maxDelegatableBandOptions}
-          />
         </FormGrid>
         <TextInputField name="description" label={t('role:fields.description')} />
-        <RoleTextareaField
-          name="permissionsText"
-          label={t('role:fields.permissions')}
-          placeholder={t('role:placeholders.permissions')}
-        />
-        <RoleTextareaField
-          name="rulesJson"
-          label={t('role:fields.assignmentRules')}
-          placeholder={t('role:placeholders.assignmentRules')}
-        />
+        {mode === 'template' ? (
+          <div className="space-y-3">
+            <SelectField
+              name="templateCode"
+              label={t('role:templates.roleTemplate')}
+              options={templateOptions}
+              placeholder={
+                isTemplateCatalogLoading
+                  ? t('role:templates.loading')
+                  : t('role:templates.chooseTemplate')
+              }
+              helperText={t('role:templates.backendAuthority')}
+            />
+            <RoleTemplatePreviewPanel
+              preview={templatePreview}
+              isLoading={isPreviewLoading}
+              errorMessage={templatePreviewError}
+            />
+          </div>
+        ) : (
+          <>
+            <FormGrid columns={2}>
+              <SelectField
+                name="initialDelegationBand"
+                label={t('role:fields.delegationBand')}
+                options={delegationBandOptions}
+              />
+              <SelectField
+                name="initialMaxDelegatableBand"
+                label={t('role:fields.maxDelegatableBand')}
+                options={maxDelegatableBandOptions}
+              />
+            </FormGrid>
+            <RoleTextareaField
+              name="permissionsText"
+              label={t('role:fields.permissions')}
+              placeholder={t('role:placeholders.permissions')}
+            />
+            <RoleTextareaField
+              name="rulesJson"
+              label={t('role:fields.assignmentRules')}
+              placeholder={t('role:placeholders.assignmentRules')}
+            />
+          </>
+        )}
       </ModuleMutationSurface>
     </FormProvider>
+  );
+};
+
+const RoleTemplatePreviewPanel = ({
+  preview,
+  isLoading,
+  errorMessage,
+}: {
+  preview: RoleTemplatePreview | null;
+  isLoading: boolean;
+  errorMessage: string | null;
+}): JSX.Element => {
+  const { t } = useTranslation('role');
+
+  if (isLoading) {
+    return (
+      <div className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+        {t('templates.loadingPreview')}
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="rounded border border-danger bg-bg px-3 py-2 text-sm text-danger">
+        {errorMessage}
+      </div>
+    );
+  }
+
+  if (!preview) {
+    return (
+      <div className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+        {t('templates.previewEmpty')}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded border border-border bg-bg p-3">
+      <div>
+        <h4 className="text-sm font-semibold text-text">{t('templates.generatedPermissions')}</h4>
+        <p className="text-xs text-muted">{t('templates.generatedPermissionsHelp')}</p>
+        <div className="mt-2 max-h-44 overflow-auto rounded border border-border bg-panel p-2">
+          <ul className="grid gap-1 text-xs md:grid-cols-2">
+            {preview.permissions.map((permission) => (
+              <li key={permission.code} className="font-mono text-text">
+                {permission.code}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold text-text">{t('templates.warnings')}</h4>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-muted">
+          {preview.warnings.map((warning) => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold text-text">{t('templates.scopePlan')}</h4>
+        <p className="text-xs text-muted">{t('templates.scopePlanHelp')}</p>
+        <ul className="mt-2 space-y-1 text-xs">
+          {preview.scopePlan.map((entry) => (
+            <li key={`${entry.module}-${entry.scopes.join('-')}`} className="text-text">
+              <span className="font-medium">{entry.module}:</span>{' '}
+              {entry.scopes.map(toTitle).join(', ')} - {entry.status} - {entry.note}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold text-text">{t('templates.implementationNotes')}</h4>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-muted">
+          {preview.template.implementationNotes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 };
 
@@ -550,6 +836,20 @@ export const RoleAssignUserSurface = ({
     defaultValues: {
       userId: '',
       reason: '',
+      scopeGrants: {
+        workSchedule: {
+          self: false,
+          team: false,
+          department: false,
+          global: false,
+        },
+        eventAssignment: false,
+        contractRegistry: false,
+        talentKpi: false,
+        revenueLedger: false,
+        commission: false,
+        dashboardLite: false,
+      },
     },
   });
 
@@ -563,9 +863,12 @@ export const RoleAssignUserSurface = ({
       return;
     }
 
+    const scopeGrants = buildScopeGrants(values.scopeGrants);
+
     await onSubmit({
       userId,
       reason: toNullableText(values.reason),
+      ...(scopeGrants ? { scopeGrants } : {}),
     });
   });
 
@@ -593,6 +896,47 @@ export const RoleAssignUserSurface = ({
           />
           <TextInputField name="reason" label={t('role:fields.reason')} />
         </FormGrid>
+        <div className="space-y-3 rounded border border-border bg-bg p-3">
+          <div>
+            <h4 className="text-sm font-semibold text-text">
+              {t('role:scopePicker.assignmentScopes')}
+            </h4>
+            <p className="text-xs text-muted">{t('role:scopePicker.backendValidation')}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2 rounded border border-border bg-panel p-3">
+              <div className="text-xs font-medium uppercase text-muted">
+                {scopeModuleLabels.workSchedule}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {workScheduleScopeValues.map((scope) => (
+                  <CheckboxField
+                    key={scope}
+                    name={`scopeGrants.workSchedule.${scope}`}
+                    label={t(`role:scopePicker.scopes.${scope}`)}
+                  />
+                ))}
+              </div>
+            </div>
+            {[
+              'eventAssignment',
+              'contractRegistry',
+              'talentKpi',
+              'revenueLedger',
+              'commission',
+              'dashboardLite',
+            ].map((module) => (
+              <div key={module} className="rounded border border-border bg-panel p-3">
+                <CheckboxField
+                  name={`scopeGrants.${module}`}
+                  label={`${scopeModuleLabels[module as keyof typeof scopeModuleLabels]}: ${t(
+                    'role:scopePicker.scopes.global',
+                  )}`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
       </ModuleMutationSurface>
     </FormProvider>
   );

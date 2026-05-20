@@ -1,16 +1,27 @@
 import { APP_PATHS } from '@app/router/paths';
-import { fetchEmploymentProfiles } from '@modules/employment-profile/api/employment-profile.api';
+import {
+  fetchEmploymentProfileDetail,
+  fetchEmploymentProfiles,
+} from '@modules/employment-profile/api/employment-profile.api';
 import type { EmploymentProfileListItem } from '@modules/employment-profile/types/employment-profile.types';
-import { fetchOrgUnits } from '@modules/org-unit/api/org-unit.api';
+import { fetchOrgUnitDetail, fetchOrgUnits } from '@modules/org-unit/api/org-unit.api';
 import type { OrgUnitRecord } from '@modules/org-unit/types/org-unit.types';
-import { fetchStudioResources } from '@modules/studio-resource/api/studio-resource.api';
+import {
+  fetchStudioResourceDetail,
+  fetchStudioResources,
+} from '@modules/studio-resource/api/studio-resource.api';
 import type { StudioResourceListItem } from '@modules/studio-resource/types/studio-resource.types';
-import { fetchTalentGroups } from '@modules/talent-group/api/talent-group.api';
+import {
+  fetchTalentGroupDetail,
+  fetchTalentGroups,
+} from '@modules/talent-group/api/talent-group.api';
 import type { TalentGroupRecord } from '@modules/talent-group/types/talent-group.types';
-import { fetchTalents } from '@modules/talent/api/talent.api';
+import { fetchTalentDetail, fetchTalents } from '@modules/talent/api/talent.api';
 import type { TalentRecord } from '@modules/talent/types/talent.types';
 import {
+  fetchHolidayCalendarDetail,
   fetchHolidayCalendars,
+  fetchWorkPatternDetail,
   fetchWorkPatterns,
 } from '@modules/work-schedule/api/work-schedule.api';
 import type {
@@ -80,6 +91,25 @@ const toHolidayCalendarOption = (item: HolidayCalendarRecord): ReferenceOption =
   href: APP_PATHS.holidayCalendarDetail(item.holidayCalendarId),
 });
 
+const mergeSelectedOption = async (
+  options: ReferenceOption[],
+  search: string,
+  selectedId: string | undefined,
+  loadSelected: (id: string) => Promise<ReferenceOption>,
+): Promise<ReferenceOption[]> => {
+  const normalizedSelectedId = selectedId?.trim();
+  if (search.trim() || !normalizedSelectedId) {
+    return options;
+  }
+
+  if (options.some((option) => option.id === normalizedSelectedId)) {
+    return options;
+  }
+
+  const selectedOption = await loadSelected(normalizedSelectedId);
+  return [selectedOption, ...options];
+};
+
 export const loadWorkShiftSubjectOptions = async (
   subjectKind: WorkShiftSubjectKind,
   search: string,
@@ -113,6 +143,33 @@ export const loadWorkShiftSubjectOptions = async (
   return response.data.map(toTalentGroupOption);
 };
 
+export const loadWorkShiftSubjectOptionById = async (
+  subjectKind: WorkShiftSubjectKind,
+  subjectId: string,
+): Promise<ReferenceOption> => {
+  if (subjectKind === 'EMPLOYMENT_PROFILE') {
+    return toEmploymentProfileOption(await fetchEmploymentProfileDetail(subjectId));
+  }
+
+  if (subjectKind === 'TALENT') {
+    return toTalentOption(await fetchTalentDetail(subjectId));
+  }
+
+  return toTalentGroupOption(await fetchTalentGroupDetail(subjectId));
+};
+
+export const loadWorkShiftSubjectFilterOptions = async (
+  subjectKind: WorkShiftSubjectKind,
+  search: string,
+  selectedId?: string,
+): Promise<ReferenceOption[]> =>
+  mergeSelectedOption(
+    await loadWorkShiftSubjectOptions(subjectKind, search),
+    search,
+    selectedId,
+    (subjectId) => loadWorkShiftSubjectOptionById(subjectKind, subjectId),
+  );
+
 export const loadWorkShiftStudioResourceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
@@ -124,6 +181,22 @@ export const loadWorkShiftStudioResourceOptions = async (
   });
   return response.data.map(toStudioResourceOption);
 };
+
+export const loadWorkShiftStudioResourceOptionById = async (
+  studioResourceId: string,
+): Promise<ReferenceOption> =>
+  toStudioResourceOption(await fetchStudioResourceDetail(studioResourceId));
+
+export const loadWorkShiftStudioResourceFilterOptions = async (
+  search: string,
+  selectedId?: string,
+): Promise<ReferenceOption[]> =>
+  mergeSelectedOption(
+    await loadWorkShiftStudioResourceOptions(search),
+    search,
+    selectedId,
+    loadWorkShiftStudioResourceOptionById,
+  );
 
 export const loadMonthlyRosterEmploymentProfileOptions = async (
   search: string,
@@ -156,6 +229,21 @@ export const loadMonthlyRosterDepartmentOptions = async (
   return response.data.map(toDepartmentOption);
 };
 
+export const loadMonthlyRosterDepartmentOptionById = async (
+  departmentOrgUnitId: string,
+): Promise<ReferenceOption> => toDepartmentOption(await fetchOrgUnitDetail(departmentOrgUnitId));
+
+export const loadMonthlyRosterDepartmentFilterOptions = async (
+  search: string,
+  selectedId?: string,
+): Promise<ReferenceOption[]> =>
+  mergeSelectedOption(
+    await loadMonthlyRosterDepartmentOptions(search),
+    search,
+    selectedId,
+    loadMonthlyRosterDepartmentOptionById,
+  );
+
 export const loadMonthlyRosterWorkPatternOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
@@ -168,6 +256,21 @@ export const loadMonthlyRosterWorkPatternOptions = async (
   return response.data.map(toWorkPatternOption);
 };
 
+export const loadMonthlyRosterWorkPatternOptionById = async (
+  workPatternId: string,
+): Promise<ReferenceOption> => toWorkPatternOption(await fetchWorkPatternDetail(workPatternId));
+
+export const loadMonthlyRosterWorkPatternFilterOptions = async (
+  search: string,
+  selectedId?: string,
+): Promise<ReferenceOption[]> =>
+  mergeSelectedOption(
+    await loadMonthlyRosterWorkPatternOptions(search),
+    search,
+    selectedId,
+    loadMonthlyRosterWorkPatternOptionById,
+  );
+
 export const loadMonthlyRosterHolidayCalendarOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
@@ -179,3 +282,19 @@ export const loadMonthlyRosterHolidayCalendarOptions = async (
 
   return response.data.map(toHolidayCalendarOption);
 };
+
+export const loadMonthlyRosterHolidayCalendarOptionById = async (
+  holidayCalendarId: string,
+): Promise<ReferenceOption> =>
+  toHolidayCalendarOption(await fetchHolidayCalendarDetail(holidayCalendarId));
+
+export const loadMonthlyRosterHolidayCalendarFilterOptions = async (
+  search: string,
+  selectedId?: string,
+): Promise<ReferenceOption[]> =>
+  mergeSelectedOption(
+    await loadMonthlyRosterHolidayCalendarOptions(search),
+    search,
+    selectedId,
+    loadMonthlyRosterHolidayCalendarOptionById,
+  );

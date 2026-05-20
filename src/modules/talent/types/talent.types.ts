@@ -1,7 +1,13 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type TalentOperationalStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE' | 'ARCHIVED';
 export const talentOriginValues = ['INTERNAL', 'EXTERNAL'] as const;
 export type TalentOrigin = (typeof talentOriginValues)[number];
-export const talentCommercialParticipationStatusValues = ['ALLOWED', 'BLOCKED'] as const;
+export const talentCommercialParticipationStatusValues = [
+  'ELIGIBLE',
+  'RESTRICTED',
+  'BLOCKED',
+] as const;
 export type TalentCommercialParticipationStatus =
   (typeof talentCommercialParticipationStatusValues)[number];
 
@@ -14,7 +20,9 @@ export type TalentRecord = {
   talentOrigin: TalentOrigin;
   operationalStatus: TalentOperationalStatus;
   managerEmploymentProfileId?: string | null;
+  managerEmploymentProfileRef?: ReferenceSummary | null;
   linkedEmploymentProfileId?: string | null;
+  linkedEmploymentProfileRef?: ReferenceSummary | null;
   commercialParticipationStatus: TalentCommercialParticipationStatus;
   livestreamEligible: boolean;
   eventEligible: boolean;

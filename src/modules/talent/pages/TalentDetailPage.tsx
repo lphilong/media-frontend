@@ -48,7 +48,11 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCreatedDate,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveMutationSurface =
@@ -66,9 +70,10 @@ const operationalStatusToneMap = {
 } as const;
 
 const commercialStatusToneMap = {
-  ALLOWED: 'success',
+  ELIGIBLE: 'success',
+  RESTRICTED: 'warning',
   BLOCKED: 'danger',
-} as const satisfies Record<TalentCommercialParticipationStatus, 'success' | 'danger'>;
+} as const satisfies Record<TalentCommercialParticipationStatus, 'success' | 'warning' | 'danger'>;
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -366,7 +371,10 @@ export const TalentDetailPage = (): JSX.Element => {
                   label: t('talent:fields.managerEmploymentProfileId'),
                   value: record.managerEmploymentProfileId ? (
                     <ReferenceChip
-                      label={record.managerEmploymentProfileId}
+                      label={readReferenceDisplay(
+                        record.managerEmploymentProfileRef,
+                        record.managerEmploymentProfileId,
+                      )}
                       to={relatedManagerHref}
                     />
                   ) : (
@@ -378,7 +386,10 @@ export const TalentDetailPage = (): JSX.Element => {
                   label: t('talent:fields.linkedEmploymentProfileId'),
                   value: record.linkedEmploymentProfileId ? (
                     <ReferenceChip
-                      label={record.linkedEmploymentProfileId}
+                      label={readReferenceDisplay(
+                        record.linkedEmploymentProfileRef,
+                        record.linkedEmploymentProfileId,
+                      )}
                       to={relatedEmploymentProfileHref}
                     />
                   ) : (
@@ -411,12 +422,12 @@ export const TalentDetailPage = (): JSX.Element => {
                 {
                   key: 'created-at',
                   label: t('talent:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('talent:fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}

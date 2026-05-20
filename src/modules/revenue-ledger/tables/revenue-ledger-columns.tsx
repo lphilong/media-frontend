@@ -11,7 +11,12 @@ import type {
   RevenueLedgerLifecycleAction,
 } from '@modules/revenue-ledger/types/revenue-ledger.types';
 import { StatusBadge } from '@shared/components/primitives';
-import { formatCurrency, formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCurrency,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+  type ReferenceSummary,
+} from '@shared/formatting/formatters';
 
 export type RevenueLedgerTableRow =
   | RevenueEntryListItem
@@ -49,6 +54,21 @@ const renderMono = (value: unknown): JSX.Element | string => {
   return <span className="font-mono text-xs">{String(value)}</span>;
 };
 
+const renderReference = (
+  ref: ReferenceSummary | null | undefined,
+  fallbackId: string | null | undefined,
+): JSX.Element | string => {
+  if (!ref && !fallbackId) {
+    return '-';
+  }
+
+  return (
+    <span className={ref ? 'text-sm' : 'font-mono text-xs'}>
+      {readReferenceDisplay(ref, fallbackId)}
+    </span>
+  );
+};
+
 const renderTranslated = (t: TFunction, namespaceKey: string, value: unknown): string => {
   if (!value) {
     return '-';
@@ -73,17 +93,33 @@ export const createRevenueLedgerColumns = (
   {
     accessorKey: 'subjectTalentId',
     header: t('revenue-ledger:table.subjectTalentId'),
-    cell: (context) => renderMono(context.getValue()),
+    cell: ({ row }) =>
+      renderReference(
+        'subjectTalentRef' in row.original ? row.original.subjectTalentRef : undefined,
+        row.original.subjectTalentId,
+      ),
   },
   {
     accessorKey: 'attributionPlatformAccountId',
     header: t('revenue-ledger:table.attributionPlatformAccountId'),
-    cell: (context) => renderMono(context.getValue()),
+    cell: ({ row }) =>
+      renderReference(
+        'attributionPlatformAccountRef' in row.original
+          ? row.original.attributionPlatformAccountRef
+          : undefined,
+        'attributionPlatformAccountId' in row.original
+          ? row.original.attributionPlatformAccountId
+          : undefined,
+      ),
   },
   {
     accessorKey: 'attributionEventId',
     header: t('revenue-ledger:table.attributionEventId'),
-    cell: (context) => renderMono(context.getValue()),
+    cell: ({ row }) =>
+      renderReference(
+        'attributionEventRef' in row.original ? row.original.attributionEventRef : undefined,
+        'attributionEventId' in row.original ? row.original.attributionEventId : undefined,
+      ),
   },
   {
     accessorKey: 'revenueKind',
@@ -123,7 +159,7 @@ export const createRevenueLedgerColumns = (
   {
     accessorKey: 'recognizedAt',
     header: t('revenue-ledger:table.recognizedAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as string),
   },
   {
     id: 'actions',

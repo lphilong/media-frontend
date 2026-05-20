@@ -33,7 +33,7 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveMutationSurface = 'edit' | null;
@@ -322,12 +322,12 @@ export const StudioResourceDetailPage = (): JSX.Element => {
                 {
                   key: 'created-at',
                   label: t('studio-resource:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('studio-resource:fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}

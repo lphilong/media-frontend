@@ -11,7 +11,7 @@
     "status": "Trạng thái",
     "parentOrgUnitId": "Đơn vị tổ chức cha",
     "newParentOrgUnitId": "Đơn vị tổ chức cha mới",
-    "displayOrder": "Thứ tự hiển thị",
+    "displayOrder": "Ưu tiên sắp xếp",
     "depth": "Độ sâu",
     "ancestorChain": "Chuỗi cấp trên",
     "externalRef": "Tham chiếu bên ngoài",
@@ -21,10 +21,11 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã sẽ được tạo tự động."
   },
   "placeholders": {
     "typeToken": "Ví dụ: DEPARTMENT",
+    "selectType": "Chọn loại",
     "parentOrgUnitId": "Để trống nếu là đơn vị gốc",
     "parentOrgUnitSearch": "Tìm đơn vị tổ chức theo tên hoặc mã",
     "optional": "Không bắt buộc"
@@ -43,7 +44,8 @@
     "searchPlaceholder": "Nhập mã hoặc tên đơn vị",
     "status": "Trạng thái",
     "type": "Loại",
-    "typePlaceholder": "Lọc theo token loại",
+    "typePlaceholder": "Lọc theo loại",
+    "allTypes": "Tất cả loại",
     "parentOrgUnitId": "Đơn vị tổ chức cha",
     "parentOrgUnitIdPlaceholder": "Chọn đơn vị cha",
     "rootOnly": "Chế độ phân cấp",
@@ -56,10 +58,19 @@
     "code": "Mã",
     "name": "Tên",
     "createdAt": "Thời điểm tạo",
-    "displayOrder": "Thứ tự hiển thị"
+    "displayOrder": "Ưu tiên sắp xếp"
+  },
+  "types": {
+    "DEPARTMENT": "Phòng ban",
+    "TEAM": "Nhóm",
+    "BUSINESS_UNIT": "Đơn vị kinh doanh",
+    "SUPPORT_UNIT": "Đơn vị hỗ trợ"
+  },
+  "help": {
+    "displayOrder": "Số nhỏ hiển thị trước. Khoảng cách như 10, 20, 30 giúp chèn mục mới giữa các mục hiện có dễ hơn. Ví dụ: dùng 15 để đặt một mục giữa 10 và 20."
   },
   "statuses": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "INACTIVE": "Không hoạt động",
     "ARCHIVED": "Đã lưu trữ"
   },
@@ -82,7 +93,7 @@
     "status": "Trạng thái",
     "parentOrgUnitId": "Đơn vị cha",
     "depth": "Độ sâu",
-    "displayOrder": "Thứ tự",
+    "displayOrder": "Ưu tiên sắp xếp",
     "createdAt": "Thời điểm tạo",
     "actions": "Hành động"
   },
@@ -92,7 +103,7 @@
     "type": "Loại",
     "status": "Trạng thái",
     "depth": "Độ sâu",
-    "displayOrder": "Thứ tự"
+    "displayOrder": "Ưu tiên sắp xếp"
   },
   "detail": {
     "summaryTitle": "Metadata chính",
@@ -130,7 +141,7 @@
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidDisplayOrder": "Thứ tự hiển thị phải là số nguyên lớn hơn hoặc bằng 0.",
+    "invalidDisplayOrder": "Ưu tiên sắp xếp phải là số nguyên lớn hơn hoặc bằng 0.",
     "invalidTypeToken": "Loại phải là token chữ hoa, ví dụ DEPARTMENT.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
     "moveSelfForbidden": "Không thể di chuyển đơn vị tổ chức vào chính nó."

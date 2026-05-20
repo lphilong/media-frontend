@@ -1,11 +1,16 @@
 import i18n from 'i18next';
 import { QueryClient } from '@tanstack/react-query';
-import { screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 
 import { appRoutes } from '@app/router/router';
+import {
+  fetchRevenueEntriesByEvent,
+  fetchRevenueEntriesByPlatform,
+  fetchRevenueEntriesByTalent,
+} from '@modules/revenue-ledger/api/revenue-ledger.api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import { server } from '@test/msw/server';
@@ -27,6 +32,8 @@ const renderRoute = (path: string) => {
   });
 
   renderAppWithProviders(<RouterProvider router={router} />, { queryClient });
+
+  return router;
 };
 
 describe('Revenue Ledger Wave 8 query mode selection', () => {
@@ -64,7 +71,9 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
   });
 
   it('allows flat identity filters to coexist with flat-list search', async () => {
-    renderRoute('/revenue-entries?subjectTalentId=talent-001&search=REV-202604-000001');
+    const router = renderRoute(
+      '/revenue-entries?subjectTalentId=talent-001&search=REV-202604-000001',
+    );
 
     expect(await screen.findByText('REV-202604-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(
@@ -73,6 +82,80 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     expect(
       screen.queryByText(i18n.t('revenue-ledger:relatedModes.by-talent')),
     ).not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(new URLSearchParams(router.state.location.search).get('subjectTalentId')).toBe(
+      'talent-001',
+    );
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
+    expect(
+      screen.getAllByText(i18n.t('revenue-ledger:filters.subjectTalentId')).length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'revenue-ledger:filters.subjectTalentId',
+        )}`,
+      }),
+    );
+    expect(
+      screen.queryByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'revenue-ledger:filters.subjectTalentId',
+        )}`,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('clears stale Revenue Ledger selected reference labels when the option becomes unavailable', async () => {
+    const user = userEvent.setup();
+    renderRoute('/revenue-entries?subjectTalentId=talent-001');
+
+    expect(await screen.findByText('REV-202604-000001', {}, { timeout: 3000 })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
+
+    const appliedFilters = screen.getByLabelText(i18n.t('common:filters.appliedFilters'));
+    await waitFor(() => expect(appliedFilters).toHaveTextContent('Mina - TAL-000001'));
+
+    await user.type(
+      screen.getByPlaceholderText(i18n.t('revenue-ledger:filters.subjectTalentIdPlaceholder')),
+      'missing-reference',
+    );
+
+    await waitFor(() => {
+      expect(appliedFilters).toHaveTextContent('Luna Park');
+      expect(appliedFilters).not.toHaveTextContent('Mina - TAL-000001');
+    });
+  });
+
+  it('keeps target timestamp filters hidden but active through the flat-list URL', async () => {
+    renderRoute(
+      '/revenue-entries?status=FINALIZED&createdBeforeAt=1780000000000&finalizedFromAt=1770000000000&finalizedToAt=1780000000000',
+    );
+
+    expect(await screen.findByText('REV-202604-000002', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByText('Created before:')).toBeInTheDocument();
+    expect(screen.getByText('Finalized from:')).toBeInTheDocument();
+    expect(screen.getByText('Finalized until:')).toBeInTheDocument();
+    expect(screen.getAllByText(/20:26 28-05-2026/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/02:40 02-02-2026/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/1770000000000|1780000000000/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: 'Finalized from' })).not.toBeInTheDocument();
+  });
+
+  it('serializes reconciled target filters and keeps narrow sort disabled when they are active', async () => {
+    renderRoute(
+      '/revenue-entries?status=RECONCILED&reconciledFromAt=1770000000000&reconciledToAt=1780000000000&sortBy=createdAt',
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('revenue-ledger:page.title') }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Reconciled from:')).toBeInTheDocument();
+    expect(screen.getByText('Reconciled until:')).toBeInTheDocument();
+    expect(screen.getAllByText(/02:40 02-02-2026/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/20:26 28-05-2026/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/1770000000000|1780000000000/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(i18n.t('common:labels.sort'))).toHaveValue('recognizedAt');
   });
 
   it.each([
@@ -97,6 +180,50 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     expect(
       screen.queryByPlaceholderText(i18n.t('revenue-ledger:filters.searchPlaceholder')),
     ).not.toBeInTheDocument();
+  });
+
+  it('parses Revenue Ledger related endpoints with reduced backend shapes', async () => {
+    const byTalent = await fetchRevenueEntriesByTalent({
+      subjectTalentId: 'talent-001',
+      limit: 10,
+    });
+    const byPlatform = await fetchRevenueEntriesByPlatform({
+      attributionPlatformAccountId: 'platform-001',
+      limit: 10,
+    });
+    const byEvent = await fetchRevenueEntriesByEvent({
+      attributionEventId: 'event-001',
+      limit: 1,
+    });
+
+    const byTalentRecord = byTalent.data.find((record) => record.id === 'revenue-entry-001');
+    expect(byTalentRecord).toMatchObject({
+      id: 'revenue-entry-001',
+      revenueEntryCode: 'REV-202604-000001',
+      subjectTalentId: 'talent-001',
+      revenueKind: 'PLATFORM_LIVESTREAM',
+      status: 'DRAFT',
+    });
+    expect(byTalentRecord).not.toHaveProperty('entrySource');
+    expect(byTalentRecord).not.toHaveProperty('createdAt');
+    expect(byTalentRecord).not.toHaveProperty('subjectTalentRef');
+
+    const byPlatformRecord = byPlatform.data.find((record) => record.id === 'revenue-entry-001');
+    expect(byPlatformRecord).toMatchObject({
+      id: 'revenue-entry-001',
+      attributionPlatformAccountId: 'platform-001',
+      revenueKind: 'PLATFORM_LIVESTREAM',
+    });
+    expect(byPlatformRecord).not.toHaveProperty('entrySource');
+    expect(byPlatformRecord).not.toHaveProperty('createdAt');
+
+    expect(byEvent.data[0]).toMatchObject({
+      id: 'revenue-entry-finalized',
+      attributionEventId: 'event-001',
+      revenueKind: 'EVENT_OPERATIONAL',
+    });
+    expect(byEvent.data[0]).not.toHaveProperty('entrySource');
+    expect(byEvent.data[0]).not.toHaveProperty('createdAt');
   });
 
   it('keeps Revenue Ledger create, search, and narrow sort controls available during list failure', async () => {
@@ -124,5 +251,85 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
         name: i18n.t('revenue-ledger:mutations.create.title'),
       }),
     ).toBeInTheDocument();
+  });
+
+  it('renders readable Revenue attribution refs in list and detail without raw IDs', async () => {
+    renderRoute('/revenue-entries');
+
+    expect((await screen.findAllByText('Luna Park')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Luna TikTok').length).toBeGreaterThan(0);
+    expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('platform-001')).not.toBeInTheDocument();
+
+    renderRoute('/revenue-entries/revenue-entry-finalized');
+
+    expect(await screen.findByText('Minh Tran')).toBeInTheDocument();
+    expect(screen.getAllByText('06:58 22-04-2026').length).toBeGreaterThan(0);
+    expect(screen.getByText('Spring Live Show')).toBeInTheDocument();
+    expect(screen.queryByText('talent-002')).not.toBeInTheDocument();
+    expect(screen.queryByText('event-001')).not.toBeInTheDocument();
+  });
+
+  it('shows capability scope reason for Revenue Ledger actions', async () => {
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({
+          data: {
+            id: 'user-admin',
+            type: 'admin',
+            context: 'ADMIN',
+            isActive: true,
+            roles: ['role-admin'],
+            permissions: ['revenueLedger.update', 'revenueLedger.manageLifecycle'],
+            scopeGrants: {},
+            generatedAt: '2026-05-20T00:00:00.000Z',
+          },
+        }),
+      ),
+    );
+
+    renderRoute('/revenue-entries/revenue-entry-001');
+
+    const editDraftCore = await screen.findByRole('button', {
+      name: i18n.t('revenue-ledger:actions.editDraftCore'),
+    });
+    const finalize = screen.getByRole('button', {
+      name: i18n.t('revenue-ledger:actions.finalize'),
+    });
+
+    expect(editDraftCore).toBeDisabled();
+    await waitFor(() =>
+      expect(editDraftCore).toHaveAccessibleDescription(i18n.t('common:capabilities.missingScope')),
+    );
+    expect(finalize).toBeDisabled();
+    expect(finalize).toHaveAccessibleDescription(i18n.t('common:capabilities.missingScope'));
+  });
+
+  it('keeps invalid Revenue Ledger status reason ahead of capability reasons', async () => {
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({
+          data: {
+            id: 'user-admin',
+            type: 'admin',
+            context: 'ADMIN',
+            isActive: true,
+            roles: ['role-admin'],
+            permissions: [],
+            scopeGrants: {},
+            generatedAt: '2026-05-20T00:00:00.000Z',
+          },
+        }),
+      ),
+    );
+
+    renderRoute('/revenue-entries/revenue-entry-archived');
+
+    const editDraftCore = await screen.findByRole('button', {
+      name: i18n.t('revenue-ledger:actions.editDraftCore'),
+    });
+
+    expect(editDraftCore).toBeDisabled();
+    expect(editDraftCore).toHaveAccessibleDescription(i18n.t('common:capabilities.invalidStatus'));
   });
 });

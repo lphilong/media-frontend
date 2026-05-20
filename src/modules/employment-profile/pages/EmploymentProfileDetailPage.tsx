@@ -51,7 +51,12 @@ import {
   StatusBadge,
 } from '@shared/components/primitives';
 import { useDestructiveConfirm, useMutationFeedback } from '@shared/components/primitives';
-import { formatCanonicalDate, formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCreatedDate,
+  formatUtcMidnightDateLike,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
@@ -510,7 +515,7 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                 {
                   key: 'linked-user-id',
                   label: t('employment-profile:fields.linkedUserId'),
-                  value: record.linkedUserId ?? '-',
+                  value: readReferenceDisplay(record.linkedUserRef, record.linkedUserId),
                 },
               ]}
               columns={2}
@@ -527,7 +532,10 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                   key: 'org-unit',
                   label: t('employment-profile:fields.orgUnitId'),
                   value: record.orgUnitId ? (
-                    <ReferenceChip label={record.orgUnitId} to={relatedOrgUnitHref} />
+                    <ReferenceChip
+                      label={readReferenceDisplay(record.orgUnitRef, record.orgUnitId)}
+                      to={relatedOrgUnitHref}
+                    />
                   ) : (
                     '-'
                   ),
@@ -537,7 +545,10 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                   label: t('employment-profile:fields.managerEmploymentProfileId'),
                   value: record.managerEmploymentProfileId ? (
                     <ReferenceChip
-                      label={record.managerEmploymentProfileId}
+                      label={readReferenceDisplay(
+                        record.managerEmploymentProfileRef,
+                        record.managerEmploymentProfileId,
+                      )}
                       to={relatedManagerHref}
                     />
                   ) : (
@@ -547,24 +558,24 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                 {
                   key: 'start-date',
                   label: t('employment-profile:fields.employmentStartDate'),
-                  value: formatCanonicalDate(record.employmentStartDate),
+                  value: formatUtcMidnightDateLike(record.employmentStartDate),
                 },
                 {
                   key: 'end-date',
                   label: t('employment-profile:fields.employmentEndDate'),
                   value: record.employmentEndDate
-                    ? formatCanonicalDate(record.employmentEndDate)
+                    ? formatUtcMidnightDateLike(record.employmentEndDate)
                     : '-',
                 },
                 {
                   key: 'created-at',
                   label: t('employment-profile:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('employment-profile:fields.updatedAt'),
-                  value: record.updatedAt ? formatUtcTimestamp(record.updatedAt) : '-',
+                  value: record.updatedAt ? formatBusinessTimestamp(record.updatedAt) : '-',
                 },
               ]}
               columns={2}

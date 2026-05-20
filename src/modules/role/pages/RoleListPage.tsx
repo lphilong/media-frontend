@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
+import { previewRoleTemplate } from '@modules/role/api/role.api';
 import { roleStateValues } from '@modules/role/constants/role.constants';
 import { RoleCreateSurface } from '@modules/role/forms/role-mutation-forms';
 import {
+  useCreateRoleFromTemplateMutation,
   useCreateRoleMutation,
   useRoleLifecycleMutation,
   useRoleList,
+  useRoleTemplates,
 } from '@modules/role/hooks/use-role';
 import { createRoleListColumns } from '@modules/role/tables/role-columns';
 import type { RoleLifecycleAction, RoleListQuery } from '@modules/role/types/role.types';
@@ -69,7 +72,9 @@ export const RoleListPage = (): JSX.Element => {
   const navigate = useNavigate();
   const { query, patchQuery } = useRouteQueryState(roleFlatListQueryConfig);
   const listQueryResult = useRoleList(query);
+  const roleTemplatesQuery = useRoleTemplates();
   const createMutation = useCreateRoleMutation();
+  const createFromTemplateMutation = useCreateRoleFromTemplateMutation();
   const lifecycleMutation = useRoleLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
@@ -136,6 +141,18 @@ export const RoleListPage = (): JSX.Element => {
   const onCreateSubmit = async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
     try {
       await createMutation.mutateAsync(payload);
+      notifySuccess('role:feedback.created');
+      setIsCreateOpen(false);
+    } catch (error) {
+      notifyError(error as NormalizedApiError);
+    }
+  };
+
+  const onCreateFromTemplateSubmit = async (
+    payload: Parameters<typeof createFromTemplateMutation.mutateAsync>[0],
+  ) => {
+    try {
+      await createFromTemplateMutation.mutateAsync(payload);
       notifySuccess('role:feedback.created');
       setIsCreateOpen(false);
     } catch (error) {
@@ -235,9 +252,13 @@ export const RoleListPage = (): JSX.Element => {
         <>
           {isCreateOpen ? (
             <RoleCreateSurface
-              isPending={createMutation.isPending}
+              isPending={createMutation.isPending || createFromTemplateMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}
               onSubmit={onCreateSubmit}
+              onTemplateSubmit={onCreateFromTemplateSubmit}
+              onPreviewTemplate={previewRoleTemplate}
+              templateCatalog={roleTemplatesQuery.data ?? []}
+              isTemplateCatalogLoading={roleTemplatesQuery.isLoading}
             />
           ) : null}
         </>

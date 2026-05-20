@@ -26,7 +26,14 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveMutationSurface = 'edit' | 'auth-linkage' | null;
@@ -68,19 +75,29 @@ const readLifecycleConfirmKey = (action: UserLifecycleAction): string => {
 };
 
 const formatOptionalTimestamp = (value?: number | string | null): string =>
-  value === null || value === undefined ? '-' : formatUtcTimestamp(value);
+  value === null || value === undefined ? '-' : formatBusinessTimestamp(value);
 
 export const UserDetailPage = (): JSX.Element => {
   const { userId } = useParams<{ userId: string }>();
   const { t } = useTranslation(['user', 'common', 'errors']);
 
   const detailQuery = useUserDetail(userId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateUserMutation();
   const authLinkageMutation = useUserAuthLinkageMutation();
   const lifecycleMutation = useUserLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [activeSurface, setActiveSurface] = useState<ActiveMutationSurface>(null);
+
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   useEffect(() => {
     setActiveSurface(null);
@@ -183,16 +200,75 @@ export const UserDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createUserActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onAuthLinkage: () => setActiveSurface('auth-linkage'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.userId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    return applyActionCapabilityHints(
+      createUserActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onAuthLinkage: () => setActiveSurface('auth-linkage'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.userId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.USER_EDIT },
+          capabilityCopy,
+        ),
+        'auth-linkage': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.USER_AUTH_LINKAGE_SET },
+          capabilityCopy,
+        ),
+        activate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.USER_ACTIVATE },
+          capabilityCopy,
+        ),
+        disable: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.USER_DISABLE },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.USER_ARCHIVE },
+          capabilityCopy,
+        ),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   return (
     <ModuleDetailScreenShell
@@ -294,12 +370,12 @@ export const UserDetailPage = (): JSX.Element => {
                   {
                     key: 'createdAt',
                     label: t('user:fields.createdAt'),
-                    value: formatUtcTimestamp(record.createdAt),
+                    value: formatCreatedDate(record.createdAt),
                   },
                   {
                     key: 'updatedAt',
                     label: t('user:fields.updatedAt'),
-                    value: formatUtcTimestamp(record.updatedAt),
+                    value: formatBusinessTimestamp(record.updatedAt),
                   },
                   {
                     key: 'activatedAt',

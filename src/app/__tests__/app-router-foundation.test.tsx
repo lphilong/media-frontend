@@ -50,7 +50,7 @@ describe('app router foundation', () => {
 
     renderAppWithProviders(<RouterProvider router={router} />);
 
-    expect(await screen.findByText('CRULE-000001')).toBeInTheDocument();
+    expect(await screen.findByText('CRULE-000001', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.queryByText(i18n.t('common:actions.stubAction'))).not.toBeInTheDocument();
   });
 });

@@ -10,12 +10,21 @@ type SelectFieldProps = {
   name: string;
   label: string;
   options: SelectFieldOption[];
+  placeholder?: string;
+  helperText?: string;
 };
 
-export const SelectField = ({ name, label, options }: SelectFieldProps): JSX.Element => {
+export const SelectField = ({
+  name,
+  label,
+  options,
+  placeholder,
+  helperText,
+}: SelectFieldProps): JSX.Element => {
   const id = useId();
   const labelId = `${id}-label`;
   const errorId = `${id}-error`;
+  const helperId = `${id}-helper`;
   const {
     register,
     formState: { errors },
@@ -32,16 +41,24 @@ export const SelectField = ({ name, label, options }: SelectFieldProps): JSX.Ele
         id={id}
         {...register(name)}
         aria-labelledby={labelId}
-        aria-describedby={fieldError ? errorId : undefined}
+        aria-describedby={[helperText ? helperId : undefined, fieldError ? errorId : undefined]
+          .filter(Boolean)
+          .join(' ')}
         aria-invalid={fieldError ? true : undefined}
         className="rounded border border-border bg-panel px-3 py-2 text-sm outline-none ring-accent focus:ring-2"
       >
+        {placeholder ? <option value="">{placeholder}</option> : null}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
       </select>
+      {helperText ? (
+        <span id={helperId} className="text-xs text-muted">
+          {helperText}
+        </span>
+      ) : null}
       {fieldError ? (
         <span id={errorId} className="text-xs font-medium text-danger">
           {fieldError}

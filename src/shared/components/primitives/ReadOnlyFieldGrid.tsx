@@ -5,6 +5,7 @@ export type ReadOnlyField = {
   key: string;
   label: string;
   value: ReactNode;
+  description?: ReactNode;
   monospace?: boolean;
 };
 
@@ -28,6 +29,9 @@ export const ReadOnlyFieldGrid = ({ fields, columns = 2 }: ReadOnlyFieldGridProp
           <dd className={clsx('mt-1 text-sm text-text', field.monospace ? 'font-mono' : '')}>
             {field.value}
           </dd>
+          {field.description ? (
+            <dd className="mt-1 text-xs text-muted">{field.description}</dd>
+          ) : null}
         </div>
       ))}
     </dl>

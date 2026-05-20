@@ -13,6 +13,36 @@ const renderRoute = (path: string) => {
   });
 
   renderAppWithProviders(<RouterProvider router={router} />);
+
+  return router;
+};
+
+const findPicker = async (pickerId: string): Promise<HTMLElement> => {
+  await waitFor(() => {
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some((surface) => surface.getAttribute('data-picker-id') === pickerId),
+    ).toBe(true);
+  });
+  const picker = screen
+    .getAllByTestId('picker-surface')
+    .find((surface) => surface.getAttribute('data-picker-id') === pickerId);
+  if (!picker) {
+    throw new Error(`Picker not found: ${pickerId}`);
+  }
+  return picker;
+};
+
+const openMoreFilters = async (user: ReturnType<typeof userEvent.setup>): Promise<void> => {
+  await user.click(
+    screen.getByRole('button', {
+      name: new RegExp(i18n.t('common:filters.moreFilters')),
+    }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
+  ).toBeInTheDocument();
 };
 
 describe('platform-account wave 5 surfaces', () => {
@@ -25,7 +55,111 @@ describe('platform-account wave 5 surfaces', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('PA-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('Mina Live')).toBeInTheDocument();
+    expect(screen.getAllByText('Mina').length).toBeGreaterThan(0);
     expect(screen.queryByText('Archived Platform')).not.toBeInTheDocument();
+  });
+
+  it('uses an owner selector for owner relationship filters while preserving owner id keys', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const router = renderRoute(
+      '/platform-accounts?operationalStatus=ACTIVE&ownerTalentId=talent-001',
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('platform-account:page.title') }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(i18n.t('platform-account:filters.ownerIdPlaceholder')),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(i18n.t('platform-account:filters.searchPlaceholder')),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('platform-account:filters.operationalStatus') }),
+    ).toHaveValue('ACTIVE');
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'platform-account:filters.ownerKind',
+        )}`,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'platform-account:filters.ownerId',
+        )}`,
+      }),
+    ).toBeInTheDocument();
+
+    await openMoreFilters(user);
+
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('platform-account:filters.ownerKind') }),
+    ).toHaveValue('TALENT');
+
+    const picker = await findPicker('platform-account-filter-owner-talent');
+    expect(await within(picker).findAllByText(/TAL-000001/)).not.toHaveLength(0);
+
+    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('ownerTalentId')).toBe(
+        'talent-001',
+      );
+      expect(new URLSearchParams(router.state.location.search).get('ownerTalentId')).not.toBe(
+        'TAL-000001',
+      );
+    });
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'platform-account:filters.ownerId',
+        )}`,
+      }),
+    );
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search);
+      expect(params.get('ownerTalentId')).toBeNull();
+      expect(params.get('ownerKind')).toBe('TALENT');
+    });
+
+    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('ownerTalentId')).toBe(
+        'talent-001',
+      );
+    });
+
+    const field = picker.closest('fieldset');
+    expect(field).not.toBeNull();
+    if (!field) {
+      return;
+    }
+
+    await user.click(within(field).getByRole('button', { name: i18n.t('common:actions.clear') }));
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search);
+      expect(params.get('ownerTalentId')).toBeNull();
+      expect(params.get('ownerKind')).toBe('TALENT');
+    });
+
+    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('ownerTalentId')).toBe(
+        'talent-001',
+      );
+    });
+
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search);
+      expect(params.get('operationalStatus')).toBeNull();
+      expect(params.get('ownerKind')).toBeNull();
+      expect(params.get('ownerTalentId')).toBeNull();
+    });
   });
 
   it('renders detail sections and constrained related navigation links', async () => {
@@ -37,6 +171,10 @@ describe('platform-account wave 5 surfaces', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('PA-000001')).toBeInTheDocument();
     expect(screen.getByText('@mina')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Mina' })).toHaveAttribute(
+      'href',
+      '/talents/talent-001',
+    );
 
     const relatedLinks = screen.getAllByRole('link', {
       name: i18n.t('platform-account:related.openFilteredList'),
@@ -103,13 +241,13 @@ describe('platform-account wave 5 surfaces', () => {
     expect(
       createSurfaceScope.getByText(i18n.t('platform-account:generatedCode.description')),
     ).toBeInTheDocument();
-    await user.type(
+    await user.selectOptions(
       createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.platform')),
       'YOUTUBE',
     );
-    await user.type(
+    await user.selectOptions(
       createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.platformSurfaceType')),
-      'LIVESTREAM',
+      'ACCOUNT',
     );
     await user.type(
       createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.displayName')),
@@ -131,7 +269,7 @@ describe('platform-account wave 5 surfaces', () => {
     );
     await user.type(
       createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.handle')),
-      '@wave5',
+      'wave5',
     );
     await user.click(
       createSurfaceScope.getByRole('button', {

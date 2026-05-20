@@ -7,7 +7,15 @@ import {
 
 type TalentOperationalStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE' | 'ARCHIVED';
 type TalentOrigin = 'INTERNAL' | 'EXTERNAL';
-type TalentCommercialParticipationStatus = 'ALLOWED' | 'BLOCKED';
+type TalentCommercialParticipationStatus = 'ELIGIBLE' | 'RESTRICTED' | 'BLOCKED';
+
+type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  displayName?: string;
+  status?: string;
+};
 
 type TalentRecord = {
   id: string;
@@ -76,7 +84,7 @@ const initialTalents: TalentRecord[] = [
     operationalStatus: 'ACTIVE',
     managerEmploymentProfileId: 'ep-001',
     linkedEmploymentProfileId: 'ep-002',
-    commercialParticipationStatus: 'ALLOWED',
+    commercialParticipationStatus: 'ELIGIBLE',
     livestreamEligible: true,
     eventEligible: true,
     externalRef: null,
@@ -112,7 +120,7 @@ const initialTalents: TalentRecord[] = [
     operationalStatus: 'INACTIVE',
     managerEmploymentProfileId: null,
     linkedEmploymentProfileId: 'ep-003',
-    commercialParticipationStatus: 'ALLOWED',
+    commercialParticipationStatus: 'RESTRICTED',
     livestreamEligible: true,
     eventEligible: false,
     externalRef: null,
@@ -307,6 +315,42 @@ const readGroup = (groupId: string): TalentGroupRecord | undefined =>
 const readMembership = (membershipId: string): TalentGroupMembershipRecord | undefined =>
   memberships.find((item) => item.id === membershipId);
 
+const employmentProfileRefs = new Map<string, ReferenceSummary>([
+  [
+    'ep-001',
+    {
+      id: 'ep-001',
+      code: 'EP-000001',
+      displayName: 'Alice',
+      name: 'Alice Nguyen',
+      status: 'ACTIVE',
+    },
+  ],
+  [
+    'ep-002',
+    { id: 'ep-002', code: 'EP-000002', displayName: 'Bao', name: 'Bao Tran', status: 'ON_LEAVE' },
+  ],
+  [
+    'ep-003',
+    { id: 'ep-003', code: 'EP-000003', displayName: 'Chau', name: 'Chau Le', status: 'SUSPENDED' },
+  ],
+]);
+
+const toEmploymentProfileRef = (employmentProfileId: string | null): ReferenceSummary | null =>
+  employmentProfileId ? (employmentProfileRefs.get(employmentProfileId) ?? null) : null;
+
+const toTalentRef = (talentId: string): ReferenceSummary | null => {
+  const talent = readTalent(talentId);
+  return talent
+    ? {
+        id: talent.id,
+        code: talent.talentCode,
+        name: talent.displayShortName ?? talent.stageName,
+        status: talent.operationalStatus,
+      }
+    : null;
+};
+
 const toTalentListItem = (record: TalentRecord) => {
   return {
     id: record.id,
@@ -317,7 +361,9 @@ const toTalentListItem = (record: TalentRecord) => {
     talentOrigin: record.talentOrigin,
     operationalStatus: record.operationalStatus,
     managerEmploymentProfileId: record.managerEmploymentProfileId,
+    managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
     linkedEmploymentProfileId: record.linkedEmploymentProfileId,
+    linkedEmploymentProfileRef: toEmploymentProfileRef(record.linkedEmploymentProfileId),
     commercialParticipationStatus: record.commercialParticipationStatus,
     livestreamEligible: record.livestreamEligible,
     eventEligible: record.eventEligible,
@@ -360,6 +406,7 @@ const toMembershipItem = (record: TalentGroupMembershipRecord) => {
     id: record.id,
     groupId: record.groupId,
     talentId: record.talentId,
+    talentRef: toTalentRef(record.talentId),
     membershipStatus: record.membershipStatus,
     lineupOrder: record.lineupOrder,
     joinedAt: record.joinedAt,
@@ -371,6 +418,7 @@ const toMembershipItem = (record: TalentGroupMembershipRecord) => {
 
 const toByTalentItem = (group: TalentGroupRecord, membership: TalentGroupMembershipRecord) => {
   return {
+    groupId: group.id,
     id: group.id,
     groupCode: group.groupCode,
     name: group.name,
@@ -379,6 +427,7 @@ const toByTalentItem = (group: TalentGroupRecord, membership: TalentGroupMembers
     displayOrder: group.displayOrder,
     membershipId: membership.id,
     talentId: membership.talentId,
+    talentRef: toTalentRef(membership.talentId),
     membershipStatus: membership.membershipStatus,
     lineupOrder: membership.lineupOrder,
     joinedAt: membership.joinedAt,
@@ -486,7 +535,7 @@ const isTalentOrigin = (value: unknown): value is TalentOrigin => {
 const isTalentCommercialParticipationStatus = (
   value: unknown,
 ): value is TalentCommercialParticipationStatus => {
-  return value === 'ALLOWED' || value === 'BLOCKED';
+  return value === 'ELIGIBLE' || value === 'RESTRICTED' || value === 'BLOCKED';
 };
 
 const cloneTalents = (): TalentRecord[] => initialTalents.map((record) => ({ ...record }));
@@ -573,7 +622,7 @@ export const wave4Handlers = [
   http.post('*/admin/talents', async ({ request }) => {
     const body = await parseJsonBody(request);
     const talentOrigin = body.talentOrigin ?? 'INTERNAL';
-    const commercialParticipationStatus = body.commercialParticipationStatus ?? 'ALLOWED';
+    const commercialParticipationStatus = body.commercialParticipationStatus ?? 'ELIGIBLE';
     const livestreamEligible = Boolean(body.livestreamEligible);
     const eventEligible = Boolean(body.eventEligible);
 

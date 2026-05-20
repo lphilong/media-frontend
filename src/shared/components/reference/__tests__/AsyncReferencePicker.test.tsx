@@ -7,6 +7,7 @@ import {
   EmploymentProfileReferencePicker,
   OrgUnitReferencePicker,
   PlatformAccountReferencePicker,
+  ReferenceFilterField,
   StudioResourceReferencePicker,
   TalentGroupReferencePicker,
   TalentReferencePicker,
@@ -74,7 +75,31 @@ describe('AsyncReferencePicker', () => {
     expect(screen.queryByRole('link', { name: 'ORG-01' })).not.toBeInTheDocument();
   });
 
-  it('supports disabled, empty, and error slots', async () => {
+  it('renders loading state while options are being fetched', async () => {
+    let resolveOptions: (options: Array<{ id: string; label: string }>) => void = () => {};
+    const loadOptions = vi.fn(
+      () =>
+        new Promise<Array<{ id: string; label: string }>>((resolve) => {
+          resolveOptions = resolve;
+        }),
+    );
+
+    render(
+      <AsyncReferencePicker
+        pickerId="employment-profile"
+        onChange={vi.fn()}
+        loadOptions={loadOptions}
+      />,
+    );
+
+    expect(await screen.findByText('Loading')).toBeInTheDocument();
+    resolveOptions([]);
+    await waitFor(() => {
+      expect(screen.queryByText('Loading')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders compact inline load errors with retry instead of the shared ErrorState card', async () => {
     const user = userEvent.setup();
     const loadOptions = vi
       .fn(async (): Promise<Array<{ id: string; label: string }>> => [])
@@ -86,14 +111,41 @@ describe('AsyncReferencePicker', () => {
         pickerId="employment-profile"
         onChange={vi.fn()}
         loadOptions={loadOptions}
+        resourceLabel="Employment Profile"
         disabledSlot={<div>Disabled Slot</div>}
         emptySlot={<div>Empty Slot</div>}
       />,
     );
 
-    expect(await screen.findByText('Please retry or reload the page')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Could not load Employment Profile options.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not load Employment Profile options.',
+    );
+    expect(screen.queryByText('Unexpected error')).not.toBeInTheDocument();
+    expect(screen.queryByText('Please retry or reload the page')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Retry' }));
     expect(await screen.findByText('Empty Slot')).toBeInTheDocument();
+  });
+
+  it('keeps filter reference load failures compact and local to the field', async () => {
+    const loadOptions = vi.fn().mockRejectedValue(new Error('failed'));
+
+    render(
+      <ReferenceFilterField
+        label="Talent"
+        pickerId="talent-filter"
+        value={undefined}
+        loadOptions={loadOptions}
+        onChange={vi.fn()}
+        clearLabel="Clear"
+      />,
+    );
+
+    expect(await screen.findByText('Could not load Talent options.')).toBeInTheDocument();
+    expect(screen.queryByText('Unexpected error')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('picker-surface')).toBeInTheDocument();
   });
 
   it('provides wrapper-friendly entity picker scaffolds for future module-specific pickers', () => {

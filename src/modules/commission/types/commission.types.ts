@@ -1,3 +1,5 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type CommissionRuleStatus = 'DRAFT' | 'INACTIVE' | 'ACTIVE' | 'ARCHIVED';
 export type CommissionSettlementStatus = 'DRAFT' | 'FINALIZED' | 'VOIDED' | 'ARCHIVED';
 export type CommissionBeneficiaryKind = 'EMPLOYMENT_PROFILE' | 'TALENT';
@@ -54,6 +56,8 @@ export type CommissionRuleRecord = {
   beneficiaryEmploymentProfileId?: string | null;
   beneficiaryTalentId?: string | null;
   sourceContractRecordId: string;
+  beneficiaryRef?: ReferenceSummary | null;
+  sourceContractRecordRef?: ReferenceSummary | null;
   settlementBasis: CommissionSettlementBasis;
   ratePercent: number;
   appliesToRevenueKinds: CommissionRevenueKind[];
@@ -76,6 +80,8 @@ export type CommissionRuleListItem = Pick<
   | 'beneficiaryEmploymentProfileId'
   | 'beneficiaryTalentId'
   | 'sourceContractRecordId'
+  | 'beneficiaryRef'
+  | 'sourceContractRecordRef'
   | 'ratePercent'
   | 'status'
   | 'effectiveStartDate'
@@ -94,6 +100,9 @@ export type CommissionSettlementRecord = {
   beneficiaryEmploymentProfileIdSnapshot?: string | null;
   beneficiaryTalentIdSnapshot?: string | null;
   subjectTalentId: string;
+  beneficiaryRef?: ReferenceSummary | null;
+  sourceRuleRef?: ReferenceSummary | null;
+  revenueEntryRefs?: ReferenceSummary[];
   settlementBasisSnapshot: CommissionSettlementBasis;
   ratePercentSnapshot: number;
   revenueEntryIds: string[];
@@ -122,6 +131,10 @@ export type CommissionSettlementListItem = Pick<
   | 'beneficiaryEmploymentProfileIdSnapshot'
   | 'beneficiaryTalentIdSnapshot'
   | 'subjectTalentId'
+  | 'revenueEntryIds'
+  | 'beneficiaryRef'
+  | 'sourceRuleRef'
+  | 'revenueEntryRefs'
   | 'settlementCurrencyCode'
   | 'grossRevenueAmount'
   | 'settlementAmount'
@@ -193,6 +206,9 @@ export type CommissionSettlementsFlatListQuery = {
   settlementCurrencyCode?: string;
   windowStartAt?: number;
   windowEndAt?: number;
+  createdBeforeAt?: number;
+  finalizedFromAt?: number;
+  finalizedToAt?: number;
   limit?: number;
   cursor?: string;
   search?: string;

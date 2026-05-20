@@ -11,7 +11,7 @@ import type {
   WorkShiftSubjectKind,
 } from '@modules/work-schedule/types/work-schedule.types';
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 
 export type WorkShiftTableRow =
   | WorkShiftListItem
@@ -102,7 +102,10 @@ export const createWorkShiftListColumns = (
         'subjectKind' in row.original
           ? readWorkShiftSubjectId(row.original as WorkShiftListItem)
           : null;
-      return <span className="font-mono text-xs">{subjectId ?? '-'}</span>;
+      return readReferenceDisplay(
+        'subjectRef' in row.original ? row.original.subjectRef : null,
+        subjectId,
+      );
     },
   },
   {
@@ -123,11 +126,17 @@ export const createWorkShiftListColumns = (
       const sourceType = readSourceType(row.original);
       const month =
         'sourceRosterMonth' in row.original ? (row.original.sourceRosterMonth ?? null) : null;
+      const sourceRosterLabel =
+        'sourceRosterRef' in row.original
+          ? readReferenceDisplay(row.original.sourceRosterRef, row.original.sourceRosterId)
+          : null;
 
       return (
         <div>
           <span>{t(`work-schedule:sourceLabels.${sourceType}`)}</span>
-          {sourceType === 'ROSTER_GENERATED' && month ? (
+          {sourceType === 'ROSTER_GENERATED' && sourceRosterLabel ? (
+            <span className="block text-xs text-muted">{sourceRosterLabel}</span>
+          ) : sourceType === 'ROSTER_GENERATED' && month ? (
             <span className="block text-xs text-muted">{month}</span>
           ) : null}
         </div>
@@ -137,20 +146,12 @@ export const createWorkShiftListColumns = (
   {
     accessorKey: 'shiftStartAt',
     header: t('work-schedule:table.shiftStartAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     accessorKey: 'shiftEndAt',
     header: t('work-schedule:table.shiftEndAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: t('work-schedule:table.createdAt'),
-    cell: (context) => {
-      const value = context.getValue();
-      return value ? formatUtcTimestamp(value as number | string) : '-';
-    },
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     id: 'actions',

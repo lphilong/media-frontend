@@ -9,7 +9,11 @@ import type {
 } from '@modules/work-schedule/types/work-schedule.types';
 import type { NormalizedApiError } from '@shared/api';
 import { MetadataSection } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatBusinessTimestamp,
+  formatCreatedDate,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 
 type ExceptionSurfaceState =
   | { mode: 'add'; exception?: undefined }
@@ -41,7 +45,7 @@ const formatNullable = (value?: string | number | null): string => {
 };
 
 const formatNullableTimestamp = (value?: string | number | null): string =>
-  value ? formatUtcTimestamp(value) : '-';
+  value ? formatBusinessTimestamp(value) : '-';
 
 const summarizeException = (
   t: (key: string) => string,
@@ -206,8 +210,11 @@ export const MonthlyRosterExceptionEditor = ({
                       key={exception.rosterExceptionId}
                       className={exception.status === 'REMOVED' ? 'text-muted' : undefined}
                     >
-                      <td className="px-3 py-2 font-mono">
-                        {exception.subjectEmploymentProfileId}
+                      <td className="px-3 py-2">
+                        {readReferenceDisplay(
+                          exception.subjectEmploymentProfileRef,
+                          exception.subjectEmploymentProfileId,
+                        )}
                       </td>
                       <td className="px-3 py-2">{exception.exceptionDate}</td>
                       <td className="px-3 py-2">
@@ -222,8 +229,8 @@ export const MonthlyRosterExceptionEditor = ({
                       <td className="px-3 py-2">
                         {formatNullable(exception.reason ?? exception.sourceNote)}
                       </td>
-                      <td className="px-3 py-2">{formatUtcTimestamp(exception.createdAt)}</td>
-                      <td className="px-3 py-2">{formatUtcTimestamp(exception.updatedAt)}</td>
+                      <td className="px-3 py-2">{formatCreatedDate(exception.createdAt)}</td>
+                      <td className="px-3 py-2">{formatBusinessTimestamp(exception.updatedAt)}</td>
                       <td className="px-3 py-2">{formatNullableTimestamp(exception.removedAt)}</td>
                       <td className="px-3 py-2">
                         <div className="flex flex-wrap gap-2">

@@ -36,6 +36,7 @@ const sortDirectionSchema = z
 const eventStatusSchema = z
   .enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ARCHIVED'])
   .optional();
+const eventStatusGroupSchema = z.literal('ACTIVE').optional();
 const assignmentKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP']).optional();
 const eventSortBySchema = z.enum(['eventStartAt', 'eventCode', 'createdAt']).optional();
 
@@ -55,8 +56,13 @@ const baseEventQueryShape = {
 
 const eventFlatListSchema = z.object({
   ...baseEventQueryShape,
+  statusGroup: eventStatusGroupSchema,
   containsStudioResourceId: idSchema.optional(),
   containsPlatformAccountId: idSchema.optional(),
+  eventOverlapStartAt: timestampSchema,
+  eventOverlapEndAt: timestampSchema,
+  eventStartFromAt: timestampSchema,
+  eventStartToAt: timestampSchema,
   search: searchSchema,
 });
 
@@ -235,7 +241,10 @@ export const eventFlatListQueryConfig = defineScreenQueryConfig({
   id: 'event-assignment.flat-list',
   schema: eventFlatListSchema,
   cursorKey: 'cursor',
-  normalize: (query) => dropSortDirectionWithoutSortBy(normalizeAssignmentFilters({ ...query })),
+  normalize: (query) =>
+    dropSortDirectionWithoutSortBy(
+      normalizeAssignmentFilters(sanitizeEventTargetRanges({ ...query })),
+    ),
   capabilities: {
     surface: 'flat-list',
     search: {
@@ -255,6 +264,7 @@ export const eventFlatListQueryConfig = defineScreenQueryConfig({
     },
     allowedFilterKeys: [
       'status',
+      'statusGroup',
       'assignmentKind',
       'assignmentEmploymentProfileId',
       'assignmentTalentId',
@@ -263,6 +273,10 @@ export const eventFlatListQueryConfig = defineScreenQueryConfig({
       'containsPlatformAccountId',
       'windowStartAt',
       'windowEndAt',
+      'eventOverlapStartAt',
+      'eventOverlapEndAt',
+      'eventStartFromAt',
+      'eventStartToAt',
     ],
     archivedByDefault: {
       hiddenByDefault: true,
@@ -271,6 +285,43 @@ export const eventFlatListQueryConfig = defineScreenQueryConfig({
     },
   },
 });
+
+function sanitizeEventTargetRanges<
+  TQuery extends {
+    eventOverlapStartAt?: number;
+    eventOverlapEndAt?: number;
+    eventStartFromAt?: number;
+    eventStartToAt?: number;
+  },
+>(query: TQuery): TQuery {
+  let next = { ...query };
+
+  if (
+    next.eventOverlapStartAt !== undefined &&
+    next.eventOverlapEndAt !== undefined &&
+    next.eventOverlapEndAt <= next.eventOverlapStartAt
+  ) {
+    next = {
+      ...next,
+      eventOverlapStartAt: undefined,
+      eventOverlapEndAt: undefined,
+    };
+  }
+
+  if (
+    next.eventStartFromAt !== undefined &&
+    next.eventStartToAt !== undefined &&
+    next.eventStartToAt <= next.eventStartFromAt
+  ) {
+    next = {
+      ...next,
+      eventStartFromAt: undefined,
+      eventStartToAt: undefined,
+    };
+  }
+
+  return next;
+}
 
 export const eventByAssignmentQueryConfig = defineScreenQueryConfig({
   id: 'event-assignment.by-assignment',

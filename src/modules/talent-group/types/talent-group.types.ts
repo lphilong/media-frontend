@@ -1,3 +1,5 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type TalentGroupStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 export type TalentGroupMembershipStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
 
@@ -18,6 +20,7 @@ export type TalentGroupMemberRecord = {
   id: string;
   groupId: string;
   talentId: string;
+  talentRef?: ReferenceSummary | null;
   membershipStatus: TalentGroupMembershipStatus;
   lineupOrder: number;
   joinedAt: number | string;
@@ -28,6 +31,7 @@ export type TalentGroupMemberRecord = {
 
 export type TalentGroupByTalentListItem = {
   id: string;
+  groupId: string;
   groupCode: string;
   name: string;
   shortName?: string | null;
@@ -35,6 +39,7 @@ export type TalentGroupByTalentListItem = {
   displayOrder: number;
   membershipId: string;
   talentId: string;
+  talentRef?: ReferenceSummary | null;
   membershipStatus: TalentGroupMembershipStatus;
   lineupOrder: number;
   joinedAt: number | string;

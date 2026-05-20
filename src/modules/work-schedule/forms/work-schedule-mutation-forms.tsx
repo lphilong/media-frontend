@@ -28,6 +28,10 @@ import type {
 } from '@modules/work-schedule/types/work-schedule.types';
 import { AsyncReferencePicker, type ReferenceOption } from '@shared/components/reference';
 import { FormGrid, SelectField, TextInputField } from '@shared/forms';
+import {
+  formatBusinessDateTimeInputValue,
+  parseBusinessDateTimeInputValue,
+} from '@shared/formatting/formatters';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseSurfaceProps = {
@@ -155,8 +159,14 @@ const createSubjectKindSchema = (requiredMessage: string) =>
 
 const timestampField = (requiredMessage: string) =>
   z.preprocess(
-    (value) => (typeof value === 'string' && value.trim().length > 0 ? value : undefined),
-    z.coerce.number().int().nonnegative({ message: requiredMessage }),
+    (value) =>
+      typeof value === 'string' && value.trim().length > 0
+        ? parseBusinessDateTimeInputValue(value)
+        : undefined,
+    z
+      .number({ required_error: requiredMessage, invalid_type_error: requiredMessage })
+      .int()
+      .nonnegative({ message: requiredMessage }),
   );
 
 const createCreateSchema = (
@@ -477,12 +487,12 @@ export const WorkShiftCreateSurface = ({
           <TextInputField
             name="shiftStartAt"
             label={t('work-schedule:fields.shiftStartAt')}
-            type="number"
+            type="datetime-local"
           />
           <TextInputField
             name="shiftEndAt"
             label={t('work-schedule:fields.shiftEndAt')}
-            type="number"
+            type="datetime-local"
           />
           <TextInputField
             name="externalRef"
@@ -592,8 +602,8 @@ export const WorkShiftRescheduleSurface = ({
   const { t } = useTranslation(['work-schedule', 'common']);
   const form = useForm<{ newShiftStartAt: string; newShiftEndAt: string }>({
     defaultValues: {
-      newShiftStartAt: String(initialValues.shiftStartAt),
-      newShiftEndAt: String(initialValues.shiftEndAt),
+      newShiftStartAt: formatBusinessDateTimeInputValue(initialValues.shiftStartAt),
+      newShiftEndAt: formatBusinessDateTimeInputValue(initialValues.shiftEndAt),
     },
   });
   const schema = useMemo(
@@ -630,12 +640,12 @@ export const WorkShiftRescheduleSurface = ({
           <TextInputField
             name="newShiftStartAt"
             label={t('work-schedule:fields.newShiftStartAt')}
-            type="number"
+            type="datetime-local"
           />
           <TextInputField
             name="newShiftEndAt"
             label={t('work-schedule:fields.newShiftEndAt')}
-            type="number"
+            type="datetime-local"
           />
         </FormGrid>
       </ModuleMutationSurface>

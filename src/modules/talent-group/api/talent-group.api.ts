@@ -20,6 +20,18 @@ import type {
 
 const groupStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']);
 const membershipStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'REMOVED']);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+    handle: z.string().optional(),
+    platform: z.string().optional(),
+    status: z.string().optional(),
+  })
+  .strict();
 
 const listTalentGroupSchema = z
   .object({
@@ -46,6 +58,7 @@ const memberSchema = z
     id: z.string().trim().min(1),
     groupId: z.string().trim().min(1),
     talentId: z.string().trim().min(1),
+    talentRef: referenceSummarySchema.nullable().optional(),
     membershipStatus: membershipStatusSchema,
     lineupOrder: z.number().int(),
     joinedAt: z.union([z.number(), z.string()]),
@@ -58,6 +71,7 @@ const memberSchema = z
 const byTalentSchema = z
   .object({
     id: z.string().trim().min(1),
+    groupId: z.string().trim().min(1),
     groupCode: z.string().trim().min(1),
     name: z.string().trim().min(1),
     shortName: z.string().nullable().optional(),
@@ -65,6 +79,7 @@ const byTalentSchema = z
     displayOrder: z.number().int(),
     membershipId: z.string().trim().min(1),
     talentId: z.string().trim().min(1),
+    talentRef: referenceSummarySchema.nullable().optional(),
     membershipStatus: membershipStatusSchema,
     lineupOrder: z.number().int(),
     joinedAt: z.union([z.number(), z.string()]),

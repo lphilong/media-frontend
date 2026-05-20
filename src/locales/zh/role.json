@@ -21,6 +21,38 @@
     "archivedAt": "已归档",
     "reason": "原因"
   },
+  "templates": {
+    "templateMode": "基于模板的角色",
+    "customMode": "高级自定义角色",
+    "roleTemplate": "角色模板",
+    "chooseTemplate": "选择角色模板",
+    "loading": "正在加载角色模板",
+    "loadingPreview": "正在加载模板预览",
+    "previewEmpty": "选择模板以预览生成的权限。",
+    "previewError": "无法加载模板预览。",
+    "generatedPermissions": "生成的权限",
+    "generatedPermissionsHelp": "模板权限会生成明确的角色权限。",
+    "warnings": "警告",
+    "scopePlan": "范围计划",
+    "scopePlanHelp": "仅供预览。分配角色给用户时再选择分配范围。",
+    "implementationNotes": "实现说明",
+    "backendAuthority": "后端会验证授权；前端预览不是安全保证。",
+    "basedOnTemplate": "基于模板",
+    "custom": "自定义",
+    "templateVersion": "模板版本",
+    "templateAppliedAt": "模板应用时间",
+    "permissionsRemainExplicit": "权限仍为明确权限，模板元数据不具权威性。"
+  },
+  "scopePicker": {
+    "assignmentScopes": "分配范围",
+    "backendValidation": "分配范围会影响运行时访问。后端会拒绝当前 actor 无权授予的范围。",
+    "scopes": {
+      "self": "本人",
+      "team": "团队",
+      "department": "部门",
+      "global": "全局"
+    }
+  },
   "states": {
     "DRAFT": "草稿",
     "ACTIVE": "启用",
@@ -170,6 +202,7 @@
     "state": "状态",
     "effectiveAt": "生效",
     "revokedAt": "已撤销",
+    "scopeGrants": "分配范围",
     "reason": "原因",
     "allStates": "所有分配状态",
     "emptyTitle": "未找到分配",

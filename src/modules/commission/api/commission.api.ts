@@ -31,6 +31,18 @@ const beneficiaryKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT']);
 const settlementBasisSchema = z.literal('RECOGNIZED_GROSS_REVENUE');
 const revenueKindSchema = z.enum(['PLATFORM_LIVESTREAM', 'PLATFORM_CONTENT', 'EVENT_OPERATIONAL']);
 const timestampSchema = z.union([z.number(), z.string()]);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+    handle: z.string().optional(),
+    platform: z.string().optional(),
+    status: z.string().optional(),
+  })
+  .strict();
 
 const cursorMetaSchema = z
   .object({
@@ -49,6 +61,8 @@ const ruleListItemSchema = z
     beneficiaryEmploymentProfileId: z.string().nullable().optional(),
     beneficiaryTalentId: z.string().nullable().optional(),
     sourceContractRecordId: z.string().trim().min(1),
+    beneficiaryRef: referenceSummarySchema.nullable().optional(),
+    sourceContractRecordRef: referenceSummarySchema.nullable().optional(),
     ratePercent: z.number(),
     status: ruleStatusSchema,
     effectiveStartDate: timestampSchema,
@@ -78,6 +92,10 @@ const settlementListItemSchema = z
     beneficiaryEmploymentProfileIdSnapshot: z.string().nullable().optional(),
     beneficiaryTalentIdSnapshot: z.string().nullable().optional(),
     subjectTalentId: z.string().trim().min(1),
+    revenueEntryIds: z.array(z.string().trim().min(1)),
+    beneficiaryRef: referenceSummarySchema.nullable().optional(),
+    sourceRuleRef: referenceSummarySchema.nullable().optional(),
+    revenueEntryRefs: z.array(referenceSummarySchema).optional(),
     settlementCurrencyCode: z
       .string()
       .trim()
@@ -188,6 +206,9 @@ const sanitizeSettlementsFlatQuery = (
   settlementCurrencyCode: query.settlementCurrencyCode,
   windowStartAt: query.windowStartAt,
   windowEndAt: query.windowEndAt,
+  createdBeforeAt: query.createdBeforeAt,
+  finalizedFromAt: query.finalizedFromAt,
+  finalizedToAt: query.finalizedToAt,
   limit: query.limit,
   cursor: query.cursor,
   search: query.search,

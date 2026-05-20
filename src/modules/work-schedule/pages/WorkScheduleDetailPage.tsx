@@ -38,7 +38,11 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCreatedDate,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 import { parseWorkScheduleScope } from '@shared/query';
 
@@ -181,6 +185,12 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
         : record?.subjectKind === 'TALENT_GROUP'
           ? buildEntityDetailHref('talentGroup', subjectId)
           : undefined;
+  const subjectLabel = record
+    ? readReferenceDisplay(record.subjectRef, subjectId)
+    : formatNullable(subjectId);
+  const studioResourceRefsById = new Map(
+    (record?.studioResourceRefs ?? []).map((ref) => [ref.id, ref]),
+  );
 
   return (
     <ModuleDetailScreenShell
@@ -242,12 +252,12 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                 {
                   key: 'start',
                   label: t('work-schedule:fields.shiftStartAt'),
-                  value: formatUtcTimestamp(record.shiftStartAt),
+                  value: formatBusinessTimestamp(record.shiftStartAt),
                 },
                 {
                   key: 'end',
                   label: t('work-schedule:fields.shiftEndAt'),
-                  value: formatUtcTimestamp(record.shiftEndAt),
+                  value: formatBusinessTimestamp(record.shiftEndAt),
                 },
                 {
                   key: 'description',
@@ -262,12 +272,12 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                 {
                   key: 'created-at',
                   label: t('work-schedule:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('work-schedule:fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}
@@ -291,10 +301,10 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                     label: t('work-schedule:fields.subjectId'),
                     value: subjectHref ? (
                       <Link to={subjectHref} className="font-mono text-accent hover:underline">
-                        {subjectId}
+                        {subjectLabel}
                       </Link>
                     ) : (
-                      formatNullable(subjectId)
+                      subjectLabel
                     ),
                   },
                 ]}
@@ -328,7 +338,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                           to={APP_PATHS.monthlyRosterDetail(record.sourceRosterId)}
                           className="font-mono text-accent hover:underline"
                         >
-                          {record.sourceRosterId}
+                          {readReferenceDisplay(record.sourceRosterRef, record.sourceRosterId)}
                         </Link>
                       ) : (
                         formatNullable(record.sourceRosterId)
@@ -342,7 +352,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                           to={APP_PATHS.workPatternDetail(record.sourcePatternId)}
                           className="font-mono text-accent hover:underline"
                         >
-                          {record.sourcePatternId}
+                          {readReferenceDisplay(record.sourcePatternRef, record.sourcePatternId)}
                         </Link>
                       ) : (
                         formatNullable(record.sourcePatternId)
@@ -359,7 +369,10 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                           }
                           className="font-mono text-accent hover:underline"
                         >
-                          {record.sourceDepartmentOrgUnitId}
+                          {readReferenceDisplay(
+                            record.sourceDepartmentOrgUnitRef,
+                            record.sourceDepartmentOrgUnitId,
+                          )}
                         </Link>
                       ) : (
                         formatNullable(record.sourceDepartmentOrgUnitId)
@@ -518,7 +531,10 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                           to={href}
                           className="mt-1 inline-flex font-mono text-sm text-accent hover:underline"
                         >
-                          {studioResourceId}
+                          {readReferenceDisplay(
+                            studioResourceRefsById.get(studioResourceId),
+                            studioResourceId,
+                          )}
                         </Link>
                       ) : (
                         <p className="mt-1 text-sm text-muted">

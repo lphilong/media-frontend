@@ -12,7 +12,7 @@
     "ownerKind": "Owner kind",
     "ownerId": "Owner",
     "operationalStatus": "Status",
-    "handle": "Handle",
+    "handle": "Public handle",
     "externalPlatformId": "External platform id",
     "profileUrl": "Profile URL",
     "livestreamEnabled": "Livestream",
@@ -29,7 +29,13 @@
   },
   "placeholders": {
     "optional": "Optional",
-    "ownerSearch": "Search owners for the selected owner kind"
+    "ownerSearch": "Search owners for the selected owner kind",
+    "selectPlatform": "Select platform",
+    "selectSurfaceType": "Select surface type",
+    "handle": "my_channel"
+  },
+  "help": {
+    "handle": "Public username on the platform, usually without the @. Example: my_channel."
   },
   "referenceHelp": {
     "ownerId": "Choose an owner from the list for the selected owner kind."
@@ -46,8 +52,10 @@
     "allStatuses": "All non-archived",
     "platform": "Platform",
     "platformPlaceholder": "YOUTUBE",
+    "allPlatforms": "All platforms",
     "platformSurfaceType": "Surface type",
     "platformSurfaceTypePlaceholder": "LIVESTREAM",
+    "allSurfaceTypes": "All surface types",
     "ownerKind": "Owner kind",
     "allOwnerKinds": "All owner kinds",
     "ownerId": "Owner",
@@ -61,6 +69,17 @@
     "ORG_UNIT": "Org unit",
     "TALENT": "Talent",
     "TALENT_GROUP": "Talent group"
+  },
+  "platforms": {
+    "TIKTOK": "TikTok",
+    "YOUTUBE": "YouTube",
+    "FACEBOOK": "Facebook",
+    "INSTAGRAM": "Instagram"
+  },
+  "surfaceTypes": {
+    "ACCOUNT": "Account",
+    "CHANNEL": "Channel",
+    "PAGE": "Page"
   },
   "sort": {
     "accountCode": "Account code",
@@ -93,7 +112,7 @@
     "platform": "Platform",
     "platformSurfaceType": "Surface type",
     "displayName": "Display name",
-    "handle": "Handle",
+    "handle": "Public handle",
     "ownerKind": "Owner kind",
     "ownerId": "Owner",
     "operationalStatus": "Status",

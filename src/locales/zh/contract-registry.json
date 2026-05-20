@@ -50,7 +50,7 @@
     "TALENT": "艺人"
   },
   "confidentialityTiers": {
-    "STANDARD": "标准",
+    "INTERNAL": "内部",
     "CONFIDENTIAL": "保密",
     "RESTRICTED": "受限"
   },

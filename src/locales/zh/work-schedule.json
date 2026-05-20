@@ -56,12 +56,20 @@
     "subjectKind": "对象类型",
     "allSubjectKinds": "所有对象类型",
     "subjectId": "对象",
-    "subjectIdPlaceholder": "对象标识",
+    "subjectIdPlaceholder": "按名称或代码搜索",
     "studioResourceId": "演播室资源",
-    "studioResourceIdPlaceholder": "资源标识",
+    "studioResourceIdPlaceholder": "搜索演播室资源",
     "scope": "范围",
-    "windowStartAt": "窗口开始 UTC",
-    "windowEndAt": "窗口结束 UTC"
+    "windowStartAt": "从",
+    "windowEndAt": "至"
+  },
+  "filterChips": {
+    "selectedSubject": "已选对象",
+    "selectedStudioResource": "已选演播室资源",
+    "selectedDepartment": "已选部门",
+    "selectedWorkPattern": "已选工作模式",
+    "selectedHolidayCalendar": "已选假期日历",
+    "selectedMonthlyRoster": "已选月度排班"
   },
   "relatedModes": {
     "by-subject": "按对象查看相关班次",
@@ -268,7 +276,7 @@
       "startLocalTime": "开始时间",
       "workingMinutes": "工作分钟数",
       "breakMinutes": "休息分钟数",
-      "calculatedEndLocalTime": "计算结束时间",
+      "calculatedEndLocalTime": "结束时间",
       "workingDays": "工作日",
       "description": "描述",
       "externalRef": "外部引用",
@@ -310,7 +318,7 @@
       "name": "名称",
       "status": "状态",
       "startLocalTime": "开始时间",
-      "endLocalTime": "计算结束时间",
+      "endLocalTime": "结束时间",
       "workingDays": "工作日",
       "updatedAt": "更新",
       "actions": "操作"

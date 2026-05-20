@@ -4,38 +4,74 @@
     "subtitle": "Operational snapshot"
   },
   "actions": {
-    "refreshing": "Refreshing..."
+    "refreshing": "Refreshing…"
   },
   "meta": {
     "title": "Snapshot Metadata",
     "generatedAt": "Generated At (UTC)",
+    "lastUpdated": "Last updated",
+    "autoRefreshHelper": "Auto-refreshes every 10 minutes.",
     "businessDate": "Business Date"
   },
+  "sectionNav": {
+    "label": "Dashboard sections"
+  },
+  "severityBadges": {
+    "needsReview": "Needs review",
+    "pending": "Pending",
+    "finalized": "Finalized",
+    "active": "Active",
+    "upcoming": "Upcoming"
+  },
   "groups": {
-    "overview": "Overview",
-    "operations": "Operations",
-    "commercial": "Commercial",
-    "attention": "Attention"
+    "needsReview": "Needs review",
+    "workInProgress": "Work in progress",
+    "finalizedResults": "Finalized results",
+    "upcomingDates": "Upcoming dates"
+  },
+  "groupDescriptions": {
+    "needsReview": "Items that may require follow-up.",
+    "workInProgress": "Saved records that are not finalized yet.",
+    "finalizedResults": "Completed or active figures in the current reporting window.",
+    "upcomingDates": "Events and contracts near the current business date."
   },
   "metrics": {
-    "todayEventCount": "Today Event Count",
-    "next7DayEventCount": "Next 7 Days Event Count",
-    "draftTalentKpiCount": "Draft Talent KPI",
-    "finalizedTalentKpiCount30d": "Finalized Talent KPI (30D)",
-    "draftRevenueEntryCount": "Draft Revenue Entries",
-    "finalizedRevenueAmount30d": "Finalized Revenue Amount (30D)",
-    "reconciledRevenueAmount30d": "Reconciled Revenue Amount (30D)",
-    "draftSettlementCount": "Draft Settlements",
-    "finalizedSettlementAmount30d": "Finalized Settlement Amount (30D)",
-    "activeCommissionRuleCount": "Active Commission Rules",
-    "expiringContractCount30d": "Expiring Contracts (30D)",
-    "staleTalentKpiDraftCount": "Stale KPI Drafts",
-    "staleRevenueDraftCount": "Stale Revenue Drafts",
-    "staleSettlementDraftCount": "Stale Settlement Drafts"
+    "todayEventCount": "Events today",
+    "next7DayEventCount": "Events next 7 days",
+    "draftTalentKpiCount": "Draft KPI records",
+    "finalizedTalentKpiCount30d": "Finalized KPI records",
+    "draftRevenueEntryCount": "Draft revenue entries",
+    "finalizedRevenueAmount30d": "Finalized revenue",
+    "reconciledRevenueAmount30d": "Reconciled revenue",
+    "draftSettlementCount": "Draft settlements",
+    "finalizedSettlementAmount30d": "Finalized settlements",
+    "activeCommissionRuleCount": "Active commission rules",
+    "expiringContractCount30d": "Contracts ending soon",
+    "staleTalentKpiDraftCount": "Stale KPI drafts",
+    "staleRevenueDraftCount": "Stale revenue drafts",
+    "staleSettlementDraftCount": "Stale settlement drafts"
+  },
+  "metricDescriptions": {
+    "todayEventCount": "Events scheduled for the current business date.",
+    "next7DayEventCount": "Events scheduled in the next seven days.",
+    "draftTalentKpiCount": "KPI records saved but not finalized.",
+    "finalizedTalentKpiCount30d": "KPI records finalized in the dashboard reporting window.",
+    "draftRevenueEntryCount": "Revenue entries saved but not finalized.",
+    "finalizedRevenueAmount30d": "Revenue finalized in the dashboard reporting window.",
+    "reconciledRevenueAmount30d": "Revenue entries marked as reconciled in the reporting window.",
+    "draftSettlementCount": "Settlement records saved but not finalized.",
+    "finalizedSettlementAmount30d": "Settlement value finalized in the reporting window.",
+    "activeCommissionRuleCount": "Commission rules currently active.",
+    "expiringContractCount30d": "Active contracts with an end date in the dashboard expiry window.",
+    "staleTalentKpiDraftCount": "Drafts that may need review because they have been open for too long.",
+    "staleRevenueDraftCount": "Drafts that may need review because they have been open for too long.",
+    "staleSettlementDraftCount": "Drafts that may need review because they have been open for too long."
   },
   "states": {
     "loadErrorTitle": "Unable To Load Dashboard Snapshot",
     "loadErrorMessage": "Please retry loading the dashboard snapshot.",
+    "refreshingInline": "Refreshing…",
+    "refreshErrorInline": "Could not refresh dashboard. Showing the last loaded data.",
     "emptyTitle": "No Snapshot Data",
     "emptyMessage": "The backend returned no dashboard snapshot payload."
   }

@@ -42,10 +42,40 @@ const attentionMetricsSchema = z
   })
   .strict();
 
+const dateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+const timestampWindowSchema = z
+  .object({
+    startAtInclusive: z.number(),
+    endAtExclusive: z.number(),
+  })
+  .strict();
+
+const dashboardLiteWindowsSchema = z
+  .object({
+    businessTimeZone: z.string(),
+    today: timestampWindowSchema,
+    next7Days: timestampWindowSchema,
+    trailing30Days: timestampWindowSchema,
+    staleDrafts: z
+      .object({
+        olderThanAtExclusive: z.number(),
+      })
+      .strict(),
+    contractExpiry30Days: z
+      .object({
+        startDateInclusive: dateOnlySchema,
+        endDateInclusive: dateOnlySchema,
+      })
+      .strict(),
+  })
+  .strict();
+
 export const dashboardLiteSnapshotSchema = z
   .object({
     generatedAt: z.union([z.number(), z.string()]),
     businessDate: z.union([z.number(), z.string()]),
+    windows: dashboardLiteWindowsSchema,
     overview: overviewMetricsSchema,
     operations: operationsMetricsSchema,
     commercial: commercialMetricsSchema,

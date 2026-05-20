@@ -11,6 +11,15 @@ type CommissionSettlementStatus = 'DRAFT' | 'FINALIZED' | 'VOIDED' | 'ARCHIVED';
 type CommissionBeneficiaryKind = 'EMPLOYMENT_PROFILE' | 'TALENT';
 type RevenueKind = 'PLATFORM_LIVESTREAM' | 'PLATFORM_CONTENT' | 'EVENT_OPERATIONAL';
 
+type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  title?: string;
+  displayName?: string;
+  status?: string;
+};
+
 type CommissionRuleRecord = {
   id: string;
   ruleCode: string;
@@ -280,6 +289,57 @@ export const resetWave9MockData = (): void => {
 };
 
 resetWave9MockData();
+
+const employmentProfileRefs = new Map<string, ReferenceSummary>([
+  ['ep-001', { id: 'ep-001', code: 'EMP-001', name: 'Alice Nguyen', status: 'ACTIVE' }],
+]);
+
+const talentRefs = new Map<string, ReferenceSummary>([
+  ['talent-001', { id: 'talent-001', code: 'TAL-001', name: 'Luna', status: 'ACTIVE' }],
+  ['talent-002', { id: 'talent-002', code: 'TAL-002', name: 'Mira', status: 'ACTIVE' }],
+]);
+
+const contractRefs = new Map<string, ReferenceSummary>([
+  [
+    'contract-record-001',
+    {
+      id: 'contract-record-001',
+      code: 'CON-2026-000001',
+      title: 'Alice employment contract',
+      status: 'ACTIVE',
+    },
+  ],
+  [
+    'contract-record-002',
+    {
+      id: 'contract-record-002',
+      code: 'CON-2026-000002',
+      title: 'Talent service contract',
+      status: 'ACTIVE',
+    },
+  ],
+]);
+
+const revenueEntryRefs = new Map<string, ReferenceSummary>([
+  [
+    'revenue-entry-001',
+    {
+      id: 'revenue-entry-001',
+      code: 'REV-202604-000001',
+      title: 'April livestream revenue',
+      status: 'FINALIZED',
+    },
+  ],
+  [
+    'revenue-entry-finalized',
+    {
+      id: 'revenue-entry-finalized',
+      code: 'REV-202604-000002',
+      title: 'April content revenue',
+      status: 'FINALIZED',
+    },
+  ],
+]);
 
 const parsePositiveInt = (value: string | null | undefined): number | undefined => {
   if (!value) {
@@ -598,6 +658,9 @@ const filterSettlements = (
   const search = searchParams.get('search');
   const windowStartAt = readNumberParam(searchParams, 'windowStartAt');
   const windowEndAt = readNumberParam(searchParams, 'windowEndAt');
+  const createdBeforeAt = readNumberParam(searchParams, 'createdBeforeAt');
+  const finalizedFromAt = readNumberParam(searchParams, 'finalizedFromAt');
+  const finalizedToAt = readNumberParam(searchParams, 'finalizedToAt');
 
   rows = status
     ? rows.filter((item) => item.status === status)
@@ -651,6 +714,15 @@ const filterSettlements = (
   if (windowEndAt !== undefined) {
     rows = rows.filter((item) => item.settlementPeriodStartAt < windowEndAt);
   }
+  if (createdBeforeAt !== undefined) {
+    rows = rows.filter((item) => item.createdAt < createdBeforeAt);
+  }
+  if (finalizedFromAt !== undefined) {
+    rows = rows.filter((item) => item.finalizedAt !== null && item.finalizedAt >= finalizedFromAt);
+  }
+  if (finalizedToAt !== undefined) {
+    rows = rows.filter((item) => item.finalizedAt !== null && item.finalizedAt < finalizedToAt);
+  }
 
   return rows.sort(
     (left, right) =>
@@ -668,11 +740,19 @@ const toRuleListItem = (record: CommissionRuleRecord) => ({
   beneficiaryEmploymentProfileId: record.beneficiaryEmploymentProfileId,
   beneficiaryTalentId: record.beneficiaryTalentId,
   sourceContractRecordId: record.sourceContractRecordId,
+  beneficiaryRef: readBeneficiaryRef(record),
+  sourceContractRecordRef: contractRefs.get(record.sourceContractRecordId) ?? null,
   ratePercent: record.ratePercent,
   status: record.status,
   effectiveStartDate: record.effectiveStartDate,
   effectiveEndDate: record.effectiveEndDate,
   createdAt: record.createdAt,
+});
+
+const toRuleDetail = (record: CommissionRuleRecord) => ({
+  ...record,
+  beneficiaryRef: readBeneficiaryRef(record),
+  sourceContractRecordRef: contractRefs.get(record.sourceContractRecordId) ?? null,
 });
 
 const toSettlementListItem = (record: CommissionSettlementRecord) => ({
@@ -685,6 +765,12 @@ const toSettlementListItem = (record: CommissionSettlementRecord) => ({
   beneficiaryEmploymentProfileIdSnapshot: record.beneficiaryEmploymentProfileIdSnapshot,
   beneficiaryTalentIdSnapshot: record.beneficiaryTalentIdSnapshot,
   subjectTalentId: record.subjectTalentId,
+  revenueEntryIds: [...record.revenueEntryIds],
+  beneficiaryRef: readBeneficiarySnapshotRef(record),
+  sourceRuleRef: readRuleRef(record.sourceRuleId),
+  revenueEntryRefs: record.revenueEntryIds.map(
+    (revenueEntryId) => revenueEntryRefs.get(revenueEntryId) ?? { id: revenueEntryId },
+  ),
   settlementCurrencyCode: record.settlementCurrencyCode,
   grossRevenueAmount: record.grossRevenueAmount,
   settlementAmount: record.settlementAmount,
@@ -695,11 +781,62 @@ const toSettlementListItem = (record: CommissionSettlementRecord) => ({
   createdAt: record.createdAt,
 });
 
+const toSettlementDetail = (record: CommissionSettlementRecord) => ({
+  ...record,
+  beneficiaryRef: readBeneficiarySnapshotRef(record),
+  sourceRuleRef: readRuleRef(record.sourceRuleId),
+  revenueEntryRefs: record.revenueEntryIds.map(
+    (revenueEntryId) => revenueEntryRefs.get(revenueEntryId) ?? { id: revenueEntryId },
+  ),
+});
+
 const readRule = (id: string): CommissionRuleRecord | undefined =>
   rules.find((item) => item.id === id);
 
 const readSettlement = (id: string): CommissionSettlementRecord | undefined =>
   settlements.find((item) => item.id === id);
+
+const readBeneficiaryRef = (input: {
+  beneficiaryKind: CommissionBeneficiaryKind;
+  beneficiaryEmploymentProfileId: string | null;
+  beneficiaryTalentId: string | null;
+}): ReferenceSummary | null => {
+  if (input.beneficiaryKind === 'EMPLOYMENT_PROFILE') {
+    return input.beneficiaryEmploymentProfileId
+      ? (employmentProfileRefs.get(input.beneficiaryEmploymentProfileId) ?? null)
+      : null;
+  }
+
+  return input.beneficiaryTalentId ? (talentRefs.get(input.beneficiaryTalentId) ?? null) : null;
+};
+
+const readBeneficiarySnapshotRef = (input: {
+  beneficiaryKindSnapshot: CommissionBeneficiaryKind;
+  beneficiaryEmploymentProfileIdSnapshot: string | null;
+  beneficiaryTalentIdSnapshot: string | null;
+}): ReferenceSummary | null => {
+  if (input.beneficiaryKindSnapshot === 'EMPLOYMENT_PROFILE') {
+    return input.beneficiaryEmploymentProfileIdSnapshot
+      ? (employmentProfileRefs.get(input.beneficiaryEmploymentProfileIdSnapshot) ?? null)
+      : null;
+  }
+
+  return input.beneficiaryTalentIdSnapshot
+    ? (talentRefs.get(input.beneficiaryTalentIdSnapshot) ?? null)
+    : null;
+};
+
+const readRuleRef = (ruleId: string): ReferenceSummary | null => {
+  const rule = readRule(ruleId);
+  return rule
+    ? {
+        id: rule.id,
+        code: rule.ruleCode,
+        title: rule.title,
+        status: rule.status,
+      }
+    : null;
+};
 
 const rulesFlatKeys = [
   'status',
@@ -747,6 +884,9 @@ const settlementsFlatKeys = [
   'settlementCurrencyCode',
   'windowStartAt',
   'windowEndAt',
+  'createdBeforeAt',
+  'finalizedFromAt',
+  'finalizedToAt',
   'limit',
   'cursor',
   'search',
@@ -871,12 +1011,12 @@ export const wave9Handlers = [
       updatedAt: Date.now(),
     };
     rules.unshift(record);
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRuleDetail(record) });
   }),
   http.get('*/admin/commission/rules/:commissionRuleId', ({ params }) => {
     const record = readRule(String(params.commissionRuleId));
     if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRuleDetail(record) });
   }),
   http.patch(
     '*/admin/commission/rules/:commissionRuleId/draft-core',
@@ -902,7 +1042,7 @@ export const wave9Handlers = [
         return HttpResponse.json({ message: 'Invalid commission rule payload' }, { status: 422 });
       }
       Object.assign(record, body, { updatedAt: Date.now() });
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: toRuleDetail(record) });
     },
   ),
   http.post('*/admin/commission/rules/:commissionRuleId/:action', async ({ params, request }) => {
@@ -927,7 +1067,7 @@ export const wave9Handlers = [
     record.status =
       action === 'activate' ? 'ACTIVE' : action === 'deactivate' ? 'INACTIVE' : 'ARCHIVED';
     record.updatedAt = Date.now();
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRuleDetail(record) });
   }),
 
   http.get('*/admin/commission/settlements', ({ request }) => {
@@ -1056,7 +1196,7 @@ export const wave9Handlers = [
       revenueRecognizedAtSnapshot: Date.now(),
       lineSettlementAmount: record.settlementAmount / record.revenueEntryIds.length,
     }));
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toSettlementDetail(record) });
   }),
   http.get('*/admin/commission/settlements/:commissionSettlementId/lines', ({ params }) => {
     const record = readSettlement(String(params.commissionSettlementId));
@@ -1069,7 +1209,7 @@ export const wave9Handlers = [
   http.get('*/admin/commission/settlements/:commissionSettlementId', ({ params }) => {
     const record = readSettlement(String(params.commissionSettlementId));
     if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toSettlementDetail(record) });
   }),
   http.patch(
     '*/admin/commission/settlements/:commissionSettlementId/draft-core',
@@ -1096,7 +1236,7 @@ export const wave9Handlers = [
         );
       }
       Object.assign(record, body, { updatedAt: Date.now() });
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: toSettlementDetail(record) });
     },
   ),
   http.post(
@@ -1126,7 +1266,7 @@ export const wave9Handlers = [
         revenueRecognizedAtSnapshot: Date.now(),
         lineSettlementAmount: record.settlementAmount / record.revenueEntryIds.length,
       }));
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: toSettlementDetail(record) });
     },
   ),
   http.post(
@@ -1161,7 +1301,7 @@ export const wave9Handlers = [
         record.status = 'ARCHIVED';
       }
       record.updatedAt = Date.now();
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: toSettlementDetail(record) });
     },
   ),
 ];

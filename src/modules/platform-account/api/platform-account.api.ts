@@ -15,6 +15,18 @@ import type {
 
 const ownerKindSchema = z.enum(['ORG_UNIT', 'TALENT', 'TALENT_GROUP']);
 const operationalStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+    handle: z.string().optional(),
+    platform: z.string().optional(),
+    status: z.string().optional(),
+  })
+  .strict();
 
 const platformAccountSchema = z
   .object({
@@ -30,6 +42,7 @@ const platformAccountSchema = z
     ownerOrgUnitId: z.string().nullable().optional(),
     ownerTalentId: z.string().nullable().optional(),
     ownerTalentGroupId: z.string().nullable().optional(),
+    ownerRef: referenceSummarySchema.nullable().optional(),
     operationalStatus: operationalStatusSchema,
     livestreamEnabled: z.boolean(),
     contentPublishingEnabled: z.boolean(),

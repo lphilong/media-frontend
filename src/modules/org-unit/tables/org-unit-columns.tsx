@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { readReferenceDisplay } from '@shared/formatting/formatters';
 import type {
   OrgUnitChildRecord,
   OrgUnitLifecycleAction,
@@ -57,6 +57,7 @@ export const createOrgUnitListColumns = (
       cell: (context) => (
         <StatusBadge
           status={String(context.getValue() ?? '')}
+          label={t(`org-unit:statuses.${String(context.getValue() ?? '')}`)}
           toneByStatus={STATUS_TONE_MAP}
           uppercase
         />
@@ -65,25 +66,12 @@ export const createOrgUnitListColumns = (
     {
       accessorKey: 'parentOrgUnitId',
       header: t('org-unit:table.parentOrgUnitId'),
-      cell: (context) => {
-        const value = context.getValue() as string | null | undefined;
-        return <span className="font-mono text-xs">{value ?? '-'}</span>;
-      },
+      cell: ({ row }) =>
+        readReferenceDisplay(row.original.parentOrgUnitRef, row.original.parentOrgUnitId),
     },
     {
       accessorKey: 'depth',
       header: t('org-unit:table.depth'),
-    },
-    {
-      accessorKey: 'displayOrder',
-      header: t('org-unit:table.displayOrder'),
-    },
-    {
-      accessorKey: 'createdAt',
-      header: t('org-unit:table.createdAt'),
-      cell: (context) => {
-        return formatUtcTimestamp(context.getValue() as number | string);
-      },
     },
     {
       id: 'actions',
@@ -148,6 +136,7 @@ export const createOrgUnitChildrenColumns = (t: TFunction): ColumnDef<OrgUnitChi
       cell: (context) => (
         <StatusBadge
           status={String(context.getValue() ?? '')}
+          label={t(`org-unit:statuses.${String(context.getValue() ?? '')}`)}
           toneByStatus={STATUS_TONE_MAP}
           uppercase
         />
@@ -156,10 +145,6 @@ export const createOrgUnitChildrenColumns = (t: TFunction): ColumnDef<OrgUnitChi
     {
       accessorKey: 'depth',
       header: t('org-unit:childrenTable.depth'),
-    },
-    {
-      accessorKey: 'displayOrder',
-      header: t('org-unit:childrenTable.displayOrder'),
     },
   ];
 };

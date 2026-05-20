@@ -7,6 +7,10 @@ import { usePageActions } from '@app/store/use-page-actions';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import { WorkShiftGuidedWorkflow } from '@modules/work-schedule/components/WorkShiftGuidedWorkflow';
 import {
+  loadWorkShiftStudioResourceFilterOptions,
+  loadWorkShiftSubjectFilterOptions,
+} from '@modules/work-schedule/components/work-schedule-reference-options';
+import {
   useCreateWorkShiftMutation,
   useWorkShiftFlatList,
   useWorkShiftLifecycleMutation,
@@ -17,14 +21,19 @@ import { createWorkShiftListColumns } from '@modules/work-schedule/tables/work-s
 import type {
   WorkScheduleScope,
   WorkShiftLifecycleAction,
+  WorkShiftSubjectKind,
 } from '@modules/work-schedule/types/work-schedule.types';
 import type { NormalizedApiError } from '@shared/api';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
@@ -58,6 +67,70 @@ const sortOptions = [
 const statusOptions = ['', 'ACTIVE', 'CANCELLED', 'ARCHIVED'] as const;
 const subjectKindOptions = ['', 'EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP'] as const;
 const scopeOptions = ['', 'self', 'team', 'department', 'global'] as const;
+
+const padNumber = (value: number, length = 2): string => value.toString().padStart(length, '0');
+
+const formatUtcTimestampInput = (timestamp: number | undefined): string => {
+  if (timestamp === undefined || !Number.isFinite(timestamp)) {
+    return '';
+  }
+
+  const date = new Date(timestamp);
+  if (!Number.isFinite(date.getTime())) {
+    return '';
+  }
+
+  const base = `${date.getUTCFullYear()}-${padNumber(date.getUTCMonth() + 1)}-${padNumber(
+    date.getUTCDate(),
+  )}T${padNumber(date.getUTCHours())}:${padNumber(date.getUTCMinutes())}`;
+  const seconds = date.getUTCSeconds();
+  const milliseconds = date.getUTCMilliseconds();
+
+  if (milliseconds > 0) {
+    return `${base}:${padNumber(seconds)}.${padNumber(milliseconds, 3)}`;
+  }
+
+  if (seconds > 0) {
+    return `${base}:${padNumber(seconds)}`;
+  }
+
+  return base;
+};
+
+const parseUtcTimestampInput = (value: string): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const timestamp = Date.parse(`${value}Z`);
+  return Number.isFinite(timestamp) ? timestamp : undefined;
+};
+
+const formatUtcTimestampChipValue = (timestamp: number | undefined): string => {
+  const inputValue = formatUtcTimestampInput(timestamp);
+  return inputValue ? `${inputValue.replace('T', ' ')} UTC` : '';
+};
+
+const UtcTimestampFilterField = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
+}): JSX.Element => (
+  <label className="flex min-w-[190px] flex-col gap-1">
+    <span className="text-xs font-medium uppercase text-muted">{label}</span>
+    <input
+      type="datetime-local"
+      step="0.001"
+      value={formatUtcTimestampInput(value)}
+      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+      onChange={(event) => onChange(parseUtcTimestampInput(event.target.value))}
+    />
+  </label>
+);
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -179,6 +252,8 @@ export const WorkScheduleListPage = (): JSX.Element => {
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isGuidedWorkflowOpen, setIsGuidedWorkflowOpen] = useState(false);
   const [guidedWorkflowError, setGuidedWorkflowError] = useState<NormalizedApiError | null>(null);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(() => {
@@ -362,6 +437,243 @@ export const WorkScheduleListPage = (): JSX.Element => {
     (activeQuery.subjectKind === 'TALENT' || activeQuery.subjectKind === 'TALENT_GROUP')
       ? ['', 'global']
       : scopeOptions;
+  const activeSubjectKind = 'subjectKind' in activeQuery ? activeQuery.subjectKind : undefined;
+  const activeSubjectId =
+    'subjectEmploymentProfileId' in activeQuery
+      ? (activeQuery.subjectEmploymentProfileId ??
+        activeQuery.subjectTalentId ??
+        activeQuery.subjectTalentGroupId)
+      : undefined;
+  const studioResourceFilterValue =
+    routeMode === 'by-resource'
+      ? byResourceQuery.studioResourceId
+      : flatListQuery.containsStudioResourceId;
+  const loadSubjectFilterOptions = useCallback(
+    (search: string) =>
+      activeSubjectKind
+        ? loadWorkShiftSubjectFilterOptions(activeSubjectKind, search, activeSubjectId)
+        : Promise.resolve([]),
+    [activeSubjectId, activeSubjectKind],
+  );
+  const loadStudioResourceFilterOptions = useCallback(
+    (search: string) => loadWorkShiftStudioResourceFilterOptions(search, studioResourceFilterValue),
+    [studioResourceFilterValue],
+  );
+  const updateSubjectFilter = useCallback(
+    (value: string | undefined) => {
+      const subjectKind = activeSubjectKind as WorkShiftSubjectKind | undefined;
+      patchQuery({
+        subjectEmploymentProfileId: subjectKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
+        subjectTalentId: subjectKind === 'TALENT' ? value : undefined,
+        subjectTalentGroupId: subjectKind === 'TALENT_GROUP' ? value : undefined,
+      });
+    },
+    [activeSubjectKind, patchQuery],
+  );
+  const rememberFilterOption = useCallback(
+    (key: string, option: ReferenceOption | undefined): void => {
+      setFilterOptionLabels((current) => {
+        if (option?.label) {
+          return current[key] === option.label ? current : { ...current, [key]: option.label };
+        }
+
+        if (!(key in current)) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
+    },
+    [],
+  );
+  const advancedFilterCount = [
+    activeSubjectKind,
+    activeSubjectId,
+    studioResourceFilterValue,
+    activeQuery.scope,
+    activeQuery.windowStartAt,
+    activeQuery.windowEndAt,
+    routeMode === 'flat' ? flatListQuery.sourceType : undefined,
+    routeMode === 'flat' ? flatListQuery.sourceRosterId : undefined,
+    routeMode === 'flat' ? flatListQuery.sourceDepartmentOrgUnitId : undefined,
+    routeMode === 'flat' ? flatListQuery.sourceRosterMonth : undefined,
+  ].filter((value) => value !== undefined && value !== '').length;
+  const clearWorkShiftFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      subjectKind: undefined,
+      subjectEmploymentProfileId: undefined,
+      subjectTalentId: undefined,
+      subjectTalentGroupId: undefined,
+      containsStudioResourceId: undefined,
+      studioResourceId: undefined,
+      scope: undefined,
+      windowStartAt: undefined,
+      windowEndAt: undefined,
+      sourceType: undefined,
+      sourceRosterId: undefined,
+      sourceDepartmentOrgUnitId: undefined,
+      sourceRosterMonth: undefined,
+    });
+  }, [patchQuery]);
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (routeMode === 'flat' && flatListQuery.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: flatListQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (activeQuery.status) {
+      items.push({
+        id: 'status',
+        label: t('work-schedule:filters.status'),
+        value: t(`work-schedule:statuses.${activeQuery.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    if (routeMode !== 'by-resource' && activeSubjectKind) {
+      items.push({
+        id: 'subject-kind',
+        label: t('work-schedule:filters.subjectKind'),
+        value: t(`work-schedule:subjectKinds.${activeSubjectKind}`),
+        onClear: () =>
+          patchQuery({
+            subjectKind: undefined,
+            subjectEmploymentProfileId: undefined,
+            subjectTalentId: undefined,
+            subjectTalentGroupId: undefined,
+          }),
+      });
+    }
+
+    if (routeMode !== 'by-resource' && activeSubjectId) {
+      items.push({
+        id: 'subject',
+        label: t('work-schedule:filters.subjectId'),
+        value: filterOptionLabels.subject ?? t('work-schedule:filterChips.selectedSubject'),
+        onClear: () =>
+          patchQuery({
+            subjectEmploymentProfileId: undefined,
+            subjectTalentId: undefined,
+            subjectTalentGroupId: undefined,
+          }),
+      });
+    }
+
+    if (studioResourceFilterValue) {
+      items.push({
+        id: 'studio-resource',
+        label: t('work-schedule:filters.studioResourceId'),
+        value:
+          filterOptionLabels.studioResource ??
+          t('work-schedule:filterChips.selectedStudioResource'),
+        onClear: () =>
+          patchQuery(
+            routeMode === 'by-resource'
+              ? { studioResourceId: undefined }
+              : { containsStudioResourceId: undefined },
+          ),
+      });
+    }
+
+    if (activeQuery.scope) {
+      items.push({
+        id: 'scope',
+        label: t('work-schedule:filters.scope'),
+        value: t(`work-schedule:scopes.${activeQuery.scope}`),
+        onClear: () => patchQuery({ scope: undefined }),
+      });
+    }
+
+    if (activeQuery.windowStartAt !== undefined) {
+      items.push({
+        id: 'window-start',
+        label: t('work-schedule:filters.windowStartAt'),
+        value: formatUtcTimestampChipValue(activeQuery.windowStartAt),
+        onClear: () => patchQuery({ windowStartAt: undefined }),
+      });
+    }
+
+    if (activeQuery.windowEndAt !== undefined) {
+      items.push({
+        id: 'window-end',
+        label: t('work-schedule:filters.windowEndAt'),
+        value: formatUtcTimestampChipValue(activeQuery.windowEndAt),
+        onClear: () => patchQuery({ windowEndAt: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.sourceType) {
+      items.push({
+        id: 'source-type',
+        label: t('work-schedule:sourceDetail.fields.sourceType'),
+        value: t(`work-schedule:sourceLabels.${flatListQuery.sourceType}`),
+        onClear: () =>
+          patchQuery({
+            sourceType: undefined,
+            sourceRosterId: undefined,
+            sourceDepartmentOrgUnitId: undefined,
+            sourceRosterMonth: undefined,
+          }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.sourceRosterId) {
+      items.push({
+        id: 'source-roster',
+        label: t('work-schedule:sourceDetail.fields.sourceRosterId'),
+        value: t('work-schedule:filterChips.selectedMonthlyRoster'),
+        onClear: () => patchQuery({ sourceRosterId: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.sourceDepartmentOrgUnitId) {
+      items.push({
+        id: 'source-department',
+        label: t('work-schedule:sourceDetail.fields.sourceDepartmentOrgUnitId'),
+        value: t('work-schedule:filterChips.selectedDepartment'),
+        onClear: () => patchQuery({ sourceDepartmentOrgUnitId: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.sourceRosterMonth) {
+      items.push({
+        id: 'source-roster-month',
+        label: t('work-schedule:sourceDetail.fields.sourceRosterMonth'),
+        value: flatListQuery.sourceRosterMonth,
+        onClear: () => patchQuery({ sourceRosterMonth: undefined }),
+      });
+    }
+
+    return items;
+  }, [
+    activeQuery.scope,
+    activeQuery.status,
+    activeQuery.windowEndAt,
+    activeQuery.windowStartAt,
+    activeSubjectId,
+    activeSubjectKind,
+    filterOptionLabels.studioResource,
+    filterOptionLabels.subject,
+    flatListQuery.search,
+    flatListQuery.sourceDepartmentOrgUnitId,
+    flatListQuery.sourceRosterId,
+    flatListQuery.sourceRosterMonth,
+    flatListQuery.sourceType,
+    patchQuery,
+    routeMode,
+    studioResourceFilterValue,
+    t,
+  ]);
 
   return (
     <ModuleListScreenShell
@@ -377,7 +689,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
         </div>
       }
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             routeMode === 'flat' ? (
               <SearchBoxSeam
@@ -396,6 +708,127 @@ export const WorkScheduleListPage = (): JSX.Element => {
                 label: t(option.labelKey),
               }))}
               onChange={(sortBy, sortDirection) => patchQuery({ sortBy, sortDirection })}
+            />
+          }
+          moreFiltersTrigger={
+            <button
+              type="button"
+              aria-expanded={isMoreFiltersOpen}
+              aria-controls="work-shift-more-filters"
+              onClick={() => setIsMoreFiltersOpen((current) => !current)}
+              className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+            >
+              {t('common:filters.moreFilters')}
+              {advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ''}
+            </button>
+          }
+          moreFiltersPanel={
+            <MoreFiltersPanel
+              id="work-shift-more-filters"
+              title={t('common:filters.moreFilters')}
+              closeLabel={t('common:actions.close')}
+              isOpen={isMoreFiltersOpen}
+              onClose={() => setIsMoreFiltersOpen(false)}
+            >
+              {routeMode !== 'by-resource' ? (
+                <>
+                  <label className="flex min-w-[210px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('work-schedule:filters.subjectKind')}
+                    </span>
+                    <select
+                      value={'subjectKind' in activeQuery ? (activeQuery.subjectKind ?? '') : ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({
+                          subjectKind: event.target.value || undefined,
+                          subjectEmploymentProfileId: undefined,
+                          subjectTalentId: undefined,
+                          subjectTalentGroupId: undefined,
+                        })
+                      }
+                    >
+                      {subjectKindOptions.map((kind) => (
+                        <option key={kind || 'all'} value={kind}>
+                          {kind
+                            ? t(`work-schedule:subjectKinds.${kind}`)
+                            : t('work-schedule:filters.allSubjectKinds')}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <ReferenceFilterField
+                    label={t('work-schedule:filters.subjectId')}
+                    pickerId="work-shift-filter-subject"
+                    value={activeSubjectId}
+                    loadOptions={loadSubjectFilterOptions}
+                    onChange={updateSubjectFilter}
+                    placeholder={t('work-schedule:filters.subjectIdPlaceholder')}
+                    clearLabel={t('common:actions.clear')}
+                    disabled={!activeSubjectKind}
+                    className="min-w-[260px]"
+                    onSelectedOptionChange={(option) => rememberFilterOption('subject', option)}
+                  />
+                </>
+              ) : null}
+              <ReferenceFilterField
+                label={t('work-schedule:filters.studioResourceId')}
+                pickerId="work-shift-filter-studio-resource"
+                value={studioResourceFilterValue}
+                loadOptions={loadStudioResourceFilterOptions}
+                onChange={(value) =>
+                  patchQuery(
+                    routeMode === 'by-resource'
+                      ? { studioResourceId: value }
+                      : { containsStudioResourceId: value },
+                  )
+                }
+                placeholder={t('work-schedule:filters.studioResourceIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                className="min-w-[260px]"
+                onSelectedOptionChange={(option) => rememberFilterOption('studioResource', option)}
+              />
+              <label className="flex min-w-[170px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('work-schedule:filters.scope')}
+                </span>
+                <select
+                  value={activeQuery.scope ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({
+                      scope: (event.target.value || undefined) as WorkScheduleScope | undefined,
+                    })
+                  }
+                >
+                  {visibleScopeOptions.map((scope) => (
+                    <option key={scope || 'omitted'} value={scope}>
+                      {scope
+                        ? t(`work-schedule:scopes.${scope}`)
+                        : t('work-schedule:scopes.omitted')}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <UtcTimestampFilterField
+                label={t('work-schedule:filters.windowStartAt')}
+                value={activeQuery.windowStartAt}
+                onChange={(value) => patchQuery({ windowStartAt: value })}
+              />
+              <UtcTimestampFilterField
+                label={t('work-schedule:filters.windowEndAt')}
+                value={activeQuery.windowEndAt}
+                onChange={(value) => patchQuery({ windowEndAt: value })}
+              />
+            </MoreFiltersPanel>
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              onClearAll={appliedFilterChips.length > 0 ? clearWorkShiftFilters : undefined}
             />
           }
         >
@@ -421,135 +854,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          {routeMode !== 'by-resource' ? (
-            <>
-              <label className="flex min-w-[210px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('work-schedule:filters.subjectKind')}
-                </span>
-                <select
-                  value={'subjectKind' in activeQuery ? (activeQuery.subjectKind ?? '') : ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      subjectKind: event.target.value || undefined,
-                      subjectEmploymentProfileId: undefined,
-                      subjectTalentId: undefined,
-                      subjectTalentGroupId: undefined,
-                    })
-                  }
-                >
-                  {subjectKindOptions.map((kind) => (
-                    <option key={kind || 'all'} value={kind}>
-                      {kind
-                        ? t(`work-schedule:subjectKinds.${kind}`)
-                        : t('work-schedule:filters.allSubjectKinds')}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex min-w-[220px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('work-schedule:filters.subjectId')}
-                </span>
-                <input
-                  value={
-                    'subjectEmploymentProfileId' in activeQuery
-                      ? (activeQuery.subjectEmploymentProfileId ??
-                        activeQuery.subjectTalentId ??
-                        activeQuery.subjectTalentGroupId ??
-                        '')
-                      : ''
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  placeholder={t('work-schedule:filters.subjectIdPlaceholder')}
-                  onChange={(event) => {
-                    const value = event.target.value || undefined;
-                    const subjectKind =
-                      'subjectKind' in activeQuery ? activeQuery.subjectKind : undefined;
-                    patchQuery({
-                      subjectEmploymentProfileId:
-                        subjectKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
-                      subjectTalentId: subjectKind === 'TALENT' ? value : undefined,
-                      subjectTalentGroupId: subjectKind === 'TALENT_GROUP' ? value : undefined,
-                    });
-                  }}
-                />
-              </label>
-            </>
-          ) : null}
-          <label className="flex min-w-[220px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('work-schedule:filters.studioResourceId')}
-            </span>
-            <input
-              value={
-                routeMode === 'by-resource'
-                  ? (byResourceQuery.studioResourceId ?? '')
-                  : (flatListQuery.containsStudioResourceId ?? '')
-              }
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              placeholder={t('work-schedule:filters.studioResourceIdPlaceholder')}
-              onChange={(event) =>
-                patchQuery(
-                  routeMode === 'by-resource'
-                    ? { studioResourceId: event.target.value || undefined }
-                    : { containsStudioResourceId: event.target.value || undefined },
-                )
-              }
-            />
-          </label>
-          <label className="flex min-w-[170px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('work-schedule:filters.scope')}
-            </span>
-            <select
-              value={activeQuery.scope ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  scope: (event.target.value || undefined) as WorkScheduleScope | undefined,
-                })
-              }
-            >
-              {visibleScopeOptions.map((scope) => (
-                <option key={scope || 'omitted'} value={scope}>
-                  {scope ? t(`work-schedule:scopes.${scope}`) : t('work-schedule:scopes.omitted')}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex min-w-[170px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('work-schedule:filters.windowStartAt')}
-            </span>
-            <input
-              type="number"
-              value={activeQuery.windowStartAt ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  windowStartAt: event.target.value ? Number(event.target.value) : undefined,
-                })
-              }
-            />
-          </label>
-          <label className="flex min-w-[170px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('work-schedule:filters.windowEndAt')}
-            </span>
-            <input
-              type="number"
-              value={activeQuery.windowEndAt ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  windowEndAt: event.target.value ? Number(event.target.value) : undefined,
-                })
-              }
-            />
-          </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>

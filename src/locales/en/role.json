@@ -21,6 +21,38 @@
     "archivedAt": "Archived",
     "reason": "Reason"
   },
+  "templates": {
+    "templateMode": "Template-based role",
+    "customMode": "Advanced custom role",
+    "roleTemplate": "Role template",
+    "chooseTemplate": "Choose a role template",
+    "loading": "Loading role templates",
+    "loadingPreview": "Loading template preview",
+    "previewEmpty": "Choose a template to preview generated permissions.",
+    "previewError": "Unable to load template preview.",
+    "generatedPermissions": "Generated permissions",
+    "generatedPermissionsHelp": "Template permissions are generated as explicit role permissions.",
+    "warnings": "Warnings",
+    "scopePlan": "Scope plan",
+    "scopePlanHelp": "Preview only. Assignment scopes are chosen when assigning a role to a user.",
+    "implementationNotes": "Implementation notes",
+    "backendAuthority": "Backend validates authorization; frontend preview is not a security guarantee.",
+    "basedOnTemplate": "Based on template",
+    "custom": "Custom",
+    "templateVersion": "Template version",
+    "templateAppliedAt": "Template applied",
+    "permissionsRemainExplicit": "Permissions remain explicit and template metadata is non-authoritative."
+  },
+  "scopePicker": {
+    "assignmentScopes": "Assignment scopes",
+    "backendValidation": "Assigning scopes affects runtime access. Backend rejects scopes the current actor cannot grant.",
+    "scopes": {
+      "self": "Self",
+      "team": "Team",
+      "department": "Department",
+      "global": "Global"
+    }
+  },
   "states": {
     "DRAFT": "Draft",
     "ACTIVE": "Active",
@@ -170,6 +202,7 @@
     "state": "State",
     "effectiveAt": "Effective",
     "revokedAt": "Revoked",
+    "scopeGrants": "Assignment scopes",
     "reason": "Reason",
     "allStates": "All assignment states",
     "emptyTitle": "No assignments found",

@@ -36,6 +36,10 @@ import {
   SelectField,
   TextInputField,
 } from '@shared/forms';
+import {
+  formatBusinessDateTimeInputValue,
+  parseBusinessDateTimeInputValue,
+} from '@shared/formatting/formatters';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseSurfaceProps = {
@@ -155,8 +159,14 @@ const applySchemaErrors = <TValues extends FieldValues>(
 
 const timestampField = (requiredMessage: string) =>
   z.preprocess(
-    (value) => (typeof value === 'string' && value.trim().length > 0 ? value : undefined),
-    z.coerce.number().int().nonnegative({ message: requiredMessage }),
+    (value) =>
+      typeof value === 'string' && value.trim().length > 0
+        ? parseBusinessDateTimeInputValue(value)
+        : undefined,
+    z
+      .number({ required_error: requiredMessage, invalid_type_error: requiredMessage })
+      .int()
+      .nonnegative({ message: requiredMessage }),
   );
 
 const createAssignmentKindSchema = (requiredMessage: string) =>
@@ -352,12 +362,12 @@ export const EventCreateSurface = ({
           <TextInputField
             name="eventStartAt"
             label={t('event-assignment:fields.eventStartAt')}
-            type="number"
+            type="datetime-local"
           />
           <TextInputField
             name="eventEndAt"
             label={t('event-assignment:fields.eventEndAt')}
-            type="number"
+            type="datetime-local"
           />
           <TextInputField
             name="externalRef"
@@ -504,8 +514,8 @@ export const EventRescheduleSurface = ({
   const { t } = useTranslation(['event-assignment', 'common']);
   const form = useForm<{ newEventStartAt: string; newEventEndAt: string }>({
     defaultValues: {
-      newEventStartAt: String(initialValues.eventStartAt),
-      newEventEndAt: String(initialValues.eventEndAt),
+      newEventStartAt: formatBusinessDateTimeInputValue(initialValues.eventStartAt),
+      newEventEndAt: formatBusinessDateTimeInputValue(initialValues.eventEndAt),
     },
   });
   const schema = useMemo(
@@ -542,12 +552,12 @@ export const EventRescheduleSurface = ({
           <TextInputField
             name="newEventStartAt"
             label={t('event-assignment:fields.newEventStartAt')}
-            type="number"
+            type="datetime-local"
           />
           <TextInputField
             name="newEventEndAt"
             label={t('event-assignment:fields.newEventEndAt')}
-            type="number"
+            type="datetime-local"
           />
         </FormGrid>
       </ModuleMutationSurface>

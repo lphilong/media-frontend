@@ -1,9 +1,11 @@
+import clsx from 'clsx';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { usePageActions } from '@app/store/use-page-actions';
 import { APP_PATHS } from '@app/router/paths';
+import type { DashboardLiteSnapshot } from '@modules/dashboard-lite/api/dashboard-lite.api';
 import { useDashboardLiteSnapshot } from '@modules/dashboard-lite/hooks/use-dashboard-lite-snapshot';
 import type { NormalizedApiError } from '@shared/api';
 import {
@@ -15,60 +17,334 @@ import {
   PageContainer,
   PermissionDeniedState,
   ReadOnlyFieldGrid,
+  StatusBadge,
+  type StatusBadgeTone,
 } from '@shared/components/primitives';
 import {
+  DEFAULT_BUSINESS_TIME_ZONE,
+  formatBusinessTimestamp,
   formatCanonicalDate,
   formatDecimal,
   formatInteger,
   formatUtcMidnightDateLike,
-  formatUtcTimestamp,
 } from '@shared/formatting/formatters';
+import {
+  commissionRulesFlatListQueryConfig,
+  commissionSettlementsFlatListQueryConfig,
+  contractRegistryFlatListQueryConfig,
+  eventFlatListQueryConfig,
+  revenueLedgerFlatListQueryConfig,
+  serializeScreenQueryParams,
+  talentKpiFlatListQueryConfig,
+} from '@shared/query';
 
-type DashboardMetricGroup = 'overview' | 'operations' | 'commercial' | 'attention';
+type DashboardSourceGroup = 'overview' | 'operations' | 'commercial' | 'attention';
+type DashboardDisplayGroup =
+  | 'needsReview'
+  | 'workInProgress'
+  | 'finalizedResults'
+  | 'upcomingDates';
 type MetricValueKind = 'count' | 'amount';
 
 type MetricCardDefinition = {
   key: string;
-  linkTo?: string;
+  sourceGroup: DashboardSourceGroup;
+  linkTo?: string | ((windows: DashboardLiteWindows) => string);
   valueKind?: MetricValueKind;
+  badgeKey?: DashboardToneBadgeKey;
 };
 
-const metricGroups: Record<DashboardMetricGroup, MetricCardDefinition[]> = {
-  overview: [
-    { key: 'todayEventCount', linkTo: APP_PATHS.events },
-    { key: 'draftTalentKpiCount', linkTo: APP_PATHS.talentKpiRecords },
-    { key: 'draftRevenueEntryCount', linkTo: APP_PATHS.revenueEntries },
-    { key: 'draftSettlementCount', linkTo: APP_PATHS.commissionSettlements },
-    { key: 'activeCommissionRuleCount', linkTo: APP_PATHS.commissionRules },
-    { key: 'expiringContractCount30d', linkTo: APP_PATHS.contractRecords },
-  ],
-  operations: [
-    { key: 'todayEventCount', linkTo: APP_PATHS.events },
-    { key: 'next7DayEventCount', linkTo: APP_PATHS.events },
-    { key: 'draftTalentKpiCount', linkTo: APP_PATHS.talentKpiRecords },
-    { key: 'finalizedTalentKpiCount30d', linkTo: APP_PATHS.talentKpiRecords },
-  ],
-  commercial: [
-    { key: 'draftRevenueEntryCount', linkTo: APP_PATHS.revenueEntries },
-    { key: 'finalizedRevenueAmount30d', linkTo: APP_PATHS.revenueEntries, valueKind: 'amount' },
-    { key: 'reconciledRevenueAmount30d', linkTo: APP_PATHS.revenueEntries, valueKind: 'amount' },
-    { key: 'draftSettlementCount', linkTo: APP_PATHS.commissionSettlements },
+type DashboardLiteWindows = DashboardLiteSnapshot['windows'];
+
+type DashboardToneBadgeKey = 'needsReview' | 'pending' | 'finalized' | 'active' | 'upcoming';
+
+type DashboardToneConfig = {
+  tone: StatusBadgeTone;
+  badgeKey: DashboardToneBadgeKey;
+  sectionId: string;
+  sectionClassName: string;
+  cardClassName: string;
+  focusClassName: string;
+  navClassName: string;
+};
+
+const buildStatusLink = (path: string, params: URLSearchParams): string => {
+  const serialized = params.toString();
+  return serialized ? `${path}?${serialized}` : path;
+};
+
+const dashboardMetricStatusLinks = {
+  draftTalentKpi: buildStatusLink(
+    APP_PATHS.talentKpiRecords,
+    serializeScreenQueryParams({ status: 'DRAFT' }, talentKpiFlatListQueryConfig),
+  ),
+  draftRevenueEntry: buildStatusLink(
+    APP_PATHS.revenueEntries,
+    serializeScreenQueryParams({ status: 'DRAFT' }, revenueLedgerFlatListQueryConfig),
+  ),
+  draftSettlement: buildStatusLink(
+    APP_PATHS.commissionSettlements,
+    serializeScreenQueryParams({ status: 'DRAFT' }, commissionSettlementsFlatListQueryConfig),
+  ),
+  activeCommissionRule: buildStatusLink(
+    APP_PATHS.commissionRules,
+    serializeScreenQueryParams({ status: 'ACTIVE' }, commissionRulesFlatListQueryConfig),
+  ),
+} as const;
+
+const dashboardMetricExactLinks = {
+  staleTalentKpiDraft: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.talentKpiRecords,
+      serializeScreenQueryParams(
+        {
+          status: 'DRAFT',
+          createdBeforeAt: windows.staleDrafts.olderThanAtExclusive,
+        },
+        talentKpiFlatListQueryConfig,
+      ),
+    ),
+  staleRevenueDraft: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.revenueEntries,
+      serializeScreenQueryParams(
+        {
+          status: 'DRAFT',
+          createdBeforeAt: windows.staleDrafts.olderThanAtExclusive,
+        },
+        revenueLedgerFlatListQueryConfig,
+      ),
+    ),
+  staleSettlementDraft: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.commissionSettlements,
+      serializeScreenQueryParams(
+        {
+          status: 'DRAFT',
+          createdBeforeAt: windows.staleDrafts.olderThanAtExclusive,
+        },
+        commissionSettlementsFlatListQueryConfig,
+      ),
+    ),
+  expiringContract: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.contractRecords,
+      serializeScreenQueryParams(
+        {
+          status: 'ACTIVE',
+          effectiveEndDateFrom: windows.contractExpiry30Days.startDateInclusive,
+          effectiveEndDateTo: windows.contractExpiry30Days.endDateInclusive,
+        },
+        contractRegistryFlatListQueryConfig,
+      ),
+    ),
+  finalizedTalentKpi: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.talentKpiRecords,
+      serializeScreenQueryParams(
+        {
+          status: 'FINALIZED',
+          publishedFromAt: windows.trailing30Days.startAtInclusive,
+          publishedToAt: windows.trailing30Days.endAtExclusive,
+        },
+        talentKpiFlatListQueryConfig,
+      ),
+    ),
+  finalizedRevenue: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.revenueEntries,
+      serializeScreenQueryParams(
+        {
+          status: 'FINALIZED',
+          finalizedFromAt: windows.trailing30Days.startAtInclusive,
+          finalizedToAt: windows.trailing30Days.endAtExclusive,
+        },
+        revenueLedgerFlatListQueryConfig,
+      ),
+    ),
+  reconciledRevenue: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.revenueEntries,
+      serializeScreenQueryParams(
+        {
+          status: 'RECONCILED',
+          reconciledFromAt: windows.trailing30Days.startAtInclusive,
+          reconciledToAt: windows.trailing30Days.endAtExclusive,
+        },
+        revenueLedgerFlatListQueryConfig,
+      ),
+    ),
+  finalizedSettlement: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.commissionSettlements,
+      serializeScreenQueryParams(
+        {
+          status: 'FINALIZED',
+          finalizedFromAt: windows.trailing30Days.startAtInclusive,
+          finalizedToAt: windows.trailing30Days.endAtExclusive,
+        },
+        commissionSettlementsFlatListQueryConfig,
+      ),
+    ),
+  todayEvents: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.events,
+      serializeScreenQueryParams(
+        {
+          statusGroup: 'ACTIVE',
+          eventOverlapStartAt: windows.today.startAtInclusive,
+          eventOverlapEndAt: windows.today.endAtExclusive,
+        },
+        eventFlatListQueryConfig,
+      ),
+    ),
+  next7DayEvents: (windows: DashboardLiteWindows) =>
+    buildStatusLink(
+      APP_PATHS.events,
+      serializeScreenQueryParams(
+        {
+          statusGroup: 'ACTIVE',
+          eventStartFromAt: windows.next7Days.startAtInclusive,
+          eventStartToAt: windows.next7Days.endAtExclusive,
+        },
+        eventFlatListQueryConfig,
+      ),
+    ),
+} as const;
+
+const metricGroups: Record<DashboardDisplayGroup, MetricCardDefinition[]> = {
+  needsReview: [
     {
-      key: 'finalizedSettlementAmount30d',
-      linkTo: APP_PATHS.commissionSettlements,
+      key: 'staleTalentKpiDraftCount',
+      sourceGroup: 'attention',
+      linkTo: dashboardMetricExactLinks.staleTalentKpiDraft,
+    },
+    {
+      key: 'staleRevenueDraftCount',
+      sourceGroup: 'attention',
+      linkTo: dashboardMetricExactLinks.staleRevenueDraft,
+    },
+    {
+      key: 'staleSettlementDraftCount',
+      sourceGroup: 'attention',
+      linkTo: dashboardMetricExactLinks.staleSettlementDraft,
+    },
+    {
+      key: 'expiringContractCount30d',
+      sourceGroup: 'attention',
+      linkTo: dashboardMetricExactLinks.expiringContract,
+    },
+  ],
+  workInProgress: [
+    {
+      key: 'draftTalentKpiCount',
+      sourceGroup: 'overview',
+      linkTo: dashboardMetricStatusLinks.draftTalentKpi,
+    },
+    {
+      key: 'draftRevenueEntryCount',
+      sourceGroup: 'overview',
+      linkTo: dashboardMetricStatusLinks.draftRevenueEntry,
+    },
+    {
+      key: 'draftSettlementCount',
+      sourceGroup: 'overview',
+      linkTo: dashboardMetricStatusLinks.draftSettlement,
+    },
+  ],
+  finalizedResults: [
+    {
+      key: 'finalizedTalentKpiCount30d',
+      sourceGroup: 'operations',
+      linkTo: dashboardMetricExactLinks.finalizedTalentKpi,
+    },
+    {
+      key: 'finalizedRevenueAmount30d',
+      sourceGroup: 'commercial',
+      linkTo: dashboardMetricExactLinks.finalizedRevenue,
       valueKind: 'amount',
     },
-    { key: 'activeCommissionRuleCount', linkTo: APP_PATHS.commissionRules },
+    {
+      key: 'reconciledRevenueAmount30d',
+      sourceGroup: 'commercial',
+      linkTo: dashboardMetricExactLinks.reconciledRevenue,
+      valueKind: 'amount',
+    },
+    {
+      key: 'finalizedSettlementAmount30d',
+      sourceGroup: 'commercial',
+      linkTo: dashboardMetricExactLinks.finalizedSettlement,
+      valueKind: 'amount',
+    },
+    {
+      key: 'activeCommissionRuleCount',
+      sourceGroup: 'commercial',
+      linkTo: dashboardMetricStatusLinks.activeCommissionRule,
+      badgeKey: 'active',
+    },
   ],
-  attention: [
-    { key: 'staleTalentKpiDraftCount', linkTo: APP_PATHS.talentKpiRecords },
-    { key: 'staleRevenueDraftCount', linkTo: APP_PATHS.revenueEntries },
-    { key: 'staleSettlementDraftCount', linkTo: APP_PATHS.commissionSettlements },
-    { key: 'expiringContractCount30d', linkTo: APP_PATHS.contractRecords },
+  upcomingDates: [
+    {
+      key: 'todayEventCount',
+      sourceGroup: 'operations',
+      linkTo: dashboardMetricExactLinks.todayEvents,
+    },
+    {
+      key: 'next7DayEventCount',
+      sourceGroup: 'operations',
+      linkTo: dashboardMetricExactLinks.next7DayEvents,
+    },
   ],
 };
 
-const groupOrder: DashboardMetricGroup[] = ['overview', 'operations', 'commercial', 'attention'];
+const groupOrder: DashboardDisplayGroup[] = [
+  'needsReview',
+  'workInProgress',
+  'finalizedResults',
+  'upcomingDates',
+];
+
+const dashboardToneConfig: Record<DashboardDisplayGroup, DashboardToneConfig> = {
+  needsReview: {
+    tone: 'danger',
+    badgeKey: 'needsReview',
+    sectionId: 'dashboard-needs-review',
+    sectionClassName: 'border-rose-200 border-l-rose-500',
+    cardClassName: 'border-rose-200 hover:border-rose-300 hover:bg-rose-50/40',
+    focusClassName: 'focus-visible:ring-rose-400',
+    navClassName: 'border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300',
+  },
+  workInProgress: {
+    tone: 'warning',
+    badgeKey: 'pending',
+    sectionId: 'dashboard-work-in-progress',
+    sectionClassName: 'border-amber-200 border-l-amber-500',
+    cardClassName: 'border-amber-200 hover:border-amber-300 hover:bg-amber-50/40',
+    focusClassName: 'focus-visible:ring-amber-400',
+    navClassName: 'border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300',
+  },
+  finalizedResults: {
+    tone: 'success',
+    badgeKey: 'finalized',
+    sectionId: 'dashboard-finalized-results',
+    sectionClassName: 'border-emerald-200 border-l-emerald-500',
+    cardClassName: 'border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/40',
+    focusClassName: 'focus-visible:ring-emerald-400',
+    navClassName: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300',
+  },
+  upcomingDates: {
+    tone: 'info',
+    badgeKey: 'upcoming',
+    sectionId: 'dashboard-upcoming-dates',
+    sectionClassName: 'border-sky-200 border-l-sky-500',
+    cardClassName: 'border-sky-200 hover:border-sky-300 hover:bg-sky-50/40',
+    focusClassName: 'focus-visible:ring-sky-400',
+    navClassName: 'border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300',
+  },
+};
+
+const cardBaseClassName =
+  'rounded border bg-bg px-3 py-3 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
 
 const resolveLocale = (language: string): string => {
   if (language.startsWith('en')) {
@@ -137,7 +413,7 @@ export const DashboardLitePage = (): JSX.Element => {
     );
   }
 
-  if (isError) {
+  if (isError && !data) {
     const apiError = error as unknown as NormalizedApiError | null;
 
     if (apiError?.permissionDenied) {
@@ -185,9 +461,13 @@ export const DashboardLitePage = (): JSX.Element => {
         <ReadOnlyFieldGrid
           fields={[
             {
-              key: 'generated-at',
-              label: t('dashboard-lite:meta.generatedAt'),
-              value: formatUtcTimestamp(data.generatedAt),
+              key: 'last-updated',
+              label: t('dashboard-lite:meta.lastUpdated'),
+              value: formatBusinessTimestamp(
+                data.generatedAt,
+                data.windows.businessTimeZone || DEFAULT_BUSINESS_TIME_ZONE,
+              ),
+              description: t('dashboard-lite:meta.autoRefreshHelper'),
             },
             {
               key: 'business-date',
@@ -197,52 +477,120 @@ export const DashboardLitePage = (): JSX.Element => {
           ]}
           columns={2}
         />
+        <div className="mt-3 space-y-1 text-sm" aria-live="polite">
+          {isFetching ? (
+            <p className="text-muted">{t('dashboard-lite:states.refreshingInline')}</p>
+          ) : null}
+          {isError ? (
+            <p className="text-danger">{t('dashboard-lite:states.refreshErrorInline')}</p>
+          ) : null}
+        </div>
       </MetadataSection>
 
+      <nav
+        aria-label={t('dashboard-lite:sectionNav.label')}
+        className="rounded border border-border bg-panel p-3"
+      >
+        <div className="flex flex-wrap gap-2">
+          {groupOrder.map((groupKey) => {
+            const toneConfig = dashboardToneConfig[groupKey];
+
+            return (
+              <a
+                key={groupKey}
+                href={`#${toneConfig.sectionId}`}
+                className={clsx(
+                  'inline-flex min-h-9 items-center rounded border px-3 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
+                  toneConfig.navClassName,
+                )}
+              >
+                {t(`dashboard-lite:groups.${groupKey}`)}
+              </a>
+            );
+          })}
+        </div>
+      </nav>
+
       {groupOrder.map((groupKey) => {
-        const group = data[groupKey] as Record<string, number>;
         const cards = metricGroups[groupKey];
+        const toneConfig = dashboardToneConfig[groupKey];
 
         return (
           <section
             key={groupKey}
-            className="rounded-lg border border-border bg-panel p-4 shadow-shell"
+            id={toneConfig.sectionId}
+            className={clsx(
+              'scroll-mt-4 rounded-lg border border-l-4 bg-panel p-4 shadow-shell',
+              toneConfig.sectionClassName,
+            )}
           >
-            <h2 className="mb-3 text-base font-semibold text-text">
-              {t(`dashboard-lite:groups.${groupKey}`)}
-            </h2>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-semibold text-text">
+                {t(`dashboard-lite:groups.${groupKey}`)}
+              </h2>
+              <StatusBadge
+                label={t(`dashboard-lite:severityBadges.${toneConfig.badgeKey}`)}
+                tone={toneConfig.tone}
+              />
+            </div>
+            <p className="mb-4 text-sm text-muted">
+              {t(`dashboard-lite:groupDescriptions.${groupKey}`)}
+            </p>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {cards.map((card) => {
+                const group = data[card.sourceGroup] as Record<string, number>;
                 const value = group[card.key];
                 const formattedValue =
                   card.valueKind === 'amount'
                     ? formatDecimal(value, locale, 2)
                     : formatInteger(value, locale);
+                const badgeKey = card.badgeKey ?? toneConfig.badgeKey;
+                const badgeTone = card.badgeKey === 'active' ? 'success' : toneConfig.tone;
+                const cardClassName = clsx(
+                  cardBaseClassName,
+                  toneConfig.cardClassName,
+                  toneConfig.focusClassName,
+                );
+                const linkTo =
+                  typeof card.linkTo === 'function' ? card.linkTo(data.windows) : card.linkTo;
 
-                if (card.linkTo) {
+                if (linkTo) {
                   return (
-                    <Link
-                      key={`${groupKey}-${card.key}`}
-                      to={card.linkTo}
-                      className="rounded border border-border bg-bg px-3 py-3 hover:border-accent/50 hover:bg-slate-50"
-                    >
-                      <p className="text-xs uppercase tracking-wide text-muted">
-                        {t(`dashboard-lite:metrics.${card.key}`)}
-                      </p>
+                    <Link key={`${groupKey}-${card.key}`} to={linkTo} className={cardClassName}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs uppercase tracking-wide text-muted">
+                          {t(`dashboard-lite:metrics.${card.key}`)}
+                        </p>
+                        <StatusBadge
+                          label={t(`dashboard-lite:severityBadges.${badgeKey}`)}
+                          tone={badgeTone}
+                          className="shrink-0"
+                        />
+                      </div>
                       <p className="mt-2 text-xl font-semibold text-text">{formattedValue}</p>
+                      <p className="mt-2 text-sm text-muted">
+                        {t(`dashboard-lite:metricDescriptions.${card.key}`)}
+                      </p>
                     </Link>
                   );
                 }
 
                 return (
-                  <div
-                    key={`${groupKey}-${card.key}`}
-                    className="rounded border border-border bg-bg px-3 py-3"
-                  >
-                    <p className="text-xs uppercase tracking-wide text-muted">
-                      {t(`dashboard-lite:metrics.${card.key}`)}
-                    </p>
+                  <div key={`${groupKey}-${card.key}`} className={cardClassName}>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs uppercase tracking-wide text-muted">
+                        {t(`dashboard-lite:metrics.${card.key}`)}
+                      </p>
+                      <StatusBadge
+                        label={t(`dashboard-lite:severityBadges.${badgeKey}`)}
+                        tone={badgeTone}
+                        className="shrink-0"
+                      />
+                    </div>
                     <p className="mt-2 text-xl font-semibold text-text">{formattedValue}</p>
+                    <p className="mt-2 text-sm text-muted">
+                      {t(`dashboard-lite:metricDescriptions.${card.key}`)}
+                    </p>
                   </div>
                 );
               })}

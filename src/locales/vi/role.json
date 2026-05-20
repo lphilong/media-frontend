@@ -21,14 +21,46 @@
     "archivedAt": "Thời điểm lưu trữ",
     "reason": "Lý do"
   },
+  "templates": {
+    "templateMode": "Vai trò theo mẫu",
+    "customMode": "Vai trò tùy chỉnh nâng cao",
+    "roleTemplate": "Mẫu vai trò",
+    "chooseTemplate": "Chọn mẫu vai trò",
+    "loading": "Đang tải mẫu vai trò",
+    "loadingPreview": "Đang tải bản xem trước mẫu",
+    "previewEmpty": "Chọn mẫu để xem trước quyền được tạo.",
+    "previewError": "Không thể tải bản xem trước mẫu.",
+    "generatedPermissions": "Quyền được tạo",
+    "generatedPermissionsHelp": "Quyền từ mẫu được tạo thành quyền vai trò rõ ràng.",
+    "warnings": "Cảnh báo",
+    "scopePlan": "Kế hoạch phạm vi",
+    "scopePlanHelp": "Chỉ xem trước. Phạm vi gán được chọn khi gán vai trò cho người dùng.",
+    "implementationNotes": "Ghi chú triển khai",
+    "backendAuthority": "Backend xác thực ủy quyền; bản xem trước frontend không phải bảo đảm bảo mật.",
+    "basedOnTemplate": "Dựa trên mẫu",
+    "custom": "Tùy chỉnh",
+    "templateVersion": "Phiên bản mẫu",
+    "templateAppliedAt": "Thời điểm áp dụng mẫu",
+    "permissionsRemainExplicit": "Quyền vẫn là quyền rõ ràng và metadata mẫu không có tính thẩm quyền."
+  },
+  "scopePicker": {
+    "assignmentScopes": "Phạm vi gán",
+    "backendValidation": "Gán phạm vi ảnh hưởng quyền truy cập khi chạy. Backend từ chối phạm vi actor hiện tại không được phép cấp.",
+    "scopes": {
+      "self": "Cá nhân",
+      "team": "Nhóm",
+      "department": "Phòng ban",
+      "global": "Toàn cục"
+    }
+  },
   "states": {
     "DRAFT": "Nháp",
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "INACTIVE": "Không hoạt động",
     "ARCHIVED": "Đã lưu trữ"
   },
   "assignmentStates": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "REVOKED": "Đã thu hồi"
   },
   "delegationBands": {
@@ -170,6 +202,7 @@
     "state": "Trạng thái",
     "effectiveAt": "Thời điểm có hiệu lực",
     "revokedAt": "Thời điểm thu hồi",
+    "scopeGrants": "Phạm vi gán",
     "reason": "Lý do",
     "allStates": "Tất cả trạng thái gán",
     "emptyTitle": "Không tìm thấy bản ghi gán vai trò",

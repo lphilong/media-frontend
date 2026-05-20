@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ErrorState, ReferenceChip } from '@shared/components/primitives';
+import { ReferenceChip } from '@shared/components/primitives';
 
 export type ReferenceOption = {
   id: string;
@@ -21,11 +21,13 @@ export type AsyncReferencePickerProps = {
   disabled?: boolean;
   exactOneId?: boolean;
   placeholder?: string;
+  resourceLabel?: string;
   loadingSlot?: ReactNode;
   emptySlot?: ReactNode;
   errorSlot?: ReactNode;
   disabledSlot?: ReactNode;
   onValidityChange?: (isValid: boolean) => void;
+  onSelectedOptionChange?: (option: ReferenceOption | undefined) => void;
 };
 
 const findSelectedOption = (
@@ -47,11 +49,13 @@ export const AsyncReferencePicker = ({
   disabled = false,
   exactOneId = true,
   placeholder,
+  resourceLabel,
   loadingSlot,
   emptySlot,
   errorSlot,
   disabledSlot,
   onValidityChange,
+  onSelectedOptionChange,
 }: AsyncReferencePickerProps): JSX.Element => {
   const { t } = useTranslation(['common', 'errors']);
   const [search, setSearch] = useState('');
@@ -64,6 +68,10 @@ export const AsyncReferencePicker = ({
   useEffect(() => {
     onValidityChange?.(!exactOneId || Boolean(value && value.trim().length > 0));
   }, [exactOneId, onValidityChange, value]);
+
+  useEffect(() => {
+    onSelectedOptionChange?.(selected);
+  }, [onSelectedOptionChange, selected]);
 
   const reload = useCallback(
     async (query: string): Promise<void> => {
@@ -102,6 +110,11 @@ export const AsyncReferencePicker = ({
   const showEmpty = state === 'ready' && options.length === 0;
   const selectedLabel = selected?.label ?? value;
   const selectedHref = selected?.href;
+  const errorMessage = resourceLabel
+    ? t('errors:referenceSelector.loadOptionsFailedWithResource', {
+        resource: resourceLabel,
+      })
+    : t('errors:referenceSelector.loadOptionsFailed');
 
   return (
     <section
@@ -142,13 +155,19 @@ export const AsyncReferencePicker = ({
       {state === 'error' ? (
         <div>
           {errorSlot ?? (
-            <ErrorState
-              title={t('errors:unexpected.title')}
-              message={t('errors:unexpected.message')}
-              actionLabel={t('common:actions.retry')}
-              onRetry={() => void reload(search)}
-              variant="inline"
-            />
+            <div
+              role="alert"
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded border border-danger/30 bg-bg px-2 py-1.5 text-xs"
+            >
+              <span className="font-medium text-danger">{errorMessage}</span>
+              <button
+                type="button"
+                onClick={() => void reload(search)}
+                className="rounded border border-border bg-panel px-2 py-0.5 font-medium text-text hover:bg-slate-50"
+              >
+                {t('common:actions.retry')}
+              </button>
+            </div>
           )}
         </div>
       ) : null}

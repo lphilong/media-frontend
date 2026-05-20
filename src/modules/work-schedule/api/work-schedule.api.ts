@@ -67,6 +67,18 @@ const monthlyRosterPreviewConflictKindSchema = z.enum([
 ]);
 const workShiftSourceTypeSchema = z.enum(['MANUAL', 'ROSTER_GENERATED']);
 const timestampSchema = z.union([z.number(), z.string()]);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1).optional(),
+    title: z.string().trim().min(1).optional(),
+    displayName: z.string().trim().min(1).optional(),
+    handle: z.string().trim().min(1).optional(),
+    platform: z.string().trim().min(1).optional(),
+    status: z.string().trim().min(1).optional(),
+  })
+  .strict();
 
 const workShiftListSourceShape = {
   sourceType: workShiftSourceTypeSchema.nullable().optional(),
@@ -85,11 +97,13 @@ const listItemSchema = z
     subjectEmploymentProfileId: z.string().nullable().optional(),
     subjectTalentId: z.string().nullable().optional(),
     subjectTalentGroupId: z.string().nullable().optional(),
+    subjectRef: referenceSummarySchema.nullable().optional(),
     status: statusSchema,
     shiftStartAt: timestampSchema,
     shiftEndAt: timestampSchema,
     createdAt: timestampSchema,
     ...workShiftListSourceShape,
+    sourceRosterRef: referenceSummarySchema.nullable().optional(),
   })
   .strict();
 
@@ -119,13 +133,16 @@ const byResourceItemSchema = z
 const detailSchema = listItemSchema
   .extend({
     studioResourceIds: z.array(z.string()),
+    studioResourceRefs: z.array(referenceSummarySchema).optional(),
     description: z.string().nullable().optional(),
     externalRef: z.string().nullable().optional(),
     updatedAt: timestampSchema,
     sourcePatternId: z.string().nullable().optional(),
+    sourcePatternRef: referenceSummarySchema.nullable().optional(),
     sourceExceptionId: z.string().nullable().optional(),
     sourceGenerationRunId: z.string().nullable().optional(),
     sourceDepartmentOrgUnitId: z.string().nullable().optional(),
+    sourceDepartmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
   })
   .strict();
 
@@ -250,6 +267,7 @@ const rosterExceptionSchema = z
     exceptionType: rosterExceptionTypeSchema,
     exceptionDate: z.string().trim().min(1),
     subjectEmploymentProfileId: z.string().trim().min(1),
+    subjectEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     status: z.enum(['ACTIVE', 'REMOVED']),
     title: z.string().nullable().optional(),
     startLocalTime: z.string().nullable().optional(),
@@ -257,6 +275,7 @@ const rosterExceptionSchema = z
     workingMinutes: z.number().int().nullable().optional(),
     breakMinutes: z.number().int().nullable().optional(),
     studioResourceIds: z.array(z.string()).optional(),
+    studioResourceRefs: z.array(referenceSummarySchema).optional(),
     reason: z.string().nullable().optional(),
     sourceNote: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
@@ -276,8 +295,11 @@ const monthlyRosterListItemSchema = z
     targetSubjectKind: z.literal('EMPLOYMENT_PROFILE'),
     targetOrgUnitMode: z.literal('EXACT_ONLY'),
     departmentOrgUnitId: z.string().trim().min(1),
+    departmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
     workPatternId: z.string().trim().min(1),
+    workPatternRef: referenceSummarySchema.nullable().optional(),
     holidayCalendarId: z.string().trim().min(1),
+    holidayCalendarRef: referenceSummarySchema.nullable().optional(),
     status: monthlyRosterStatusSchema,
     draftVersion: z.number().int().optional(),
     exceptionCount: z.number().int().nonnegative().optional(),
@@ -337,7 +359,9 @@ const monthlyRosterPreviewRowSchema = z
     monthlyRosterId: z.string().trim().min(1),
     rosterMonth: z.string().trim().min(1),
     departmentOrgUnitId: z.string().trim().min(1),
+    departmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
     subjectEmploymentProfileId: z.string().trim().min(1),
+    subjectEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     localDate: z.string().trim().min(1),
     rowKind: monthlyRosterPreviewRowKindSchema,
     sourceExceptionId: z.string().nullable(),
@@ -380,8 +404,11 @@ const monthlyRosterPreviewResponseSchema = z
         rosterMonth: z.string().trim().min(1),
         timezone: z.literal(MONTHLY_ROSTER_TIMEZONE),
         departmentOrgUnitId: z.string().trim().min(1),
+        departmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
         workPatternId: z.string().trim().min(1),
+        workPatternRef: referenceSummarySchema.nullable().optional(),
         holidayCalendarId: z.string().trim().min(1),
+        holidayCalendarRef: referenceSummarySchema.nullable().optional(),
         rosterStatus: monthlyRosterStatusSchema,
         draftVersion: z.number().int(),
         currentPreviewHash: z.string().nullable(),
@@ -390,8 +417,10 @@ const monthlyRosterPreviewResponseSchema = z
           z
             .object({
               subjectEmploymentProfileId: z.string().trim().min(1),
+              subjectEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
               employmentStatus: z.literal('ACTIVE'),
               departmentOrgUnitId: z.string().trim().min(1),
+              departmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
             })
             .strict(),
         ),

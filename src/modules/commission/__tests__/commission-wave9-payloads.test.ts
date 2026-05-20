@@ -29,6 +29,12 @@ import {
 
 const utcMidnight = 1735689600000;
 const nextUtcMidnight = 1735776000000;
+const utcMidnightInput = '2025-01-01';
+const nextUtcMidnightInput = '2025-01-02';
+const settlementStartInput = '2026-04-01T00:00';
+const settlementEndInput = '2026-05-01T00:00';
+const settlementStartUtcMs = Date.parse('2026-03-31T17:00:00.000Z');
+const settlementEndUtcMs = Date.parse('2026-04-30T17:00:00.000Z');
 type RuleCreateFormValues = Parameters<typeof parseCommissionRuleCreateForTest>[0];
 type RuleDraftCoreFormValues = Parameters<typeof parseCommissionRuleDraftCoreForTest>[0];
 
@@ -46,7 +52,7 @@ const createRuleValues = (overrides: Partial<RuleCreateFormValues> = {}): RuleCr
     PLATFORM_CONTENT: false,
     EVENT_OPERATIONAL: false,
   },
-  effectiveStartDate: String(utcMidnight),
+  effectiveStartDate: utcMidnightInput,
   effectiveEndDate: '',
   description: '',
   externalRef: '',
@@ -63,7 +69,7 @@ const draftRuleValues = (
     PLATFORM_CONTENT: false,
     EVENT_OPERATIONAL: false,
   },
-  effectiveStartDate: String(utcMidnight),
+  effectiveStartDate: utcMidnightInput,
   effectiveEndDate: '',
   description: '',
   externalRef: '',
@@ -104,7 +110,7 @@ describe('commission Wave 9 payload contracts', () => {
         PLATFORM_CONTENT: false,
         EVENT_OPERATIONAL: false,
       },
-      effectiveStartDate: String(utcMidnight),
+      effectiveStartDate: utcMidnightInput,
       effectiveEndDate: '',
       description: '',
       externalRef: '',
@@ -145,8 +151,8 @@ describe('commission Wave 9 payload contracts', () => {
         PLATFORM_CONTENT: true,
         EVENT_OPERATIONAL: false,
       },
-      effectiveStartDate: String(utcMidnight),
-      effectiveEndDate: String(nextUtcMidnight),
+      effectiveStartDate: utcMidnightInput,
+      effectiveEndDate: nextUtcMidnightInput,
       description: 'Edited',
       externalRef: '',
     });
@@ -184,13 +190,12 @@ describe('commission Wave 9 payload contracts', () => {
 
   it('validates optional Rule effectiveEndDate consistently for create and draft-core edit', () => {
     expect(
-      parseCommissionRuleCreateForTest(
-        createRuleValues({ effectiveEndDate: String(nextUtcMidnight) }),
-      ).effectiveEndDate,
+      parseCommissionRuleCreateForTest(createRuleValues({ effectiveEndDate: nextUtcMidnightInput }))
+        .effectiveEndDate,
     ).toBe(nextUtcMidnight);
     expect(
       parseCommissionRuleDraftCoreForTest(
-        draftRuleValues({ effectiveEndDate: String(nextUtcMidnight) }),
+        draftRuleValues({ effectiveEndDate: nextUtcMidnightInput }),
       ).effectiveEndDate,
     ).toBe(nextUtcMidnight);
     expect(parseCommissionRuleCreateForTest(createRuleValues()).effectiveEndDate).toBeNull();
@@ -199,40 +204,38 @@ describe('commission Wave 9 payload contracts', () => {
     expectEffectiveEndDateRejected(
       validateCommissionRuleCreateForTest({
         ...createRuleValues(),
-        effectiveEndDate: String(nextUtcMidnight + 1),
+        effectiveEndDate: '2025-02-30',
       }),
     );
     expectDraftEffectiveEndDateRejected(
       validateCommissionRuleDraftCoreForTest({
         ...draftRuleValues(),
-        effectiveEndDate: String(nextUtcMidnight + 1),
+        effectiveEndDate: '2025-02-30',
       }),
     );
 
-    ['not-a-timestamp', '1735776000000.5', 'NaN', 'Infinity', '0x1941f297c00'].forEach(
-      (effectiveEndDate) => {
-        expectEffectiveEndDateRejected(
-          validateCommissionRuleCreateForTest({
-            ...createRuleValues(),
-            effectiveEndDate,
-          }),
-        );
-        expectDraftEffectiveEndDateRejected(
-          validateCommissionRuleDraftCoreForTest({
-            ...draftRuleValues(),
-            effectiveEndDate,
-          }),
-        );
-      },
-    );
+    ['not-a-date', '1735776000000', '2025-1-02', '2025-13-01'].forEach((effectiveEndDate) => {
+      expectEffectiveEndDateRejected(
+        validateCommissionRuleCreateForTest({
+          ...createRuleValues(),
+          effectiveEndDate,
+        }),
+      );
+      expectDraftEffectiveEndDateRejected(
+        validateCommissionRuleDraftCoreForTest({
+          ...draftRuleValues(),
+          effectiveEndDate,
+        }),
+      );
+    });
   });
 
   it('shapes Commission Settlement create payloads without derived totals, snapshots, or scope', () => {
     const payload = parseCommissionSettlementCreateForTest({
       title: 'Wave 9 settlement',
       sourceRuleId: 'commission-rule-001',
-      settlementPeriodStartAt: '1000',
-      settlementPeriodEndAt: '2000',
+      settlementPeriodStartAt: settlementStartInput,
+      settlementPeriodEndAt: settlementEndInput,
       revenueEntryIds: [{ revenueEntryId: 'revenue-entry-001' }],
       description: '',
       externalRef: 'SET-EXT',
@@ -249,8 +252,8 @@ describe('commission Wave 9 payload contracts', () => {
     expect(sanitized).toEqual({
       title: 'Wave 9 settlement',
       sourceRuleId: 'commission-rule-001',
-      settlementPeriodStartAt: 1000,
-      settlementPeriodEndAt: 2000,
+      settlementPeriodStartAt: settlementStartUtcMs,
+      settlementPeriodEndAt: settlementEndUtcMs,
       revenueEntryIds: ['revenue-entry-001'],
       description: null,
       externalRef: 'SET-EXT',
@@ -265,8 +268,8 @@ describe('commission Wave 9 payload contracts', () => {
     const draftPayload = sanitizeCommissionSettlementDraftCorePayload({
       ...parseCommissionSettlementDraftCoreForTest({
         title: 'Edited settlement',
-        settlementPeriodStartAt: '1000',
-        settlementPeriodEndAt: '2000',
+        settlementPeriodStartAt: settlementStartInput,
+        settlementPeriodEndAt: settlementEndInput,
         description: '',
         externalRef: '',
       }),
@@ -284,8 +287,8 @@ describe('commission Wave 9 payload contracts', () => {
 
     expect(draftPayload).toEqual({
       title: 'Edited settlement',
-      settlementPeriodStartAt: 1000,
-      settlementPeriodEndAt: 2000,
+      settlementPeriodStartAt: settlementStartUtcMs,
+      settlementPeriodEndAt: settlementEndUtcMs,
       description: null,
       externalRef: null,
     });

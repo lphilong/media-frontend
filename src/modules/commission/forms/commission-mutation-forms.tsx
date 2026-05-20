@@ -42,12 +42,16 @@ import {
   SelectField,
   TextInputField,
 } from '@shared/forms';
+import {
+  formatBusinessDateTimeInputValue,
+  formatUtcDateInputValue,
+  parseBusinessDateTimeInputValue,
+  parseUtcMidnightDateInputValue,
+} from '@shared/formatting/formatters';
 import { ModuleMutationSurface } from '@shared/modules';
 
-const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const idRegex = /^[A-Za-z0-9_-]+$/;
 const rateRegex = /^(?:\d+|\d+\.\d{1,4})$/;
-const integerTimestampRegex = /^-?\d+$/;
 
 type BaseSurfaceProps = {
   onCancel: () => void;
@@ -151,35 +155,28 @@ const toNullableText = (value?: string): string | null => {
   return trimmed && trimmed.length > 0 ? trimmed : null;
 };
 
-const toTimestampText = (value?: number | string | null): string => {
+const toUtcMidnightDateInputText = (value?: number | string | null): string => {
   if (value === null || value === undefined || value === '') {
     return '';
   }
 
-  return String(value);
+  return formatUtcDateInputValue(value);
+};
+
+const toBusinessDateTimeInputText = (value?: number | string | null): string => {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+
+  return formatBusinessDateTimeInputValue(value);
 };
 
 const parseIntegerTimestamp = (value: string): number | undefined => {
-  const trimmed = value.trim();
-  if (trimmed.length === 0) {
-    return undefined;
-  }
-
-  if (!integerTimestampRegex.test(trimmed)) {
-    return undefined;
-  }
-
-  const parsed = Number(trimmed);
-  return Number.isSafeInteger(parsed) ? parsed : undefined;
+  return parseBusinessDateTimeInputValue(value);
 };
 
 const parseUtcMidnightTimestamp = (value: string): number | undefined => {
-  const parsed = parseIntegerTimestamp(value);
-  if (parsed === undefined || parsed % MILLISECONDS_PER_DAY !== 0) {
-    return undefined;
-  }
-
-  return parsed;
+  return parseUtcMidnightDateInputValue(value);
 };
 
 const parseRatePercent = (value: string): number | undefined => {
@@ -769,12 +766,12 @@ export const CommissionRuleCreateSurface = ({
           />
           <TextInputField
             name="effectiveStartDate"
-            type="number"
+            type="date"
             label={t('commission:rules.fields.effectiveStartDate')}
           />
           <TextInputField
             name="effectiveEndDate"
-            type="number"
+            type="date"
             label={t('commission:rules.fields.effectiveEndDate')}
           />
           <TextInputField name="externalRef" label={t('commission:rules.fields.externalRef')} />
@@ -798,8 +795,8 @@ export const CommissionRuleDraftCoreSurface = ({
       title: initialValues.title,
       ratePercent: String(initialValues.ratePercent),
       appliesToRevenueKinds: revenueKindSelectionFromArray(initialValues.appliesToRevenueKinds),
-      effectiveStartDate: toTimestampText(initialValues.effectiveStartDate),
-      effectiveEndDate: toTimestampText(initialValues.effectiveEndDate),
+      effectiveStartDate: toUtcMidnightDateInputText(initialValues.effectiveStartDate),
+      effectiveEndDate: toUtcMidnightDateInputText(initialValues.effectiveEndDate),
       description: initialValues.description ?? '',
       externalRef: initialValues.externalRef ?? '',
     },
@@ -839,12 +836,12 @@ export const CommissionRuleDraftCoreSurface = ({
           />
           <TextInputField
             name="effectiveStartDate"
-            type="number"
+            type="date"
             label={t('commission:rules.fields.effectiveStartDate')}
           />
           <TextInputField
             name="effectiveEndDate"
-            type="number"
+            type="date"
             label={t('commission:rules.fields.effectiveEndDate')}
           />
           <TextInputField name="externalRef" label={t('commission:rules.fields.externalRef')} />
@@ -922,12 +919,12 @@ export const CommissionSettlementCreateSurface = ({
           />
           <TextInputField
             name="settlementPeriodStartAt"
-            type="number"
+            type="datetime-local"
             label={t('commission:settlements.fields.settlementPeriodStartAt')}
           />
           <TextInputField
             name="settlementPeriodEndAt"
-            type="number"
+            type="datetime-local"
             label={t('commission:settlements.fields.settlementPeriodEndAt')}
           />
           <TextInputField
@@ -952,8 +949,8 @@ export const CommissionSettlementDraftCoreSurface = ({
   const form = useForm<CommissionSettlementDraftCoreFormValues>({
     defaultValues: {
       title: initialValues.title,
-      settlementPeriodStartAt: toTimestampText(initialValues.settlementPeriodStartAt),
-      settlementPeriodEndAt: toTimestampText(initialValues.settlementPeriodEndAt),
+      settlementPeriodStartAt: toBusinessDateTimeInputText(initialValues.settlementPeriodStartAt),
+      settlementPeriodEndAt: toBusinessDateTimeInputText(initialValues.settlementPeriodEndAt),
       description: initialValues.description ?? '',
       externalRef: initialValues.externalRef ?? '',
     },
@@ -986,12 +983,12 @@ export const CommissionSettlementDraftCoreSurface = ({
           <TextInputField name="title" label={t('commission:settlements.fields.title')} />
           <TextInputField
             name="settlementPeriodStartAt"
-            type="number"
+            type="datetime-local"
             label={t('commission:settlements.fields.settlementPeriodStartAt')}
           />
           <TextInputField
             name="settlementPeriodEndAt"
-            type="number"
+            type="datetime-local"
             label={t('commission:settlements.fields.settlementPeriodEndAt')}
           />
           <TextInputField

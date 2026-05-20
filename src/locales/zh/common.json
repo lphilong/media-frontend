@@ -14,6 +14,14 @@
     "sortAscending": "升序",
     "sortDescending": "降序"
   },
+  "filters": {
+    "filters": "筛选",
+    "moreFilters": "更多筛选",
+    "appliedFilters": "已应用筛选",
+    "clearAll": "全部清除",
+    "clearFilter": "清除筛选",
+    "noFiltersApplied": "未应用筛选"
+  },
   "locales": {
     "vi": "Tiếng Việt",
     "en": "English",
@@ -38,6 +46,14 @@
   },
   "states": {
     "loading": "加载中"
+  },
+  "capabilities": {
+    "missingPermission": "你没有执行此操作的权限。",
+    "missingScope": "你的角色分配不包含所需范围。",
+    "invalidStatus": "此操作不适用于当前记录状态。",
+    "notWired": "此操作尚未接入。",
+    "checkingPermissions": "正在检查权限。",
+    "backendEnforced": "提交时后端仍会强制执行授权。"
   },
   "auth": {
     "loginTitle": "管理后台登录",

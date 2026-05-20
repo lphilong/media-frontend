@@ -33,7 +33,8 @@
     "orgUnitSearch": "Search org units by name or code",
     "employmentProfileSearch": "Search employment profiles by name or employee code",
     "userSearch": "Search users by name or email",
-    "clearToUnset": "Leave blank to clear manager assignment"
+    "clearToUnset": "Leave blank to clear manager assignment",
+    "selectEmploymentKind": "Select employment kind"
   },
   "referenceHelp": {
     "orgUnitId": "Choose the organization unit this profile belongs to.",
@@ -54,6 +55,7 @@
     "contractStatus": "Contract Status",
     "employmentKind": "Employment Kind",
     "employmentKindPlaceholder": "Filter by kind token",
+    "allEmploymentKinds": "All employment kinds",
     "orgUnitId": "Org Unit",
     "orgUnitIdPlaceholder": "Org unit ID",
     "managerEmploymentProfileId": "Manager",
@@ -84,6 +86,12 @@
     "ACTIVE": "Active",
     "EXPIRED": "Expired",
     "TERMINATED": "Terminated"
+  },
+  "employmentKinds": {
+    "EMPLOYEE": "Employee",
+    "CONTRACTOR": "Contractor",
+    "PART_TIME": "Part-time",
+    "INTERN": "Intern"
   },
   "actions": {
     "create": "Create Employment Profile",

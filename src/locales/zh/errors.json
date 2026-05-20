@@ -3,6 +3,10 @@
     "title": "发生未知错误",
     "message": "请重试或刷新页面"
   },
+  "referenceSelector": {
+    "loadOptionsFailed": "无法加载选项列表。",
+    "loadOptionsFailedWithResource": "无法加载 {{resource}} 选项列表。"
+  },
   "transport": {
     "generic": "无法连接服务器"
   },

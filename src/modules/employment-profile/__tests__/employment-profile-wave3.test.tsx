@@ -46,6 +46,8 @@ const renderRoute = (path: string) => {
   });
 
   renderAppWithProviders(<RouterProvider router={router} />);
+
+  return router;
 };
 
 const findPicker = async (pickerId: string): Promise<HTMLElement> => {
@@ -74,6 +76,17 @@ const selectPickerOption = async (
   await user.click(await within(picker).findByText(optionText));
 };
 
+const openMoreFilters = async (user: ReturnType<typeof userEvent.setup>): Promise<void> => {
+  await user.click(
+    screen.getByRole('button', {
+      name: new RegExp(i18n.t('common:filters.moreFilters')),
+    }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
+  ).toBeInTheDocument();
+};
+
 describe('employment profile wave 3 surfaces', () => {
   it('renders filtered list rows for query-driven Employment Profile routes', async () => {
     await setLocale(DEFAULT_LOCALE);
@@ -83,7 +96,111 @@ describe('employment profile wave 3 surfaces', () => {
       await screen.findByRole('heading', { name: i18n.t('employment-profile:page.title') }),
     ).toBeInTheDocument();
     expect(await screen.findByText('EP-000002', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(await screen.findByText('Bao', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect((await screen.findAllByText('Bao', {}, { timeout: 3000 })).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Sales')).toBeInTheDocument();
+    expect(await screen.findByText('Alice Nguyen')).toBeInTheDocument();
+  });
+
+  it('uses readable org unit and manager selectors for relationship filters', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const router = renderRoute(
+      '/employment-profiles?employmentStatus=ACTIVE&orgUnitId=ou-sales&managerEmploymentProfileId=ep-manager',
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('employment-profile:page.title') }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(i18n.t('employment-profile:filters.orgUnitIdPlaceholder')),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(
+        i18n.t('employment-profile:filters.managerEmploymentProfileIdPlaceholder'),
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('employment-profile:filters.employmentStatus') }),
+    ).toHaveValue('ACTIVE');
+    expect(
+      screen.getByPlaceholderText(i18n.t('employment-profile:filters.searchPlaceholder')),
+    ).toBeTruthy();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'employment-profile:filters.orgUnitId',
+        )}`,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'employment-profile:filters.managerEmploymentProfileId',
+        )}`,
+      }),
+    ).toBeInTheDocument();
+
+    await openMoreFilters(user);
+
+    const orgUnitPicker = await findPicker('employment-profile-filter-org-unit');
+    const managerPicker = await findPicker('employment-profile-filter-manager');
+    expect(await within(orgUnitPicker).findAllByText(/OU-SALES/)).not.toHaveLength(0);
+    expect(await within(managerPicker).findAllByText(/EMPMGR/)).not.toHaveLength(0);
+
+    await user.click(await within(orgUnitPicker).findByRole('button', { name: /OU-SALES/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).toBe('ou-sales');
+      expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).not.toBe(
+        'OU-SALES',
+      );
+    });
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'employment-profile:filters.orgUnitId',
+        )}`,
+      }),
+    );
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).toBeNull();
+    });
+
+    await user.click(await within(orgUnitPicker).findByRole('button', { name: /OU-SALES/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).toBe('ou-sales');
+    });
+
+    const managerField = managerPicker.closest('fieldset');
+    expect(managerField).not.toBeNull();
+    if (!managerField) {
+      return;
+    }
+
+    await user.click(
+      within(managerField).getByRole('button', { name: i18n.t('common:actions.clear') }),
+    );
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).toBeNull();
+    });
+
+    await user.click(await within(managerPicker).findByRole('button', { name: /EMPMGR/ }));
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).toBe('ep-manager');
+    });
+
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search);
+      expect(params.get('employmentStatus')).toBeNull();
+      expect(params.get('orgUnitId')).toBeNull();
+      expect(params.get('managerEmploymentProfileId')).toBeNull();
+    });
   });
 
   it('renders detail direct-reports and lifecycle gating', async () => {
@@ -93,6 +210,12 @@ describe('employment profile wave 3 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('employment-profile:actionRail.title')),
     ).toBeInTheDocument();
+    expect(screen.getByText('01-01-2024')).toBeInTheDocument();
+    expect(screen.getByText('alice@example.test')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sales' })).toHaveAttribute(
+      'href',
+      '/org-units/ou-sales',
+    );
     expect(await screen.findByText('EP-000002')).toBeInTheDocument();
     expect(screen.getByText('EP-000003')).toBeInTheDocument();
 
@@ -247,9 +370,9 @@ describe('employment profile wave 3 surfaces', () => {
     expect(
       screen.getByText(i18n.t('employment-profile:generatedCode.description')),
     ).toBeInTheDocument();
-    await user.type(
+    await user.selectOptions(
       screen.getByLabelText(i18n.t('employment-profile:fields.employmentKind')),
-      'FULL_TIME',
+      'EMPLOYEE',
     );
     await user.type(
       screen.getByLabelText(i18n.t('employment-profile:fields.legalName')),
@@ -281,6 +404,7 @@ describe('employment profile wave 3 surfaces', () => {
     );
     expect(onCreate).toHaveBeenCalledWith(
       expect.objectContaining({
+        employmentKind: 'EMPLOYEE',
         orgUnitId: 'ou-sales',
         managerEmploymentProfileId: 'ep-manager',
         linkedUserId: 'user-admin',

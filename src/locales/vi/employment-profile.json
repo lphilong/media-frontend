@@ -26,14 +26,15 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã nhân viên sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã nhân viên sẽ được tạo tự động"
   },
   "placeholders": {
     "optional": "Không bắt buộc",
     "orgUnitSearch": "Tìm đơn vị tổ chức theo tên hoặc mã",
     "employmentProfileSearch": "Tìm hồ sơ nhân sự theo tên hoặc mã nhân viên",
     "userSearch": "Tìm người dùng theo tên hoặc email",
-    "clearToUnset": "Để trống để xóa quản lý đang gán"
+    "clearToUnset": "Để trống để xóa quản lý đang gán",
+    "selectEmploymentKind": "Chọn loại nhân sự"
   },
   "referenceHelp": {
     "orgUnitId": "Chọn đơn vị tổ chức của hồ sơ này.",
@@ -54,6 +55,7 @@
     "contractStatus": "Trạng thái hợp đồng",
     "employmentKind": "Loại nhân sự",
     "employmentKindPlaceholder": "Lọc theo token loại nhân sự",
+    "allEmploymentKinds": "Tất cả loại nhân sự",
     "orgUnitId": "Đơn vị tổ chức",
     "orgUnitIdPlaceholder": "Chọn đơn vị tổ chức",
     "managerEmploymentProfileId": "Quản lý",
@@ -72,7 +74,7 @@
     "createdAt": "Thời điểm tạo"
   },
   "statuses": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "ON_LEAVE": "Đang nghỉ phép",
     "SUSPENDED": "Đã tạm ngưng",
     "TERMINATED": "Đã kết thúc",
@@ -81,9 +83,15 @@
   "contractStatuses": {
     "NONE": "Không có",
     "PENDING_SIGNATURE": "Chờ ký",
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "EXPIRED": "Đã hết hạn",
     "TERMINATED": "Đã kết thúc"
+  },
+  "employmentKinds": {
+    "EMPLOYEE": "Nhân viên",
+    "CONTRACTOR": "Nhà thầu",
+    "PART_TIME": "Bán thời gian",
+    "INTERN": "Thực tập sinh"
   },
   "actions": {
     "create": "Tạo hồ sơ nhân sự",

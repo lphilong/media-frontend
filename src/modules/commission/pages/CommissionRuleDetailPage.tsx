@@ -32,9 +32,11 @@ import {
 } from '@shared/components/primitives';
 import {
   formatDecimal,
+  formatCreatedDate,
   formatUtcMidnightDateLike,
-  formatUtcTimestamp,
+  formatBusinessTimestamp,
 } from '@shared/formatting/formatters';
+import { readReferenceDisplay } from '@shared/formatting/reference-display';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface = 'draft-core' | null;
@@ -287,14 +289,11 @@ export const CommissionRuleDetailPage = (): JSX.Element => {
                     label: t('commission:rules.fields.beneficiaryId'),
                     value:
                       beneficiaryHref && beneficiaryId ? (
-                        <Link
-                          className="font-mono text-accent hover:underline"
-                          to={beneficiaryHref}
-                        >
-                          {beneficiaryId}
+                        <Link className="text-accent hover:underline" to={beneficiaryHref}>
+                          {readReferenceDisplay(record.beneficiaryRef, beneficiaryId)}
                         </Link>
                       ) : (
-                        formatNullable(beneficiaryId)
+                        readReferenceDisplay(record.beneficiaryRef, beneficiaryId)
                       ),
                   },
                 ]}
@@ -309,14 +308,17 @@ export const CommissionRuleDetailPage = (): JSX.Element => {
                     label: t('commission:rules.fields.sourceContractRecordId'),
                     value:
                       sourceContractHref && record.sourceContractRecordId ? (
-                        <Link
-                          className="font-mono text-accent hover:underline"
-                          to={sourceContractHref}
-                        >
-                          {record.sourceContractRecordId}
+                        <Link className="text-accent hover:underline" to={sourceContractHref}>
+                          {readReferenceDisplay(
+                            record.sourceContractRecordRef,
+                            record.sourceContractRecordId,
+                          )}
                         </Link>
                       ) : (
-                        record.sourceContractRecordId
+                        readReferenceDisplay(
+                          record.sourceContractRecordRef,
+                          record.sourceContractRecordId,
+                        )
                       ),
                   },
                 ]}
@@ -329,12 +331,12 @@ export const CommissionRuleDetailPage = (): JSX.Element => {
                   {
                     key: 'created',
                     label: t('commission:rules.fields.createdAt'),
-                    value: formatUtcTimestamp(record.createdAt),
+                    value: formatCreatedDate(record.createdAt),
                   },
                   {
                     key: 'updated',
                     label: t('commission:rules.fields.updatedAt'),
-                    value: formatUtcTimestamp(record.updatedAt),
+                    value: formatBusinessTimestamp(record.updatedAt),
                   },
                 ]}
                 columns={2}

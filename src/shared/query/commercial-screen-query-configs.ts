@@ -92,7 +92,7 @@ const talentKpiStatusSchema = z.enum(['DRAFT', 'FINALIZED', 'ARCHIVED']).optiona
 
 const contractKindSchema = z.enum(['EMPLOYMENT', 'TALENT_SERVICE', 'TALENT_MANAGEMENT']).optional();
 const linkedEntityKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT']).optional();
-const confidentialityTierSchema = z.enum(['STANDARD', 'CONFIDENTIAL', 'RESTRICTED']).optional();
+const confidentialityTierSchema = z.enum(['INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']).optional();
 const revenueKindSchema = z
   .enum(['PLATFORM_LIVESTREAM', 'PLATFORM_CONTENT', 'EVENT_OPERATIONAL'])
   .optional();
@@ -468,6 +468,9 @@ const talentKpiFlatListSchema = z.object({
   containsMetricCode: talentKpiMetricCodeSchema,
   windowStartAt: integerTimestampSchema,
   windowEndAt: integerTimestampSchema,
+  createdBeforeAt: integerTimestampSchema,
+  publishedFromAt: integerTimestampSchema,
+  publishedToAt: integerTimestampSchema,
   search: searchSchema,
   sortBy: talentKpiSortSchema,
   sortDirection: sortDirectionSchema,
@@ -485,6 +488,11 @@ const revenueFlatListSchema = z.object({
   currencyCode: currencyCodeSchema,
   windowStartAt: integerTimestampSchema,
   windowEndAt: integerTimestampSchema,
+  createdBeforeAt: integerTimestampSchema,
+  finalizedFromAt: integerTimestampSchema,
+  finalizedToAt: integerTimestampSchema,
+  reconciledFromAt: integerTimestampSchema,
+  reconciledToAt: integerTimestampSchema,
   search: searchSchema,
   sortBy: revenueFlatSortSchema,
   sortDirection: sortDirectionSchema,
@@ -513,6 +521,8 @@ const contractFlatListSchema = z.object({
   hasFileReference: contractHasFileReferenceSchema,
   windowStartDate: contractDateSchema,
   windowEndDate: contractDateSchema,
+  effectiveEndDateFrom: contractDateSchema,
+  effectiveEndDateTo: contractDateSchema,
   search: searchSchema,
   sortBy: contractSortSchema,
   sortDirection: sortDirectionSchema,
@@ -597,6 +607,9 @@ const commissionSettlementFlatListSchema = z.object({
   settlementCurrencyCode: currencyCodeSchema,
   windowStartAt: integerTimestampSchema,
   windowEndAt: integerTimestampSchema,
+  createdBeforeAt: integerTimestampSchema,
+  finalizedFromAt: integerTimestampSchema,
+  finalizedToAt: integerTimestampSchema,
   search: searchSchema,
   sortBy: commissionSettlementSortSchema,
   sortDirection: sortDirectionSchema,
@@ -792,30 +805,41 @@ export const revenueLedgerFlatListQueryConfig = defineScreenQueryConfig({
   cursorKey: 'cursor',
   normalize: (query) => {
     const next = dropSortDirectionWithoutSortBy(
-      sanitizeWindowRange({ ...query }, 'windowStartAt', 'windowEndAt'),
+      sanitizeWindowRange(
+        sanitizeWindowRange({ ...query }, 'finalizedFromAt', 'finalizedToAt'),
+        'windowStartAt',
+        'windowEndAt',
+      ),
     );
+    const normalized = sanitizeWindowRange(next, 'reconciledFromAt', 'reconciledToAt');
     const hasNarrowSortBlocker = Boolean(
-      hasPresentValue(next.subjectTalentId) ||
-      hasPresentValue(next.attributionPlatformAccountId) ||
-      hasPresentValue(next.attributionEventId) ||
-      hasPresentValue(next.revenueKind) ||
-      hasPresentValue(next.entrySource) ||
-      hasPresentValue(next.currencyCode) ||
-      hasPresentValue(next.windowStartAt) ||
-      hasPresentValue(next.windowEndAt) ||
-      hasPresentValue(next.search),
+      hasPresentValue(normalized.subjectTalentId) ||
+      hasPresentValue(normalized.attributionPlatformAccountId) ||
+      hasPresentValue(normalized.attributionEventId) ||
+      hasPresentValue(normalized.revenueKind) ||
+      hasPresentValue(normalized.entrySource) ||
+      hasPresentValue(normalized.currencyCode) ||
+      hasPresentValue(normalized.windowStartAt) ||
+      hasPresentValue(normalized.windowEndAt) ||
+      hasPresentValue(normalized.createdBeforeAt) ||
+      hasPresentValue(normalized.finalizedFromAt) ||
+      hasPresentValue(normalized.finalizedToAt) ||
+      hasPresentValue(normalized.reconciledFromAt) ||
+      hasPresentValue(normalized.reconciledToAt) ||
+      hasPresentValue(normalized.search),
     );
-    const hasExplicitStatus = next.status !== undefined;
-    const usesNarrowSort = next.sortBy === 'createdAt' || next.sortBy === 'revenueEntryCode';
+    const hasExplicitStatus = normalized.status !== undefined;
+    const usesNarrowSort =
+      normalized.sortBy === 'createdAt' || normalized.sortBy === 'revenueEntryCode';
 
     if (usesNarrowSort && (hasNarrowSortBlocker || hasExplicitStatus)) {
       return {
-        ...next,
+        ...normalized,
         sortBy: 'recognizedAt' as const,
       };
     }
 
-    return next;
+    return normalized;
   },
   capabilities: {
     surface: 'flat-list',
@@ -844,6 +868,11 @@ export const revenueLedgerFlatListQueryConfig = defineScreenQueryConfig({
       'currencyCode',
       'windowStartAt',
       'windowEndAt',
+      'createdBeforeAt',
+      'finalizedFromAt',
+      'finalizedToAt',
+      'reconciledFromAt',
+      'reconciledToAt',
     ],
     archivedByDefault: {
       hiddenByDefault: true,
@@ -986,7 +1015,11 @@ export const contractRegistryFlatListQueryConfig = defineScreenQueryConfig({
   normalize: (query) => {
     return dropSortDirectionWithoutSortBy(
       sanitizeWindowRange(
-        sanitizeLinkedEntityFilters({ ...query }),
+        sanitizeWindowRange(
+          sanitizeLinkedEntityFilters({ ...query }),
+          'effectiveEndDateFrom',
+          'effectiveEndDateTo',
+        ),
         'windowStartDate',
         'windowEndDate',
       ),
@@ -1020,6 +1053,8 @@ export const contractRegistryFlatListQueryConfig = defineScreenQueryConfig({
       'hasFileReference',
       'windowStartDate',
       'windowEndDate',
+      'effectiveEndDateFrom',
+      'effectiveEndDateTo',
     ],
     archivedByDefault: {
       hiddenByDefault: true,
@@ -1263,7 +1298,11 @@ export const commissionSettlementsFlatListQueryConfig = defineScreenQueryConfig(
   normalize: (query) => {
     return dropSortDirectionWithoutSortBy(
       sanitizeWindowRange(
-        sanitizeBeneficiarySnapshotFilters({ ...query }),
+        sanitizeWindowRange(
+          sanitizeBeneficiarySnapshotFilters({ ...query }),
+          'finalizedFromAt',
+          'finalizedToAt',
+        ),
         'windowStartAt',
         'windowEndAt',
       ),
@@ -1298,6 +1337,9 @@ export const commissionSettlementsFlatListQueryConfig = defineScreenQueryConfig(
       'settlementCurrencyCode',
       'windowStartAt',
       'windowEndAt',
+      'createdBeforeAt',
+      'finalizedFromAt',
+      'finalizedToAt',
     ],
     archivedByDefault: {
       hiddenByDefault: true,
@@ -1448,7 +1490,11 @@ export const talentKpiFlatListQueryConfig = defineScreenQueryConfig({
   cursorKey: 'cursor',
   normalize: (query) => {
     return dropSortDirectionWithoutSortBy(
-      sanitizeWindowRange({ ...query }, 'windowStartAt', 'windowEndAt'),
+      sanitizeWindowRange(
+        sanitizeWindowRange({ ...query }, 'publishedFromAt', 'publishedToAt'),
+        'windowStartAt',
+        'windowEndAt',
+      ),
     );
   },
   capabilities: {
@@ -1477,6 +1523,9 @@ export const talentKpiFlatListQueryConfig = defineScreenQueryConfig({
       'containsMetricCode',
       'windowStartAt',
       'windowEndAt',
+      'createdBeforeAt',
+      'publishedFromAt',
+      'publishedToAt',
     ],
     archivedByDefault: {
       hiddenByDefault: true,

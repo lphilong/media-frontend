@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 
 import {
   createEvent,
+  fetchEventAssignments,
+  fetchEventDetail,
   fetchEvents,
   performEventLifecycleAction,
   replaceEventAssignments,
@@ -57,6 +59,14 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
 }));
 
 const apiRequestMock = vi.mocked(apiRequest);
+const businessStartInput = '2026-05-20T14:14';
+const businessEndInput = '2026-05-20T15:14';
+const rescheduleStartInput = '2026-05-21T09:30';
+const rescheduleEndInput = '2026-05-21T10:30';
+const businessStartUtcMs = Date.parse('2026-05-20T07:14:00.000Z');
+const businessEndUtcMs = Date.parse('2026-05-20T08:14:00.000Z');
+const rescheduleStartUtcMs = Date.parse('2026-05-21T02:30:00.000Z');
+const rescheduleEndUtcMs = Date.parse('2026-05-21T03:30:00.000Z');
 
 const eventRecord: EventRecord = {
   id: 'event-001',
@@ -143,6 +153,65 @@ describe('event assignment wave 6 query and payload shaping', () => {
     expect(params.get('page')).toBeNull();
   });
 
+  it('accepts additive Event target-filter deep links and serializes them to URL/API params', async () => {
+    const query = parseScreenQueryParams(
+      new URLSearchParams(
+        'statusGroup=ACTIVE&eventOverlapStartAt=1000&eventOverlapEndAt=2000&eventStartFromAt=3000&eventStartToAt=4000&status=SCHEDULED&windowStartAt=5000&windowEndAt=6000',
+      ),
+      eventFlatListQueryConfig,
+    );
+
+    expect(query).toEqual({
+      status: 'SCHEDULED',
+      statusGroup: 'ACTIVE',
+      windowStartAt: 5000,
+      windowEndAt: 6000,
+      eventOverlapStartAt: 1000,
+      eventOverlapEndAt: 2000,
+      eventStartFromAt: 3000,
+      eventStartToAt: 4000,
+    });
+
+    const params = serializeScreenQueryParams(query, eventFlatListQueryConfig);
+    expect(params.get('statusGroup')).toBe('ACTIVE');
+    expect(params.get('eventOverlapStartAt')).toBe('1000');
+    expect(params.get('eventOverlapEndAt')).toBe('2000');
+    expect(params.get('eventStartFromAt')).toBe('3000');
+    expect(params.get('eventStartToAt')).toBe('4000');
+    expect(params.get('status')).toBe('SCHEDULED');
+    expect(params.get('windowStartAt')).toBe('5000');
+    expect(params.get('windowEndAt')).toBe('6000');
+
+    const invalid = serializeScreenQueryParams(
+      {
+        statusGroup: 'INACTIVE',
+        eventOverlapStartAt: 2000,
+        eventOverlapEndAt: 1000,
+        eventStartFromAt: 'not-a-number',
+        eventStartToAt: 4000,
+      },
+      eventFlatListQueryConfig,
+    );
+    expect(invalid.get('statusGroup')).toBeNull();
+    expect(invalid.get('eventOverlapStartAt')).toBeNull();
+    expect(invalid.get('eventOverlapEndAt')).toBeNull();
+    expect(invalid.get('eventStartFromAt')).toBeNull();
+    expect(invalid.get('eventStartToAt')).toBe('4000');
+
+    apiRequestMock.mockResolvedValue({ data: [], meta: undefined });
+    await fetchEvents(query);
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].params).toMatchObject({
+      status: 'SCHEDULED',
+      statusGroup: 'ACTIVE',
+      windowStartAt: 5000,
+      windowEndAt: 6000,
+      eventOverlapStartAt: 1000,
+      eventOverlapEndAt: 2000,
+      eventStartFromAt: 3000,
+      eventStartToAt: 4000,
+    });
+  });
+
   it('normalizes every related Event query without search or scope', () => {
     const byAssignment = parseScreenQueryParams(
       new URLSearchParams(
@@ -196,6 +265,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
         url: '/admin/events',
         params: {
           status: 'SCHEDULED',
+          statusGroup: undefined,
           assignmentKind: undefined,
           assignmentEmploymentProfileId: undefined,
           assignmentTalentId: undefined,
@@ -204,6 +274,10 @@ describe('event assignment wave 6 query and payload shaping', () => {
           containsPlatformAccountId: undefined,
           windowStartAt: undefined,
           windowEndAt: undefined,
+          eventOverlapStartAt: undefined,
+          eventOverlapEndAt: undefined,
+          eventStartFromAt: undefined,
+          eventStartToAt: undefined,
           limit: undefined,
           cursor: undefined,
           search: undefined,
@@ -222,6 +296,103 @@ describe('event assignment wave 6 query and payload shaping', () => {
         method: 'POST',
         url: '/admin/events/event-001/start',
         data: {},
+      }),
+    );
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('params');
+  });
+
+  it('accepts additive Event reference summaries while preserving raw IDs and API serialization', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        ...eventRecord,
+        studioResourceIds: ['studio-002', 'missing-studio', 'studio-001'],
+        platformAccountIds: ['platform-003', 'missing-platform', 'platform-001'],
+        studioResourceRefs: [
+          { id: 'studio-002', code: 'SR-002', name: 'Studio Two', status: 'ACTIVE' },
+          { id: 'missing-studio' },
+          { id: 'studio-001', code: 'SR-001', name: 'Studio One', status: 'ACTIVE' },
+        ],
+        platformAccountRefs: [
+          {
+            id: 'platform-003',
+            code: 'PA-003',
+            displayName: 'Platform Three',
+            handle: '@platform3',
+            platform: 'YOUTUBE',
+            status: 'ACTIVE',
+          },
+          { id: 'missing-platform' },
+          {
+            id: 'platform-001',
+            code: 'PA-001',
+            displayName: 'Platform One',
+            platform: 'TIKTOK',
+            status: 'ACTIVE',
+          },
+        ],
+      },
+    });
+    const detail = await fetchEventDetail('event-001');
+    expect(detail.studioResourceIds).toEqual(['studio-002', 'missing-studio', 'studio-001']);
+    expect(detail.studioResourceRefs?.map((ref) => ref.id)).toEqual([
+      'studio-002',
+      'missing-studio',
+      'studio-001',
+    ]);
+    expect(detail.platformAccountIds).toEqual(['platform-003', 'missing-platform', 'platform-001']);
+    expect(detail.platformAccountRefs?.map((ref) => ref.id)).toEqual([
+      'platform-003',
+      'missing-platform',
+      'platform-001',
+    ]);
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/admin/events/event-001',
+      }),
+    );
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('params');
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'assignment-001',
+          eventId: 'event-001',
+          assignmentKind: 'EMPLOYMENT_PROFILE',
+          assignmentEmploymentProfileId: 'ep-001',
+          assignmentTalentId: null,
+          assignmentTalentGroupId: null,
+          assignmentSubjectRef: {
+            id: 'ep-001',
+            code: 'EMP-001',
+            displayName: 'Employee One',
+            status: 'ACTIVE',
+          },
+          assignmentStatus: 'ACTIVE',
+          createdAt: 1,
+        },
+        {
+          id: 'assignment-002',
+          eventId: 'event-001',
+          assignmentKind: 'TALENT',
+          assignmentEmploymentProfileId: null,
+          assignmentTalentId: 'missing-talent',
+          assignmentTalentGroupId: null,
+          assignmentSubjectRef: null,
+          assignmentStatus: 'ACTIVE',
+          createdAt: 2,
+        },
+      ],
+    });
+    const assignments = await fetchEventAssignments('event-001');
+    expect(assignments[0].assignmentEmploymentProfileId).toBe('ep-001');
+    expect(assignments[0].assignmentSubjectRef?.code).toBe('EMP-001');
+    expect(assignments[1].assignmentTalentId).toBe('missing-talent');
+    expect(assignments[1].assignmentSubjectRef).toBeNull();
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/admin/events/event-001/assignments',
       }),
     );
     expect(apiRequestMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('params');
@@ -313,8 +484,14 @@ describe('event assignment wave 6 query and payload shaping', () => {
     ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.title')), 'Wave 6 event');
     await user.click(await screen.findByRole('button', { name: /Employee One/ }));
-    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.eventStartAt')), '1000');
-    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.eventEndAt')), '2000');
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.eventStartAt')),
+      businessStartInput,
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.eventEndAt')),
+      businessEndInput,
+    );
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.addStudioResource') }),
     );
@@ -334,8 +511,8 @@ describe('event assignment wave 6 query and payload shaping', () => {
           assignmentEmploymentProfileId: 'ep-001',
         },
       ],
-      eventStartAt: 1000,
-      eventEndAt: 2000,
+      eventStartAt: businessStartUtcMs,
+      eventEndAt: businessEndUtcMs,
       studioResourceIds: ['studio-001'],
       platformAccountIds: ['platform-001'],
       description: null,
@@ -367,24 +544,30 @@ describe('event assignment wave 6 query and payload shaping', () => {
     const onReschedule = vi.fn();
     const rescheduleRender = render(
       <EventRescheduleSurface
-        initialValues={{ eventStartAt: 1000, eventEndAt: 2000 }}
+        initialValues={{ eventStartAt: businessStartUtcMs, eventEndAt: businessEndUtcMs }}
         onCancel={() => undefined}
         onSubmit={onReschedule}
       />,
     );
+    expect(screen.getByLabelText(i18n.t('event-assignment:fields.newEventStartAt'))).toHaveValue(
+      businessStartInput,
+    );
     await user.clear(screen.getByLabelText(i18n.t('event-assignment:fields.newEventStartAt')));
     await user.type(
       screen.getByLabelText(i18n.t('event-assignment:fields.newEventStartAt')),
-      '3000',
+      rescheduleStartInput,
     );
     await user.clear(screen.getByLabelText(i18n.t('event-assignment:fields.newEventEndAt')));
-    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.newEventEndAt')), '4000');
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.newEventEndAt')),
+      rescheduleEndInput,
+    );
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:mutations.reschedule.submit') }),
     );
     expect(onReschedule).toHaveBeenCalledWith({
-      newEventStartAt: 3000,
-      newEventEndAt: 4000,
+      newEventStartAt: rescheduleStartUtcMs,
+      newEventEndAt: rescheduleEndUtcMs,
     });
     expect(onReschedule.mock.calls.at(-1)?.[0]).not.toHaveProperty('eventCode');
     rescheduleRender.unmount();

@@ -181,6 +181,7 @@ export const TalentGroupCreateSurface = ({
             name="displayOrder"
             label={t('talent-group:fields.displayOrder')}
             type="number"
+            helperText={t('talent-group:help.displayOrder')}
           />
           <TextInputField
             name="shortName"
@@ -272,6 +273,7 @@ export const TalentGroupEditSurface = ({
             name="displayOrder"
             label={t('talent-group:fields.displayOrder')}
             type="number"
+            helperText={t('talent-group:help.displayOrder')}
           />
           <TextInputField
             name="shortName"

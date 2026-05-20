@@ -23,6 +23,18 @@ import type {
 const talentOperationalStatusSchema = z.enum(['ACTIVE', 'SUSPENDED', 'INACTIVE', 'ARCHIVED']);
 const talentOriginSchema = z.enum(talentOriginValues);
 const talentCommercialParticipationStatusSchema = z.enum(talentCommercialParticipationStatusValues);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+    handle: z.string().optional(),
+    platform: z.string().optional(),
+    status: z.string().optional(),
+  })
+  .strict();
 
 const listTalentSchema = z
   .object({
@@ -34,7 +46,9 @@ const listTalentSchema = z
     talentOrigin: talentOriginSchema,
     operationalStatus: talentOperationalStatusSchema,
     managerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
+    managerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     linkedEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
+    linkedEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     commercialParticipationStatus: talentCommercialParticipationStatusSchema,
     livestreamEligible: z.boolean(),
     eventEligible: z.boolean(),

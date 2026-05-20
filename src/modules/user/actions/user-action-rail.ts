@@ -26,24 +26,28 @@ export const createUserActionRailItems = (
     id: 'edit',
     label: t('user:actions.edit'),
     disabled: isArchived(record),
+    disabledReason: isArchived(record) ? t('common:capabilities.invalidStatus') : undefined,
     onClick: !isArchived(record) ? handlers.onEdit : undefined,
   },
   {
     id: 'auth-linkage',
     label: t('user:actions.setAuthLinkage'),
     disabled: isArchived(record),
+    disabledReason: isArchived(record) ? t('common:capabilities.invalidStatus') : undefined,
     onClick: !isArchived(record) ? handlers.onAuthLinkage : undefined,
   },
   {
     id: 'activate',
     label: t('user:actions.activate'),
     disabled: !canActivate(record) || handlers.isLifecyclePending?.('activate'),
+    disabledReason: !canActivate(record) ? t('common:capabilities.invalidStatus') : undefined,
     onClick: canActivate(record) ? () => handlers.onLifecycleAction('activate') : undefined,
   },
   {
     id: 'disable',
     label: t('user:actions.disable'),
     disabled: !canDisable(record) || handlers.isLifecyclePending?.('disable'),
+    disabledReason: !canDisable(record) ? t('common:capabilities.invalidStatus') : undefined,
     onClick: canDisable(record) ? () => handlers.onLifecycleAction('disable') : undefined,
   },
   {
@@ -51,6 +55,7 @@ export const createUserActionRailItems = (
     label: t('user:actions.archive'),
     tone: 'danger',
     disabled: !canArchive(record) || handlers.isLifecyclePending?.('archive'),
+    disabledReason: !canArchive(record) ? t('common:capabilities.invalidStatus') : undefined,
     onClick: canArchive(record) ? () => handlers.onLifecycleAction('archive') : undefined,
   },
 ];

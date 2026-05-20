@@ -34,7 +34,7 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã sự kiện sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã sự kiện sẽ được tạo tự động"
   },
   "statuses": {
     "SCHEDULED": "Đã lên lịch",
@@ -44,7 +44,7 @@
     "ARCHIVED": "Đã lưu trữ"
   },
   "assignmentStatuses": {
-    "ACTIVE": "Đang hoạt động"
+    "ACTIVE": "Hoạt động"
   },
   "assignmentKinds": {
     "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",

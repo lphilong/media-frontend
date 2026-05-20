@@ -1,5 +1,8 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type EventAssignmentKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
 export type EventStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
+export type EventStatusGroup = 'ACTIVE';
 export type EventAssignmentStatus = 'ACTIVE';
 
 export type EventRecord = {
@@ -8,6 +11,8 @@ export type EventRecord = {
   title: string;
   studioResourceIds: string[];
   platformAccountIds: string[];
+  studioResourceRefs?: ReferenceSummary[];
+  platformAccountRefs?: ReferenceSummary[];
   status: EventStatus;
   eventStartAt: number | string;
   eventEndAt: number | string;
@@ -34,6 +39,7 @@ export type EventAssignmentItem = {
   assignmentEmploymentProfileId?: string | null;
   assignmentTalentId?: string | null;
   assignmentTalentGroupId?: string | null;
+  assignmentSubjectRef?: ReferenceSummary | null;
   assignmentStatus: EventAssignmentStatus;
   createdAt: number | string;
 };
@@ -47,6 +53,7 @@ export type EventAssignmentInput = {
 
 export type EventListQuery = {
   status?: EventStatus;
+  statusGroup?: EventStatusGroup;
   assignmentKind?: EventAssignmentKind;
   assignmentEmploymentProfileId?: string;
   assignmentTalentId?: string;
@@ -55,6 +62,10 @@ export type EventListQuery = {
   containsPlatformAccountId?: string;
   windowStartAt?: number;
   windowEndAt?: number;
+  eventOverlapStartAt?: number;
+  eventOverlapEndAt?: number;
+  eventStartFromAt?: number;
+  eventStartToAt?: number;
   limit?: number;
   cursor?: string;
   search?: string;

@@ -4,6 +4,17 @@ export type RevenueEntrySource = 'MANUAL';
 export type RevenueLedgerSortBy = 'recognizedAt' | 'revenueEntryCode' | 'createdAt';
 export type SortDirection = 'asc' | 'desc';
 
+export type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  title?: string;
+  displayName?: string;
+  handle?: string;
+  platform?: string;
+  status?: string;
+};
+
 export const revenueEntryStatusValues: RevenueEntryStatus[] = [
   'DRAFT',
   'FINALIZED',
@@ -25,6 +36,9 @@ export type RevenueEntryRecord = {
   subjectTalentId: string;
   attributionPlatformAccountId?: string | null;
   attributionEventId?: string | null;
+  subjectTalentRef?: ReferenceSummary | null;
+  attributionPlatformAccountRef?: ReferenceSummary | null;
+  attributionEventRef?: ReferenceSummary | null;
   revenueKind: RevenueKind;
   entrySource: RevenueEntrySource;
   status: RevenueEntryStatus;
@@ -49,6 +63,9 @@ export type RevenueEntryListItem = Pick<
   | 'subjectTalentId'
   | 'attributionPlatformAccountId'
   | 'attributionEventId'
+  | 'subjectTalentRef'
+  | 'attributionPlatformAccountRef'
+  | 'attributionEventRef'
   | 'revenueKind'
   | 'entrySource'
   | 'status'
@@ -65,7 +82,6 @@ export type RevenueEntryByTalentItem = Pick<
   | 'title'
   | 'subjectTalentId'
   | 'revenueKind'
-  | 'entrySource'
   | 'status'
   | 'currencyCode'
   | 'recognizedAmount'
@@ -79,6 +95,7 @@ export type RevenueEntryByPlatformItem = Pick<
   | 'title'
   | 'subjectTalentId'
   | 'attributionPlatformAccountId'
+  | 'revenueKind'
   | 'status'
   | 'currencyCode'
   | 'recognizedAmount'
@@ -92,6 +109,7 @@ export type RevenueEntryByEventItem = Pick<
   | 'title'
   | 'subjectTalentId'
   | 'attributionEventId'
+  | 'revenueKind'
   | 'status'
   | 'currencyCode'
   | 'recognizedAmount'
@@ -108,6 +126,11 @@ export type RevenueLedgerFlatListQuery = {
   currencyCode?: string;
   windowStartAt?: number;
   windowEndAt?: number;
+  createdBeforeAt?: number;
+  finalizedFromAt?: number;
+  finalizedToAt?: number;
+  reconciledFromAt?: number;
+  reconciledToAt?: number;
   limit?: number;
   cursor?: string;
   search?: string;

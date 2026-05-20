@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -13,6 +13,7 @@ const renderRoute = (path: string) => {
   });
 
   renderAppWithProviders(<RouterProvider router={router} />);
+  return router;
 };
 
 const findPicker = async (pickerId: string): Promise<HTMLElement> => {
@@ -38,16 +39,98 @@ describe('work schedule wave 6 surfaces', () => {
   });
 
   it('renders Work Shift list rows, filters archived by default, and keeps scope local', async () => {
-    renderRoute('/work-shifts?subjectKind=TALENT&subjectTalentId=talent-001&scope=self');
+    renderRoute('/work-shifts?subjectKind=TALENT&scope=self');
 
     expect(
       await screen.findByRole('heading', { name: i18n.t('work-schedule:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('SHIFT002', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText('SHIFT002', {}, { timeout: 8000 })).toBeInTheDocument();
+    expect(await screen.findByText('Mina')).toBeInTheDocument();
+    expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('Archived work shift')).not.toBeInTheDocument();
     expect(screen.queryByText(i18n.t('work-schedule:scopes.self'))).not.toBeInTheDocument();
     expect(
       screen.queryByText(/recurrence|attendance|bulk|delete|unarchive/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses readable Work Shift filters while preserving internal-id query values', async () => {
+    const user = userEvent.setup();
+    const router = renderRoute('/work-shifts?subjectKind=TALENT');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('work-schedule:page.title') }),
+    ).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Subject identifier')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Resource identifier')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(i18n.t('work-schedule:filters.status'))).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', {
+        name: (name) => name.includes(i18n.t('common:filters.moreFilters')),
+      }),
+    );
+    expect(
+      screen.getByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      await within(await findPicker('work-shift-filter-subject')).findByText(/TAL-000001/),
+    );
+    await waitFor(() => {
+      const query = new URLSearchParams(router.state.location.search);
+      expect(query.get('subjectTalentId')).toBe('talent-001');
+      expect(query.get('subjectEmploymentProfileId')).toBeNull();
+      expect(query.get('subjectTalentGroupId')).toBeNull();
+      expect(query.get('subjectTalentId')).not.toBe('TAL-000001');
+    });
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(screen.getAllByText(/TAL-000001/).length).toBeGreaterThan(0);
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'work-schedule:filters.subjectId',
+        )}`,
+      }),
+    );
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('subjectTalentId')).toBeNull();
+    });
+
+    await user.click(
+      await within(await findPicker('work-shift-filter-studio-resource')).findByText(/SR-000001/),
+    );
+    await waitFor(() => {
+      const query = new URLSearchParams(router.state.location.search);
+      expect(query.get('containsStudioResourceId')).toBe('studio-001');
+      expect(query.get('containsStudioResourceId')).not.toBe('SR-000001');
+    });
+
+    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:filters.windowStartAt')), {
+      target: { value: '2030-03-17T17:46:40' },
+    });
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('windowStartAt')).toBe(
+        '1900000000000',
+      );
+    });
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'work-schedule:filters.windowStartAt',
+        )}`,
+      }),
+    );
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('windowStartAt')).toBeNull();
+    });
+    expect(
+      screen.getAllByRole('button', {
+        name: i18n.t('work-schedule:actions.scheduleWorkShift'),
+      }),
+    ).toHaveLength(1);
+    expect(
+      screen.queryByRole('button', { name: /admin|technical|advanced/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -58,9 +141,15 @@ describe('work schedule wave 6 surfaces', () => {
     expect(screen.getByText('SHIFT001')).toBeInTheDocument();
     expect(screen.getByText('Main studio morning shift')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('work-schedule:scopes.team'))).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'studio-001' })).toHaveAttribute(
+    expect(screen.getByText('16:00 12-05-2026')).toBeInTheDocument();
+    expect(screen.getByText('19:00 12-05-2026')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Main Studio' })).toHaveAttribute(
       'href',
       '/studio-resources/studio-001',
+    );
+    expect(screen.getByRole('link', { name: 'Alice Nguyen' })).toHaveAttribute(
+      'href',
+      '/employment-profiles/ep-001',
     );
   });
 

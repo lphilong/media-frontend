@@ -1,3 +1,5 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type WorkShiftSubjectKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
 export type WorkShiftStatus = 'ACTIVE' | 'CANCELLED' | 'ARCHIVED';
 export type WorkScheduleScope = 'self' | 'team' | 'department' | 'global';
@@ -50,7 +52,9 @@ export type WorkShiftRecord = {
   subjectEmploymentProfileId?: string | null;
   subjectTalentId?: string | null;
   subjectTalentGroupId?: string | null;
+  subjectRef?: ReferenceSummary | null;
   studioResourceIds: string[];
+  studioResourceRefs?: ReferenceSummary[];
   status: WorkShiftStatus;
   shiftStartAt: number | string;
   shiftEndAt: number | string;
@@ -60,11 +64,14 @@ export type WorkShiftRecord = {
   updatedAt: number | string;
   sourceType?: WorkShiftSourceType | null;
   sourceRosterId?: string | null;
+  sourceRosterRef?: ReferenceSummary | null;
   sourcePatternId?: string | null;
+  sourcePatternRef?: ReferenceSummary | null;
   sourceExceptionId?: string | null;
   sourceGenerationRunId?: string | null;
   sourceRosterMonth?: string | null;
   sourceDepartmentOrgUnitId?: string | null;
+  sourceDepartmentOrgUnitRef?: ReferenceSummary | null;
   sourceRosterLocalDate?: string | null;
   sourceRosterSlotKey?: string | null;
 };
@@ -296,6 +303,7 @@ export type RosterExceptionRecord = {
   exceptionType: RosterExceptionType;
   exceptionDate: string;
   subjectEmploymentProfileId: string;
+  subjectEmploymentProfileRef?: ReferenceSummary | null;
   status: RosterExceptionStatus;
   title?: string | null;
   startLocalTime?: string | null;
@@ -303,6 +311,7 @@ export type RosterExceptionRecord = {
   workingMinutes?: number | null;
   breakMinutes?: number | null;
   studioResourceIds?: string[];
+  studioResourceRefs?: ReferenceSummary[];
   reason?: string | null;
   sourceNote?: string | null;
   description?: string | null;
@@ -320,8 +329,11 @@ export type MonthlyRosterListItem = {
   targetSubjectKind: 'EMPLOYMENT_PROFILE';
   targetOrgUnitMode: 'EXACT_ONLY';
   departmentOrgUnitId: string;
+  departmentOrgUnitRef?: ReferenceSummary | null;
   workPatternId: string;
+  workPatternRef?: ReferenceSummary | null;
   holidayCalendarId: string;
+  holidayCalendarRef?: ReferenceSummary | null;
   status: MonthlyRosterStatus;
   draftVersion?: number;
   exceptionCount?: number;
@@ -397,8 +409,10 @@ export type RosterExceptionPayload = {
 
 export type MonthlyRosterPreviewEligibleProfile = {
   subjectEmploymentProfileId: string;
+  subjectEmploymentProfileRef?: ReferenceSummary | null;
   employmentStatus: 'ACTIVE';
   departmentOrgUnitId: string;
+  departmentOrgUnitRef?: ReferenceSummary | null;
 };
 
 export type MonthlyRosterPreviewConflict = {
@@ -422,7 +436,9 @@ export type MonthlyRosterPreviewRow = {
   monthlyRosterId: string;
   rosterMonth: string;
   departmentOrgUnitId: string;
+  departmentOrgUnitRef?: ReferenceSummary | null;
   subjectEmploymentProfileId: string;
+  subjectEmploymentProfileRef?: ReferenceSummary | null;
   localDate: string;
   rowKind: MonthlyRosterPreviewRowKind;
   sourceExceptionId: string | null;
@@ -459,8 +475,11 @@ export type MonthlyRosterPreview = {
   rosterMonth: string;
   timezone: typeof MONTHLY_ROSTER_TIMEZONE;
   departmentOrgUnitId: string;
+  departmentOrgUnitRef?: ReferenceSummary | null;
   workPatternId: string;
+  workPatternRef?: ReferenceSummary | null;
   holidayCalendarId: string;
+  holidayCalendarRef?: ReferenceSummary | null;
   rosterStatus: MonthlyRosterStatus;
   draftVersion: number;
   currentPreviewHash: string | null;

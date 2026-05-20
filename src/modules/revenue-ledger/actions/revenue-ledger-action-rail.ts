@@ -34,12 +34,18 @@ export const createRevenueLedgerActionRailItems = (
       id: 'draft-core',
       label: t('revenue-ledger:actions.editDraftCore'),
       disabled: !canEditRevenueDraftCore(status),
+      disabledReason: !canEditRevenueDraftCore(status)
+        ? t('common:capabilities.invalidStatus')
+        : undefined,
       onClick: canEditRevenueDraftCore(status) ? handlers.onDraftCoreEdit : undefined,
     },
     {
       id: 'finalize',
       label: t('revenue-ledger:actions.finalize'),
       disabled: !canFinalizeRevenueEntry(status) || handlers.isLifecyclePending?.('finalize'),
+      disabledReason: !canFinalizeRevenueEntry(status)
+        ? t('common:capabilities.invalidStatus')
+        : undefined,
       onClick: canFinalizeRevenueEntry(status)
         ? () => handlers.onLifecycleAction('finalize')
         : undefined,
@@ -48,6 +54,9 @@ export const createRevenueLedgerActionRailItems = (
       id: 'reconcile',
       label: t('revenue-ledger:actions.reconcile'),
       disabled: !canReconcileRevenueEntry(status),
+      disabledReason: !canReconcileRevenueEntry(status)
+        ? t('common:capabilities.invalidStatus')
+        : undefined,
       onClick: canReconcileRevenueEntry(status) ? handlers.onReconcile : undefined,
     },
     {
@@ -55,6 +64,9 @@ export const createRevenueLedgerActionRailItems = (
       label: t('revenue-ledger:actions.void'),
       tone: 'danger',
       disabled: !canVoidRevenueEntry(status) || handlers.isLifecyclePending?.('void'),
+      disabledReason: !canVoidRevenueEntry(status)
+        ? t('common:capabilities.invalidStatus')
+        : undefined,
       onClick: canVoidRevenueEntry(status) ? () => handlers.onLifecycleAction('void') : undefined,
     },
     {
@@ -62,6 +74,9 @@ export const createRevenueLedgerActionRailItems = (
       label: t('revenue-ledger:actions.archive'),
       tone: 'danger',
       disabled: !canArchiveRevenueEntry(status) || handlers.isLifecyclePending?.('archive'),
+      disabledReason: !canArchiveRevenueEntry(status)
+        ? t('common:capabilities.invalidStatus')
+        : undefined,
       onClick: canArchiveRevenueEntry(status)
         ? () => handlers.onLifecycleAction('archive')
         : undefined,

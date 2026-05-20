@@ -46,7 +46,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatBusinessTimestamp,
+  formatCreatedDate,
+  readReferenceDisplay,
+  type ReferenceSummary,
+} from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface =
@@ -102,6 +107,21 @@ const readLifecycleConfirmKey = (action: EventLifecycleAction): string => {
     default:
       return 'event-assignment:confirm.archive';
   }
+};
+
+const createReferenceMap = (
+  refs: readonly ReferenceSummary[] | undefined,
+): ReadonlyMap<string, ReferenceSummary> => new Map((refs ?? []).map((ref) => [ref.id, ref]));
+
+const formatReferenceList = (
+  ids: readonly string[],
+  refsById: ReadonlyMap<string, ReferenceSummary>,
+): string => {
+  if (ids.length === 0) {
+    return '-';
+  }
+
+  return ids.map((id) => readReferenceDisplay(refsById.get(id), id)).join(', ');
 };
 
 const assignmentToInput = (assignment: EventAssignmentItem): EventAssignmentInput => {
@@ -175,6 +195,14 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
 
   const record = detailQuery.data;
   const assignments = useMemo(() => assignmentsQuery.data ?? [], [assignmentsQuery.data]);
+  const studioResourceRefsById = useMemo(
+    () => createReferenceMap(record?.studioResourceRefs),
+    [record?.studioResourceRefs],
+  );
+  const platformAccountRefsById = useMemo(
+    () => createReferenceMap(record?.platformAccountRefs),
+    [record?.platformAccountRefs],
+  );
   const assignmentInputs = useMemo(
     () => assignments.map((assignment) => assignmentToInput(assignment)),
     [assignments],
@@ -307,12 +335,12 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                 {
                   key: 'start',
                   label: t('event-assignment:fields.eventStartAt'),
-                  value: formatUtcTimestamp(record.eventStartAt),
+                  value: formatBusinessTimestamp(record.eventStartAt),
                 },
                 {
                   key: 'end',
                   label: t('event-assignment:fields.eventEndAt'),
-                  value: formatUtcTimestamp(record.eventEndAt),
+                  value: formatBusinessTimestamp(record.eventEndAt),
                 },
                 {
                   key: 'description',
@@ -327,12 +355,12 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                 {
                   key: 'created-at',
                   label: t('event-assignment:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('event-assignment:fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}
@@ -349,18 +377,12 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                   {
                     key: 'studio-resources',
                     label: t('event-assignment:fields.studioResourceIds'),
-                    value:
-                      record.studioResourceIds.length > 0
-                        ? record.studioResourceIds.join(', ')
-                        : '-',
+                    value: formatReferenceList(record.studioResourceIds, studioResourceRefsById),
                   },
                   {
                     key: 'platform-accounts',
                     label: t('event-assignment:fields.platformAccountIds'),
-                    value:
-                      record.platformAccountIds.length > 0
-                        ? record.platformAccountIds.join(', ')
-                        : '-',
+                    value: formatReferenceList(record.platformAccountIds, platformAccountRefsById),
                   },
                 ]}
                 columns={2}
@@ -492,28 +514,55 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
         record ? (
           <RelatedSectionShell title={t('event-assignment:related.navigationTitle')}>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {[...record.studioResourceIds, ...record.platformAccountIds].map((referenceId) => {
-                const isStudio = record.studioResourceIds.includes(referenceId);
-                const href = buildEntityDetailHref(
-                  isStudio ? 'studioResource' : 'platformAccount',
+              {record.studioResourceIds.map((referenceId) => {
+                const href = buildEntityDetailHref('studioResource', referenceId);
+                const label = readReferenceDisplay(
+                  studioResourceRefsById.get(referenceId),
                   referenceId,
                 );
                 return (
                   <div
-                    key={`${isStudio ? 'studio' : 'platform'}-${referenceId}`}
+                    key={`studio-${referenceId}`}
                     className="rounded border border-border bg-bg px-3 py-2"
                   >
                     <p className="text-xs font-medium uppercase text-muted">
-                      {isStudio
-                        ? t('event-assignment:related.studioResource')
-                        : t('event-assignment:related.platformAccount')}
+                      {t('event-assignment:related.studioResource')}
                     </p>
                     {href ? (
                       <Link
                         to={href}
-                        className="mt-1 inline-flex font-mono text-sm text-accent hover:underline"
+                        className="mt-1 inline-flex text-sm text-accent hover:underline"
                       >
-                        {referenceId}
+                        {label}
+                      </Link>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted">
+                        {t('event-assignment:related.unavailable')}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+              {record.platformAccountIds.map((referenceId) => {
+                const href = buildEntityDetailHref('platformAccount', referenceId);
+                const label = readReferenceDisplay(
+                  platformAccountRefsById.get(referenceId),
+                  referenceId,
+                );
+                return (
+                  <div
+                    key={`platform-${referenceId}`}
+                    className="rounded border border-border bg-bg px-3 py-2"
+                  >
+                    <p className="text-xs font-medium uppercase text-muted">
+                      {t('event-assignment:related.platformAccount')}
+                    </p>
+                    {href ? (
+                      <Link
+                        to={href}
+                        className="mt-1 inline-flex text-sm text-accent hover:underline"
+                      >
+                        {label}
                       </Link>
                     ) : (
                       <p className="mt-1 text-sm text-muted">

@@ -12,7 +12,7 @@
     "ownerKind": "Loại chủ sở hữu",
     "ownerId": "Chủ sở hữu",
     "operationalStatus": "Trạng thái",
-    "handle": "Handle",
+    "handle": "Tên công khai",
     "externalPlatformId": "ID nền tảng bên ngoài",
     "profileUrl": "URL hồ sơ",
     "livestreamEnabled": "Livestream",
@@ -25,11 +25,17 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã tài khoản sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã tài khoản sẽ được tạo tự động"
   },
   "placeholders": {
     "optional": "Không bắt buộc",
-    "ownerSearch": "Tìm chủ sở hữu theo loại đã chọn"
+    "ownerSearch": "Tìm chủ sở hữu theo loại đã chọn",
+    "selectPlatform": "Chọn nền tảng",
+    "selectSurfaceType": "Chọn loại bề mặt",
+    "handle": "my_channel"
+  },
+  "help": {
+    "handle": "Tên người dùng công khai trên nền tảng, thường không có @. Ví dụ: my_channel."
   },
   "referenceHelp": {
     "ownerId": "Chọn chủ sở hữu trong danh sách theo loại chủ sở hữu đã chọn."
@@ -46,8 +52,10 @@
     "allStatuses": "Tất cả chưa lưu trữ",
     "platform": "Nền tảng",
     "platformPlaceholder": "youtube",
+    "allPlatforms": "Tất cả nền tảng",
     "platformSurfaceType": "Loại nền tảng",
     "platformSurfaceTypePlaceholder": "Livestream",
+    "allSurfaceTypes": "Tất cả loại bề mặt",
     "ownerKind": "Loại chủ sở hữu",
     "allOwnerKinds": "Tất cả loại chủ sở hữu",
     "ownerId": "Chủ sở hữu",
@@ -62,13 +70,24 @@
     "TALENT": "Talent",
     "TALENT_GROUP": "Nhóm Talent"
   },
+  "platforms": {
+    "TIKTOK": "TikTok",
+    "YOUTUBE": "YouTube",
+    "FACEBOOK": "Facebook",
+    "INSTAGRAM": "Instagram"
+  },
+  "surfaceTypes": {
+    "ACCOUNT": "Tài khoản",
+    "CHANNEL": "Kênh",
+    "PAGE": "Trang"
+  },
   "sort": {
     "accountCode": "Mã tài khoản",
     "displayName": "Tên hiển thị",
     "createdAt": "Thời điểm tạo"
   },
   "statuses": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "INACTIVE": "Không hoạt động",
     "ARCHIVED": "Đã lưu trữ"
   },
@@ -93,7 +112,7 @@
     "platform": "Nền tảng",
     "platformSurfaceType": "Loại nền tảng",
     "displayName": "Tên hiển thị",
-    "handle": "Handle",
+    "handle": "Tên công khai",
     "ownerKind": "Loại chủ sở hữu",
     "ownerId": "Chủ sở hữu",
     "operationalStatus": "Trạng thái",

@@ -15,6 +15,7 @@ import type {
 } from '@modules/contract-registry/types/contract-registry.types';
 import { StatusBadge } from '@shared/components/primitives';
 import { formatUtcMidnightDateLike } from '@shared/formatting/formatters';
+import { readReferenceDisplay, type ReferenceSummary } from '@shared/formatting/reference-display';
 
 export type ContractTableRow = ContractListItem | ContractByLinkedEntityItem | ContractByOwnerItem;
 
@@ -56,6 +57,18 @@ export const readContractLinkedEntityId = (record: {
   return record.linkedTalentId;
 };
 
+const readContractLinkedEntityRef = (record: {
+  linkedEntityKind?: string;
+  linkedEmploymentProfileRef?: ReferenceSummary | null;
+  linkedTalentRef?: ReferenceSummary | null;
+}): ReferenceSummary | null | undefined => {
+  if (record.linkedEntityKind === 'EMPLOYMENT_PROFILE') {
+    return record.linkedEmploymentProfileRef;
+  }
+
+  return record.linkedTalentRef;
+};
+
 export const createContractRecordColumns = (
   t: TFunction,
   handlers: ContractListColumnHandlers,
@@ -82,21 +95,23 @@ export const createContractRecordColumns = (
   {
     id: 'linkedEntityId',
     header: t('contract-registry:table.linkedEntityId'),
-    cell: ({ row }) => (
-      <span className="font-mono text-xs">
-        {readContractLinkedEntityId(
-          row.original as Parameters<typeof readContractLinkedEntityId>[0],
-        ) ?? '-'}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const record = row.original as Parameters<typeof readContractLinkedEntityId>[0] &
+        Parameters<typeof readContractLinkedEntityRef>[0];
+      return readReferenceDisplay(
+        readContractLinkedEntityRef(record),
+        readContractLinkedEntityId(record),
+      );
+    },
   },
   {
     accessorKey: 'ownerEmploymentProfileId',
     header: t('contract-registry:table.ownerEmploymentProfileId'),
-    cell: (context) => {
-      const value = context.getValue();
-      return value ? <span className="font-mono text-xs">{String(value)}</span> : '-';
-    },
+    cell: ({ row }) =>
+      readReferenceDisplay(
+        'ownerEmploymentProfileRef' in row.original ? row.original.ownerEmploymentProfileRef : null,
+        'ownerEmploymentProfileId' in row.original ? row.original.ownerEmploymentProfileId : null,
+      ),
   },
   {
     accessorKey: 'confidentialityTier',

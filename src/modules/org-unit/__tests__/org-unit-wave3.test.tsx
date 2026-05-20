@@ -8,6 +8,7 @@ import { http, HttpResponse } from 'msw';
 import { appRoutes } from '@app/router/router';
 import {
   OrgUnitCreateSurface,
+  OrgUnitEditSurface,
   OrgUnitMoveSurface,
 } from '@modules/org-unit/forms/org-unit-mutation-forms';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
@@ -48,6 +49,8 @@ const renderRoute = (path: string) => {
   });
 
   renderAppWithProviders(<RouterProvider router={router} />, { queryClient });
+
+  return router;
 };
 
 const findPicker = async (pickerId: string): Promise<HTMLElement> => {
@@ -76,6 +79,17 @@ const selectPickerOption = async (
   await user.click(await within(picker).findByText(optionText));
 };
 
+const openMoreFilters = async (user: ReturnType<typeof userEvent.setup>): Promise<void> => {
+  await user.click(
+    screen.getByRole('button', {
+      name: new RegExp(i18n.t('common:filters.moreFilters')),
+    }),
+  );
+  expect(
+    await screen.findByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
+  ).toBeInTheDocument();
+};
+
 describe('org unit wave 3 surfaces', () => {
   it('renders list rows for query-driven Org Unit routes', async () => {
     await setLocale(DEFAULT_LOCALE);
@@ -86,6 +100,102 @@ describe('org unit wave 3 surfaces', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('OU-000003', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(await screen.findByText('Operations', {}, { timeout: 3000 })).toBeInTheDocument();
+    const row = (await screen.findAllByText('OU-000003', {}, { timeout: 3000 }))
+      .map((element) => element.closest('tr'))
+      .find((candidate): candidate is HTMLTableRowElement => Boolean(candidate));
+    expect(row).not.toBeNull();
+    if (!row) {
+      return;
+    }
+    expect(within(row).getByText(i18n.t('org-unit:statuses.INACTIVE'))).toBeInTheDocument();
+    expect(within(row).queryByText('INACTIVE')).not.toBeInTheDocument();
+    expect(await screen.findByText('Head Office')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('org-unit:sort.displayOrder'))).toBeInTheDocument();
+    expect(screen.queryByText('displayOrder')).not.toBeInTheDocument();
+    expect(screen.queryByText(/sortPriority\(/i)).not.toBeInTheDocument();
+  });
+
+  it('uses a parent org unit selector for the relationship filter while preserving query ids', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const router = renderRoute('/org-units?status=ACTIVE&parentOrgUnitId=ou-parent');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('org-unit:page.title') }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(i18n.t('org-unit:filters.parentOrgUnitIdPlaceholder')),
+    ).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(i18n.t('org-unit:filters.searchPlaceholder'))).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: i18n.t('org-unit:filters.status') })).toHaveValue(
+      'ACTIVE',
+    );
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'org-unit:filters.parentOrgUnitId',
+        )}`,
+      }),
+    ).toBeInTheDocument();
+
+    await openMoreFilters(user);
+
+    const picker = await findPicker('org-unit-filter-parent');
+    expect(await within(picker).findAllByText(/OU-PARENT/)).not.toHaveLength(0);
+
+    await user.click(await within(picker).findByRole('button', { name: /OU-NEW/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBe(
+        'ou-new-parent',
+      );
+      expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).not.toBe(
+        'OU-NEW',
+      );
+    });
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'org-unit:filters.parentOrgUnitId',
+        )}`,
+      }),
+    );
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBeNull();
+    });
+
+    await user.click(await within(picker).findByRole('button', { name: /OU-PARENT/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBe(
+        'ou-parent',
+      );
+    });
+
+    const field = picker.closest('fieldset');
+    expect(field).not.toBeNull();
+    if (!field) {
+      return;
+    }
+
+    await user.click(within(field).getByRole('button', { name: i18n.t('common:actions.clear') }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBeNull();
+    });
+
+    await user.click(await within(picker).findByRole('button', { name: /OU-PARENT/ }));
+    await waitFor(() => {
+      expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBe(
+        'ou-parent',
+      );
+    });
+
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search);
+      expect(params.get('status')).toBeNull();
+      expect(params.get('parentOrgUnitId')).toBeNull();
+    });
   });
 
   it('renders detail hierarchy and detail-first action surfaces', async () => {
@@ -94,6 +204,8 @@ describe('org unit wave 3 surfaces', () => {
     renderRoute('/org-units/ou-root');
 
     expect(await screen.findByText(i18n.t('org-unit:actionRail.title'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('org-unit:fields.displayOrder'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('org-unit:help.displayOrder'))).toBeInTheDocument();
 
     const activateButton = screen.getByRole('button', {
       name: i18n.t('org-unit:actions.activate'),
@@ -107,6 +219,22 @@ describe('org unit wave 3 surfaces', () => {
     await user.click(screen.getByRole('button', { name: i18n.t('org-unit:actions.move') }));
     expect(await screen.findByText(i18n.t('org-unit:mutations.move.title'))).toBeInTheDocument();
     expect(await findPicker('org-unit-new-parent')).toBeInTheDocument();
+    const childRow = (await screen.findByText('Sales')).closest('tr');
+    expect(childRow).not.toBeNull();
+    if (!childRow) {
+      return;
+    }
+    expect(within(childRow).getByText(i18n.t('org-unit:statuses.ACTIVE'))).toBeInTheDocument();
+    expect(within(childRow).queryByText('ACTIVE')).not.toBeInTheDocument();
+  });
+
+  it('renders readable parent org unit refs on detail while links stay id-based', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    renderRoute('/org-units/ou-sales');
+
+    const parentLink = await screen.findByRole('link', { name: 'Head Office' });
+    expect(parentLink).toHaveAttribute('href', '/org-units/ou-root');
+    expect(parentLink).not.toHaveTextContent('ou-root');
   });
 
   it('submits selected parent org unit references from create and move surfaces', async () => {
@@ -122,8 +250,9 @@ describe('org unit wave 3 surfaces', () => {
     );
     expect(screen.queryByLabelText(i18n.t('org-unit:fields.code'))).toBeNull();
     expect(screen.getByText(i18n.t('org-unit:generatedCode.description'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('org-unit:help.displayOrder'))).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('org-unit:fields.name')), 'Selector Unit');
-    await user.type(screen.getByLabelText(i18n.t('org-unit:fields.type')), 'TEAM');
+    await user.selectOptions(screen.getByLabelText(i18n.t('org-unit:fields.type')), 'TEAM');
     await user.type(screen.getByLabelText(i18n.t('org-unit:fields.externalRef')), 'EXT-OU');
     await selectPickerOption(user, 'org-unit-parent', /OU-PARENT/);
     await user.click(
@@ -157,6 +286,38 @@ describe('org unit wave 3 surfaces', () => {
     });
   });
 
+  it('keeps the stored Org Unit sort priority value visible in edit payloads', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+
+    renderAppWithProviders(
+      <MemoryRouter>
+        <OrgUnitEditSurface
+          initialValues={{
+            name: 'Editorial',
+            displayOrder: 20,
+          }}
+          onCancel={() => undefined}
+          onSubmit={onEdit}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByLabelText(i18n.t('org-unit:fields.displayOrder'))).toHaveValue(20);
+    expect(screen.getByText(i18n.t('org-unit:help.displayOrder'))).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('org-unit:mutations.edit.submit') }),
+    );
+
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        displayOrder: 20,
+      }),
+    );
+  });
+
   it('supports create and lifecycle mutation flows from list/detail surfaces', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -186,7 +347,10 @@ describe('org unit wave 3 surfaces', () => {
       createSurfaceScope.getByLabelText(i18n.t('org-unit:fields.name')),
       'Wave 3 Org',
     );
-    await user.type(createSurfaceScope.getByLabelText(i18n.t('org-unit:fields.type')), 'TEAM');
+    await user.selectOptions(
+      createSurfaceScope.getByLabelText(i18n.t('org-unit:fields.type')),
+      'TEAM',
+    );
     const displayOrderInput = createSurfaceScope.getByLabelText(
       i18n.t('org-unit:fields.displayOrder'),
     );
@@ -219,7 +383,10 @@ describe('org unit wave 3 surfaces', () => {
           return;
         }
 
-        expect(within(refreshedRow).getByText(/inactive/i)).toBeInTheDocument();
+        expect(
+          within(refreshedRow).getByText(i18n.t('org-unit:statuses.INACTIVE')),
+        ).toBeInTheDocument();
+        expect(within(refreshedRow).queryByText('INACTIVE')).not.toBeInTheDocument();
       },
       { timeout: 3000 },
     );

@@ -17,6 +17,17 @@ type MetricCode =
   | 'ENGAGEMENT_COUNT'
   | 'FOLLOWER_DELTA';
 
+type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  title?: string;
+  displayName?: string;
+  handle?: string;
+  platform?: string;
+  status?: string;
+};
+
 type TalentKpiMetricRecord = {
   id: string;
   metricCode: MetricCode;
@@ -32,6 +43,9 @@ type TalentKpiRecord = {
   subjectTalentId: string;
   attributionPlatformAccountId?: string | null;
   attributionEventId?: string | null;
+  subjectTalentRef?: ReferenceSummary | null;
+  attributionPlatformAccountRef?: ReferenceSummary | null;
+  attributionEventRef?: ReferenceSummary | null;
   measurementSource: 'MANUAL';
   status: TalentKpiStatus;
   periodStartAt: number;
@@ -50,6 +64,9 @@ type RevenueEntryRecord = {
   subjectTalentId: string;
   attributionPlatformAccountId?: string | null;
   attributionEventId?: string | null;
+  subjectTalentRef?: ReferenceSummary | null;
+  attributionPlatformAccountRef?: ReferenceSummary | null;
+  attributionEventRef?: ReferenceSummary | null;
   revenueKind: RevenueKind;
   entrySource: 'MANUAL';
   status: RevenueEntryStatus;
@@ -76,6 +93,37 @@ const metricCodes: MetricCode[] = [
   'ENGAGEMENT_COUNT',
   'FOLLOWER_DELTA',
 ];
+
+const talentRefs = new Map<string, ReferenceSummary>([
+  ['talent-001', { id: 'talent-001', code: 'TAL-001', name: 'Luna Park', status: 'ACTIVE' }],
+  ['talent-002', { id: 'talent-002', code: 'TAL-002', name: 'Minh Tran', status: 'ACTIVE' }],
+]);
+
+const platformRefSummaries = new Map<string, ReferenceSummary>([
+  [
+    'platform-001',
+    {
+      id: 'platform-001',
+      code: 'PA-001',
+      displayName: 'Luna TikTok',
+      handle: '@luna-live',
+      platform: 'TIKTOK',
+      status: 'ACTIVE',
+    },
+  ],
+]);
+
+const eventRefs = new Map<string, ReferenceSummary>([
+  [
+    'event-001',
+    {
+      id: 'event-001',
+      code: 'EVT-001',
+      title: 'Spring Live Show',
+      status: 'SCHEDULED',
+    },
+  ],
+]);
 
 const initialTalentKpiRecords: TalentKpiRecord[] = [
   {
@@ -418,6 +466,9 @@ const filterTalentKpis = (records: TalentKpiRecord[], searchParams: URLSearchPar
   const search = searchParams.get('search');
   const windowStartAt = readNumberParam(searchParams, 'windowStartAt');
   const windowEndAt = readNumberParam(searchParams, 'windowEndAt');
+  const createdBeforeAt = readNumberParam(searchParams, 'createdBeforeAt');
+  const publishedFromAt = readNumberParam(searchParams, 'publishedFromAt');
+  const publishedToAt = readNumberParam(searchParams, 'publishedToAt');
   const containsMetricCode = searchParams.get('containsMetricCode');
 
   rows = status
@@ -442,6 +493,13 @@ const filterTalentKpis = (records: TalentKpiRecord[], searchParams: URLSearchPar
     rows = rows.filter((item) => item.measurementSource === searchParams.get('measurementSource'));
   if (windowStartAt !== undefined) rows = rows.filter((item) => item.periodEndAt > windowStartAt);
   if (windowEndAt !== undefined) rows = rows.filter((item) => item.periodStartAt < windowEndAt);
+  if (createdBeforeAt !== undefined) rows = rows.filter((item) => item.createdAt < createdBeforeAt);
+  if (publishedFromAt !== undefined) {
+    rows = rows.filter((item) => item.publishedAt != null && item.publishedAt >= publishedFromAt);
+  }
+  if (publishedToAt !== undefined) {
+    rows = rows.filter((item) => item.publishedAt != null && item.publishedAt < publishedToAt);
+  }
   if (containsMetricCode) {
     rows = rows.filter((item) =>
       (talentKpiMetrics[item.id] ?? []).some((metric) => metric.metricCode === containsMetricCode),
@@ -469,6 +527,11 @@ const hasUnsafeRevenueNarrowSort = (searchParams: URLSearchParams): boolean => {
     'currencyCode',
     'windowStartAt',
     'windowEndAt',
+    'createdBeforeAt',
+    'finalizedFromAt',
+    'finalizedToAt',
+    'reconciledFromAt',
+    'reconciledToAt',
     'search',
   ].some((key) => searchParams.has(key));
 };
@@ -479,6 +542,11 @@ const filterRevenueEntries = (records: RevenueEntryRecord[], searchParams: URLSe
   const search = searchParams.get('search');
   const windowStartAt = readNumberParam(searchParams, 'windowStartAt');
   const windowEndAt = readNumberParam(searchParams, 'windowEndAt');
+  const createdBeforeAt = readNumberParam(searchParams, 'createdBeforeAt');
+  const finalizedFromAt = readNumberParam(searchParams, 'finalizedFromAt');
+  const finalizedToAt = readNumberParam(searchParams, 'finalizedToAt');
+  const reconciledFromAt = readNumberParam(searchParams, 'reconciledFromAt');
+  const reconciledToAt = readNumberParam(searchParams, 'reconciledToAt');
 
   rows = status
     ? rows.filter((item) => item.status === status)
@@ -506,6 +574,21 @@ const filterRevenueEntries = (records: RevenueEntryRecord[], searchParams: URLSe
     rows = rows.filter((item) => item.currencyCode === searchParams.get('currencyCode'));
   if (windowStartAt !== undefined) rows = rows.filter((item) => item.recognizedAt >= windowStartAt);
   if (windowEndAt !== undefined) rows = rows.filter((item) => item.recognizedAt < windowEndAt);
+  if (createdBeforeAt !== undefined) rows = rows.filter((item) => item.createdAt < createdBeforeAt);
+  if (finalizedFromAt !== undefined) {
+    rows = rows.filter((item) => item.finalizedAt != null && item.finalizedAt >= finalizedFromAt);
+  }
+  if (finalizedToAt !== undefined) {
+    rows = rows.filter((item) => item.finalizedAt != null && item.finalizedAt < finalizedToAt);
+  }
+  if (reconciledFromAt !== undefined) {
+    rows = rows.filter(
+      (item) => item.reconciledAt != null && item.reconciledAt >= reconciledFromAt,
+    );
+  }
+  if (reconciledToAt !== undefined) {
+    rows = rows.filter((item) => item.reconciledAt != null && item.reconciledAt < reconciledToAt);
+  }
 
   return rows.sort(
     (left, right) => left.recognizedAt - right.recognizedAt || left.id.localeCompare(right.id),
@@ -525,12 +608,64 @@ const toTalentKpiListItem = (record: TalentKpiRecord) => ({
   subjectTalentId: record.subjectTalentId,
   attributionPlatformAccountId: record.attributionPlatformAccountId ?? null,
   attributionEventId: record.attributionEventId ?? null,
+  subjectTalentRef: talentRefs.get(record.subjectTalentId) ?? null,
+  attributionPlatformAccountRef: record.attributionPlatformAccountId
+    ? (platformRefSummaries.get(record.attributionPlatformAccountId) ?? null)
+    : null,
+  attributionEventRef: record.attributionEventId
+    ? (eventRefs.get(record.attributionEventId) ?? null)
+    : null,
   measurementSource: record.measurementSource,
   status: record.status,
   periodStartAt: record.periodStartAt,
   periodEndAt: record.periodEndAt,
   publishedAt: record.publishedAt ?? null,
   createdAt: record.createdAt,
+});
+
+const toTalentKpiByTalentItem = (record: TalentKpiRecord) => ({
+  id: record.id,
+  kpiRecordCode: record.kpiRecordCode,
+  title: record.title,
+  subjectTalentId: record.subjectTalentId,
+  status: record.status,
+  measurementSource: record.measurementSource,
+  periodStartAt: record.periodStartAt,
+  periodEndAt: record.periodEndAt,
+  publishedAt: record.publishedAt ?? null,
+});
+
+const toTalentKpiByPlatformItem = (record: TalentKpiRecord) => ({
+  id: record.id,
+  kpiRecordCode: record.kpiRecordCode,
+  title: record.title,
+  subjectTalentId: record.subjectTalentId,
+  attributionPlatformAccountId: record.attributionPlatformAccountId,
+  status: record.status,
+  periodStartAt: record.periodStartAt,
+  periodEndAt: record.periodEndAt,
+});
+
+const toTalentKpiByEventItem = (record: TalentKpiRecord) => ({
+  id: record.id,
+  kpiRecordCode: record.kpiRecordCode,
+  title: record.title,
+  subjectTalentId: record.subjectTalentId,
+  attributionEventId: record.attributionEventId,
+  status: record.status,
+  periodStartAt: record.periodStartAt,
+  periodEndAt: record.periodEndAt,
+});
+
+const toTalentKpiDetail = (record: TalentKpiRecord): TalentKpiRecord => ({
+  ...record,
+  subjectTalentRef: talentRefs.get(record.subjectTalentId) ?? null,
+  attributionPlatformAccountRef: record.attributionPlatformAccountId
+    ? (platformRefSummaries.get(record.attributionPlatformAccountId) ?? null)
+    : null,
+  attributionEventRef: record.attributionEventId
+    ? (eventRefs.get(record.attributionEventId) ?? null)
+    : null,
 });
 
 const toRevenueEntryListItem = (record: RevenueEntryRecord) => ({
@@ -540,6 +675,13 @@ const toRevenueEntryListItem = (record: RevenueEntryRecord) => ({
   subjectTalentId: record.subjectTalentId,
   attributionPlatformAccountId: record.attributionPlatformAccountId ?? null,
   attributionEventId: record.attributionEventId ?? null,
+  subjectTalentRef: talentRefs.get(record.subjectTalentId) ?? null,
+  attributionPlatformAccountRef: record.attributionPlatformAccountId
+    ? (platformRefSummaries.get(record.attributionPlatformAccountId) ?? null)
+    : null,
+  attributionEventRef: record.attributionEventId
+    ? (eventRefs.get(record.attributionEventId) ?? null)
+    : null,
   revenueKind: record.revenueKind,
   entrySource: record.entrySource,
   status: record.status,
@@ -547,6 +689,55 @@ const toRevenueEntryListItem = (record: RevenueEntryRecord) => ({
   recognizedAmount: record.recognizedAmount,
   recognizedAt: record.recognizedAt,
   createdAt: record.createdAt,
+});
+
+const toRevenueEntryByTalentItem = (record: RevenueEntryRecord) => ({
+  id: record.id,
+  revenueEntryCode: record.revenueEntryCode,
+  title: record.title,
+  subjectTalentId: record.subjectTalentId,
+  revenueKind: record.revenueKind,
+  status: record.status,
+  currencyCode: record.currencyCode,
+  recognizedAmount: record.recognizedAmount,
+  recognizedAt: record.recognizedAt,
+});
+
+const toRevenueEntryByPlatformItem = (record: RevenueEntryRecord) => ({
+  id: record.id,
+  revenueEntryCode: record.revenueEntryCode,
+  title: record.title,
+  subjectTalentId: record.subjectTalentId,
+  attributionPlatformAccountId: record.attributionPlatformAccountId,
+  revenueKind: record.revenueKind,
+  status: record.status,
+  currencyCode: record.currencyCode,
+  recognizedAmount: record.recognizedAmount,
+  recognizedAt: record.recognizedAt,
+});
+
+const toRevenueEntryByEventItem = (record: RevenueEntryRecord) => ({
+  id: record.id,
+  revenueEntryCode: record.revenueEntryCode,
+  title: record.title,
+  subjectTalentId: record.subjectTalentId,
+  attributionEventId: record.attributionEventId,
+  revenueKind: record.revenueKind,
+  status: record.status,
+  currencyCode: record.currencyCode,
+  recognizedAmount: record.recognizedAmount,
+  recognizedAt: record.recognizedAt,
+});
+
+const toRevenueEntryDetail = (record: RevenueEntryRecord): RevenueEntryRecord => ({
+  ...record,
+  subjectTalentRef: talentRefs.get(record.subjectTalentId) ?? null,
+  attributionPlatformAccountRef: record.attributionPlatformAccountId
+    ? (platformRefSummaries.get(record.attributionPlatformAccountId) ?? null)
+    : null,
+  attributionEventRef: record.attributionEventId
+    ? (eventRefs.get(record.attributionEventId) ?? null)
+    : null,
 });
 
 const toMetricRecords = (
@@ -570,6 +761,9 @@ const talentKpiFlatKeys = [
   'containsMetricCode',
   'windowStartAt',
   'windowEndAt',
+  'createdBeforeAt',
+  'publishedFromAt',
+  'publishedToAt',
   'limit',
   'cursor',
   'search',
@@ -616,6 +810,11 @@ const revenueFlatKeys = [
   'currencyCode',
   'windowStartAt',
   'windowEndAt',
+  'createdBeforeAt',
+  'finalizedFromAt',
+  'finalizedToAt',
+  'reconciledFromAt',
+  'reconciledToAt',
   'limit',
   'cursor',
   'search',
@@ -646,7 +845,7 @@ export const wave8Handlers = [
       return HttpResponse.json({ message: 'Missing subjectTalentId' }, { status: 422 });
     return HttpResponse.json(
       paginate(
-        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiListItem),
+        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiByTalentItem),
         url.searchParams,
       ),
     );
@@ -662,7 +861,7 @@ export const wave8Handlers = [
       );
     return HttpResponse.json(
       paginate(
-        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiListItem),
+        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiByPlatformItem),
         url.searchParams,
       ),
     );
@@ -675,7 +874,7 @@ export const wave8Handlers = [
       return HttpResponse.json({ message: 'Missing attributionEventId' }, { status: 422 });
     return HttpResponse.json(
       paginate(
-        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiListItem),
+        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiByEventItem),
         url.searchParams,
       ),
     );
@@ -723,7 +922,7 @@ export const wave8Handlers = [
     };
     talentKpiRecords.push(record);
     talentKpiMetrics[id] = toMetricRecords(id, body.metrics as Array<Record<string, unknown>>);
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toTalentKpiDetail(record) });
   }),
   http.get('*/admin/talent-kpi-records/:talentKpiRecordId/metrics', ({ params }) => {
     const record = readTalentKpi(String(params.talentKpiRecordId));
@@ -733,7 +932,7 @@ export const wave8Handlers = [
   http.get('*/admin/talent-kpi-records/:talentKpiRecordId', ({ params }) => {
     const record = readTalentKpi(String(params.talentKpiRecordId));
     if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toTalentKpiDetail(record) });
   }),
   http.patch(
     '*/admin/talent-kpi-records/:talentKpiRecordId/draft-core',
@@ -756,7 +955,7 @@ export const wave8Handlers = [
       ]);
       if (unsupported) return unsupported;
       Object.assign(record, body, { updatedAt: Date.now() });
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: toTalentKpiDetail(record) });
     },
   ),
   http.post(
@@ -777,7 +976,7 @@ export const wave8Handlers = [
         body.metrics as Array<Record<string, unknown>>,
       );
       record.updatedAt = Date.now();
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: toTalentKpiDetail(record) });
     },
   ),
   http.post(
@@ -794,7 +993,7 @@ export const wave8Handlers = [
       record.status = 'FINALIZED';
       record.publishedAt = Date.now();
       record.updatedAt = Date.now();
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: toTalentKpiDetail(record) });
     },
   ),
   http.post(
@@ -810,7 +1009,7 @@ export const wave8Handlers = [
         return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
       record.status = 'ARCHIVED';
       record.updatedAt = Date.now();
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: toTalentKpiDetail(record) });
     },
   ),
 
@@ -838,7 +1037,7 @@ export const wave8Handlers = [
       return HttpResponse.json({ message: 'Invalid related sort' }, { status: 422 });
     return HttpResponse.json(
       paginate(
-        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryListItem),
+        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryByTalentItem),
         url.searchParams,
       ),
     );
@@ -856,7 +1055,7 @@ export const wave8Handlers = [
       return HttpResponse.json({ message: 'Invalid related sort' }, { status: 422 });
     return HttpResponse.json(
       paginate(
-        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryListItem),
+        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryByPlatformItem),
         url.searchParams,
       ),
     );
@@ -871,7 +1070,7 @@ export const wave8Handlers = [
       return HttpResponse.json({ message: 'Invalid related sort' }, { status: 422 });
     return HttpResponse.json(
       paginate(
-        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryListItem),
+        filterRevenueEntries(revenueEntries, url.searchParams).map(toRevenueEntryByEventItem),
         url.searchParams,
       ),
     );
@@ -921,12 +1120,12 @@ export const wave8Handlers = [
       updatedAt: Date.now(),
     };
     revenueEntries.push(record);
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRevenueEntryDetail(record) });
   }),
   http.get('*/admin/revenue-entries/:revenueEntryId', ({ params }) => {
     const record = readRevenueEntry(String(params.revenueEntryId));
     if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRevenueEntryDetail(record) });
   }),
   http.patch('*/admin/revenue-entries/:revenueEntryId/draft-core', async ({ params, request }) => {
     const record = readRevenueEntry(String(params.revenueEntryId));
@@ -948,7 +1147,7 @@ export const wave8Handlers = [
     ]);
     if (unsupported) return unsupported;
     Object.assign(record, body, { updatedAt: Date.now() });
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRevenueEntryDetail(record) });
   }),
   http.post('*/admin/revenue-entries/:revenueEntryId/finalize', async ({ params, request }) => {
     const body = await parseJsonBody(request);
@@ -961,7 +1160,7 @@ export const wave8Handlers = [
     record.status = 'FINALIZED';
     record.finalizedAt = Date.now();
     record.updatedAt = Date.now();
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRevenueEntryDetail(record) });
   }),
   http.post('*/admin/revenue-entries/:revenueEntryId/reconcile', async ({ params, request }) => {
     const body = await parseJsonBody(request);
@@ -976,7 +1175,7 @@ export const wave8Handlers = [
     record.reconciliationReference =
       (body.reconciliationReference as string | null | undefined) ?? null;
     record.updatedAt = Date.now();
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRevenueEntryDetail(record) });
   }),
   http.post('*/admin/revenue-entries/:revenueEntryId/void', async ({ params, request }) => {
     const body = await parseJsonBody(request);
@@ -994,7 +1193,7 @@ export const wave8Handlers = [
     record.status = 'VOIDED';
     record.voidedAt = Date.now();
     record.updatedAt = Date.now();
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRevenueEntryDetail(record) });
   }),
   http.post('*/admin/revenue-entries/:revenueEntryId/archive', async ({ params, request }) => {
     const body = await parseJsonBody(request);
@@ -1006,6 +1205,6 @@ export const wave8Handlers = [
       return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
     record.status = 'ARCHIVED';
     record.updatedAt = Date.now();
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: toRevenueEntryDetail(record) });
   }),
 ];

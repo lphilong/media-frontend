@@ -50,7 +50,7 @@
     "TALENT": "Talent"
   },
   "confidentialityTiers": {
-    "STANDARD": "Standard",
+    "INTERNAL": "Internal",
     "CONFIDENTIAL": "Confidential",
     "RESTRICTED": "Restricted"
   },

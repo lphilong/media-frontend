@@ -68,6 +68,23 @@ const detailRecord: ContractRecord = {
   updatedAt: 2,
 };
 
+const listRecord = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  id: detailRecord.id,
+  contractCode: detailRecord.contractCode,
+  title: detailRecord.title,
+  contractKind: detailRecord.contractKind,
+  linkedEntityKind: detailRecord.linkedEntityKind,
+  linkedEmploymentProfileId: detailRecord.linkedEmploymentProfileId,
+  linkedTalentId: detailRecord.linkedTalentId,
+  ownerEmploymentProfileId: detailRecord.ownerEmploymentProfileId,
+  confidentialityTier: detailRecord.confidentialityTier,
+  status: detailRecord.status,
+  effectiveStartDate: detailRecord.effectiveStartDate,
+  effectiveEndDate: detailRecord.effectiveEndDate,
+  createdAt: detailRecord.createdAt,
+  ...overrides,
+});
+
 describe('contract registry wave 7 query and payload shaping', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -111,6 +128,52 @@ describe('contract registry wave 7 query and payload shaping', () => {
     expect(params.get('scope')).toBeNull();
     expect(params.get('scopeGrants')).toBeNull();
     expect(params.get('page')).toBeNull();
+  });
+
+  it('accepts Contract Registry effective-end target filters and serializes URL/API params', async () => {
+    const query = parseScreenQueryParams(
+      new URLSearchParams(
+        'status=ACTIVE&effectiveEndDateFrom=2026-05-01&effectiveEndDateTo=2026-05-31&windowStartDate=2026-01-01&windowEndDate=2026-12-31',
+      ),
+      contractRegistryFlatListQueryConfig,
+    );
+
+    expect(query).toEqual({
+      status: 'ACTIVE',
+      windowStartDate: '2026-01-01',
+      windowEndDate: '2026-12-31',
+      effectiveEndDateFrom: '2026-05-01',
+      effectiveEndDateTo: '2026-05-31',
+    });
+
+    const params = serializeScreenQueryParams(query, contractRegistryFlatListQueryConfig);
+    expect(params.get('status')).toBe('ACTIVE');
+    expect(params.get('windowStartDate')).toBe('2026-01-01');
+    expect(params.get('windowEndDate')).toBe('2026-12-31');
+    expect(params.get('effectiveEndDateFrom')).toBe('2026-05-01');
+    expect(params.get('effectiveEndDateTo')).toBe('2026-05-31');
+
+    const invalid = serializeScreenQueryParams(
+      {
+        effectiveEndDateFrom: '2026-06-01',
+        effectiveEndDateTo: '2026-05-01',
+        windowStartDate: '2026-02-30',
+      },
+      contractRegistryFlatListQueryConfig,
+    );
+    expect(invalid.get('effectiveEndDateFrom')).toBeNull();
+    expect(invalid.get('effectiveEndDateTo')).toBeNull();
+    expect(invalid.get('windowStartDate')).toBeNull();
+
+    apiRequestMock.mockResolvedValue({ data: [], meta: undefined });
+    await fetchContractRecords(query);
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].params).toMatchObject({
+      status: 'ACTIVE',
+      windowStartDate: '2026-01-01',
+      windowEndDate: '2026-12-31',
+      effectiveEndDateFrom: '2026-05-01',
+      effectiveEndDateTo: '2026-05-31',
+    });
   });
 
   it('normalizes related queries fail-closed and forbids search on related routes', () => {
@@ -202,6 +265,32 @@ describe('contract registry wave 7 query and payload shaping', () => {
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('contractCode');
   });
 
+  it('keeps the API parser strict for backend confidentiality tiers', async () => {
+    apiRequestMock.mockResolvedValue({
+      data: [
+        listRecord({ id: 'contract-internal', confidentialityTier: 'INTERNAL' }),
+        listRecord({ id: 'contract-confidential', confidentialityTier: 'CONFIDENTIAL' }),
+        listRecord({ id: 'contract-restricted', confidentialityTier: 'RESTRICTED' }),
+      ],
+      meta: undefined,
+    });
+
+    await expect(fetchContractRecords({})).resolves.toMatchObject({
+      data: [
+        { confidentialityTier: 'INTERNAL' },
+        { confidentialityTier: 'CONFIDENTIAL' },
+        { confidentialityTier: 'RESTRICTED' },
+      ],
+    });
+
+    apiRequestMock.mockResolvedValue({
+      data: [listRecord({ confidentialityTier: 'STANDARD' })],
+      meta: undefined,
+    });
+
+    await expect(fetchContractRecords({})).rejects.toThrow(/STANDARD/);
+  });
+
   it('submits exact mutation payloads for draft-core, owner, file reference, dates, and zero-body lifecycle', async () => {
     apiRequestMock.mockResolvedValue({ data: detailRecord });
 
@@ -210,7 +299,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
       linkedEntityKind: 'TALENT',
       linkedTalentId: 'talent-001',
       linkedEmploymentProfileId: 'ep-forbidden',
-      confidentialityTier: 'STANDARD',
+      confidentialityTier: 'INTERNAL',
       effectiveStartDate: '2026-01-01',
       effectiveEndDate: null,
       description: null,
@@ -223,7 +312,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
       linkedEntityKind: 'TALENT',
       linkedTalentId: 'talent-001',
       linkedEmploymentProfileId: null,
-      confidentialityTier: 'STANDARD',
+      confidentialityTier: 'INTERNAL',
       effectiveStartDate: '2026-01-01',
       effectiveEndDate: null,
       description: null,

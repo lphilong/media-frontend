@@ -67,6 +67,64 @@ describe('user IA-1 surfaces', () => {
     expect(screen.queryByText(/credential|token|password|session/i)).not.toBeInTheDocument();
   });
 
+  it('shows capability reasons for User actions when permissions are missing', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({
+          data: {
+            id: 'user-admin',
+            type: 'admin',
+            context: 'ADMIN',
+            isActive: true,
+            roles: ['role-admin'],
+            permissions: ['user:view'],
+            scopeGrants: {},
+            generatedAt: '2026-05-20T00:00:00.000Z',
+          },
+        }),
+      ),
+    );
+
+    renderRoute('/users/user-admin');
+
+    const edit = await screen.findByRole('button', { name: i18n.t('user:actions.edit') });
+    const authLinkage = screen.getByRole('button', {
+      name: i18n.t('user:actions.setAuthLinkage'),
+    });
+
+    expect(edit).toBeDisabled();
+    await waitFor(() =>
+      expect(edit).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission')),
+    );
+    expect(authLinkage).toBeDisabled();
+    expect(authLinkage).toHaveAccessibleDescription(
+      i18n.t('common:capabilities.missingPermission'),
+    );
+  });
+
+  it('still surfaces backend mutation 403 when capability hints allow the action', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    server.use(
+      http.patch('*/admin/users/:userId', () =>
+        HttpResponse.json(
+          { error: { code: 'FORBIDDEN', message: 'Permission denied' } },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    renderRoute('/users/user-admin');
+
+    await user.click(await screen.findByRole('button', { name: i18n.t('user:actions.edit') }));
+    await user.clear(screen.getByLabelText(i18n.t('user:fields.displayName')));
+    await user.type(screen.getByLabelText(i18n.t('user:fields.displayName')), 'Denied User');
+    await user.click(screen.getByRole('button', { name: i18n.t('user:mutations.update.submit') }));
+
+    expect(await screen.findByText('Permission denied')).toBeInTheDocument();
+  });
+
   it('supports create and lifecycle transition flows without User-owned Role assignment UI', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();

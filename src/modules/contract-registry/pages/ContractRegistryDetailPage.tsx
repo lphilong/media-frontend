@@ -39,7 +39,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcMidnightDateLike, formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCreatedDate,
+  formatUtcMidnightDateLike,
+  formatBusinessTimestamp,
+} from '@shared/formatting/formatters';
+import { readReferenceDisplay } from '@shared/formatting/reference-display';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface =
@@ -180,6 +185,10 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
     record?.linkedEntityKind === 'EMPLOYMENT_PROFILE'
       ? record.linkedEmploymentProfileId
       : record?.linkedTalentId;
+  const linkedEntityRef =
+    record?.linkedEntityKind === 'EMPLOYMENT_PROFILE'
+      ? record.linkedEmploymentProfileRef
+      : record?.linkedTalentRef;
   const linkedEntityHref =
     record?.linkedEntityKind === 'EMPLOYMENT_PROFILE'
       ? buildEntityDetailHref('employmentProfile', linkedEntityId)
@@ -266,12 +275,12 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
                 {
                   key: 'created',
                   label: t('contract-registry:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated',
                   label: t('contract-registry:fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}
@@ -295,25 +304,28 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
                     label: t('contract-registry:fields.linkedEntityId'),
                     value:
                       linkedEntityHref && linkedEntityId ? (
-                        <Link
-                          className="font-mono text-accent hover:underline"
-                          to={linkedEntityHref}
-                        >
-                          {linkedEntityId}
+                        <Link className="text-accent hover:underline" to={linkedEntityHref}>
+                          {readReferenceDisplay(linkedEntityRef, linkedEntityId)}
                         </Link>
                       ) : (
-                        formatNullable(linkedEntityId)
+                        readReferenceDisplay(linkedEntityRef, linkedEntityId)
                       ),
                   },
                   {
                     key: 'owner',
                     label: t('contract-registry:fields.ownerEmploymentProfileId'),
                     value: ownerHref ? (
-                      <Link className="font-mono text-accent hover:underline" to={ownerHref}>
-                        {record.ownerEmploymentProfileId}
+                      <Link className="text-accent hover:underline" to={ownerHref}>
+                        {readReferenceDisplay(
+                          record.ownerEmploymentProfileRef,
+                          record.ownerEmploymentProfileId,
+                        )}
                       </Link>
                     ) : (
-                      record.ownerEmploymentProfileId
+                      readReferenceDisplay(
+                        record.ownerEmploymentProfileRef,
+                        record.ownerEmploymentProfileId,
+                      )
                     ),
                   },
                 ]}

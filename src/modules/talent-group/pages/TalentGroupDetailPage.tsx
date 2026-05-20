@@ -46,7 +46,7 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
@@ -375,6 +375,7 @@ export const TalentGroupDetailPage = (): JSX.Element => {
                   key: 'display-order',
                   label: t('talent-group:fields.displayOrder'),
                   value: String(record.displayOrder),
+                  description: t('talent-group:help.displayOrder'),
                 },
                 {
                   key: 'status',
@@ -384,12 +385,12 @@ export const TalentGroupDetailPage = (): JSX.Element => {
                 {
                   key: 'created-at',
                   label: t('talent-group:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('talent-group:fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}

@@ -24,6 +24,18 @@ import { apiRequest } from '@shared/api';
 const statusSchema = z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ARCHIVED']);
 const assignmentKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP']);
 const timestampSchema = z.union([z.number(), z.string()]);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+    handle: z.string().optional(),
+    platform: z.string().optional(),
+    status: z.string().optional(),
+  })
+  .strict();
 
 const listItemSchema = z
   .object({
@@ -43,6 +55,8 @@ const detailSchema = listItemSchema
   .extend({
     studioResourceIds: z.array(z.string()),
     platformAccountIds: z.array(z.string()),
+    studioResourceRefs: z.array(referenceSummarySchema).optional(),
+    platformAccountRefs: z.array(referenceSummarySchema).optional(),
     description: z.string().nullable().optional(),
     externalRef: z.string().nullable().optional(),
     updatedAt: timestampSchema,
@@ -57,6 +71,7 @@ const assignmentItemSchema = z
     assignmentEmploymentProfileId: z.string().nullable().optional(),
     assignmentTalentId: z.string().nullable().optional(),
     assignmentTalentGroupId: z.string().nullable().optional(),
+    assignmentSubjectRef: referenceSummarySchema.nullable().optional(),
     assignmentStatus: z.literal('ACTIVE'),
     createdAt: timestampSchema,
   })
@@ -99,6 +114,7 @@ const sanitizeFlatListQuery = (
   query: EventListQuery,
 ): Record<string, string | number | undefined> => ({
   status: query.status,
+  statusGroup: query.statusGroup,
   assignmentKind: query.assignmentKind,
   assignmentEmploymentProfileId: query.assignmentEmploymentProfileId,
   assignmentTalentId: query.assignmentTalentId,
@@ -107,6 +123,10 @@ const sanitizeFlatListQuery = (
   containsPlatformAccountId: query.containsPlatformAccountId,
   windowStartAt: query.windowStartAt,
   windowEndAt: query.windowEndAt,
+  eventOverlapStartAt: query.eventOverlapStartAt,
+  eventOverlapEndAt: query.eventOverlapEndAt,
+  eventStartFromAt: query.eventStartFromAt,
+  eventStartToAt: query.eventStartToAt,
   limit: query.limit,
   cursor: query.cursor,
   search: query.search,

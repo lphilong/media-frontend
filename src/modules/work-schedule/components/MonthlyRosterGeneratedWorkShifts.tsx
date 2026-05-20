@@ -8,6 +8,7 @@ import type {
   MonthlyRosterScope,
 } from '@modules/work-schedule/types/work-schedule.types';
 import { MetadataSection, ReadOnlyFieldGrid } from '@shared/components/primitives';
+import { readReferenceDisplay } from '@shared/formatting/formatters';
 
 type MonthlyRosterGeneratedWorkShiftsProps = {
   roster: MonthlyRosterRecord;
@@ -70,8 +71,15 @@ export const MonthlyRosterGeneratedWorkShifts = ({
             {
               key: 'roster',
               label: t('work-schedule:monthlyRosters.generated.fields.sourceRosterId'),
-              value: roster.monthlyRosterId,
-              monospace: true,
+              value: readReferenceDisplay(
+                {
+                  id: roster.monthlyRosterId,
+                  code: roster.rosterCode,
+                  title: roster.rosterMonth,
+                  status: roster.status,
+                },
+                roster.monthlyRosterId,
+              ),
             },
             {
               key: 'generation-run',

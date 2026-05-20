@@ -21,12 +21,15 @@ describe('contract registry wave 7 surfaces', () => {
   });
 
   it('renders Contract Registry list rows, filters archived by default, and keeps scope absent', async () => {
+    const user = userEvent.setup();
     renderRoute('/contract-records?scope=global&scopeGrants=x');
 
     expect(
       await screen.findByRole('heading', { name: i18n.t('contract-registry:page.title') }),
     ).toBeInTheDocument();
     expect(await screen.findByText('CON-2026-000001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getAllByText('Alice Nguyen').length).toBeGreaterThan(0);
+    expect(screen.queryByText('ep-001')).not.toBeInTheDocument();
     const activeRow = screen.getByText('CON-2026-000002').closest('tr');
     expect(activeRow).not.toBeNull();
     if (!activeRow) {
@@ -41,9 +44,46 @@ describe('contract registry wave 7 surfaces', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.queryByText('Archived contract record')).not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.noFiltersApplied'))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
+    expect(
+      screen.getByRole('combobox', { name: i18n.t('contract-registry:filters.contractKind') }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByText(/scope|scopeGrants|delete|bulk|unarchive|upload|download/i),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders Contract Registry applied chips and clears exact flat filter keys', async () => {
+    const user = userEvent.setup();
+    renderRoute(
+      '/contract-records?search=CON-2026-000001&hasFileReference=true&effectiveEndDateFrom=2026-05-19&effectiveEndDateTo=2026-06-18',
+    );
+
+    expect(await screen.findByText('CON-2026-000001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(screen.getByText('Effective end date from:')).toBeInTheDocument();
+    expect(screen.getByText('Effective end date to:')).toBeInTheDocument();
+    expect(screen.getByText(/2026-05-19/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-06-18/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
+    expect(
+      screen.getByRole('combobox', {
+        name: i18n.t('contract-registry:filters.hasFileReference'),
+      }),
+    ).toHaveValue('true');
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'contract-registry:filters.hasFileReference',
+        )}`,
+      }),
+    );
+    expect(
+      screen.getByRole('combobox', {
+        name: i18n.t('contract-registry:filters.hasFileReference'),
+      }),
+    ).toHaveValue('');
   });
 
   it('renders detail from detail API with links, action rail, and file metadata only', async () => {
@@ -54,11 +94,12 @@ describe('contract registry wave 7 surfaces', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('CON-2026-000001')).toBeInTheDocument();
     expect(screen.getByText('alice-contract.pdf')).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'ep-001' })).toHaveLength(2);
-    expect(screen.getAllByRole('link', { name: 'ep-001' })[0]).toHaveAttribute(
+    expect(screen.getAllByRole('link', { name: 'Alice Nguyen' })).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: 'Alice Nguyen' })[0]).toHaveAttribute(
       'href',
       '/employment-profiles/ep-001',
     );
+    expect(screen.queryByText('ep-001')).not.toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: i18n.t('contract-registry:related.commissionRules') }),
     ).toHaveAttribute(

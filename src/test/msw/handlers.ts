@@ -17,6 +17,14 @@ import {
 
 type OrgUnitStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
+type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  displayName?: string;
+  status?: string;
+};
+
 type OrgUnitRecord = {
   id: string;
   code: string;
@@ -49,8 +57,8 @@ type EmploymentProfileRecord = {
   linkedUserId?: string | null;
   employmentStatus: EmploymentStatus;
   contractStatus: ContractStatus;
-  employmentStartDate: string;
-  employmentEndDate?: string | null;
+  employmentStartDate: number;
+  employmentEndDate?: number | null;
   createdAt: number;
   updatedAt: number;
 };
@@ -137,6 +145,33 @@ let employmentSeed = initialEmploymentSeed;
 
 const now = Date.parse('2026-04-22T00:00:00.000Z');
 
+const parseCanonicalDateToUtcMidnight = (value: unknown, fallback: number): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) {
+    return fallback;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utcMidnight = Date.UTC(year, month - 1, day);
+  const date = new Date(utcMidnight);
+
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? utcMidnight
+    : fallback;
+};
+
 const initialOrgUnits: OrgUnitRecord[] = [
   {
     id: 'ou-root',
@@ -211,7 +246,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     linkedUserId: 'user-alice',
     employmentStatus: 'ACTIVE',
     contractStatus: 'ACTIVE',
-    employmentStartDate: '2024-01-01',
+    employmentStartDate: Date.UTC(2024, 0, 1),
     employmentEndDate: null,
     createdAt: now - 6_000,
     updatedAt: now - 5_500,
@@ -230,7 +265,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     linkedUserId: null,
     employmentStatus: 'ON_LEAVE',
     contractStatus: 'PENDING_SIGNATURE',
-    employmentStartDate: '2024-03-01',
+    employmentStartDate: Date.UTC(2024, 2, 1),
     employmentEndDate: null,
     createdAt: now - 5_000,
     updatedAt: now - 4_500,
@@ -249,7 +284,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     linkedUserId: 'user-chau',
     employmentStatus: 'SUSPENDED',
     contractStatus: 'ACTIVE',
-    employmentStartDate: '2023-10-01',
+    employmentStartDate: Date.UTC(2023, 9, 1),
     employmentEndDate: null,
     createdAt: now - 4_000,
     updatedAt: now - 3_500,
@@ -268,8 +303,8 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     linkedUserId: null,
     employmentStatus: 'TERMINATED',
     contractStatus: 'TERMINATED',
-    employmentStartDate: '2022-11-01',
-    employmentEndDate: '2025-12-31',
+    employmentStartDate: Date.UTC(2022, 10, 1),
+    employmentEndDate: Date.UTC(2025, 11, 31),
     createdAt: now - 3_000,
     updatedAt: now - 2_500,
   },
@@ -287,8 +322,8 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     linkedUserId: null,
     employmentStatus: 'ARCHIVED',
     contractStatus: 'TERMINATED',
-    employmentStartDate: '2020-01-01',
-    employmentEndDate: '2021-12-31',
+    employmentStartDate: Date.UTC(2020, 0, 1),
+    employmentEndDate: Date.UTC(2021, 11, 31),
     createdAt: now - 2_000,
     updatedAt: now - 1_500,
   },
@@ -301,6 +336,17 @@ const cloneEmploymentProfiles = (): EmploymentProfileRecord[] =>
 
 let orgUnits: OrgUnitRecord[] = cloneOrgUnits();
 let employmentProfiles: EmploymentProfileRecord[] = cloneEmploymentProfiles();
+
+const userRefs = new Map<string, ReferenceSummary>([
+  [
+    'user-alice',
+    { id: 'user-alice', displayName: 'Alice User', name: 'alice@example.test', status: 'ACTIVE' },
+  ],
+  [
+    'user-chau',
+    { id: 'user-chau', displayName: 'Chau User', name: 'chau@example.test', status: 'ACTIVE' },
+  ],
+]);
 
 export const resetMockData = (): void => {
   orgUnitSeed = initialOrgUnitSeed;
@@ -322,6 +368,29 @@ const readOrgUnit = (orgUnitId: string): OrgUnitRecord | undefined =>
 const readEmploymentProfile = (employmentProfileId: string): EmploymentProfileRecord | undefined =>
   employmentProfiles.find((item) => item.id === employmentProfileId);
 
+const toOrgUnitRef = (orgUnitId?: string | null): ReferenceSummary | null => {
+  const record = orgUnitId ? readOrgUnit(orgUnitId) : undefined;
+  return record
+    ? { id: record.id, code: record.code, name: record.name, status: record.status }
+    : null;
+};
+
+const toEmploymentProfileRef = (employmentProfileId?: string | null): ReferenceSummary | null => {
+  const record = employmentProfileId ? readEmploymentProfile(employmentProfileId) : undefined;
+  return record
+    ? {
+        id: record.id,
+        code: record.employeeCode,
+        displayName: record.displayName,
+        name: record.legalName,
+        status: record.employmentStatus,
+      }
+    : null;
+};
+
+const toUserRef = (userId?: string | null): ReferenceSummary | null =>
+  userId ? (userRefs.get(userId) ?? null) : null;
+
 const toOrgUnitListItem = (record: OrgUnitRecord) => {
   return {
     id: record.id,
@@ -330,6 +399,7 @@ const toOrgUnitListItem = (record: OrgUnitRecord) => {
     type: record.type,
     status: record.status,
     parentOrgUnitId: record.parentOrgUnitId ?? null,
+    parentOrgUnitRef: toOrgUnitRef(record.parentOrgUnitId),
     depth: record.depth,
     displayOrder: record.displayOrder,
     createdAt: record.createdAt,
@@ -344,6 +414,7 @@ const toOrgUnitChildItem = (record: OrgUnitRecord) => {
     type: record.type,
     status: record.status,
     parentOrgUnitId: record.parentOrgUnitId ?? null,
+    parentOrgUnitRef: toOrgUnitRef(record.parentOrgUnitId),
     depth: record.depth,
     displayOrder: record.displayOrder,
   };
@@ -364,6 +435,7 @@ const toOrgUnitDetail = (record: OrgUnitRecord) => {
     type: record.type,
     status: record.status,
     parentOrgUnitId: record.parentOrgUnitId ?? null,
+    parentOrgUnitRef: toOrgUnitRef(record.parentOrgUnitId),
     depth: record.depth,
     description: record.description ?? null,
     externalRef: record.externalRef ?? null,
@@ -388,8 +460,11 @@ const toEmploymentListItem = (record: EmploymentProfileRecord) => {
     employmentKind: record.employmentKind,
     jobTitle: record.jobTitle,
     orgUnitId: record.orgUnitId,
+    orgUnitRef: toOrgUnitRef(record.orgUnitId),
     managerEmploymentProfileId: record.managerEmploymentProfileId ?? null,
+    managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
     linkedUserId: record.linkedUserId ?? null,
+    linkedUserRef: toUserRef(record.linkedUserId),
     employmentStatus: record.employmentStatus,
     contractStatus: record.contractStatus,
     createdAt: record.createdAt,
@@ -407,8 +482,11 @@ const toEmploymentDetail = (record: EmploymentProfileRecord) => {
     titleDescription: record.titleDescription ?? null,
     externalRef: record.externalRef ?? null,
     orgUnitId: record.orgUnitId,
+    orgUnitRef: toOrgUnitRef(record.orgUnitId),
     managerEmploymentProfileId: record.managerEmploymentProfileId ?? null,
+    managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
     linkedUserId: record.linkedUserId ?? null,
+    linkedUserRef: toUserRef(record.linkedUserId),
     employmentStatus: record.employmentStatus,
     contractStatus: record.contractStatus,
     employmentStartDate: record.employmentStartDate,
@@ -426,7 +504,9 @@ const toDirectReportItem = (record: EmploymentProfileRecord) => {
     employmentStatus: record.employmentStatus,
     contractStatus: record.contractStatus,
     orgUnitId: record.orgUnitId,
+    orgUnitRef: toOrgUnitRef(record.orgUnitId),
     managerEmploymentProfileId: record.managerEmploymentProfileId ?? null,
+    managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
   };
 };
 
@@ -523,6 +603,28 @@ export const handlers = [
       data: {
         generatedAt: '2026-04-22T00:00:00.000Z',
         businessDate: '2026-04-22',
+        windows: {
+          businessTimeZone: 'UTC',
+          today: {
+            startAtInclusive: Date.UTC(2026, 3, 22, 0, 0, 0, 0),
+            endAtExclusive: Date.UTC(2026, 3, 23, 0, 0, 0, 0),
+          },
+          next7Days: {
+            startAtInclusive: Date.UTC(2026, 3, 22, 0, 0, 0, 0),
+            endAtExclusive: Date.UTC(2026, 3, 29, 0, 0, 0, 0),
+          },
+          trailing30Days: {
+            startAtInclusive: Date.UTC(2026, 2, 23, 0, 0, 0, 0),
+            endAtExclusive: Date.UTC(2026, 3, 22, 0, 0, 0, 0),
+          },
+          staleDrafts: {
+            olderThanAtExclusive: Date.UTC(2026, 3, 15, 0, 0, 0, 0),
+          },
+          contractExpiry30Days: {
+            startDateInclusive: '2026-04-22',
+            endDateInclusive: '2026-05-22',
+          },
+        },
         overview: {
           todayEventCount: 12,
           draftTalentKpiCount: 4,
@@ -814,7 +916,10 @@ export const handlers = [
       employmentStatus: 'ACTIVE',
       contractStatus:
         (body.contractStatus as ContractStatus | undefined) ?? ('NONE' as ContractStatus),
-      employmentStartDate: String(body.employmentStartDate ?? '2026-01-01'),
+      employmentStartDate: parseCanonicalDateToUtcMidnight(
+        body.employmentStartDate,
+        Date.UTC(2026, 0, 1),
+      ),
       employmentEndDate: null,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -1037,9 +1142,10 @@ export const handlers = [
       }
 
       const body = await parseJsonBody(request);
-      if (typeof body.employmentEndDate === 'string') {
-        profile.employmentEndDate = body.employmentEndDate;
-      }
+      profile.employmentEndDate = parseCanonicalDateToUtcMidnight(
+        body.employmentEndDate,
+        Date.UTC(2026, 0, 1),
+      );
       profile.employmentStatus = 'TERMINATED';
       profile.updatedAt = Date.now();
       return HttpResponse.json({ data: toEmploymentDetail(profile) });

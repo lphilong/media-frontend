@@ -12,6 +12,8 @@ import type {
   RoleAssignmentItem,
   RoleAssignmentListQuery,
   RoleAssignmentRuleReplacementPayload,
+  RoleAssignmentScopeGrants,
+  RoleCreateFromTemplatePayload,
   RoleCreatePayload,
   RoleDetailRecord,
   JsonPlainValue,
@@ -22,6 +24,8 @@ import type {
   RolePermissionMatrix,
   RolePermissionReplacementPayload,
   RoleRevokeAssignmentPayload,
+  RoleTemplateListItem,
+  RoleTemplatePreview,
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
 import { apiRequest } from '@shared/api';
@@ -30,10 +34,86 @@ const roleStateSchema = z.enum(roleStateValues);
 const roleAssignmentStateSchema = z.enum(roleAssignmentStateValues);
 const delegationBandSchema = z.enum(roleDelegationBandValues);
 const maxDelegatableBandSchema = z.enum(roleMaxDelegatableBandValues);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1).optional(),
+    title: z.string().trim().min(1).optional(),
+    displayName: z.string().trim().min(1).optional(),
+    handle: z.string().trim().min(1).optional(),
+    platform: z.string().trim().min(1).optional(),
+    status: z.string().trim().min(1).optional(),
+  })
+  .strict();
 
 const permissionSchema = z
   .object({
     code: z.string().trim().min(1),
+  })
+  .strict();
+
+const roleTemplateCodeSchema = z.enum([
+  'ADMIN_FULL',
+  'HR_OPERATIONS',
+  'TEAM_MANAGER',
+  'PRODUCTION_OPS',
+  'COMMERCIAL_FINANCE',
+  'TALENT_STAFF_SELF',
+  'VIEWER_AUDITOR',
+]);
+
+const roleTemplateStatusSchema = z.enum(['READY', 'PREVIEW_ONLY', 'REQUIRES_FUTURE_SCOPE']);
+
+const roleTemplateScopePlanEntrySchema = z
+  .object({
+    module: z.string().trim().min(1),
+    scopes: z.array(z.string().trim().min(1)),
+    status: roleTemplateStatusSchema,
+    note: z.string().trim().min(1),
+  })
+  .strict();
+
+export const roleTemplateSchema = z
+  .object({
+    code: roleTemplateCodeSchema,
+    version: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    description: z.string(),
+    category: z.string().trim().min(1),
+    permissionCount: z.number().int().nonnegative(),
+    permissions: z.array(permissionSchema).optional(),
+    scopePlan: z.array(roleTemplateScopePlanEntrySchema),
+    warnings: z.array(z.string()),
+    implementationNotes: z.array(z.string()),
+    status: roleTemplateStatusSchema,
+  })
+  .strict();
+
+const roleTemplatePreviewSchema = z
+  .object({
+    template: roleTemplateSchema.extend({
+      permissions: z.array(permissionSchema),
+    }),
+    permissions: z.array(permissionSchema),
+    scopePlan: z.array(roleTemplateScopePlanEntrySchema),
+    warnings: z.array(z.string()),
+    unsupportedScopeNotes: z.array(z.string()),
+  })
+  .strict();
+
+const workScheduleScopeGrantSchema = z.enum(['self', 'team', 'department', 'global']);
+const globalScopeGrantSchema = z.enum(['global']);
+
+export const roleAssignmentScopeGrantsSchema = z
+  .object({
+    workSchedule: z.array(workScheduleScopeGrantSchema).optional(),
+    eventAssignment: z.array(globalScopeGrantSchema).optional(),
+    contractRegistry: z.array(globalScopeGrantSchema).optional(),
+    talentKpi: z.array(globalScopeGrantSchema).optional(),
+    revenueLedger: z.array(globalScopeGrantSchema).optional(),
+    commission: z.array(globalScopeGrantSchema).optional(),
+    dashboardLite: z.array(globalScopeGrantSchema).optional(),
   })
   .strict();
 
@@ -59,6 +139,9 @@ const roleListItemSchema = z
     state: roleStateSchema,
     permissionsSummary: z.union([z.string(), z.number()]).nullable().optional(),
     assignmentCountSummary: z.union([z.string(), z.number()]).nullable().optional(),
+    templateCode: roleTemplateCodeSchema.nullable().optional(),
+    templateVersion: z.string().nullable().optional(),
+    templateAppliedAt: z.union([z.number(), z.string()]).nullable().optional(),
     updatedAt: z.union([z.number(), z.string()]),
   })
   .strict();
@@ -74,6 +157,9 @@ const roleDetailSchema = z
     delegationBand: delegationBandSchema,
     maxDelegatableBand: maxDelegatableBandSchema,
     assignmentRules: z.array(assignmentRuleSchema),
+    templateCode: roleTemplateCodeSchema.nullable().optional(),
+    templateVersion: z.string().nullable().optional(),
+    templateAppliedAt: z.union([z.number(), z.string()]).nullable().optional(),
     createdAt: z.union([z.number(), z.string()]).optional(),
     updatedAt: z.union([z.number(), z.string()]),
     activatedAt: z.union([z.number(), z.string()]).nullable().optional(),
@@ -86,6 +172,8 @@ const assignmentItemSchema = z
     assignmentId: z.string().trim().min(1),
     roleId: z.string().trim().min(1),
     userId: z.string().trim().min(1),
+    userRef: referenceSummarySchema.nullable().optional(),
+    scopeGrants: roleAssignmentScopeGrantsSchema.nullable().optional(),
     state: roleAssignmentStateSchema,
     effectiveAt: z.union([z.number(), z.string()]),
     revokedAt: z.union([z.number(), z.string()]).nullable().optional(),
@@ -134,6 +222,18 @@ const assignmentListResponseSchema = z
 const permissionMatrixResponseSchema = z
   .object({
     data: permissionMatrixSchema,
+  })
+  .strict();
+
+const roleTemplateListResponseSchema = z
+  .object({
+    data: z.array(roleTemplateSchema),
+  })
+  .strict();
+
+const roleTemplatePreviewResponseSchema = z
+  .object({
+    data: roleTemplatePreviewSchema,
   })
   .strict();
 
@@ -187,6 +287,42 @@ export const createRole = async (payload: RoleCreatePayload): Promise<RoleDetail
       initialDelegationBand: payload.initialDelegationBand ?? 'LIMITED',
       initialMaxDelegatableBand: payload.initialMaxDelegatableBand ?? 'NONE',
       initialAssignmentRules: payload.initialAssignmentRules ?? [],
+    },
+  });
+
+  return detailResponseSchema.parse(response).data;
+};
+
+export const fetchRoleTemplates = async (): Promise<RoleTemplateListItem[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/role-templates',
+  });
+
+  return roleTemplateListResponseSchema.parse(response).data;
+};
+
+export const previewRoleTemplate = async (templateCode: string): Promise<RoleTemplatePreview> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/role-templates/${encodeURIComponent(templateCode)}/preview`,
+    data: {},
+  });
+
+  return roleTemplatePreviewResponseSchema.parse(response).data;
+};
+
+export const createRoleFromTemplate = async (
+  payload: RoleCreateFromTemplatePayload,
+): Promise<RoleDetailRecord> => {
+  const response = await apiRequest<unknown, RoleCreateFromTemplatePayload>({
+    method: 'POST',
+    url: '/admin/roles/from-template',
+    data: {
+      templateCode: payload.templateCode,
+      code: payload.code,
+      name: payload.name,
+      description: payload.description ?? null,
     },
   });
 
@@ -277,12 +413,14 @@ export const assignRoleToUser = async (
   roleId: string,
   payload: RoleAssignToUserPayload,
 ): Promise<RoleAssignmentItem> => {
+  const scopeGrants = normalizeScopeGrantsForPayload(payload.scopeGrants);
   const response = await apiRequest<unknown, RoleAssignToUserPayload>({
     method: 'POST',
     url: `/admin/roles/${encodeURIComponent(roleId)}/assignments`,
     data: {
       userId: payload.userId,
       reason: payload.reason ?? null,
+      ...(scopeGrants ? { scopeGrants } : {}),
     },
   });
 
@@ -314,4 +452,39 @@ export const fetchRolePermissionMatrix = async (roleId: string): Promise<RolePer
   });
 
   return permissionMatrixResponseSchema.parse(response).data;
+};
+
+const normalizeScopeGrantsForPayload = (
+  scopeGrants: RoleAssignmentScopeGrants | undefined,
+): RoleAssignmentScopeGrants | undefined => {
+  if (!scopeGrants) {
+    return undefined;
+  }
+
+  const parsed = roleAssignmentScopeGrantsSchema.parse(scopeGrants);
+  const normalized: RoleAssignmentScopeGrants = {};
+
+  if ((parsed.workSchedule?.length ?? 0) > 0) {
+    normalized.workSchedule = parsed.workSchedule;
+  }
+  if ((parsed.eventAssignment?.length ?? 0) > 0) {
+    normalized.eventAssignment = parsed.eventAssignment;
+  }
+  if ((parsed.contractRegistry?.length ?? 0) > 0) {
+    normalized.contractRegistry = parsed.contractRegistry;
+  }
+  if ((parsed.talentKpi?.length ?? 0) > 0) {
+    normalized.talentKpi = parsed.talentKpi;
+  }
+  if ((parsed.revenueLedger?.length ?? 0) > 0) {
+    normalized.revenueLedger = parsed.revenueLedger;
+  }
+  if ((parsed.commission?.length ?? 0) > 0) {
+    normalized.commission = parsed.commission;
+  }
+  if ((parsed.dashboardLite?.length ?? 0) > 0) {
+    normalized.dashboardLite = parsed.dashboardLite;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
 };

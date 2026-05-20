@@ -80,7 +80,7 @@ describe('talent wave 4 mutation payloads', () => {
     ).map((option) => option.getAttribute('value'));
 
     expect(originOptions).toEqual(['', 'INTERNAL', 'EXTERNAL']);
-    expect(commercialOptions).toEqual(['ALLOWED', 'BLOCKED']);
+    expect(commercialOptions).toEqual(['ELIGIBLE', 'RESTRICTED', 'BLOCKED']);
   });
 
   it('omits talentCode from the normal create payload while preserving external references', async () => {
@@ -167,7 +167,7 @@ describe('talent wave 4 mutation payloads', () => {
     renderWithProviders(
       <TalentCommercialParticipationSurface
         initialValues={{
-          commercialParticipationStatus: 'ALLOWED',
+          commercialParticipationStatus: 'ELIGIBLE',
           livestreamEligible: true,
           eventEligible: true,
         }}

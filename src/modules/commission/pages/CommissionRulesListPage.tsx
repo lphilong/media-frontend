@@ -27,18 +27,21 @@ import {
 } from '@modules/commission/types/commission.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  AppliedFilterChips,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
   useDestructiveConfirm,
   useMutationFeedback,
+  type AppliedFilterChipItem,
 } from '@shared/components/primitives';
-import { ReferenceFilterField } from '@shared/components/reference';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import {
   loadContractReferenceOptions,
   loadEmploymentProfileReferenceOptions,
@@ -56,6 +59,7 @@ import {
   parseScreenQueryParams,
   serializeScreenQueryParams,
 } from '@shared/query';
+import { readReferenceDisplayForId } from '@shared/formatting/reference-display';
 
 type RouteMode = 'flat' | 'by-beneficiary' | 'by-contract';
 type ActiveRuleQuery =
@@ -65,6 +69,21 @@ type ActiveRuleQuery =
 type RoutePatchOptions = {
   replace?: boolean;
   resetCursorOnChange?: boolean;
+};
+
+type FilterLabelKey = 'beneficiaryEmployment' | 'beneficiaryTalent' | 'sourceContract';
+type FilterLabelEntry = {
+  id: string;
+  label: string;
+};
+
+const readCachedFilterLabel = (
+  labels: Partial<Record<FilterLabelKey, FilterLabelEntry>>,
+  key: FilterLabelKey,
+  activeId: string | undefined,
+): string | undefined => {
+  const cached = labels[key];
+  return cached && cached.id === activeId ? cached.label : undefined;
 };
 
 const sortOptions = [
@@ -202,6 +221,10 @@ export const CommissionRulesListPage = (): JSX.Element => {
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterLabels, setFilterLabels] = useState<
+    Partial<Record<FilterLabelKey, FilterLabelEntry>>
+  >({});
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(() => {
@@ -284,6 +307,218 @@ export const CommissionRulesListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const rememberFilterLabel = useCallback(
+    (key: FilterLabelKey, activeId: string | undefined) =>
+      (option: ReferenceOption | undefined) => {
+        setFilterLabels((current) => {
+          if (!option) {
+            if (!current[key] || (activeId && current[key]?.id !== activeId)) {
+              return current;
+            }
+
+            const next = { ...current };
+            delete next[key];
+            return next;
+          }
+
+          if (current[key]?.id === option.id && current[key]?.label === option.label) {
+            return current;
+          }
+
+          return { ...current, [key]: { id: option.id, label: option.label } };
+        });
+      },
+    [],
+  );
+  const beneficiaryEmploymentFilterLabel = useMemo(
+    () =>
+      readReferenceDisplayForId(
+        'beneficiaryEmploymentProfileId' in activeQuery
+          ? activeQuery.beneficiaryEmploymentProfileId
+          : undefined,
+        (listQueryResult.data?.data ?? []).map((record) => record.beneficiaryRef),
+      ),
+    [activeQuery, listQueryResult.data?.data],
+  );
+  const beneficiaryTalentFilterLabel = useMemo(
+    () =>
+      readReferenceDisplayForId(
+        'beneficiaryTalentId' in activeQuery ? activeQuery.beneficiaryTalentId : undefined,
+        (listQueryResult.data?.data ?? []).map((record) => record.beneficiaryRef),
+      ),
+    [activeQuery, listQueryResult.data?.data],
+  );
+  const sourceContractFilterLabel = useMemo(
+    () =>
+      readReferenceDisplayForId(
+        'sourceContractRecordId' in activeQuery ? activeQuery.sourceContractRecordId : undefined,
+        (listQueryResult.data?.data ?? []).map((record) => record.sourceContractRecordRef),
+      ),
+    [activeQuery, listQueryResult.data?.data],
+  );
+
+  const activeFilterChips = useMemo(() => {
+    const chips: AppliedFilterChipItem[] = [];
+
+    if (routeMode === 'flat' && flatListQuery.search) {
+      chips.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: flatListQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (activeQuery.status) {
+      chips.push({
+        id: 'status',
+        label: t('commission:rules.filters.status'),
+        value: t(`commission:rules.statuses.${activeQuery.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.beneficiaryKind) {
+      chips.push({
+        id: 'beneficiaryKind',
+        label: t('commission:rules.filters.beneficiaryKind'),
+        value: t(`commission:beneficiaryKinds.${flatListQuery.beneficiaryKind}`),
+        onClear: () =>
+          patchQuery({
+            beneficiaryKind: undefined,
+            beneficiaryEmploymentProfileId: undefined,
+            beneficiaryTalentId: undefined,
+          }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.beneficiaryEmploymentProfileId) {
+      chips.push({
+        id: 'beneficiaryEmploymentProfileId',
+        label: t('commission:rules.filters.beneficiaryEmploymentProfileId'),
+        value:
+          readCachedFilterLabel(
+            filterLabels,
+            'beneficiaryEmployment',
+            flatListQuery.beneficiaryEmploymentProfileId,
+          ) ?? beneficiaryEmploymentFilterLabel,
+        onClear: () => patchQuery({ beneficiaryEmploymentProfileId: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.beneficiaryTalentId) {
+      chips.push({
+        id: 'beneficiaryTalentId',
+        label: t('commission:rules.filters.beneficiaryTalentId'),
+        value:
+          readCachedFilterLabel(
+            filterLabels,
+            'beneficiaryTalent',
+            flatListQuery.beneficiaryTalentId,
+          ) ?? beneficiaryTalentFilterLabel,
+        onClear: () => patchQuery({ beneficiaryTalentId: undefined }),
+      });
+    }
+
+    const sourceContractRecordId =
+      'sourceContractRecordId' in activeQuery
+        ? (activeQuery.sourceContractRecordId ?? undefined)
+        : undefined;
+    if (routeMode === 'flat' && sourceContractRecordId) {
+      chips.push({
+        id: 'sourceContractRecordId',
+        label: t('commission:rules.filters.sourceContractRecordId'),
+        value:
+          readCachedFilterLabel(filterLabels, 'sourceContract', sourceContractRecordId) ??
+          sourceContractFilterLabel,
+        onClear: () => patchQuery({ sourceContractRecordId: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.settlementKind) {
+      chips.push({
+        id: 'settlementKind',
+        label: t('commission:rules.filters.settlementKind'),
+        value: t(`commission:settlementKinds.${flatListQuery.settlementKind}`),
+        onClear: () => patchQuery({ settlementKind: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.appliesToRevenueKind) {
+      chips.push({
+        id: 'appliesToRevenueKind',
+        label: t('commission:rules.filters.appliesToRevenueKind'),
+        value: t(`commission:revenueKinds.${flatListQuery.appliesToRevenueKind}`),
+        onClear: () => patchQuery({ appliesToRevenueKind: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.windowStartDate !== undefined) {
+      chips.push({
+        id: 'windowStartDate',
+        label: t('commission:rules.filters.windowStartDate'),
+        value: String(flatListQuery.windowStartDate),
+        onClear: () => patchQuery({ windowStartDate: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.windowEndDate !== undefined) {
+      chips.push({
+        id: 'windowEndDate',
+        label: t('commission:rules.filters.windowEndDate'),
+        value: String(flatListQuery.windowEndDate),
+        onClear: () => patchQuery({ windowEndDate: undefined }),
+      });
+    }
+
+    return chips;
+  }, [
+    activeQuery,
+    beneficiaryEmploymentFilterLabel,
+    beneficiaryTalentFilterLabel,
+    filterLabels,
+    flatListQuery.appliesToRevenueKind,
+    flatListQuery.beneficiaryEmploymentProfileId,
+    flatListQuery.beneficiaryKind,
+    flatListQuery.beneficiaryTalentId,
+    flatListQuery.search,
+    flatListQuery.settlementKind,
+    flatListQuery.windowEndDate,
+    flatListQuery.windowStartDate,
+    patchQuery,
+    routeMode,
+    sourceContractFilterLabel,
+    t,
+  ]);
+
+  const clearAllFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      beneficiaryKind:
+        routeMode === 'by-beneficiary' ? byBeneficiaryQuery.beneficiaryKind : undefined,
+      beneficiaryEmploymentProfileId:
+        routeMode === 'by-beneficiary'
+          ? byBeneficiaryQuery.beneficiaryEmploymentProfileId
+          : undefined,
+      beneficiaryTalentId:
+        routeMode === 'by-beneficiary' ? byBeneficiaryQuery.beneficiaryTalentId : undefined,
+      sourceContractRecordId:
+        routeMode === 'by-contract' ? byContractQuery.sourceContractRecordId : undefined,
+      settlementKind: undefined,
+      appliesToRevenueKind: undefined,
+      windowStartDate: undefined,
+      windowEndDate: undefined,
+    });
+  }, [
+    byBeneficiaryQuery.beneficiaryEmploymentProfileId,
+    byBeneficiaryQuery.beneficiaryKind,
+    byBeneficiaryQuery.beneficiaryTalentId,
+    byContractQuery.sourceContractRecordId,
+    patchQuery,
+    routeMode,
+  ]);
+
   return (
     <ModuleListScreenShell
       mode={routeMode === 'flat' ? 'flat-list' : 'related-list'}
@@ -297,7 +532,7 @@ export const CommissionRulesListPage = (): JSX.Element => {
         </div>
       }
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             routeMode === 'flat' ? (
               <SearchBoxSeam
@@ -318,6 +553,216 @@ export const CommissionRulesListPage = (): JSX.Element => {
               onChange={(sortBy, sortDirection) => patchQuery({ sortBy, sortDirection })}
             />
           }
+          moreFiltersTrigger={
+            <button
+              type="button"
+              aria-expanded={isMoreFiltersOpen}
+              aria-controls="commission-rules-more-filters"
+              onClick={() => setIsMoreFiltersOpen((current) => !current)}
+              className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+            >
+              {t('common:filters.moreFilters')}
+            </button>
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              emptyLabel={t('common:filters.noFiltersApplied')}
+              items={activeFilterChips}
+              onClearAll={activeFilterChips.length > 0 ? clearAllFilters : undefined}
+            />
+          }
+          moreFiltersPanel={
+            <MoreFiltersPanel
+              id="commission-rules-more-filters"
+              title={t('common:filters.moreFilters')}
+              isOpen={isMoreFiltersOpen}
+              closeLabel={t('common:actions.close')}
+              onClose={() => setIsMoreFiltersOpen(false)}
+            >
+              {routeMode !== 'by-contract' ? (
+                <>
+                  <label className="flex min-w-[190px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('commission:rules.filters.beneficiaryKind')}
+                    </span>
+                    <select
+                      value={
+                        'beneficiaryKind' in activeQuery ? (activeQuery.beneficiaryKind ?? '') : ''
+                      }
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({
+                          beneficiaryKind: event.target.value || undefined,
+                          beneficiaryEmploymentProfileId: undefined,
+                          beneficiaryTalentId: undefined,
+                        })
+                      }
+                    >
+                      <option value="">{t('commission:rules.filters.anyBeneficiaryKind')}</option>
+                      {commissionBeneficiaryKindValues.map((kind) => (
+                        <option key={kind} value={kind}>
+                          {t(`commission:beneficiaryKinds.${kind}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <ReferenceFilterField
+                    label={t('commission:rules.filters.beneficiaryEmploymentProfileId')}
+                    pickerId="commission-rule-filter-beneficiary-employment"
+                    value={
+                      'beneficiaryEmploymentProfileId' in activeQuery
+                        ? (activeQuery.beneficiaryEmploymentProfileId ?? undefined)
+                        : undefined
+                    }
+                    loadOptions={loadEmploymentProfileReferenceOptions}
+                    placeholder={t('commission:rules.placeholders.searchReference')}
+                    clearLabel={t('common:actions.clear')}
+                    className="min-w-[230px]"
+                    onSelectedOptionChange={rememberFilterLabel(
+                      'beneficiaryEmployment',
+                      'beneficiaryEmploymentProfileId' in activeQuery
+                        ? (activeQuery.beneficiaryEmploymentProfileId ?? undefined)
+                        : undefined,
+                    )}
+                    onChange={(value) =>
+                      patchQuery({
+                        beneficiaryKind: value ? 'EMPLOYMENT_PROFILE' : undefined,
+                        beneficiaryEmploymentProfileId: value,
+                        beneficiaryTalentId: undefined,
+                      })
+                    }
+                  />
+                  <ReferenceFilterField
+                    label={t('commission:rules.filters.beneficiaryTalentId')}
+                    pickerId="commission-rule-filter-beneficiary-talent"
+                    value={
+                      'beneficiaryTalentId' in activeQuery
+                        ? (activeQuery.beneficiaryTalentId ?? undefined)
+                        : undefined
+                    }
+                    loadOptions={loadTalentReferenceOptions}
+                    placeholder={t('commission:rules.placeholders.searchReference')}
+                    clearLabel={t('common:actions.clear')}
+                    className="min-w-[210px]"
+                    onSelectedOptionChange={rememberFilterLabel(
+                      'beneficiaryTalent',
+                      'beneficiaryTalentId' in activeQuery
+                        ? (activeQuery.beneficiaryTalentId ?? undefined)
+                        : undefined,
+                    )}
+                    onChange={(value) =>
+                      patchQuery({
+                        beneficiaryKind: value ? 'TALENT' : undefined,
+                        beneficiaryTalentId: value,
+                        beneficiaryEmploymentProfileId: undefined,
+                      })
+                    }
+                  />
+                </>
+              ) : null}
+              {routeMode !== 'by-beneficiary' ? (
+                <ReferenceFilterField
+                  label={t('commission:rules.filters.sourceContractRecordId')}
+                  pickerId="commission-rule-filter-source-contract"
+                  value={
+                    'sourceContractRecordId' in activeQuery
+                      ? (activeQuery.sourceContractRecordId ?? undefined)
+                      : undefined
+                  }
+                  loadOptions={loadContractReferenceOptions}
+                  placeholder={t('commission:rules.placeholders.searchReference')}
+                  clearLabel={t('common:actions.clear')}
+                  className="min-w-[230px]"
+                  onSelectedOptionChange={rememberFilterLabel(
+                    'sourceContract',
+                    'sourceContractRecordId' in activeQuery
+                      ? (activeQuery.sourceContractRecordId ?? undefined)
+                      : undefined,
+                  )}
+                  onChange={(value) => patchQuery({ sourceContractRecordId: value })}
+                />
+              ) : null}
+              {routeMode === 'flat' ? (
+                <>
+                  <label className="flex min-w-[180px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('commission:rules.filters.settlementKind')}
+                    </span>
+                    <select
+                      value={flatListQuery.settlementKind ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({ settlementKind: event.target.value || undefined })
+                      }
+                    >
+                      <option value="">{t('commission:rules.filters.anySettlementKind')}</option>
+                      {commissionSettlementKindValues.map((kind) => (
+                        <option key={kind} value={kind}>
+                          {t(`commission:settlementKinds.${kind}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex min-w-[210px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('commission:rules.filters.appliesToRevenueKind')}
+                    </span>
+                    <select
+                      value={flatListQuery.appliesToRevenueKind ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({ appliesToRevenueKind: event.target.value || undefined })
+                      }
+                    >
+                      <option value="">{t('commission:rules.filters.anyRevenueKind')}</option>
+                      {commissionRevenueKindValues.map((kind) => (
+                        <option key={kind} value={kind}>
+                          {t(`commission:revenueKinds.${kind}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex min-w-[210px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('commission:rules.filters.windowStartDate')}
+                    </span>
+                    <input
+                      type="number"
+                      value={flatListQuery.windowStartDate ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({
+                          windowStartDate: event.target.value
+                            ? Number(event.target.value)
+                            : undefined,
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="flex min-w-[210px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('commission:rules.filters.windowEndDate')}
+                    </span>
+                    <input
+                      type="number"
+                      value={flatListQuery.windowEndDate ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({
+                          windowEndDate: event.target.value
+                            ? Number(event.target.value)
+                            : undefined,
+                        })
+                      }
+                    />
+                  </label>
+                </>
+              ) : null}
+            </MoreFiltersPanel>
+          }
         >
           <label className="flex min-w-[170px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">
@@ -336,164 +781,7 @@ export const CommissionRulesListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          {routeMode !== 'by-contract' ? (
-            <>
-              <label className="flex min-w-[190px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:rules.filters.beneficiaryKind')}
-                </span>
-                <select
-                  value={
-                    'beneficiaryKind' in activeQuery ? (activeQuery.beneficiaryKind ?? '') : ''
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      beneficiaryKind: event.target.value || undefined,
-                      beneficiaryEmploymentProfileId: undefined,
-                      beneficiaryTalentId: undefined,
-                    })
-                  }
-                >
-                  <option value="">{t('commission:rules.filters.anyBeneficiaryKind')}</option>
-                  {commissionBeneficiaryKindValues.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {t(`commission:beneficiaryKinds.${kind}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <ReferenceFilterField
-                label={t('commission:rules.filters.beneficiaryEmploymentProfileId')}
-                pickerId="commission-rule-filter-beneficiary-employment"
-                value={
-                  'beneficiaryEmploymentProfileId' in activeQuery
-                    ? (activeQuery.beneficiaryEmploymentProfileId ?? undefined)
-                    : undefined
-                }
-                loadOptions={loadEmploymentProfileReferenceOptions}
-                placeholder={t('commission:rules.placeholders.searchReference')}
-                clearLabel={t('common:actions.clear')}
-                className="min-w-[230px]"
-                onChange={(value) =>
-                  patchQuery({
-                    beneficiaryKind: value ? 'EMPLOYMENT_PROFILE' : undefined,
-                    beneficiaryEmploymentProfileId: value,
-                    beneficiaryTalentId: undefined,
-                  })
-                }
-              />
-              <ReferenceFilterField
-                label={t('commission:rules.filters.beneficiaryTalentId')}
-                pickerId="commission-rule-filter-beneficiary-talent"
-                value={
-                  'beneficiaryTalentId' in activeQuery
-                    ? (activeQuery.beneficiaryTalentId ?? undefined)
-                    : undefined
-                }
-                loadOptions={loadTalentReferenceOptions}
-                placeholder={t('commission:rules.placeholders.searchReference')}
-                clearLabel={t('common:actions.clear')}
-                className="min-w-[210px]"
-                onChange={(value) =>
-                  patchQuery({
-                    beneficiaryKind: value ? 'TALENT' : undefined,
-                    beneficiaryTalentId: value,
-                    beneficiaryEmploymentProfileId: undefined,
-                  })
-                }
-              />
-            </>
-          ) : null}
-          {routeMode !== 'by-beneficiary' ? (
-            <ReferenceFilterField
-              label={t('commission:rules.filters.sourceContractRecordId')}
-              pickerId="commission-rule-filter-source-contract"
-              value={
-                'sourceContractRecordId' in activeQuery
-                  ? (activeQuery.sourceContractRecordId ?? undefined)
-                  : undefined
-              }
-              loadOptions={loadContractReferenceOptions}
-              placeholder={t('commission:rules.placeholders.searchReference')}
-              clearLabel={t('common:actions.clear')}
-              className="min-w-[230px]"
-              onChange={(value) => patchQuery({ sourceContractRecordId: value })}
-            />
-          ) : null}
-          {routeMode === 'flat' ? (
-            <>
-              <label className="flex min-w-[180px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:rules.filters.settlementKind')}
-                </span>
-                <select
-                  value={flatListQuery.settlementKind ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({ settlementKind: event.target.value || undefined })
-                  }
-                >
-                  <option value="">{t('commission:rules.filters.anySettlementKind')}</option>
-                  {commissionSettlementKindValues.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {t(`commission:settlementKinds.${kind}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex min-w-[210px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:rules.filters.appliesToRevenueKind')}
-                </span>
-                <select
-                  value={flatListQuery.appliesToRevenueKind ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({ appliesToRevenueKind: event.target.value || undefined })
-                  }
-                >
-                  <option value="">{t('commission:rules.filters.anyRevenueKind')}</option>
-                  {commissionRevenueKindValues.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {t(`commission:revenueKinds.${kind}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex min-w-[210px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:rules.filters.windowStartDate')}
-                </span>
-                <input
-                  type="number"
-                  value={flatListQuery.windowStartDate ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      windowStartDate: event.target.value ? Number(event.target.value) : undefined,
-                    })
-                  }
-                />
-              </label>
-              <label className="flex min-w-[210px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('commission:rules.filters.windowEndDate')}
-                </span>
-                <input
-                  type="number"
-                  value={flatListQuery.windowEndDate ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      windowEndDate: event.target.value ? Number(event.target.value) : undefined,
-                    })
-                  }
-                />
-              </label>
-            </>
-          ) : null}
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>

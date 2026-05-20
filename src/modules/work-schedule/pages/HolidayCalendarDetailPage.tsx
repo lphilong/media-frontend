@@ -34,7 +34,7 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface =
@@ -63,7 +63,7 @@ const formatNullable = (value?: string | number | null): string => {
 };
 
 const formatNullableTimestamp = (value?: string | number | null): string =>
-  value ? formatUtcTimestamp(value) : '-';
+  value ? formatBusinessTimestamp(value) : '-';
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -280,12 +280,12 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
                 {
                   key: 'created-at',
                   label: t('work-schedule:holidayCalendars.fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('work-schedule:holidayCalendars.fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
                 {
                   key: 'activated-at',

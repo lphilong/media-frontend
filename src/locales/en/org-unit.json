@@ -11,7 +11,7 @@
     "status": "Status",
     "parentOrgUnitId": "Parent Org Unit",
     "newParentOrgUnitId": "New Parent Org Unit",
-    "displayOrder": "Display Order",
+    "displayOrder": "Sort priority",
     "depth": "Depth",
     "ancestorChain": "Ancestor Chain",
     "externalRef": "External Reference",
@@ -25,6 +25,7 @@
   },
   "placeholders": {
     "typeToken": "Example: DEPARTMENT",
+    "selectType": "Select type",
     "parentOrgUnitId": "Leave blank for root",
     "parentOrgUnitSearch": "Search org units by name or code",
     "optional": "Optional"
@@ -44,6 +45,7 @@
     "status": "Status",
     "type": "Type",
     "typePlaceholder": "Filter by type token",
+    "allTypes": "All types",
     "parentOrgUnitId": "Parent Org Unit",
     "parentOrgUnitIdPlaceholder": "Parent ID",
     "rootOnly": "Hierarchy Mode",
@@ -56,7 +58,16 @@
     "code": "Code",
     "name": "Name",
     "createdAt": "Created At",
-    "displayOrder": "Display Order"
+    "displayOrder": "Sort priority"
+  },
+  "types": {
+    "DEPARTMENT": "Department",
+    "TEAM": "Team",
+    "BUSINESS_UNIT": "Business unit",
+    "SUPPORT_UNIT": "Support unit"
+  },
+  "help": {
+    "displayOrder": "Lower numbers appear first. Gaps like 10, 20, 30 make it easier to insert new items between existing ones. Example: use 15 to place an item between 10 and 20."
   },
   "statuses": {
     "ACTIVE": "Active",
@@ -82,7 +93,7 @@
     "status": "Status",
     "parentOrgUnitId": "Parent",
     "depth": "Depth",
-    "displayOrder": "Order",
+    "displayOrder": "Sort priority",
     "createdAt": "Created",
     "actions": "Actions"
   },
@@ -92,7 +103,7 @@
     "type": "Type",
     "status": "Status",
     "depth": "Depth",
-    "displayOrder": "Order"
+    "displayOrder": "Sort priority"
   },
   "detail": {
     "summaryTitle": "Core Metadata",
@@ -130,7 +141,7 @@
   },
   "validation": {
     "required": "This field is required.",
-    "invalidDisplayOrder": "Display order must be an integer greater than or equal to 0.",
+    "invalidDisplayOrder": "Sort priority must be an integer greater than or equal to 0.",
     "invalidTypeToken": "Type must be an uppercase token like DEPARTMENT.",
     "invalidReferenceToken": "Reference ID contains unsupported characters.",
     "moveSelfForbidden": "An org unit cannot be moved under itself."

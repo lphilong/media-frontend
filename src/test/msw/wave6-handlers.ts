@@ -25,6 +25,17 @@ type WorkScheduleScope = 'self' | 'team' | 'department' | 'global';
 type EventAssignmentKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
 type EventStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
 
+type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  title?: string;
+  displayName?: string;
+  handle?: string;
+  platform?: string;
+  status?: string;
+};
+
 type WorkShiftRecord = {
   id: string;
   shiftCode: string;
@@ -33,7 +44,9 @@ type WorkShiftRecord = {
   subjectEmploymentProfileId: string | null;
   subjectTalentId: string | null;
   subjectTalentGroupId: string | null;
+  subjectRef?: ReferenceSummary | null;
   studioResourceIds: string[];
+  studioResourceRefs?: ReferenceSummary[];
   status: WorkShiftStatus;
   shiftStartAt: number;
   shiftEndAt: number;
@@ -43,11 +56,14 @@ type WorkShiftRecord = {
   updatedAt: number;
   sourceType?: 'MANUAL' | 'ROSTER_GENERATED' | null;
   sourceRosterId?: string | null;
+  sourceRosterRef?: ReferenceSummary | null;
   sourcePatternId?: string | null;
+  sourcePatternRef?: ReferenceSummary | null;
   sourceExceptionId?: string | null;
   sourceGenerationRunId?: string | null;
   sourceRosterMonth?: string | null;
   sourceDepartmentOrgUnitId?: string | null;
+  sourceDepartmentOrgUnitRef?: ReferenceSummary | null;
   sourceRosterLocalDate?: string | null;
   sourceRosterSlotKey?: string | null;
 };
@@ -106,6 +122,7 @@ type RosterExceptionRecord = {
   exceptionType: RosterExceptionType;
   exceptionDate: string;
   subjectEmploymentProfileId: string;
+  subjectEmploymentProfileRef?: ReferenceSummary | null;
   status: 'ACTIVE' | 'REMOVED';
   title: string | null;
   startLocalTime: string | null;
@@ -113,6 +130,7 @@ type RosterExceptionRecord = {
   workingMinutes: number | null;
   breakMinutes: number | null;
   studioResourceIds: string[];
+  studioResourceRefs?: ReferenceSummary[];
   reason: string | null;
   sourceNote: string | null;
   description: string | null;
@@ -143,7 +161,9 @@ type MonthlyRosterPreviewRowRecord = {
   monthlyRosterId: string;
   rosterMonth: string;
   departmentOrgUnitId: string;
+  departmentOrgUnitRef?: ReferenceSummary | null;
   subjectEmploymentProfileId: string;
+  subjectEmploymentProfileRef?: ReferenceSummary | null;
   localDate: string;
   rowKind: MonthlyRosterPreviewRowKind;
   sourceExceptionId: string | null;
@@ -172,8 +192,11 @@ type MonthlyRosterRecord = {
   targetSubjectKind: 'EMPLOYMENT_PROFILE';
   targetOrgUnitMode: 'EXACT_ONLY';
   departmentOrgUnitId: string;
+  departmentOrgUnitRef?: ReferenceSummary | null;
   workPatternId: string;
+  workPatternRef?: ReferenceSummary | null;
   holidayCalendarId: string;
+  holidayCalendarRef?: ReferenceSummary | null;
   status: MonthlyRosterStatus;
   draftVersion: number;
   exceptionCount: number;
@@ -196,6 +219,8 @@ type EventRecord = {
   title: string;
   studioResourceIds: string[];
   platformAccountIds: string[];
+  studioResourceRefs?: ReferenceSummary[];
+  platformAccountRefs?: ReferenceSummary[];
   status: EventStatus;
   eventStartAt: number;
   eventEndAt: number;
@@ -212,6 +237,7 @@ type EventAssignmentRecord = {
   assignmentEmploymentProfileId: string | null;
   assignmentTalentId: string | null;
   assignmentTalentGroupId: string | null;
+  assignmentSubjectRef?: ReferenceSummary | null;
   assignmentStatus: 'ACTIVE';
   createdAt: number;
 };
@@ -646,6 +672,70 @@ const initialAssignments: EventAssignmentRecord[] = [
   },
 ];
 
+const employmentProfileRefs = new Map<string, ReferenceSummary>([
+  ['ep-001', { id: 'ep-001', code: 'EMP-001', displayName: 'Alice Nguyen', status: 'ACTIVE' }],
+  ['ep-002', { id: 'ep-002', code: 'EMP-002', displayName: 'Binh Tran', status: 'ACTIVE' }],
+  ['ep-003', { id: 'ep-003', code: 'EMP-003', displayName: 'Chi Le', status: 'ACTIVE' }],
+]);
+
+const talentRefs = new Map<string, ReferenceSummary>([
+  ['talent-001', { id: 'talent-001', code: 'TAL-001', name: 'Mina', status: 'ACTIVE' }],
+  ['talent-002', { id: 'talent-002', code: 'TAL-002', name: 'Luna', status: 'ACTIVE' }],
+]);
+
+const talentGroupRefs = new Map<string, ReferenceSummary>([
+  ['group-001', { id: 'group-001', code: 'GRP-001', name: 'Prime Crew', status: 'ACTIVE' }],
+]);
+
+const studioResourceRefs = new Map<string, ReferenceSummary>([
+  ['studio-001', { id: 'studio-001', code: 'SR-001', name: 'Main Studio', status: 'ACTIVE' }],
+  ['studio-002', { id: 'studio-002', code: 'SR-002', name: 'Podcast Booth', status: 'ACTIVE' }],
+]);
+
+const orgUnitRefs = new Map<string, ReferenceSummary>([
+  ['ou-sales', { id: 'ou-sales', code: 'OU-SALES', name: 'Sales', status: 'ACTIVE' }],
+]);
+
+const workPatternRefs = new Map<string, ReferenceSummary>([
+  [
+    'pattern-active',
+    { id: 'pattern-active', code: 'WP-ACTIVE', name: 'Standard day', status: 'ACTIVE' },
+  ],
+  ['pattern-draft', { id: 'pattern-draft', code: 'WP-DRAFT', name: 'Draft day', status: 'DRAFT' }],
+]);
+
+const holidayCalendarRefs = new Map<string, ReferenceSummary>([
+  [
+    'holiday-calendar-active',
+    { id: 'holiday-calendar-active', code: 'HC-ACTIVE', name: 'VN Holidays', status: 'ACTIVE' },
+  ],
+]);
+
+const platformAccountRefs = new Map<string, ReferenceSummary>([
+  [
+    'platform-001',
+    {
+      id: 'platform-001',
+      code: 'PA-001',
+      displayName: 'Mina Live',
+      handle: '@minalive',
+      platform: 'TIKTOK',
+      status: 'ACTIVE',
+    },
+  ],
+  [
+    'platform-003',
+    {
+      id: 'platform-003',
+      code: 'PA-003',
+      displayName: 'Luna Shorts',
+      handle: '@lunashorts',
+      platform: 'YOUTUBE',
+      status: 'ACTIVE',
+    },
+  ],
+]);
+
 let workShifts = initialWorkShifts.map((record) => ({ ...record }));
 let workPatterns = initialWorkPatterns.map((record) => ({ ...record }));
 let holidayCalendars = initialHolidayCalendars.map((record) => ({
@@ -940,6 +1030,53 @@ const readHolidayCalendar = (holidayCalendarId: string): HolidayCalendarRecord |
 const readMonthlyRoster = (monthlyRosterId: string): MonthlyRosterRecord | undefined =>
   monthlyRosters.find((item) => item.monthlyRosterId === monthlyRosterId);
 
+const readWorkShiftSubjectRef = (record: WorkShiftRecord): ReferenceSummary | null => {
+  if (record.subjectKind === 'EMPLOYMENT_PROFILE') {
+    return record.subjectEmploymentProfileId
+      ? (employmentProfileRefs.get(record.subjectEmploymentProfileId) ?? null)
+      : null;
+  }
+
+  if (record.subjectKind === 'TALENT') {
+    return record.subjectTalentId ? (talentRefs.get(record.subjectTalentId) ?? null) : null;
+  }
+
+  return record.subjectTalentGroupId
+    ? (talentGroupRefs.get(record.subjectTalentGroupId) ?? null)
+    : null;
+};
+
+const readMonthlyRosterRef = (monthlyRosterId?: string | null): ReferenceSummary | null => {
+  if (!monthlyRosterId) {
+    return null;
+  }
+
+  const roster = readMonthlyRoster(monthlyRosterId);
+  return roster
+    ? {
+        id: roster.monthlyRosterId,
+        code: roster.rosterCode,
+        title: roster.rosterMonth,
+        status: roster.status,
+      }
+    : null;
+};
+
+const withMonthlyRosterRefs = <TRecord extends MonthlyRosterRecord>(record: TRecord): TRecord => ({
+  ...record,
+  departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
+  workPatternRef: workPatternRefs.get(record.workPatternId) ?? null,
+  holidayCalendarRef: holidayCalendarRefs.get(record.holidayCalendarId) ?? null,
+  exceptions: record.exceptions.map((exception) => ({
+    ...exception,
+    subjectEmploymentProfileRef:
+      employmentProfileRefs.get(exception.subjectEmploymentProfileId) ?? null,
+    studioResourceRefs: exception.studioResourceIds.map(
+      (id) => studioResourceRefs.get(id) ?? { id },
+    ),
+  })),
+});
+
 const readEvent = (eventId: string): EventRecord | undefined =>
   events.find((item) => item.id === eventId);
 
@@ -1008,12 +1145,14 @@ const toWorkShiftListItem = (record: WorkShiftRecord) => ({
   subjectEmploymentProfileId: record.subjectEmploymentProfileId,
   subjectTalentId: record.subjectTalentId,
   subjectTalentGroupId: record.subjectTalentGroupId,
+  subjectRef: readWorkShiftSubjectRef(record),
   status: record.status,
   shiftStartAt: record.shiftStartAt,
   shiftEndAt: record.shiftEndAt,
   createdAt: record.createdAt,
   sourceType: record.sourceType ?? 'MANUAL',
   sourceRosterId: record.sourceRosterId ?? null,
+  sourceRosterRef: readMonthlyRosterRef(record.sourceRosterId),
   sourceRosterMonth: record.sourceRosterMonth ?? null,
   sourceRosterLocalDate: record.sourceRosterLocalDate ?? null,
   sourceRosterSlotKey: record.sourceRosterSlotKey ?? null,
@@ -1041,13 +1180,20 @@ const toWorkShiftByResourceItem = (record: WorkShiftRecord) => ({
 const toWorkShiftDetail = (record: WorkShiftRecord) => ({
   ...toWorkShiftListItem(record),
   studioResourceIds: record.studioResourceIds,
+  studioResourceRefs: record.studioResourceIds.map((id) => studioResourceRefs.get(id) ?? { id }),
   description: record.description,
   externalRef: record.externalRef,
   updatedAt: record.updatedAt,
   sourcePatternId: record.sourcePatternId ?? null,
+  sourcePatternRef: record.sourcePatternId
+    ? (workPatternRefs.get(record.sourcePatternId) ?? null)
+    : null,
   sourceExceptionId: record.sourceExceptionId ?? null,
   sourceGenerationRunId: record.sourceGenerationRunId ?? null,
   sourceDepartmentOrgUnitId: record.sourceDepartmentOrgUnitId ?? null,
+  sourceDepartmentOrgUnitRef: record.sourceDepartmentOrgUnitId
+    ? (orgUnitRefs.get(record.sourceDepartmentOrgUnitId) ?? null)
+    : null,
 });
 
 const toEventListItem = (record: EventRecord) => ({
@@ -1073,9 +1219,36 @@ const toEventDetail = (record: EventRecord) => ({
   ...toEventListItem(record),
   studioResourceIds: record.studioResourceIds,
   platformAccountIds: record.platformAccountIds,
+  studioResourceRefs: record.studioResourceIds.map((id) => studioResourceRefs.get(id) ?? { id }),
+  platformAccountRefs: record.platformAccountIds.map((id) => platformAccountRefs.get(id) ?? { id }),
   description: record.description,
   externalRef: record.externalRef,
   updatedAt: record.updatedAt,
+});
+
+const readEventAssignmentSubjectRef = (
+  assignment: EventAssignmentRecord,
+): ReferenceSummary | null => {
+  if (assignment.assignmentKind === 'EMPLOYMENT_PROFILE') {
+    return assignment.assignmentEmploymentProfileId
+      ? (employmentProfileRefs.get(assignment.assignmentEmploymentProfileId) ?? null)
+      : null;
+  }
+
+  if (assignment.assignmentKind === 'TALENT') {
+    return assignment.assignmentTalentId
+      ? (talentRefs.get(assignment.assignmentTalentId) ?? null)
+      : null;
+  }
+
+  return assignment.assignmentTalentGroupId
+    ? (talentGroupRefs.get(assignment.assignmentTalentGroupId) ?? null)
+    : null;
+};
+
+const toEventAssignmentItem = (assignment: EventAssignmentRecord) => ({
+  ...assignment,
+  assignmentSubjectRef: readEventAssignmentSubjectRef(assignment),
 });
 
 const sortWorkShifts = (
@@ -1302,8 +1475,11 @@ const toMonthlyRosterListItem = (record: MonthlyRosterRecord) => ({
   targetSubjectKind: record.targetSubjectKind,
   targetOrgUnitMode: record.targetOrgUnitMode,
   departmentOrgUnitId: record.departmentOrgUnitId,
+  departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
   workPatternId: record.workPatternId,
+  workPatternRef: workPatternRefs.get(record.workPatternId) ?? null,
   holidayCalendarId: record.holidayCalendarId,
+  holidayCalendarRef: holidayCalendarRefs.get(record.holidayCalendarId) ?? null,
   status: record.status,
   draftVersion: record.draftVersion,
   exceptionCount: record.exceptionCount,
@@ -1329,6 +1505,8 @@ const createPreviewRow = (
   monthlyRosterId: record.monthlyRosterId,
   rosterMonth: record.rosterMonth,
   departmentOrgUnitId: record.departmentOrgUnitId,
+  departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
+  subjectEmploymentProfileRef: employmentProfileRefs.get(row.subjectEmploymentProfileId) ?? null,
   sourceExceptionId: null,
   sourceRosterSlotKey: row.rowKind === 'STANDARD' ? 'STANDARD' : null,
   startLocalTime: row.isSuppressed ? null : '09:00',
@@ -1466,8 +1644,11 @@ const buildMonthlyRosterPreview = (record: MonthlyRosterRecord) => {
     rosterMonth: record.rosterMonth,
     timezone: record.timezone,
     departmentOrgUnitId: record.departmentOrgUnitId,
+    departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
     workPatternId: record.workPatternId,
+    workPatternRef: workPatternRefs.get(record.workPatternId) ?? null,
     holidayCalendarId: record.holidayCalendarId,
+    holidayCalendarRef: holidayCalendarRefs.get(record.holidayCalendarId) ?? null,
     rosterStatus: record.status,
     draftVersion: record.draftVersion,
     currentPreviewHash: record.previewHash,
@@ -1475,13 +1656,17 @@ const buildMonthlyRosterPreview = (record: MonthlyRosterRecord) => {
     eligibleProfiles: [
       {
         subjectEmploymentProfileId: 'ep-001',
+        subjectEmploymentProfileRef: employmentProfileRefs.get('ep-001') ?? null,
         employmentStatus: 'ACTIVE',
         departmentOrgUnitId: record.departmentOrgUnitId,
+        departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
       },
       {
         subjectEmploymentProfileId: 'ep-002',
+        subjectEmploymentProfileRef: employmentProfileRefs.get('ep-002') ?? null,
         employmentStatus: 'ACTIVE',
         departmentOrgUnitId: record.departmentOrgUnitId,
+        departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
       },
     ],
     rows,
@@ -2180,7 +2365,7 @@ export const wave6Handlers = [
       exceptions: [],
     };
     monthlyRosters.unshift(record);
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
   }),
 
   http.get('*/admin/work-schedule/rosters/:monthlyRosterId/preview', ({ params, request }) => {
@@ -2216,7 +2401,7 @@ export const wave6Handlers = [
     if (!record) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
   }),
 
   http.patch('*/admin/work-schedule/rosters/:monthlyRosterId', async ({ params, request }) => {
@@ -2273,7 +2458,7 @@ export const wave6Handlers = [
       body.externalRef === undefined ? record.externalRef : toNullableText(body.externalRef);
     record.draftVersion += 1;
     record.updatedAt = Date.now();
-    return HttpResponse.json({ data: record });
+    return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
   }),
 
   http.post(
@@ -2305,7 +2490,7 @@ export const wave6Handlers = [
       record.status = 'ARCHIVED';
       record.archivedAt = Date.now();
       record.updatedAt = Date.now();
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
     },
   ),
 
@@ -2493,7 +2678,7 @@ export const wave6Handlers = [
       record.exceptionCount = record.exceptions.filter((item) => item.status === 'ACTIVE').length;
       record.draftVersion += 1;
       record.updatedAt = Date.now();
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
     },
   ),
 
@@ -2536,7 +2721,7 @@ export const wave6Handlers = [
       record.exceptionCount = record.exceptions.filter((item) => item.status === 'ACTIVE').length;
       record.draftVersion += 1;
       record.updatedAt = Date.now();
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
     },
   ),
 
@@ -2578,7 +2763,7 @@ export const wave6Handlers = [
       record.exceptionCount = record.exceptions.filter((item) => item.status === 'ACTIVE').length;
       record.draftVersion += 1;
       record.updatedAt = Date.now();
-      return HttpResponse.json({ data: record });
+      return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
     },
   ),
 
@@ -3288,9 +3473,12 @@ export const wave6Handlers = [
     }
 
     return HttpResponse.json({
-      data: assignments.filter(
-        (assignment) => assignment.eventId === event.id && assignment.assignmentStatus === 'ACTIVE',
-      ),
+      data: assignments
+        .filter(
+          (assignment) =>
+            assignment.eventId === event.id && assignment.assignmentStatus === 'ACTIVE',
+        )
+        .map(toEventAssignmentItem),
     });
   }),
 

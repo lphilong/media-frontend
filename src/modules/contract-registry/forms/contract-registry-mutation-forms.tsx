@@ -32,7 +32,7 @@ import {
   SelectField,
   TextInputField,
 } from '@shared/forms';
-import { formatUtcMidnightDateLike } from '@shared/formatting/formatters';
+import { formatUtcDateInputValue } from '@shared/formatting/formatters';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseSurfaceProps = {
@@ -71,7 +71,7 @@ const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 const contractKindOptions: ContractKind[] = ['EMPLOYMENT', 'TALENT_SERVICE', 'TALENT_MANAGEMENT'];
 const linkedEntityKindOptions: ContractLinkedEntityKind[] = ['EMPLOYMENT_PROFILE', 'TALENT'];
 const confidentialityTierOptions: ContractConfidentialityTier[] = [
-  'STANDARD',
+  'INTERNAL',
   'CONFIDENTIAL',
   'RESTRICTED',
 ];
@@ -95,7 +95,7 @@ const toInputDate = (value?: string | number | null): string => {
     return value;
   }
 
-  return formatUtcMidnightDateLike(value);
+  return formatUtcDateInputValue(value);
 };
 
 const applySchemaErrors = <TValues extends FieldValues>(
@@ -269,7 +269,7 @@ export const ContractCreateSurface = ({
       linkedEntityKind: 'EMPLOYMENT_PROFILE',
       linkedEntityId: '',
       ownerEmploymentProfileId: '',
-      confidentialityTier: 'STANDARD',
+      confidentialityTier: 'INTERNAL',
       effectiveStartDate: '',
       effectiveEndDate: '',
       fileReferenceId: '',

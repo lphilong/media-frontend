@@ -11,7 +11,11 @@ import type {
   TalentKpiStatus,
 } from '@modules/talent-kpi/types/talent-kpi.types';
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+  type ReferenceSummary,
+} from '@shared/formatting/formatters';
 
 export type TalentKpiTableRow =
   | TalentKpiListItem
@@ -33,16 +37,25 @@ export const talentKpiStatusToneMap = {
 
 export const talentKpiStatusValues: TalentKpiStatus[] = ['DRAFT', 'FINALIZED', 'ARCHIVED'];
 
-const renderMono = (value: unknown): JSX.Element | string => {
-  if (!value) {
+const renderReference = (
+  ref: ReferenceSummary | null | undefined,
+  fallbackId: string | null | undefined,
+): JSX.Element | string => {
+  if (!ref && !fallbackId) {
     return '-';
   }
 
-  return <span className="font-mono text-xs">{String(value)}</span>;
+  return (
+    <span className={ref ? 'text-sm' : 'font-mono text-xs'}>
+      {readReferenceDisplay(ref, fallbackId)}
+    </span>
+  );
 };
 
 const renderNullableTimestamp = (value: unknown): string =>
-  value === null || value === undefined || value === '' ? '-' : formatUtcTimestamp(value as string);
+  value === null || value === undefined || value === ''
+    ? '-'
+    : formatBusinessTimestamp(value as string);
 
 export const createTalentKpiColumns = (
   t: TFunction,
@@ -60,17 +73,33 @@ export const createTalentKpiColumns = (
   {
     accessorKey: 'subjectTalentId',
     header: t('talent-kpi:table.subjectTalentId'),
-    cell: (context) => renderMono(context.getValue()),
+    cell: ({ row }) =>
+      renderReference(
+        'subjectTalentRef' in row.original ? row.original.subjectTalentRef : undefined,
+        row.original.subjectTalentId,
+      ),
   },
   {
     accessorKey: 'attributionPlatformAccountId',
     header: t('talent-kpi:table.attributionPlatformAccountId'),
-    cell: (context) => renderMono(context.getValue()),
+    cell: ({ row }) =>
+      renderReference(
+        'attributionPlatformAccountRef' in row.original
+          ? row.original.attributionPlatformAccountRef
+          : undefined,
+        'attributionPlatformAccountId' in row.original
+          ? row.original.attributionPlatformAccountId
+          : undefined,
+      ),
   },
   {
     accessorKey: 'attributionEventId',
     header: t('talent-kpi:table.attributionEventId'),
-    cell: (context) => renderMono(context.getValue()),
+    cell: ({ row }) =>
+      renderReference(
+        'attributionEventRef' in row.original ? row.original.attributionEventRef : undefined,
+        'attributionEventId' in row.original ? row.original.attributionEventId : undefined,
+      ),
   },
   {
     accessorKey: 'measurementSource',
@@ -91,12 +120,12 @@ export const createTalentKpiColumns = (
   {
     accessorKey: 'periodStartAt',
     header: t('talent-kpi:table.periodStartAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as string),
   },
   {
     accessorKey: 'periodEndAt',
     header: t('talent-kpi:table.periodEndAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as string),
   },
   {
     accessorKey: 'publishedAt',

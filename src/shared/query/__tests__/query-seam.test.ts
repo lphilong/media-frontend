@@ -88,7 +88,7 @@ describe('shared query seam hardening', () => {
   it('enforces Talent flat-list query booleans, exact enum filters, and supported sort keys', () => {
     const parsed = parseScreenQueryParams(
       new URLSearchParams(
-        'operationalStatus=ACTIVE&talentOrigin=INTERNAL&commercialParticipationStatus=ALLOWED&hasLinkedEmploymentProfile=true&livestreamEligible=false&eventEligible=true&sortBy=stageName&unsupported=value',
+        'operationalStatus=ACTIVE&talentOrigin=INTERNAL&commercialParticipationStatus=ELIGIBLE&hasLinkedEmploymentProfile=true&livestreamEligible=false&eventEligible=true&sortBy=stageName&unsupported=value',
       ),
       talentFlatListQueryConfig,
     );
@@ -103,7 +103,7 @@ describe('shared query seam hardening', () => {
 
     expect(serialized.get('operationalStatus')).toBe('ACTIVE');
     expect(serialized.get('talentOrigin')).toBe('INTERNAL');
-    expect(serialized.get('commercialParticipationStatus')).toBe('ALLOWED');
+    expect(serialized.get('commercialParticipationStatus')).toBe('ELIGIBLE');
     expect(serialized.get('hasLinkedEmploymentProfile')).toBe('true');
     expect(serialized.get('livestreamEligible')).toBe('false');
     expect(serialized.get('eventEligible')).toBe('true');
@@ -200,14 +200,14 @@ describe('shared query seam hardening', () => {
     const invalidContract = serializeScreenQueryParams(
       {
         contractKind: 'UNKNOWN_KIND',
-        confidentialityTier: 'internal only',
+        confidentialityTier: 'STANDARD',
       },
       contractRegistryFlatListQueryConfig,
     );
     const validContract = serializeScreenQueryParams(
       {
         contractKind: 'TALENT_SERVICE',
-        confidentialityTier: 'CONFIDENTIAL',
+        confidentialityTier: 'INTERNAL',
       },
       contractRegistryFlatListQueryConfig,
     );
@@ -234,7 +234,7 @@ describe('shared query seam hardening', () => {
     expect(invalidContract.get('contractKind')).toBeNull();
     expect(invalidContract.get('confidentialityTier')).toBeNull();
     expect(validContract.get('contractKind')).toBe('TALENT_SERVICE');
-    expect(validContract.get('confidentialityTier')).toBe('CONFIDENTIAL');
+    expect(validContract.get('confidentialityTier')).toBe('INTERNAL');
     expect(invalidSettlement.get('settlementKindSnapshot')).toBeNull();
     expect(invalidSettlement.get('settlementCurrencyCode')).toBeNull();
   });
@@ -279,6 +279,156 @@ describe('shared query seam hardening', () => {
     expect(related.get('attributionPlatformAccountId')).toBe('platform-01');
     expect(related.get('search')).toBeNull();
     expect(related.get('sortBy')).toBe('kpiRecordCode');
+  });
+
+  it('accepts Batch 2E-B Talent KPI target timestamp filters and rejects invalid ranges', () => {
+    const serialized = serializeScreenQueryParams(
+      parseScreenQueryParams(
+        new URLSearchParams(
+          'status=FINALIZED&createdBeforeAt=1000&publishedFromAt=2000&publishedToAt=3000&windowStartAt=4000&windowEndAt=5000',
+        ),
+        talentKpiFlatListQueryConfig,
+      ),
+      talentKpiFlatListQueryConfig,
+    );
+    const invalid = serializeScreenQueryParams(
+      {
+        publishedFromAt: 3000,
+        publishedToAt: 2000,
+        createdBeforeAt: 'bad',
+      },
+      talentKpiFlatListQueryConfig,
+    );
+
+    expect(serialized.get('status')).toBe('FINALIZED');
+    expect(serialized.get('createdBeforeAt')).toBe('1000');
+    expect(serialized.get('publishedFromAt')).toBe('2000');
+    expect(serialized.get('publishedToAt')).toBe('3000');
+    expect(serialized.get('windowStartAt')).toBe('4000');
+    expect(serialized.get('windowEndAt')).toBe('5000');
+    expect(invalid.get('createdBeforeAt')).toBeNull();
+    expect(invalid.get('publishedFromAt')).toBeNull();
+    expect(invalid.get('publishedToAt')).toBeNull();
+  });
+
+  it('keeps target timestamp URL params serialized as raw milliseconds for display-only chip formatting', () => {
+    const talentKpi = serializeScreenQueryParams(
+      {
+        createdBeforeAt: 1780000000000,
+        publishedFromAt: 1770000000000,
+        publishedToAt: 1780000000000,
+      },
+      talentKpiFlatListQueryConfig,
+    );
+    const revenueLedger = serializeScreenQueryParams(
+      {
+        createdBeforeAt: 1780000000000,
+        finalizedFromAt: 1770000000000,
+        finalizedToAt: 1780000000000,
+        reconciledFromAt: 1770000000000,
+        reconciledToAt: 1780000000000,
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const commissionSettlements = serializeScreenQueryParams(
+      {
+        createdBeforeAt: 1780000000000,
+        finalizedFromAt: 1770000000000,
+        finalizedToAt: 1780000000000,
+      },
+      commissionSettlementsFlatListQueryConfig,
+    );
+
+    expect(talentKpi.get('createdBeforeAt')).toBe('1780000000000');
+    expect(talentKpi.get('publishedFromAt')).toBe('1770000000000');
+    expect(talentKpi.get('publishedToAt')).toBe('1780000000000');
+    expect(revenueLedger.get('createdBeforeAt')).toBe('1780000000000');
+    expect(revenueLedger.get('finalizedFromAt')).toBe('1770000000000');
+    expect(revenueLedger.get('finalizedToAt')).toBe('1780000000000');
+    expect(revenueLedger.get('reconciledFromAt')).toBe('1770000000000');
+    expect(revenueLedger.get('reconciledToAt')).toBe('1780000000000');
+    expect(commissionSettlements.get('createdBeforeAt')).toBe('1780000000000');
+    expect(commissionSettlements.get('finalizedFromAt')).toBe('1770000000000');
+    expect(commissionSettlements.get('finalizedToAt')).toBe('1780000000000');
+  });
+
+  it('accepts Batch 2E-B Revenue Ledger target timestamp filters and treats them as query-shape filters', () => {
+    const current = serializeScreenQueryParams(
+      {
+        status: 'RECONCILED',
+        createdBeforeAt: 1000,
+        finalizedFromAt: 2000,
+        finalizedToAt: 3000,
+        reconciledFromAt: 4000,
+        reconciledToAt: 5000,
+        windowStartAt: 6000,
+        windowEndAt: 7000,
+        cursor: 'opaque',
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+    const next = mergeScreenQueryParams(
+      current,
+      { reconciledToAt: 6000 },
+      revenueLedgerFlatListQueryConfig,
+      { resetCursorOnChange: true },
+    );
+    const invalid = serializeScreenQueryParams(
+      {
+        finalizedFromAt: 3000,
+        finalizedToAt: 2000,
+        reconciledFromAt: 5000,
+        reconciledToAt: 5000,
+      },
+      revenueLedgerFlatListQueryConfig,
+    );
+
+    expect(current.get('status')).toBe('RECONCILED');
+    expect(current.get('createdBeforeAt')).toBe('1000');
+    expect(current.get('finalizedFromAt')).toBe('2000');
+    expect(current.get('finalizedToAt')).toBe('3000');
+    expect(current.get('reconciledFromAt')).toBe('4000');
+    expect(current.get('reconciledToAt')).toBe('5000');
+    expect(current.get('windowStartAt')).toBe('6000');
+    expect(current.get('windowEndAt')).toBe('7000');
+    expect(next.get('reconciledToAt')).toBe('6000');
+    expect(next.get('cursor')).toBeNull();
+    expect(invalid.get('finalizedFromAt')).toBeNull();
+    expect(invalid.get('finalizedToAt')).toBeNull();
+    expect(invalid.get('reconciledFromAt')).toBeNull();
+    expect(invalid.get('reconciledToAt')).toBeNull();
+  });
+
+  it('accepts Batch 2E-B Commission Settlement target timestamp filters without changing rule queries', () => {
+    const settlements = serializeScreenQueryParams(
+      parseScreenQueryParams(
+        new URLSearchParams(
+          'status=FINALIZED&createdBeforeAt=1000&finalizedFromAt=2000&finalizedToAt=3000&windowStartAt=4000&windowEndAt=5000',
+        ),
+        commissionSettlementsFlatListQueryConfig,
+      ),
+      commissionSettlementsFlatListQueryConfig,
+    );
+    const rules = serializeScreenQueryParams(
+      {
+        status: 'ACTIVE',
+        createdBeforeAt: 1000,
+        finalizedFromAt: 2000,
+        finalizedToAt: 3000,
+      },
+      commissionRulesFlatListQueryConfig,
+    );
+
+    expect(settlements.get('status')).toBe('FINALIZED');
+    expect(settlements.get('createdBeforeAt')).toBe('1000');
+    expect(settlements.get('finalizedFromAt')).toBe('2000');
+    expect(settlements.get('finalizedToAt')).toBe('3000');
+    expect(settlements.get('windowStartAt')).toBe('4000');
+    expect(settlements.get('windowEndAt')).toBe('5000');
+    expect(rules.get('status')).toBe('ACTIVE');
+    expect(rules.get('createdBeforeAt')).toBeNull();
+    expect(rules.get('finalizedFromAt')).toBeNull();
+    expect(rules.get('finalizedToAt')).toBeNull();
   });
 
   it('keeps Wave 8 flat identity filters flat unless an explicit related view is present', () => {
@@ -429,6 +579,15 @@ describe('shared query seam hardening', () => {
       {
         windowStartDate: '2026-03-10',
         windowEndDate: '2026-03-01',
+        effectiveEndDateFrom: '2026-05-01',
+        effectiveEndDateTo: '2026-05-31',
+      },
+      contractRegistryFlatListQueryConfig,
+    );
+    const invalidEffectiveEndDateWindow = serializeScreenQueryParams(
+      {
+        effectiveEndDateFrom: '2026-06-01',
+        effectiveEndDateTo: '2026-05-01',
       },
       contractRegistryFlatListQueryConfig,
     );
@@ -437,6 +596,10 @@ describe('shared query seam hardening', () => {
     expect(invalidDateFormat.get('windowEndDate')).toBe('2026-03-05');
     expect(invalidDateWindow.get('windowStartDate')).toBeNull();
     expect(invalidDateWindow.get('windowEndDate')).toBeNull();
+    expect(invalidDateWindow.get('effectiveEndDateFrom')).toBe('2026-05-01');
+    expect(invalidDateWindow.get('effectiveEndDateTo')).toBe('2026-05-31');
+    expect(invalidEffectiveEndDateWindow.get('effectiveEndDateFrom')).toBeNull();
+    expect(invalidEffectiveEndDateWindow.get('effectiveEndDateTo')).toBeNull();
   });
 
   it('rejects invalid timestamp windows and invalid UTC-midnight rule windows', () => {

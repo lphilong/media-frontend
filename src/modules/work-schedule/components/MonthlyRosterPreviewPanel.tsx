@@ -18,7 +18,7 @@ import {
   ReadOnlyFieldGrid,
   StatusBadge,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 
 type MonthlyRosterPreviewPanelProps = {
   roster: MonthlyRosterRecord;
@@ -46,7 +46,7 @@ const formatNullable = (value?: string | number | null): string => {
 };
 
 const formatNullableTimestamp = (value?: string | number | null): string =>
-  value ? formatUtcTimestamp(value) : '-';
+  value ? formatBusinessTimestamp(value) : '-';
 
 const getMonthEndDate = (rosterMonth: string): string => {
   const [yearPart, monthPart] = rosterMonth.split('-');
@@ -160,7 +160,16 @@ export const MonthlyRosterPreviewPanel = ({
         return false;
       }
 
-      if (query && !row.subjectEmploymentProfileId.toLowerCase().includes(query)) {
+      const employeeLabel = readReferenceDisplay(
+        row.subjectEmploymentProfileRef,
+        row.subjectEmploymentProfileId,
+      ).toLowerCase();
+
+      if (
+        query &&
+        !row.subjectEmploymentProfileId.toLowerCase().includes(query) &&
+        !employeeLabel.includes(query)
+      ) {
         return false;
       }
 
@@ -336,7 +345,11 @@ export const MonthlyRosterPreviewPanel = ({
                           : t('work-schedule:monthlyRosters.preview.conflicts.blocker')}
                       </span>
                       <span className="ml-2 text-muted">
-                        {item.row.subjectEmploymentProfileId} · {item.row.localDate}
+                        {readReferenceDisplay(
+                          item.row.subjectEmploymentProfileRef,
+                          item.row.subjectEmploymentProfileId,
+                        )}{' '}
+                        · {item.row.localDate}
                       </span>
                       <span className="mt-1 block text-muted">
                         {item.kind === 'conflict'
@@ -469,7 +482,12 @@ export const MonthlyRosterPreviewPanel = ({
                           }
                           onClick={() => setSelectedRowId(row.previewRowId)}
                         >
-                          <td className="px-3 py-2 font-mono">{row.subjectEmploymentProfileId}</td>
+                          <td className="px-3 py-2">
+                            {readReferenceDisplay(
+                              row.subjectEmploymentProfileRef,
+                              row.subjectEmploymentProfileId,
+                            )}
+                          </td>
                           <td className="px-3 py-2">{row.localDate}</td>
                           <td className="px-3 py-2">
                             {t(`work-schedule:monthlyRosters.preview.rowKinds.${row.rowKind}`)}
@@ -538,8 +556,10 @@ export const MonthlyRosterPreviewPanel = ({
                     {
                       key: 'employee',
                       label: t('work-schedule:monthlyRosters.preview.table.employee'),
-                      value: selectedRow.subjectEmploymentProfileId,
-                      monospace: true,
+                      value: readReferenceDisplay(
+                        selectedRow.subjectEmploymentProfileRef,
+                        selectedRow.subjectEmploymentProfileId,
+                      ),
                     },
                     {
                       key: 'date',

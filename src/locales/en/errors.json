@@ -3,6 +3,10 @@
     "title": "Unexpected error",
     "message": "Please retry or reload the page"
   },
+  "referenceSelector": {
+    "loadOptionsFailed": "Could not load options.",
+    "loadOptionsFailedWithResource": "Could not load {{resource}} options."
+  },
   "transport": {
     "generic": "Unable to reach the server"
   },

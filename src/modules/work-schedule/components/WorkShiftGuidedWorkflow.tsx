@@ -19,7 +19,7 @@ import {
 import type { NormalizedApiError } from '@shared/api';
 import { AsyncReferencePicker, type ReferenceOption } from '@shared/components/reference';
 import { BlockerBanner, TaskWorkflowShell } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { MutationFieldErrorSummary } from '@shared/modules';
 
 type WorkflowStep = 'details' | 'review';
@@ -553,7 +553,7 @@ export const WorkShiftGuidedWorkflow = ({
                     ? '-'
                     : t('work-schedule:task.utcReviewValue', {
                         timestamp: startTimestamp,
-                        value: formatUtcTimestamp(startTimestamp),
+                        value: formatBusinessTimestamp(startTimestamp),
                       }),
                 ],
                 [
@@ -572,7 +572,7 @@ export const WorkShiftGuidedWorkflow = ({
                     ? '-'
                     : t('work-schedule:task.utcReviewValue', {
                         timestamp: endTimestamp,
-                        value: formatUtcTimestamp(endTimestamp),
+                        value: formatBusinessTimestamp(endTimestamp),
                       }),
                 ],
                 [

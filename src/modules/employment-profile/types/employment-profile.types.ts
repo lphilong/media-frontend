@@ -1,3 +1,5 @@
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
+
 export type EmploymentStatus = 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED' | 'ARCHIVED';
 
 export type EmploymentContractStatus =
@@ -17,12 +19,15 @@ export type EmploymentProfileRecord = {
   titleDescription?: string | null;
   externalRef?: string | null;
   orgUnitId: string;
+  orgUnitRef?: ReferenceSummary | null;
   managerEmploymentProfileId?: string | null;
+  managerEmploymentProfileRef?: ReferenceSummary | null;
   linkedUserId?: string | null;
+  linkedUserRef?: ReferenceSummary | null;
   employmentStatus: EmploymentStatus;
   contractStatus: EmploymentContractStatus;
-  employmentStartDate: string;
-  employmentEndDate?: string | null;
+  employmentStartDate: number;
+  employmentEndDate?: number | null;
   createdAt: number | string;
   updatedAt?: number | string;
 };
@@ -39,7 +44,9 @@ export type EmploymentProfileDirectReport = {
   employmentStatus: EmploymentStatus;
   contractStatus: EmploymentContractStatus;
   orgUnitId: string;
+  orgUnitRef?: ReferenceSummary | null;
   managerEmploymentProfileId?: string | null;
+  managerEmploymentProfileRef?: ReferenceSummary | null;
 };
 
 export type EmploymentProfileListQuery = {

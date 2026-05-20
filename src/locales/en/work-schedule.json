@@ -56,12 +56,20 @@
     "subjectKind": "Subject kind",
     "allSubjectKinds": "All subject kinds",
     "subjectId": "Subject",
-    "subjectIdPlaceholder": "Subject identifier",
-    "studioResourceId": "Studio Resource",
-    "studioResourceIdPlaceholder": "Resource identifier",
+    "subjectIdPlaceholder": "Search by name or code",
+    "studioResourceId": "Studio resource",
+    "studioResourceIdPlaceholder": "Search studio resources",
     "scope": "Scope",
-    "windowStartAt": "Window start UTC",
-    "windowEndAt": "Window end UTC"
+    "windowStartAt": "From",
+    "windowEndAt": "To"
+  },
+  "filterChips": {
+    "selectedSubject": "Selected subject",
+    "selectedStudioResource": "Selected studio resource",
+    "selectedDepartment": "Selected department",
+    "selectedWorkPattern": "Selected work pattern",
+    "selectedHolidayCalendar": "Selected holiday calendar",
+    "selectedMonthlyRoster": "Selected monthly roster"
   },
   "relatedModes": {
     "by-subject": "Related work shifts by subject",
@@ -268,7 +276,7 @@
       "startLocalTime": "Start time",
       "workingMinutes": "Working minutes",
       "breakMinutes": "Break minutes",
-      "calculatedEndLocalTime": "Calculated end time",
+      "calculatedEndLocalTime": "End time",
       "workingDays": "Working days",
       "description": "Description",
       "externalRef": "External reference",
@@ -310,7 +318,7 @@
       "name": "Name",
       "status": "Status",
       "startLocalTime": "Start time",
-      "endLocalTime": "Calculated end time",
+      "endLocalTime": "End time",
       "workingDays": "Working days",
       "updatedAt": "Updated",
       "actions": "Actions"

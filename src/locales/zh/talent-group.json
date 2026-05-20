@@ -9,7 +9,7 @@
     "name": "名称",
     "shortName": "简称",
     "status": "状态",
-    "displayOrder": "显示顺序",
+    "displayOrder": "排序优先级",
     "description": "描述",
     "externalRef": "外部引用",
     "talentId": "艺人",
@@ -28,6 +28,9 @@
   },
   "referenceHelp": {
     "talentId": "选择要添加到此组的艺人。"
+  },
+  "help": {
+    "displayOrder": "数字越小越靠前。像 10、20、30 这样的间隔便于以后在现有项目之间插入新项目。例如：使用 15 可将项目放在 10 和 20 之间。"
   },
   "states": {
     "emptyTitle": "未找到艺人组",
@@ -48,7 +51,7 @@
     "groupCode": "组编码",
     "name": "名称",
     "createdAt": "创建时间",
-    "displayOrder": "显示顺序"
+    "displayOrder": "排序优先级"
   },
   "statuses": {
     "ACTIVE": "启用",
@@ -81,7 +84,7 @@
     "name": "名称",
     "shortName": "简称",
     "status": "状态",
-    "displayOrder": "顺序",
+    "displayOrder": "排序优先级",
     "createdAt": "已创建",
     "updatedAt": "已更新",
     "actions": "操作"
@@ -141,7 +144,7 @@
     "required": "此字段为必填。",
     "invalidToken": "值只能使用支持的标记字符。",
     "invalidReferenceToken": "引用 ID 包含不支持的字符。",
-    "invalidDisplayOrder": "显示顺序必须是大于或等于 0 的整数。",
+    "invalidDisplayOrder": "排序优先级必须是大于或等于 0 的整数。",
     "invalidLineupOrder": "阵容顺序必须是大于或等于 0 的整数。"
   },
   "feedback": {

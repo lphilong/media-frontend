@@ -37,7 +37,11 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCreatedDate,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface = 'edit-draft' | null;
@@ -58,7 +62,7 @@ const formatNullable = (value?: string | number | null): string => {
 };
 
 const formatNullableTimestamp = (value?: string | number | null): string =>
-  value ? formatUtcTimestamp(value) : '-';
+  value ? formatBusinessTimestamp(value) : '-';
 
 const parseScope = (value: string | null): MonthlyRosterScope | undefined =>
   value === 'department' || value === 'global' ? value : undefined;
@@ -314,20 +318,20 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
                 {
                   key: 'department',
                   label: t('work-schedule:monthlyRosters.fields.departmentOrgUnitId'),
-                  value: record.departmentOrgUnitId,
-                  monospace: true,
+                  value: readReferenceDisplay(
+                    record.departmentOrgUnitRef,
+                    record.departmentOrgUnitId,
+                  ),
                 },
                 {
                   key: 'pattern',
                   label: t('work-schedule:monthlyRosters.fields.workPatternId'),
-                  value: record.workPatternId,
-                  monospace: true,
+                  value: readReferenceDisplay(record.workPatternRef, record.workPatternId),
                 },
                 {
                   key: 'calendar',
                   label: t('work-schedule:monthlyRosters.fields.holidayCalendarId'),
-                  value: record.holidayCalendarId,
-                  monospace: true,
+                  value: readReferenceDisplay(record.holidayCalendarRef, record.holidayCalendarId),
                 },
                 {
                   key: 'exception-count',
@@ -384,12 +388,12 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
                   {
                     key: 'created-at',
                     label: t('work-schedule:monthlyRosters.fields.createdAt'),
-                    value: formatUtcTimestamp(record.createdAt),
+                    value: formatCreatedDate(record.createdAt),
                   },
                   {
                     key: 'updated-at',
                     label: t('work-schedule:monthlyRosters.fields.updatedAt'),
-                    value: formatUtcTimestamp(record.updatedAt),
+                    value: formatBusinessTimestamp(record.updatedAt),
                   },
                   {
                     key: 'archived-at',

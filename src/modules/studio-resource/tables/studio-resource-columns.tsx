@@ -2,7 +2,6 @@ import type { TFunction } from 'i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
 import type {
   StudioResourceAvailabilityItem,
   StudioResourceLifecycleAction,
@@ -82,11 +81,6 @@ export const createStudioResourceListColumns = (
       accessorKey: 'maxOccupancy',
       header: t('studio-resource:table.maxOccupancy'),
       cell: (context) => formatOccupancy(context.getValue() as number | null | undefined),
-    },
-    {
-      accessorKey: 'createdAt',
-      header: t('studio-resource:table.createdAt'),
-      cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
     },
     {
       id: 'actions',

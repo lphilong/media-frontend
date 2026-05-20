@@ -37,7 +37,11 @@ import {
   StatusBadge,
 } from '@shared/components/primitives';
 import { useDestructiveConfirm, useMutationFeedback } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCreatedDate,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
@@ -277,16 +281,17 @@ export const OrgUnitDetailPage = (): JSX.Element => {
                   key: 'display-order',
                   label: t('org-unit:fields.displayOrder'),
                   value: String(record.displayOrder),
+                  description: t('org-unit:help.displayOrder'),
                 },
                 {
                   key: 'created-at',
                   label: t('org-unit:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated-at',
                   label: t('org-unit:fields.updatedAt'),
-                  value: record.updatedAt ? formatUtcTimestamp(record.updatedAt) : '-',
+                  value: record.updatedAt ? formatBusinessTimestamp(record.updatedAt) : '-',
                 },
               ]}
               columns={2}
@@ -304,7 +309,7 @@ export const OrgUnitDetailPage = (): JSX.Element => {
                   label: t('org-unit:fields.parentOrgUnitId'),
                   value: record.parentOrgUnitId ? (
                     <ReferenceChip
-                      label={record.parentOrgUnitId}
+                      label={readReferenceDisplay(record.parentOrgUnitRef, record.parentOrgUnitId)}
                       to={APP_PATHS.orgUnitDetail(record.parentOrgUnitId)}
                     />
                   ) : (

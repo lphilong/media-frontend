@@ -6,6 +6,31 @@ import {
 } from '@modules/role/constants/role.constants';
 import type { JsonPlainValue } from '@modules/role/types/role.types';
 
+const roleTemplateCodeSchema = z.enum([
+  'ADMIN_FULL',
+  'HR_OPERATIONS',
+  'TEAM_MANAGER',
+  'PRODUCTION_OPS',
+  'COMMERCIAL_FINANCE',
+  'TALENT_STAFF_SELF',
+  'VIEWER_AUDITOR',
+]);
+
+const workScheduleScopeGrantSchema = z.enum(['self', 'team', 'department', 'global']);
+const globalScopeGrantSchema = z.enum(['global']);
+
+export const roleAssignmentScopeGrantsPayloadSchema = z
+  .object({
+    workSchedule: z.array(workScheduleScopeGrantSchema).optional(),
+    eventAssignment: z.array(globalScopeGrantSchema).optional(),
+    contractRegistry: z.array(globalScopeGrantSchema).optional(),
+    talentKpi: z.array(globalScopeGrantSchema).optional(),
+    revenueLedger: z.array(globalScopeGrantSchema).optional(),
+    commission: z.array(globalScopeGrantSchema).optional(),
+    dashboardLite: z.array(globalScopeGrantSchema).optional(),
+  })
+  .strict();
+
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false;
@@ -94,6 +119,16 @@ export const roleAssignToUserPayloadSchema = z
   .object({
     userId: z.string().trim().min(1),
     reason: z.string().nullable().optional(),
+    scopeGrants: roleAssignmentScopeGrantsPayloadSchema.optional(),
+  })
+  .strict();
+
+export const roleCreateFromTemplatePayloadSchema = z
+  .object({
+    templateCode: roleTemplateCodeSchema,
+    code: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    description: z.string().nullable().optional(),
   })
   .strict();
 

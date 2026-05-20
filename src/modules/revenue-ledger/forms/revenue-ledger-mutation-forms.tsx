@@ -29,6 +29,10 @@ import {
   SelectField,
   TextInputField,
 } from '@shared/forms';
+import {
+  formatBusinessDateTimeInputValue,
+  parseBusinessDateTimeInputValue,
+} from '@shared/formatting/formatters';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseSurfaceProps = {
@@ -84,16 +88,11 @@ const toTimestampText = (value?: number | string | null): string => {
     return '';
   }
 
-  return String(value);
+  return formatBusinessDateTimeInputValue(value);
 };
 
 const parseIntegerTimestamp = (value: string): number | undefined => {
-  if (value.trim().length === 0) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isSafeInteger(parsed) ? parsed : undefined;
+  return parseBusinessDateTimeInputValue(value);
 };
 
 const parseAmount = (value: string): number | undefined => {
@@ -407,7 +406,7 @@ export const RevenueEntryCreateSurface = ({
           />
           <TextInputField
             name="recognizedAt"
-            type="number"
+            type="datetime-local"
             label={t('revenue-ledger:fields.recognizedAt')}
           />
           <TextInputField name="externalRef" label={t('revenue-ledger:fields.externalRef')} />
@@ -506,7 +505,7 @@ export const RevenueEntryDraftCoreSurface = ({
           />
           <TextInputField
             name="recognizedAt"
-            type="number"
+            type="datetime-local"
             label={t('revenue-ledger:fields.recognizedAt')}
           />
           <TextInputField name="externalRef" label={t('revenue-ledger:fields.externalRef')} />

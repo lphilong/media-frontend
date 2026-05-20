@@ -14,6 +14,14 @@
     "sortAscending": "Tăng dần",
     "sortDescending": "Giảm dần"
   },
+  "filters": {
+    "filters": "Bộ lọc",
+    "moreFilters": "Thêm bộ lọc",
+    "appliedFilters": "Bộ lọc đang áp dụng",
+    "clearAll": "Xóa tất cả",
+    "clearFilter": "Xóa bộ lọc",
+    "noFiltersApplied": "Chưa áp dụng bộ lọc"
+  },
   "locales": {
     "vi": "Tiếng Việt",
     "en": "English",
@@ -39,13 +47,21 @@
   "states": {
     "loading": "Đang tải"
   },
+  "capabilities": {
+    "missingPermission": "Bạn không có quyền thực hiện hành động này.",
+    "missingScope": "Phân quyền vai trò của bạn không bao gồm phạm vi cần thiết.",
+    "invalidStatus": "Hành động này không khả dụng với trạng thái hiện tại của bản ghi.",
+    "notWired": "Hành động này chưa được kết nối.",
+    "checkingPermissions": "Đang kiểm tra quyền.",
+    "backendEnforced": "Backend vẫn kiểm soát quyền khi bạn gửi thao tác."
+  },
   "auth": {
     "loginTitle": "Đăng nhập quản trị",
     "loginSubtitle": "Lớp xác thực nền tảng đã sẵn sàng cho Auth0"
   },
   "session": {
     "placeholderUser": "Phiên quản trị",
-    "statusActive": "Đang hoạt động"
+    "statusActive": "Hoạt động"
   },
   "placeholders": {
     "foundationOnlyTitle": "Trang này mới ở mức khung nền tảng",

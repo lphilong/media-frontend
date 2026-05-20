@@ -29,8 +29,20 @@ const statusSchema = z.enum([
 ]);
 const contractKindSchema = z.enum(['EMPLOYMENT', 'TALENT_SERVICE', 'TALENT_MANAGEMENT']);
 const linkedEntityKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT']);
-const confidentialityTierSchema = z.enum(['STANDARD', 'CONFIDENTIAL', 'RESTRICTED']);
+const confidentialityTierSchema = z.enum(['INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']);
 const timestampSchema = z.union([z.number(), z.string()]);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+    handle: z.string().optional(),
+    platform: z.string().optional(),
+    status: z.string().optional(),
+  })
+  .strict();
 
 const listItemSchema = z
   .object({
@@ -42,6 +54,9 @@ const listItemSchema = z
     linkedEmploymentProfileId: z.string().nullable().optional(),
     linkedTalentId: z.string().nullable().optional(),
     ownerEmploymentProfileId: z.string().trim().min(1),
+    linkedEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
+    linkedTalentRef: referenceSummarySchema.nullable().optional(),
+    ownerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     confidentialityTier: confidentialityTierSchema,
     status: statusSchema,
     effectiveStartDate: timestampSchema,
@@ -59,6 +74,8 @@ const byLinkedEntityItemSchema = listItemSchema
     linkedEntityKind: true,
     linkedEmploymentProfileId: true,
     linkedTalentId: true,
+    linkedEmploymentProfileRef: true,
+    linkedTalentRef: true,
     status: true,
     effectiveStartDate: true,
     effectiveEndDate: true,
@@ -72,6 +89,7 @@ const byOwnerItemSchema = listItemSchema
     title: true,
     contractKind: true,
     ownerEmploymentProfileId: true,
+    ownerEmploymentProfileRef: true,
     confidentialityTier: true,
     status: true,
     effectiveStartDate: true,
@@ -120,6 +138,8 @@ const sanitizeFlatListQuery = (
   hasFileReference: query.hasFileReference,
   windowStartDate: query.windowStartDate,
   windowEndDate: query.windowEndDate,
+  effectiveEndDateFrom: query.effectiveEndDateFrom,
+  effectiveEndDateTo: query.effectiveEndDateTo,
   limit: query.limit,
   cursor: query.cursor,
   search: query.search,

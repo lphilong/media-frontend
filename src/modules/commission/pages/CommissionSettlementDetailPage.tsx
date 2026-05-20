@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { buildEntityDetailHref } from '@app/router/reference-links';
 import { createCommissionSettlementActionRailItems } from '@modules/commission/actions/commission-action-rail';
+import { readCommissionSettlementLineRevenueEntryDisplay } from '@modules/commission/display/commission-settlement-line-display';
 import {
   CommissionSettlementDraftCoreSurface,
   CommissionSettlementRevenueEntriesSurface,
@@ -27,12 +28,19 @@ import {
   PermissionDeniedState,
   ReadOnlyFieldGrid,
   ReferenceChip,
+  ReferenceLink,
   RelatedSectionShell,
   StatusBadge,
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatCurrency, formatDecimal, formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCurrency,
+  formatCreatedDate,
+  formatDecimal,
+  formatBusinessTimestamp,
+} from '@shared/formatting/formatters';
+import { readReferenceDisplay } from '@shared/formatting/reference-display';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface = 'draft-core' | 'revenue-entries' | null;
@@ -50,7 +58,7 @@ const formatNullableTimestamp = (value?: string | number | null): string => {
     return '-';
   }
 
-  return formatUtcTimestamp(value);
+  return formatBusinessTimestamp(value);
 };
 
 const readErrorMessage = (
@@ -180,6 +188,10 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
       ? buildEntityDetailHref('employmentProfile', beneficiaryId)
       : buildEntityDetailHref('talent', beneficiaryId);
   const subjectTalentHref = buildEntityDetailHref('talent', record?.subjectTalentId);
+  const revenueEntryRefById = useMemo(
+    () => new Map((record?.revenueEntryRefs ?? []).map((ref) => [ref.id, ref])),
+    [record?.revenueEntryRefs],
+  );
 
   return (
     <ModuleDetailScreenShell
@@ -286,11 +298,11 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
                     label: t('commission:settlements.fields.sourceRuleId'),
                     value:
                       sourceRuleHref && record.sourceRuleId ? (
-                        <Link className="font-mono text-accent hover:underline" to={sourceRuleHref}>
-                          {record.sourceRuleId}
+                        <Link className="text-accent hover:underline" to={sourceRuleHref}>
+                          {readReferenceDisplay(record.sourceRuleRef, record.sourceRuleId)}
                         </Link>
                       ) : (
-                        record.sourceRuleId
+                        readReferenceDisplay(record.sourceRuleRef, record.sourceRuleId)
                       ),
                   },
                   {
@@ -325,14 +337,11 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
                     label: t('commission:settlements.fields.beneficiarySnapshotId'),
                     value:
                       beneficiaryHref && beneficiaryId ? (
-                        <Link
-                          className="font-mono text-accent hover:underline"
-                          to={beneficiaryHref}
-                        >
-                          {beneficiaryId}
+                        <Link className="text-accent hover:underline" to={beneficiaryHref}>
+                          {readReferenceDisplay(record.beneficiaryRef, beneficiaryId)}
                         </Link>
                       ) : (
-                        formatNullable(beneficiaryId)
+                        readReferenceDisplay(record.beneficiaryRef, beneficiaryId)
                       ),
                   },
                   {
@@ -360,12 +369,12 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
                   {
                     key: 'period-start',
                     label: t('commission:settlements.fields.settlementPeriodStartAt'),
-                    value: formatUtcTimestamp(record.settlementPeriodStartAt),
+                    value: formatBusinessTimestamp(record.settlementPeriodStartAt),
                   },
                   {
                     key: 'period-end',
                     label: t('commission:settlements.fields.settlementPeriodEndAt'),
-                    value: formatUtcTimestamp(record.settlementPeriodEndAt),
+                    value: formatBusinessTimestamp(record.settlementPeriodEndAt),
                   },
                   {
                     key: 'finalized',
@@ -385,20 +394,22 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
               <div className="flex flex-wrap gap-2">
                 {record.revenueEntryIds.map((revenueEntryId) => {
                   const href = buildEntityDetailHref('revenueEntry', revenueEntryId);
+                  const revenueEntryRef = revenueEntryRefById.get(revenueEntryId);
+                  const label = readReferenceDisplay(revenueEntryRef, revenueEntryId);
                   return href ? (
                     <Link
                       key={revenueEntryId}
                       to={href}
-                      className="rounded border border-border bg-bg px-2 py-1 font-mono text-xs text-accent hover:underline"
+                      className="rounded border border-border bg-bg px-2 py-1 text-xs text-accent hover:underline"
                     >
-                      {revenueEntryId}
+                      {label}
                     </Link>
                   ) : (
                     <span
                       key={revenueEntryId}
-                      className="rounded border border-border bg-bg px-2 py-1 font-mono text-xs"
+                      className="rounded border border-border bg-bg px-2 py-1 text-xs"
                     >
-                      {revenueEntryId}
+                      {label}
                     </span>
                   );
                 })}
@@ -430,9 +441,6 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
                           {t('commission:settlements.lines.revenueEntryId')}
                         </th>
                         <th className="px-3 py-2 font-semibold text-text">
-                          {t('commission:settlements.lines.revenueEntryCodeSnapshot')}
-                        </th>
-                        <th className="px-3 py-2 font-semibold text-text">
                           {t('commission:settlements.lines.revenueKindSnapshot')}
                         </th>
                         <th className="px-3 py-2 font-semibold text-text">
@@ -446,18 +454,13 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
                     <tbody>
                       {lines.map((line) => {
                         const href = buildEntityDetailHref('revenueEntry', line.revenueEntryId);
+                        const revenueEntryDisplay =
+                          readCommissionSettlementLineRevenueEntryDisplay(line);
                         return (
                           <tr key={line.id} className="border-t border-border">
                             <td className="px-3 py-2">
-                              {href ? (
-                                <Link to={href} className="font-mono text-accent hover:underline">
-                                  {line.revenueEntryId}
-                                </Link>
-                              ) : (
-                                <span className="font-mono">{line.revenueEntryId}</span>
-                              )}
+                              <ReferenceLink label={revenueEntryDisplay} to={href} />
                             </td>
-                            <td className="px-3 py-2 font-mono">{line.revenueEntryCodeSnapshot}</td>
                             <td className="px-3 py-2">
                               {t(`commission:revenueKinds.${line.revenueKindSnapshot}`)}
                             </td>
@@ -478,7 +481,7 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
                       })}
                       {lines.length === 0 ? (
                         <tr>
-                          <td className="px-3 py-3 text-muted" colSpan={5}>
+                          <td className="px-3 py-3 text-muted" colSpan={4}>
                             {t('commission:settlements.states.noLines')}
                           </td>
                         </tr>
@@ -494,12 +497,12 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
                   {
                     key: 'created',
                     label: t('commission:settlements.fields.createdAt'),
-                    value: formatUtcTimestamp(record.createdAt),
+                    value: formatCreatedDate(record.createdAt),
                   },
                   {
                     key: 'updated',
                     label: t('commission:settlements.fields.updatedAt'),
-                    value: formatUtcTimestamp(record.updatedAt),
+                    value: formatBusinessTimestamp(record.updatedAt),
                   },
                 ]}
                 columns={2}

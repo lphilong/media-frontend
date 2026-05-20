@@ -3,11 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   assignRoleToUser,
   createRole,
+  createRoleFromTemplate,
   fetchRoleAssignments,
   fetchRoleDetail,
   fetchRolePermissionMatrix,
+  fetchRoleTemplates,
   fetchRoles,
   performRoleLifecycleAction,
+  previewRoleTemplate,
   replaceRoleAssignmentRules,
   replaceRolePermissions,
   revokeRoleAssignment,
@@ -17,6 +20,7 @@ import type {
   RoleAssignmentListQuery,
   RoleAssignmentRuleReplacementPayload,
   RoleAssignToUserPayload,
+  RoleCreateFromTemplatePayload,
   RoleCreatePayload,
   RoleLifecycleAction,
   RoleLifecyclePayload,
@@ -44,6 +48,8 @@ export const roleQueryKeys = {
   all: (): readonly ['role'] => ROLE_QUERY_ROOT,
   list: (query: RoleListQuery) => ['role', 'list', toListQueryToken(query)] as const,
   detail: (roleId: string) => ['role', 'detail', roleId] as const,
+  templates: () => ['role', 'templates'] as const,
+  templatePreview: (templateCode: string) => ['role', 'template-preview', templateCode] as const,
   assignments: (roleId: string, query: RoleAssignmentListQuery) =>
     ['role', 'assignments', roleId, toAssignmentListQueryToken(query)] as const,
   permissionMatrix: (roleId: string) => ['role', 'permission-matrix', roleId] as const,
@@ -61,6 +67,23 @@ export const useRoleDetail = (roleId?: string) => {
     queryKey: roleId ? roleQueryKeys.detail(roleId) : [...ROLE_QUERY_ROOT, 'detail'],
     queryFn: () => fetchRoleDetail(roleId ?? ''),
     enabled: Boolean(roleId),
+  });
+};
+
+export const useRoleTemplates = () => {
+  return useQuery({
+    queryKey: roleQueryKeys.templates(),
+    queryFn: fetchRoleTemplates,
+  });
+};
+
+export const useRoleTemplatePreview = (templateCode?: string) => {
+  return useQuery({
+    queryKey: templateCode
+      ? roleQueryKeys.templatePreview(templateCode)
+      : [...ROLE_QUERY_ROOT, 'template-preview'],
+    queryFn: () => previewRoleTemplate(templateCode ?? ''),
+    enabled: Boolean(templateCode),
   });
 };
 
@@ -94,6 +117,17 @@ export const useCreateRoleMutation = () => {
 
   return useMutation({
     mutationFn: (payload: RoleCreatePayload) => createRole(payload),
+    onSuccess: async () => {
+      await invalidateRoleLaneQueries(queryClient);
+    },
+  });
+};
+
+export const useCreateRoleFromTemplateMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: RoleCreateFromTemplatePayload) => createRoleFromTemplate(payload),
     onSuccess: async () => {
       await invalidateRoleLaneQueries(queryClient);
     },

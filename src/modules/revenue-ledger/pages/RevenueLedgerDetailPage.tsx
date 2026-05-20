@@ -37,7 +37,19 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatCurrency, formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
+  formatCurrency,
+  formatCreatedDate,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface = 'draft-core' | 'reconcile' | null;
@@ -55,7 +67,7 @@ const formatNullableTimestamp = (value?: string | number | null): string => {
     return '-';
   }
 
-  return formatUtcTimestamp(value);
+  return formatBusinessTimestamp(value);
 };
 
 const readErrorMessage = (
@@ -89,12 +101,22 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
   const { revenueEntryId } = useParams<{ revenueEntryId: string }>();
   const { t } = useTranslation(['revenue-ledger', 'common', 'errors']);
   const detailQuery = useRevenueEntryDetail(revenueEntryId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const draftCoreMutation = useUpdateRevenueEntryDraftCoreMutation();
   const reconcileMutation = useReconcileRevenueEntryMutation();
   const lifecycleMutation = useRevenueEntryLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [activeSurface, setActiveSurface] = useState<ActiveSurface>(null);
+
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   useEffect(() => {
     setActiveSurface(null);
@@ -159,16 +181,90 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createRevenueLedgerActionRailItems(t, record, {
-      onDraftCoreEdit: () => setActiveSurface('draft-core'),
-      onReconcile: () => setActiveSurface('reconcile'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.revenueEntryId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    return applyActionCapabilityHints(
+      createRevenueLedgerActionRailItems(t, record, {
+        onDraftCoreEdit: () => setActiveSurface('draft-core'),
+        onReconcile: () => setActiveSurface('reconcile'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.revenueEntryId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        'draft-core': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          {
+            permission: PERMISSIONS.REVENUE_LEDGER_UPDATE,
+            scope: { module: 'revenueLedger', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        finalize: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          {
+            permission: PERMISSIONS.REVENUE_LEDGER_MANAGE_LIFECYCLE,
+            scope: { module: 'revenueLedger', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        reconcile: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          {
+            permission: PERMISSIONS.REVENUE_LEDGER_RECONCILE,
+            scope: { module: 'revenueLedger', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        void: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          {
+            permission: PERMISSIONS.REVENUE_LEDGER_MANAGE_LIFECYCLE,
+            scope: { module: 'revenueLedger', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          {
+            permission: PERMISSIONS.REVENUE_LEDGER_MANAGE_LIFECYCLE,
+            scope: { module: 'revenueLedger', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   const talentHref = buildEntityDetailHref('talent', record?.subjectTalentId);
   const platformHref = buildEntityDetailHref(
@@ -258,7 +354,7 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
                 {
                   key: 'recognized-at',
                   label: t('revenue-ledger:fields.recognizedAt'),
-                  value: formatUtcTimestamp(record.recognizedAt),
+                  value: formatBusinessTimestamp(record.recognizedAt),
                 },
                 {
                   key: 'reconcile-ref',
@@ -282,11 +378,11 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
                     label: t('revenue-ledger:fields.subjectTalentId'),
                     value:
                       talentHref && record.subjectTalentId ? (
-                        <Link className="font-mono text-accent hover:underline" to={talentHref}>
-                          {record.subjectTalentId}
+                        <Link className="text-accent hover:underline" to={talentHref}>
+                          {readReferenceDisplay(record.subjectTalentRef, record.subjectTalentId)}
                         </Link>
                       ) : (
-                        record.subjectTalentId
+                        readReferenceDisplay(record.subjectTalentRef, record.subjectTalentId)
                       ),
                   },
                   {
@@ -294,11 +390,17 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
                     label: t('revenue-ledger:fields.attributionPlatformAccountId'),
                     value:
                       platformHref && record.attributionPlatformAccountId ? (
-                        <Link className="font-mono text-accent hover:underline" to={platformHref}>
-                          {record.attributionPlatformAccountId}
+                        <Link className="text-accent hover:underline" to={platformHref}>
+                          {readReferenceDisplay(
+                            record.attributionPlatformAccountRef,
+                            record.attributionPlatformAccountId,
+                          )}
                         </Link>
                       ) : (
-                        formatNullable(record.attributionPlatformAccountId)
+                        readReferenceDisplay(
+                          record.attributionPlatformAccountRef,
+                          record.attributionPlatformAccountId,
+                        )
                       ),
                   },
                   {
@@ -306,11 +408,14 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
                     label: t('revenue-ledger:fields.attributionEventId'),
                     value:
                       eventHref && record.attributionEventId ? (
-                        <Link className="font-mono text-accent hover:underline" to={eventHref}>
-                          {record.attributionEventId}
+                        <Link className="text-accent hover:underline" to={eventHref}>
+                          {readReferenceDisplay(
+                            record.attributionEventRef,
+                            record.attributionEventId,
+                          )}
                         </Link>
                       ) : (
-                        formatNullable(record.attributionEventId)
+                        readReferenceDisplay(record.attributionEventRef, record.attributionEventId)
                       ),
                   },
                 ]}
@@ -338,12 +443,12 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
                   {
                     key: 'created',
                     label: t('revenue-ledger:fields.createdAt'),
-                    value: formatUtcTimestamp(record.createdAt),
+                    value: formatCreatedDate(record.createdAt),
                   },
                   {
                     key: 'updated',
                     label: t('revenue-ledger:fields.updatedAt'),
-                    value: formatUtcTimestamp(record.updatedAt),
+                    value: formatBusinessTimestamp(record.updatedAt),
                   },
                 ]}
                 columns={2}

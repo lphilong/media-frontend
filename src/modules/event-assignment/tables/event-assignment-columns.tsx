@@ -10,7 +10,7 @@ import type {
   EventRelatedListItem,
 } from '@modules/event-assignment/types/event-assignment.types';
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 
 export type EventTableRow = EventListItem | EventRelatedListItem;
 
@@ -100,20 +100,12 @@ export const createEventListColumns = (
   {
     accessorKey: 'eventStartAt',
     header: t('event-assignment:table.eventStartAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     accessorKey: 'eventEndAt',
     header: t('event-assignment:table.eventEndAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: t('event-assignment:table.createdAt'),
-    cell: (context) => {
-      const value = context.getValue();
-      return value ? formatUtcTimestamp(value as number | string) : '-';
-    },
+    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
   },
   {
     id: 'actions',
@@ -167,17 +159,17 @@ export const createEventAssignmentRosterColumns = (
     id: 'subjectId',
     header: t('event-assignment:assignments.subjectId'),
     cell: ({ row }) => (
-      <span className="font-mono text-xs">{readEventAssignmentSubjectId(row.original) ?? '-'}</span>
+      <span className="text-xs">
+        {readReferenceDisplay(
+          row.original.assignmentSubjectRef,
+          readEventAssignmentSubjectId(row.original),
+        )}
+      </span>
     ),
   },
   {
     accessorKey: 'assignmentStatus',
     header: t('event-assignment:assignments.assignmentStatus'),
-  },
-  {
-    accessorKey: 'createdAt',
-    header: t('event-assignment:assignments.createdAt'),
-    cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
   },
   {
     id: 'actions',

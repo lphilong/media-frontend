@@ -28,7 +28,7 @@
   },
   "statuses": {
     "PENDING": "Đang chờ",
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "DISABLED": "Đã vô hiệu hóa",
     "ARCHIVED": "Đã lưu trữ"
   },

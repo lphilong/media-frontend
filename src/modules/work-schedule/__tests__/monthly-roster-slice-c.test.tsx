@@ -133,12 +133,12 @@ describe('monthly roster slice C exception editor', () => {
     expect(within(table).getByText(t('table.createdAt'))).toBeInTheDocument();
     expect(within(table).getByText(t('table.updatedAt'))).toBeInTheDocument();
     expect(within(table).getByText(t('table.removedAt'))).toBeInTheDocument();
-    expect(within(table).getByText('2026-04-20 01:02:03')).toBeInTheDocument();
-    expect(within(table).getByText('2026-04-21 04:05:06')).toBeInTheDocument();
+    expect(within(table).getByText('20-04-2026')).toBeInTheDocument();
+    expect(within(table).getByText('11:05 21-04-2026')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText(t('actions.showRemoved')));
     expect(screen.getByText('Removed schedule change')).toBeInTheDocument();
-    expect(within(table).getByText('2026-04-22 07:08:09')).toBeInTheDocument();
+    expect(within(table).getByText('14:08 22-04-2026')).toBeInTheDocument();
   });
 
   it('allows DRAFT rosters to add WORKING_TO_OFF through a backend-shaped mutation', async () => {

@@ -5,10 +5,13 @@ import { MemoryRouter } from 'react-router-dom';
 
 import {
   assignRoleToUser,
+  createRoleFromTemplate,
   createRole,
   fetchRoleAssignments,
+  fetchRoleTemplates,
   fetchRoles,
   performRoleLifecycleAction,
+  previewRoleTemplate,
   replaceRoleAssignmentRules,
   replaceRolePermissions,
   revokeRoleAssignment,
@@ -24,12 +27,16 @@ import {
 } from '@modules/role/forms/role-mutation-forms';
 import {
   roleAssignmentRuleReplacementPayloadSchema,
+  roleAssignToUserPayloadSchema,
   roleCreatePayloadSchema,
+  roleCreateFromTemplatePayloadSchema,
 } from '@modules/role/schemas/role-payload-schemas';
 import type {
   RoleAssignmentItem,
   RoleDetailRecord,
   RolePermissionReplacementPayload,
+  RoleTemplateListItem,
+  RoleTemplatePreview,
 } from '@modules/role/types/role.types';
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
@@ -88,6 +95,9 @@ const roleDetail: RoleDetailRecord = {
   delegationBand: 'PRIVILEGED',
   maxDelegatableBand: 'LIMITED',
   assignmentRules: [{ id: 'rule-1', code: 'ALLOW_ADMIN', conditions: null }],
+  templateCode: 'ADMIN_FULL',
+  templateVersion: '2026-05-20',
+  templateAppliedAt: 2,
   createdAt: 1,
   updatedAt: 2,
   activatedAt: 2,
@@ -98,10 +108,46 @@ const roleAssignment: RoleAssignmentItem = {
   assignmentId: 'assignment-1',
   roleId: 'role-admin',
   userId: 'user-admin',
+  scopeGrants: {
+    workSchedule: ['self', 'team'],
+  },
   state: 'ACTIVE',
   effectiveAt: 2,
   revokedAt: null,
   reason: null,
+};
+
+const roleTemplateCatalog: RoleTemplateListItem[] = [
+  {
+    code: 'TEAM_MANAGER',
+    version: '2026-05-20',
+    name: 'Team Manager',
+    description: 'Team operations preset',
+    category: 'MANAGEMENT',
+    permissionCount: 2,
+    scopePlan: [
+      {
+        module: 'Work Schedule',
+        scopes: ['self', 'team'],
+        status: 'PREVIEW_ONLY',
+        note: 'Preview-only scope plan.',
+      },
+    ],
+    warnings: ['Scope plans are preview-only.'],
+    implementationNotes: ['Permissions remain explicit.'],
+    status: 'PREVIEW_ONLY',
+  },
+];
+
+const roleTemplatePreview: RoleTemplatePreview = {
+  template: {
+    ...roleTemplateCatalog[0],
+    permissions: [{ code: 'work-schedule:read' }, { code: 'talent-kpi:read' }],
+  },
+  permissions: [{ code: 'work-schedule:read' }, { code: 'talent-kpi:read' }],
+  scopePlan: roleTemplateCatalog[0].scopePlan,
+  warnings: roleTemplateCatalog[0].warnings,
+  unsupportedScopeNotes: [],
 };
 
 const mockDetailResponse = () => {
@@ -335,6 +381,30 @@ describe('role IA-1 query and payload shaping', () => {
       }),
     );
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('effectiveAt');
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('scopeGrants');
+
+    await assignRoleToUser('role-admin', {
+      userId: 'user-admin',
+      reason: 'Scoped coverage',
+      scopeGrants: {
+        workSchedule: ['self', 'team', 'department', 'global'],
+        dashboardLite: ['global'],
+      },
+    });
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/roles/role-admin/assignments',
+        data: {
+          userId: 'user-admin',
+          reason: 'Scoped coverage',
+          scopeGrants: {
+            workSchedule: ['self', 'team', 'department', 'global'],
+            dashboardLite: ['global'],
+          },
+        },
+      }),
+    );
 
     await revokeRoleAssignment('role-admin', 'assignment-1', { reason: 'Done' });
     expect(apiRequestMock).toHaveBeenLastCalledWith(
@@ -348,10 +418,64 @@ describe('role IA-1 query and payload shaping', () => {
     );
   });
 
+  it('parses role templates, previews, and create-from-template responses with strict schemas', async () => {
+    apiRequestMock.mockResolvedValueOnce({ data: roleTemplateCatalog });
+    await expect(fetchRoleTemplates()).resolves.toEqual(roleTemplateCatalog);
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/admin/role-templates',
+      }),
+    );
+
+    apiRequestMock.mockResolvedValueOnce({ data: roleTemplatePreview });
+    await expect(previewRoleTemplate('TEAM_MANAGER')).resolves.toEqual(roleTemplatePreview);
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/role-templates/TEAM_MANAGER/preview',
+        data: {},
+      }),
+    );
+
+    mockDetailResponse();
+    await expect(
+      createRoleFromTemplate({
+        templateCode: 'TEAM_MANAGER',
+        code: 'team_manager_copy',
+        name: 'Team Manager Copy',
+        description: null,
+      }),
+    ).resolves.toEqual(roleDetail);
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/roles/from-template',
+        data: {
+          templateCode: 'TEAM_MANAGER',
+          code: 'team_manager_copy',
+          name: 'Team Manager Copy',
+          description: null,
+        },
+      }),
+    );
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: [
+        {
+          ...roleTemplateCatalog[0],
+          extra: 'unsupported',
+        },
+      ],
+    });
+    await expect(fetchRoleTemplates()).rejects.toThrow();
+  });
+
   it('submits Role create, update, permission, assignment-rule, assign, and revoke surfaces with supported payloads', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
     const onCreate = vi.fn();
+    const onCreateFromTemplate = vi.fn();
     const onUpdate = vi.fn();
     const onPermissions = vi.fn();
     const onRules = vi.fn();
@@ -359,8 +483,15 @@ describe('role IA-1 query and payload shaping', () => {
     const onRevoke = vi.fn();
 
     const createRender = render(
-      <RoleCreateSurface onCancel={() => undefined} onSubmit={onCreate} />,
+      <RoleCreateSurface
+        onCancel={() => undefined}
+        onSubmit={onCreate}
+        onTemplateSubmit={onCreateFromTemplate}
+        onPreviewTemplate={vi.fn(async () => roleTemplatePreview)}
+        templateCatalog={roleTemplateCatalog}
+      />,
     );
+    await user.click(screen.getByLabelText(i18n.t('role:templates.customMode')));
     await user.type(screen.getByLabelText(i18n.t('role:fields.name')), 'Ops role');
     await user.type(screen.getByLabelText(i18n.t('role:fields.code')), 'ops');
     await user.type(
@@ -391,6 +522,36 @@ describe('role IA-1 query and payload shaping', () => {
       ],
     });
     createRender.unmount();
+
+    const templateRender = render(
+      <RoleCreateSurface
+        onCancel={() => undefined}
+        onSubmit={onCreate}
+        onTemplateSubmit={onCreateFromTemplate}
+        onPreviewTemplate={vi.fn(async () => roleTemplatePreview)}
+        templateCatalog={roleTemplateCatalog}
+      />,
+    );
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('role:templates.roleTemplate')),
+      'TEAM_MANAGER',
+    );
+    expect(
+      await screen.findByText(i18n.t('role:templates.generatedPermissions')),
+    ).toBeInTheDocument();
+    expect(screen.getByText('work-schedule:read')).toBeInTheDocument();
+    expect(screen.getByText('Scope plans are preview-only.')).toBeInTheDocument();
+    expect(screen.getByText(/Preview-only scope plan/u)).toBeInTheDocument();
+    await user.type(screen.getByLabelText(i18n.t('role:fields.name')), 'Team Manager Copy');
+    await user.type(screen.getByLabelText(i18n.t('role:fields.code')), 'team_manager_copy');
+    await user.click(screen.getByRole('button', { name: i18n.t('role:mutations.create.submit') }));
+    expect(onCreateFromTemplate).toHaveBeenCalledWith({
+      templateCode: 'TEAM_MANAGER',
+      name: 'Team Manager Copy',
+      code: 'TEAM_MANAGER_COPY',
+      description: null,
+    });
+    templateRender.unmount();
 
     const editRender = render(
       <RoleEditSurface initialRecord={roleDetail} onCancel={() => undefined} onSubmit={onUpdate} />,
@@ -469,6 +630,32 @@ describe('role IA-1 query and payload shaping', () => {
     expect(onAssign.mock.calls[0][0]).not.toHaveProperty('effectiveAt');
     assignRender.unmount();
 
+    const scopedAssignRender = render(
+      <MemoryRouter>
+        <RoleAssignUserSurface onCancel={() => undefined} onSubmit={onAssign} />
+      </MemoryRouter>,
+    );
+    await selectPickerOption(user, 'role-assignment-user', /Admin User/);
+    await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.self')));
+    await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.team')));
+    await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.department')));
+    await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.global')));
+    await user.click(
+      screen.getByLabelText(`Dashboard Lite: ${i18n.t('role:scopePicker.scopes.global')}`),
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
+    );
+    expect(onAssign).toHaveBeenLastCalledWith({
+      userId: 'user-admin',
+      reason: null,
+      scopeGrants: {
+        workSchedule: ['self', 'team', 'department', 'global'],
+        dashboardLite: ['global'],
+      },
+    });
+    scopedAssignRender.unmount();
+
     render(
       <RoleRevokeAssignmentSurface
         assignmentId="assignment-1"
@@ -525,6 +712,49 @@ describe('role IA-1 query and payload shaping', () => {
     });
 
     expect(validCreate.success).toBe(true);
+
+    expect(
+      roleCreateFromTemplatePayloadSchema.safeParse({
+        templateCode: 'TEAM_MANAGER',
+        code: 'TEAM_MANAGER_COPY',
+        name: 'Team Manager Copy',
+        description: null,
+      }).success,
+    ).toBe(true);
+
+    expect(
+      roleAssignToUserPayloadSchema.safeParse({
+        userId: 'user-admin',
+        reason: null,
+        scopeGrants: {
+          workSchedule: ['self', 'team', 'department', 'global'],
+          eventAssignment: ['global'],
+          contractRegistry: ['global'],
+          talentKpi: ['global'],
+          revenueLedger: ['global'],
+          commission: ['global'],
+          dashboardLite: ['global'],
+        },
+      }).success,
+    ).toBe(true);
+
+    expect(
+      roleAssignToUserPayloadSchema.safeParse({
+        userId: 'user-admin',
+        scopeGrants: {
+          role: ['global'],
+        },
+      }).success,
+    ).toBe(false);
+
+    expect(
+      roleAssignToUserPayloadSchema.safeParse({
+        userId: 'user-admin',
+        scopeGrants: {
+          eventAssignment: ['team'],
+        },
+      }).success,
+    ).toBe(false);
 
     const forbiddenConditions: unknown[] = [
       [],

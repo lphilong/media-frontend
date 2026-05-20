@@ -6,6 +6,7 @@ import type {
   roleMaxDelegatableBandValues,
   roleStateValues,
 } from '@modules/role/constants/role.constants';
+import type { ReferenceSummary } from '@shared/formatting/reference-display';
 
 export type RoleState = (typeof roleStateValues)[number];
 export type RoleAssignmentState = (typeof roleAssignmentStateValues)[number];
@@ -18,6 +19,61 @@ export type JsonPlainValue = string | number | boolean | null | { [key: string]:
 
 export type RolePermission = {
   code: string;
+};
+
+export type RoleTemplateCode =
+  | 'ADMIN_FULL'
+  | 'HR_OPERATIONS'
+  | 'TEAM_MANAGER'
+  | 'PRODUCTION_OPS'
+  | 'COMMERCIAL_FINANCE'
+  | 'TALENT_STAFF_SELF'
+  | 'VIEWER_AUDITOR';
+
+export type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
+
+export type RoleTemplateScopePlanEntry = {
+  module: string;
+  scopes: string[];
+  status: RoleTemplateStatus;
+  note: string;
+};
+
+export type RoleTemplateListItem = {
+  code: RoleTemplateCode;
+  version: string;
+  name: string;
+  description: string;
+  category: string;
+  permissionCount: number;
+  permissions?: RolePermission[];
+  scopePlan: RoleTemplateScopePlanEntry[];
+  warnings: string[];
+  implementationNotes: string[];
+  status: RoleTemplateStatus;
+};
+
+export type RoleTemplatePreview = {
+  template: RoleTemplateListItem & {
+    permissions: RolePermission[];
+  };
+  permissions: RolePermission[];
+  scopePlan: RoleTemplateScopePlanEntry[];
+  warnings: string[];
+  unsupportedScopeNotes: string[];
+};
+
+export type WorkScheduleAssignmentScope = 'self' | 'team' | 'department' | 'global';
+export type GlobalAssignmentScope = 'global';
+
+export type RoleAssignmentScopeGrants = {
+  workSchedule?: WorkScheduleAssignmentScope[];
+  eventAssignment?: GlobalAssignmentScope[];
+  contractRegistry?: GlobalAssignmentScope[];
+  talentKpi?: GlobalAssignmentScope[];
+  revenueLedger?: GlobalAssignmentScope[];
+  commission?: GlobalAssignmentScope[];
+  dashboardLite?: GlobalAssignmentScope[];
 };
 
 export type RoleAssignmentRule = {
@@ -35,6 +91,9 @@ export type RoleListItem = {
   state: RoleState;
   permissionsSummary?: string | number | null;
   assignmentCountSummary?: string | number | null;
+  templateCode?: RoleTemplateCode | null;
+  templateVersion?: string | null;
+  templateAppliedAt?: number | string | null;
   updatedAt: number | string;
 };
 
@@ -48,6 +107,9 @@ export type RoleDetailRecord = {
   delegationBand: RoleDelegationBand;
   maxDelegatableBand: RoleMaxDelegatableBand;
   assignmentRules: RoleAssignmentRule[];
+  templateCode?: RoleTemplateCode | null;
+  templateVersion?: string | null;
+  templateAppliedAt?: number | string | null;
   createdAt?: number | string;
   updatedAt: number | string;
   activatedAt?: number | string | null;
@@ -58,6 +120,8 @@ export type RoleAssignmentItem = {
   assignmentId: string;
   roleId: string;
   userId: string;
+  userRef?: ReferenceSummary | null;
+  scopeGrants?: RoleAssignmentScopeGrants | null;
   state: RoleAssignmentState;
   effectiveAt: number | string;
   revokedAt?: number | string | null;
@@ -118,6 +182,14 @@ export type RoleAssignmentRuleReplacementPayload = {
 export type RoleAssignToUserPayload = {
   userId: string;
   reason?: string | null;
+  scopeGrants?: RoleAssignmentScopeGrants;
+};
+
+export type RoleCreateFromTemplatePayload = {
+  templateCode: RoleTemplateCode;
+  code: string;
+  name: string;
+  description?: string | null;
 };
 
 export type RoleRevokeAssignmentPayload = {

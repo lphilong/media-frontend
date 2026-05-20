@@ -37,7 +37,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatDecimal, formatUtcTimestamp } from '@shared/formatting/formatters';
+import {
+  formatDecimal,
+  formatCreatedDate,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface = 'draft-core' | 'metrics' | null;
@@ -55,7 +60,7 @@ const formatNullableTimestamp = (value?: string | number | null): string => {
     return '-';
   }
 
-  return formatUtcTimestamp(value);
+  return formatBusinessTimestamp(value);
 };
 
 const readErrorMessage = (
@@ -243,12 +248,12 @@ export const TalentKpiDetailPage = (): JSX.Element => {
                 {
                   key: 'period-start',
                   label: t('talent-kpi:fields.periodStartAt'),
-                  value: formatUtcTimestamp(record.periodStartAt),
+                  value: formatBusinessTimestamp(record.periodStartAt),
                 },
                 {
                   key: 'period-end',
                   label: t('talent-kpi:fields.periodEndAt'),
-                  value: formatUtcTimestamp(record.periodEndAt),
+                  value: formatBusinessTimestamp(record.periodEndAt),
                 },
                 {
                   key: 'published',
@@ -258,12 +263,12 @@ export const TalentKpiDetailPage = (): JSX.Element => {
                 {
                   key: 'created',
                   label: t('talent-kpi:fields.createdAt'),
-                  value: formatUtcTimestamp(record.createdAt),
+                  value: formatCreatedDate(record.createdAt),
                 },
                 {
                   key: 'updated',
                   label: t('talent-kpi:fields.updatedAt'),
-                  value: formatUtcTimestamp(record.updatedAt),
+                  value: formatBusinessTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}
@@ -282,11 +287,11 @@ export const TalentKpiDetailPage = (): JSX.Element => {
                     label: t('talent-kpi:fields.subjectTalentId'),
                     value:
                       talentHref && record.subjectTalentId ? (
-                        <Link className="font-mono text-accent hover:underline" to={talentHref}>
-                          {record.subjectTalentId}
+                        <Link className="text-accent hover:underline" to={talentHref}>
+                          {readReferenceDisplay(record.subjectTalentRef, record.subjectTalentId)}
                         </Link>
                       ) : (
-                        record.subjectTalentId
+                        readReferenceDisplay(record.subjectTalentRef, record.subjectTalentId)
                       ),
                   },
                   {
@@ -294,11 +299,17 @@ export const TalentKpiDetailPage = (): JSX.Element => {
                     label: t('talent-kpi:fields.attributionPlatformAccountId'),
                     value:
                       platformHref && record.attributionPlatformAccountId ? (
-                        <Link className="font-mono text-accent hover:underline" to={platformHref}>
-                          {record.attributionPlatformAccountId}
+                        <Link className="text-accent hover:underline" to={platformHref}>
+                          {readReferenceDisplay(
+                            record.attributionPlatformAccountRef,
+                            record.attributionPlatformAccountId,
+                          )}
                         </Link>
                       ) : (
-                        formatNullable(record.attributionPlatformAccountId)
+                        readReferenceDisplay(
+                          record.attributionPlatformAccountRef,
+                          record.attributionPlatformAccountId,
+                        )
                       ),
                   },
                   {
@@ -306,11 +317,14 @@ export const TalentKpiDetailPage = (): JSX.Element => {
                     label: t('talent-kpi:fields.attributionEventId'),
                     value:
                       eventHref && record.attributionEventId ? (
-                        <Link className="font-mono text-accent hover:underline" to={eventHref}>
-                          {record.attributionEventId}
+                        <Link className="text-accent hover:underline" to={eventHref}>
+                          {readReferenceDisplay(
+                            record.attributionEventRef,
+                            record.attributionEventId,
+                          )}
                         </Link>
                       ) : (
-                        formatNullable(record.attributionEventId)
+                        readReferenceDisplay(record.attributionEventRef, record.attributionEventId)
                       ),
                   },
                 ]}

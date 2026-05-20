@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { readReferenceDisplay } from '@shared/formatting/formatters';
 import type {
   PlatformAccountLifecycleAction,
   PlatformAccountOwnerKind,
@@ -90,7 +90,7 @@ export const createPlatformAccountListColumns = (
       header: t('platform-account:table.ownerId'),
       cell: ({ row }) => {
         const ownerId = readPlatformAccountOwnerId(row.original);
-        return <span className="font-mono text-xs">{ownerId ?? '-'}</span>;
+        return readReferenceDisplay(row.original.ownerRef, ownerId);
       },
     },
     {
@@ -127,11 +127,6 @@ export const createPlatformAccountListColumns = (
         context.getValue() === true
           ? t('platform-account:boolean.true')
           : t('platform-account:boolean.false'),
-    },
-    {
-      accessorKey: 'createdAt',
-      header: t('platform-account:table.createdAt'),
-      cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
     },
     {
       id: 'actions',

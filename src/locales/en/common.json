@@ -14,6 +14,14 @@
     "sortAscending": "Ascending",
     "sortDescending": "Descending"
   },
+  "filters": {
+    "filters": "Filters",
+    "moreFilters": "More filters",
+    "appliedFilters": "Applied filters",
+    "clearAll": "Clear all",
+    "clearFilter": "Clear filter",
+    "noFiltersApplied": "No filters applied"
+  },
   "locales": {
     "vi": "Tiếng Việt",
     "en": "English",
@@ -38,6 +46,14 @@
   },
   "states": {
     "loading": "Loading"
+  },
+  "capabilities": {
+    "missingPermission": "You do not have permission to perform this action.",
+    "missingScope": "Your role assignment does not include the required scope.",
+    "invalidStatus": "This action is not available for the current record status.",
+    "notWired": "This action is not wired yet.",
+    "checkingPermissions": "Checking permissions.",
+    "backendEnforced": "Backend authorization is still enforced when you submit."
   },
   "auth": {
     "loginTitle": "Admin sign in",

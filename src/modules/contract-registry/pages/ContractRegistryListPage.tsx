@@ -24,18 +24,21 @@ import type {
 } from '@modules/contract-registry/types/contract-registry.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  AppliedFilterChips,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  MoreFiltersPanel,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
   useDestructiveConfirm,
   useMutationFeedback,
+  type AppliedFilterChipItem,
 } from '@shared/components/primitives';
-import { ReferenceFilterField } from '@shared/components/reference';
+import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import {
   loadEmploymentProfileReferenceOptions,
   loadTalentReferenceOptions,
@@ -80,8 +83,10 @@ const statusOptions = [
 ] as const;
 const contractKindOptions = ['', 'EMPLOYMENT', 'TALENT_SERVICE', 'TALENT_MANAGEMENT'] as const;
 const linkedEntityKindOptions = ['', 'EMPLOYMENT_PROFILE', 'TALENT'] as const;
-const confidentialityTierOptions = ['', 'STANDARD', 'CONFIDENTIAL', 'RESTRICTED'] as const;
+const confidentialityTierOptions = ['', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'] as const;
 const hasFileReferenceOptions = ['', 'true', 'false'] as const;
+
+type FilterLabelKey = 'linkedEntity' | 'owner';
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -220,6 +225,8 @@ export const ContractRegistryListPage = (): JSX.Element => {
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
+  const [filterLabels, setFilterLabels] = useState<Partial<Record<FilterLabelKey, string>>>({});
   const [activeDateAction, setActiveDateAction] = useState<ListDateAction | null>(null);
   const [, setCursorStack] = useState(createCursorStack);
 
@@ -371,6 +378,189 @@ export const ContractRegistryListPage = (): JSX.Element => {
     [linkedKind],
   );
 
+  const rememberFilterLabel = useCallback(
+    (key: FilterLabelKey) => (option: ReferenceOption | undefined) => {
+      if (!option) {
+        return;
+      }
+
+      setFilterLabels((current) => ({ ...current, [key]: option.label }));
+    },
+    [],
+  );
+
+  const activeFilterChips = useMemo(() => {
+    const chips: AppliedFilterChipItem[] = [];
+
+    if (routeMode === 'flat' && flatListQuery.search) {
+      chips.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: flatListQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (activeQuery.status) {
+      chips.push({
+        id: 'status',
+        label: t('contract-registry:filters.status'),
+        value: t(`contract-registry:statuses.${activeQuery.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.contractKind) {
+      chips.push({
+        id: 'contractKind',
+        label: t('contract-registry:filters.contractKind'),
+        value: t(`contract-registry:contractKinds.${flatListQuery.contractKind}`),
+        onClear: () => patchQuery({ contractKind: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && linkedKind) {
+      chips.push({
+        id: 'linkedEntityKind',
+        label: t('contract-registry:filters.linkedEntityKind'),
+        value: t(`contract-registry:linkedEntityKinds.${linkedKind}`),
+        onClear: () =>
+          patchQuery({
+            linkedEntityKind: undefined,
+            linkedEmploymentProfileId: undefined,
+            linkedTalentId: undefined,
+          }),
+      });
+    }
+
+    if (routeMode === 'flat' && selectedLinkedEntityId) {
+      chips.push({
+        id: 'linkedEntity',
+        label: t('contract-registry:filters.linkedEntityId'),
+        value: filterLabels.linkedEntity ?? selectedLinkedEntityId,
+        onClear: () =>
+          patchQuery({
+            linkedEmploymentProfileId: undefined,
+            linkedTalentId: undefined,
+          }),
+      });
+    }
+
+    const ownerEmploymentProfileId =
+      'ownerEmploymentProfileId' in activeQuery
+        ? (activeQuery.ownerEmploymentProfileId ?? undefined)
+        : undefined;
+    if (routeMode === 'flat' && ownerEmploymentProfileId) {
+      chips.push({
+        id: 'owner',
+        label: t('contract-registry:filters.ownerEmploymentProfileId'),
+        value: filterLabels.owner ?? ownerEmploymentProfileId,
+        onClear: () => patchQuery({ ownerEmploymentProfileId: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.confidentialityTier) {
+      chips.push({
+        id: 'confidentialityTier',
+        label: t('contract-registry:filters.confidentialityTier'),
+        value: t(`contract-registry:confidentialityTiers.${flatListQuery.confidentialityTier}`),
+        onClear: () => patchQuery({ confidentialityTier: undefined }),
+      });
+    }
+
+    if (routeMode === 'flat' && flatListQuery.hasFileReference !== undefined) {
+      chips.push({
+        id: 'hasFileReference',
+        label: t('contract-registry:filters.hasFileReference'),
+        value: t(
+          `contract-registry:filters.fileReference.${String(flatListQuery.hasFileReference)}`,
+        ),
+        onClear: () => patchQuery({ hasFileReference: undefined }),
+      });
+    }
+
+    if (activeQuery.windowStartDate) {
+      chips.push({
+        id: 'windowStartDate',
+        label: t('contract-registry:filters.windowStartDate'),
+        value: activeQuery.windowStartDate,
+        onClear: () => patchQuery({ windowStartDate: undefined }),
+      });
+    }
+
+    if (activeQuery.windowEndDate) {
+      chips.push({
+        id: 'windowEndDate',
+        label: t('contract-registry:filters.windowEndDate'),
+        value: activeQuery.windowEndDate,
+        onClear: () => patchQuery({ windowEndDate: undefined }),
+      });
+    }
+
+    if ('effectiveEndDateFrom' in activeQuery && activeQuery.effectiveEndDateFrom) {
+      chips.push({
+        id: 'effectiveEndDateFrom',
+        label: 'Effective end date from',
+        value: activeQuery.effectiveEndDateFrom,
+        onClear: () => patchQuery({ effectiveEndDateFrom: undefined }),
+      });
+    }
+
+    if ('effectiveEndDateTo' in activeQuery && activeQuery.effectiveEndDateTo) {
+      chips.push({
+        id: 'effectiveEndDateTo',
+        label: 'Effective end date to',
+        value: activeQuery.effectiveEndDateTo,
+        onClear: () => patchQuery({ effectiveEndDateTo: undefined }),
+      });
+    }
+
+    return chips;
+  }, [
+    activeQuery,
+    filterLabels.linkedEntity,
+    filterLabels.owner,
+    flatListQuery.confidentialityTier,
+    flatListQuery.contractKind,
+    flatListQuery.hasFileReference,
+    flatListQuery.search,
+    linkedKind,
+    patchQuery,
+    routeMode,
+    selectedLinkedEntityId,
+    t,
+  ]);
+
+  const clearAllFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      contractKind: undefined,
+      linkedEntityKind: routeMode === 'by-linked-entity' ? linkedKind : undefined,
+      linkedEmploymentProfileId:
+        routeMode === 'by-linked-entity'
+          ? byLinkedEntityQuery.linkedEmploymentProfileId
+          : undefined,
+      linkedTalentId:
+        routeMode === 'by-linked-entity' ? byLinkedEntityQuery.linkedTalentId : undefined,
+      ownerEmploymentProfileId:
+        routeMode === 'by-owner' ? byOwnerQuery.ownerEmploymentProfileId : undefined,
+      confidentialityTier: undefined,
+      hasFileReference: undefined,
+      windowStartDate: undefined,
+      windowEndDate: undefined,
+      effectiveEndDateFrom: undefined,
+      effectiveEndDateTo: undefined,
+    });
+  }, [
+    byLinkedEntityQuery.linkedEmploymentProfileId,
+    byLinkedEntityQuery.linkedTalentId,
+    byOwnerQuery.ownerEmploymentProfileId,
+    linkedKind,
+    patchQuery,
+    routeMode,
+  ]);
+
   return (
     <ModuleListScreenShell
       mode={routeMode === 'flat' ? 'flat-list' : 'related-list'}
@@ -384,7 +574,7 @@ export const ContractRegistryListPage = (): JSX.Element => {
         </div>
       }
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             routeMode === 'flat' ? (
               <SearchBoxSeam
@@ -405,6 +595,195 @@ export const ContractRegistryListPage = (): JSX.Element => {
               onChange={(sortBy, sortDirection) => patchQuery({ sortBy, sortDirection })}
             />
           }
+          moreFiltersTrigger={
+            <button
+              type="button"
+              aria-expanded={isMoreFiltersOpen}
+              aria-controls="contract-registry-more-filters"
+              onClick={() => setIsMoreFiltersOpen((current) => !current)}
+              className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+            >
+              {t('common:filters.moreFilters')}
+            </button>
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              emptyLabel={t('common:filters.noFiltersApplied')}
+              items={activeFilterChips}
+              onClearAll={activeFilterChips.length > 0 ? clearAllFilters : undefined}
+            />
+          }
+          moreFiltersPanel={
+            <MoreFiltersPanel
+              id="contract-registry-more-filters"
+              title={t('common:filters.moreFilters')}
+              isOpen={isMoreFiltersOpen}
+              closeLabel={t('common:actions.close')}
+              onClose={() => setIsMoreFiltersOpen(false)}
+            >
+              {routeMode === 'flat' ? (
+                <label className="flex min-w-[210px] flex-col gap-1">
+                  <span className="text-xs font-medium uppercase text-muted">
+                    {t('contract-registry:filters.contractKind')}
+                  </span>
+                  <select
+                    value={flatListQuery.contractKind ?? ''}
+                    className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                    onChange={(event) =>
+                      patchQuery({ contractKind: event.target.value || undefined })
+                    }
+                  >
+                    {contractKindOptions.map((kind) => (
+                      <option key={kind || 'all'} value={kind}>
+                        {kind
+                          ? t(`contract-registry:contractKinds.${kind}`)
+                          : t('contract-registry:filters.allContractKinds')}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {routeMode !== 'by-owner' ? (
+                <>
+                  <label className="flex min-w-[210px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('contract-registry:filters.linkedEntityKind')}
+                    </span>
+                    <select
+                      value={linkedKind ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({
+                          linkedEntityKind: event.target.value || undefined,
+                          linkedEmploymentProfileId: undefined,
+                          linkedTalentId: undefined,
+                        })
+                      }
+                    >
+                      {linkedEntityKindOptions.map((kind) => (
+                        <option key={kind || 'all'} value={kind}>
+                          {kind
+                            ? t(`contract-registry:linkedEntityKinds.${kind}`)
+                            : t('contract-registry:filters.allLinkedEntityKinds')}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <ReferenceFilterField
+                    label={t('contract-registry:filters.linkedEntityId')}
+                    pickerId="contract-registry-filter-linked-entity"
+                    value={selectedLinkedEntityId}
+                    loadOptions={loadLinkedEntityFilterOptions}
+                    placeholder={t('contract-registry:filters.linkedEntityIdPlaceholder')}
+                    clearLabel={t('common:actions.clear')}
+                    disabled={!linkedKind}
+                    onSelectedOptionChange={rememberFilterLabel('linkedEntity')}
+                    onChange={(value) =>
+                      patchQuery({
+                        linkedEmploymentProfileId:
+                          linkedKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
+                        linkedTalentId: linkedKind === 'TALENT' ? value : undefined,
+                      })
+                    }
+                  />
+                </>
+              ) : null}
+              <ReferenceFilterField
+                label={t('contract-registry:filters.ownerEmploymentProfileId')}
+                pickerId="contract-registry-filter-owner"
+                value={
+                  'ownerEmploymentProfileId' in activeQuery
+                    ? (activeQuery.ownerEmploymentProfileId ?? undefined)
+                    : undefined
+                }
+                loadOptions={loadEmploymentProfileReferenceOptions}
+                placeholder={t('contract-registry:filters.ownerEmploymentProfileIdPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                onSelectedOptionChange={rememberFilterLabel('owner')}
+                onChange={(value) => patchQuery({ ownerEmploymentProfileId: value })}
+              />
+              {routeMode === 'flat' ? (
+                <>
+                  <label className="flex min-w-[190px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('contract-registry:filters.confidentialityTier')}
+                    </span>
+                    <select
+                      value={flatListQuery.confidentialityTier ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({ confidentialityTier: event.target.value || undefined })
+                      }
+                    >
+                      {confidentialityTierOptions.map((tier) => (
+                        <option key={tier || 'all'} value={tier}>
+                          {tier
+                            ? t(`contract-registry:confidentialityTiers.${tier}`)
+                            : t('contract-registry:filters.allConfidentialityTiers')}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex min-w-[170px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('contract-registry:filters.hasFileReference')}
+                    </span>
+                    <select
+                      value={
+                        flatListQuery.hasFileReference === undefined
+                          ? ''
+                          : String(flatListQuery.hasFileReference)
+                      }
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        patchQuery({
+                          hasFileReference:
+                            event.target.value === '' ? undefined : event.target.value === 'true',
+                        })
+                      }
+                    >
+                      {hasFileReferenceOptions.map((value) => (
+                        <option key={value || 'all'} value={value}>
+                          {value === ''
+                            ? t('contract-registry:filters.anyFileReference')
+                            : t(`contract-registry:filters.fileReference.${value}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              ) : null}
+              <label className="flex min-w-[170px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('contract-registry:filters.windowStartDate')}
+                </span>
+                <input
+                  type="date"
+                  value={activeQuery.windowStartDate ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({ windowStartDate: event.target.value || undefined })
+                  }
+                />
+              </label>
+              <label className="flex min-w-[170px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('contract-registry:filters.windowEndDate')}
+                </span>
+                <input
+                  type="date"
+                  value={activeQuery.windowEndDate ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) =>
+                    patchQuery({ windowEndDate: event.target.value || undefined })
+                  }
+                />
+              </label>
+            </MoreFiltersPanel>
+          }
         >
           <label className="flex min-w-[180px] flex-col gap-1">
             <span className="text-xs font-medium uppercase text-muted">
@@ -424,157 +803,7 @@ export const ContractRegistryListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          {routeMode === 'flat' ? (
-            <label className="flex min-w-[210px] flex-col gap-1">
-              <span className="text-xs font-medium uppercase text-muted">
-                {t('contract-registry:filters.contractKind')}
-              </span>
-              <select
-                value={flatListQuery.contractKind ?? ''}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                onChange={(event) => patchQuery({ contractKind: event.target.value || undefined })}
-              >
-                {contractKindOptions.map((kind) => (
-                  <option key={kind || 'all'} value={kind}>
-                    {kind
-                      ? t(`contract-registry:contractKinds.${kind}`)
-                      : t('contract-registry:filters.allContractKinds')}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-          {routeMode !== 'by-owner' ? (
-            <>
-              <label className="flex min-w-[210px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('contract-registry:filters.linkedEntityKind')}
-                </span>
-                <select
-                  value={linkedKind ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      linkedEntityKind: event.target.value || undefined,
-                      linkedEmploymentProfileId: undefined,
-                      linkedTalentId: undefined,
-                    })
-                  }
-                >
-                  {linkedEntityKindOptions.map((kind) => (
-                    <option key={kind || 'all'} value={kind}>
-                      {kind
-                        ? t(`contract-registry:linkedEntityKinds.${kind}`)
-                        : t('contract-registry:filters.allLinkedEntityKinds')}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <ReferenceFilterField
-                label={t('contract-registry:filters.linkedEntityId')}
-                pickerId="contract-registry-filter-linked-entity"
-                value={selectedLinkedEntityId}
-                loadOptions={loadLinkedEntityFilterOptions}
-                placeholder={t('contract-registry:filters.linkedEntityIdPlaceholder')}
-                clearLabel={t('common:actions.clear')}
-                disabled={!linkedKind}
-                onChange={(value) =>
-                  patchQuery({
-                    linkedEmploymentProfileId:
-                      linkedKind === 'EMPLOYMENT_PROFILE' ? value : undefined,
-                    linkedTalentId: linkedKind === 'TALENT' ? value : undefined,
-                  })
-                }
-              />
-            </>
-          ) : null}
-          <ReferenceFilterField
-            label={t('contract-registry:filters.ownerEmploymentProfileId')}
-            pickerId="contract-registry-filter-owner"
-            value={
-              'ownerEmploymentProfileId' in activeQuery
-                ? (activeQuery.ownerEmploymentProfileId ?? undefined)
-                : undefined
-            }
-            loadOptions={loadEmploymentProfileReferenceOptions}
-            placeholder={t('contract-registry:filters.ownerEmploymentProfileIdPlaceholder')}
-            clearLabel={t('common:actions.clear')}
-            onChange={(value) => patchQuery({ ownerEmploymentProfileId: value })}
-          />
-          {routeMode === 'flat' ? (
-            <>
-              <label className="flex min-w-[190px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('contract-registry:filters.confidentialityTier')}
-                </span>
-                <select
-                  value={flatListQuery.confidentialityTier ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({ confidentialityTier: event.target.value || undefined })
-                  }
-                >
-                  {confidentialityTierOptions.map((tier) => (
-                    <option key={tier || 'all'} value={tier}>
-                      {tier
-                        ? t(`contract-registry:confidentialityTiers.${tier}`)
-                        : t('contract-registry:filters.allConfidentialityTiers')}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex min-w-[170px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('contract-registry:filters.hasFileReference')}
-                </span>
-                <select
-                  value={
-                    flatListQuery.hasFileReference === undefined
-                      ? ''
-                      : String(flatListQuery.hasFileReference)
-                  }
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      hasFileReference:
-                        event.target.value === '' ? undefined : event.target.value === 'true',
-                    })
-                  }
-                >
-                  {hasFileReferenceOptions.map((value) => (
-                    <option key={value || 'all'} value={value}>
-                      {value === ''
-                        ? t('contract-registry:filters.anyFileReference')
-                        : t(`contract-registry:filters.fileReference.${value}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          ) : null}
-          <label className="flex min-w-[170px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('contract-registry:filters.windowStartDate')}
-            </span>
-            <input
-              type="date"
-              value={activeQuery.windowStartDate ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) => patchQuery({ windowStartDate: event.target.value || undefined })}
-            />
-          </label>
-          <label className="flex min-w-[170px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('contract-registry:filters.windowEndDate')}
-            </span>
-            <input
-              type="date"
-              value={activeQuery.windowEndDate ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) => patchQuery({ windowEndDate: event.target.value || undefined })}
-            />
-          </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>

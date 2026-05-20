@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { StatusBadge } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 import type {
   TalentGroupByTalentListItem,
   TalentGroupLifecycleAction,
@@ -85,18 +85,9 @@ export const createTalentGroupListColumns = (
       ),
     },
     {
-      accessorKey: 'displayOrder',
-      header: t('talent-group:table.displayOrder'),
-    },
-    {
-      accessorKey: 'createdAt',
-      header: t('talent-group:table.createdAt'),
-      cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
-    },
-    {
       accessorKey: 'updatedAt',
       header: t('talent-group:table.updatedAt'),
-      cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+      cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
     },
     {
       id: 'actions',
@@ -186,7 +177,7 @@ export const createTalentGroupByTalentColumns = (
     {
       accessorKey: 'joinedAt',
       header: t('talent-group:membersTable.joinedAt'),
-      cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+      cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
     },
     {
       id: 'actions',
@@ -236,16 +227,17 @@ export const createTalentGroupMemberColumns = (
     {
       accessorKey: 'talentId',
       header: t('talent-group:membersTable.talentId'),
-      cell: (context) => {
-        const talentId = String(context.getValue() ?? '');
+      cell: ({ row }) => {
+        const talentId = row.original.talentId;
+        const label = readReferenceDisplay(row.original.talentRef, talentId);
 
         return (
           <button
             type="button"
-            className="font-mono text-xs text-accent hover:underline"
+            className="text-xs text-accent hover:underline"
             onClick={() => handlers.onOpenTalentDetail(talentId)}
           >
-            {talentId || '-'}
+            {label}
           </button>
         );
       },
@@ -268,14 +260,14 @@ export const createTalentGroupMemberColumns = (
     {
       accessorKey: 'joinedAt',
       header: t('talent-group:membersTable.joinedAt'),
-      cell: (context) => formatUtcTimestamp(context.getValue() as number | string),
+      cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
     },
     {
       accessorKey: 'leftAt',
       header: t('talent-group:membersTable.leftAt'),
       cell: (context) => {
         const value = context.getValue() as number | string | null | undefined;
-        return value ? formatUtcTimestamp(value) : '-';
+        return value ? formatBusinessTimestamp(value) : '-';
       },
     },
     {

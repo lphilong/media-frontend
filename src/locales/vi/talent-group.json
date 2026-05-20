@@ -9,7 +9,7 @@
     "name": "Họ và Tên",
     "shortName": "Tên ngắn",
     "status": "Trạng thái",
-    "displayOrder": "Thứ tự hiển thị",
+    "displayOrder": "Ưu tiên sắp xếp",
     "description": "Mô tả",
     "externalRef": "Tham chiếu bên ngoài",
     "talentId": "Talent",
@@ -20,7 +20,7 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã nhóm sẽ được hệ thống tạo sau khi tạo bản ghi."
+    "description": "Mã nhóm sẽ được tạo tự động"
   },
   "placeholders": {
     "optional": "Không bắt buộc",
@@ -28,6 +28,9 @@
   },
   "referenceHelp": {
     "talentId": "Chọn Talent cần thêm vào nhóm này."
+  },
+  "help": {
+    "displayOrder": "Số nhỏ hiển thị trước. Khoảng cách như 10, 20, 30 giúp chèn mục mới giữa các mục hiện có dễ hơn. Ví dụ: dùng 15 để đặt một mục giữa 10 và 20."
   },
   "states": {
     "emptyTitle": "Không tìm thấy nhóm Talent",
@@ -48,15 +51,15 @@
     "groupCode": "Mã nhóm",
     "name": "Tên",
     "createdAt": "Thời điểm tạo",
-    "displayOrder": "Thứ tự hiển thị"
+    "displayOrder": "Ưu tiên sắp xếp"
   },
   "statuses": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "INACTIVE": "Không hoạt động",
     "ARCHIVED": "Đã lưu trữ"
   },
   "membershipStatuses": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "INACTIVE": "Không hoạt động",
     "REMOVED": "Đã xóa khỏi nhóm"
   },
@@ -81,7 +84,7 @@
     "name": "Tên",
     "shortName": "Tên ngắn",
     "status": "Trạng thái",
-    "displayOrder": "Thứ tự",
+    "displayOrder": "Ưu tiên sắp xếp",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
     "actions": "Hành động"
@@ -141,7 +144,7 @@
     "required": "Trường này là bắt buộc.",
     "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
-    "invalidDisplayOrder": "Thứ tự hiển thị phải là số nguyên lớn hơn hoặc bằng 0.",
+    "invalidDisplayOrder": "Ưu tiên sắp xếp phải là số nguyên lớn hơn hoặc bằng 0.",
     "invalidLineupOrder": "Thứ tự đội hình phải là số nguyên lớn hơn hoặc bằng 0."
   },
   "feedback": {

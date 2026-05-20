@@ -28,7 +28,7 @@
     "studioResources": "Tài nguyên studio"
   },
   "statuses": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Hoạt động",
     "CANCELLED": "Đã hủy",
     "ARCHIVED": "Đã lưu trữ"
   },
@@ -56,12 +56,20 @@
     "subjectKind": "Loại chủ thể",
     "allSubjectKinds": "Tất cả loại chủ thể",
     "subjectId": "Chủ thể",
-    "subjectIdPlaceholder": "Mã định danh chủ thể",
+    "subjectIdPlaceholder": "Tìm theo tên hoặc mã",
     "studioResourceId": "Tài nguyên studio",
-    "studioResourceIdPlaceholder": "Mã định danh tài nguyên",
+    "studioResourceIdPlaceholder": "Tìm tài nguyên studio",
     "scope": "Phạm vi",
-    "windowStartAt": "Bắt đầu khung thời gian UTC",
-    "windowEndAt": "Kết thúc khung thời gian UTC"
+    "windowStartAt": "Từ",
+    "windowEndAt": "Đến"
+  },
+  "filterChips": {
+    "selectedSubject": "Chủ thể đã chọn",
+    "selectedStudioResource": "Tài nguyên studio đã chọn",
+    "selectedDepartment": "Phòng ban đã chọn",
+    "selectedWorkPattern": "Mẫu lịch đã chọn",
+    "selectedHolidayCalendar": "Lịch nghỉ đã chọn",
+    "selectedMonthlyRoster": "Bảng lịch tháng đã chọn"
   },
   "relatedModes": {
     "by-subject": "Ca làm liên quan theo chủ thể",
@@ -268,7 +276,7 @@
       "startLocalTime": "Giờ bắt đầu",
       "workingMinutes": "Số phút làm việc",
       "breakMinutes": "Số phút nghỉ",
-      "calculatedEndLocalTime": "Giờ kết thúc được tính",
+      "calculatedEndLocalTime": "Giờ kết thúc",
       "workingDays": "Ngày làm việc",
       "description": "Mô tả",
       "externalRef": "Tham chiếu bên ngoài",
@@ -310,7 +318,7 @@
       "name": "Tên",
       "status": "Trạng thái",
       "startLocalTime": "Giờ bắt đầu",
-      "endLocalTime": "Giờ kết thúc được tính",
+      "endLocalTime": "Giờ kết thúc",
       "workingDays": "Ngày làm việc",
       "updatedAt": "Cập nhật",
       "actions": "Hành động"

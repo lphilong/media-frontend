@@ -28,7 +28,7 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveSurface = 'edit' | null;
@@ -48,7 +48,7 @@ const formatNullable = (value?: string | number | null): string => {
 };
 
 const formatNullableTimestamp = (value?: string | number | null): string =>
-  value ? formatUtcTimestamp(value) : '-';
+  value ? formatBusinessTimestamp(value) : '-';
 
 const formatWorkingDays = (t: (key: string) => string, record: WorkPatternRecord): string =>
   record.workingDays.map((day) => t(`work-schedule:patterns.weekdays.${day}`)).join(', ');
@@ -262,12 +262,12 @@ export const WorkPatternDetailPage = (): JSX.Element => {
                   {
                     key: 'created-at',
                     label: t('work-schedule:patterns.fields.createdAt'),
-                    value: formatUtcTimestamp(record.createdAt),
+                    value: formatCreatedDate(record.createdAt),
                   },
                   {
                     key: 'updated-at',
                     label: t('work-schedule:patterns.fields.updatedAt'),
-                    value: formatUtcTimestamp(record.updatedAt),
+                    value: formatBusinessTimestamp(record.updatedAt),
                   },
                   {
                     key: 'activated-at',

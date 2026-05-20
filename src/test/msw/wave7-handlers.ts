@@ -14,7 +14,16 @@ type ContractStatus =
   | 'ARCHIVED';
 type ContractKind = 'EMPLOYMENT' | 'TALENT_SERVICE' | 'TALENT_MANAGEMENT';
 type LinkedEntityKind = 'EMPLOYMENT_PROFILE' | 'TALENT';
-type ConfidentialityTier = 'STANDARD' | 'CONFIDENTIAL' | 'RESTRICTED';
+type ConfidentialityTier = 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED';
+
+type ReferenceSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  title?: string;
+  displayName?: string;
+  status?: string;
+};
 
 type ContractRecord = {
   id: string;
@@ -74,7 +83,7 @@ const initialContracts: ContractRecord[] = [
     linkedEmploymentProfileId: null,
     linkedTalentId: 'talent-001',
     ownerEmploymentProfileId: 'ep-002',
-    confidentialityTier: 'STANDARD',
+    confidentialityTier: 'INTERNAL',
     status: 'ACTIVE',
     effectiveStartDate: now - day * 10,
     effectiveEndDate: null,
@@ -108,6 +117,15 @@ const initialContracts: ContractRecord[] = [
 ];
 
 let contracts = initialContracts.map((record) => ({ ...record }));
+
+const employmentProfileRefs = new Map<string, ReferenceSummary>([
+  ['ep-001', { id: 'ep-001', code: 'EMP-001', name: 'Alice Nguyen', status: 'ACTIVE' }],
+  ['ep-002', { id: 'ep-002', code: 'EMP-002', name: 'Bao Tran', status: 'ACTIVE' }],
+]);
+
+const talentRefs = new Map<string, ReferenceSummary>([
+  ['talent-001', { id: 'talent-001', code: 'TAL-001', name: 'Luna', status: 'ACTIVE' }],
+]);
 
 export const resetWave7MockData = (): void => {
   contractSeed = initialContractSeed;
@@ -293,6 +311,11 @@ const toListItem = (record: ContractRecord) => ({
   linkedEmploymentProfileId: record.linkedEmploymentProfileId,
   linkedTalentId: record.linkedTalentId,
   ownerEmploymentProfileId: record.ownerEmploymentProfileId,
+  linkedEmploymentProfileRef: record.linkedEmploymentProfileId
+    ? (employmentProfileRefs.get(record.linkedEmploymentProfileId) ?? null)
+    : null,
+  linkedTalentRef: record.linkedTalentId ? (talentRefs.get(record.linkedTalentId) ?? null) : null,
+  ownerEmploymentProfileRef: employmentProfileRefs.get(record.ownerEmploymentProfileId) ?? null,
   confidentialityTier: record.confidentialityTier,
   status: record.status,
   effectiveStartDate: record.effectiveStartDate,
@@ -317,6 +340,10 @@ const toByLinkedEntityItem = (record: ContractRecord) => ({
   linkedEntityKind: record.linkedEntityKind,
   linkedEmploymentProfileId: record.linkedEmploymentProfileId,
   linkedTalentId: record.linkedTalentId,
+  linkedEmploymentProfileRef: record.linkedEmploymentProfileId
+    ? (employmentProfileRefs.get(record.linkedEmploymentProfileId) ?? null)
+    : null,
+  linkedTalentRef: record.linkedTalentId ? (talentRefs.get(record.linkedTalentId) ?? null) : null,
   status: record.status,
   effectiveStartDate: record.effectiveStartDate,
   effectiveEndDate: record.effectiveEndDate,
@@ -328,6 +355,7 @@ const toByOwnerItem = (record: ContractRecord) => ({
   title: record.title,
   contractKind: record.contractKind,
   ownerEmploymentProfileId: record.ownerEmploymentProfileId,
+  ownerEmploymentProfileRef: employmentProfileRefs.get(record.ownerEmploymentProfileId) ?? null,
   confidentialityTier: record.confidentialityTier,
   status: record.status,
   effectiveStartDate: record.effectiveStartDate,
