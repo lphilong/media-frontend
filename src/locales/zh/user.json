@@ -22,6 +22,21 @@
     "disabledAt": "已禁用",
     "archivedAt": "已归档"
   },
+  "sections": {
+    "profile": "档案",
+    "preferences": "偏好设置",
+    "authLinkage": "高级认证链接"
+  },
+  "help": {
+    "displayName": "在管理界面显示的用户名称。",
+    "timezone": "新用户默认使用越南业务时区。",
+    "authSubjectRequired": "将此用户链接到外部 Auth0 身份。当前后端合同要求此字段，且必须与外部 subject 完全匹配。",
+    "authSubjectExact": "必须与外部 Auth0 身份 subject 完全匹配。"
+  },
+  "placeholders": {
+    "locale": "不设置偏好",
+    "timezone": "不设置偏好"
+  },
   "actorKinds": {
     "ADMIN": "管理员",
     "STAFF": "员工"

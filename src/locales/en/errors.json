@@ -14,7 +14,7 @@
     "title": "Authentication error",
     "loginFailed": "Login redirect failed",
     "callbackFailed": "Unable to process auth callback",
-    "configMissing": "Auth0 configuration is missing. Set VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID, or set VITE_AUTH_MODE=mock only for local mock auth."
+    "configMissing": "Auth0 configuration is missing. Set VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID, and VITE_AUTH0_AUDIENCE, or set VITE_AUTH_MODE=mock only for local mock auth."
   },
   "permission": {
     "title": "Access denied",

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 import { createMonthlyRosterActionRailItems } from '@modules/work-schedule/actions/monthly-roster-action-rail';
+import { createWorkScheduleCapabilityHint } from '@modules/work-schedule/capability-hints';
 import { MonthlyRosterExceptionEditor } from '@modules/work-schedule/components/MonthlyRosterExceptionEditor';
 import { MonthlyRosterGeneratedWorkShifts } from '@modules/work-schedule/components/MonthlyRosterGeneratedWorkShifts';
 import { MonthlyRosterPreviewPanel } from '@modules/work-schedule/components/MonthlyRosterPreviewPanel';
@@ -37,6 +38,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import {
+  applyActionCapabilityHints,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import {
   formatCreatedDate,
   formatBusinessTimestamp,
@@ -89,6 +96,7 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
   const scope = parseScope(searchParams.get('scope'));
   const { t } = useTranslation(['work-schedule', 'common', 'errors']);
   const detailQuery = useMonthlyRosterDetail(monthlyRosterId, scope);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateMonthlyRosterDraftMutation();
   const archiveMutation = useArchiveMonthlyRosterMutation();
   const addExceptionMutation = useAddRosterExceptionMutation();
@@ -140,6 +148,14 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
     0;
   const structuralLocked = activeExceptionCount > 0;
   const isReadOnly = record?.status !== 'DRAFT';
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const onArchive = useCallback(async () => {
     if (!record) {
@@ -251,14 +267,47 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createMonthlyRosterActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit-draft'),
-      onArchive: () => void onArchive(),
-      isArchivePending:
-        archiveMutation.isPending &&
-        archiveMutation.variables?.monthlyRosterId === record.monthlyRosterId,
-    });
-  }, [archiveMutation.isPending, archiveMutation.variables, onArchive, record, t]);
+    const capabilityState = {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    };
+
+    return applyActionCapabilityHints(
+      createMonthlyRosterActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit-draft'),
+        onArchive: () => void onArchive(),
+        isArchivePending:
+          archiveMutation.isPending &&
+          archiveMutation.variables?.monthlyRosterId === record.monthlyRosterId,
+      }),
+      {
+        'edit-draft': createWorkScheduleCapabilityHint({
+          state: capabilityState,
+          permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
+          requestedScope: scope,
+          copy: capabilityCopy,
+        }),
+        archive: createWorkScheduleCapabilityHint({
+          state: capabilityState,
+          permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+          requestedScope: scope,
+          copy: capabilityCopy,
+        }),
+      },
+    );
+  }, [
+    archiveMutation.isPending,
+    archiveMutation.variables,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    capabilityCopy,
+    onArchive,
+    record,
+    scope,
+    t,
+  ]);
 
   return (
     <ModuleDetailScreenShell

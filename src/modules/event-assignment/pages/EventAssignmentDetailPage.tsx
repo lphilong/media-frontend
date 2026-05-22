@@ -47,6 +47,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatBusinessTimestamp,
   formatCreatedDate,
   readReferenceDisplay,
@@ -152,6 +159,7 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
   const navigate = useNavigate();
 
   const detailQuery = useEventDetail(eventId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const assignmentsQuery = useEventAssignments(eventId);
   const updateMutation = useUpdateEventMutation();
   const rescheduleMutation = useRescheduleEventMutation();
@@ -207,6 +215,14 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
     () => assignments.map((assignment) => assignmentToInput(assignment)),
     [assignments],
   );
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const onLifecycleAction = useCallback(
     async (action: EventLifecycleAction) => {
@@ -239,27 +255,128 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createEventActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onReschedule: () => setActiveSurface('reschedule'),
-      onReplaceAssignments: () => {
-        if (assignmentsQuery.isSuccess) {
-          setActiveSurface('replace-assignments');
-        }
+    const eventUpdateRequirement = {
+      permission: PERMISSIONS.EVENT_UPDATE,
+      scope: { module: 'eventAssignment' as const, value: 'global' as const },
+    };
+    const lifecycleRequirement = {
+      permission: PERMISSIONS.EVENT_MANAGE_LIFECYCLE,
+      scope: { module: 'eventAssignment' as const, value: 'global' as const },
+    };
+
+    return applyActionCapabilityHints(
+      createEventActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onReschedule: () => setActiveSurface('reschedule'),
+        onReplaceAssignments: () => {
+          if (assignmentsQuery.isSuccess) {
+            setActiveSurface('replace-assignments');
+          }
+        },
+        onReplaceStudioResources: () => setActiveSurface('replace-studio-resources'),
+        onReplacePlatformAccounts: () => setActiveSurface('replace-platform-accounts'),
+        onLifecycleAction,
+        assignmentRosterKnown: assignmentsQuery.isSuccess,
+        hasActiveAssignments: assignments.length > 0,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.eventId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          eventUpdateRequirement,
+          capabilityCopy,
+        ),
+        reschedule: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          eventUpdateRequirement,
+          capabilityCopy,
+        ),
+        'replace-assignments': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          {
+            permission: PERMISSIONS.EVENT_MANAGE_ASSIGNMENTS,
+            scope: { module: 'eventAssignment', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        'replace-studio-resources': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          eventUpdateRequirement,
+          capabilityCopy,
+        ),
+        'replace-platform-accounts': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          eventUpdateRequirement,
+          capabilityCopy,
+        ),
+        start: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
+        complete: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
+        cancel: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
       },
-      onReplaceStudioResources: () => setActiveSurface('replace-studio-resources'),
-      onReplacePlatformAccounts: () => setActiveSurface('replace-platform-accounts'),
-      onLifecycleAction,
-      assignmentRosterKnown: assignmentsQuery.isSuccess,
-      hasActiveAssignments: assignments.length > 0,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.eventId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
+    );
   }, [
     assignments.length,
     assignmentsQuery.isSuccess,
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
     lifecycleMutation.isPending,
     lifecycleMutation.variables,
     onLifecycleAction,

@@ -38,6 +38,7 @@ import { loadUserReferenceOptions } from '@shared/components/reference/admin-ref
 import {
   CheckboxField,
   FormGrid,
+  GeneratedCodeNotice,
   ReferencePickerField,
   SelectField,
   TextInputField,
@@ -295,7 +296,7 @@ const createRoleCreateSchema = (requiredMessage: string) =>
     mode: z.enum(['template', 'custom']),
     templateCode: z.string(),
     name: z.string().trim().min(1, requiredMessage),
-    code: z.string().trim().min(1, requiredMessage),
+    code: z.string().trim().optional(),
     description: z.string().trim().optional(),
     initialDelegationBand: z.enum(roleDelegationBandValues),
     initialMaxDelegatableBand: z.enum(roleMaxDelegatableBandValues),
@@ -434,10 +435,11 @@ export const RoleCreateSurface = ({
         return;
       }
 
+      const code = toNullableText(parsed.data.code)?.toUpperCase();
       await onTemplateSubmit({
         templateCode: parsed.data.templateCode as RoleCreateFromTemplatePayload['templateCode'],
         name: parsed.data.name,
-        code: parsed.data.code.toUpperCase(),
+        ...(code ? { code } : {}),
         description: toNullableText(parsed.data.description),
       });
       return;
@@ -457,9 +459,10 @@ export const RoleCreateSurface = ({
       return;
     }
 
+    const code = toNullableText(parsed.data.code)?.toUpperCase();
     await onSubmit({
       name: parsed.data.name,
-      code: parsed.data.code.toUpperCase(),
+      ...(code ? { code } : {}),
       description: toNullableText(parsed.data.description),
       initialPermissions: parsePermissionText(parsed.data.permissionsText),
       initialDelegationBand: parsed.data.initialDelegationBand,
@@ -492,9 +495,21 @@ export const RoleCreateSurface = ({
           </label>
         </div>
         <FormGrid columns={2}>
-          <TextInputField name="name" label={t('role:fields.name')} />
-          <TextInputField name="code" label={t('role:fields.code')} />
+          <TextInputField
+            name="name"
+            label={t('role:fields.name')}
+            helperText={t('role:help.name')}
+          />
+          <TextInputField
+            name="code"
+            label={t('role:fields.codeOptional')}
+            helperText={t('role:help.codeOptional')}
+          />
         </FormGrid>
+        <GeneratedCodeNotice
+          label={t('role:generatedCode.label')}
+          description={t('role:generatedCode.description')}
+        />
         <TextInputField name="description" label={t('role:fields.description')} />
         {mode === 'template' ? (
           <div className="space-y-3">

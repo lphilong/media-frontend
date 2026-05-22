@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 
 import { createWorkPatternActionRailItems } from '@modules/work-schedule/actions/work-pattern-action-rail';
+import { createWorkScheduleCapabilityHint } from '@modules/work-schedule/capability-hints';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import { WorkPatternEditSurface } from '@modules/work-schedule/forms/work-pattern-mutation-forms';
 import {
@@ -28,6 +29,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import {
+  applyActionCapabilityHints,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
@@ -78,6 +85,7 @@ export const WorkPatternDetailPage = (): JSX.Element => {
   const { workPatternId } = useParams<{ workPatternId: string }>();
   const { t } = useTranslation(['work-schedule', 'common', 'errors']);
   const detailQuery = useWorkPatternDetail(workPatternId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateWorkPatternMutation();
   const lifecycleMutation = useWorkPatternLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -115,6 +123,14 @@ export const WorkPatternDetailPage = (): JSX.Element => {
   ]);
 
   const record = detailQuery.data;
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const onLifecycleAction = useCallback(
     async (action: WorkPatternLifecycleAction) => {
@@ -147,15 +163,47 @@ export const WorkPatternDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createWorkPatternActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.workPatternId === record.workPatternId &&
-        lifecycleMutation.variables?.action === action,
+    const capabilityState = {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    };
+    const lifecycleHint = createWorkScheduleCapabilityHint({
+      state: capabilityState,
+      permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+      copy: capabilityCopy,
     });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+
+    return applyActionCapabilityHints(
+      createWorkPatternActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.workPatternId === record.workPatternId &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createWorkScheduleCapabilityHint({
+          state: capabilityState,
+          permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
+          copy: capabilityCopy,
+        }),
+        activate: lifecycleHint,
+        archive: lifecycleHint,
+      },
+    );
+  }, [
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    capabilityCopy,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   return (
     <ModuleDetailScreenShell

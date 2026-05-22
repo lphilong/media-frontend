@@ -2,10 +2,12 @@ import i18n from 'i18next';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { http, HttpResponse } from 'msw';
 
 import { appRoutes } from '@app/router/router';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
+import { server } from '@test/msw/server';
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {
@@ -108,6 +110,52 @@ describe('event assignment wave 6 surfaces', () => {
     );
     expect(screen.getByText('Alice Nguyen')).toBeInTheDocument();
     expect(screen.getByText('Luna')).toBeInTheDocument();
+  });
+
+  it('requires the eventAssignment global scope for Event detail mutation actions', async () => {
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({
+          data: {
+            id: 'user-admin',
+            type: 'admin',
+            context: 'ADMIN',
+            isActive: true,
+            roles: ['role-admin'],
+            permissions: ['event.update', 'event.manageAssignments', 'event.manageLifecycle'],
+            scopeGrants: {},
+            generatedAt: '2026-05-20T00:00:00.000Z',
+          },
+        }),
+      ),
+    );
+
+    renderRoute('/events/event-001');
+
+    const edit = await screen.findByRole('button', {
+      name: i18n.t('event-assignment:actions.edit'),
+    });
+    const replaceAssignments = screen.getByRole('button', {
+      name: i18n.t('event-assignment:actions.replaceAssignments'),
+    });
+    const historicalNote = screen.queryByRole('button', {
+      name: i18n.t('event-assignment:actions.historicalArchiveEligible'),
+    });
+
+    await waitFor(() =>
+      expect(edit).toHaveAccessibleDescription(i18n.t('common:capabilities.missingScope')),
+    );
+    expect(edit).toBeDisabled();
+    expect(replaceAssignments).toBeDisabled();
+    expect(replaceAssignments).toHaveAccessibleDescription(
+      i18n.t('common:capabilities.missingScope'),
+    );
+    if (historicalNote) {
+      expect(historicalNote).toBeDisabled();
+      expect(historicalNote).not.toHaveAccessibleDescription(
+        i18n.t('common:capabilities.missingScope'),
+      );
+    }
   });
 
   it('keeps archived events read-only and does not present unsupported event surfaces', async () => {

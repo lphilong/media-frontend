@@ -46,6 +46,13 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
 import { ModuleDetailScreenShell } from '@shared/modules';
@@ -106,6 +113,7 @@ export const TalentGroupDetailPage = (): JSX.Element => {
   const { groupId } = useParams<{ groupId: string }>();
   const { t } = useTranslation(['talent-group', 'common', 'errors']);
   const navigate = useNavigate();
+  const capabilitiesQuery = useCurrentActorCapabilities();
 
   const detailQuery = useTalentGroupDetail(groupId);
   const [membersCursor, setMembersCursor] = useState<string | undefined>(undefined);
@@ -288,21 +296,89 @@ export const TalentGroupDetailPage = (): JSX.Element => {
     }
   };
 
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
+
   const actionItems = useMemo(() => {
     if (!record) {
       return [];
     }
 
-    return createTalentGroupActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onAddMember: () => setActiveSurface('add-member'),
-      onLifecycleAction: onGroupLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.groupId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onGroupLifecycleAction, record, t]);
+    return applyActionCapabilityHints(
+      createTalentGroupActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onAddMember: () => setActiveSurface('add-member'),
+        onLifecycleAction: onGroupLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.groupId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_GROUP_UPDATE },
+          capabilityCopy,
+        ),
+        'add-member': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_GROUP_MANAGE_MEMBERSHIP },
+          capabilityCopy,
+        ),
+        activate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_GROUP_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        deactivate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_GROUP_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_GROUP_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onGroupLifecycleAction,
+    record,
+    t,
+  ]);
 
   const memberColumns = useMemo(
     () =>

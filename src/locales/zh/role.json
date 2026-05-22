@@ -8,6 +8,7 @@
     "roleId": "角色ID",
     "userId": "用户",
     "code": "编码",
+    "codeOptional": "手动代码覆盖（可选）",
     "name": "名称",
     "state": "状态",
     "description": "描述",
@@ -20,6 +21,14 @@
     "activatedAt": "已启用",
     "archivedAt": "已归档",
     "reason": "原因"
+  },
+  "generatedCode": {
+    "label": "后端生成代码",
+    "description": "留空手动代码覆盖，后端会在创建后生成稳定的角色代码。"
+  },
+  "help": {
+    "name": "显示给管理员的业务角色名称。",
+    "codeOptional": "仅在保留稳定运营角色键时使用。代码是大写后端标识符，不是显示名称。"
   },
   "templates": {
     "templateMode": "基于模板的角色",

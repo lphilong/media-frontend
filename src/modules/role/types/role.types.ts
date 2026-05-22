@@ -152,7 +152,7 @@ export type RoleAssignmentListQuery = {
 
 export type RoleCreatePayload = {
   name: string;
-  code: string;
+  code?: string;
   description?: string | null;
   initialPermissions?: string[];
   initialDelegationBand?: RoleDelegationBand;
@@ -187,7 +187,7 @@ export type RoleAssignToUserPayload = {
 
 export type RoleCreateFromTemplatePayload = {
   templateCode: RoleTemplateCode;
-  code: string;
+  code?: string;
   name: string;
   description?: string | null;
 };

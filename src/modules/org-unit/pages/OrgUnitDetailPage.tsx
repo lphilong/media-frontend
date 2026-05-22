@@ -38,6 +38,13 @@ import {
 } from '@shared/components/primitives';
 import { useDestructiveConfirm, useMutationFeedback } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatCreatedDate,
   formatBusinessTimestamp,
   readReferenceDisplay,
@@ -86,6 +93,7 @@ export const OrgUnitDetailPage = (): JSX.Element => {
   const { orgUnitId } = useParams<{ orgUnitId: string }>();
   const { t } = useTranslation(['org-unit', 'common', 'errors']);
   const navigate = useNavigate();
+  const capabilitiesQuery = useCurrentActorCapabilities();
 
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
@@ -137,6 +145,14 @@ export const OrgUnitDetailPage = (): JSX.Element => {
   const childrenNextCursor = childrenQuery.data?.meta?.nextCursor;
   const canGoChildrenNext = Boolean(childrenNextCursor);
   const canGoChildrenBack = Boolean(childrenCursor);
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const onChildrenNext = (): void => {
     if (!childrenNextCursor) {
@@ -225,19 +241,78 @@ export const OrgUnitDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createOrgUnitActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onMove: () => setActiveSurface('move'),
-      onLifecycleAction,
-      isLifecyclePending: (action) => {
-        return (
-          lifecycleMutation.isPending &&
-          lifecycleMutation.variables?.orgUnitId === record.id &&
-          lifecycleMutation.variables?.action === action
-        );
+    return applyActionCapabilityHints(
+      createOrgUnitActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onMove: () => setActiveSurface('move'),
+        onLifecycleAction,
+        isLifecyclePending: (action) => {
+          return (
+            lifecycleMutation.isPending &&
+            lifecycleMutation.variables?.orgUnitId === record.id &&
+            lifecycleMutation.variables?.action === action
+          );
+        },
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ORG_UNIT_UPDATE },
+          capabilityCopy,
+        ),
+        move: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ORG_UNIT_MANAGE_HIERARCHY },
+          capabilityCopy,
+        ),
+        activate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ORG_UNIT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        deactivate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ORG_UNIT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.ORG_UNIT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
       },
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   const childrenColumns = useMemo(() => createOrgUnitChildrenColumns(t), [t]);
 

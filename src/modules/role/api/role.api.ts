@@ -281,7 +281,7 @@ export const createRole = async (payload: RoleCreatePayload): Promise<RoleDetail
     url: '/admin/roles',
     data: {
       name: payload.name,
-      code: payload.code,
+      ...(payload.code ? { code: payload.code } : {}),
       description: payload.description,
       initialPermissions: payload.initialPermissions ?? [],
       initialDelegationBand: payload.initialDelegationBand ?? 'LIMITED',
@@ -320,7 +320,7 @@ export const createRoleFromTemplate = async (
     url: '/admin/roles/from-template',
     data: {
       templateCode: payload.templateCode,
-      code: payload.code,
+      ...(payload.code ? { code: payload.code } : {}),
       name: payload.name,
       description: payload.description ?? null,
     },

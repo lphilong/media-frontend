@@ -14,7 +14,7 @@
     "title": "认证错误",
     "loginFailed": "登录跳转失败",
     "callbackFailed": "无法处理认证回调",
-    "configMissing": "Auth0 配置缺失。请设置 VITE_AUTH0_DOMAIN 和 VITE_AUTH0_CLIENT_ID，或仅在本地 mock auth 时设置 VITE_AUTH_MODE=mock。"
+    "configMissing": "Auth0 配置缺失。请设置 VITE_AUTH0_DOMAIN、VITE_AUTH0_CLIENT_ID 和 VITE_AUTH0_AUDIENCE，或仅在本地 mock auth 时设置 VITE_AUTH_MODE=mock。"
   },
   "permission": {
     "title": "无访问权限",

@@ -8,6 +8,7 @@ import { appRoutes } from '@app/router/router';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import { server } from '@test/msw/server';
+import { createRole, createRoleFromTemplate } from '@modules/role/api/role.api';
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {
@@ -191,5 +192,52 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByRole('button', { name: /rename permission/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /set auth0 linkage/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/credential|token|password|session/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('role MSW create code behavior', () => {
+  it('rejects duplicate manual Role code on create using backend-like normalization', async () => {
+    await expect(
+      createRole({
+        name: 'Duplicate admin code',
+        code: ' admin ',
+        description: null,
+      }),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: 'ROLE_CONFLICT',
+      message: 'Role code already exists: ADMIN',
+    });
+  });
+
+  it('rejects duplicate manual Role code on create-from-template', async () => {
+    await expect(
+      createRoleFromTemplate({
+        templateCode: 'TEAM_MANAGER',
+        name: 'Duplicate template code',
+        code: 'ops',
+        description: null,
+      }),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: 'ROLE_CONFLICT',
+      message: 'Role code already exists: OPS',
+    });
+  });
+
+  it('generates unique MSW Role codes when code is omitted', async () => {
+    const custom = await createRole({
+      name: 'Generated custom role',
+      description: null,
+    });
+    const templated = await createRoleFromTemplate({
+      templateCode: 'VIEWER_AUDITOR',
+      name: 'Generated template role',
+      description: null,
+    });
+
+    expect(custom.code).toMatch(/^ROLE-\d{6}$/u);
+    expect(templated.code).toMatch(/^ROLE-\d{6}$/u);
+    expect(templated.code).not.toBe(custom.code);
   });
 });

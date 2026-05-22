@@ -8,6 +8,7 @@
     "roleId": "Role id",
     "userId": "User",
     "code": "Code",
+    "codeOptional": "Manual code override (optional)",
     "name": "Name",
     "state": "State",
     "description": "Description",
@@ -20,6 +21,14 @@
     "activatedAt": "Activated",
     "archivedAt": "Archived",
     "reason": "Reason"
+  },
+  "generatedCode": {
+    "label": "Backend-generated code",
+    "description": "Leave the manual code override blank and the backend will generate the stable role code after creation."
+  },
+  "help": {
+    "name": "Business display role name shown to admins.",
+    "codeOptional": "Use only when preserving a stable operational role key. Codes are uppercase backend identifiers, not display names."
   },
   "templates": {
     "templateMode": "Template-based role",

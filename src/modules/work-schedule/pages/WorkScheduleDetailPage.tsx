@@ -5,6 +5,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { APP_PATHS } from '@app/router/paths';
 import { buildEntityDetailHref } from '@app/router/reference-links';
 import { createWorkShiftActionRailItems } from '@modules/work-schedule/actions/work-schedule-action-rail';
+import { createWorkScheduleCapabilityHint } from '@modules/work-schedule/capability-hints';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import {
   WorkShiftEditSurface,
@@ -38,6 +39,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import {
+  applyActionCapabilityHints,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import {
   formatCreatedDate,
   formatBusinessTimestamp,
@@ -89,6 +96,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
   const { t } = useTranslation(['work-schedule', 'common', 'errors']);
 
   const detailQuery = useWorkShiftDetail(workShiftId, scope);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateWorkShiftMutation();
   const rescheduleMutation = useRescheduleWorkShiftMutation();
   const reassignMutation = useReassignWorkShiftSubjectMutation();
@@ -130,6 +138,14 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
 
   const record = detailQuery.data;
   const sourceType = record?.sourceType ?? 'MANUAL';
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const onLifecycleAction = useCallback(
     async (action: WorkShiftLifecycleAction) => {
@@ -163,18 +179,57 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createWorkShiftActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onReschedule: () => setActiveSurface('reschedule'),
-      onReassignSubject: () => setActiveSurface('reassign-subject'),
-      onReplaceResources: () => setActiveSurface('replace-resources'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.workShiftId === record.id &&
-        lifecycleMutation.variables?.action === action,
+    const capabilityState = {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    };
+    const updateHint = createWorkScheduleCapabilityHint({
+      state: capabilityState,
+      permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
+      requestedScope: scope,
+      copy: capabilityCopy,
     });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    const lifecycleHint = createWorkScheduleCapabilityHint({
+      state: capabilityState,
+      permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+      requestedScope: scope,
+      copy: capabilityCopy,
+    });
+
+    return applyActionCapabilityHints(
+      createWorkShiftActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onReschedule: () => setActiveSurface('reschedule'),
+        onReassignSubject: () => setActiveSurface('reassign-subject'),
+        onReplaceResources: () => setActiveSurface('replace-resources'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.workShiftId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: updateHint,
+        reschedule: updateHint,
+        'reassign-subject': updateHint,
+        'replace-resources': updateHint,
+        cancel: lifecycleHint,
+        archive: lifecycleHint,
+      },
+    );
+  }, [
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    capabilityCopy,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    scope,
+    t,
+  ]);
 
   const subjectId = record ? readWorkShiftSubjectId(record) : undefined;
   const subjectHref =

@@ -42,6 +42,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatCreatedDate,
   formatBusinessTimestamp,
   readReferenceDisplay,
@@ -107,6 +114,7 @@ export const PlatformAccountDetailPage = (): JSX.Element => {
   const { t } = useTranslation(['platform-account', 'common', 'errors']);
 
   const detailQuery = usePlatformAccountDetail(platformAccountId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdatePlatformAccountMutation();
   const transferMutation = usePlatformAccountOwnershipTransferMutation();
   const capabilitiesMutation = usePlatformAccountCapabilitiesMutation();
@@ -231,22 +239,99 @@ export const PlatformAccountDetailPage = (): JSX.Element => {
     }
   };
 
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
+
   const actionItems = useMemo(() => {
     if (!record) {
       return [];
     }
 
-    return createPlatformAccountActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onTransferOwnership: () => setActiveSurface('transfer-ownership'),
-      onUpdateCapabilities: () => setActiveSurface('capabilities'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.platformAccountId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    return applyActionCapabilityHints(
+      createPlatformAccountActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onTransferOwnership: () => setActiveSurface('transfer-ownership'),
+        onUpdateCapabilities: () => setActiveSurface('capabilities'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.platformAccountId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.PLATFORM_ACCOUNT_UPDATE },
+          capabilityCopy,
+        ),
+        'transfer-ownership': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.PLATFORM_ACCOUNT_MANAGE_OWNERSHIP },
+          capabilityCopy,
+        ),
+        capabilities: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.PLATFORM_ACCOUNT_MANAGE_CAPABILITIES },
+          capabilityCopy,
+        ),
+        activate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.PLATFORM_ACCOUNT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        deactivate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.PLATFORM_ACCOUNT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.PLATFORM_ACCOUNT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   const ownerId = record ? readPlatformAccountOwnerId(record) : undefined;
   const ownerHref = record ? buildOwnerHref(record) : undefined;

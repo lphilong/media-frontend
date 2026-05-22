@@ -33,6 +33,13 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
@@ -98,6 +105,7 @@ export const StudioResourceDetailPage = (): JSX.Element => {
   const { t } = useTranslation(['studio-resource', 'common', 'errors']);
 
   const detailQuery = useStudioResourceDetail(studioResourceId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateStudioResourceMutation();
   const availabilityMutation = useStudioResourceAvailabilityMutation();
   const lifecycleMutation = useStudioResourceLifecycleMutation();
@@ -136,6 +144,14 @@ export const StudioResourceDetailPage = (): JSX.Element => {
   ]);
 
   const record = detailQuery.data;
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const onEditSubmit = async (
     payload: Parameters<typeof updateMutation.mutateAsync>[0]['payload'],
@@ -213,22 +229,84 @@ export const StudioResourceDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createStudioResourceActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onAvailabilityAction,
-      onLifecycleAction,
-      isAvailabilityPending: (action) =>
-        availabilityMutation.isPending &&
-        availabilityMutation.variables?.studioResourceId === record.id &&
-        availabilityMutation.variables?.action === action,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.studioResourceId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
+    return applyActionCapabilityHints(
+      createStudioResourceActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onAvailabilityAction,
+        onLifecycleAction,
+        isAvailabilityPending: (action) =>
+          availabilityMutation.isPending &&
+          availabilityMutation.variables?.studioResourceId === record.id &&
+          availabilityMutation.variables?.action === action,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.studioResourceId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.STUDIO_RESOURCE_UPDATE },
+          capabilityCopy,
+        ),
+        'out-of-service': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.STUDIO_RESOURCE_MANAGE_AVAILABILITY },
+          capabilityCopy,
+        ),
+        'restore-to-active': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.STUDIO_RESOURCE_MANAGE_AVAILABILITY },
+          capabilityCopy,
+        ),
+        deactivate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.STUDIO_RESOURCE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        activate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.STUDIO_RESOURCE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.STUDIO_RESOURCE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+      },
+    );
   }, [
     availabilityMutation.isPending,
     availabilityMutation.variables,
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
     lifecycleMutation.isPending,
     lifecycleMutation.variables,
     onAvailabilityAction,

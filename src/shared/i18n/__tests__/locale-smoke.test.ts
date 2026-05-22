@@ -1,8 +1,9 @@
 import i18n from 'i18next';
 
-import { I18N_STORAGE_KEY } from '@shared/i18n/constants';
+import { DEFAULT_LOCALE, I18N_NAMESPACES, I18N_STORAGE_KEY } from '@shared/i18n/constants';
 import { setLocale } from '@shared/i18n/i18n';
-import { resources } from '@shared/i18n/resources';
+import { getStoredLocale } from '@shared/i18n/locale';
+import { getLocaleResourcePaths, loadAllLocaleResourceData } from '@shared/i18n/resources';
 
 const supportedLocales = ['en', 'vi', 'zh'] as const;
 const translatedLocales = ['vi', 'zh'] as const;
@@ -303,6 +304,38 @@ const expectNoLocaleIssues = (issues: LocaleIssue[]): void => {
 };
 
 describe('locale foundation', () => {
+  it('indexes every supported locale namespace without eager resource imports', () => {
+    const resourcePaths = getLocaleResourcePaths();
+
+    expect(resourcePaths).toHaveLength(supportedLocales.length * I18N_NAMESPACES.length);
+    for (const locale of supportedLocales) {
+      expect(resourcePaths.filter((path) => path.includes(`/locales/${locale}/`))).toHaveLength(
+        I18N_NAMESPACES.length,
+      );
+    }
+  });
+
+  it('resolves active locale translations after lazy loading', async () => {
+    await setLocale(DEFAULT_LOCALE);
+
+    expect(i18n.t('common:actions.refresh')).not.toBe('actions.refresh');
+    expect(i18n.t('dashboard-lite:page.title')).not.toBe('page.title');
+  });
+
+  it('loads switched locale resources before changing language', async () => {
+    await setLocale('zh');
+
+    expect(i18n.language).toBe('zh');
+    expect(i18n.t('common:locales.zh')).not.toBe('locales.zh');
+    expect(i18n.t('nav:items.dashboard')).not.toBe('items.dashboard');
+  });
+
+  it('falls back to the default locale when stored locale is unsupported', () => {
+    localStorage.setItem(I18N_STORAGE_KEY, 'fr');
+
+    expect(getStoredLocale()).toBe(DEFAULT_LOCALE);
+  });
+
   it('persists selected locale to localStorage', async () => {
     await setLocale('zh');
 
@@ -310,8 +343,11 @@ describe('locale foundation', () => {
     expect(localStorage.getItem(I18N_STORAGE_KEY)).toBe('zh');
   });
 
-  it('keeps supported locale namespaces and keys in parity', () => {
-    const typedResources = resources as Record<string, Record<string, unknown>>;
+  it('keeps supported locale namespaces and keys in parity', async () => {
+    const typedResources = (await loadAllLocaleResourceData()) as Record<
+      string,
+      Record<string, unknown>
+    >;
     const englishNamespaces = Object.keys(typedResources.en).sort();
 
     for (const locale of supportedLocales) {
@@ -331,8 +367,11 @@ describe('locale foundation', () => {
     }
   });
 
-  it('preserves interpolation tokens and avoids empty or placeholder-like visible strings', () => {
-    const typedResources = resources as Record<string, Record<string, unknown>>;
+  it('preserves interpolation tokens and avoids empty or placeholder-like visible strings', async () => {
+    const typedResources = (await loadAllLocaleResourceData()) as Record<
+      string,
+      Record<string, unknown>
+    >;
     const localeIssues: LocaleIssue[] = [];
 
     for (const locale of translatedLocales) {

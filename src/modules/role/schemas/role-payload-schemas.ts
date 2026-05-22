@@ -85,7 +85,7 @@ const assignmentRuleSchema = z
 export const roleCreatePayloadSchema = z
   .object({
     name: z.string().trim().min(1),
-    code: z.string().trim().min(1),
+    code: z.string().trim().min(1).optional(),
     description: z.string().nullable().optional(),
     initialPermissions: z.array(z.string()).optional(),
     initialDelegationBand: z.enum(roleDelegationBandValues).optional(),
@@ -126,7 +126,7 @@ export const roleAssignToUserPayloadSchema = z
 export const roleCreateFromTemplatePayloadSchema = z
   .object({
     templateCode: roleTemplateCodeSchema,
-    code: z.string().trim().min(1),
+    code: z.string().trim().min(1).optional(),
     name: z.string().trim().min(1),
     description: z.string().nullable().optional(),
   })

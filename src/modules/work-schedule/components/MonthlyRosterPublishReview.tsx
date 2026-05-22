@@ -5,6 +5,7 @@ import {
   useMonthlyRosterPreview,
   usePublishMonthlyRosterMutation,
 } from '@modules/work-schedule/hooks/use-work-schedule';
+import { createWorkScheduleCapabilityHint } from '@modules/work-schedule/capability-hints';
 import type {
   MonthlyRosterPreview,
   MonthlyRosterPublishResult,
@@ -21,6 +22,11 @@ import {
   StatusBadge,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import {
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type MonthlyRosterPublishReviewProps = {
@@ -101,6 +107,7 @@ export const MonthlyRosterPublishReview = ({
   const previewQuery = useMonthlyRosterPreview(roster.monthlyRosterId, scope, {
     enabled: previewEnabled,
   });
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const publishMutation = usePublishMonthlyRosterMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const [confirming, setConfirming] = useState(false);
@@ -162,7 +169,43 @@ export const MonthlyRosterPublishReview = ({
     roster.status,
   ]);
 
-  const isPublishAllowed = roster.status === 'DRAFT' && !disabledReasonKey && Boolean(preview);
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
+  const publishCapabilityHint = useMemo(
+    () =>
+      createWorkScheduleCapabilityHint({
+        state: {
+          capabilities: capabilitiesQuery.data,
+          isLoading: capabilitiesQuery.isLoading,
+          isError: capabilitiesQuery.isError,
+        },
+        permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+        requestedScope: scope,
+        copy: capabilityCopy,
+      }),
+    [
+      capabilitiesQuery.data,
+      capabilitiesQuery.isError,
+      capabilitiesQuery.isLoading,
+      capabilityCopy,
+      scope,
+    ],
+  );
+
+  const isPublishLocallyAllowed =
+    roster.status === 'DRAFT' && !disabledReasonKey && Boolean(preview);
+  const isPublishAllowed = isPublishLocallyAllowed && !publishCapabilityHint.disabled;
+  const publishDisabledReason = disabledReasonKey
+    ? t(`work-schedule:monthlyRosters.publish.disabledReasons.${disabledReasonKey}`)
+    : isPublishLocallyAllowed
+      ? publishCapabilityHint.disabledReason
+      : undefined;
 
   const handlePublish = async (): Promise<void> => {
     if (!preview || !preview.computedPreviewHash || !isPublishAllowed) {
@@ -309,9 +352,9 @@ export const MonthlyRosterPublishReview = ({
           />
         ) : null}
 
-        {disabledReasonKey ? (
+        {publishDisabledReason ? (
           <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
-            {t(`work-schedule:monthlyRosters.publish.disabledReasons.${disabledReasonKey}`)}
+            {publishDisabledReason}
           </div>
         ) : null}
 
@@ -458,7 +501,7 @@ export const MonthlyRosterPublishReview = ({
               <button
                 type="button"
                 className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
-                disabled={publishMutation.isPending}
+                disabled={!isPublishAllowed || publishMutation.isPending}
                 onClick={() => void handlePublish()}
               >
                 {publishMutation.isPending

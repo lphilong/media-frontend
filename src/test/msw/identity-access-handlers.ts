@@ -448,6 +448,41 @@ const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
     'user:disable',
     'user:archive',
     'user:auth_linkage:set',
+    'orgUnit.update',
+    'orgUnit.manageHierarchy',
+    'orgUnit.manageLifecycle',
+    'employmentProfile.update',
+    'employmentProfile.manageOrgAssignment',
+    'employmentProfile.manageManagerAssignment',
+    'employmentProfile.manageUserLinkage',
+    'employmentProfile.manageLifecycle',
+    'talent.update',
+    'talent.manageManager',
+    'talent.manageEmploymentLink',
+    'talent.manageCommercialParticipation',
+    'talent.manageLifecycle',
+    'talentGroup.update',
+    'talentGroup.manageMembership',
+    'talentGroup.manageLifecycle',
+    'platformAccount.update',
+    'platformAccount.manageOwnership',
+    'platformAccount.manageCapabilities',
+    'platformAccount.manageLifecycle',
+    'studioResource.update',
+    'studioResource.manageAvailability',
+    'studioResource.manageLifecycle',
+    'event.update',
+    'event.manageAssignments',
+    'event.manageLifecycle',
+    'workSchedule.update',
+    'workSchedule.manageLifecycle',
+    'contractRegistry.update',
+    'contractRegistry.manageOwner',
+    'contractRegistry.manageFileReference',
+    'contractRegistry.manageLifecycle',
+    'talentKpi.update',
+    'talentKpi.manageMetrics',
+    'talentKpi.manageLifecycle',
     'kpi.read',
     'kpi.createPlan',
     'kpi.updateDraft',
@@ -461,13 +496,20 @@ const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
     'revenueLedger.update',
     'revenueLedger.manageLifecycle',
     'revenueLedger.reconcile',
+    'commissionRule.update',
+    'commissionRule.manageLifecycle',
+    'commissionSettlement.update',
+    'commissionSettlement.manageLifecycle',
   ],
   scopeGrants: {
+    eventAssignment: ['global'],
+    contractRegistry: ['global'],
+    talentKpi: ['global'],
+    kpi: ['global'],
     revenueLedger: ['global'],
     commission: ['global'],
     dashboardLite: ['global'],
-    kpi: ['global'],
-    workSchedule: ['self', 'team', 'department'],
+    workSchedule: ['self', 'team', 'department', 'global'],
   },
   generatedAt: '2026-05-20T00:00:00.000Z',
 };
@@ -634,6 +676,49 @@ const toRoleTemplateListItem = (template: RoleTemplateRecord) => ({
 const readRoleTemplate = (templateCode: string): RoleTemplateRecord | undefined =>
   roleTemplates.find((template) => template.code === templateCode.trim().toUpperCase());
 
+const readManualRoleCode = (value: unknown): string | undefined => {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim().toUpperCase();
+  }
+
+  return undefined;
+};
+
+const roleCodeExists = (code: string): boolean => roles.some((role) => role.code === code);
+
+const duplicateRoleCodeResponse = (code: string): Response =>
+  HttpResponse.json(
+    {
+      error: {
+        code: 'ROLE_CONFLICT',
+        message: `Role code already exists: ${code}`,
+      },
+      message: `Role code already exists: ${code}`,
+    },
+    { status: 409 },
+  );
+
+const allocateGeneratedRoleCode = (): string => {
+  for (let attempt = 0; attempt < 1_000; attempt += 1) {
+    const code = `ROLE-${String(roleSeed).padStart(6, '0')}`;
+    if (!roleCodeExists(code)) {
+      return code;
+    }
+    roleSeed += 1;
+  }
+
+  throw new Error('MSW generated Role code sequence exhausted');
+};
+
+const readRoleCodeForCreate = (value: unknown): string | Response => {
+  const manualCode = readManualRoleCode(value);
+  if (manualCode) {
+    return roleCodeExists(manualCode) ? duplicateRoleCodeResponse(manualCode) : manualCode;
+  }
+
+  return allocateGeneratedRoleCode();
+};
+
 export const identityAccessHandlers = [
   http.get('*/admin/me/capabilities', () => {
     return HttpResponse.json({
@@ -698,12 +783,15 @@ export const identityAccessHandlers = [
 
   http.post('*/admin/users', async ({ request }) => {
     const body = await parseJsonBody(request);
+    if (typeof body.authSubject !== 'string' || body.authSubject.trim().length === 0) {
+      return HttpResponse.json({ message: 'authSubject is required' }, { status: 400 });
+    }
     userSeed += 1;
     const record: UserRecord = {
       id: `user-${userSeed}`,
       accountStatus: 'PENDING',
       actorKind: body.actorKind === 'ADMIN' ? 'ADMIN' : 'STAFF',
-      authLinkage: { provider: 'auth0', subject: String(body.authSubject ?? `auth0|${userSeed}`) },
+      authLinkage: { provider: 'auth0', subject: body.authSubject.trim() },
       contextAccess: { contexts: [{ context: 'ADMIN' }] },
       profile: {
         displayName: String(body.displayName ?? `User ${userSeed}`),
@@ -906,9 +994,14 @@ export const identityAccessHandlers = [
     }
 
     roleSeed += 1;
+    const code = readRoleCodeForCreate(body.code);
+    if (code instanceof Response) {
+      return code;
+    }
+
     const role: RoleRecord = {
       id: `role-${roleSeed}`,
-      code: String(body.code ?? `ROLE${roleSeed}`).toUpperCase(),
+      code,
       name: String(body.name ?? template.name),
       description: toNullableText(body.description),
       state: 'DRAFT',
@@ -931,9 +1024,14 @@ export const identityAccessHandlers = [
   http.post('*/admin/roles', async ({ request }) => {
     const body = await parseJsonBody(request);
     roleSeed += 1;
+    const code = readRoleCodeForCreate(body.code);
+    if (code instanceof Response) {
+      return code;
+    }
+
     const role: RoleRecord = {
       id: `role-${roleSeed}`,
-      code: String(body.code ?? `ROLE${roleSeed}`).toUpperCase(),
+      code,
       name: String(body.name ?? `Role ${roleSeed}`),
       description: toNullableText(body.description),
       state: 'DRAFT',

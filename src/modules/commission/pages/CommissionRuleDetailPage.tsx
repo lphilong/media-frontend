@@ -31,6 +31,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatDecimal,
   formatCreatedDate,
   formatUtcMidnightDateLike,
@@ -86,6 +93,7 @@ export const CommissionRuleDetailPage = (): JSX.Element => {
   const { commissionRuleId } = useParams<{ commissionRuleId: string }>();
   const { t } = useTranslation(['commission', 'common', 'errors']);
   const detailQuery = useCommissionRuleDetail(commissionRuleId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const draftCoreMutation = useUpdateCommissionRuleDraftCoreMutation();
   const lifecycleMutation = useCommissionRuleLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -95,6 +103,15 @@ export const CommissionRuleDetailPage = (): JSX.Element => {
   useEffect(() => {
     setActiveSurface(null);
   }, [commissionRuleId]);
+
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const detailError = detailQuery.error as NormalizedApiError | null;
   const detailState = useMemo(() => {
@@ -155,15 +172,54 @@ export const CommissionRuleDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createCommissionRuleActionRailItems(t, record, {
-      onDraftCoreEdit: () => setActiveSurface('draft-core'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.commissionRuleId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    const capabilityState = {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    };
+    const lifecycleRequirement = {
+      permission: PERMISSIONS.COMMISSION_RULE_MANAGE_LIFECYCLE,
+      scope: { module: 'commission' as const, value: 'global' as const },
+    };
+
+    return applyActionCapabilityHints(
+      createCommissionRuleActionRailItems(t, record, {
+        onDraftCoreEdit: () => setActiveSurface('draft-core'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.commissionRuleId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        'draft-core': createActionCapabilityHint(
+          capabilityState,
+          {
+            permission: PERMISSIONS.COMMISSION_RULE_UPDATE,
+            scope: { module: 'commission', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        activate: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+        deactivate: createActionCapabilityHint(
+          capabilityState,
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   const beneficiaryId =
     record?.beneficiaryKind === 'EMPLOYMENT_PROFILE'

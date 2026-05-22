@@ -275,7 +275,6 @@ describe('role IA-1 query and payload shaping', () => {
     mockDetailResponse();
     await createRole({
       name: 'Ops role',
-      code: 'OPS',
       description: null,
       initialPermissions: ['role:view'],
       initialDelegationBand: 'LIMITED',
@@ -286,12 +285,23 @@ describe('role IA-1 query and payload shaping', () => {
 
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).toEqual({
       name: 'Ops role',
-      code: 'OPS',
       description: null,
       initialPermissions: ['role:view'],
       initialDelegationBand: 'LIMITED',
       initialMaxDelegatableBand: 'NONE',
       initialAssignmentRules: [],
+    });
+
+    mockDetailResponse();
+    await createRole({
+      name: 'Manual role',
+      code: 'MANUAL_ROLE',
+      description: null,
+      initialPermissions: [],
+    });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).toMatchObject({
+      name: 'Manual role',
+      code: 'MANUAL_ROLE',
     });
 
     await updateRole('role-admin', {
@@ -442,7 +452,6 @@ describe('role IA-1 query and payload shaping', () => {
     await expect(
       createRoleFromTemplate({
         templateCode: 'TEAM_MANAGER',
-        code: 'team_manager_copy',
         name: 'Team Manager Copy',
         description: null,
       }),
@@ -453,7 +462,6 @@ describe('role IA-1 query and payload shaping', () => {
         url: '/admin/roles/from-template',
         data: {
           templateCode: 'TEAM_MANAGER',
-          code: 'team_manager_copy',
           name: 'Team Manager Copy',
           description: null,
         },
@@ -492,8 +500,8 @@ describe('role IA-1 query and payload shaping', () => {
       />,
     );
     await user.click(screen.getByLabelText(i18n.t('role:templates.customMode')));
+    expect(screen.getByText(i18n.t('role:generatedCode.description'))).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('role:fields.name')), 'Ops role');
-    await user.type(screen.getByLabelText(i18n.t('role:fields.code')), 'ops');
     await user.type(
       screen.getByLabelText(i18n.t('role:fields.permissions')),
       'role:view role:view,user:view',
@@ -506,7 +514,6 @@ describe('role IA-1 query and payload shaping', () => {
     await user.click(screen.getByRole('button', { name: i18n.t('role:mutations.create.submit') }));
     expect(onCreate).toHaveBeenCalledWith({
       name: 'Ops role',
-      code: 'OPS',
       description: null,
       initialPermissions: ['role:view', 'user:view'],
       initialDelegationBand: 'LIMITED',
@@ -543,12 +550,10 @@ describe('role IA-1 query and payload shaping', () => {
     expect(screen.getByText('Scope plans are preview-only.')).toBeInTheDocument();
     expect(screen.getByText(/Preview-only scope plan/u)).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('role:fields.name')), 'Team Manager Copy');
-    await user.type(screen.getByLabelText(i18n.t('role:fields.code')), 'team_manager_copy');
     await user.click(screen.getByRole('button', { name: i18n.t('role:mutations.create.submit') }));
     expect(onCreateFromTemplate).toHaveBeenCalledWith({
       templateCode: 'TEAM_MANAGER',
       name: 'Team Manager Copy',
-      code: 'TEAM_MANAGER_COPY',
       description: null,
     });
     templateRender.unmount();

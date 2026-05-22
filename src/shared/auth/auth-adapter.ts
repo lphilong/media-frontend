@@ -1,11 +1,11 @@
 import { createAuth0Adapter } from '@shared/auth/auth0-adapter';
 import { createMockAuthAdapter } from '@shared/auth/mock-auth-adapter';
 import type { AuthAdapter } from '@shared/auth/auth-types';
-import { env } from '@shared/config/env';
+import { env, getAuth0ConfigIssue } from '@shared/config/env';
 
 export class AuthConfigurationError extends Error {
-  constructor() {
-    super('Auth0 config is missing. Set VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID.');
+  constructor(message: string) {
+    super(message);
     this.name = 'AuthConfigurationError';
   }
 }
@@ -14,13 +14,9 @@ export const isAuthConfigurationError = (error: unknown): error is AuthConfigura
   return error instanceof AuthConfigurationError;
 };
 
-const hasAuth0Config = (): boolean => {
-  return Boolean(env.VITE_AUTH0_DOMAIN?.trim() && env.VITE_AUTH0_CLIENT_ID?.trim());
-};
-
-const createConfigurationErrorAdapter = (): AuthAdapter => {
+const createConfigurationErrorAdapter = (message: string): AuthAdapter => {
   const reject = async (): Promise<never> => {
-    throw new AuthConfigurationError();
+    throw new AuthConfigurationError(message);
   };
 
   return {
@@ -38,8 +34,9 @@ const createConfigurationErrorAdapter = (): AuthAdapter => {
 
 export const createAuthAdapter = (): AuthAdapter => {
   if (env.VITE_AUTH_MODE === 'auth0') {
-    if (!hasAuth0Config()) {
-      return createConfigurationErrorAdapter();
+    const configIssue = getAuth0ConfigIssue(env);
+    if (configIssue) {
+      return createConfigurationErrorAdapter(configIssue);
     }
 
     return createAuth0Adapter();

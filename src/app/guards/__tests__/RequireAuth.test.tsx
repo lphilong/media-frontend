@@ -49,4 +49,70 @@ describe('RequireAuth', () => {
     });
     expect(screen.queryByText('protected content')).not.toBeInTheDocument();
   });
+
+  it('does not redirect while auth initialization is loading', () => {
+    useAuthMock.mockReturnValue({ status: 'loading' });
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Routes>
+          <Route path="/auth/login" element={<LocationProbe />} />
+          <Route
+            path="*"
+            element={
+              <RequireAuth>
+                <div>protected content</div>
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByTestId('location')).not.toBeInTheDocument();
+    expect(screen.queryByText('protected content')).not.toBeInTheDocument();
+  });
+
+  it('renders protected content after auth restoration succeeds', () => {
+    useAuthMock.mockReturnValue({ status: 'authenticated' });
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Routes>
+          <Route
+            path="*"
+            element={
+              <RequireAuth>
+                <div>protected content</div>
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('protected content')).toBeVisible();
+  });
+
+  it('shows the required Auth0 audience in the protected route configuration diagnostic', () => {
+    useAuthMock.mockReturnValue({ status: 'configurationError' });
+
+    render(
+      <MemoryRouter initialEntries={['/revenue-ledger']}>
+        <Routes>
+          <Route
+            path="*"
+            element={
+              <RequireAuth>
+                <div>protected content</div>
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/VITE_AUTH0_AUDIENCE/)).toBeVisible();
+    expect(screen.queryByText('protected content')).not.toBeInTheDocument();
+  });
 });

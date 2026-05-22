@@ -5,7 +5,7 @@ type TextInputFieldProps = {
   name: string;
   label: string;
   placeholder?: string;
-  type?: 'text' | 'number' | 'date' | 'datetime-local';
+  type?: 'text' | 'email' | 'tel' | 'number' | 'date' | 'datetime-local';
   step?: string | number;
   min?: string | number;
   helperText?: string;

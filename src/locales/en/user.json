@@ -22,6 +22,21 @@
     "disabledAt": "Disabled",
     "archivedAt": "Archived"
   },
+  "sections": {
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "authLinkage": "Advanced auth linkage"
+  },
+  "help": {
+    "displayName": "Human-readable user name shown in admin screens.",
+    "timezone": "Defaults to the Vietnam business timezone for new users.",
+    "authSubjectRequired": "Links this user to an external Auth0 identity. Required by the current backend contract and must match the external subject exactly.",
+    "authSubjectExact": "Must match the external Auth0 identity subject exactly."
+  },
+  "placeholders": {
+    "locale": "No preference",
+    "timezone": "No preference"
+  },
   "actorKinds": {
     "ADMIN": "Admin",
     "STAFF": "Staff"

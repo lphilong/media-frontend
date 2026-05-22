@@ -49,6 +49,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatCreatedDate,
   formatBusinessTimestamp,
   readReferenceDisplay,
@@ -111,6 +118,7 @@ export const TalentDetailPage = (): JSX.Element => {
   const { t } = useTranslation(['talent', 'common', 'errors']);
 
   const detailQuery = useTalentDetail(talentId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateTalentMutation();
   const managerAssignmentMutation = useTalentManagerAssignmentMutation();
   const employmentLinkMutation = useTalentEmploymentLinkMutation();
@@ -277,24 +285,118 @@ export const TalentDetailPage = (): JSX.Element => {
   const relatedContractsHref = record
     ? buildContractRegistryByLinkedTalentHref(record.id)
     : undefined;
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const actionItems = useMemo(() => {
     if (!record) {
       return [];
     }
 
-    return createTalentActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onAssignManager: () => setActiveSurface('assign-manager'),
-      onLinkEmploymentProfile: () => setActiveSurface('link-employment-profile'),
-      onUpdateCommercialParticipation: () => setActiveSurface('commercial-participation'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.talentId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    return applyActionCapabilityHints(
+      createTalentActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onAssignManager: () => setActiveSurface('assign-manager'),
+        onLinkEmploymentProfile: () => setActiveSurface('link-employment-profile'),
+        onUpdateCommercialParticipation: () => setActiveSurface('commercial-participation'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.talentId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_UPDATE },
+          capabilityCopy,
+        ),
+        'assign-manager': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_MANAGE_MANAGER },
+          capabilityCopy,
+        ),
+        'employment-link': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_MANAGE_EMPLOYMENT_LINK },
+          capabilityCopy,
+        ),
+        'commercial-participation': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_MANAGE_COMMERCIAL_PARTICIPATION },
+          capabilityCopy,
+        ),
+        suspend: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        reactivate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        deactivate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.TALENT_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   return (
     <ModuleDetailScreenShell

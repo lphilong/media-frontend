@@ -40,6 +40,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatCreatedDate,
   formatUtcMidnightDateLike,
   formatBusinessTimestamp,
@@ -94,6 +101,7 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
   const { contractRecordId } = useParams<{ contractRecordId: string }>();
   const { t } = useTranslation(['contract-registry', 'common', 'errors']);
   const detailQuery = useContractRecordDetail(contractRecordId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const draftCoreMutation = useUpdateContractDraftCoreMutation();
   const assignOwnerMutation = useAssignContractOwnerMutation();
   const fileReferenceMutation = useUpdateContractFileReferenceMutation();
@@ -107,6 +115,15 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
   useEffect(() => {
     setActiveSurface(null);
   }, [contractRecordId]);
+
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const detailError = detailQuery.error as NormalizedApiError | null;
   const detailState = useMemo(() => {
@@ -167,19 +184,85 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createContractActionRailItems(t, record, {
-      onDraftCoreEdit: () => setActiveSurface('draft-core'),
-      onAssignOwner: () => setActiveSurface('assign-owner'),
-      onUpdateFileReference: () => setActiveSurface('file-reference'),
-      onExpire: () => setActiveSurface('expire'),
-      onTerminate: () => setActiveSurface('terminate'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.contractRecordId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    const capabilityState = {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    };
+    const lifecycleRequirement = {
+      permission: PERMISSIONS.CONTRACT_REGISTRY_MANAGE_LIFECYCLE,
+      scope: { module: 'contractRegistry' as const, value: 'global' as const },
+    };
+
+    return applyActionCapabilityHints(
+      createContractActionRailItems(t, record, {
+        onDraftCoreEdit: () => setActiveSurface('draft-core'),
+        onAssignOwner: () => setActiveSurface('assign-owner'),
+        onUpdateFileReference: () => setActiveSurface('file-reference'),
+        onExpire: () => setActiveSurface('expire'),
+        onTerminate: () => setActiveSurface('terminate'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.contractRecordId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        'draft-core': createActionCapabilityHint(
+          capabilityState,
+          {
+            permission: PERMISSIONS.CONTRACT_REGISTRY_UPDATE,
+            scope: { module: 'contractRegistry', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        'assign-owner': createActionCapabilityHint(
+          capabilityState,
+          {
+            permission: PERMISSIONS.CONTRACT_REGISTRY_MANAGE_OWNER,
+            scope: { module: 'contractRegistry', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        'file-reference': createActionCapabilityHint(
+          capabilityState,
+          {
+            permission: PERMISSIONS.CONTRACT_REGISTRY_MANAGE_FILE_REFERENCE,
+            scope: { module: 'contractRegistry', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        'mark-pending-signature': createActionCapabilityHint(
+          capabilityState,
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
+        'reopen-draft': createActionCapabilityHint(
+          capabilityState,
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
+        activate: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+        expire: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+        terminate: createActionCapabilityHint(
+          capabilityState,
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   const linkedEntityId =
     record?.linkedEntityKind === 'EMPLOYMENT_PROFILE'

@@ -5,10 +5,18 @@ import type { AuthAdapter } from '@shared/auth/auth-types';
 import { resolveReturnTarget } from '@shared/auth/return-target';
 
 const AUTH_SCOPE = 'openid profile email offline_access';
+const AUTH_CALLBACK_PATH = '/auth/callback';
+const SILENT_RESTORE_UNAUTHENTICATED_ERRORS = new Set([
+  'login_required',
+  'consent_required',
+  'interaction_required',
+]);
 
-const requireAuth0Config = (): { domain: string; clientId: string; audience?: string } => {
-  if (!env.VITE_AUTH0_DOMAIN || !env.VITE_AUTH0_CLIENT_ID) {
-    throw new Error('Auth0 config is missing. Set VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID.');
+const requireAuth0Config = (): { domain: string; clientId: string; audience: string } => {
+  if (!env.VITE_AUTH0_DOMAIN || !env.VITE_AUTH0_CLIENT_ID || !env.VITE_AUTH0_AUDIENCE) {
+    throw new Error(
+      'Auth0 config is missing. Set VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID, and VITE_AUTH0_AUDIENCE.',
+    );
   }
 
   return {
@@ -32,6 +40,24 @@ const resolveUserName = (user: Awaited<ReturnType<Auth0Client['getUser']>>): str
   }
 
   return undefined;
+};
+
+const readAuthErrorCode = (error: unknown): string | null => {
+  if (typeof error !== 'object' || error === null) {
+    return null;
+  }
+
+  const { error: errorCode } = error as { error?: unknown };
+  return typeof errorCode === 'string' ? errorCode : null;
+};
+
+const isSilentRestoreUnauthenticatedError = (error: unknown): boolean => {
+  const errorCode = readAuthErrorCode(error);
+  return errorCode !== null && SILENT_RESTORE_UNAUTHENTICATED_ERRORS.has(errorCode);
+};
+
+const isAuthCallbackRoute = (): boolean => {
+  return window.location.pathname === AUTH_CALLBACK_PATH;
 };
 
 export const createAuth0Adapter = (): AuthAdapter => {
@@ -58,8 +84,8 @@ export const createAuth0Adapter = (): AuthAdapter => {
   };
 
   const getSession = async (client: Auth0Client) => {
-    const user = await client.getUser();
     const token = await client.getTokenSilently({ detailedResponse: true });
+    const user = await client.getUser();
     const expiresAt = Date.now() + token.expires_in * 1000;
 
     return {
@@ -74,6 +100,19 @@ export const createAuth0Adapter = (): AuthAdapter => {
       const client = await getClient();
       const isAuthenticated = await client.isAuthenticated();
       if (!isAuthenticated) {
+        if (!isAuthCallbackRoute()) {
+          try {
+            return {
+              isAuthenticated: true,
+              session: await getSession(client),
+            };
+          } catch (error) {
+            if (!isSilentRestoreUnauthenticatedError(error)) {
+              throw error;
+            }
+          }
+        }
+
         return {
           isAuthenticated: false,
         };

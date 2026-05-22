@@ -52,6 +52,13 @@ import {
 } from '@shared/components/primitives';
 import { useDestructiveConfirm, useMutationFeedback } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatCreatedDate,
   formatUtcMidnightDateLike,
   formatBusinessTimestamp,
@@ -146,6 +153,7 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
   const { t } = useTranslation(['employment-profile', 'common', 'errors']);
 
   const detailQuery = useEmploymentProfileDetail(employmentProfileId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
 
   const [activeSurface, setActiveSurface] = useState<ActiveMutationSurface>(null);
   const [directReportsCursor, setDirectReportsCursor] = useState<string | undefined>(undefined);
@@ -423,28 +431,152 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
   const allowedContractStatuses = record
     ? readAllowedContractStatuses(record.contractStatus, record.employmentStatus)
     : [];
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const actionItems = useMemo(() => {
     if (!record) {
       return [];
     }
 
-    return createEmploymentProfileActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit'),
-      onAssignOrgUnit: () => setActiveSurface('assign-org-unit'),
-      onAssignManager: () => setActiveSurface('assign-manager'),
-      onLinkUser: () => setActiveSurface('link-user'),
-      onContractStatus: () => setActiveSurface('contract-status'),
-      onTerminate: () => setActiveSurface('terminate'),
-      onUnlinkUser,
-      onLifecycleAction,
-      canUpdateContractStatus: allowedContractStatuses.length > 0,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.employmentProfileId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
+    return applyActionCapabilityHints(
+      createEmploymentProfileActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit'),
+        onAssignOrgUnit: () => setActiveSurface('assign-org-unit'),
+        onAssignManager: () => setActiveSurface('assign-manager'),
+        onLinkUser: () => setActiveSurface('link-user'),
+        onContractStatus: () => setActiveSurface('contract-status'),
+        onTerminate: () => setActiveSurface('terminate'),
+        onUnlinkUser,
+        onLifecycleAction,
+        canUpdateContractStatus: allowedContractStatuses.length > 0,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.employmentProfileId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_UPDATE },
+          capabilityCopy,
+        ),
+        'assign-org-unit': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_ORG_ASSIGNMENT },
+          capabilityCopy,
+        ),
+        'assign-manager': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_MANAGER_ASSIGNMENT },
+          capabilityCopy,
+        ),
+        'link-user': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_USER_LINKAGE },
+          capabilityCopy,
+        ),
+        'unlink-user': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_USER_LINKAGE },
+          capabilityCopy,
+        ),
+        'contract-status': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_UPDATE },
+          capabilityCopy,
+        ),
+        'place-on-leave': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        'return-from-leave': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        suspend: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        reactivate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        terminate: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+        archive: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_LIFECYCLE },
+          capabilityCopy,
+        ),
+      },
+    );
   }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
     lifecycleMutation.isPending,
     lifecycleMutation.variables,
     onLifecycleAction,

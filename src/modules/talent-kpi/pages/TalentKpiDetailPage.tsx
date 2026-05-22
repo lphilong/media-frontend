@@ -38,6 +38,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatDecimal,
   formatCreatedDate,
   formatBusinessTimestamp,
@@ -90,6 +97,7 @@ export const TalentKpiDetailPage = (): JSX.Element => {
   const { talentKpiRecordId } = useParams<{ talentKpiRecordId: string }>();
   const { t } = useTranslation(['talent-kpi', 'common', 'errors']);
   const detailQuery = useTalentKpiDetail(talentKpiRecordId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const metricsQuery = useTalentKpiMetrics(talentKpiRecordId);
   const draftCoreMutation = useUpdateTalentKpiDraftCoreMutation();
   const metricsMutation = useReplaceTalentKpiMetricsMutation();
@@ -101,6 +109,15 @@ export const TalentKpiDetailPage = (): JSX.Element => {
   useEffect(() => {
     setActiveSurface(null);
   }, [talentKpiRecordId]);
+
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const detailError = detailQuery.error as NormalizedApiError | null;
   const metricsError = metricsQuery.error as NormalizedApiError | null;
@@ -163,16 +180,58 @@ export const TalentKpiDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createTalentKpiActionRailItems(t, record, {
-      onDraftCoreEdit: () => setActiveSurface('draft-core'),
-      onReplaceMetrics: () => setActiveSurface('metrics'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.talentKpiRecordId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    const capabilityState = {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    };
+    const lifecycleRequirement = {
+      permission: PERMISSIONS.TALENT_KPI_MANAGE_LIFECYCLE,
+      scope: { module: 'talentKpi' as const, value: 'global' as const },
+    };
+
+    return applyActionCapabilityHints(
+      createTalentKpiActionRailItems(t, record, {
+        onDraftCoreEdit: () => setActiveSurface('draft-core'),
+        onReplaceMetrics: () => setActiveSurface('metrics'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.talentKpiRecordId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        'draft-core': createActionCapabilityHint(
+          capabilityState,
+          {
+            permission: PERMISSIONS.TALENT_KPI_UPDATE,
+            scope: { module: 'talentKpi', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        'replace-metrics': createActionCapabilityHint(
+          capabilityState,
+          {
+            permission: PERMISSIONS.TALENT_KPI_MANAGE_METRICS,
+            scope: { module: 'talentKpi', value: 'global' },
+          },
+          capabilityCopy,
+        ),
+        finalize: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+        archive: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   const talentHref = buildEntityDetailHref('talent', record?.subjectTalentId);
   const platformHref = buildEntityDetailHref(

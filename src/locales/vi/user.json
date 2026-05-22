@@ -22,6 +22,21 @@
     "disabledAt": "Thời điểm vô hiệu hóa",
     "archivedAt": "Thời điểm lưu trữ"
   },
+  "sections": {
+    "profile": "Hồ sơ",
+    "preferences": "Tùy chọn",
+    "authLinkage": "Liên kết xác thực nâng cao"
+  },
+  "help": {
+    "displayName": "Tên người dùng dễ đọc hiển thị trên màn hình quản trị.",
+    "timezone": "Mặc định dùng múi giờ nghiệp vụ Việt Nam cho người dùng mới.",
+    "authSubjectRequired": "Liên kết người dùng này với danh tính Auth0 bên ngoài. Hợp đồng backend hiện tại yêu cầu trường này và giá trị phải khớp chính xác subject bên ngoài.",
+    "authSubjectExact": "Phải khớp chính xác subject của danh tính Auth0 bên ngoài."
+  },
+  "placeholders": {
+    "locale": "Không đặt tùy chọn",
+    "timezone": "Không đặt tùy chọn"
+  },
   "actorKinds": {
     "ADMIN": "Quản trị viên",
     "STAFF": "Nhân sự"

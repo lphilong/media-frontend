@@ -9,36 +9,38 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('/src/locales/')) {
-            return 'locales';
+          const normalizedId = id.replace(/\\/g, '/');
+          const localeMatch = normalizedId.match(/\/src\/locales\/([^/]+)\//);
+          if (localeMatch) {
+            return `locales-${localeMatch[1]}`;
           }
 
-          if (!id.includes('/node_modules/')) {
+          if (!normalizedId.includes('/node_modules/')) {
             return undefined;
           }
 
           if (
-            id.includes('/react/') ||
-            id.includes('/react-dom/') ||
-            id.includes('/scheduler/') ||
-            id.includes('/loose-envify/')
+            normalizedId.includes('/react/') ||
+            normalizedId.includes('/react-dom/') ||
+            normalizedId.includes('/scheduler/') ||
+            normalizedId.includes('/loose-envify/')
           ) {
             return 'vendor-react';
           }
 
-          if (id.includes('/react-router') || id.includes('/@remix-run/')) {
+          if (normalizedId.includes('/react-router') || normalizedId.includes('/@remix-run/')) {
             return 'vendor-router';
           }
 
-          if (id.includes('/@tanstack/')) {
+          if (normalizedId.includes('/@tanstack/')) {
             return 'vendor-tanstack';
           }
 
-          if (id.includes('/i18next/') || id.includes('/react-i18next/')) {
+          if (normalizedId.includes('/i18next/') || normalizedId.includes('/react-i18next/')) {
             return 'vendor-i18n';
           }
 
-          if (id.includes('/@auth0/') || id.includes('/axios/')) {
+          if (normalizedId.includes('/@auth0/') || normalizedId.includes('/axios/')) {
             return 'vendor-api-auth';
           }
 

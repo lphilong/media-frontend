@@ -44,6 +44,10 @@ const nonEmptyOptionalText = (value?: string | null): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+const USER_LOCALE_OPTIONS = ['vi', 'en', 'zh'] as const;
+const USER_TIMEZONE_OPTIONS = ['Asia/Ho_Chi_Minh', 'Asia/Saigon', 'UTC'] as const;
+const DEFAULT_USER_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
 const readText = (value?: string | null): string => value ?? '';
 
 const applySchemaErrors = <TValues extends FieldValues>(
@@ -67,8 +71,8 @@ const createUserCreateSchema = (requiredMessage: string, maxMessage: string) =>
     displayName: z.string().trim().min(1, requiredMessage).max(128, maxMessage),
     email: z.string().trim(),
     phone: z.string().trim(),
-    locale: z.string().trim(),
-    timezone: z.string().trim(),
+    locale: z.enum(USER_LOCALE_OPTIONS).or(z.literal('')),
+    timezone: z.enum(USER_TIMEZONE_OPTIONS),
   });
 
 const createUserUpdateSchema = (requiredMessage: string, maxMessage: string) =>
@@ -76,8 +80,8 @@ const createUserUpdateSchema = (requiredMessage: string, maxMessage: string) =>
     displayName: z.string().trim().min(1, requiredMessage).max(128, maxMessage),
     email: z.string().trim(),
     phone: z.string().trim(),
-    locale: z.string().trim(),
-    timezone: z.string().trim(),
+    locale: z.enum(USER_LOCALE_OPTIONS).or(z.literal('')),
+    timezone: z.enum(USER_TIMEZONE_OPTIONS).or(z.literal('')),
   });
 
 const createAuthLinkageSchema = (requiredMessage: string) =>
@@ -153,7 +157,7 @@ export const UserCreateSurface = ({
       email: '',
       phone: '',
       locale: '',
-      timezone: '',
+      timezone: DEFAULT_USER_TIMEZONE,
     },
   });
 
@@ -169,6 +173,24 @@ export const UserCreateSurface = ({
         label: t(`user:actorKinds.${value}`),
       })),
     [t],
+  );
+
+  const localeOptions = useMemo(
+    () =>
+      USER_LOCALE_OPTIONS.map((value) => ({
+        value,
+        label: t(`common:locales.${value}`),
+      })),
+    [t],
+  );
+
+  const timezoneOptions = useMemo(
+    () =>
+      USER_TIMEZONE_OPTIONS.map((value) => ({
+        value,
+        label: value,
+      })),
+    [],
   );
 
   const handleSubmit = form.handleSubmit(async (values) => {
@@ -202,19 +224,50 @@ export const UserCreateSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <FormGrid columns={2}>
-          <TextInputField name="authSubject" label={t('user:fields.authSubject')} />
-          <SelectField
-            name="actorKind"
-            label={t('user:fields.actorKind')}
-            options={actorKindOptions}
-          />
-          <TextInputField name="displayName" label={t('user:fields.displayName')} />
-          <TextInputField name="email" label={t('user:fields.email')} />
-          <TextInputField name="phone" label={t('user:fields.phone')} />
-          <TextInputField name="locale" label={t('user:fields.locale')} />
-          <TextInputField name="timezone" label={t('user:fields.timezone')} />
-        </FormGrid>
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-text">{t('user:sections.profile')}</h3>
+          <FormGrid columns={2}>
+            <TextInputField
+              name="displayName"
+              label={t('user:fields.displayName')}
+              helperText={t('user:help.displayName')}
+            />
+            <SelectField
+              name="actorKind"
+              label={t('user:fields.actorKind')}
+              options={actorKindOptions}
+            />
+            <TextInputField name="email" type="email" label={t('user:fields.email')} />
+            <TextInputField name="phone" type="tel" label={t('user:fields.phone')} />
+          </FormGrid>
+        </section>
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-text">{t('user:sections.preferences')}</h3>
+          <FormGrid columns={2}>
+            <SelectField
+              name="locale"
+              label={t('user:fields.locale')}
+              options={localeOptions}
+              placeholder={t('user:placeholders.locale')}
+            />
+            <SelectField
+              name="timezone"
+              label={t('user:fields.timezone')}
+              options={timezoneOptions}
+              helperText={t('user:help.timezone')}
+            />
+          </FormGrid>
+        </section>
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-text">{t('user:sections.authLinkage')}</h3>
+          <FormGrid columns={2}>
+            <TextInputField
+              name="authSubject"
+              label={t('user:fields.authSubject')}
+              helperText={t('user:help.authSubjectRequired')}
+            />
+          </FormGrid>
+        </section>
       </ModuleMutationSurface>
     </FormProvider>
   );
@@ -240,6 +293,24 @@ export const UserUpdateSurface = ({
   const schema = useMemo(
     () => createUserUpdateSchema(t('user:validation.required'), t('user:validation.maxText')),
     [t],
+  );
+
+  const localeOptions = useMemo(
+    () =>
+      USER_LOCALE_OPTIONS.map((value) => ({
+        value,
+        label: t(`common:locales.${value}`),
+      })),
+    [t],
+  );
+
+  const timezoneOptions = useMemo(
+    () =>
+      USER_TIMEZONE_OPTIONS.map((value) => ({
+        value,
+        label: value,
+      })),
+    [],
   );
 
   const handleSubmit = form.handleSubmit(async (values) => {
@@ -276,10 +347,20 @@ export const UserUpdateSurface = ({
       >
         <FormGrid columns={2}>
           <TextInputField name="displayName" label={t('user:fields.displayName')} />
-          <TextInputField name="email" label={t('user:fields.email')} />
-          <TextInputField name="phone" label={t('user:fields.phone')} />
-          <TextInputField name="locale" label={t('user:fields.locale')} />
-          <TextInputField name="timezone" label={t('user:fields.timezone')} />
+          <TextInputField name="email" type="email" label={t('user:fields.email')} />
+          <TextInputField name="phone" type="tel" label={t('user:fields.phone')} />
+          <SelectField
+            name="locale"
+            label={t('user:fields.locale')}
+            options={localeOptions}
+            placeholder={t('user:placeholders.locale')}
+          />
+          <SelectField
+            name="timezone"
+            label={t('user:fields.timezone')}
+            options={timezoneOptions}
+            placeholder={t('user:placeholders.timezone')}
+          />
         </FormGrid>
       </ModuleMutationSurface>
     </FormProvider>
@@ -337,7 +418,11 @@ export const UserAuthLinkageSurface = ({
               className="rounded border border-border bg-slate-50 px-3 py-2 text-sm text-muted outline-none"
             />
           </label>
-          <TextInputField name="subject" label={t('user:fields.authSubject')} />
+          <TextInputField
+            name="subject"
+            label={t('user:fields.authSubject')}
+            helperText={t('user:help.authSubjectExact')}
+          />
         </FormGrid>
       </ModuleMutationSurface>
     </FormProvider>

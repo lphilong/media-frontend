@@ -14,7 +14,7 @@
     "title": "Lỗi xác thực",
     "loginFailed": "Không thể chuyển hướng đến trang đăng nhập.",
     "callbackFailed": "Không thể xử lý callback xác thực.",
-    "configMissing": "Thiếu cấu hình Auth0. Hãy thiết lập VITE_AUTH0_DOMAIN và VITE_AUTH0_CLIENT_ID, hoặc chỉ dùng VITE_AUTH_MODE=mock cho mock auth cục bộ."
+    "configMissing": "Thiếu cấu hình Auth0. Hãy thiết lập VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID và VITE_AUTH0_AUDIENCE, hoặc chỉ dùng VITE_AUTH_MODE=mock cho mock auth cục bộ."
   },
   "permission": {
     "title": "Không có quyền truy cập",

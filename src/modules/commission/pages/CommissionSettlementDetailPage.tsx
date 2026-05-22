@@ -35,6 +35,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
+  applyActionCapabilityHints,
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
+import {
   formatCurrency,
   formatCreatedDate,
   formatDecimal,
@@ -90,6 +97,7 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
   const { commissionSettlementId } = useParams<{ commissionSettlementId: string }>();
   const { t } = useTranslation(['commission', 'common', 'errors']);
   const detailQuery = useCommissionSettlementDetail(commissionSettlementId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const linesQuery = useCommissionSettlementLines(commissionSettlementId);
   const draftCoreMutation = useUpdateCommissionSettlementDraftCoreMutation();
   const revenueEntriesMutation = useReplaceCommissionSettlementRevenueEntriesMutation();
@@ -101,6 +109,15 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
   useEffect(() => {
     setActiveSurface(null);
   }, [commissionSettlementId]);
+
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
 
   const detailError = detailQuery.error as NormalizedApiError | null;
   const linesError = linesQuery.error as NormalizedApiError | null;
@@ -163,16 +180,57 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createCommissionSettlementActionRailItems(t, record, {
-      onDraftCoreEdit: () => setActiveSurface('draft-core'),
-      onReplaceRevenueEntries: () => setActiveSurface('revenue-entries'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.commissionSettlementId === record.id &&
-        lifecycleMutation.variables?.action === action,
-    });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+    const capabilityState = {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    };
+    const updateRequirement = {
+      permission: PERMISSIONS.COMMISSION_SETTLEMENT_UPDATE,
+      scope: { module: 'commission' as const, value: 'global' as const },
+    };
+    const lifecycleRequirement = {
+      permission: PERMISSIONS.COMMISSION_SETTLEMENT_MANAGE_LIFECYCLE,
+      scope: { module: 'commission' as const, value: 'global' as const },
+    };
+
+    return applyActionCapabilityHints(
+      createCommissionSettlementActionRailItems(t, record, {
+        onDraftCoreEdit: () => setActiveSurface('draft-core'),
+        onReplaceRevenueEntries: () => setActiveSurface('revenue-entries'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.commissionSettlementId === record.id &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        'draft-core': createActionCapabilityHint(
+          capabilityState,
+          updateRequirement,
+          capabilityCopy,
+        ),
+        'replace-revenue-entries': createActionCapabilityHint(
+          capabilityState,
+          updateRequirement,
+          capabilityCopy,
+        ),
+        finalize: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+        void: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+        archive: createActionCapabilityHint(capabilityState, lifecycleRequirement, capabilityCopy),
+      },
+    );
+  }, [
+    capabilityCopy,
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   const sourceRuleHref = buildEntityDetailHref('commissionRule', record?.sourceRuleId);
   const sourceContractHref = buildEntityDetailHref(

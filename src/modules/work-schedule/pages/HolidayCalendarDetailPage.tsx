@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 
 import { createHolidayCalendarActionRailItems } from '@modules/work-schedule/actions/holiday-calendar-action-rail';
+import { createWorkScheduleCapabilityHint } from '@modules/work-schedule/capability-hints';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import {
   HolidayCalendarEditSurface,
@@ -34,6 +35,12 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import {
+  applyActionCapabilityHints,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
@@ -90,6 +97,7 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
   const { holidayCalendarId } = useParams<{ holidayCalendarId: string }>();
   const { t } = useTranslation(['work-schedule', 'common', 'errors']);
   const detailQuery = useHolidayCalendarDetail(holidayCalendarId);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateHolidayCalendarMutation();
   const lifecycleMutation = useHolidayCalendarLifecycleMutation();
   const addEntryMutation = useAddHolidayCalendarEntryMutation();
@@ -133,6 +141,14 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
 
   const record = detailQuery.data;
   const isArchived = record?.status === 'ARCHIVED';
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
   const visibleEntries = useMemo(() => {
     const entries = record?.entries ?? [];
     return showRemovedEntries ? entries : entries.filter((entry) => entry.status === 'ACTIVE');
@@ -197,15 +213,47 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
       return [];
     }
 
-    return createHolidayCalendarActionRailItems(t, record, {
-      onEdit: () => setActiveSurface('edit-calendar'),
-      onLifecycleAction,
-      isLifecyclePending: (action) =>
-        lifecycleMutation.isPending &&
-        lifecycleMutation.variables?.holidayCalendarId === record.holidayCalendarId &&
-        lifecycleMutation.variables?.action === action,
+    const capabilityState = {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    };
+    const lifecycleHint = createWorkScheduleCapabilityHint({
+      state: capabilityState,
+      permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+      copy: capabilityCopy,
     });
-  }, [lifecycleMutation.isPending, lifecycleMutation.variables, onLifecycleAction, record, t]);
+
+    return applyActionCapabilityHints(
+      createHolidayCalendarActionRailItems(t, record, {
+        onEdit: () => setActiveSurface('edit-calendar'),
+        onLifecycleAction,
+        isLifecyclePending: (action) =>
+          lifecycleMutation.isPending &&
+          lifecycleMutation.variables?.holidayCalendarId === record.holidayCalendarId &&
+          lifecycleMutation.variables?.action === action,
+      }),
+      {
+        edit: createWorkScheduleCapabilityHint({
+          state: capabilityState,
+          permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
+          copy: capabilityCopy,
+        }),
+        activate: lifecycleHint,
+        archive: lifecycleHint,
+      },
+    );
+  }, [
+    capabilitiesQuery.data,
+    capabilitiesQuery.isError,
+    capabilitiesQuery.isLoading,
+    capabilityCopy,
+    lifecycleMutation.isPending,
+    lifecycleMutation.variables,
+    onLifecycleAction,
+    record,
+    t,
+  ]);
 
   return (
     <ModuleDetailScreenShell

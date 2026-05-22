@@ -8,6 +8,7 @@
     "roleId": "ID vai trò",
     "userId": "Người dùng",
     "code": "Mã",
+    "codeOptional": "Ghi đè mã thủ công (tùy chọn)",
     "name": "Họ và Tên",
     "state": "Trạng thái",
     "description": "Mô tả",
@@ -20,6 +21,14 @@
     "activatedAt": "Thời điểm kích hoạt",
     "archivedAt": "Thời điểm lưu trữ",
     "reason": "Lý do"
+  },
+  "generatedCode": {
+    "label": "Mã do backend sinh",
+    "description": "Để trống ghi đè mã thủ công, backend sẽ sinh mã vai trò ổn định sau khi tạo."
+  },
+  "help": {
+    "name": "Tên vai trò nghiệp vụ hiển thị cho quản trị viên.",
+    "codeOptional": "Chỉ dùng khi cần giữ khóa vai trò vận hành ổn định. Mã là định danh backend viết hoa, không phải tên hiển thị."
   },
   "templates": {
     "templateMode": "Vai trò theo mẫu",

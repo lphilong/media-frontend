@@ -228,6 +228,60 @@ describe('org unit wave 3 surfaces', () => {
     expect(within(childRow).queryByText('ACTIVE')).not.toBeInTheDocument();
   });
 
+  it('adds permission-only capability reasons while local Org Unit status still wins', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({
+          data: {
+            id: 'user-admin',
+            type: 'admin',
+            context: 'ADMIN',
+            isActive: true,
+            roles: ['role-admin'],
+            permissions: [],
+            scopeGrants: {},
+            generatedAt: '2026-05-20T00:00:00.000Z',
+          },
+        }),
+      ),
+    );
+
+    renderRoute('/org-units/ou-root');
+
+    const edit = await screen.findByRole('button', { name: i18n.t('org-unit:actions.edit') });
+    const activate = screen.getByRole('button', { name: i18n.t('org-unit:actions.activate') });
+    const deactivate = screen.getByRole('button', {
+      name: i18n.t('org-unit:actions.deactivate'),
+    });
+
+    await waitFor(() =>
+      expect(edit).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission')),
+    );
+    expect(edit).toBeDisabled();
+    expect(deactivate).toBeDisabled();
+    expect(deactivate).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission'));
+    expect(activate).toBeDisabled();
+    expect(activate).not.toHaveAccessibleDescription(
+      i18n.t('common:capabilities.missingPermission'),
+    );
+  });
+
+  it('does not hard-block Org Unit actions when capability fetch fails', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({ message: 'errors:transport.generic' }, { status: 500 }),
+      ),
+    );
+
+    renderRoute('/org-units/ou-root');
+
+    const edit = await screen.findByRole('button', { name: i18n.t('org-unit:actions.edit') });
+    await waitFor(() => expect(edit).toBeEnabled());
+    expect(edit).not.toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission'));
+  });
+
   it('renders readable parent org unit refs on detail while links stay id-based', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/org-units/ou-sales');

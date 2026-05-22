@@ -188,6 +188,9 @@ describe('user IA-1 query and payload shaping', () => {
     await user.type(screen.getByLabelText(i18n.t('user:fields.authSubject')), 'auth0|created');
     await user.type(screen.getByLabelText(i18n.t('user:fields.displayName')), 'Created User');
     await user.type(screen.getByLabelText(i18n.t('user:fields.email')), 'created@example.test');
+    expect(screen.getByLabelText(i18n.t('user:fields.locale')).tagName).toBe('SELECT');
+    expect(screen.getByLabelText(i18n.t('user:fields.timezone'))).toHaveValue('Asia/Ho_Chi_Minh');
+    expect(screen.getByText(i18n.t('user:help.authSubjectRequired'))).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: i18n.t('user:mutations.create.submit') }));
 
     expect(onCreate).toHaveBeenCalledWith({
@@ -197,7 +200,7 @@ describe('user IA-1 query and payload shaping', () => {
       email: 'created@example.test',
       phone: undefined,
       locale: undefined,
-      timezone: undefined,
+      timezone: 'Asia/Ho_Chi_Minh',
     });
     createRender.unmount();
 
