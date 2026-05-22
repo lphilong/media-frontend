@@ -70,6 +70,13 @@ export const APP_PATHS = {
   talentKpiRecordDetail: (talentKpiRecordId: string) =>
     joinDetailPath('/talent-kpi-records', talentKpiRecordId),
 
+  kpi: '/kpi',
+  kpiPlans: '/kpi/plans',
+  kpiPlanDetailPattern: '/kpi/plans/:kpiPlanId',
+  kpiPlanDetail: (kpiPlanId: string) => joinDetailPath('/kpi/plans', kpiPlanId),
+  kpiActualEntry: '/kpi/actual-entry',
+  kpiMy: '/kpi/my',
+
   revenueEntries: '/revenue-entries',
   revenueEntryDetailPattern: '/revenue-entries/:revenueEntryId',
   revenueEntryDetail: (revenueEntryId: string) =>

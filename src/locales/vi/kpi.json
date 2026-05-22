@@ -1,0 +1,155 @@
+{
+  "page": {
+    "title": "KPI",
+    "subtitle": "Quản lý kế hoạch KPI V2, nhập actual, điều chỉnh và tiến độ.",
+    "placeholder": "Mô-đun KPI"
+  },
+  "detail": {
+    "pageTitle": "Kế hoạch KPI",
+    "pageSubtitle": "Mục tiêu, phân bổ, actual, điều chỉnh và tiến độ."
+  },
+  "tabs": {
+    "label": "Chế độ xem KPI",
+    "management": "Quản lý KPI",
+    "group": "KPI nhóm của tôi",
+    "my": "KPI của tôi",
+    "myClosed": "KPI cá nhân dùng endpoint my-progress của backend và không hiển thị dòng của thành viên khác."
+  },
+  "list": {
+    "title": "Kế hoạch KPI"
+  },
+  "create": {
+    "title": "Tạo kế hoạch KPI nháp",
+    "submit": "Tạo kế hoạch nháp"
+  },
+  "fields": {
+    "planId": "ID kế hoạch",
+    "planCode": "Mã kế hoạch",
+    "title": "Tiêu đề",
+    "description": "Mô tả",
+    "subject": "Đối tượng",
+    "subjectType": "Loại đối tượng",
+    "subjectId": "ID đối tượng",
+    "groupId": "Nhóm Talent",
+    "talentId": "Talent",
+    "member": "Thành viên",
+    "status": "Trạng thái",
+    "periodMonth": "Tháng KPI",
+    "metricCode": "Chỉ số",
+    "targetValue": "Mục tiêu",
+    "publishedAt": "Đã publish lúc",
+    "finalizedAt": "Đã chốt lúc",
+    "archivedAt": "Đã lưu trữ lúc",
+    "actualDate": "Ngày actual"
+  },
+  "filters": {
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Tìm mã hoặc tiêu đề kế hoạch",
+    "allStatuses": "Tất cả trạng thái",
+    "allSubjectTypes": "Tất cả loại đối tượng",
+    "allMetrics": "Tất cả chỉ số"
+  },
+  "subjectTypes": {
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Nhóm Talent",
+    "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
+    "ORG_UNIT": "Đơn vị tổ chức"
+  },
+  "metricCodes": {
+    "REVENUE_VND": "Doanh thu VND",
+    "CONTENT_OUTPUT_COUNT": "Số lượng nội dung",
+    "LIVE_HOURS": "Giờ live",
+    "EVENT_COMPLETION_COUNT": "Số sự kiện hoàn thành",
+    "ONBOARDED_TALENT_COUNT": "Talent đã onboarding"
+  },
+  "statuses": {
+    "DRAFT": "Nháp",
+    "PUBLISHED": "Đã publish",
+    "FINALIZED": "Đã chốt",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "sections": {
+    "lifecycle": "Vòng đời",
+    "targetMetrics": "Chỉ số mục tiêu",
+    "allocations": "Phân bổ",
+    "progress": "Tiến độ KPI"
+  },
+  "allocation": {
+    "targetTotal": "Tổng mục tiêu",
+    "allocatedTotal": "Tổng phân bổ",
+    "difference": "Chênh lệch"
+  },
+  "actualEntry": {
+    "title": "Nhập actual",
+    "directEdit": "Sửa trực tiếp",
+    "requiresCorrection": "Cần điều chỉnh"
+  },
+  "correction": {
+    "title": "Chỉnh sửa actual",
+    "previousValue": "Giá trị trước",
+    "correctedValue": "Giá trị điều chỉnh",
+    "reason": "Lý do điều chỉnh",
+    "history": "Lịch sử điều chỉnh"
+  },
+  "progress": {
+    "target": "Mục tiêu",
+    "actual": "Actual",
+    "percent": "Tiến độ",
+    "memberBreakdown": "Chi tiết thành viên",
+    "actualEntryCount": "Số actual",
+    "missingEntryCount": "Số thiếu"
+  },
+  "actions": {
+    "create": "Tạo KPI",
+    "open": "Mở",
+    "remove": "Xóa",
+    "addMetric": "Thêm chỉ số",
+    "loadGrid": "Tải bảng",
+    "saveChangedCells": "Lưu ô đã đổi",
+    "correction": "Điều chỉnh",
+    "submitCorrection": "Gửi điều chỉnh",
+    "updateDraft": "Cập nhật nháp",
+    "replaceMetrics": "Thay chỉ số",
+    "replaceAllocations": "Thay phân bổ",
+    "publish": "Publish",
+    "archive": "Lưu trữ",
+    "finalize": "Chốt"
+  },
+  "actionRail": {
+    "title": "Hành động KPI"
+  },
+  "table": {
+    "actions": "Hành động"
+  },
+  "validation": {
+    "invalidPeriodMonth": "Tháng KPI phải có dạng YYYY-MM.",
+    "invalidMetricValue": "Nhập giá trị chỉ số hợp lệ.",
+    "allocationMismatch": "Tổng phân bổ phải bằng mục tiêu kế hoạch trước khi publish.",
+    "invalidActualDate": "Dùng DD-MM-YYYY. Không dùng YYYY-MM-DD hoặc ngày có dấu gạch chéo.",
+    "duplicateConflict": "Actual đã tồn tại với giá trị khác. Hãy dùng luồng sửa hoặc điều chỉnh.",
+    "reasonRequired": "Bắt buộc nhập lý do điều chỉnh.",
+    "missingActualEntry": "Điều chỉnh cần một actual đã tồn tại."
+  },
+  "disabled": {
+    "draftEditDraftOnly": "Chỉ kế hoạch nháp được chỉnh sửa.",
+    "publishDraftOnly": "Chỉ kế hoạch nháp được publish.",
+    "finalizePublishedOnly": "Chỉ kế hoạch đã publish được chốt.",
+    "alreadyArchived": "Kế hoạch đã lưu trữ."
+  },
+  "confirm": {
+    "publish": "Publish kế hoạch KPI này? Mục tiêu và phân bổ sẽ bị khóa.",
+    "archive": "Lưu trữ kế hoạch KPI này?",
+    "finalize": "Chốt kế hoạch KPI này? Việc chốt sẽ khóa actual và điều chỉnh cho payroll/reporting."
+  },
+  "feedback": {
+    "created": "Đã tạo kế hoạch KPI.",
+    "actualSaved": "Đã lưu actual.",
+    "correctionCreated": "Đã gửi điều chỉnh.",
+    "lifecycleUpdated": "Đã cập nhật vòng đời KPI.",
+    "allocationsUpdated": "Đã thay phân bổ."
+  },
+  "states": {
+    "loadErrorTitle": "Không tải được KPI",
+    "loadErrorMessage": "Không tải được dữ liệu KPI."
+  }
+}

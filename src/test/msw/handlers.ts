@@ -5,6 +5,7 @@ import { resetWave6MockData, wave6Handlers } from '@test/msw/wave6-handlers';
 import { resetWave7MockData, wave7Handlers } from '@test/msw/wave7-handlers';
 import { resetWave8MockData, wave8Handlers } from '@test/msw/wave8-handlers';
 import { resetWave9MockData, wave9Handlers } from '@test/msw/wave9-handlers';
+import { kpiHandlers, resetKpiMockData } from '@test/msw/kpi-handlers';
 import { resetWave4MockData, wave4Handlers } from '@test/msw/wave4-handlers';
 import {
   generatedFixtureCode,
@@ -359,6 +360,7 @@ export const resetMockData = (): void => {
   resetWave7MockData();
   resetWave8MockData();
   resetWave9MockData();
+  resetKpiMockData();
   resetIdentityAccessMockData();
 };
 
@@ -1166,5 +1168,6 @@ export const handlers = [
   ...wave7Handlers,
   ...wave8Handlers,
   ...wave9Handlers,
+  ...kpiHandlers,
   ...identityAccessHandlers,
 ];

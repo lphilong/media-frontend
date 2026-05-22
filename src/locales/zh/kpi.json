@@ -1,0 +1,155 @@
+{
+  "page": {
+    "title": "KPI",
+    "subtitle": "管理 KPI V2 计划、actual 录入、修正和进度。",
+    "placeholder": "KPI 模块"
+  },
+  "detail": {
+    "pageTitle": "KPI 计划",
+    "pageSubtitle": "目标、分配、actual、修正和进度。"
+  },
+  "tabs": {
+    "label": "KPI 视图",
+    "management": "KPI 管理",
+    "group": "我的小组 KPI",
+    "my": "我的 KPI",
+    "myClosed": "个人 KPI 使用后端 my-progress 端点，不显示其他成员行。"
+  },
+  "list": {
+    "title": "KPI 计划"
+  },
+  "create": {
+    "title": "创建 KPI 草稿计划",
+    "submit": "创建草稿计划"
+  },
+  "fields": {
+    "planId": "计划 ID",
+    "planCode": "计划编码",
+    "title": "标题",
+    "description": "描述",
+    "subject": "对象",
+    "subjectType": "对象类型",
+    "subjectId": "对象 ID",
+    "groupId": "Talent 组",
+    "talentId": "Talent",
+    "member": "成员",
+    "status": "状态",
+    "periodMonth": "KPI 月份",
+    "metricCode": "指标",
+    "targetValue": "目标",
+    "publishedAt": "发布时间",
+    "finalizedAt": "已终结时间",
+    "archivedAt": "归档时间",
+    "actualDate": "Actual 日期"
+  },
+  "filters": {
+    "search": "搜索",
+    "searchPlaceholder": "搜索计划编码或标题",
+    "allStatuses": "全部状态",
+    "allSubjectTypes": "全部对象类型",
+    "allMetrics": "全部指标"
+  },
+  "subjectTypes": {
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Talent 组",
+    "EMPLOYMENT_PROFILE": "雇佣档案",
+    "ORG_UNIT": "组织单元"
+  },
+  "metricCodes": {
+    "REVENUE_VND": "VND 收入",
+    "CONTENT_OUTPUT_COUNT": "内容产出数",
+    "LIVE_HOURS": "直播小时",
+    "EVENT_COMPLETION_COUNT": "完成活动数",
+    "ONBOARDED_TALENT_COUNT": "已入职 Talent 数"
+  },
+  "statuses": {
+    "DRAFT": "草稿",
+    "PUBLISHED": "已发布",
+    "FINALIZED": "已终结",
+    "ARCHIVED": "已归档"
+  },
+  "sections": {
+    "lifecycle": "生命周期",
+    "targetMetrics": "目标指标",
+    "allocations": "分配",
+    "progress": "KPI 进度"
+  },
+  "allocation": {
+    "targetTotal": "目标合计",
+    "allocatedTotal": "分配合计",
+    "difference": "差额"
+  },
+  "actualEntry": {
+    "title": "录入 actual",
+    "directEdit": "直接编辑",
+    "requiresCorrection": "需要修正"
+  },
+  "correction": {
+    "title": "编辑 actual",
+    "previousValue": "原值",
+    "correctedValue": "修正值",
+    "reason": "修正原因",
+    "history": "修正历史"
+  },
+  "progress": {
+    "target": "目标",
+    "actual": "Actual",
+    "percent": "进度",
+    "memberBreakdown": "成员明细",
+    "actualEntryCount": "Actual 数",
+    "missingEntryCount": "缺失数"
+  },
+  "actions": {
+    "create": "创建 KPI",
+    "open": "打开",
+    "remove": "移除",
+    "addMetric": "添加指标",
+    "loadGrid": "加载表格",
+    "saveChangedCells": "保存已变更单元格",
+    "correction": "修正",
+    "submitCorrection": "提交修正",
+    "updateDraft": "更新草稿",
+    "replaceMetrics": "替换指标",
+    "replaceAllocations": "替换分配",
+    "publish": "发布",
+    "archive": "归档",
+    "finalize": "终结"
+  },
+  "actionRail": {
+    "title": "KPI 操作"
+  },
+  "table": {
+    "actions": "操作"
+  },
+  "validation": {
+    "invalidPeriodMonth": "KPI 月份必须为 YYYY-MM。",
+    "invalidMetricValue": "请输入有效的指标数值。",
+    "allocationMismatch": "发布前分配合计必须等于计划目标。",
+    "invalidActualDate": "使用 DD-MM-YYYY。不要使用 YYYY-MM-DD 或斜杠日期。",
+    "duplicateConflict": "Actual 已存在且值不同。请使用编辑或修正流程。",
+    "reasonRequired": "必须填写修正原因。",
+    "missingActualEntry": "修正需要已有 actual。"
+  },
+  "disabled": {
+    "draftEditDraftOnly": "只有草稿计划可编辑。",
+    "publishDraftOnly": "只有草稿计划可发布。",
+    "finalizePublishedOnly": "只有已发布计划可终结。",
+    "alreadyArchived": "计划已归档。"
+  },
+  "confirm": {
+    "publish": "发布此 KPI 计划？目标和分配将被锁定。",
+    "archive": "归档此 KPI 计划？",
+    "finalize": "终结此 KPI 计划？终结会锁定 actual 和修正用于薪酬/报表。"
+  },
+  "feedback": {
+    "created": "KPI 计划已创建。",
+    "actualSaved": "Actual 已保存。",
+    "correctionCreated": "修正已提交。",
+    "lifecycleUpdated": "KPI 生命周期已更新。",
+    "allocationsUpdated": "分配已替换。"
+  },
+  "states": {
+    "loadErrorTitle": "无法加载 KPI",
+    "loadErrorMessage": "无法加载 KPI 数据。"
+  }
+}

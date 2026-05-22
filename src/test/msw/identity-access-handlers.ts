@@ -19,6 +19,7 @@ type RoleAssignmentScopeGrants = {
   eventAssignment?: Array<'global'>;
   contractRegistry?: Array<'global'>;
   talentKpi?: Array<'global'>;
+  kpi?: Array<'global'>;
   revenueLedger?: Array<'global'>;
   commission?: Array<'global'>;
   dashboardLite?: Array<'global'>;
@@ -447,6 +448,16 @@ const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
     'user:disable',
     'user:archive',
     'user:auth_linkage:set',
+    'kpi.read',
+    'kpi.createPlan',
+    'kpi.updateDraft',
+    'kpi.publish',
+    'kpi.manageAllocation',
+    'kpi.archive',
+    'kpi.enterActual',
+    'kpi.correctActual',
+    'kpi.readProgress',
+    'kpi.finalize',
     'revenueLedger.update',
     'revenueLedger.manageLifecycle',
     'revenueLedger.reconcile',
@@ -455,6 +466,7 @@ const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
     revenueLedger: ['global'],
     commission: ['global'],
     dashboardLite: ['global'],
+    kpi: ['global'],
     workSchedule: ['self', 'team', 'department'],
   },
   generatedAt: '2026-05-20T00:00:00.000Z',

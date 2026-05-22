@@ -1,0 +1,751 @@
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { http, HttpResponse } from 'msw';
+import { describe, expect, it, beforeEach } from 'vitest';
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+import { appRoutes } from '@app/router/router';
+import {
+  parseKpiDate,
+  parseKpiHoursInput,
+  parseKpiMetricInput,
+  parseKpiMoneyInput,
+} from '@modules/kpi/formatting/kpi-formatting';
+import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
+import { fetchMyKpiProgress, parseKpiPlanListResponseForTest } from '@modules/kpi/api/kpi.api';
+import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
+import { setLocale } from '@shared/i18n/i18n';
+import { renderAppWithProviders } from '@test/render-app-route';
+import { server } from '@test/msw/server';
+
+const renderRoute = (path: string) => {
+  const router = createMemoryRouter(appRoutes, { initialEntries: [path] });
+  return renderAppWithProviders(<RouterProvider router={router} />);
+};
+
+const waitForKpiList = async () => {
+  await screen.findByRole('heading', { name: 'KPI plans' });
+};
+
+const waitForEnabledButton = async (name: string): Promise<HTMLElement> => {
+  const button = await screen.findByRole('button', { name });
+  await waitFor(() => expect(button).toBeEnabled());
+  return button;
+};
+
+type KpiCapabilityMockParams = {
+  permissions?: string[];
+  scopeGrants?: CurrentActorCapabilities['scopeGrants'];
+  status?: number;
+};
+
+const mockKpiCapabilities = ({
+  permissions = [],
+  scopeGrants = { kpi: ['global'] },
+  status,
+}: KpiCapabilityMockParams): void => {
+  server.use(
+    http.get('*/admin/me/capabilities', () => {
+      if (status) {
+        return HttpResponse.json({ message: 'Capability check failed' }, { status });
+      }
+
+      return HttpResponse.json({
+        data: makeCapabilities({ permissions, scopeGrants }),
+      });
+    }),
+  );
+};
+
+const kpiCapabilityCopy = {
+  loading: 'Checking permissions.',
+  unavailable: 'KPI permissions could not be verified. Try again.',
+  'missing-permission': 'You do not have permission to perform this action.',
+  'missing-scope': 'Your role assignment does not include the required scope.',
+};
+
+describe('KPI MVP UX', () => {
+  beforeEach(async () => {
+    await setLocale('en');
+  });
+
+  it('shows KPI in sidebar instead of visible Talent KPI', async () => {
+    renderRoute('/dashboard');
+    expect(await screen.findByRole('link', { name: 'KPI' })).toHaveAttribute('href', '/kpi');
+    expect(screen.queryByRole('link', { name: 'Talent KPI' })).not.toBeInTheDocument();
+  });
+
+  it('renders the KPI route list page', async () => {
+    renderRoute('/kpi');
+    await waitForKpiList();
+    expect(screen.getByRole('heading', { name: 'KPI plans' })).toBeInTheDocument();
+  });
+
+  it('sends backend search query from list search', async () => {
+    const urls: string[] = [];
+    server.use(
+      http.get('*/admin/kpi/plans', ({ request }) => {
+        urls.push(request.url);
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+    renderRoute('/kpi');
+    await waitForKpiList();
+    await userEvent.type(screen.getByPlaceholderText('Search plan code or title'), 'Published');
+    await waitFor(() => expect(urls.some((url) => url.includes('search=Published'))).toBe(true));
+  });
+
+  it('sends list filters as backend params', async () => {
+    let captured = new URL('http://example.test');
+    server.use(
+      http.get('*/admin/kpi/plans', ({ request }) => {
+        captured = new URL(request.url);
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+    renderRoute(
+      '/kpi?subjectType=TALENT_GROUP&status=PUBLISHED&periodMonth=2026-05&metricCode=REVENUE_VND&subjectId=group-001',
+    );
+    await waitForKpiList();
+    expect(captured.searchParams.get('subjectType')).toBe('TALENT_GROUP');
+    expect(captured.searchParams.get('status')).toBe('PUBLISHED');
+    expect(captured.searchParams.get('periodMonth')).toBe('2026-05');
+    expect(captured.searchParams.get('metricCode')).toBe('REVENUE_VND');
+    expect(captured.searchParams.get('subjectId')).toBe('group-001');
+  });
+
+  it('create plan form parses money display input to a numeric API value', async () => {
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      http.post('*/admin/kpi/plans', async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          data: {
+            id: 'kpi-plan-created',
+            planCode: 'KPI-202605-000101',
+            title: 'Created',
+            description: null,
+            subjectType: 'TALENT_GROUP',
+            subjectId: 'group-001',
+            subjectRef: null,
+            status: 'DRAFT',
+            currencyCode: 'VND',
+            periodMonth: '2026-05',
+            periodStartAt: 1777593600000,
+            periodEndAt: 1780271999999,
+            timezone: 'Asia/Ho_Chi_Minh',
+            actualPolicySnapshot: null,
+            publishedAt: null,
+            publishedByActorId: null,
+            finalizedAt: null,
+            finalizedByActorId: null,
+            archivedAt: null,
+            archivedByActorId: null,
+            createdAt: 1,
+            createdByActorId: 'user-admin',
+            updatedAt: 1,
+            updatedByActorId: 'user-admin',
+            externalRef: null,
+            targetMetrics: [],
+            allocations: [],
+          },
+        });
+      }),
+    );
+    renderRoute('/kpi');
+    await waitForKpiList();
+    await userEvent.click(await waitForEnabledButton('Create KPI plan'));
+    await userEvent.click(await waitForEnabledButton('Create draft plan'));
+    await waitFor(() => expect(body).toBeDefined());
+    expect((body?.targetMetrics as Array<{ targetValue: number }>)[0].targetValue).toBe(1000000);
+    expect(typeof (body?.targetMetrics as Array<{ targetValue: number }>)[0].targetValue).toBe(
+      'number',
+    );
+  });
+
+  it('rejects malformed money before calling create API', async () => {
+    let called = false;
+    server.use(
+      http.post('*/admin/kpi/plans', () => {
+        called = true;
+        return HttpResponse.json({ data: {} });
+      }),
+    );
+    renderRoute('/kpi');
+    await waitForKpiList();
+    await userEvent.click(await waitForEnabledButton('Create KPI plan'));
+    const money = screen.getByLabelText('Revenue VND Target');
+    await userEvent.clear(money);
+    await userEvent.type(money, '1.00.000');
+    await userEvent.click(await waitForEnabledButton('Create draft plan'));
+    expect(await screen.findByText('Enter a valid numeric metric value.')).toBeInTheDocument();
+    expect(called).toBe(false);
+  });
+
+  it('accepts DD-MM-YYYY and rejects YYYY-MM-DD dates', () => {
+    expect(parseKpiDate('16-05-2026')).toBe('16-05-2026');
+    expect(parseKpiDate('2026-05-16')).toBeUndefined();
+    expect(parseKpiDate('16/05/2026')).toBeUndefined();
+    expect(parseKpiDate('6-5-2026')).toBeUndefined();
+  });
+
+  it('actual entry UI rejects YYYY-MM-DD before saving', async () => {
+    renderRoute('/kpi');
+    await screen.findByText('Actual entry');
+    const actualDate = screen.getByLabelText('Actual date');
+    await userEvent.clear(actualDate);
+    await userEvent.type(actualDate, '2026-05-16');
+    expect(await screen.findByText(/Do not use YYYY-MM-DD/i)).toBeInTheDocument();
+  });
+
+  it('enforces count integer and LIVE_HOURS max two decimals', () => {
+    expect(parseKpiMetricInput('CONTENT_OUTPUT_COUNT', '10')).toBe(10);
+    expect(parseKpiMetricInput('CONTENT_OUTPUT_COUNT', '10.5')).toBeUndefined();
+    expect(parseKpiHoursInput('1,5')).toBe(1.5);
+    expect(parseKpiHoursInput('1.55')).toBe(1.55);
+    expect(parseKpiHoursInput('1.555')).toBeUndefined();
+  });
+
+  it('shows allocation totals/difference and blocks publish UI on mismatch', async () => {
+    renderRoute('/kpi');
+    await waitForKpiList();
+    await userEvent.click(await waitForEnabledButton('Create KPI plan'));
+    expect(screen.getByText('Allocated total')).toBeInTheDocument();
+    const lunaRevenue = screen.getByLabelText('Luna Park Revenue VND');
+    await userEvent.clear(lunaRevenue);
+    await userEvent.type(lunaRevenue, '500.000');
+    expect(
+      screen.getByText('Allocation total must equal plan target before publish.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create draft plan' })).toBeDisabled();
+  });
+
+  it('hides draft edit controls for a published plan', async () => {
+    renderRoute('/kpi/plans/kpi-plan-published');
+    await screen.findByText('Published team KPI');
+    expect(screen.queryByRole('button', { name: 'Update draft' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Replace metrics' })).not.toBeInTheDocument();
+  });
+
+  it('shows publish confirmation and calls publish API', async () => {
+    let called = false;
+    server.use(
+      http.post('*/admin/kpi/plans/kpi-plan-draft/publish', async () => {
+        called = true;
+        return HttpResponse.json({ data: makeDetail('kpi-plan-draft', 'PUBLISHED') });
+      }),
+    );
+    renderRoute('/kpi/plans/kpi-plan-draft');
+    await screen.findByText('May creator KPI');
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    expect(await screen.findByTestId('confirm-dialog')).toHaveTextContent(
+      'Targets and allocations will be locked',
+    );
+    await userEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+    await waitFor(() => expect(called).toBe(true));
+  });
+
+  it('shows finalize confirmation and calls finalize API', async () => {
+    renderRoute('/kpi/plans/kpi-plan-published');
+    await screen.findByText('Published team KPI');
+    await userEvent.click(screen.getByRole('button', { name: 'Finalize' }));
+    expect(await screen.findByTestId('confirm-dialog')).toHaveTextContent('payroll/reporting');
+    await userEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+    expect(await screen.findByText('KPI lifecycle updated.')).toBeInTheDocument();
+  });
+
+  it('shows archive confirmation and calls archive API', async () => {
+    renderRoute('/kpi/plans/kpi-plan-published');
+    await screen.findByText('Published team KPI');
+    await userEvent.click(screen.getByRole('button', { name: 'Archive' }));
+    expect(await screen.findByTestId('confirm-dialog')).toHaveTextContent('Archive this KPI plan?');
+    await userEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+    expect(await screen.findByText('KPI lifecycle updated.')).toBeInTheDocument();
+  });
+
+  it('loads actual grid endpoint and sends actualDate as DD-MM-YYYY', async () => {
+    let captured = new URL('http://example.test');
+    server.use(
+      http.get('*/admin/kpi/plans/:kpiPlanId/actuals', ({ request }) => {
+        captured = new URL(request.url);
+        return HttpResponse.json({ data: makeActualGrid() });
+      }),
+    );
+    renderRoute('/kpi');
+    await screen.findByText('Actual entry');
+    await waitFor(() => expect(captured.searchParams.get('actualDate')).toBe('16-05-2026'));
+  });
+
+  it('uses POST for missing actual cells and PATCH for existing editable cells', async () => {
+    let posted = false;
+    let patched = false;
+    server.use(
+      http.post('*/admin/kpi/plans/:kpiPlanId/actuals', () => {
+        posted = true;
+        return HttpResponse.json({
+          data: makeActualEntry('actual-new', 'CONTENT_OUTPUT_COUNT', 3),
+        });
+      }),
+      http.patch('*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId', () => {
+        patched = true;
+        return HttpResponse.json({
+          data: makeActualEntry('actual-editable', 'REVENUE_VND', 510000),
+        });
+      }),
+    );
+    renderRoute('/kpi');
+    await screen.findByText('Actual entry');
+    const lunaRevenue = await screen.findByLabelText('Luna Park Revenue VND actual');
+    await userEvent.clear(lunaRevenue);
+    await userEvent.type(lunaRevenue, '510.000');
+    const lunaContent = await screen.findByLabelText('Luna Park Content output count actual');
+    await userEvent.clear(lunaContent);
+    await userEvent.type(lunaContent, '3');
+    await userEvent.click(await waitForEnabledButton('Save changed cells'));
+    await waitFor(() => expect(posted && patched).toBe(true));
+  });
+
+  it('opens correction modal for locked cells and renders history', async () => {
+    renderRoute('/kpi');
+    await screen.findByText('Actual entry');
+    const minhRevenue = await screen.findByLabelText('Minh Tran Revenue VND actual');
+    await userEvent.clear(minhRevenue);
+    await userEvent.type(minhRevenue, '300.000');
+    await userEvent.click(await waitForEnabledButton('Save changed cells'));
+    expect(await screen.findByRole('dialog', { name: 'Edit actual' })).toBeInTheDocument();
+    expect(await screen.findByText('Correction history')).toBeInTheDocument();
+  });
+
+  it('shows duplicate POST conflict message', async () => {
+    server.use(
+      http.post('*/admin/kpi/plans/:kpiPlanId/actuals', () =>
+        HttpResponse.json({ message: 'Duplicate actual with different value' }, { status: 409 }),
+      ),
+    );
+    renderRoute('/kpi');
+    await screen.findByText('Actual entry');
+    const lunaContent = await screen.findByLabelText('Luna Park Content output count actual');
+    await userEvent.clear(lunaContent);
+    await userEvent.type(lunaContent, '3');
+    await userEvent.click(await waitForEnabledButton('Save changed cells'));
+    expect(await screen.findByText(/already exists with a different value/i)).toBeInTheDocument();
+  });
+
+  it('requires correction reason and sends numeric corrected value', async () => {
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      http.post(
+        '*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId/corrections',
+        async ({ request }) => {
+          body = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({
+            data: {
+              actualEntry: makeActualEntry('actual-locked', 'REVENUE_VND', 300000),
+              correction: makeCorrection(300000),
+            },
+          });
+        },
+      ),
+    );
+    renderRoute('/kpi');
+    await screen.findByText('Actual entry');
+    const correctionButtons = await screen.findAllByRole('button', { name: 'Correction' });
+    await waitFor(() => expect(correctionButtons.at(-1)).toBeEnabled());
+    await userEvent.click(correctionButtons.at(-1)!);
+    await userEvent.click(await waitForEnabledButton('Submit correction'));
+    expect(await screen.findByText('Correction reason is required.')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Correction reason'), 'Payroll correction');
+    const corrected = screen.getByLabelText('Corrected value');
+    await userEvent.clear(corrected);
+    await userEvent.type(corrected, '300.000');
+    await userEvent.click(await waitForEnabledButton('Submit correction'));
+    await waitFor(() => expect(body?.correctedValue).toBe(300000));
+    expect(typeof body?.correctedValue).toBe('number');
+  });
+
+  it('displays progress over 100 percent', async () => {
+    renderRoute('/kpi/plans/kpi-plan-published');
+    expect(await screen.findByText('125%')).toBeInTheDocument();
+  });
+
+  it('self view does not show member rows', async () => {
+    renderRoute('/kpi');
+    await userEvent.click(await screen.findByRole('tab', { name: 'My KPI' }));
+    expect(screen.getByText(/does not show other member rows/i)).toBeInTheDocument();
+  });
+
+  it('self-progress API returns no member rows for talent self view', async () => {
+    const progress = await fetchMyKpiProgress('kpi-plan-published');
+    expect(progress.memberProgress).toEqual([]);
+    expect(progress.groupTotals[0].progressPercent).toBe(125);
+  });
+
+  it('shows capability-disabled reason when KPI scope is missing', async () => {
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({
+          data: {
+            id: 'user-admin',
+            type: 'admin',
+            context: 'ADMIN',
+            isActive: true,
+            roles: ['role-admin'],
+            permissions: ['kpi.finalize'],
+            scopeGrants: {},
+          },
+        }),
+      ),
+    );
+    renderRoute('/kpi/plans/kpi-plan-published');
+    const finalize = await screen.findByRole('button', { name: 'Finalize' });
+    expect(finalize).toBeDisabled();
+    expect(
+      screen.getByText('Your role assignment does not include the required scope.'),
+    ).toBeInTheDocument();
+  });
+
+  it('disables create with a visible reason when capability data is unavailable', async () => {
+    let called = false;
+    mockKpiCapabilities({ status: 500 });
+    server.use(
+      http.post('*/admin/kpi/plans', () => {
+        called = true;
+        return HttpResponse.json({ data: makeDetail('kpi-plan-denied', 'DRAFT') });
+      }),
+    );
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    const create = await screen.findByRole('button', { name: 'Create KPI plan' });
+    await waitFor(() => expect(create).toBeDisabled());
+    expect(
+      screen.getAllByText('KPI permissions could not be verified. Try again.').length,
+    ).toBeGreaterThan(0);
+    await userEvent.click(create);
+    expect(called).toBe(false);
+  });
+
+  it('does not call create API without kpi.createPlan', async () => {
+    let called = false;
+    mockKpiCapabilities({
+      permissions: ['kpi.enterActual', 'kpi.correctActual'],
+      scopeGrants: { kpi: ['global'] },
+    });
+    server.use(
+      http.post('*/admin/kpi/plans', () => {
+        called = true;
+        return HttpResponse.json({ data: makeDetail('kpi-plan-denied', 'DRAFT') });
+      }),
+    );
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    const create = await screen.findByRole('button', { name: 'Create KPI plan' });
+    await waitFor(() => expect(create).toBeDisabled());
+    expect(
+      screen.getAllByText('You do not have permission to perform this action.').length,
+    ).toBeGreaterThan(0);
+    await userEvent.click(create);
+    expect(called).toBe(false);
+  });
+
+  it('disables actual save with a visible reason and does not POST or PATCH without kpi.enterActual', async () => {
+    let posted = false;
+    let patched = false;
+    mockKpiCapabilities({
+      permissions: ['kpi.createPlan', 'kpi.correctActual'],
+      scopeGrants: { kpi: ['global'] },
+    });
+    server.use(
+      http.post('*/admin/kpi/plans/:kpiPlanId/actuals', () => {
+        posted = true;
+        return HttpResponse.json({
+          data: makeActualEntry('actual-new', 'CONTENT_OUTPUT_COUNT', 3),
+        });
+      }),
+      http.patch('*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId', () => {
+        patched = true;
+        return HttpResponse.json({
+          data: makeActualEntry('actual-editable', 'REVENUE_VND', 510000),
+        });
+      }),
+    );
+
+    renderRoute('/kpi');
+    await screen.findByText('Actual entry');
+
+    const save = await screen.findByRole('button', { name: 'Save changed cells' });
+    await waitFor(() => expect(save).toBeDisabled());
+    expect(
+      screen.getAllByText('You do not have permission to perform this action.').length,
+    ).toBeGreaterThan(0);
+    await userEvent.click(save);
+    expect(posted).toBe(false);
+    expect(patched).toBe(false);
+  });
+
+  it('disables correction with a visible reason and does not call correction API without kpi.correctActual', async () => {
+    let called = false;
+    mockKpiCapabilities({
+      permissions: ['kpi.createPlan', 'kpi.enterActual'],
+      scopeGrants: { kpi: ['global'] },
+    });
+    server.use(
+      http.post('*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId/corrections', () => {
+        called = true;
+        return HttpResponse.json({
+          data: {
+            actualEntry: makeActualEntry('actual-locked', 'REVENUE_VND', 300000),
+            correction: makeCorrection(300000),
+          },
+        });
+      }),
+    );
+
+    renderRoute('/kpi');
+    await screen.findByText('Actual entry');
+
+    const correctionButtons = await screen.findAllByRole('button', { name: 'Correction' });
+    const correction = correctionButtons.at(-1);
+    expect(correction).toBeDefined();
+    await waitFor(() => expect(correction).toBeDisabled());
+    expect(
+      screen.getAllByText('You do not have permission to perform this action.').length,
+    ).toBeGreaterThan(0);
+    await userEvent.click(correction!);
+    expect(screen.queryByRole('dialog', { name: 'Edit actual' })).not.toBeInTheDocument();
+    expect(called).toBe(false);
+  });
+
+  it('KPI money actions fail closed on loading, error, missing data, missing permission, and missing scope', () => {
+    expect(
+      createKpiActionCapabilityHint(
+        { capabilities: undefined, isLoading: true, isError: false },
+        'createPlan',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({ allowed: false, disabled: true, disabledReason: 'Checking permissions.' });
+    expect(
+      createKpiActionCapabilityHint(
+        { capabilities: undefined, isLoading: false, isError: true },
+        'enterActual',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({
+      allowed: false,
+      disabled: true,
+      disabledReason: 'KPI permissions could not be verified. Try again.',
+    });
+    expect(
+      createKpiActionCapabilityHint(
+        { capabilities: undefined, isLoading: false, isError: false },
+        'correctActual',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({
+      allowed: false,
+      disabled: true,
+      disabledReason: 'KPI permissions could not be verified. Try again.',
+    });
+    expect(
+      createKpiActionCapabilityHint(
+        {
+          capabilities: makeCapabilities({ permissions: [], scopeGrants: { kpi: ['global'] } }),
+          isLoading: false,
+          isError: false,
+        },
+        'createPlan',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({
+      allowed: false,
+      disabled: true,
+      disabledReason: 'You do not have permission to perform this action.',
+    });
+    expect(
+      createKpiActionCapabilityHint(
+        {
+          capabilities: makeCapabilities({ permissions: ['kpi.enterActual'], scopeGrants: {} }),
+          isLoading: false,
+          isError: false,
+        },
+        'enterActual',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({
+      allowed: false,
+      disabled: true,
+      disabledReason: 'Your role assignment does not include the required scope.',
+    });
+  });
+
+  it('enables KPI money actions when the required permission and scope are present', () => {
+    expect(
+      createKpiActionCapabilityHint(
+        {
+          capabilities: makeCapabilities({
+            permissions: ['kpi.correctActual'],
+            scopeGrants: { kpi: ['global'] },
+          }),
+          isLoading: false,
+          isError: false,
+        },
+        'correctActual',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({ allowed: true, disabled: false });
+  });
+
+  it('strict API schema rejects unexpected fields', () => {
+    expect(() =>
+      parseKpiPlanListResponseForTest({
+        data: [{ ...makeDetail('kpi-plan-x', 'DRAFT'), unexpected: true }],
+      }),
+    ).toThrow();
+  });
+
+  it('money parser never returns formatted strings', () => {
+    expect(parseKpiMoneyInput('1.000.000')).toBe(1000000);
+    expect(parseKpiMoneyInput('1.00.000')).toBeUndefined();
+  });
+});
+
+const makeCapabilities = (
+  overrides: Partial<CurrentActorCapabilities> = {},
+): CurrentActorCapabilities => ({
+  id: 'kpi-capability-test-user',
+  type: 'admin',
+  context: 'ADMIN',
+  isActive: true,
+  roles: ['role-kpi-capability-test'],
+  permissions: ['kpi.createPlan', 'kpi.enterActual', 'kpi.correctActual'],
+  scopeGrants: { kpi: ['global'] },
+  generatedAt: '2026-05-22T00:00:00.000Z',
+  ...overrides,
+});
+
+const makeDetail = (id: string, status: 'DRAFT' | 'PUBLISHED' | 'FINALIZED' | 'ARCHIVED') => ({
+  id,
+  planCode: 'KPI-202605-000002',
+  title: 'Published team KPI',
+  description: null,
+  subjectType: 'TALENT_GROUP',
+  subjectId: 'group-001',
+  subjectRef: null,
+  status,
+  currencyCode: 'VND',
+  periodMonth: '2026-05',
+  periodStartAt: 1777593600000,
+  periodEndAt: 1780271999999,
+  timezone: 'Asia/Ho_Chi_Minh',
+  actualPolicySnapshot: null,
+  publishedAt: 1,
+  publishedByActorId: 'user-admin',
+  finalizedAt: status === 'FINALIZED' ? 2 : null,
+  finalizedByActorId: status === 'FINALIZED' ? 'user-admin' : null,
+  archivedAt: null,
+  archivedByActorId: null,
+  createdAt: 1,
+  createdByActorId: 'user-admin',
+  updatedAt: 1,
+  updatedByActorId: 'user-admin',
+  externalRef: null,
+  targetMetrics: [
+    {
+      id: `${id}-metric-revenue`,
+      kpiPlanId: id,
+      metricCode: 'REVENUE_VND',
+      targetValue: 1000000,
+      unit: 'VND',
+      rollupMethod: 'SUM',
+      actualSource: 'MANUAL',
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ],
+  allocations: [],
+});
+
+const makeActualEntry = (id: string, metricCode: string, value: number) => ({
+  id,
+  kpiPlanId: 'kpi-plan-published',
+  allocationId: 'kpi-plan-published-alloc-1',
+  memberTalentId: 'talent-001',
+  metricCode,
+  actualDate: '16-05-2026',
+  actualValue: value,
+  effectiveValue: value,
+  editCount: 1,
+  correctionCount: 0,
+  latestCorrectionId: null,
+  createdAt: 1,
+  createdByActorId: 'user-admin',
+  updatedAt: 1,
+  updatedByActorId: 'user-admin',
+  lastEditedAt: 1,
+  lastEditedByActorId: 'user-admin',
+});
+
+const makeCorrection = (value: number) => ({
+  id: 'correction-test',
+  actualEntryId: 'actual-locked',
+  kpiPlanId: 'kpi-plan-published',
+  allocationId: 'kpi-plan-published-alloc-2',
+  memberTalentId: 'talent-002',
+  metricCode: 'REVENUE_VND',
+  actualDate: '16-05-2026',
+  previousValue: 250000,
+  correctedValue: value,
+  reason: 'Payroll correction',
+  correctedByActorId: 'user-admin',
+  correctedAt: 1,
+  createdAt: 1,
+});
+
+const makeActualGrid = () => ({
+  kpiPlanId: 'kpi-plan-published',
+  planCode: 'KPI-202605-000002',
+  status: 'PUBLISHED',
+  subjectType: 'TALENT_GROUP',
+  subjectId: 'group-001',
+  actualDate: '16-05-2026',
+  policy: {
+    timezone: 'Asia/Ho_Chi_Minh',
+    entryOpenLocalTime: '06:00',
+    entryLockLocalTime: '23:00',
+    maxDirectEditsPerEntry: 2,
+    correctionAllowedUntil: 'PLAN_FINALIZED',
+  },
+  editability: {
+    isDirectEditOpen: true,
+    isPlanFinalized: false,
+    disabledReason: null,
+  },
+  targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000, unit: 'VND' }],
+  rows: [
+    {
+      allocationId: 'kpi-plan-published-alloc-1',
+      memberTalentId: 'talent-001',
+      memberDisplayName: 'Luna Park',
+      allocationStatus: 'ACTIVE',
+      metrics: [
+        {
+          metricCode: 'REVENUE_VND',
+          targetValue: 600000,
+          actualEntryId: null,
+          actualValue: null,
+          effectiveValue: 0,
+          hasEntry: false,
+          editCount: 0,
+          correctionCount: 0,
+          latestCorrectionId: null,
+          canDirectEdit: false,
+          requiresCorrection: false,
+          disabledReason: null,
+        },
+      ],
+    },
+  ],
+});

@@ -23,6 +23,8 @@ export { ContractRegistryListPage } from '@modules/contract-registry/pages/Contr
 export { ContractRegistryDetailPage } from '@modules/contract-registry/pages/ContractRegistryDetailPage';
 export { TalentKpiListPage } from '@modules/talent-kpi/pages/TalentKpiListPage';
 export { TalentKpiDetailPage } from '@modules/talent-kpi/pages/TalentKpiDetailPage';
+export { KpiListPage } from '@modules/kpi/pages/KpiListPage';
+export { KpiDetailPage } from '@modules/kpi/pages/KpiDetailPage';
 export { RevenueLedgerListPage } from '@modules/revenue-ledger/pages/RevenueLedgerListPage';
 export { RevenueLedgerDetailPage } from '@modules/revenue-ledger/pages/RevenueLedgerDetailPage';
 export { CommissionRulesListPage } from '@modules/commission/pages/CommissionRulesListPage';

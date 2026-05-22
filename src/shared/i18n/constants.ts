@@ -24,6 +24,7 @@ export const I18N_NAMESPACES = [
   'event-assignment',
   'contract-registry',
   'talent-kpi',
+  'kpi',
   'revenue-ledger',
   'commission',
 ] as const;

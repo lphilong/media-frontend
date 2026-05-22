@@ -1,0 +1,155 @@
+{
+  "page": {
+    "title": "KPI",
+    "subtitle": "KPI V2 plan, actual entry, correction, and progress management.",
+    "placeholder": "KPI module"
+  },
+  "detail": {
+    "pageTitle": "KPI plan",
+    "pageSubtitle": "Targets, allocations, actuals, corrections, and progress."
+  },
+  "tabs": {
+    "label": "KPI views",
+    "management": "KPI Management",
+    "group": "My Group KPI",
+    "my": "My KPI",
+    "myClosed": "Self KPI uses the backend my-progress endpoint and does not show other member rows."
+  },
+  "list": {
+    "title": "KPI plans"
+  },
+  "create": {
+    "title": "Create draft KPI plan",
+    "submit": "Create draft plan"
+  },
+  "fields": {
+    "planId": "Plan ID",
+    "planCode": "Plan code",
+    "title": "Title",
+    "description": "Description",
+    "subject": "Subject",
+    "subjectType": "Subject type",
+    "subjectId": "Subject ID",
+    "groupId": "Talent group",
+    "talentId": "Talent",
+    "member": "Member",
+    "status": "Status",
+    "periodMonth": "Period month",
+    "metricCode": "Metric",
+    "targetValue": "Target",
+    "publishedAt": "Published at",
+    "finalizedAt": "Finalized at",
+    "archivedAt": "Archived at",
+    "actualDate": "Actual date"
+  },
+  "filters": {
+    "search": "Search",
+    "searchPlaceholder": "Search plan code or title",
+    "allStatuses": "All statuses",
+    "allSubjectTypes": "All subject types",
+    "allMetrics": "All metrics"
+  },
+  "subjectTypes": {
+    "TALENT": "Talent",
+    "TALENT_GROUP": "Talent group",
+    "EMPLOYMENT_PROFILE": "Employment profile",
+    "ORG_UNIT": "Org unit"
+  },
+  "metricCodes": {
+    "REVENUE_VND": "Revenue VND",
+    "CONTENT_OUTPUT_COUNT": "Content output count",
+    "LIVE_HOURS": "Live hours",
+    "EVENT_COMPLETION_COUNT": "Event completion count",
+    "ONBOARDED_TALENT_COUNT": "Onboarded talent count"
+  },
+  "statuses": {
+    "DRAFT": "Draft",
+    "PUBLISHED": "Published",
+    "FINALIZED": "Finalized",
+    "ARCHIVED": "Archived"
+  },
+  "sections": {
+    "lifecycle": "Lifecycle",
+    "targetMetrics": "Target metrics",
+    "allocations": "Allocation",
+    "progress": "KPI progress"
+  },
+  "allocation": {
+    "targetTotal": "Target total",
+    "allocatedTotal": "Allocated total",
+    "difference": "Difference"
+  },
+  "actualEntry": {
+    "title": "Actual entry",
+    "directEdit": "Direct edit",
+    "requiresCorrection": "Correction required"
+  },
+  "correction": {
+    "title": "Edit actual",
+    "previousValue": "Previous value",
+    "correctedValue": "Corrected value",
+    "reason": "Correction reason",
+    "history": "Correction history"
+  },
+  "progress": {
+    "target": "Target",
+    "actual": "Actual",
+    "percent": "Progress",
+    "memberBreakdown": "Member breakdown",
+    "actualEntryCount": "Actual entries",
+    "missingEntryCount": "Missing entries"
+  },
+  "actions": {
+    "create": "Create KPI plan",
+    "open": "Open",
+    "remove": "Remove",
+    "addMetric": "Add metric",
+    "loadGrid": "Load grid",
+    "saveChangedCells": "Save changed cells",
+    "correction": "Correction",
+    "submitCorrection": "Submit correction",
+    "updateDraft": "Update draft",
+    "replaceMetrics": "Replace metrics",
+    "replaceAllocations": "Replace allocations",
+    "publish": "Publish",
+    "archive": "Archive",
+    "finalize": "Finalize"
+  },
+  "actionRail": {
+    "title": "KPI actions"
+  },
+  "table": {
+    "actions": "Actions"
+  },
+  "validation": {
+    "invalidPeriodMonth": "Use period month as YYYY-MM.",
+    "invalidMetricValue": "Enter a valid numeric metric value.",
+    "allocationMismatch": "Allocation total must equal plan target before publish.",
+    "invalidActualDate": "Use DD-MM-YYYY. Do not use YYYY-MM-DD or slash dates.",
+    "duplicateConflict": "An actual already exists with a different value. Use edit or correction flow.",
+    "reasonRequired": "Correction reason is required.",
+    "missingActualEntry": "Correction requires an existing actual entry."
+  },
+  "disabled": {
+    "draftEditDraftOnly": "Only draft plans can be edited.",
+    "publishDraftOnly": "Only draft plans can be published.",
+    "finalizePublishedOnly": "Only published plans can be finalized.",
+    "alreadyArchived": "Plan is already archived."
+  },
+  "confirm": {
+    "publish": "Publish this KPI plan? Targets and allocations will be locked.",
+    "archive": "Archive this KPI plan?",
+    "finalize": "Finalize this KPI plan? Finalizing locks actuals and corrections for payroll/reporting."
+  },
+  "feedback": {
+    "created": "KPI plan created.",
+    "actualSaved": "Actual cells saved.",
+    "correctionCreated": "Correction submitted.",
+    "lifecycleUpdated": "KPI lifecycle updated.",
+    "allocationsUpdated": "Allocations replaced."
+  },
+  "states": {
+    "loadErrorTitle": "Unable to load KPI",
+    "loadErrorMessage": "Unable to load KPI data."
+  }
+}

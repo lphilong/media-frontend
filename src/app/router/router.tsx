@@ -76,6 +76,11 @@ const modulePageMap: Record<string, LazyExoticComponent<LazyModuleRoute>> = {
       default: module.TalentKpiListPage,
     })),
   ),
+  kpi: lazy(() =>
+    import('@modules/kpi/pages/KpiListPage').then((module) => ({
+      default: module.KpiListPage,
+    })),
+  ),
   'revenue-ledger': lazy(() =>
     import('@modules/revenue-ledger/pages/RevenueLedgerListPage').then((module) => ({
       default: module.RevenueLedgerListPage,
@@ -152,6 +157,11 @@ const moduleDetailPageMap: Record<string, LazyExoticComponent<LazyModuleRoute>> 
   'talent-kpi': lazy(() =>
     import('@modules/talent-kpi/pages/TalentKpiDetailPage').then((module) => ({
       default: module.TalentKpiDetailPage,
+    })),
+  ),
+  kpi: lazy(() =>
+    import('@modules/kpi/pages/KpiDetailPage').then((module) => ({
+      default: module.KpiDetailPage,
     })),
   ),
   'revenue-ledger': lazy(() =>
@@ -429,6 +439,15 @@ export const appRoutes: RouteObject[] = [
           breadcrumbKey: 'work-schedule:monthlyRosters.detail.pageTitle',
           titleKey: 'work-schedule:monthlyRosters.detail.pageTitle',
           subtitleKey: 'work-schedule:monthlyRosters.detail.pageSubtitle',
+        } satisfies ModuleRouteHandle,
+      },
+      {
+        path: APP_PATHS.kpiPlans.replace(/^\//, ''),
+        element: <LazyModuleElement moduleId="kpi" />,
+        handle: {
+          breadcrumbKey: 'nav:items.kpi',
+          titleKey: 'kpi:page.title',
+          subtitleKey: 'kpi:page.subtitle',
         } satisfies ModuleRouteHandle,
       },
       ...standardModuleDefinitions.map((definition) => {
