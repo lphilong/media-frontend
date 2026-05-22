@@ -9,7 +9,7 @@
     "userId": "Người dùng",
     "code": "Mã",
     "codeOptional": "Ghi đè mã thủ công (tùy chọn)",
-    "name": "Họ và Tên",
+    "name": "Vai trò",
     "state": "Trạng thái",
     "description": "Mô tả",
     "delegationBand": "Dải ủy quyền",
@@ -31,7 +31,7 @@
     "codeOptional": "Chỉ dùng khi cần giữ khóa vai trò vận hành ổn định. Mã là định danh backend viết hoa, không phải tên hiển thị."
   },
   "templates": {
-    "templateMode": "Vai trò theo mẫu",
+    "templateMode": "Mẫu vai trò",
     "customMode": "Vai trò tùy chỉnh nâng cao",
     "roleTemplate": "Mẫu vai trò",
     "chooseTemplate": "Chọn mẫu vai trò",
@@ -55,6 +55,9 @@
   "scopePicker": {
     "assignmentScopes": "Phạm vi gán",
     "backendValidation": "Gán phạm vi ảnh hưởng quyền truy cập khi chạy. Backend từ chối phạm vi actor hiện tại không được phép cấp.",
+    "recommendedScopes": "Phạm vi được khuyến nghị",
+    "recommendedScopesHelp": "Phạm vi khuyến nghị không được gán tự động. Hãy áp dụng trước khi gửi nếu phù hợp với bản ghi gán này.",
+    "applyRecommendedScopes": "Áp dụng phạm vi khuyến nghị",
     "scopes": {
       "self": "Cá nhân",
       "team": "Nhóm",

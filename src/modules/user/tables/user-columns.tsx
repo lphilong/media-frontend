@@ -9,6 +9,7 @@ type UserListColumnHandlers = {
   onOpenDetail: (userId: string) => void;
   onLifecycleAction: (userId: string, action: UserLifecycleAction) => void;
   isActionPending?: (userId: string, action: UserLifecycleAction) => boolean;
+  getActionDisabledReason?: (action: UserLifecycleAction) => string | undefined;
 };
 
 const statusToneMap = {
@@ -17,6 +18,15 @@ const statusToneMap = {
   DISABLED: 'warning',
   ARCHIVED: 'muted',
 } as const;
+
+const authLinkageToneMap = {
+  LINKED: 'success',
+  UNLINKED: 'warning',
+  PENDING: 'neutral',
+} as const;
+
+const readAuthLinkageStatus = (record: UserListItem): 'LINKED' | 'UNLINKED' | 'PENDING' =>
+  record.authLinkage?.status ?? 'PENDING';
 
 const readLifecycleActions = (record: UserListItem): UserLifecycleAction[] => {
   if (record.accountStatus === 'PENDING') {
@@ -64,6 +74,20 @@ export const createUserListColumns = (
     ),
   },
   {
+    id: 'authLinkage',
+    header: t('user:table.authLinkage'),
+    cell: ({ row }) => {
+      const status = readAuthLinkageStatus(row.original);
+      return (
+        <StatusBadge
+          status={status}
+          label={t(`user:authLinkageStatuses.${status}`)}
+          toneByStatus={authLinkageToneMap}
+        />
+      );
+    },
+  },
+  {
     accessorKey: 'updatedAt',
     header: t('user:table.updatedAt'),
     cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
@@ -88,18 +112,26 @@ export const createUserListColumns = (
             {t('user:actions.open')}
           </button>
           {actions.map((action) => (
-            <button
-              key={action}
-              type="button"
-              className="rounded border border-border px-2 py-1 text-xs"
-              disabled={handlers.isActionPending?.(record.id, action)}
-              onClick={(event) => {
-                event.stopPropagation();
-                handlers.onLifecycleAction(record.id, action);
-              }}
-            >
-              {t(`user:actions.${action}`)}
-            </button>
+            <div key={action} className="space-y-1">
+              <button
+                type="button"
+                className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={
+                  Boolean(handlers.getActionDisabledReason?.(action)) ||
+                  handlers.isActionPending?.(record.id, action)
+                }
+                title={handlers.getActionDisabledReason?.(action)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handlers.onLifecycleAction(record.id, action);
+                }}
+              >
+                {t(`user:actions.${action}`)}
+              </button>
+              {handlers.getActionDisabledReason?.(action) ? (
+                <p className="text-xs text-muted">{handlers.getActionDisabledReason?.(action)}</p>
+              ) : null}
+            </div>
           ))}
         </div>
       );

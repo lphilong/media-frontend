@@ -12,6 +12,8 @@ import type {
   UserLifecycleAction,
   UserListItem,
   UserListQuery,
+  UserMutationResult,
+  UserProvisionPayload,
   UserUpdatePayload,
 } from '@modules/user/types/user.types';
 import { apiRequest } from '@shared/api';
@@ -26,6 +28,12 @@ const userListItemSchema = z
     email: z.string().nullable().optional(),
     actorKind: userActorKindSchema,
     accountStatus: userAccountStatusSchema,
+    authLinkage: z
+      .object({
+        status: z.enum(['LINKED', 'UNLINKED', 'PENDING']).optional(),
+      })
+      .strict()
+      .optional(),
     updatedAt: z.union([z.number(), z.string()]),
   })
   .strict();
@@ -39,6 +47,7 @@ const userDetailSchema = z
       .object({
         provider: z.literal('auth0'),
         subject: z.string().trim().min(1),
+        status: z.enum(['LINKED', 'UNLINKED', 'PENDING']).optional(),
       })
       .strict(),
     contextAccess: z
@@ -93,6 +102,31 @@ const detailResponseSchema = z
   })
   .strict();
 
+const mutationResponseSchema = z
+  .object({
+    data: userDetailSchema,
+    meta: z
+      .object({
+        provisioning: z
+          .object({
+            credentialMode: z.literal('INVITE_LINK'),
+            auth0UserCreated: z.boolean(),
+            invitationTicketCreated: z.boolean(),
+          })
+          .strict()
+          .optional(),
+        passwordSetup: z
+          .object({
+            ticketCreated: z.boolean(),
+          })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
 const sanitizeListQuery = (query: UserListQuery): Record<string, string | number | undefined> => ({
   state: query.state,
   actorKind: query.actorKind,
@@ -102,13 +136,23 @@ const sanitizeListQuery = (query: UserListQuery): Record<string, string | number
 });
 
 const sanitizeCreatePayload = (payload: UserCreatePayload): UserCreatePayload => ({
-  authSubject: payload.authSubject,
   actorKind: payload.actorKind,
   displayName: payload.displayName,
   email: payload.email,
   phone: payload.phone,
   locale: payload.locale,
   timezone: payload.timezone,
+});
+
+const sanitizeProvisionPayload = (payload: UserProvisionPayload): UserProvisionPayload => ({
+  actorKind: payload.actorKind,
+  displayName: payload.displayName,
+  email: payload.email,
+  phone: payload.phone,
+  locale: payload.locale,
+  timezone: payload.timezone,
+  credentialMode: payload.credentialMode ?? 'INVITE_LINK',
+  sendInvitation: payload.sendInvitation ?? true,
 });
 
 const sanitizeUpdatePayload = (payload: UserUpdatePayload): UserUpdatePayload => ({
@@ -150,6 +194,21 @@ export const createUser = async (payload: UserCreatePayload): Promise<UserDetail
   return detailResponseSchema.parse(response).data;
 };
 
+export const provisionUser = async (payload: UserProvisionPayload): Promise<UserMutationResult> => {
+  const response = await apiRequest<unknown, UserProvisionPayload>({
+    method: 'POST',
+    url: '/admin/users/provision',
+    data: sanitizeProvisionPayload(payload),
+  });
+
+  const parsed = mutationResponseSchema.parse(response);
+  return {
+    user: parsed.data,
+    provisioning: parsed.meta?.provisioning,
+    passwordSetup: parsed.meta?.passwordSetup,
+  };
+};
+
 export const updateUser = async (
   userId: string,
   payload: UserUpdatePayload,
@@ -161,6 +220,31 @@ export const updateUser = async (
   });
 
   return detailResponseSchema.parse(response).data;
+};
+
+export const unlinkUserAuthLinkage = async (userId: string): Promise<UserDetailRecord> => {
+  const response = await apiRequest<unknown>({
+    method: 'DELETE',
+    url: `/admin/users/${encodeURIComponent(userId)}/auth-linkage`,
+    data: {},
+  });
+
+  return detailResponseSchema.parse(response).data;
+};
+
+export const sendUserPasswordSetup = async (userId: string): Promise<UserMutationResult> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/users/${encodeURIComponent(userId)}/send-password-setup`,
+    data: {},
+  });
+
+  const parsed = mutationResponseSchema.parse(response);
+  return {
+    user: parsed.data,
+    provisioning: parsed.meta?.provisioning,
+    passwordSetup: parsed.meta?.passwordSetup,
+  };
 };
 
 export const setUserAuthLinkage = async (

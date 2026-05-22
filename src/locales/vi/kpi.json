@@ -1,26 +1,26 @@
 {
   "page": {
     "title": "KPI",
-    "subtitle": "Quản lý kế hoạch KPI V2, nhập actual, điều chỉnh và tiến độ.",
+    "subtitle": "Quản lý KPI.",
     "placeholder": "Mô-đun KPI"
   },
   "detail": {
-    "pageTitle": "Kế hoạch KPI",
-    "pageSubtitle": "Mục tiêu, phân bổ, actual, điều chỉnh và tiến độ."
+    "pageTitle": "KPI",
+    "pageSubtitle": "Mục tiêu, phân bổ, điều chỉnh và tiến độ."
   },
   "tabs": {
     "label": "Chế độ xem KPI",
     "management": "Quản lý KPI",
     "group": "KPI nhóm của tôi",
     "my": "KPI của tôi",
-    "myClosed": "KPI cá nhân dùng endpoint my-progress của backend và không hiển thị dòng của thành viên khác."
+    "myClosed": "KPI cá nhân."
   },
   "list": {
-    "title": "Kế hoạch KPI"
+    "title": "KPI"
   },
   "create": {
-    "title": "Tạo kế hoạch KPI nháp",
-    "submit": "Tạo kế hoạch nháp"
+    "title": "Tạo KPI nháp",
+    "submit": "Tạo KPI nháp"
   },
   "fields": {
     "planId": "ID kế hoạch",
@@ -40,7 +40,7 @@
     "publishedAt": "Đã publish lúc",
     "finalizedAt": "Đã chốt lúc",
     "archivedAt": "Đã lưu trữ lúc",
-    "actualDate": "Ngày actual"
+    "actualDate": "Ngày thực đạt"
   },
   "filters": {
     "search": "Tìm kiếm",
@@ -80,7 +80,7 @@
     "difference": "Chênh lệch"
   },
   "actualEntry": {
-    "title": "Nhập actual",
+    "title": "Nhập thực đạt",
     "directEdit": "Sửa trực tiếp",
     "requiresCorrection": "Cần điều chỉnh"
   },
@@ -93,10 +93,10 @@
   },
   "progress": {
     "target": "Mục tiêu",
-    "actual": "Actual",
+    "actual": "Thực đạt",
     "percent": "Tiến độ",
     "memberBreakdown": "Chi tiết thành viên",
-    "actualEntryCount": "Số actual",
+    "actualEntryCount": "Số thực đạt",
     "missingEntryCount": "Số thiếu"
   },
   "actions": {
@@ -125,10 +125,10 @@
     "invalidPeriodMonth": "Tháng KPI phải có dạng YYYY-MM.",
     "invalidMetricValue": "Nhập giá trị chỉ số hợp lệ.",
     "allocationMismatch": "Tổng phân bổ phải bằng mục tiêu kế hoạch trước khi publish.",
-    "invalidActualDate": "Dùng DD-MM-YYYY. Không dùng YYYY-MM-DD hoặc ngày có dấu gạch chéo.",
-    "duplicateConflict": "Actual đã tồn tại với giá trị khác. Hãy dùng luồng sửa hoặc điều chỉnh.",
+    "invalidActualDate": "Dùng DD-MM-YYYY.",
+    "duplicateConflict": "Số thực đạt đã tồn tại với giá trị khác. Hãy sửa hoặc điều chỉnh.",
     "reasonRequired": "Bắt buộc nhập lý do điều chỉnh.",
-    "missingActualEntry": "Điều chỉnh cần một actual đã tồn tại."
+    "missingActualEntry": "Điều chỉnh cần một số thực đạt đã tồn tại."
   },
   "disabled": {
     "draftEditDraftOnly": "Chỉ kế hoạch nháp được chỉnh sửa.",
@@ -139,11 +139,11 @@
   "confirm": {
     "publish": "Publish kế hoạch KPI này? Mục tiêu và phân bổ sẽ bị khóa.",
     "archive": "Lưu trữ kế hoạch KPI này?",
-    "finalize": "Chốt kế hoạch KPI này? Việc chốt sẽ khóa actual và điều chỉnh cho payroll/reporting."
+    "finalize": "Chốt kế hoạch KPI này? Việc chốt sẽ khóa số thực đạt và điều chỉnh cho payroll/reporting."
   },
   "feedback": {
     "created": "Đã tạo kế hoạch KPI.",
-    "actualSaved": "Đã lưu actual.",
+    "actualSaved": "Đã lưu số thực đạt.",
     "correctionCreated": "Đã gửi điều chỉnh.",
     "lifecycleUpdated": "Đã cập nhật vòng đời KPI.",
     "allocationsUpdated": "Đã thay phân bổ."

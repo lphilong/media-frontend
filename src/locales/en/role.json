@@ -55,6 +55,9 @@
   "scopePicker": {
     "assignmentScopes": "Assignment scopes",
     "backendValidation": "Assigning scopes affects runtime access. Backend rejects scopes the current actor cannot grant.",
+    "recommendedScopes": "Recommended scopes",
+    "recommendedScopesHelp": "Recommended scopes are not assigned automatically. Apply them before submitting if they fit this user assignment.",
+    "applyRecommendedScopes": "Apply recommended scopes",
     "scopes": {
       "self": "Self",
       "team": "Team",

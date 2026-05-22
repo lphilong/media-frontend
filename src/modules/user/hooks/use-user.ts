@@ -5,7 +5,10 @@ import {
   fetchUserDetail,
   fetchUsers,
   performUserLifecycleAction,
+  provisionUser,
+  sendUserPasswordSetup,
   setUserAuthLinkage,
+  unlinkUserAuthLinkage,
   updateUser,
 } from '@modules/user/api/user.api';
 import type {
@@ -13,6 +16,7 @@ import type {
   UserCreatePayload,
   UserLifecycleAction,
   UserListQuery,
+  UserProvisionPayload,
   UserUpdatePayload,
 } from '@modules/user/types/user.types';
 import { serializeScreenQueryParams, userFlatListQueryConfig } from '@shared/query';
@@ -60,6 +64,17 @@ export const useCreateUserMutation = () => {
   });
 };
 
+export const useProvisionUserMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UserProvisionPayload) => provisionUser(payload),
+    onSuccess: async () => {
+      await invalidateUserLaneQueries(queryClient);
+    },
+  });
+};
+
 export const useUpdateUserMutation = () => {
   const queryClient = useQueryClient();
 
@@ -78,6 +93,28 @@ export const useUserAuthLinkageMutation = () => {
   return useMutation({
     mutationFn: ({ userId, payload }: { userId: string; payload: UserAuthLinkagePayload }) =>
       setUserAuthLinkage(userId, payload),
+    onSuccess: async () => {
+      await invalidateUserLaneQueries(queryClient);
+    },
+  });
+};
+
+export const useUserAuthLinkageUnlinkMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId }: { userId: string }) => unlinkUserAuthLinkage(userId),
+    onSuccess: async () => {
+      await invalidateUserLaneQueries(queryClient);
+    },
+  });
+};
+
+export const useUserPasswordSetupMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId }: { userId: string }) => sendUserPasswordSetup(userId),
     onSuccess: async () => {
       await invalidateUserLaneQueries(queryClient);
     },

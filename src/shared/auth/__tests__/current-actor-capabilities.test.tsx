@@ -27,6 +27,7 @@ const capabilitiesPayload: CurrentActorCapabilities = {
   permissions: ['role:update', 'revenueLedger.update'],
   scopeGrants: {
     revenueLedger: ['global'],
+    kpi: ['managedGroup', 'self'],
     workSchedule: ['self', 'team'],
   },
   generatedAt: '2026-05-20T00:00:00.000Z',
@@ -58,6 +59,7 @@ describe('current actor capabilities', () => {
 
     expect(parsed.permissions).toEqual(['role:update', 'revenueLedger.update']);
     expect(parsed.scopeGrants.revenueLedger).toEqual(['global']);
+    expect(parsed.scopeGrants.kpi).toEqual(['managedGroup', 'self']);
     expect(() =>
       currentActorCapabilitiesSchema.parse({
         ...capabilitiesPayload,
@@ -80,6 +82,8 @@ describe('current actor capabilities', () => {
     expect(hasPermission(capabilitiesPayload, PERMISSIONS.ROLE_UPDATE)).toBe(true);
     expect(hasPermission(capabilitiesPayload, PERMISSIONS.ROLE_ARCHIVE)).toBe(false);
     expect(hasScopeGrant(capabilitiesPayload, 'revenueLedger', 'global')).toBe(true);
+    expect(hasScopeGrant(capabilitiesPayload, 'kpi', 'managedGroup')).toBe(true);
+    expect(hasScopeGrant(capabilitiesPayload, 'kpi', 'global')).toBe(false);
     expect(
       canUseAction(capabilitiesPayload, {
         permission: PERMISSIONS.REVENUE_LEDGER_UPDATE,

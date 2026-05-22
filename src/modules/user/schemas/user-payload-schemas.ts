@@ -6,13 +6,25 @@ const optionalNonEmptyString = z.string().trim().min(1).optional();
 
 export const userCreatePayloadSchema = z
   .object({
-    authSubject: z.string().trim().min(1),
     actorKind: z.enum(userActorKindValues).optional(),
     displayName: z.string().trim().min(1),
     email: optionalNonEmptyString,
     phone: optionalNonEmptyString,
     locale: optionalNonEmptyString,
     timezone: optionalNonEmptyString,
+  })
+  .strict();
+
+export const userProvisionPayloadSchema = z
+  .object({
+    actorKind: z.enum(userActorKindValues).optional(),
+    displayName: z.string().trim().min(1),
+    email: z.string().trim().min(1),
+    phone: optionalNonEmptyString,
+    locale: optionalNonEmptyString,
+    timezone: optionalNonEmptyString,
+    credentialMode: z.literal('INVITE_LINK').optional(),
+    sendInvitation: z.boolean().optional(),
   })
   .strict();
 

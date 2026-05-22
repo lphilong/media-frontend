@@ -596,6 +596,56 @@ describe('KPI MVP UX', () => {
         kpiCapabilityCopy,
       ),
     ).toEqual({ allowed: true, disabled: false });
+    expect(
+      createKpiActionCapabilityHint(
+        {
+          capabilities: makeCapabilities({
+            permissions: ['kpi.enterActual'],
+            scopeGrants: { kpi: ['managedGroup'] },
+          }),
+          isLoading: false,
+          isError: false,
+        },
+        'enterActual',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({ allowed: true, disabled: false });
+    expect(
+      createKpiActionCapabilityHint(
+        {
+          capabilities: makeCapabilities({
+            permissions: ['kpi.createPlan'],
+            scopeGrants: { kpi: ['managedGroup'] },
+          }),
+          isLoading: false,
+          isError: false,
+        },
+        'createPlan',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({
+      allowed: false,
+      disabled: true,
+      disabledReason: 'Your role assignment does not include the required scope.',
+    });
+    expect(
+      createKpiActionCapabilityHint(
+        {
+          capabilities: makeCapabilities({
+            permissions: ['kpi.enterActual'],
+            scopeGrants: { kpi: ['self'] },
+          }),
+          isLoading: false,
+          isError: false,
+        },
+        'enterActual',
+        kpiCapabilityCopy,
+      ),
+    ).toEqual({
+      allowed: false,
+      disabled: true,
+      disabledReason: 'Your role assignment does not include the required scope.',
+    });
   });
 
   it('strict API schema rejects unexpected fields', () => {

@@ -1,5 +1,6 @@
 import type {
   ActionCapabilityHint,
+  ActionCapabilityRequirement,
   CapabilityMissingReason,
   CapabilityQueryState,
 } from '@shared/auth/current-actor-capabilities';
@@ -17,19 +18,33 @@ type KpiActionAvailability = ActionCapabilityHint & {
 };
 
 const kpiMoneyActionRequirements = {
-  createPlan: {
-    permission: PERMISSIONS.KPI_CREATE_PLAN,
-    scope: { module: 'kpi', value: 'global' },
-  },
-  enterActual: {
-    permission: PERMISSIONS.KPI_ENTER_ACTUAL,
-    scope: { module: 'kpi', value: 'global' },
-  },
-  correctActual: {
-    permission: PERMISSIONS.KPI_CORRECT_ACTUAL,
-    scope: { module: 'kpi', value: 'global' },
-  },
-} satisfies Record<KpiMoneyAction, Parameters<typeof canUseAction>[1]>;
+  createPlan: [
+    {
+      permission: PERMISSIONS.KPI_CREATE_PLAN,
+      scope: { module: 'kpi', value: 'global' },
+    },
+  ],
+  enterActual: [
+    {
+      permission: PERMISSIONS.KPI_ENTER_ACTUAL,
+      scope: { module: 'kpi', value: 'global' },
+    },
+    {
+      permission: PERMISSIONS.KPI_ENTER_ACTUAL,
+      scope: { module: 'kpi', value: 'managedGroup' },
+    },
+  ],
+  correctActual: [
+    {
+      permission: PERMISSIONS.KPI_CORRECT_ACTUAL,
+      scope: { module: 'kpi', value: 'global' },
+    },
+    {
+      permission: PERMISSIONS.KPI_CORRECT_ACTUAL,
+      scope: { module: 'kpi', value: 'managedGroup' },
+    },
+  ],
+} satisfies Record<KpiMoneyAction, readonly ActionCapabilityRequirement[]>;
 
 export const createKpiActionCapabilityHint = (
   state: CapabilityQueryState,
@@ -52,8 +67,11 @@ export const createKpiActionCapabilityHint = (
     };
   }
 
-  const result = canUseAction(state.capabilities, kpiMoneyActionRequirements[action]);
-  if (result.allowed) {
+  const checks = kpiMoneyActionRequirements[action].map((requirement) =>
+    canUseAction(state.capabilities, requirement),
+  );
+  const result = checks.find((check) => check.allowed) ?? checks[0];
+  if (result?.allowed) {
     return {
       allowed: true,
       disabled: false,
@@ -63,6 +81,6 @@ export const createKpiActionCapabilityHint = (
   return {
     allowed: false,
     disabled: true,
-    disabledReason: copy[result.reason ?? 'missing-permission'],
+    disabledReason: copy[result?.reason ?? 'missing-permission'],
   };
 };

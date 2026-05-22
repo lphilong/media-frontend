@@ -7,11 +7,17 @@ import { UserBoundaryNotice } from '@modules/user/components/UserBoundaryNotice'
 import { UserAuthLinkageSurface, UserUpdateSurface } from '@modules/user/forms/user-mutation-forms';
 import {
   useUpdateUserMutation,
+  useUserAuthLinkageUnlinkMutation,
   useUserAuthLinkageMutation,
   useUserDetail,
   useUserLifecycleMutation,
+  useUserPasswordSetupMutation,
 } from '@modules/user/hooks/use-user';
-import type { UserLifecycleAction } from '@modules/user/types/user.types';
+import type {
+  UserAuthLinkageStatus,
+  UserDetailRecord,
+  UserLifecycleAction,
+} from '@modules/user/types/user.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
   ActionRail,
@@ -43,6 +49,12 @@ const statusToneMap = {
   ACTIVE: 'success',
   DISABLED: 'warning',
   ARCHIVED: 'muted',
+} as const;
+
+const authLinkageToneMap = {
+  LINKED: 'success',
+  UNLINKED: 'warning',
+  PENDING: 'neutral',
 } as const;
 
 const readErrorMessage = (
@@ -77,6 +89,9 @@ const readLifecycleConfirmKey = (action: UserLifecycleAction): string => {
 const formatOptionalTimestamp = (value?: number | string | null): string =>
   value === null || value === undefined ? '-' : formatBusinessTimestamp(value);
 
+const readAuthLinkageStatus = (record: UserDetailRecord): UserAuthLinkageStatus =>
+  record.authLinkage.status ?? 'PENDING';
+
 export const UserDetailPage = (): JSX.Element => {
   const { userId } = useParams<{ userId: string }>();
   const { t } = useTranslation(['user', 'common', 'errors']);
@@ -85,6 +100,8 @@ export const UserDetailPage = (): JSX.Element => {
   const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateUserMutation();
   const authLinkageMutation = useUserAuthLinkageMutation();
+  const authLinkageUnlinkMutation = useUserAuthLinkageUnlinkMutation();
+  const passwordSetupMutation = useUserPasswordSetupMutation();
   const lifecycleMutation = useUserLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
@@ -195,6 +212,43 @@ export const UserDetailPage = (): JSX.Element => {
     }
   };
 
+  const onUnlinkAuthLinkage = useCallback(async () => {
+    if (!record) {
+      return;
+    }
+
+    const confirmed = await requestDestructiveConfirm({
+      description: t('user:confirm.unlinkAuth0'),
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await authLinkageUnlinkMutation.mutateAsync({ userId: record.id });
+      notifySuccess('user:feedback.authLinkageUnlinked');
+    } catch (error) {
+      notifyError(error as NormalizedApiError);
+    }
+  }, [authLinkageUnlinkMutation, notifyError, notifySuccess, record, requestDestructiveConfirm, t]);
+
+  const onSendPasswordSetup = useCallback(async () => {
+    if (!record) {
+      return;
+    }
+
+    if (readAuthLinkageStatus(record) !== 'LINKED') {
+      return;
+    }
+
+    try {
+      await passwordSetupMutation.mutateAsync({ userId: record.id });
+      notifySuccess('user:feedback.passwordSetupSent');
+    } catch (error) {
+      notifyError(error as NormalizedApiError);
+    }
+  }, [notifyError, notifySuccess, passwordSetupMutation, record]);
+
   const actionItems = useMemo(() => {
     if (!record) {
       return [];
@@ -204,7 +258,14 @@ export const UserDetailPage = (): JSX.Element => {
       createUserActionRailItems(t, record, {
         onEdit: () => setActiveSurface('edit'),
         onAuthLinkage: () => setActiveSurface('auth-linkage'),
+        onUnlinkAuthLinkage,
+        onSendPasswordSetup,
         onLifecycleAction,
+        isUnlinkPending:
+          authLinkageUnlinkMutation.isPending &&
+          authLinkageUnlinkMutation.variables?.userId === record.id,
+        isPasswordSetupPending:
+          passwordSetupMutation.isPending && passwordSetupMutation.variables?.userId === record.id,
         isLifecyclePending: (action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.userId === record.id &&
@@ -227,6 +288,24 @@ export const UserDetailPage = (): JSX.Element => {
             isError: capabilitiesQuery.isError,
           },
           { permission: PERMISSIONS.USER_AUTH_LINKAGE_SET },
+          capabilityCopy,
+        ),
+        'auth-linkage-unlink': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.USER_AUTH_LINKAGE_UNLINK },
+          capabilityCopy,
+        ),
+        'password-setup-send': createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          { permission: PERMISSIONS.USER_PASSWORD_SETUP_SEND },
           capabilityCopy,
         ),
         activate: createActionCapabilityHint(
@@ -265,7 +344,13 @@ export const UserDetailPage = (): JSX.Element => {
     capabilitiesQuery.isLoading,
     lifecycleMutation.isPending,
     lifecycleMutation.variables,
+    authLinkageUnlinkMutation.isPending,
+    authLinkageUnlinkMutation.variables,
     onLifecycleAction,
+    onSendPasswordSetup,
+    onUnlinkAuthLinkage,
+    passwordSetupMutation.isPending,
+    passwordSetupMutation.variables,
     record,
     t,
   ]);
@@ -333,8 +418,20 @@ export const UserDetailPage = (): JSX.Element => {
         record ? (
           <div className="space-y-4">
             <MetadataSection title={t('user:detail.authLinkageTitle')}>
+              <div className="mb-3">
+                <StatusBadge
+                  status={readAuthLinkageStatus(record)}
+                  label={t(`user:authLinkageStatuses.${readAuthLinkageStatus(record)}`)}
+                  toneByStatus={authLinkageToneMap}
+                />
+              </div>
               <ReadOnlyFieldGrid
                 fields={[
+                  {
+                    key: 'status',
+                    label: t('user:fields.authLinkageStatus'),
+                    value: t(`user:authLinkageStatuses.${readAuthLinkageStatus(record)}`),
+                  },
                   {
                     key: 'provider',
                     label: t('user:fields.authProvider'),

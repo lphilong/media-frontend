@@ -47,6 +47,7 @@ export type RoleTemplateListItem = {
   category: string;
   permissionCount: number;
   permissions?: RolePermission[];
+  recommendedScopeGrants: RoleAssignmentScopeGrants;
   scopePlan: RoleTemplateScopePlanEntry[];
   warnings: string[];
   implementationNotes: string[];
@@ -65,16 +66,20 @@ export type RoleTemplatePreview = {
 
 export type WorkScheduleAssignmentScope = 'self' | 'team' | 'department' | 'global';
 export type GlobalAssignmentScope = 'global';
+export type KpiAssignmentScope = 'global' | 'managedGroup' | 'self';
 
 export type RoleAssignmentScopeGrants = {
   workSchedule?: WorkScheduleAssignmentScope[];
   eventAssignment?: GlobalAssignmentScope[];
   contractRegistry?: GlobalAssignmentScope[];
   talentKpi?: GlobalAssignmentScope[];
+  kpi?: KpiAssignmentScope[];
   revenueLedger?: GlobalAssignmentScope[];
   commission?: GlobalAssignmentScope[];
   dashboardLite?: GlobalAssignmentScope[];
 };
+
+export type RoleAssignmentScopeModule = keyof RoleAssignmentScopeGrants;
 
 export type RoleAssignmentRule = {
   id?: string;

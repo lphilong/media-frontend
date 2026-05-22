@@ -15,6 +15,7 @@ import type {
   UserAuthLinkagePayload,
   UserCreatePayload,
   UserDetailRecord,
+  UserProvisionPayload,
   UserUpdatePayload,
 } from '@modules/user/types/user.types';
 import { FormGrid, SelectField, TextInputField } from '@shared/forms';
@@ -27,6 +28,10 @@ type BaseMutationSurfaceProps = {
 
 type UserCreateSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: UserCreatePayload) => Promise<void> | void;
+};
+
+type UserProvisionSurfaceProps = BaseMutationSurfaceProps & {
+  onSubmit: (payload: UserProvisionPayload) => Promise<void> | void;
 };
 
 type UserUpdateSurfaceProps = BaseMutationSurfaceProps & {
@@ -66,10 +71,19 @@ const applySchemaErrors = <TValues extends FieldValues>(
 
 const createUserCreateSchema = (requiredMessage: string, maxMessage: string) =>
   z.object({
-    authSubject: z.string().trim().min(1, requiredMessage),
     actorKind: z.enum(userActorKindValues).optional(),
     displayName: z.string().trim().min(1, requiredMessage).max(128, maxMessage),
     email: z.string().trim(),
+    phone: z.string().trim(),
+    locale: z.enum(USER_LOCALE_OPTIONS).or(z.literal('')),
+    timezone: z.enum(USER_TIMEZONE_OPTIONS),
+  });
+
+const createUserProvisionSchema = (requiredMessage: string, maxMessage: string) =>
+  z.object({
+    actorKind: z.enum(userActorKindValues).optional(),
+    displayName: z.string().trim().min(1, requiredMessage).max(128, maxMessage),
+    email: z.string().trim().email(requiredMessage),
     phone: z.string().trim(),
     locale: z.enum(USER_LOCALE_OPTIONS).or(z.literal('')),
     timezone: z.enum(USER_TIMEZONE_OPTIONS),
@@ -124,7 +138,6 @@ const buildChangedUpdatePayload = (
 };
 
 type UserCreateFormValues = {
-  authSubject: string;
   actorKind: UserActorKind;
   displayName: string;
   email: string;
@@ -132,6 +145,8 @@ type UserCreateFormValues = {
   locale: string;
   timezone: string;
 };
+
+type UserProvisionFormValues = UserCreateFormValues;
 
 type UserUpdateFormValues = {
   displayName: string;
@@ -151,7 +166,6 @@ export const UserCreateSurface = ({
   const { t } = useTranslation(['user', 'common']);
   const form = useForm<UserCreateFormValues>({
     defaultValues: {
-      authSubject: '',
       actorKind: 'STAFF',
       displayName: '',
       email: '',
@@ -196,12 +210,11 @@ export const UserCreateSurface = ({
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
     if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'authSubject');
+      applySchemaErrors(form.setError, parsed.error, 'displayName');
       return;
     }
 
     await onSubmit({
-      authSubject: parsed.data.authSubject,
       actorKind: parsed.data.actorKind,
       displayName: parsed.data.displayName,
       email: nonEmptyOptionalText(parsed.data.email),
@@ -258,16 +271,134 @@ export const UserCreateSurface = ({
             />
           </FormGrid>
         </section>
+      </ModuleMutationSurface>
+    </FormProvider>
+  );
+};
+
+export const UserProvisionSurface = ({
+  onCancel,
+  onSubmit,
+  isPending = false,
+}: UserProvisionSurfaceProps): JSX.Element => {
+  const { t } = useTranslation(['user', 'common']);
+  const form = useForm<UserProvisionFormValues>({
+    defaultValues: {
+      actorKind: 'STAFF',
+      displayName: '',
+      email: '',
+      phone: '',
+      locale: '',
+      timezone: DEFAULT_USER_TIMEZONE,
+    },
+  });
+
+  const schema = useMemo(
+    () => createUserProvisionSchema(t('user:validation.required'), t('user:validation.maxText')),
+    [t],
+  );
+
+  const actorKindOptions = useMemo(
+    () =>
+      userActorKindValues.map((value) => ({
+        value,
+        label: t(`user:actorKinds.${value}`),
+      })),
+    [t],
+  );
+
+  const localeOptions = useMemo(
+    () =>
+      USER_LOCALE_OPTIONS.map((value) => ({
+        value,
+        label: t(`common:locales.${value}`),
+      })),
+    [t],
+  );
+
+  const timezoneOptions = useMemo(
+    () =>
+      USER_TIMEZONE_OPTIONS.map((value) => ({
+        value,
+        label: value,
+      })),
+    [],
+  );
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      applySchemaErrors(form.setError, parsed.error, 'email');
+      return;
+    }
+
+    await onSubmit({
+      actorKind: parsed.data.actorKind,
+      displayName: parsed.data.displayName,
+      email: parsed.data.email,
+      phone: nonEmptyOptionalText(parsed.data.phone),
+      locale: nonEmptyOptionalText(parsed.data.locale),
+      timezone: nonEmptyOptionalText(parsed.data.timezone),
+      credentialMode: 'INVITE_LINK',
+      sendInvitation: true,
+    });
+  });
+
+  return (
+    <FormProvider {...form}>
+      <ModuleMutationSurface
+        title={t('user:mutations.provision.title')}
+        subtitle={t('user:mutations.provision.subtitle')}
+        kind="create"
+        submitLabel={t('user:mutations.provision.submit')}
+        pendingLabel={t('user:mutations.provision.pending')}
+        cancelLabel={t('common:actions.cancel')}
+        onCancel={onCancel}
+        onSubmit={(event) => void handleSubmit(event)}
+        isPending={isPending}
+      >
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-text">{t('user:sections.authLinkage')}</h3>
+          <h3 className="text-sm font-semibold text-text">{t('user:sections.profile')}</h3>
           <FormGrid columns={2}>
             <TextInputField
-              name="authSubject"
-              label={t('user:fields.authSubject')}
-              helperText={t('user:help.authSubjectRequired')}
+              name="email"
+              type="email"
+              label={t('user:fields.email')}
+              helperText={t('user:help.provisionEmail')}
+            />
+            <TextInputField
+              name="displayName"
+              label={t('user:fields.displayName')}
+              helperText={t('user:help.displayName')}
+            />
+            <SelectField
+              name="actorKind"
+              label={t('user:fields.actorKind')}
+              options={actorKindOptions}
+            />
+            <TextInputField name="phone" type="tel" label={t('user:fields.phone')} />
+          </FormGrid>
+        </section>
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-text">{t('user:sections.preferences')}</h3>
+          <FormGrid columns={2}>
+            <SelectField
+              name="locale"
+              label={t('user:fields.locale')}
+              options={localeOptions}
+              placeholder={t('user:placeholders.locale')}
+            />
+            <SelectField
+              name="timezone"
+              label={t('user:fields.timezone')}
+              options={timezoneOptions}
+              helperText={t('user:help.timezone')}
             />
           </FormGrid>
         </section>
+        <div className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+          {t('user:help.employmentProfileLater')}
+        </div>
       </ModuleMutationSurface>
     </FormProvider>
   );

@@ -8,15 +8,25 @@ import {
   userAccountStatusValues,
   userActorKindValues,
 } from '@modules/user/constants/user.constants';
-import { UserCreateSurface } from '@modules/user/forms/user-mutation-forms';
+import { UserProvisionSurface } from '@modules/user/forms/user-mutation-forms';
 import {
-  useCreateUserMutation,
+  useProvisionUserMutation,
   useUserLifecycleMutation,
   useUserList,
 } from '@modules/user/hooks/use-user';
 import { createUserListColumns } from '@modules/user/tables/user-columns';
-import type { UserLifecycleAction, UserListQuery } from '@modules/user/types/user.types';
+import type {
+  UserLifecycleAction,
+  UserListQuery,
+  UserMutationResult,
+} from '@modules/user/types/user.types';
 import type { NormalizedApiError } from '@shared/api';
+import {
+  createActionCapabilityHint,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type CapabilityMissingReason,
+} from '@shared/auth/current-actor-capabilities';
 import {
   AdminTableShell,
   CursorPager,
@@ -72,12 +82,14 @@ export const UserListPage = (): JSX.Element => {
   const navigate = useNavigate();
   const { query, patchQuery } = useRouteQueryState(userFlatListQueryConfig);
   const listQueryResult = useUserList(query);
-  const createMutation = useCreateUserMutation();
+  const capabilitiesQuery = useCurrentActorCapabilities();
+  const provisionMutation = useProvisionUserMutation();
   const lifecycleMutation = useUserLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [lastProvisionResult, setLastProvisionResult] = useState<UserMutationResult | null>(null);
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(
@@ -102,14 +114,47 @@ export const UserListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
+  const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
+    () => ({
+      loading: t('common:capabilities.checkingPermissions'),
+      'missing-permission': t('common:capabilities.missingPermission'),
+      'missing-scope': t('common:capabilities.missingScope'),
+    }),
+    [t],
+  );
+
+  const provisionCapability = createActionCapabilityHint(
+    {
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    },
+    { permission: PERMISSIONS.USER_PROVISION_ACCOUNT },
+    capabilityCopy,
+  );
+
   const pageActions = (
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen ? t('user:actions.closeCreate') : t('user:actions.create')}
-    </button>
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={() => {
+          setIsCreateOpen((current) => !current);
+          setLastProvisionResult(null);
+        }}
+        disabled={provisionCapability.disabled}
+        aria-describedby={
+          provisionCapability.disabledReason ? 'user-provision-disabled' : undefined
+        }
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isCreateOpen ? t('user:actions.closeProvision') : t('user:actions.provisionAccount')}
+      </button>
+      {provisionCapability.disabledReason ? (
+        <p id="user-provision-disabled" className="text-xs text-muted">
+          {provisionCapability.disabledReason}
+        </p>
+      ) : null}
+    </div>
   );
 
   usePageActions(pageActions);
@@ -136,10 +181,13 @@ export const UserListPage = (): JSX.Element => {
     });
   };
 
-  const onCreateSubmit = async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
+  const onProvisionSubmit = async (
+    payload: Parameters<typeof provisionMutation.mutateAsync>[0],
+  ) => {
     try {
-      await createMutation.mutateAsync(payload);
-      notifySuccess('user:feedback.created');
+      const result = await provisionMutation.mutateAsync(payload);
+      setLastProvisionResult(result);
+      notifySuccess('user:feedback.provisioned');
       setIsCreateOpen(false);
     } catch (error) {
       notifyError(error as NormalizedApiError);
@@ -171,12 +219,39 @@ export const UserListPage = (): JSX.Element => {
       createUserListColumns(t, {
         onOpenDetail: (userId) => navigate(APP_PATHS.userDetail(userId)),
         onLifecycleAction,
+        getActionDisabledReason: (action) => {
+          const permission =
+            action === 'activate'
+              ? PERMISSIONS.USER_ACTIVATE
+              : action === 'disable'
+                ? PERMISSIONS.USER_DISABLE
+                : PERMISSIONS.USER_ARCHIVE;
+          return createActionCapabilityHint(
+            {
+              capabilities: capabilitiesQuery.data,
+              isLoading: capabilitiesQuery.isLoading,
+              isError: capabilitiesQuery.isError,
+            },
+            { permission },
+            capabilityCopy,
+          ).disabledReason;
+        },
         isActionPending: (userId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.userId === userId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      capabilitiesQuery.data,
+      capabilitiesQuery.isError,
+      capabilitiesQuery.isLoading,
+      capabilityCopy,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -255,11 +330,32 @@ export const UserListPage = (): JSX.Element => {
       interactionSection={
         <>
           {isCreateOpen ? (
-            <UserCreateSurface
-              isPending={createMutation.isPending}
+            <UserProvisionSurface
+              isPending={provisionMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}
-              onSubmit={onCreateSubmit}
+              onSubmit={onProvisionSubmit}
             />
+          ) : null}
+          {lastProvisionResult ? (
+            <div className="rounded border border-border bg-panel p-3 text-sm">
+              <h3 className="font-semibold text-text">{t('user:provisionResult.title')}</h3>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
+                <li>{t('user:provisionResult.userCreated')}</li>
+                <li>
+                  {lastProvisionResult.provisioning?.auth0UserCreated
+                    ? t('user:provisionResult.auth0Linked')
+                    : t('user:provisionResult.auth0ExistingLinked')}
+                </li>
+                <li>
+                  {lastProvisionResult.provisioning?.invitationTicketCreated ||
+                  lastProvisionResult.passwordSetup?.ticketCreated
+                    ? t('user:provisionResult.passwordSetupSent')
+                    : t('user:provisionResult.passwordSetupNotCreated')}
+                </li>
+                <li>{t('user:provisionResult.noTicketUrl')}</li>
+                <li>{t('user:provisionResult.pendingUntilActivated')}</li>
+              </ul>
+            </div>
           ) : null}
         </>
       }

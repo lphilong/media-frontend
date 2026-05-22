@@ -22,6 +22,7 @@ import {
   useRolePermissionMatrix,
   useRolePermissionReplacementMutation,
   useRoleRevokeAssignmentMutation,
+  useRoleTemplates,
   useUpdateRoleMutation,
 } from '@modules/role/hooks/use-role';
 import { createRoleAssignmentColumns } from '@modules/role/tables/role-columns';
@@ -126,6 +127,7 @@ export const RoleDetailPage = (): JSX.Element => {
   const detailQuery = useRoleDetail(roleId);
   const assignmentsQuery = useRoleAssignments(roleId, query);
   const permissionMatrixQuery = useRolePermissionMatrix(roleId);
+  const roleTemplatesQuery = useRoleTemplates();
   const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateRoleMutation();
   const lifecycleMutation = useRoleLifecycleMutation();
@@ -496,6 +498,10 @@ export const RoleDetailPage = (): JSX.Element => {
   );
 
   const matrix = permissionMatrixQuery.data;
+  const recommendedScopeGrants = record?.templateCode
+    ? roleTemplatesQuery.data?.find((template) => template.code === record.templateCode)
+        ?.recommendedScopeGrants
+    : undefined;
 
   return (
     <ModuleDetailScreenShell
@@ -686,6 +692,7 @@ export const RoleDetailPage = (): JSX.Element => {
             {activeSurface === 'assign-to-user' ? (
               <RoleAssignUserSurface
                 isPending={assignToUserMutation.isPending}
+                recommendedScopeGrants={recommendedScopeGrants}
                 onCancel={() => setActiveSurface(null)}
                 onSubmit={onAssignToUserSubmit}
               />

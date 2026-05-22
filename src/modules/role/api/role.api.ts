@@ -74,6 +74,23 @@ const roleTemplateScopePlanEntrySchema = z
   })
   .strict();
 
+const workScheduleScopeGrantSchema = z.enum(['self', 'team', 'department', 'global']);
+const globalScopeGrantSchema = z.enum(['global']);
+const kpiScopeGrantSchema = z.enum(['global', 'managedGroup', 'self']);
+
+export const roleAssignmentScopeGrantsSchema = z
+  .object({
+    workSchedule: z.array(workScheduleScopeGrantSchema).optional(),
+    eventAssignment: z.array(globalScopeGrantSchema).optional(),
+    contractRegistry: z.array(globalScopeGrantSchema).optional(),
+    talentKpi: z.array(globalScopeGrantSchema).optional(),
+    kpi: z.array(kpiScopeGrantSchema).optional(),
+    revenueLedger: z.array(globalScopeGrantSchema).optional(),
+    commission: z.array(globalScopeGrantSchema).optional(),
+    dashboardLite: z.array(globalScopeGrantSchema).optional(),
+  })
+  .strict();
+
 export const roleTemplateSchema = z
   .object({
     code: roleTemplateCodeSchema,
@@ -83,6 +100,7 @@ export const roleTemplateSchema = z
     category: z.string().trim().min(1),
     permissionCount: z.number().int().nonnegative(),
     permissions: z.array(permissionSchema).optional(),
+    recommendedScopeGrants: roleAssignmentScopeGrantsSchema,
     scopePlan: z.array(roleTemplateScopePlanEntrySchema),
     warnings: z.array(z.string()),
     implementationNotes: z.array(z.string()),
@@ -99,21 +117,6 @@ const roleTemplatePreviewSchema = z
     scopePlan: z.array(roleTemplateScopePlanEntrySchema),
     warnings: z.array(z.string()),
     unsupportedScopeNotes: z.array(z.string()),
-  })
-  .strict();
-
-const workScheduleScopeGrantSchema = z.enum(['self', 'team', 'department', 'global']);
-const globalScopeGrantSchema = z.enum(['global']);
-
-export const roleAssignmentScopeGrantsSchema = z
-  .object({
-    workSchedule: z.array(workScheduleScopeGrantSchema).optional(),
-    eventAssignment: z.array(globalScopeGrantSchema).optional(),
-    contractRegistry: z.array(globalScopeGrantSchema).optional(),
-    talentKpi: z.array(globalScopeGrantSchema).optional(),
-    revenueLedger: z.array(globalScopeGrantSchema).optional(),
-    commission: z.array(globalScopeGrantSchema).optional(),
-    dashboardLite: z.array(globalScopeGrantSchema).optional(),
   })
   .strict();
 
@@ -475,6 +478,9 @@ const normalizeScopeGrantsForPayload = (
   }
   if ((parsed.talentKpi?.length ?? 0) > 0) {
     normalized.talentKpi = parsed.talentKpi;
+  }
+  if ((parsed.kpi?.length ?? 0) > 0) {
+    normalized.kpi = parsed.kpi;
   }
   if ((parsed.revenueLedger?.length ?? 0) > 0) {
     normalized.revenueLedger = parsed.revenueLedger;

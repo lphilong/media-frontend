@@ -9,6 +9,17 @@ export type UserAccountStatus = (typeof userAccountStatusValues)[number];
 export type UserActorKind = (typeof userActorKindValues)[number];
 export type UserLifecycleAction = (typeof userLifecycleActionValues)[number];
 export type UserPermissionLiteral = (typeof USER_PERMISSION_LITERALS)[number];
+export type UserAuthLinkageStatus = 'LINKED' | 'UNLINKED' | 'PENDING';
+
+export type UserAuthLinkage = {
+  provider: 'auth0';
+  subject: string;
+  status?: UserAuthLinkageStatus;
+};
+
+export type UserListAuthLinkage = {
+  status?: UserAuthLinkageStatus;
+};
 
 export type UserListItem = {
   id: string;
@@ -16,6 +27,7 @@ export type UserListItem = {
   email?: string | null;
   actorKind: UserActorKind;
   accountStatus: UserAccountStatus;
+  authLinkage?: UserListAuthLinkage;
   updatedAt: number | string;
 };
 
@@ -23,10 +35,7 @@ export type UserDetailRecord = {
   id: string;
   accountStatus: UserAccountStatus;
   actorKind: UserActorKind;
-  authLinkage: {
-    provider: 'auth0';
-    subject: string;
-  };
+  authLinkage: UserAuthLinkage;
   contextAccess: {
     contexts: Array<{ context: 'ADMIN' }>;
   };
@@ -55,13 +64,18 @@ export type UserListQuery = {
 };
 
 export type UserCreatePayload = {
-  authSubject: string;
   actorKind?: UserActorKind;
   displayName: string;
   email?: string;
   phone?: string;
   locale?: string;
   timezone?: string;
+};
+
+export type UserProvisionPayload = UserCreatePayload & {
+  email: string;
+  credentialMode?: 'INVITE_LINK';
+  sendInvitation?: boolean;
 };
 
 export type UserUpdatePayload = {
@@ -75,6 +89,22 @@ export type UserUpdatePayload = {
 export type UserAuthLinkagePayload = {
   provider: 'auth0';
   subject: string;
+};
+
+export type UserProvisionMetadata = {
+  credentialMode: 'INVITE_LINK';
+  auth0UserCreated: boolean;
+  invitationTicketCreated: boolean;
+};
+
+export type UserPasswordSetupMetadata = {
+  ticketCreated: boolean;
+};
+
+export type UserMutationResult = {
+  user: UserDetailRecord;
+  provisioning?: UserProvisionMetadata;
+  passwordSetup?: UserPasswordSetupMetadata;
 };
 
 export type CursorPagedResponse<TData> = {

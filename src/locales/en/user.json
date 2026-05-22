@@ -8,6 +8,7 @@
     "id": "User id",
     "authSubject": "Auth0 subject",
     "authProvider": "Provider",
+    "authLinkageStatus": "Auth linkage status",
     "actorKind": "Actor kind",
     "accountStatus": "Status",
     "displayName": "Display name",
@@ -25,13 +26,15 @@
   "sections": {
     "profile": "Profile",
     "preferences": "Preferences",
-    "authLinkage": "Advanced auth linkage"
+    "authLinkage": "Auth0 linkage"
   },
   "help": {
     "displayName": "Human-readable user name shown in admin screens.",
     "timezone": "Defaults to the Vietnam business timezone for new users.",
     "authSubjectRequired": "Links this user to an external Auth0 identity. Required by the current backend contract and must match the external subject exactly.",
-    "authSubjectExact": "Must match the external Auth0 identity subject exactly."
+    "authSubjectExact": "Must match the external Auth0 identity subject exactly.",
+    "provisionEmail": "The backend provisions the Auth0 account and invite flow for this email.",
+    "employmentProfileLater": "Employment Profile selection is handled in a later flow; this form only provisions the internal user account."
   },
   "placeholders": {
     "locale": "No preference",
@@ -47,12 +50,18 @@
     "DISABLED": "Disabled",
     "ARCHIVED": "Archived"
   },
+  "authLinkageStatuses": {
+    "LINKED": "Linked",
+    "UNLINKED": "Unlinked",
+    "PENDING": "Pending"
+  },
   "table": {
     "caption": "Users",
     "displayName": "Display name",
     "email": "Email",
     "actorKind": "Actor kind",
     "accountStatus": "Status",
+    "authLinkage": "Auth linkage",
     "updatedAt": "Updated",
     "actions": "Actions"
   },
@@ -66,9 +75,14 @@
   "actions": {
     "open": "Open",
     "create": "Create user",
+    "provisionAccount": "Provision account",
     "closeCreate": "Close create",
+    "closeProvision": "Close provision",
     "edit": "Edit profile",
     "setAuthLinkage": "Set Auth0 linkage",
+    "linkAuth0": "Link Auth0",
+    "unlinkAuth0": "Unlink Auth0",
+    "sendPasswordSetup": "Send password setup",
     "activate": "Activate",
     "disable": "Disable",
     "archive": "Archive"
@@ -90,6 +104,12 @@
       "submit": "Create user",
       "pending": "Creating user"
     },
+    "provision": {
+      "title": "Provision account",
+      "subtitle": "Creates the internal user and asks the backend to create or link Auth0 with an invite/password setup flow.",
+      "submit": "Provision account",
+      "pending": "Provisioning account"
+    },
     "update": {
       "title": "Update profile and preferences",
       "subtitle": "Only changed supported profile and preference fields are submitted.",
@@ -106,18 +126,33 @@
   "validation": {
     "required": "This field is required.",
     "maxText": "Text is too long.",
-    "noChangedFields": "Change at least one supported field."
+    "noChangedFields": "Change at least one supported field.",
+    "passwordSetupRequiresLinked": "Password setup requires a linked Auth0 identity."
   },
   "confirm": {
     "activate": "Activate this user if backend blockers allow it.",
     "disable": "Disable this user. The backend may reject current-actor or governance recovery blockers.",
-    "archive": "Archive this user. Active users cannot be archived."
+    "archive": "Archive this user. Active users cannot be archived.",
+    "unlinkAuth0": "Unlink Auth0 for this user. The account may remain pending or unlinked until backend lifecycle rules allow activation."
   },
   "feedback": {
     "created": "User created.",
+    "provisioned": "Account provisioned.",
     "updated": "User updated.",
     "authLinkageUpdated": "Auth0 linkage metadata updated.",
+    "authLinkageUnlinked": "Auth0 linkage removed.",
+    "passwordSetupSent": "Password setup sent.",
     "lifecycleUpdated": "User lifecycle updated."
+  },
+  "provisionResult": {
+    "title": "Provision result",
+    "userCreated": "User created.",
+    "auth0Linked": "Auth0 linked.",
+    "auth0ExistingLinked": "Existing Auth0 user linked.",
+    "passwordSetupSent": "Password setup sent.",
+    "passwordSetupNotCreated": "Password setup was not created.",
+    "noTicketUrl": "No ticket URL is shown.",
+    "pendingUntilActivated": "Account will remain pending until activated."
   },
   "states": {
     "emptyTitle": "No users found",

@@ -125,6 +125,9 @@ const roleTemplateCatalog: RoleTemplateListItem[] = [
     description: 'Team operations preset',
     category: 'MANAGEMENT',
     permissionCount: 2,
+    recommendedScopeGrants: {
+      kpi: ['managedGroup'],
+    },
     scopePlan: [
       {
         module: 'Work Schedule',
@@ -398,6 +401,7 @@ describe('role IA-1 query and payload shaping', () => {
       reason: 'Scoped coverage',
       scopeGrants: {
         workSchedule: ['self', 'team', 'department', 'global'],
+        kpi: ['global', 'managedGroup', 'self'],
         dashboardLite: ['global'],
       },
     });
@@ -410,6 +414,7 @@ describe('role IA-1 query and payload shaping', () => {
           reason: 'Scoped coverage',
           scopeGrants: {
             workSchedule: ['self', 'team', 'department', 'global'],
+            kpi: ['global', 'managedGroup', 'self'],
             dashboardLite: ['global'],
           },
         },
@@ -540,7 +545,9 @@ describe('role IA-1 query and payload shaping', () => {
       />,
     );
     await user.selectOptions(
-      screen.getByLabelText(i18n.t('role:templates.roleTemplate')),
+      within(templateRender.container).getByRole('combobox', {
+        name: i18n.t('role:templates.roleTemplate'),
+      }),
       'TEAM_MANAGER',
     );
     expect(
@@ -637,14 +644,29 @@ describe('role IA-1 query and payload shaping', () => {
 
     const scopedAssignRender = render(
       <MemoryRouter>
-        <RoleAssignUserSurface onCancel={() => undefined} onSubmit={onAssign} />
+        <RoleAssignUserSurface
+          onCancel={() => undefined}
+          onSubmit={onAssign}
+          recommendedScopeGrants={{
+            workSchedule: ['team'],
+            kpi: ['global', 'managedGroup', 'self'],
+          }}
+        />
       </MemoryRouter>,
     );
     await selectPickerOption(user, 'role-assignment-user', /Admin User/);
+    expect(screen.getByText(i18n.t('role:scopePicker.recommendedScopes'))).toBeInTheDocument();
+    expect(screen.getByText(/kpi\.global, kpi\.managedGroup, kpi\.self/u)).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('role:scopePicker.applyRecommendedScopes'),
+      }),
+    );
+    expect(screen.getByLabelText('kpi.global')).toBeChecked();
+    expect(screen.getByLabelText('kpi.managedGroup')).toBeChecked();
+    expect(screen.getByLabelText('kpi.self')).toBeChecked();
     await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.self')));
-    await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.team')));
     await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.department')));
-    await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.global')));
     await user.click(
       screen.getByLabelText(`Dashboard Lite: ${i18n.t('role:scopePicker.scopes.global')}`),
     );
@@ -655,7 +677,8 @@ describe('role IA-1 query and payload shaping', () => {
       userId: 'user-admin',
       reason: null,
       scopeGrants: {
-        workSchedule: ['self', 'team', 'department', 'global'],
+        workSchedule: ['self', 'team', 'department'],
+        kpi: ['global', 'managedGroup', 'self'],
         dashboardLite: ['global'],
       },
     });
@@ -736,6 +759,7 @@ describe('role IA-1 query and payload shaping', () => {
           eventAssignment: ['global'],
           contractRegistry: ['global'],
           talentKpi: ['global'],
+          kpi: ['global', 'managedGroup', 'self'],
           revenueLedger: ['global'],
           commission: ['global'],
           dashboardLite: ['global'],

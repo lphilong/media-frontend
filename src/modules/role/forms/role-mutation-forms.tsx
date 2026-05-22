@@ -33,6 +33,7 @@ import type {
   RoleTemplatePreview,
   RoleUpdatePayload,
   WorkScheduleAssignmentScope,
+  KpiAssignmentScope,
 } from '@modules/role/types/role.types';
 import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import {
@@ -80,6 +81,7 @@ type RoleLifecycleReasonSurfaceProps = BaseMutationSurfaceProps & {
 
 type RoleAssignUserSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: RoleAssignToUserPayload) => Promise<void> | void;
+  recommendedScopeGrants?: RoleAssignmentScopeGrants;
 };
 
 type RoleRevokeAssignmentSurfaceProps = BaseMutationSurfaceProps & {
@@ -126,6 +128,7 @@ type RoleAssignUserFormValues = {
     eventAssignment: boolean;
     contractRegistry: boolean;
     talentKpi: boolean;
+    kpi: Record<KpiAssignmentScope, boolean>;
     revenueLedger: boolean;
     commission: boolean;
     dashboardLite: boolean;
@@ -175,6 +178,7 @@ const scopeModuleLabels = {
   eventAssignment: 'Event Assignment',
   contractRegistry: 'Contract Registry',
   talentKpi: 'Talent KPI',
+  kpi: 'KPI',
   revenueLedger: 'Revenue Ledger',
   commission: 'Commission',
   dashboardLite: 'Dashboard Lite',
@@ -186,6 +190,7 @@ const workScheduleScopeValues: WorkScheduleAssignmentScope[] = [
   'department',
   'global',
 ];
+const kpiScopeValues: KpiAssignmentScope[] = ['global', 'managedGroup', 'self'];
 
 const toTitle = (value: string): string => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 
@@ -211,6 +216,10 @@ const buildScopeGrants = (
   }
   if (values.talentKpi) {
     scopeGrants.talentKpi = ['global'];
+  }
+  const selectedKpi = kpiScopeValues.filter((scope) => values.kpi[scope]);
+  if (selectedKpi.length > 0) {
+    scopeGrants.kpi = selectedKpi;
   }
   if (values.revenueLedger) {
     scopeGrants.revenueLedger = ['global'];
@@ -338,6 +347,24 @@ const useMaxDelegatableBandOptions = () => {
 
 const formatRulesJson = (rules: RoleAssignmentRule[]): string =>
   rules.length === 0 ? '' : JSON.stringify(rules, null, 2);
+
+const formatRecommendedScopeGrants = (scopeGrants?: RoleAssignmentScopeGrants): string => {
+  if (!scopeGrants || Object.keys(scopeGrants).length === 0) {
+    return '-';
+  }
+
+  return Object.entries(scopeGrants)
+    .flatMap(([module, scopes]) =>
+      scopes && scopes.length > 0
+        ? [
+            `${scopeModuleLabels[module as keyof typeof scopeModuleLabels] ?? module}: ${scopes
+              .map((scope) => (module === 'kpi' ? `kpi.${scope}` : scope))
+              .join(', ')}`,
+          ]
+        : [],
+    )
+    .join('; ');
+};
 
 export const RoleCreateSurface = ({
   onCancel,
@@ -844,6 +871,7 @@ export const RoleLifecycleReasonSurface = ({
 export const RoleAssignUserSurface = ({
   onCancel,
   onSubmit,
+  recommendedScopeGrants,
   isPending = false,
 }: RoleAssignUserSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['role', 'common']);
@@ -861,6 +889,11 @@ export const RoleAssignUserSurface = ({
         eventAssignment: false,
         contractRegistry: false,
         talentKpi: false,
+        kpi: {
+          global: false,
+          managedGroup: false,
+          self: false,
+        },
         revenueLedger: false,
         commission: false,
         dashboardLite: false,
@@ -886,6 +919,58 @@ export const RoleAssignUserSurface = ({
       ...(scopeGrants ? { scopeGrants } : {}),
     });
   });
+
+  const applyRecommendedScopeGrants = (): void => {
+    form.setValue(
+      'scopeGrants.workSchedule.self',
+      Boolean(recommendedScopeGrants?.workSchedule?.includes('self')),
+    );
+    form.setValue(
+      'scopeGrants.workSchedule.team',
+      Boolean(recommendedScopeGrants?.workSchedule?.includes('team')),
+    );
+    form.setValue(
+      'scopeGrants.workSchedule.department',
+      Boolean(recommendedScopeGrants?.workSchedule?.includes('department')),
+    );
+    form.setValue(
+      'scopeGrants.workSchedule.global',
+      Boolean(recommendedScopeGrants?.workSchedule?.includes('global')),
+    );
+    form.setValue(
+      'scopeGrants.eventAssignment',
+      Boolean(recommendedScopeGrants?.eventAssignment?.includes('global')),
+    );
+    form.setValue(
+      'scopeGrants.contractRegistry',
+      Boolean(recommendedScopeGrants?.contractRegistry?.includes('global')),
+    );
+    form.setValue(
+      'scopeGrants.talentKpi',
+      Boolean(recommendedScopeGrants?.talentKpi?.includes('global')),
+    );
+    form.setValue(
+      'scopeGrants.kpi.global',
+      Boolean(recommendedScopeGrants?.kpi?.includes('global')),
+    );
+    form.setValue(
+      'scopeGrants.kpi.managedGroup',
+      Boolean(recommendedScopeGrants?.kpi?.includes('managedGroup')),
+    );
+    form.setValue('scopeGrants.kpi.self', Boolean(recommendedScopeGrants?.kpi?.includes('self')));
+    form.setValue(
+      'scopeGrants.revenueLedger',
+      Boolean(recommendedScopeGrants?.revenueLedger?.includes('global')),
+    );
+    form.setValue(
+      'scopeGrants.commission',
+      Boolean(recommendedScopeGrants?.commission?.includes('global')),
+    );
+    form.setValue(
+      'scopeGrants.dashboardLite',
+      Boolean(recommendedScopeGrants?.dashboardLite?.includes('global')),
+    );
+  };
 
   return (
     <FormProvider {...form}>
@@ -917,6 +1002,26 @@ export const RoleAssignUserSurface = ({
               {t('role:scopePicker.assignmentScopes')}
             </h4>
             <p className="text-xs text-muted">{t('role:scopePicker.backendValidation')}</p>
+          </div>
+          <div className="rounded border border-border bg-panel p-3 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h5 className="font-semibold text-text">
+                  {t('role:scopePicker.recommendedScopes')}
+                </h5>
+                <p className="text-xs text-muted">{t('role:scopePicker.recommendedScopesHelp')}</p>
+              </div>
+              <button
+                type="button"
+                className="rounded border border-border px-2 py-1 text-xs"
+                onClick={applyRecommendedScopeGrants}
+              >
+                {t('role:scopePicker.applyRecommendedScopes')}
+              </button>
+            </div>
+            <p className="mt-2 font-mono text-xs text-text">
+              {formatRecommendedScopeGrants(recommendedScopeGrants)}
+            </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2 rounded border border-border bg-panel p-3">
@@ -950,6 +1055,20 @@ export const RoleAssignUserSurface = ({
                 />
               </div>
             ))}
+            <div className="space-y-2 rounded border border-border bg-panel p-3">
+              <div className="text-xs font-medium uppercase text-muted">
+                {scopeModuleLabels.kpi}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {kpiScopeValues.map((scope) => (
+                  <CheckboxField
+                    key={scope}
+                    name={`scopeGrants.kpi.${scope}`}
+                    label={`kpi.${scope}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </ModuleMutationSurface>

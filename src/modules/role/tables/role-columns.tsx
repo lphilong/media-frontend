@@ -55,6 +55,7 @@ const scopeModuleLabels: Record<keyof RoleAssignmentScopeGrants, string> = {
   eventAssignment: 'Event Assignment',
   contractRegistry: 'Contract Registry',
   talentKpi: 'Talent KPI',
+  kpi: 'KPI',
   revenueLedger: 'Revenue Ledger',
   commission: 'Commission',
   dashboardLite: 'Dashboard Lite',
@@ -65,6 +66,7 @@ const scopeOrder: Array<keyof RoleAssignmentScopeGrants> = [
   'eventAssignment',
   'contractRegistry',
   'talentKpi',
+  'kpi',
   'revenueLedger',
   'commission',
   'dashboardLite',
@@ -82,7 +84,11 @@ export const formatAssignmentScopeSummary = (
   const entries = scopeOrder.flatMap((module) => {
     const scopes = scopeGrants[module] ?? [];
     return scopes.length > 0
-      ? [`${scopeModuleLabels[module]}: ${scopes.map(toScopeLabel).join(', ')}`]
+      ? [
+          `${scopeModuleLabels[module]}: ${scopes
+            .map((scope) => (module === 'kpi' ? `kpi.${scope}` : toScopeLabel(scope)))
+            .join(', ')}`,
+        ]
       : [];
   });
 

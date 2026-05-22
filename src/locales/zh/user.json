@@ -8,6 +8,7 @@
     "id": "用户 ID",
     "authSubject": "AUTH0主体",
     "authProvider": "认证提供方",
+    "authLinkageStatus": "认证链接状态",
     "actorKind": "参与者类型",
     "accountStatus": "状态",
     "displayName": "显示名称",
@@ -31,7 +32,9 @@
     "displayName": "在管理界面显示的用户名称。",
     "timezone": "新用户默认使用越南业务时区。",
     "authSubjectRequired": "将此用户链接到外部 Auth0 身份。当前后端合同要求此字段，且必须与外部 subject 完全匹配。",
-    "authSubjectExact": "必须与外部 Auth0 身份 subject 完全匹配。"
+    "authSubjectExact": "必须与外部 Auth0 身份 subject 完全匹配。",
+    "provisionEmail": "后端会为此邮箱处理 Auth0 账号和邀请流程。",
+    "employmentProfileLater": "员工档案选择将在后续流程处理；此表单仅配置内部用户账号。"
   },
   "placeholders": {
     "locale": "不设置偏好",
@@ -47,12 +50,18 @@
     "DISABLED": "已禁用",
     "ARCHIVED": "已归档"
   },
+  "authLinkageStatuses": {
+    "LINKED": "已链接",
+    "UNLINKED": "未链接",
+    "PENDING": "待处理"
+  },
   "table": {
     "caption": "用户",
     "displayName": "显示名称",
     "email": "邮箱",
     "actorKind": "参与者类型",
     "accountStatus": "状态",
+    "authLinkage": "认证链接",
     "updatedAt": "已更新",
     "actions": "操作"
   },
@@ -66,9 +75,14 @@
   "actions": {
     "open": "打开",
     "create": "新建用户",
+    "provisionAccount": "配置账号",
     "closeCreate": "关闭新建",
+    "closeProvision": "关闭配置",
     "edit": "编辑档案",
     "setAuthLinkage": "设置 Auth0 链接",
+    "linkAuth0": "链接 Auth0",
+    "unlinkAuth0": "取消 Auth0 链接",
+    "sendPasswordSetup": "发送密码设置",
     "activate": "启用",
     "disable": "禁用",
     "archive": "归档"
@@ -90,6 +104,12 @@
       "submit": "新建用户",
       "pending": "用户创建中"
     },
+    "provision": {
+      "title": "配置账号",
+      "subtitle": "创建内部用户，并要求后端通过邀请/密码设置流程创建或链接 Auth0。",
+      "submit": "配置账号",
+      "pending": "账号配置中"
+    },
     "update": {
       "title": "更新档案和偏好",
       "subtitle": "仅提交已变更且受支持的档案和偏好字段。",
@@ -106,18 +126,33 @@
   "validation": {
     "required": "此字段为必填。",
     "maxText": "文本过长。",
-    "noChangedFields": "请至少变更一个受支持字段。"
+    "noChangedFields": "请至少变更一个受支持字段。",
+    "passwordSetupRequiresLinked": "Password setup requires a linked Auth0 identity."
   },
   "confirm": {
     "activate": "在后端允许时启用此用户。",
     "disable": "停用此用户。后端仍可能因当前操作者或治理恢复约束而拒绝。",
-    "archive": "归档此用户。启用中的用户不能归档。"
+    "archive": "归档此用户。启用中的用户不能归档。",
+    "unlinkAuth0": "取消此用户的 Auth0 链接。在后端生命周期规则允许启用前，账号可能保持待处理或未链接。"
   },
   "feedback": {
     "created": "用户已创建。",
+    "provisioned": "账号已配置。",
     "updated": "用户已更新。",
     "authLinkageUpdated": "Auth0 链接元数据已更新。",
+    "authLinkageUnlinked": "Auth0 链接已移除。",
+    "passwordSetupSent": "密码设置已发送。",
     "lifecycleUpdated": "用户生命周期已更新。"
+  },
+  "provisionResult": {
+    "title": "配置结果",
+    "userCreated": "用户已创建。",
+    "auth0Linked": "Auth0 已链接。",
+    "auth0ExistingLinked": "现有 Auth0 用户已链接。",
+    "passwordSetupSent": "密码设置已发送。",
+    "passwordSetupNotCreated": "密码设置未创建。",
+    "noTicketUrl": "不显示 ticket URL。",
+    "pendingUntilActivated": "账号在启用前将保持待处理。"
   },
   "states": {
     "emptyTitle": "未找到用户",

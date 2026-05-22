@@ -18,6 +18,7 @@ const roleTemplateCodeSchema = z.enum([
 
 const workScheduleScopeGrantSchema = z.enum(['self', 'team', 'department', 'global']);
 const globalScopeGrantSchema = z.enum(['global']);
+const kpiScopeGrantSchema = z.enum(['global', 'managedGroup', 'self']);
 
 export const roleAssignmentScopeGrantsPayloadSchema = z
   .object({
@@ -25,6 +26,7 @@ export const roleAssignmentScopeGrantsPayloadSchema = z
     eventAssignment: z.array(globalScopeGrantSchema).optional(),
     contractRegistry: z.array(globalScopeGrantSchema).optional(),
     talentKpi: z.array(globalScopeGrantSchema).optional(),
+    kpi: z.array(kpiScopeGrantSchema).optional(),
     revenueLedger: z.array(globalScopeGrantSchema).optional(),
     commission: z.array(globalScopeGrantSchema).optional(),
     dashboardLite: z.array(globalScopeGrantSchema).optional(),

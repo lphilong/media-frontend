@@ -157,6 +157,28 @@ describe('role IA-1 surfaces', () => {
     );
   }, 15_000);
 
+  it('shows recommended scope grants and applies KPI scope values on assignment', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/roles/role-admin');
+
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('role:actions.assignToUser') }),
+    );
+
+    expect(screen.getByText(i18n.t('role:scopePicker.recommendedScopes'))).toBeInTheDocument();
+    expect(screen.getAllByText(/kpi\.global/u).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('kpi.global')).not.toBeChecked();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('role:scopePicker.applyRecommendedScopes'),
+      }),
+    );
+
+    expect(screen.getByLabelText('kpi.global')).toBeChecked();
+  });
+
   it('shows Custom fallback when template metadata is absent', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/roles/role-draft');

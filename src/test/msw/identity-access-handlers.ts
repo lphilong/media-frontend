@@ -19,7 +19,7 @@ type RoleAssignmentScopeGrants = {
   eventAssignment?: Array<'global'>;
   contractRegistry?: Array<'global'>;
   talentKpi?: Array<'global'>;
-  kpi?: Array<'global'>;
+  kpi?: Array<'global' | 'managedGroup' | 'self'>;
   revenueLedger?: Array<'global'>;
   commission?: Array<'global'>;
   dashboardLite?: Array<'global'>;
@@ -43,6 +43,7 @@ type UserRecord = {
   authLinkage: {
     provider: 'auth0';
     subject: string;
+    status?: 'LINKED' | 'UNLINKED' | 'PENDING';
   };
   contextAccess: {
     contexts: Array<{ context: 'ADMIN' }>;
@@ -108,6 +109,7 @@ type RoleTemplateRecord = {
   description: string;
   category: string;
   permissions: Array<{ code: string }>;
+  recommendedScopeGrants: RoleAssignmentScopeGrants;
   scopePlan: RoleTemplateScopePlanEntry[];
   warnings: string[];
   implementationNotes: string[];
@@ -140,7 +142,7 @@ const initialUsers: UserRecord[] = [
     id: 'user-admin',
     accountStatus: 'ACTIVE',
     actorKind: 'ADMIN',
-    authLinkage: { provider: 'auth0', subject: 'auth0|admin' },
+    authLinkage: { provider: 'auth0', subject: 'auth0|admin', status: 'LINKED' },
     contextAccess: { contexts: [{ context: 'ADMIN' }] },
     profile: { displayName: 'Admin User', email: 'admin@example.test', phone: null },
     preferences: { locale: 'en', timezone: 'Asia/Saigon' },
@@ -154,7 +156,7 @@ const initialUsers: UserRecord[] = [
     id: 'user-staff',
     accountStatus: 'PENDING',
     actorKind: 'STAFF',
-    authLinkage: { provider: 'auth0', subject: 'auth0|staff' },
+    authLinkage: { provider: 'auth0', subject: 'auth0|staff', status: 'PENDING' },
     contextAccess: { contexts: [{ context: 'ADMIN' }] },
     profile: { displayName: 'Staff User', email: 'staff@example.test', phone: '0900000000' },
     preferences: { locale: 'en', timezone: 'UTC' },
@@ -168,7 +170,7 @@ const initialUsers: UserRecord[] = [
     id: 'user-archived',
     accountStatus: 'ARCHIVED',
     actorKind: 'STAFF',
-    authLinkage: { provider: 'auth0', subject: 'auth0|archived' },
+    authLinkage: { provider: 'auth0', subject: 'auth0|archived', status: 'LINKED' },
     contextAccess: { contexts: [{ context: 'ADMIN' }] },
     profile: { displayName: 'Archived User', email: 'archived@example.test', phone: null },
     preferences: { locale: null, timezone: null },
@@ -194,6 +196,16 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'user:view' },
       { code: 'dashboard-lite:read' },
     ],
+    recommendedScopeGrants: {
+      workSchedule: ['global'],
+      eventAssignment: ['global'],
+      contractRegistry: ['global'],
+      talentKpi: ['global'],
+      kpi: ['global'],
+      revenueLedger: ['global'],
+      commission: ['global'],
+      dashboardLite: ['global'],
+    },
     scopePlan: [
       {
         module: 'Work Schedule',
@@ -221,7 +233,19 @@ const roleTemplates: RoleTemplateRecord[] = [
     name: 'HR Operations',
     description: 'People, organization, employment, talent, and talent-group operations preset.',
     category: 'PEOPLE_OPERATIONS',
-    permissions: [{ code: 'user:view' }, { code: 'talent:read' }, { code: 'work-schedule:read' }],
+    permissions: [
+      { code: 'user:view' },
+      { code: 'user:create' },
+      { code: 'user:provision_account' },
+      { code: 'talent.read' },
+      { code: 'workSchedule.read' },
+      { code: 'kpi.read' },
+      { code: 'kpi.readProgress' },
+    ],
+    recommendedScopeGrants: {
+      workSchedule: ['department'],
+      kpi: ['global'],
+    },
     scopePlan: [
       {
         module: 'Work Schedule',
@@ -248,7 +272,15 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'work-schedule:update' },
       { code: 'event:read' },
       { code: 'talent-kpi:read' },
+      { code: 'kpi.read' },
+      { code: 'kpi.readProgress' },
+      { code: 'kpi.enterActual' },
+      { code: 'kpi.correctActual' },
     ],
+    recommendedScopeGrants: {
+      workSchedule: ['self', 'team', 'department'],
+      kpi: ['managedGroup'],
+    },
     scopePlan: [
       {
         module: 'Work Schedule',
@@ -274,6 +306,9 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'studio-resource:read' },
       { code: 'work-schedule:read' },
     ],
+    recommendedScopeGrants: {
+      workSchedule: ['department'],
+    },
     scopePlan: [
       {
         module: 'Work Schedule',
@@ -297,8 +332,17 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'revenue-ledger:read' },
       { code: 'commission-settlement:read' },
       { code: 'contract-registry:read' },
+      { code: 'kpi.read' },
+      { code: 'kpi.readProgress' },
       { code: 'dashboard-lite:read' },
     ],
+    recommendedScopeGrants: {
+      contractRegistry: ['global'],
+      kpi: ['global'],
+      revenueLedger: ['global'],
+      commission: ['global'],
+      dashboardLite: ['global'],
+    },
     scopePlan: [
       {
         module: 'Commercial Finance',
@@ -321,7 +365,12 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'work-schedule:read' },
       { code: 'event:read' },
       { code: 'talent-kpi:read' },
+      { code: 'kpi.readProgress' },
     ],
+    recommendedScopeGrants: {
+      workSchedule: ['self'],
+      kpi: ['self'],
+    },
     scopePlan: [
       {
         module: 'Self Service',
@@ -345,8 +394,20 @@ const roleTemplates: RoleTemplateRecord[] = [
     permissions: [
       { code: 'work-schedule:read' },
       { code: 'contract-registry:read' },
+      { code: 'kpi.read' },
+      { code: 'kpi.readProgress' },
       { code: 'dashboard-lite:read' },
     ],
+    recommendedScopeGrants: {
+      workSchedule: ['global'],
+      eventAssignment: ['global'],
+      contractRegistry: ['global'],
+      talentKpi: ['global'],
+      kpi: ['global'],
+      revenueLedger: ['global'],
+      commission: ['global'],
+      dashboardLite: ['global'],
+    },
     scopePlan: [
       {
         module: 'Read Only Audit',
@@ -444,10 +505,13 @@ const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
     'role:assign_to_user',
     'role:revoke_from_user',
     'user:edit',
+    'user:provision_account',
     'user:activate',
     'user:disable',
     'user:archive',
     'user:auth_linkage:set',
+    'user:auth_linkage:unlink',
+    'user:password_setup:send',
     'orgUnit.update',
     'orgUnit.manageHierarchy',
     'orgUnit.manageLifecycle',
@@ -636,6 +700,7 @@ const toUserListItem = (record: UserRecord) => ({
   email: record.profile.email,
   actorKind: record.actorKind,
   accountStatus: record.accountStatus,
+  authLinkage: { status: record.authLinkage.status ?? 'LINKED' },
   updatedAt: record.updatedAt,
 });
 
@@ -667,6 +732,7 @@ const toRoleTemplateListItem = (template: RoleTemplateRecord) => ({
   description: template.description,
   category: template.category,
   permissionCount: template.permissions.length,
+  recommendedScopeGrants: template.recommendedScopeGrants,
   scopePlan: template.scopePlan,
   warnings: template.warnings,
   implementationNotes: template.implementationNotes,
@@ -813,6 +879,51 @@ export const identityAccessHandlers = [
     return HttpResponse.json({ data: toUserDetail(record) });
   }),
 
+  http.post('*/admin/users/provision', async ({ request }) => {
+    const body = await parseJsonBody(request);
+    if (typeof body.email !== 'string' || body.email.trim().length === 0) {
+      return HttpResponse.json({ message: 'email is required' }, { status: 400 });
+    }
+    userSeed += 1;
+    const record: UserRecord = {
+      id: `user-${userSeed}`,
+      accountStatus: 'PENDING',
+      actorKind: body.actorKind === 'ADMIN' ? 'ADMIN' : 'STAFF',
+      authLinkage: {
+        provider: 'auth0',
+        subject: `auth0|provisioned-${userSeed}`,
+        status: 'LINKED',
+      },
+      contextAccess: { contexts: [{ context: 'ADMIN' }] },
+      profile: {
+        displayName: String(body.displayName ?? `User ${userSeed}`),
+        email: toNullableText(body.email),
+        phone: toNullableText(body.phone),
+      },
+      preferences: {
+        locale: toNullableText(body.locale),
+        timezone: toNullableText(body.timezone),
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      activatedAt: null,
+      disabledAt: null,
+      archivedAt: null,
+    };
+
+    users.push(record);
+    return HttpResponse.json({
+      data: toUserDetail(record),
+      meta: {
+        provisioning: {
+          credentialMode: 'INVITE_LINK',
+          auth0UserCreated: true,
+          invitationTicketCreated: true,
+        },
+      },
+    });
+  }),
+
   http.get('*/admin/users/:userId', ({ params }) => {
     const record = readUser(String(params.userId));
     if (!record) {
@@ -862,9 +973,58 @@ export const identityAccessHandlers = [
     }
 
     const body = await parseJsonBody(request);
-    record.authLinkage = { provider: 'auth0', subject: String(body.subject ?? '') };
+    record.authLinkage = {
+      provider: 'auth0',
+      subject: String(body.subject ?? ''),
+      status: 'LINKED',
+    };
     record.updatedAt = Date.now();
     return HttpResponse.json({ data: toUserDetail(record) });
+  }),
+
+  http.delete('*/admin/users/:userId/auth-linkage', ({ params }) => {
+    const record = readUser(String(params.userId));
+    if (!record) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (record.accountStatus === 'ARCHIVED') {
+      return HttpResponse.json({ message: 'user:detail.archivedReadOnly' }, { status: 422 });
+    }
+
+    record.authLinkage = {
+      provider: 'auth0',
+      subject: `unlinked:${record.id}`,
+      status: 'UNLINKED',
+    };
+    record.accountStatus = record.accountStatus === 'ACTIVE' ? 'PENDING' : record.accountStatus;
+    record.updatedAt = Date.now();
+    return HttpResponse.json({ data: toUserDetail(record) });
+  }),
+
+  http.post('*/admin/users/:userId/send-password-setup', ({ params }) => {
+    const record = readUser(String(params.userId));
+    if (!record) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (record.accountStatus === 'ARCHIVED') {
+      return HttpResponse.json({ message: 'user:detail.archivedReadOnly' }, { status: 422 });
+    }
+    if ((record.authLinkage.status ?? 'PENDING') !== 'LINKED') {
+      return HttpResponse.json(
+        { message: 'user:validation.passwordSetupRequiresLinked' },
+        { status: 422 },
+      );
+    }
+
+    record.updatedAt = Date.now();
+    return HttpResponse.json({
+      data: toUserDetail(record),
+      meta: {
+        passwordSetup: {
+          ticketCreated: true,
+        },
+      },
+    });
   }),
 
   http.post('*/admin/users/:userId/:action', ({ params }) => {

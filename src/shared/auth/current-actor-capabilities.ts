@@ -14,11 +14,14 @@ export const PERMISSIONS = {
   ROLE_ASSIGNMENT_RULE_SET: 'role:assignment_rule:set',
   ROLE_ASSIGN_TO_USER: 'role:assign_to_user',
   ROLE_REVOKE_FROM_USER: 'role:revoke_from_user',
+  USER_PROVISION_ACCOUNT: 'user:provision_account',
   USER_EDIT: 'user:edit',
   USER_ACTIVATE: 'user:activate',
   USER_DISABLE: 'user:disable',
   USER_ARCHIVE: 'user:archive',
   USER_AUTH_LINKAGE_SET: 'user:auth_linkage:set',
+  USER_AUTH_LINKAGE_UNLINK: 'user:auth_linkage:unlink',
+  USER_PASSWORD_SETUP_SEND: 'user:password_setup:send',
   ORG_UNIT_UPDATE: 'orgUnit.update',
   ORG_UNIT_MANAGE_HIERARCHY: 'orgUnit.manageHierarchy',
   ORG_UNIT_MANAGE_LIFECYCLE: 'orgUnit.manageLifecycle',
@@ -81,7 +84,7 @@ const scopeGrantsSchema = z
     eventAssignment: z.array(z.literal('global')).optional(),
     contractRegistry: z.array(z.literal('global')).optional(),
     talentKpi: z.array(z.literal('global')).optional(),
-    kpi: z.array(z.literal('global')).optional(),
+    kpi: z.array(z.enum(['global', 'managedGroup', 'self'])).optional(),
     revenueLedger: z.array(z.literal('global')).optional(),
     commission: z.array(z.literal('global')).optional(),
     dashboardLite: z.array(z.literal('global')).optional(),
@@ -181,7 +184,7 @@ export const canUseAction = (
   requirement: ActionCapabilityRequirement,
 ): ActionCapabilityCheck => {
   if (!capabilities) {
-    return { allowed: true };
+    return { allowed: false, reason: 'missing-permission' };
   }
 
   if (!hasPermission(capabilities, requirement.permission)) {
@@ -211,7 +214,10 @@ export const createActionCapabilityHint = (
   }
 
   if (state.isError || !state.capabilities) {
-    return { disabled: false };
+    return {
+      disabled: true,
+      disabledReason: copy['missing-permission'],
+    };
   }
 
   const result = canUseAction(state.capabilities, requirement);

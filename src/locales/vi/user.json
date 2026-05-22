@@ -8,6 +8,7 @@
     "id": "ID người dùng",
     "authSubject": "Chủ thể Auth0",
     "authProvider": "Nhà cung cấp",
+    "authLinkageStatus": "Trạng thái liên kết xác thực",
     "actorKind": "Loại tác nhân",
     "accountStatus": "Trạng thái",
     "displayName": "Tên hiển thị",
@@ -31,7 +32,9 @@
     "displayName": "Tên người dùng dễ đọc hiển thị trên màn hình quản trị.",
     "timezone": "Mặc định dùng múi giờ nghiệp vụ Việt Nam cho người dùng mới.",
     "authSubjectRequired": "Liên kết người dùng này với danh tính Auth0 bên ngoài. Hợp đồng backend hiện tại yêu cầu trường này và giá trị phải khớp chính xác subject bên ngoài.",
-    "authSubjectExact": "Phải khớp chính xác subject của danh tính Auth0 bên ngoài."
+    "authSubjectExact": "Phải khớp chính xác subject của danh tính Auth0 bên ngoài.",
+    "provisionEmail": "Backend sẽ tạo tài khoản Auth0 và luồng mời cho email này.",
+    "employmentProfileLater": "Luồng chọn Hồ sơ nhân sự sẽ xử lý sau; form này chỉ cấp phát tài khoản người dùng nội bộ."
   },
   "placeholders": {
     "locale": "Không đặt tùy chọn",
@@ -47,12 +50,18 @@
     "DISABLED": "Đã vô hiệu hóa",
     "ARCHIVED": "Đã lưu trữ"
   },
+  "authLinkageStatuses": {
+    "LINKED": "Đã liên kết",
+    "UNLINKED": "Chưa liên kết",
+    "PENDING": "Đang chờ"
+  },
   "table": {
     "caption": "Danh sách người dùng",
     "displayName": "Tên hiển thị",
     "email": "Email",
     "actorKind": "Loại tác nhân",
     "accountStatus": "Trạng thái",
+    "authLinkage": "Liên kết xác thực",
     "updatedAt": "Thời điểm cập nhật",
     "actions": "Hành động"
   },
@@ -66,9 +75,14 @@
   "actions": {
     "open": "Mở",
     "create": "Tạo người dùng",
+    "provisionAccount": "Cấp phát tài khoản",
     "closeCreate": "Đóng tạo mới",
+    "closeProvision": "Đóng cấp phát",
     "edit": "Chỉnh sửa hồ sơ",
     "setAuthLinkage": "Thiết lập liên kết Auth0",
+    "linkAuth0": "Liên kết Auth0",
+    "unlinkAuth0": "Hủy liên kết Auth0",
+    "sendPasswordSetup": "Gửi thiết lập mật khẩu",
     "activate": "Kích hoạt",
     "disable": "Vô hiệu hóa",
     "archive": "Lưu trữ"
@@ -90,6 +104,12 @@
       "submit": "Tạo người dùng",
       "pending": "Đang tạo người dùng"
     },
+    "provision": {
+      "title": "Cấp phát tài khoản",
+      "subtitle": "Tạo người dùng nội bộ và yêu cầu backend tạo hoặc liên kết Auth0 bằng luồng mời/thiết lập mật khẩu.",
+      "submit": "Cấp phát tài khoản",
+      "pending": "Đang cấp phát tài khoản"
+    },
     "update": {
       "title": "Cập nhật hồ sơ và tùy chọn",
       "subtitle": "Chỉ gửi các trường hồ sơ và tùy chọn được hỗ trợ đã thay đổi.",
@@ -106,18 +126,33 @@
   "validation": {
     "required": "Trường này là bắt buộc.",
     "maxText": "Văn bản quá dài.",
-    "noChangedFields": "Thay đổi ít nhất một trường được hỗ trợ."
+    "noChangedFields": "Thay đổi ít nhất một trường được hỗ trợ.",
+    "passwordSetupRequiresLinked": "Password setup requires a linked Auth0 identity."
   },
   "confirm": {
     "activate": "Kích hoạt người dùng này nếu backend cho phép?",
     "disable": "Vô hiệu hóa người dùng này? Backend vẫn có thể từ chối do tác nhân hiện tại hoặc ràng buộc khôi phục quản trị.",
-    "archive": "Lưu trữ người dùng này? Không thể lưu trữ người dùng đang hoạt động."
+    "archive": "Lưu trữ người dùng này? Không thể lưu trữ người dùng đang hoạt động.",
+    "unlinkAuth0": "Hủy liên kết Auth0 của người dùng này? Tài khoản có thể ở trạng thái đang chờ hoặc chưa liên kết cho đến khi backend cho phép kích hoạt."
   },
   "feedback": {
     "created": "Đã tạo người dùng.",
+    "provisioned": "Đã cấp phát tài khoản.",
     "updated": "Đã cập nhật người dùng.",
     "authLinkageUpdated": "Đã cập nhật metadata liên kết Auth0.",
+    "authLinkageUnlinked": "Đã hủy liên kết Auth0.",
+    "passwordSetupSent": "Đã gửi thiết lập mật khẩu.",
     "lifecycleUpdated": "Đã cập nhật vòng đời người dùng."
+  },
+  "provisionResult": {
+    "title": "Kết quả cấp phát",
+    "userCreated": "Đã tạo người dùng.",
+    "auth0Linked": "Đã liên kết Auth0.",
+    "auth0ExistingLinked": "Đã liên kết người dùng Auth0 sẵn có.",
+    "passwordSetupSent": "Đã gửi thiết lập mật khẩu.",
+    "passwordSetupNotCreated": "Chưa tạo thiết lập mật khẩu.",
+    "noTicketUrl": "Không hiển thị URL ticket.",
+    "pendingUntilActivated": "Tài khoản sẽ ở trạng thái đang chờ cho đến khi được kích hoạt."
   },
   "states": {
     "emptyTitle": "Không tìm thấy người dùng",

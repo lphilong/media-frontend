@@ -6,14 +6,20 @@ import {
   createUser,
   fetchUsers,
   performUserLifecycleAction,
+  provisionUser,
+  sendUserPasswordSetup,
   setUserAuthLinkage,
+  unlinkUserAuthLinkage,
   updateUser,
 } from '@modules/user/api/user.api';
+import { APP_PATHS } from '@app/router/paths';
 import {
   UserAuthLinkageSurface,
   UserCreateSurface,
+  UserProvisionSurface,
   UserUpdateSurface,
 } from '@modules/user/forms/user-mutation-forms';
+import { userProvisionPayloadSchema } from '@modules/user/schemas/user-payload-schemas';
 import type { UserDetailRecord } from '@modules/user/types/user.types';
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
@@ -28,6 +34,7 @@ vi.mock('@shared/api', () => ({
 }));
 
 const apiRequestMock = vi.mocked(apiRequest);
+const unsafeSetupUrlField = ['ticket', 'Url'].join('');
 
 const userDetail: UserDetailRecord = {
   id: 'user-admin',
@@ -36,6 +43,7 @@ const userDetail: UserDetailRecord = {
   authLinkage: {
     provider: 'auth0',
     subject: 'auth0|admin',
+    status: 'LINKED',
   },
   contextAccess: {
     contexts: [{ context: 'ADMIN' }],
@@ -106,6 +114,15 @@ describe('user IA-1 query and payload shaping', () => {
     expect(serialized.get('sortBy')).toBeNull();
   });
 
+  it('does not define public signup or registration routes', () => {
+    const pathValues = Object.values(APP_PATHS).filter((value) => typeof value === 'string');
+
+    expect(pathValues).not.toContain('/signup');
+    expect(pathValues).not.toContain('/register');
+    expect(pathValues).not.toContain('/auth/signup');
+    expect(pathValues).not.toContain('/auth/register');
+  });
+
   it('does not emit scope, scopeGrants, or unsupported body keys through the User API layer', async () => {
     apiRequestMock.mockResolvedValue({
       data: [],
@@ -136,7 +153,6 @@ describe('user IA-1 query and payload shaping', () => {
 
     mockDetailResponse();
     await createUser({
-      authSubject: 'auth0|new',
       actorKind: 'STAFF',
       displayName: 'New User',
       email: 'new@example.test',
@@ -147,7 +163,6 @@ describe('user IA-1 query and payload shaping', () => {
 
     const createCall = apiRequestMock.mock.calls.at(-1)?.[0];
     expect(createCall?.data).toMatchObject({
-      authSubject: 'auth0|new',
       actorKind: 'STAFF',
       displayName: 'New User',
       email: 'new@example.test',
@@ -155,6 +170,38 @@ describe('user IA-1 query and payload shaping', () => {
     expect(createCall?.data).not.toHaveProperty('scope');
     expect(createCall?.data).not.toHaveProperty('scopeGrants');
     expect(createCall?.data).not.toHaveProperty('roleIds');
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: userDetail,
+      meta: {
+        provisioning: {
+          credentialMode: 'INVITE_LINK',
+          auth0UserCreated: true,
+          invitationTicketCreated: true,
+        },
+      },
+    });
+    await provisionUser({
+      actorKind: 'STAFF',
+      displayName: 'Provisioned User',
+      email: 'provisioned@example.test',
+      scope: 'global',
+      [unsafeSetupUrlField]: 'https://unsafe.example.test',
+    } as Parameters<typeof provisionUser>[0]);
+
+    const provisionCall = apiRequestMock.mock.calls.at(-1)?.[0];
+    expect(provisionCall?.data).toEqual({
+      actorKind: 'STAFF',
+      displayName: 'Provisioned User',
+      email: 'provisioned@example.test',
+      phone: undefined,
+      locale: undefined,
+      timezone: undefined,
+      credentialMode: 'INVITE_LINK',
+      sendInvitation: true,
+    });
+    expect(provisionCall?.data).not.toHaveProperty(unsafeSetupUrlField);
+    expect(provisionCall?.data).not.toHaveProperty('password');
 
     await updateUser('user-admin', {
       displayName: 'Admin Updated',
@@ -174,27 +221,93 @@ describe('user IA-1 query and payload shaping', () => {
     expect(updateCall?.data).not.toHaveProperty('employmentProfileId');
   });
 
-  it('submits create, update, and Auth0 linkage surfaces with supported payload keys only', async () => {
+  it('accepts only minimal auth linkage status from the User list response', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'user-list-linked',
+          displayName: 'List Linked',
+          email: 'list-linked@example.test',
+          actorKind: 'ADMIN',
+          accountStatus: 'ACTIVE',
+          authLinkage: {
+            status: 'LINKED',
+          },
+          updatedAt: 2,
+        },
+      ],
+    });
+
+    await expect(fetchUsers({})).resolves.toMatchObject({
+      data: [
+        {
+          authLinkage: {
+            status: 'LINKED',
+          },
+        },
+      ],
+    });
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'user-list-leaky',
+          displayName: 'List Leaky',
+          email: 'list-leaky@example.test',
+          actorKind: 'ADMIN',
+          accountStatus: 'ACTIVE',
+          authLinkage: {
+            status: 'LINKED',
+            subject: 'auth0|leaky',
+          },
+          updatedAt: 3,
+        },
+      ],
+    });
+
+    await expect(fetchUsers({})).rejects.toThrow();
+  });
+
+  it('submits provision, create, update, and Auth0 linkage surfaces with supported payload keys only', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
     const onCreate = vi.fn();
+    const onProvision = vi.fn();
     const onUpdate = vi.fn();
     const onAuthLinkage = vi.fn();
+
+    const provisionRender = render(
+      <UserProvisionSurface onCancel={() => undefined} onSubmit={onProvision} />,
+    );
+    await user.type(screen.getByLabelText(i18n.t('user:fields.email')), 'created@example.test');
+    await user.type(screen.getByLabelText(i18n.t('user:fields.displayName')), 'Created User');
+    expect(screen.getByText(i18n.t('user:help.employmentProfileLater'))).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('user:mutations.provision.submit') }),
+    );
+    expect(onProvision).toHaveBeenCalledWith({
+      actorKind: 'STAFF',
+      displayName: 'Created User',
+      email: 'created@example.test',
+      phone: undefined,
+      locale: undefined,
+      timezone: 'Asia/Ho_Chi_Minh',
+      credentialMode: 'INVITE_LINK',
+      sendInvitation: true,
+    });
+    provisionRender.unmount();
 
     const createRender = render(
       <UserCreateSurface onCancel={() => undefined} onSubmit={onCreate} />,
     );
 
-    await user.type(screen.getByLabelText(i18n.t('user:fields.authSubject')), 'auth0|created');
     await user.type(screen.getByLabelText(i18n.t('user:fields.displayName')), 'Created User');
     await user.type(screen.getByLabelText(i18n.t('user:fields.email')), 'created@example.test');
     expect(screen.getByLabelText(i18n.t('user:fields.locale')).tagName).toBe('SELECT');
     expect(screen.getByLabelText(i18n.t('user:fields.timezone'))).toHaveValue('Asia/Ho_Chi_Minh');
-    expect(screen.getByText(i18n.t('user:help.authSubjectRequired'))).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: i18n.t('user:mutations.create.submit') }));
 
     expect(onCreate).toHaveBeenCalledWith({
-      authSubject: 'auth0|created',
       actorKind: 'STAFF',
       displayName: 'Created User',
       email: 'created@example.test',
@@ -241,7 +354,7 @@ describe('user IA-1 query and payload shaping', () => {
     });
   });
 
-  it('sends User Auth0 linkage and lifecycle payloads exactly as IA-1 allows', async () => {
+  it('sends User Auth0 linkage, unlink, password setup, and lifecycle payloads exactly as IA-1 allows', async () => {
     mockDetailResponse();
 
     await setUserAuthLinkage('user-admin', {
@@ -260,6 +373,32 @@ describe('user IA-1 query and payload shaping', () => {
       }),
     );
 
+    await unlinkUserAuthLinkage('user-admin');
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'DELETE',
+        url: '/admin/users/user-admin/auth-linkage',
+        data: {},
+      }),
+    );
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: userDetail,
+      meta: {
+        passwordSetup: {
+          ticketCreated: true,
+        },
+      },
+    });
+    await sendUserPasswordSetup('user-admin');
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/users/user-admin/send-password-setup',
+        data: {},
+      }),
+    );
+
     await performUserLifecycleAction('user-admin', 'disable');
     expect(apiRequestMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -268,5 +407,27 @@ describe('user IA-1 query and payload shaping', () => {
         data: {},
       }),
     );
+  });
+
+  it('rejects unsafe user provisioning schema fields and setup URL responses', async () => {
+    expect(
+      userProvisionPayloadSchema.safeParse({
+        displayName: 'Provisioned User',
+        email: 'provisioned@example.test',
+        [unsafeSetupUrlField]: 'https://unsafe.example.test',
+      }).success,
+    ).toBe(false);
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: userDetail,
+      meta: {
+        passwordSetup: {
+          ticketCreated: true,
+          [unsafeSetupUrlField]: 'https://unsafe.example.test',
+        },
+      },
+    });
+
+    await expect(sendUserPasswordSetup('user-admin')).rejects.toThrow();
   });
 });
