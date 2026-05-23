@@ -21,7 +21,8 @@
     "updatedAt": "Updated",
     "activatedAt": "Activated",
     "disabledAt": "Disabled",
-    "archivedAt": "Archived"
+    "archivedAt": "Archived",
+    "reason": "Reason"
   },
   "sections": {
     "profile": "Profile",
@@ -34,15 +35,18 @@
     "authSubjectRequired": "Links this user to an external Auth0 identity. Required by the current backend contract and must match the external subject exactly.",
     "authSubjectExact": "Must match the external Auth0 identity subject exactly.",
     "provisionEmail": "The backend provisions the Auth0 account and invite flow for this email.",
-    "employmentProfileLater": "Employment Profile selection is handled in a later flow; this form only provisions the internal user account."
+    "employmentProfileLater": "Employment Profile selection is handled in a later flow; this form only provisions the internal user account.",
+    "actorKind": "Admin console account is for HR, manager, ops, finance, and auditor surfaces and still needs roles/scopes. Self-service staff account is for own profile, schedule, and KPI access.",
+    "actorKindConversion": "Account type is a security context. Conversion requires full-control permission and a reason.",
+    "actorKindReason": "Required for audit."
   },
   "placeholders": {
     "locale": "No preference",
     "timezone": "No preference"
   },
   "actorKinds": {
-    "ADMIN": "Admin",
-    "STAFF": "Staff"
+    "ADMIN": "Admin console account",
+    "STAFF": "Self-service staff account"
   },
   "statuses": {
     "PENDING": "Pending",
@@ -85,7 +89,8 @@
     "sendPasswordSetup": "Send password setup",
     "activate": "Activate",
     "disable": "Disable",
-    "archive": "Archive"
+    "archive": "Archive",
+    "convertActorKind": "Convert account type"
   },
   "actionRail": {
     "title": "User actions"
@@ -93,6 +98,7 @@
   "detail": {
     "identityTitle": "Identity",
     "authLinkageTitle": "Auth0 linkage metadata",
+    "accountTypeTitle": "Account type",
     "lifecycleTitle": "Lifecycle",
     "archivedReadOnly": "Archived users are read-only.",
     "boundaryNotice": "User screens manage identity profile, preferences, lifecycle, and Auth0 metadata only. Role assignment is owned by Role detail, and Employment Profile linkage is owned by Employment Profile."
@@ -121,6 +127,12 @@
       "subtitle": "Updates provider metadata only.",
       "submit": "Set linkage",
       "pending": "Setting linkage"
+    },
+    "actorKind": {
+      "title": "Convert account type",
+      "subtitle": "Changes whether this user is an admin console account or self-service staff account.",
+      "submit": "Convert account type",
+      "pending": "Converting account type"
     }
   },
   "validation": {
@@ -141,16 +153,22 @@
     "updated": "User updated.",
     "authLinkageUpdated": "Auth0 linkage metadata updated.",
     "authLinkageUnlinked": "Auth0 linkage removed.",
-    "passwordSetupSent": "Password setup sent.",
-    "lifecycleUpdated": "User lifecycle updated."
+    "passwordSetupSent": "Password setup email sent.",
+    "passwordSetupEmailSent": "Password setup email sent.",
+    "passwordSetupTicketCreated": "Password setup ticket created. Email delivery was not sent by this frontend flow.",
+    "passwordSetupCompleted": "Password setup request completed.",
+    "lifecycleUpdated": "User lifecycle updated.",
+    "actorKindUpdated": "Account type converted."
   },
   "provisionResult": {
     "title": "Provision result",
     "userCreated": "User created.",
     "auth0Linked": "Auth0 linked.",
     "auth0ExistingLinked": "Existing Auth0 user linked.",
-    "passwordSetupSent": "Password setup sent.",
-    "passwordSetupNotCreated": "Password setup was not created.",
+    "passwordSetupSent": "Password setup email sent.",
+    "passwordSetupEmailSent": "Password setup email sent.",
+    "passwordSetupTicketCreated": "Password setup ticket created. Email delivery is pending backend handling.",
+    "passwordSetupNotCreated": "Password setup email was not sent.",
     "noTicketUrl": "No ticket URL is shown.",
     "pendingUntilActivated": "Account will remain pending until activated."
   },

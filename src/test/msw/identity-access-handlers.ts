@@ -137,6 +137,16 @@ let userSeed = initialUserSeed;
 let roleSeed = initialRoleSeed;
 let assignmentSeed = initialAssignmentSeed;
 
+const adminConsoleRoleCodes = [
+  'ADMIN_FULL',
+  'HR_OPERATIONS',
+  'TEAM_MANAGER',
+  'PRODUCTION_OPS',
+  'COMMERCIAL_FINANCE',
+  'VIEWER_AUDITOR',
+] as const;
+const selfServiceRoleCodes = ['TALENT_STAFF_SELF'] as const;
+
 const initialUsers: UserRecord[] = [
   {
     id: 'user-admin',
@@ -512,6 +522,7 @@ const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
     'user:auth_linkage:set',
     'user:auth_linkage:unlink',
     'user:password_setup:send',
+    'user:actor_kind:update',
     'orgUnit.update',
     'orgUnit.manageHierarchy',
     'orgUnit.manageLifecycle',
@@ -884,6 +895,7 @@ export const identityAccessHandlers = [
     if (typeof body.email !== 'string' || body.email.trim().length === 0) {
       return HttpResponse.json({ message: 'email is required' }, { status: 400 });
     }
+    const usesBackendTicket = body.email.includes('backend-ticket');
     userSeed += 1;
     const record: UserRecord = {
       id: `user-${userSeed}`,
@@ -918,7 +930,14 @@ export const identityAccessHandlers = [
         provisioning: {
           credentialMode: 'INVITE_LINK',
           auth0UserCreated: true,
-          invitationTicketCreated: true,
+          invitationEmailSent: !usesBackendTicket,
+          invitationTicketCreated: usesBackendTicket,
+          passwordSetupDeliveryMode: usesBackendTicket ? 'backend_ticket' : 'auth0_email',
+        },
+        passwordSetup: {
+          deliveryMode: usesBackendTicket ? 'backend_ticket' : 'auth0_email',
+          emailSent: !usesBackendTicket,
+          ticketCreated: usesBackendTicket,
         },
       },
     });
@@ -982,6 +1001,48 @@ export const identityAccessHandlers = [
     return HttpResponse.json({ data: toUserDetail(record) });
   }),
 
+  http.patch('*/admin/users/:userId/actor-kind', async ({ params, request }) => {
+    const record = readUser(String(params.userId));
+    if (!record) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (record.accountStatus === 'ARCHIVED') {
+      return HttpResponse.json({ message: 'user:detail.archivedReadOnly' }, { status: 422 });
+    }
+
+    const body = await parseJsonBody(request);
+    const nextActorKind = body.actorKind;
+    const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+    if (nextActorKind !== 'ADMIN' && nextActorKind !== 'STAFF') {
+      return HttpResponse.json({ message: 'actorKind must be ADMIN or STAFF' }, { status: 422 });
+    }
+    if (!reason) {
+      return HttpResponse.json({ message: 'reason is required' }, { status: 422 });
+    }
+    if (record.actorKind === 'ADMIN' && nextActorKind === 'STAFF') {
+      const activeAdminRoleCodes = assignments
+        .filter((assignment) => assignment.userId === record.id && assignment.state === 'ACTIVE')
+        .map((assignment) => readRole(assignment.roleId))
+        .filter((role): role is RoleRecord => Boolean(role))
+        .map((role) => role.templateCode ?? role.code)
+        .filter((code) =>
+          adminConsoleRoleCodes.includes(code as (typeof adminConsoleRoleCodes)[number]),
+        );
+      if (activeAdminRoleCodes.length > 0) {
+        return HttpResponse.json(
+          {
+            message: `Cannot convert ADMIN account to STAFF while active admin-console role assignments exist: ${activeAdminRoleCodes.join(', ')}`,
+          },
+          { status: 422 },
+        );
+      }
+    }
+
+    record.actorKind = nextActorKind;
+    record.updatedAt = Date.now();
+    return HttpResponse.json({ data: toUserDetail(record) });
+  }),
+
   http.delete('*/admin/users/:userId/auth-linkage', ({ params }) => {
     const record = readUser(String(params.userId));
     if (!record) {
@@ -1017,11 +1078,14 @@ export const identityAccessHandlers = [
     }
 
     record.updatedAt = Date.now();
+    const usesBackendTicket = record.profile.email?.includes('backend-ticket') === true;
     return HttpResponse.json({
       data: toUserDetail(record),
       meta: {
         passwordSetup: {
-          ticketCreated: true,
+          deliveryMode: usesBackendTicket ? 'backend_ticket' : 'auth0_email',
+          emailSent: !usesBackendTicket,
+          ticketCreated: usesBackendTicket,
         },
       },
     });
@@ -1088,6 +1152,30 @@ export const identityAccessHandlers = [
     }
 
     const body = await parseJsonBody(request);
+    const targetUser = readUser(String(body.userId ?? ''));
+    if (!targetUser) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    const governingRoleCode = role.templateCode ?? role.code;
+    if (
+      adminConsoleRoleCodes.includes(governingRoleCode as (typeof adminConsoleRoleCodes)[number]) &&
+      targetUser.actorKind !== 'ADMIN'
+    ) {
+      return HttpResponse.json(
+        { message: `${governingRoleCode} requires an admin console account.` },
+        { status: 422 },
+      );
+    }
+    if (
+      selfServiceRoleCodes.includes(governingRoleCode as (typeof selfServiceRoleCodes)[number]) &&
+      targetUser.actorKind !== 'STAFF'
+    ) {
+      return HttpResponse.json(
+        { message: `${governingRoleCode} requires a self-service staff account.` },
+        { status: 422 },
+      );
+    }
+
     assignmentSeed += 1;
     const assignment: RoleAssignmentRecord = {
       assignmentId: `assignment-${assignmentSeed}`,

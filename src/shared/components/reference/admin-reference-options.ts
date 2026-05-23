@@ -64,6 +64,9 @@ const toUserOption = (item: UserListItem): ReferenceOption => ({
   label: compactDescription([item.displayName, item.email]) ?? item.displayName,
   description: compactDescription([item.accountStatus, item.actorKind]),
   href: APP_PATHS.userDetail(item.id),
+  meta: {
+    actorKind: item.actorKind,
+  },
 });
 
 const toPlatformAccountOption = (item: PlatformAccountRecord): ReferenceOption => ({

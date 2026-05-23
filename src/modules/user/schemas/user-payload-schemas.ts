@@ -45,3 +45,10 @@ export const userAuthLinkagePayloadSchema = z
     subject: z.string().trim().min(1),
   })
   .strict();
+
+export const userActorKindUpdatePayloadSchema = z
+  .object({
+    actorKind: z.enum(userActorKindValues),
+    reason: z.string().trim().min(1).max(500),
+  })
+  .strict();

@@ -20,6 +20,7 @@ import type {
   UserListQuery,
   UserMutationResult,
 } from '@modules/user/types/user.types';
+import { getProvisionPasswordSetupFeedback } from '@modules/user/utils/password-setup-feedback';
 import type { NormalizedApiError } from '@shared/api';
 import {
   createActionCapabilityHint,
@@ -47,6 +48,7 @@ import {
   useRouteQueryState,
   userFlatListQueryConfig,
 } from '@shared/query';
+import { useScrollToPanel } from '@shared/hooks/useScrollToPanel';
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -91,6 +93,7 @@ export const UserListPage = (): JSX.Element => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [lastProvisionResult, setLastProvisionResult] = useState<UserMutationResult | null>(null);
   const [, setCursorStack] = useState(createCursorStack);
+  const { containerRef: provisionPanelRef } = useScrollToPanel(isCreateOpen ? 'provision' : null);
 
   const queryShapeSignature = useMemo(
     () =>
@@ -328,7 +331,7 @@ export const UserListPage = (): JSX.Element => {
         </FilterBarShell>
       }
       interactionSection={
-        <>
+        <div ref={provisionPanelRef} className="space-y-4">
           {isCreateOpen ? (
             <UserProvisionSurface
               isPending={provisionMutation.isPending}
@@ -346,18 +349,13 @@ export const UserListPage = (): JSX.Element => {
                     ? t('user:provisionResult.auth0Linked')
                     : t('user:provisionResult.auth0ExistingLinked')}
                 </li>
-                <li>
-                  {lastProvisionResult.provisioning?.invitationTicketCreated ||
-                  lastProvisionResult.passwordSetup?.ticketCreated
-                    ? t('user:provisionResult.passwordSetupSent')
-                    : t('user:provisionResult.passwordSetupNotCreated')}
-                </li>
+                <li>{t(getProvisionPasswordSetupFeedback(lastProvisionResult))}</li>
                 <li>{t('user:provisionResult.noTicketUrl')}</li>
                 <li>{t('user:provisionResult.pendingUntilActivated')}</li>
               </ul>
             </div>
           ) : null}
-        </>
+        </div>
       }
       tableSection={
         <div className="space-y-4">

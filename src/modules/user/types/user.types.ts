@@ -91,14 +91,23 @@ export type UserAuthLinkagePayload = {
   subject: string;
 };
 
+export type UserActorKindUpdatePayload = {
+  actorKind: UserActorKind;
+  reason: string;
+};
+
 export type UserProvisionMetadata = {
   credentialMode: 'INVITE_LINK';
   auth0UserCreated: boolean;
+  invitationEmailSent: boolean;
   invitationTicketCreated: boolean;
+  passwordSetupDeliveryMode: 'auth0_email' | 'backend_ticket';
 };
 
 export type UserPasswordSetupMetadata = {
-  ticketCreated: boolean;
+  deliveryMode: 'auth0_email' | 'backend_ticket';
+  emailSent?: boolean;
+  ticketCreated?: boolean;
 };
 
 export type UserMutationResult = {

@@ -628,7 +628,11 @@ describe('role IA-1 query and payload shaping', () => {
 
     const assignRender = render(
       <MemoryRouter>
-        <RoleAssignUserSurface onCancel={() => undefined} onSubmit={onAssign} />
+        <RoleAssignUserSurface
+          onCancel={() => undefined}
+          onSubmit={onAssign}
+          roleCode="ADMIN_FULL"
+        />
       </MemoryRouter>,
     );
     await selectPickerOption(user, 'role-assignment-user', /Admin User/);
@@ -647,6 +651,7 @@ describe('role IA-1 query and payload shaping', () => {
         <RoleAssignUserSurface
           onCancel={() => undefined}
           onSubmit={onAssign}
+          roleCode="ADMIN_FULL"
           recommendedScopeGrants={{
             workSchedule: ['team'],
             kpi: ['global', 'managedGroup', 'self'],

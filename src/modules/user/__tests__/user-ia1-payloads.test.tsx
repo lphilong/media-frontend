@@ -10,16 +10,21 @@ import {
   sendUserPasswordSetup,
   setUserAuthLinkage,
   unlinkUserAuthLinkage,
+  updateUserActorKind,
   updateUser,
 } from '@modules/user/api/user.api';
 import { APP_PATHS } from '@app/router/paths';
 import {
   UserAuthLinkageSurface,
+  UserActorKindSurface,
   UserCreateSurface,
   UserProvisionSurface,
   UserUpdateSurface,
 } from '@modules/user/forms/user-mutation-forms';
-import { userProvisionPayloadSchema } from '@modules/user/schemas/user-payload-schemas';
+import {
+  userActorKindUpdatePayloadSchema,
+  userProvisionPayloadSchema,
+} from '@modules/user/schemas/user-payload-schemas';
 import type { UserDetailRecord } from '@modules/user/types/user.types';
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
@@ -177,7 +182,14 @@ describe('user IA-1 query and payload shaping', () => {
         provisioning: {
           credentialMode: 'INVITE_LINK',
           auth0UserCreated: true,
-          invitationTicketCreated: true,
+          invitationEmailSent: true,
+          invitationTicketCreated: false,
+          passwordSetupDeliveryMode: 'auth0_email',
+        },
+        passwordSetup: {
+          deliveryMode: 'auth0_email',
+          emailSent: true,
+          ticketCreated: false,
         },
       },
     });
@@ -275,6 +287,7 @@ describe('user IA-1 query and payload shaping', () => {
     const onProvision = vi.fn();
     const onUpdate = vi.fn();
     const onAuthLinkage = vi.fn();
+    const onActorKindUpdate = vi.fn();
 
     const provisionRender = render(
       <UserProvisionSurface onCancel={() => undefined} onSubmit={onProvision} />,
@@ -286,7 +299,7 @@ describe('user IA-1 query and payload shaping', () => {
       screen.getByRole('button', { name: i18n.t('user:mutations.provision.submit') }),
     );
     expect(onProvision).toHaveBeenCalledWith({
-      actorKind: 'STAFF',
+      actorKind: 'ADMIN',
       displayName: 'Created User',
       email: 'created@example.test',
       phone: undefined,
@@ -308,7 +321,7 @@ describe('user IA-1 query and payload shaping', () => {
     await user.click(screen.getByRole('button', { name: i18n.t('user:mutations.create.submit') }));
 
     expect(onCreate).toHaveBeenCalledWith({
-      actorKind: 'STAFF',
+      actorKind: 'ADMIN',
       displayName: 'Created User',
       email: 'created@example.test',
       phone: undefined,
@@ -352,6 +365,25 @@ describe('user IA-1 query and payload shaping', () => {
       provider: 'auth0',
       subject: 'auth0|updated',
     });
+
+    render(
+      <UserActorKindSurface
+        currentActorKind="STAFF"
+        onCancel={() => undefined}
+        onSubmit={onActorKindUpdate}
+      />,
+    );
+    await user.type(screen.getByLabelText(i18n.t('user:fields.reason')), 'Promote for HR access');
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('user:mutations.actorKind.submit'),
+      }),
+    );
+
+    expect(onActorKindUpdate).toHaveBeenCalledWith({
+      actorKind: 'ADMIN',
+      reason: 'Promote for HR access',
+    });
   });
 
   it('sends User Auth0 linkage, unlink, password setup, and lifecycle payloads exactly as IA-1 allows', async () => {
@@ -386,7 +418,9 @@ describe('user IA-1 query and payload shaping', () => {
       data: userDetail,
       meta: {
         passwordSetup: {
-          ticketCreated: true,
+          deliveryMode: 'auth0_email',
+          emailSent: true,
+          ticketCreated: false,
         },
       },
     });
@@ -407,6 +441,21 @@ describe('user IA-1 query and payload shaping', () => {
         data: {},
       }),
     );
+
+    await updateUserActorKind('user-staff', {
+      actorKind: 'ADMIN',
+      reason: 'Promote for HR access',
+    });
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'PATCH',
+        url: '/admin/users/user-staff/actor-kind',
+        data: {
+          actorKind: 'ADMIN',
+          reason: 'Promote for HR access',
+        },
+      }),
+    );
   });
 
   it('rejects unsafe user provisioning schema fields and setup URL responses', async () => {
@@ -417,11 +466,19 @@ describe('user IA-1 query and payload shaping', () => {
         [unsafeSetupUrlField]: 'https://unsafe.example.test',
       }).success,
     ).toBe(false);
+    expect(
+      userActorKindUpdatePayloadSchema.safeParse({
+        actorKind: 'ADMIN',
+        reason: '',
+      }).success,
+    ).toBe(false);
 
     apiRequestMock.mockResolvedValueOnce({
       data: userDetail,
       meta: {
         passwordSetup: {
+          deliveryMode: 'backend_ticket',
+          emailSent: false,
           ticketCreated: true,
           [unsafeSetupUrlField]: 'https://unsafe.example.test',
         },

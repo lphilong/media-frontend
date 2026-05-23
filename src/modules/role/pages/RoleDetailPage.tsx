@@ -58,6 +58,7 @@ import {
   type CapabilityMissingReason,
 } from '@shared/auth/current-actor-capabilities';
 import { ModuleDetailScreenShell } from '@shared/modules';
+import { useScrollToPanel } from '@shared/hooks/useScrollToPanel';
 import {
   createCursorStack,
   moveNextCursor,
@@ -141,6 +142,7 @@ export const RoleDetailPage = (): JSX.Element => {
   const [activeSurface, setActiveSurface] = useState<ActiveMutationSurface>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<RoleAssignmentItem | null>(null);
   const [, setCursorStack] = useState(createCursorStack);
+  const { containerRef: mutationPanelRef } = useScrollToPanel(activeSurface);
 
   const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
     () => ({
@@ -663,7 +665,7 @@ export const RoleDetailPage = (): JSX.Element => {
       }
       sections={
         record ? (
-          <div className="space-y-4">
+          <div ref={mutationPanelRef} className="space-y-4">
             <RoleBoundaryNotice />
             {activeSurface === 'edit' ? (
               <RoleEditSurface
@@ -693,6 +695,8 @@ export const RoleDetailPage = (): JSX.Element => {
               <RoleAssignUserSurface
                 isPending={assignToUserMutation.isPending}
                 recommendedScopeGrants={recommendedScopeGrants}
+                roleCode={record.code}
+                templateCode={record.templateCode}
                 onCancel={() => setActiveSurface(null)}
                 onSubmit={onAssignToUserSubmit}
               />

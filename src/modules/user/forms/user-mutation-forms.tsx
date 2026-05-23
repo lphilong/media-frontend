@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { userActorKindValues } from '@modules/user/constants/user.constants';
 import type {
   UserActorKind,
+  UserActorKindUpdatePayload,
   UserAuthLinkagePayload,
   UserCreatePayload,
   UserDetailRecord,
@@ -42,6 +43,11 @@ type UserUpdateSurfaceProps = BaseMutationSurfaceProps & {
 type UserAuthLinkageSurfaceProps = BaseMutationSurfaceProps & {
   initialValues: UserAuthLinkagePayload;
   onSubmit: (payload: UserAuthLinkagePayload) => Promise<void> | void;
+};
+
+type UserActorKindSurfaceProps = BaseMutationSurfaceProps & {
+  currentActorKind: UserActorKind;
+  onSubmit: (payload: UserActorKindUpdatePayload) => Promise<void> | void;
 };
 
 const nonEmptyOptionalText = (value?: string | null): string | undefined => {
@@ -104,6 +110,12 @@ const createAuthLinkageSchema = (requiredMessage: string) =>
     subject: z.string().trim().min(1, requiredMessage),
   });
 
+const createActorKindUpdateSchema = (requiredMessage: string) =>
+  z.object({
+    actorKind: z.enum(userActorKindValues),
+    reason: z.string().trim().min(1, requiredMessage).max(500),
+  });
+
 const buildChangedUpdatePayload = (
   initialRecord: UserDetailRecord,
   values: UserUpdateFormValues,
@@ -158,6 +170,11 @@ type UserUpdateFormValues = {
 
 type UserAuthLinkageFormValues = UserAuthLinkagePayload;
 
+type UserActorKindFormValues = {
+  actorKind: UserActorKind;
+  reason: string;
+};
+
 export const UserCreateSurface = ({
   onCancel,
   onSubmit,
@@ -166,7 +183,7 @@ export const UserCreateSurface = ({
   const { t } = useTranslation(['user', 'common']);
   const form = useForm<UserCreateFormValues>({
     defaultValues: {
-      actorKind: 'STAFF',
+      actorKind: 'ADMIN',
       displayName: '',
       email: '',
       phone: '',
@@ -249,6 +266,7 @@ export const UserCreateSurface = ({
               name="actorKind"
               label={t('user:fields.actorKind')}
               options={actorKindOptions}
+              helperText={t('user:help.actorKind')}
             />
             <TextInputField name="email" type="email" label={t('user:fields.email')} />
             <TextInputField name="phone" type="tel" label={t('user:fields.phone')} />
@@ -284,7 +302,7 @@ export const UserProvisionSurface = ({
   const { t } = useTranslation(['user', 'common']);
   const form = useForm<UserProvisionFormValues>({
     defaultValues: {
-      actorKind: 'STAFF',
+      actorKind: 'ADMIN',
       displayName: '',
       email: '',
       phone: '',
@@ -375,6 +393,7 @@ export const UserProvisionSurface = ({
               name="actorKind"
               label={t('user:fields.actorKind')}
               options={actorKindOptions}
+              helperText={t('user:help.actorKind')}
             />
             <TextInputField name="phone" type="tel" label={t('user:fields.phone')} />
           </FormGrid>
@@ -553,6 +572,84 @@ export const UserAuthLinkageSurface = ({
             name="subject"
             label={t('user:fields.authSubject')}
             helperText={t('user:help.authSubjectExact')}
+          />
+        </FormGrid>
+      </ModuleMutationSurface>
+    </FormProvider>
+  );
+};
+
+export const UserActorKindSurface = ({
+  currentActorKind,
+  onCancel,
+  onSubmit,
+  isPending = false,
+}: UserActorKindSurfaceProps): JSX.Element => {
+  const { t } = useTranslation(['user', 'common']);
+  const nextActorKind = currentActorKind === 'ADMIN' ? 'STAFF' : 'ADMIN';
+  const form = useForm<UserActorKindFormValues>({
+    defaultValues: {
+      actorKind: nextActorKind,
+      reason: '',
+    },
+  });
+
+  const schema = useMemo(
+    () => createActorKindUpdateSchema(t('user:validation.required')),
+    [t],
+  );
+
+  const actorKindOptions = useMemo(
+    () =>
+      userActorKindValues.map((value) => ({
+        value,
+        label: t(`user:actorKinds.${value}`),
+      })),
+    [t],
+  );
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      applySchemaErrors(form.setError, parsed.error, 'reason');
+      return;
+    }
+
+    await onSubmit({
+      actorKind: parsed.data.actorKind,
+      reason: parsed.data.reason,
+    });
+  });
+
+  return (
+    <FormProvider {...form}>
+      <ModuleMutationSurface
+        title={t('user:mutations.actorKind.title')}
+        subtitle={t('user:mutations.actorKind.subtitle')}
+        kind="action"
+        submitLabel={t('user:mutations.actorKind.submit')}
+        pendingLabel={t('user:mutations.actorKind.pending')}
+        cancelLabel={t('common:actions.cancel')}
+        onCancel={onCancel}
+        onSubmit={(event) => void handleSubmit(event)}
+        isPending={isPending}
+        banner={
+          <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {t('user:help.actorKindConversion')}
+          </div>
+        }
+      >
+        <FormGrid columns={2}>
+          <SelectField
+            name="actorKind"
+            label={t('user:fields.actorKind')}
+            options={actorKindOptions}
+            helperText={t('user:help.actorKind')}
+          />
+          <TextInputField
+            name="reason"
+            label={t('user:fields.reason')}
+            helperText={t('user:help.actorKindReason')}
           />
         </FormGrid>
       </ModuleMutationSurface>

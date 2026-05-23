@@ -183,7 +183,9 @@
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidRulesJson": "Quy tắc gán phải là mảng JSON, trong đó conditions là object thuần hoặc null."
+    "invalidRulesJson": "Quy tắc gán phải là mảng JSON, trong đó conditions là object thuần hoặc null.",
+    "adminRoleRequiresAdminActor": "Vai trò này yêu cầu tài khoản quản trị nội bộ.",
+    "selfRoleRequiresStaffActor": "Vai trò này yêu cầu tài khoản nhân viên tự phục vụ."
   },
   "confirm": {
     "activate": "Kích hoạt vai trò này nếu backend cho phép?",

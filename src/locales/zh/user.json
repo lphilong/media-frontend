@@ -21,7 +21,8 @@
     "updatedAt": "已更新",
     "activatedAt": "已启用",
     "disabledAt": "已禁用",
-    "archivedAt": "已归档"
+    "archivedAt": "已归档",
+    "reason": "原因"
   },
   "sections": {
     "profile": "档案",
@@ -34,15 +35,18 @@
     "authSubjectRequired": "将此用户链接到外部 Auth0 身份。当前后端合同要求此字段，且必须与外部 subject 完全匹配。",
     "authSubjectExact": "必须与外部 Auth0 身份 subject 完全匹配。",
     "provisionEmail": "后端会为此邮箱处理 Auth0 账号和邀请流程。",
-    "employmentProfileLater": "员工档案选择将在后续流程处理；此表单仅配置内部用户账号。"
+    "employmentProfileLater": "员工档案选择将在后续流程处理；此表单仅配置内部用户账号。",
+    "actorKind": "管理后台账号适用于 HR、经理、运营、财务和审计界面，仍需要角色/范围。自助员工账号适用于查看自己的档案、排班和 KPI。",
+    "actorKindConversion": "账号类型是安全上下文。转换需要全控制权限和原因。",
+    "actorKindReason": "审计必填。"
   },
   "placeholders": {
     "locale": "不设置偏好",
     "timezone": "不设置偏好"
   },
   "actorKinds": {
-    "ADMIN": "管理员",
-    "STAFF": "员工"
+    "ADMIN": "内部管理账号",
+    "STAFF": "自助员工账号"
   },
   "statuses": {
     "PENDING": "待处理",
@@ -85,7 +89,8 @@
     "sendPasswordSetup": "发送密码设置",
     "activate": "启用",
     "disable": "禁用",
-    "archive": "归档"
+    "archive": "归档",
+    "convertActorKind": "转换账号类型"
   },
   "actionRail": {
     "title": "用户操作"
@@ -93,6 +98,7 @@
   "detail": {
     "identityTitle": "身份",
     "authLinkageTitle": "Auth0 链接元数据",
+    "accountTypeTitle": "账号类型",
     "lifecycleTitle": "生命周期",
     "archivedReadOnly": "已归档用户只读。",
     "boundaryNotice": "用户界面只管理身份档案、偏好、生命周期和 Auth0 元数据。角色分配由角色详情拥有，员工档案链接由员工档案拥有。"
@@ -121,6 +127,12 @@
       "subtitle": "仅更新提供方元数据。",
       "submit": "设置链接",
       "pending": "链接设置中"
+    },
+    "actorKind": {
+      "title": "转换账号类型",
+      "subtitle": "更改此用户是管理后台账号还是自助员工账号。",
+      "submit": "转换账号类型",
+      "pending": "账号类型转换中"
     }
   },
   "validation": {
@@ -136,15 +148,21 @@
     "unlinkAuth0": "取消此用户的 Auth0 链接。在后端生命周期规则允许启用前，账号可能保持待处理或未链接。"
   },
   "feedback": {
+    "passwordSetupEmailSent": "\u5bc6\u7801\u8bbe\u7f6e\u90ae\u4ef6\u5df2\u53d1\u9001\u3002",
+    "passwordSetupTicketCreated": "\u5bc6\u7801\u8bbe\u7f6e ticket \u5df2\u521b\u5efa\u3002\u6b64\u524d\u7aef\u6d41\u7a0b\u672a\u53d1\u9001\u90ae\u4ef6\u3002",
+    "passwordSetupCompleted": "\u5bc6\u7801\u8bbe\u7f6e\u8bf7\u6c42\u5df2\u5b8c\u6210\u3002",
     "created": "用户已创建。",
     "provisioned": "账号已配置。",
     "updated": "用户已更新。",
     "authLinkageUpdated": "Auth0 链接元数据已更新。",
     "authLinkageUnlinked": "Auth0 链接已移除。",
     "passwordSetupSent": "密码设置已发送。",
-    "lifecycleUpdated": "用户生命周期已更新。"
+    "lifecycleUpdated": "用户生命周期已更新。",
+    "actorKindUpdated": "账号类型已转换。"
   },
   "provisionResult": {
+    "passwordSetupEmailSent": "\u5bc6\u7801\u8bbe\u7f6e\u90ae\u4ef6\u5df2\u53d1\u9001\u3002",
+    "passwordSetupTicketCreated": "\u5bc6\u7801\u8bbe\u7f6e ticket \u5df2\u521b\u5efa\u3002\u90ae\u4ef6\u53d1\u9001\u6b63\u7b49\u5f85\u540e\u7aef\u5904\u7406\u3002",
     "title": "配置结果",
     "userCreated": "用户已创建。",
     "auth0Linked": "Auth0 已链接。",

@@ -9,6 +9,9 @@ export type ReferenceOption = {
   description?: string;
   href?: string;
   disabled?: boolean;
+  meta?: {
+    actorKind?: 'ADMIN' | 'STAFF';
+  };
 };
 
 type AsyncReferencePickerState = 'idle' | 'loading' | 'ready' | 'error';

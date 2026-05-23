@@ -7,6 +7,7 @@ import {
 import type {
   CursorPagedResponse,
   UserAuthLinkagePayload,
+  UserActorKindUpdatePayload,
   UserCreatePayload,
   UserDetailRecord,
   UserLifecycleAction,
@@ -20,6 +21,7 @@ import { apiRequest } from '@shared/api';
 
 const userAccountStatusSchema = z.enum(userAccountStatusValues);
 const userActorKindSchema = z.enum(userActorKindValues);
+const passwordSetupDeliveryModeSchema = z.enum(['auth0_email', 'backend_ticket']);
 
 const userListItemSchema = z
   .object({
@@ -111,13 +113,17 @@ const mutationResponseSchema = z
           .object({
             credentialMode: z.literal('INVITE_LINK'),
             auth0UserCreated: z.boolean(),
+            invitationEmailSent: z.boolean(),
             invitationTicketCreated: z.boolean(),
+            passwordSetupDeliveryMode: passwordSetupDeliveryModeSchema,
           })
           .strict()
           .optional(),
         passwordSetup: z
           .object({
-            ticketCreated: z.boolean(),
+            deliveryMode: passwordSetupDeliveryModeSchema,
+            emailSent: z.boolean().optional(),
+            ticketCreated: z.boolean().optional(),
           })
           .strict()
           .optional(),
@@ -161,6 +167,13 @@ const sanitizeUpdatePayload = (payload: UserUpdatePayload): UserUpdatePayload =>
   phone: payload.phone,
   locale: payload.locale,
   timezone: payload.timezone,
+});
+
+const sanitizeActorKindUpdatePayload = (
+  payload: UserActorKindUpdatePayload,
+): UserActorKindUpdatePayload => ({
+  actorKind: payload.actorKind,
+  reason: payload.reason,
 });
 
 export const fetchUsers = async (
@@ -258,6 +271,19 @@ export const setUserAuthLinkage = async (
       provider: 'auth0',
       subject: payload.subject,
     },
+  });
+
+  return detailResponseSchema.parse(response).data;
+};
+
+export const updateUserActorKind = async (
+  userId: string,
+  payload: UserActorKindUpdatePayload,
+): Promise<UserDetailRecord> => {
+  const response = await apiRequest<unknown, UserActorKindUpdatePayload>({
+    method: 'PATCH',
+    url: `/admin/users/${encodeURIComponent(userId)}/actor-kind`,
+    data: sanitizeActorKindUpdatePayload(payload),
   });
 
   return detailResponseSchema.parse(response).data;

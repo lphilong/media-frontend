@@ -144,6 +144,9 @@ describe('user IA-1 surfaces', () => {
       i18n.t('common:capabilities.missingPermission'),
     );
     expect(passwordSetup).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('user:actions.convertActorKind') }),
+    ).not.toBeInTheDocument();
   });
 
   it('still surfaces backend mutation 403 when capability hints allow the action', async () => {
@@ -234,6 +237,45 @@ describe('user IA-1 surfaces', () => {
     );
   }, 15_000);
 
+  it('converts actor kind with a required reason and shows success feedback', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/users/user-staff');
+
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('user:actions.convertActorKind') }),
+    );
+
+    const heading = await screen.findByRole('heading', {
+      name: i18n.t('user:mutations.actorKind.title'),
+    });
+    const surface = heading.closest('section');
+    expect(surface).not.toBeNull();
+    if (!surface) {
+      return;
+    }
+
+    await user.click(
+      within(surface).getByRole('button', {
+        name: i18n.t('user:mutations.actorKind.submit'),
+      }),
+    );
+    expect(await within(surface).findByText(i18n.t('user:validation.required'))).toBeInTheDocument();
+
+    await user.type(
+      within(surface).getByLabelText(i18n.t('user:fields.reason')),
+      'Promote for HR console access',
+    );
+    await user.click(
+      within(surface).getByRole('button', {
+        name: i18n.t('user:mutations.actorKind.submit'),
+      }),
+    );
+
+    expect(await screen.findByText(i18n.t('user:feedback.actorKindUpdated'))).toBeInTheDocument();
+    expect(await screen.findAllByText(i18n.t('user:actorKinds.ADMIN'))).not.toHaveLength(0);
+  });
+
   it('keeps User provision and identity/access filters inspectable when the list request fails', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -280,7 +322,7 @@ describe('user IA-1 surfaces', () => {
     expect(screen.queryByText(/credential|token|session/i)).not.toBeInTheDocument();
   });
 
-  it('sends password setup safely and never displays a setup URL', async () => {
+  it('shows email-sent feedback for auth0_email password setup and never displays a setup URL', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
     renderRoute('/users/user-admin');
@@ -289,7 +331,140 @@ describe('user IA-1 surfaces', () => {
       await screen.findByRole('button', { name: i18n.t('user:actions.sendPasswordSetup') }),
     );
 
-    expect(await screen.findByText(i18n.t('user:feedback.passwordSetupSent'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('user:feedback.passwordSetupEmailSent')),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(unsafeSetupDisclosurePattern)).not.toBeInTheDocument();
+  });
+
+  it('shows neutral feedback for backend_ticket password setup and does not claim email delivery', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    server.use(
+      http.post('*/admin/users/:userId/send-password-setup', ({ params }) =>
+        HttpResponse.json({
+          ...createUserDetailResponse({
+            provider: 'auth0',
+            subject: `auth0|${String(params.userId)}`,
+            status: 'LINKED',
+          }),
+          meta: {
+            passwordSetup: {
+              deliveryMode: 'backend_ticket',
+              emailSent: false,
+              ticketCreated: true,
+            },
+          },
+        }),
+      ),
+    );
+
+    renderRoute('/users/user-admin');
+
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('user:actions.sendPasswordSetup') }),
+    );
+
+    expect(
+      await screen.findByText(i18n.t('user:feedback.passwordSetupTicketCreated')),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('user:feedback.passwordSetupEmailSent')),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(unsafeSetupDisclosurePattern)).not.toBeInTheDocument();
+  });
+
+  it('shows neutral provision result copy for backend_ticket setup delivery', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    server.use(
+      http.post('*/admin/users/provision', async ({ request }) => {
+        const body = (await request.json()) as { displayName?: string; email?: string };
+
+        return HttpResponse.json({
+          data: {
+            id: 'user-ticket-provision',
+            accountStatus: 'PENDING',
+            actorKind: 'STAFF',
+            authLinkage: {
+              provider: 'auth0',
+              subject: 'auth0|ticket-provision',
+              status: 'LINKED',
+            },
+            contextAccess: {
+              contexts: [{ context: 'ADMIN' }],
+            },
+            profile: {
+              displayName: body.displayName ?? 'Ticket Provision',
+              email: body.email ?? 'ticket-provision@example.test',
+              phone: null,
+            },
+            preferences: {
+              locale: 'en',
+              timezone: 'Asia/Saigon',
+            },
+            createdAt: 1,
+            updatedAt: 2,
+            activatedAt: null,
+            disabledAt: null,
+            archivedAt: null,
+          },
+          meta: {
+            provisioning: {
+              credentialMode: 'INVITE_LINK',
+              auth0UserCreated: true,
+              invitationEmailSent: false,
+              invitationTicketCreated: true,
+              passwordSetupDeliveryMode: 'backend_ticket',
+            },
+            passwordSetup: {
+              deliveryMode: 'backend_ticket',
+              emailSent: false,
+              ticketCreated: true,
+            },
+          },
+        });
+      }),
+    );
+
+    renderRoute('/users');
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('user:actions.provisionAccount'),
+      }),
+    );
+
+    const createSurfaceHeading = await screen.findByRole('heading', {
+      name: i18n.t('user:mutations.provision.title'),
+    });
+    const createSurface = createSurfaceHeading.closest('section');
+    expect(createSurface).not.toBeNull();
+    if (!createSurface) {
+      return;
+    }
+
+    const createSurfaceScope = within(createSurface);
+    await user.type(
+      createSurfaceScope.getByLabelText(i18n.t('user:fields.displayName')),
+      'Ticket Provision',
+    );
+    await user.type(
+      createSurfaceScope.getByLabelText(i18n.t('user:fields.email')),
+      'ticket-provision@example.test',
+    );
+    await user.click(
+      createSurfaceScope.getByRole('button', {
+        name: i18n.t('user:mutations.provision.submit'),
+      }),
+    );
+
+    expect(
+      await screen.findByText(i18n.t('user:provisionResult.passwordSetupTicketCreated')),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('user:provisionResult.passwordSetupEmailSent')),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(unsafeSetupDisclosurePattern)).not.toBeInTheDocument();
   });
 

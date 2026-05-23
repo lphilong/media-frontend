@@ -179,6 +179,26 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByLabelText('kpi.global')).toBeChecked();
   });
 
+  it('warns and disables assignment when role and user actor kind mismatch', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/roles/role-admin');
+
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('role:actions.assignToUser') }),
+    );
+    await user.type(screen.getByPlaceholderText(i18n.t('role:placeholders.userSearch')), 'Staff');
+    await user.click(screen.getByRole('button', { name: i18n.t('common:actions.search') }));
+    await user.click(await screen.findByRole('button', { name: /Staff User/u }));
+
+    expect(
+      await screen.findByText(i18n.t('role:validation.adminRoleRequiresAdminActor')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
+    ).toBeDisabled();
+  });
+
   it('shows Custom fallback when template metadata is absent', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/roles/role-draft');

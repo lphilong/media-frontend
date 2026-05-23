@@ -183,7 +183,9 @@
   },
   "validation": {
     "required": "This field is required.",
-    "invalidRulesJson": "Assignment rules must be a JSON array with plain-object or null conditions."
+    "invalidRulesJson": "Assignment rules must be a JSON array with plain-object or null conditions.",
+    "adminRoleRequiresAdminActor": "This role requires an admin console account.",
+    "selfRoleRequiresStaffActor": "This role requires a self-service staff account."
   },
   "confirm": {
     "activate": "Activate this role if backend blockers allow it.",

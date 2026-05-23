@@ -183,7 +183,9 @@
   },
   "validation": {
     "required": "此字段为必填。",
-    "invalidRulesJson": "分配规则必须是 JSON 数组，conditions 必须是普通对象或 null。"
+    "invalidRulesJson": "分配规则必须是 JSON 数组，conditions 必须是普通对象或 null。",
+    "adminRoleRequiresAdminActor": "此角色需要管理后台账号。",
+    "selfRoleRequiresStaffActor": "此角色需要自助员工账号。"
   },
   "confirm": {
     "activate": "在后端允许时启用此角色。",

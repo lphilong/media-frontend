@@ -15,5 +15,11 @@ export const useMutationFeedback = () => {
       const message = error.message.includes(':') ? t(error.message) : error.message;
       pushToast(message || t(fallbackKey), 'error');
     },
+    notifyWarning: (messageKey: string) => {
+      pushToast(t(messageKey), 'warning');
+    },
+    notifyInfo: (messageKey: string) => {
+      pushToast(t(messageKey), 'info');
+    },
   };
 };

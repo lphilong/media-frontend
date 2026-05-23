@@ -21,7 +21,8 @@
     "updatedAt": "Thời điểm cập nhật",
     "activatedAt": "Thời điểm kích hoạt",
     "disabledAt": "Thời điểm vô hiệu hóa",
-    "archivedAt": "Thời điểm lưu trữ"
+    "archivedAt": "Thời điểm lưu trữ",
+    "reason": "Lý do"
   },
   "sections": {
     "profile": "Hồ sơ",
@@ -34,15 +35,18 @@
     "authSubjectRequired": "Liên kết người dùng này với danh tính Auth0 bên ngoài. Hợp đồng backend hiện tại yêu cầu trường này và giá trị phải khớp chính xác subject bên ngoài.",
     "authSubjectExact": "Phải khớp chính xác subject của danh tính Auth0 bên ngoài.",
     "provisionEmail": "Backend sẽ tạo tài khoản Auth0 và luồng mời cho email này.",
-    "employmentProfileLater": "Luồng chọn Hồ sơ nhân sự sẽ xử lý sau; form này chỉ cấp phát tài khoản người dùng nội bộ."
+    "employmentProfileLater": "Luồng chọn Hồ sơ nhân sự sẽ xử lý sau; form này chỉ cấp phát tài khoản người dùng nội bộ.",
+    "actorKind": "Tài khoản quản trị nội bộ dành cho HR, quản lý, vận hành, tài chính và kiểm toán; vẫn cần vai trò/phạm vi. Tài khoản nhân viên tự phục vụ dành cho hồ sơ, lịch và KPI của chính họ.",
+    "actorKindConversion": "Loại tài khoản là ngữ cảnh bảo mật. Chuyển đổi cần quyền toàn quyền và lý do.",
+    "actorKindReason": "Bắt buộc để phục vụ kiểm toán."
   },
   "placeholders": {
     "locale": "Không đặt tùy chọn",
     "timezone": "Không đặt tùy chọn"
   },
   "actorKinds": {
-    "ADMIN": "Quản trị viên",
-    "STAFF": "Nhân sự"
+    "ADMIN": "Tài khoản quản trị nội bộ",
+    "STAFF": "Tài khoản nhân viên tự phục vụ"
   },
   "statuses": {
     "PENDING": "Đang chờ",
@@ -85,7 +89,8 @@
     "sendPasswordSetup": "Gửi thiết lập mật khẩu",
     "activate": "Kích hoạt",
     "disable": "Vô hiệu hóa",
-    "archive": "Lưu trữ"
+    "archive": "Lưu trữ",
+    "convertActorKind": "Chuyển loại tài khoản"
   },
   "actionRail": {
     "title": "Hành động người dùng"
@@ -93,6 +98,7 @@
   "detail": {
     "identityTitle": "Danh tính",
     "authLinkageTitle": "Metadata liên kết Auth0",
+    "accountTypeTitle": "Loại tài khoản",
     "lifecycleTitle": "Vòng đời",
     "archivedReadOnly": "Người dùng đã lưu trữ chỉ đọc.",
     "boundaryNotice": "Màn hình Người dùng chỉ quản lý hồ sơ định danh, tùy chọn, vòng đời và metadata Auth0. Gán vai trò thuộc chi tiết Vai trò, còn liên kết hồ sơ nhân sự thuộc Hồ sơ nhân sự."
@@ -121,6 +127,12 @@
       "subtitle": "Chỉ cập nhật metadata của nhà cung cấp.",
       "submit": "Thiết lập liên kết",
       "pending": "Đang thiết lập liên kết"
+    },
+    "actorKind": {
+      "title": "Chuyển loại tài khoản",
+      "subtitle": "Thay đổi việc người dùng này là tài khoản quản trị nội bộ hay nhân viên tự phục vụ.",
+      "submit": "Chuyển loại tài khoản",
+      "pending": "Đang chuyển loại tài khoản"
     }
   },
   "validation": {
@@ -136,15 +148,21 @@
     "unlinkAuth0": "Hủy liên kết Auth0 của người dùng này? Tài khoản có thể ở trạng thái đang chờ hoặc chưa liên kết cho đến khi backend cho phép kích hoạt."
   },
   "feedback": {
+    "passwordSetupEmailSent": "\u0110\u00e3 g\u1eedi email thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u.",
+    "passwordSetupTicketCreated": "\u0110\u00e3 t\u1ea1o ticket thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u. Lu\u1ed3ng frontend n\u00e0y ch\u01b0a g\u1eedi email.",
+    "passwordSetupCompleted": "\u0110\u00e3 ho\u00e0n t\u1ea5t y\u00eau c\u1ea7u thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u.",
     "created": "Đã tạo người dùng.",
     "provisioned": "Đã cấp phát tài khoản.",
     "updated": "Đã cập nhật người dùng.",
     "authLinkageUpdated": "Đã cập nhật metadata liên kết Auth0.",
     "authLinkageUnlinked": "Đã hủy liên kết Auth0.",
     "passwordSetupSent": "Đã gửi thiết lập mật khẩu.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời người dùng."
+    "lifecycleUpdated": "Đã cập nhật vòng đời người dùng.",
+    "actorKindUpdated": "Đã chuyển loại tài khoản."
   },
   "provisionResult": {
+    "passwordSetupEmailSent": "\u0110\u00e3 g\u1eedi email thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u.",
+    "passwordSetupTicketCreated": "\u0110\u00e3 t\u1ea1o ticket thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u. Vi\u1ec7c g\u1eedi email \u0111ang ch\u1edd backend x\u1eed l\u00fd.",
     "title": "Kết quả cấp phát",
     "userCreated": "Đã tạo người dùng.",
     "auth0Linked": "Đã liên kết Auth0.",
