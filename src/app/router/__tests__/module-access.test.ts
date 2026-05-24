@@ -1,0 +1,221 @@
+import {
+  canAccessModule,
+  getAccessibleModuleIds,
+  getModuleAccessReason,
+  type ModuleAccessModuleId,
+} from '@app/router/module-access';
+import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
+
+const makeCapabilities = (
+  overrides: Partial<Pick<CurrentActorCapabilities, 'permissions' | 'roles' | 'scopeGrants'>>,
+): CurrentActorCapabilities => ({
+  id: 'module-access-test-user',
+  type: 'admin',
+  context: 'ADMIN',
+  isActive: true,
+  roles: overrides.roles ?? [],
+  permissions: overrides.permissions ?? [],
+  scopeGrants: overrides.scopeGrants ?? {},
+  generatedAt: '2026-05-24T00:00:00.000Z',
+});
+
+const accessible = (
+  capabilities: CurrentActorCapabilities,
+  moduleIds: readonly ModuleAccessModuleId[],
+): ModuleAccessModuleId[] =>
+  moduleIds.filter((moduleId) => canAccessModule(capabilities, moduleId));
+
+describe('module access model', () => {
+  it('allows TEAM_MANAGER managed group routes without treating managedGroup as global', () => {
+    const capabilities = makeCapabilities({
+      roles: ['TEAM_MANAGER'],
+      permissions: [
+        'workSchedule.read',
+        'event.read',
+        'talent.read',
+        'talentGroup.read',
+        'kpi.read',
+        'kpi.readProgress',
+      ],
+      scopeGrants: {
+        workSchedule: ['self', 'team', 'department'],
+        eventAssignment: ['managedGroup'],
+        kpi: ['managedGroup'],
+      },
+    });
+
+    expect(
+      accessible(capabilities, [
+        'kpi',
+        'event-assignment',
+        'talent',
+        'talent-group',
+        'work-schedule',
+        'user',
+        'role',
+        'contract-registry',
+        'revenue-ledger',
+        'commission-rules',
+        'commission-settlements',
+      ]),
+    ).toEqual(['kpi', 'event-assignment', 'talent', 'talent-group', 'work-schedule']);
+    expect(canAccessModule(capabilities, 'contract-registry')).toBe(false);
+  });
+
+  it('allows PRODUCTION_OPS event and operational modules by read permission plus scopes', () => {
+    const capabilities = makeCapabilities({
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'event.read',
+        'workSchedule.read',
+        'platformAccount.read',
+        'studioResource.read',
+      ],
+      scopeGrants: {
+        eventAssignment: ['global'],
+        workSchedule: ['department'],
+      },
+    });
+
+    expect(
+      accessible(capabilities, [
+        'event-assignment',
+        'work-schedule',
+        'platform-account',
+        'studio-resource',
+        'contract-registry',
+      ]),
+    ).toEqual(['event-assignment', 'work-schedule', 'platform-account', 'studio-resource']);
+  });
+
+  it('keeps COMMERCIAL_FINANCE lookup permissions from unlocking full modules', () => {
+    const capabilities = makeCapabilities({
+      roles: ['COMMERCIAL_FINANCE'],
+      permissions: [
+        'orgUnit.lookup',
+        'contractRegistry.read',
+        'revenueLedger.read',
+        'commissionRule.read',
+        'commissionSettlement.read',
+        'event.lookup',
+        'talent.lookup',
+        'platformAccount.lookup',
+        'kpi.read',
+        'kpi.readProgress',
+      ],
+      scopeGrants: {
+        contractRegistry: ['global'],
+        revenueLedger: ['global'],
+        commission: ['global'],
+        kpi: ['global'],
+      },
+    });
+
+    expect(canAccessModule(capabilities, 'contract-registry')).toBe(true);
+    expect(canAccessModule(capabilities, 'revenue-ledger')).toBe(true);
+    expect(canAccessModule(capabilities, 'commission-rules')).toBe(true);
+    expect(canAccessModule(capabilities, 'commission-settlements')).toBe(true);
+    expect(canAccessModule(capabilities, 'kpi')).toBe(true);
+    expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
+    expect(canAccessModule(capabilities, 'org-unit')).toBe(false);
+    expect(canAccessModule(capabilities, 'talent')).toBe(false);
+    expect(canAccessModule(capabilities, 'platform-account')).toBe(false);
+  });
+
+  it('allows VIEWER_AUDITOR read routes without asserting mutation action access', () => {
+    const capabilities = makeCapabilities({
+      roles: ['VIEWER_AUDITOR'],
+      permissions: [
+        'orgUnit.read',
+        'employmentProfile.read',
+        'talent.read',
+        'talentGroup.read',
+        'platformAccount.read',
+        'studioResource.read',
+        'event.read',
+        'workSchedule.read',
+        'contractRegistry.read',
+        'talentKpi.read',
+        'kpi.read',
+        'kpi.readProgress',
+        'commissionRule.read',
+        'commissionSettlement.read',
+        'revenueLedger.read',
+        'dashboardLite.read',
+      ],
+      scopeGrants: {
+        dashboardLite: ['global'],
+        workSchedule: ['global'],
+        eventAssignment: ['global'],
+        contractRegistry: ['global'],
+        talentKpi: ['global'],
+        kpi: ['global'],
+        revenueLedger: ['global'],
+        commission: ['global'],
+      },
+    });
+
+    expect(getAccessibleModuleIds(capabilities)).toEqual([
+      'dashboard',
+      'org-unit',
+      'employment-profile',
+      'talent',
+      'talent-group',
+      'platform-account',
+      'studio-resource',
+      'work-schedule',
+      'event-assignment',
+      'contract-registry',
+      'talent-kpi',
+      'kpi',
+      'revenue-ledger',
+      'commission-rules',
+      'commission-settlements',
+    ]);
+  });
+
+  it('keeps self-only actors off unsupported admin modules', () => {
+    const capabilities = makeCapabilities({
+      roles: ['TALENT_STAFF_SELF'],
+      permissions: [
+        'workSchedule.read',
+        'event.read',
+        'employmentProfile.read',
+        'talent.read',
+        'kpi.readProgress',
+      ],
+      scopeGrants: {
+        workSchedule: ['self'],
+        kpi: ['self'],
+      },
+    });
+
+    expect(canAccessModule(capabilities, 'work-schedule')).toBe(true);
+    expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
+    expect(canAccessModule(capabilities, 'employment-profile')).toBe(false);
+    expect(canAccessModule(capabilities, 'talent')).toBe(false);
+    expect(canAccessModule(capabilities, 'kpi')).toBe(false);
+  });
+
+  it('reports No Access causes for direct routes missing permission or scope', () => {
+    expect(
+      getModuleAccessReason(
+        makeCapabilities({
+          permissions: ['event.lookup'],
+          scopeGrants: { eventAssignment: ['global'] },
+        }),
+        'event-assignment',
+      ),
+    ).toBe('missing-permission');
+
+    expect(
+      getModuleAccessReason(
+        makeCapabilities({
+          permissions: ['event.read'],
+          scopeGrants: {},
+        }),
+        'event-assignment',
+      ),
+    ).toBe('missing-scope');
+  });
+});

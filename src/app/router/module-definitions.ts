@@ -1,4 +1,5 @@
 import { APP_PATHS } from '@app/router/paths';
+import type { ModuleAccessModuleId } from '@app/router/module-access';
 import type { I18nNamespace } from '@shared/i18n/constants';
 
 export type NavGroup =
@@ -263,6 +264,7 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
 
 export type ShellNavigationItem = {
   id: string;
+  moduleId?: ModuleAccessModuleId;
   navItemKey: string;
   to?: string;
   children?: ShellNavigationItem[];
@@ -276,21 +278,29 @@ export type ShellNavigationGroup = {
 export const shellNavigationGroups: ShellNavigationGroup[] = [
   {
     id: 'overview',
-    items: [{ id: 'dashboard', navItemKey: 'dashboard', to: APP_PATHS.dashboard }],
+    items: [
+      {
+        id: 'dashboard',
+        moduleId: 'dashboard',
+        navItemKey: 'dashboard',
+        to: APP_PATHS.dashboard,
+      },
+    ],
   },
   {
     id: 'identityAccess',
     items: [
-      { id: 'users', navItemKey: 'users', to: APP_PATHS.users },
-      { id: 'roles', navItemKey: 'roles', to: APP_PATHS.roles },
+      { id: 'users', moduleId: 'user', navItemKey: 'users', to: APP_PATHS.users },
+      { id: 'roles', moduleId: 'role', navItemKey: 'roles', to: APP_PATHS.roles },
     ],
   },
   {
     id: 'organization',
     items: [
-      { id: 'org-units', navItemKey: 'orgUnits', to: APP_PATHS.orgUnits },
+      { id: 'org-units', moduleId: 'org-unit', navItemKey: 'orgUnits', to: APP_PATHS.orgUnits },
       {
         id: 'employment-profiles',
+        moduleId: 'employment-profile',
         navItemKey: 'employmentProfiles',
         to: APP_PATHS.employmentProfiles,
       },
@@ -299,21 +309,42 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
   {
     id: 'talentOwnership',
     items: [
-      { id: 'talents', navItemKey: 'talents', to: APP_PATHS.talents },
-      { id: 'talent-groups', navItemKey: 'talentGroups', to: APP_PATHS.talentGroups },
+      { id: 'talents', moduleId: 'talent', navItemKey: 'talents', to: APP_PATHS.talents },
+      {
+        id: 'talent-groups',
+        moduleId: 'talent-group',
+        navItemKey: 'talentGroups',
+        to: APP_PATHS.talentGroups,
+      },
       {
         id: 'platform-accounts',
+        moduleId: 'platform-account',
         navItemKey: 'platformAccounts',
         to: APP_PATHS.platformAccounts,
       },
-      { id: 'studio-resources', navItemKey: 'studioResources', to: APP_PATHS.studioResources },
+      {
+        id: 'studio-resources',
+        moduleId: 'studio-resource',
+        navItemKey: 'studioResources',
+        to: APP_PATHS.studioResources,
+      },
     ],
   },
   {
     id: 'operations',
     items: [
-      { id: 'work-shifts', navItemKey: 'workShifts', to: APP_PATHS.workShifts },
-      { id: 'events', navItemKey: 'events', to: APP_PATHS.events },
+      {
+        id: 'work-shifts',
+        moduleId: 'work-schedule',
+        navItemKey: 'workShifts',
+        to: APP_PATHS.workShifts,
+      },
+      {
+        id: 'events',
+        moduleId: 'event-assignment',
+        navItemKey: 'events',
+        to: APP_PATHS.events,
+      },
     ],
   },
   {
@@ -321,22 +352,30 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
     items: [
       {
         id: 'contract-registry',
+        moduleId: 'contract-registry',
         navItemKey: 'contractRegistry',
         to: APP_PATHS.contractRecords,
       },
-      { id: 'kpi', navItemKey: 'kpi', to: APP_PATHS.kpi },
-      { id: 'revenue-ledger', navItemKey: 'revenueLedger', to: APP_PATHS.revenueEntries },
+      { id: 'kpi', moduleId: 'kpi', navItemKey: 'kpi', to: APP_PATHS.kpi },
+      {
+        id: 'revenue-ledger',
+        moduleId: 'revenue-ledger',
+        navItemKey: 'revenueLedger',
+        to: APP_PATHS.revenueEntries,
+      },
       {
         id: 'commission',
         navItemKey: 'commission',
         children: [
           {
             id: 'commission-rules',
+            moduleId: 'commission-rules',
             navItemKey: 'commissionRules',
             to: APP_PATHS.commissionRules,
           },
           {
             id: 'commission-settlements',
+            moduleId: 'commission-settlements',
             navItemKey: 'commissionSettlements',
             to: APP_PATHS.commissionSettlements,
           },

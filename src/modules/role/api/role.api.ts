@@ -76,12 +76,13 @@ const roleTemplateScopePlanEntrySchema = z
 
 const workScheduleScopeGrantSchema = z.enum(['self', 'team', 'department', 'global']);
 const globalScopeGrantSchema = z.enum(['global']);
+const eventAssignmentScopeGrantSchema = z.enum(['global', 'managedGroup']);
 const kpiScopeGrantSchema = z.enum(['global', 'managedGroup', 'self']);
 
 export const roleAssignmentScopeGrantsSchema = z
   .object({
     workSchedule: z.array(workScheduleScopeGrantSchema).optional(),
-    eventAssignment: z.array(globalScopeGrantSchema).optional(),
+    eventAssignment: z.array(eventAssignmentScopeGrantSchema).optional(),
     contractRegistry: z.array(globalScopeGrantSchema).optional(),
     talentKpi: z.array(globalScopeGrantSchema).optional(),
     kpi: z.array(kpiScopeGrantSchema).optional(),
@@ -501,3 +502,23 @@ const normalizeScopeGrantsForPayload = (
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 };
+
+const parseAssignmentMutationResponse = (response: unknown): RoleAssignmentItem => {
+  const parsed = assignmentMutationResponseSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw createInvalidAssignmentResponseError();
+  }
+
+  return parsed.data.data;
+};
+
+const createInvalidAssignmentResponseError = (): NormalizedApiError => ({
+  status: null,
+  code: 'ROLE_ASSIGNMENT_RESPONSE_INVALID',
+  message: 'role:feedback.assignmentResponseInvalid',
+  fieldErrors: {},
+  retryable: false,
+  permissionDenied: false,
+  notFound: false,
+});

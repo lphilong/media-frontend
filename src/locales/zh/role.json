@@ -56,12 +56,13 @@
     "assignmentScopes": "分配范围",
     "backendValidation": "分配范围会影响运行时访问。后端会拒绝当前 actor 无权授予的范围。",
     "recommendedScopes": "推荐范围",
-    "recommendedScopesHelp": "推荐范围不会自动分配。如果适合此用户分配，请在提交前应用。",
+    "recommendedScopesHelp": "推荐范围会从角色模板预填。提交前如需为此用户分配使用不同范围，请进行调整。",
     "applyRecommendedScopes": "应用推荐范围",
     "scopes": {
       "self": "本人",
       "team": "团队",
       "department": "部门",
+      "managedGroup": "管理组",
       "global": "全局"
     }
   },

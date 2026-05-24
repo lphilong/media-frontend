@@ -4,6 +4,7 @@ import {
   generatedFixtureMonthCode,
   providedOrGeneratedFixtureCode,
 } from '@test/msw/generated-code-fixtures';
+import { getMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 
 type WorkShiftSubjectKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
 type WorkShiftStatus = 'ACTIVE' | 'CANCELLED' | 'ARCHIVED';
@@ -614,6 +615,20 @@ const initialEvents: EventRecord[] = [
     updatedAt: now - 4_500,
   },
   {
+    id: 'event-managed-scheduled',
+    eventCode: 'EVT-202605-000005',
+    title: 'Managed scheduled event',
+    studioResourceIds: ['studio-001'],
+    platformAccountIds: ['platform-001'],
+    status: 'SCHEDULED',
+    eventStartAt: futureStart + 700_000,
+    eventEndAt: futureEnd + 700_000,
+    description: null,
+    externalRef: null,
+    createdAt: now - 4_800,
+    updatedAt: now - 4_300,
+  },
+  {
     id: 'event-archive',
     eventCode: 'EVT-202603-999999',
     title: 'Archived event',
@@ -669,6 +684,16 @@ const initialAssignments: EventAssignmentRecord[] = [
     assignmentTalentGroupId: 'group-001',
     assignmentStatus: 'ACTIVE',
     createdAt: now - 5_000,
+  },
+  {
+    id: 'assignment-004',
+    eventId: 'event-managed-scheduled',
+    assignmentKind: 'TALENT',
+    assignmentEmploymentProfileId: null,
+    assignmentTalentId: 'talent-001',
+    assignmentTalentGroupId: null,
+    assignmentStatus: 'ACTIVE',
+    createdAt: now - 4_500,
   },
 ];
 
@@ -1774,8 +1799,75 @@ const upsertRosterExceptionFromBody = (
   return exception;
 };
 
+const managedEventGroupIds = new Set(['group-001']);
+const managedEventTalentIds = new Set(['talent-001']);
+
+const readManagedEventScope = (): Set<string> | null | 'denied' => {
+  const capabilities = getMockCurrentActorCapabilities();
+  if (!capabilities.permissions.includes('event.read')) {
+    return 'denied';
+  }
+
+  const scopes = capabilities.scopeGrants.eventAssignment ?? [];
+  if (scopes.includes('global')) {
+    return null;
+  }
+
+  if (scopes.includes('managedGroup')) {
+    return managedEventGroupIds;
+  }
+
+  return 'denied';
+};
+
+const rejectEventReadScope = () => {
+  if (readManagedEventScope() !== 'denied') {
+    return undefined;
+  }
+
+  return HttpResponse.json({ message: 'errors:forbidden.message' }, { status: 403 });
+};
+
+const eventHasManagedAssignment = (
+  eventId: string,
+  managedGroupIds: ReadonlySet<string>,
+): boolean =>
+  assignments.some(
+    (assignment) =>
+      assignment.eventId === eventId &&
+      assignment.assignmentStatus === 'ACTIVE' &&
+      ((assignment.assignmentTalentGroupId !== null &&
+        managedGroupIds.has(assignment.assignmentTalentGroupId)) ||
+        (assignment.assignmentTalentId !== null &&
+          managedEventTalentIds.has(assignment.assignmentTalentId))),
+  );
+
+const filterManagedEventAssignments = (
+  eventId: string,
+  managedGroupIds: ReadonlySet<string> | null,
+): EventAssignmentRecord[] =>
+  assignments.filter(
+    (assignment) =>
+      assignment.eventId === eventId &&
+      assignment.assignmentStatus === 'ACTIVE' &&
+      (managedGroupIds === null ||
+        (assignment.assignmentTalentGroupId !== null &&
+          managedGroupIds.has(assignment.assignmentTalentGroupId)) ||
+        (assignment.assignmentTalentId !== null &&
+          managedEventTalentIds.has(assignment.assignmentTalentId))),
+  );
+
 const filterEventRows = (records: EventRecord[], searchParams: URLSearchParams) => {
   let rows = [...records];
+  const managedGroupIds = readManagedEventScope();
+  if (managedGroupIds === 'denied') {
+    return [];
+  }
+
+  if (managedGroupIds !== null) {
+    rows = rows.filter((item) => eventHasManagedAssignment(item.id, managedGroupIds));
+  }
+
   const status = searchParams.get('status');
   if (!status) {
     rows = rows.filter((item) => item.status !== 'ARCHIVED');
@@ -3350,6 +3442,7 @@ export const wave6Handlers = [
     const url = new URL(request.url);
     const queryFailure =
       rejectEventScopeLeakage(request) ||
+      rejectEventReadScope() ||
       rejectUnsupportedQuery(url.searchParams, eventByAssignmentKeys);
     if (queryFailure) {
       return queryFailure;
@@ -3363,6 +3456,7 @@ export const wave6Handlers = [
     const url = new URL(request.url);
     const queryFailure =
       rejectEventScopeLeakage(request) ||
+      rejectEventReadScope() ||
       rejectUnsupportedQuery(url.searchParams, eventByResourceKeys);
     if (queryFailure) {
       return queryFailure;
@@ -3376,6 +3470,7 @@ export const wave6Handlers = [
     const url = new URL(request.url);
     const queryFailure =
       rejectEventScopeLeakage(request) ||
+      rejectEventReadScope() ||
       rejectUnsupportedQuery(url.searchParams, eventByPlatformKeys);
     if (queryFailure) {
       return queryFailure;
@@ -3388,7 +3483,9 @@ export const wave6Handlers = [
   http.get('*/admin/events', ({ request }) => {
     const url = new URL(request.url);
     const queryFailure =
-      rejectEventScopeLeakage(request) || rejectUnsupportedQuery(url.searchParams, eventFlatKeys);
+      rejectEventScopeLeakage(request) ||
+      rejectEventReadScope() ||
+      rejectUnsupportedQuery(url.searchParams, eventFlatKeys);
     if (queryFailure) {
       return queryFailure;
     }
@@ -3462,7 +3559,7 @@ export const wave6Handlers = [
   }),
 
   http.get('*/admin/events/:eventId/assignments', ({ params, request }) => {
-    const queryFailure = rejectEventScopeLeakage(request);
+    const queryFailure = rejectEventScopeLeakage(request) || rejectEventReadScope();
     if (queryFailure) {
       return queryFailure;
     }
@@ -3472,18 +3569,25 @@ export const wave6Handlers = [
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
 
+    const managedGroupIds = readManagedEventScope();
+    if (
+      managedGroupIds !== null &&
+      managedGroupIds !== 'denied' &&
+      !eventHasManagedAssignment(event.id, managedGroupIds)
+    ) {
+      return HttpResponse.json({ message: 'errors:forbidden.message' }, { status: 403 });
+    }
+
     return HttpResponse.json({
-      data: assignments
-        .filter(
-          (assignment) =>
-            assignment.eventId === event.id && assignment.assignmentStatus === 'ACTIVE',
-        )
-        .map(toEventAssignmentItem),
+      data: filterManagedEventAssignments(
+        event.id,
+        managedGroupIds === 'denied' ? new Set<string>() : managedGroupIds,
+      ).map(toEventAssignmentItem),
     });
   }),
 
   http.get('*/admin/events/:eventId', ({ params, request }) => {
-    const queryFailure = rejectEventScopeLeakage(request);
+    const queryFailure = rejectEventScopeLeakage(request) || rejectEventReadScope();
     if (queryFailure) {
       return queryFailure;
     }
@@ -3491,6 +3595,15 @@ export const wave6Handlers = [
     const event = readEvent(String(params.eventId));
     if (!event) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    const managedGroupIds = readManagedEventScope();
+    if (
+      managedGroupIds !== null &&
+      managedGroupIds !== 'denied' &&
+      !eventHasManagedAssignment(event.id, managedGroupIds)
+    ) {
+      return HttpResponse.json({ message: 'errors:forbidden.message' }, { status: 403 });
     }
 
     return HttpResponse.json({ data: toEventDetail(event) });

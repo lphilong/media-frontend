@@ -18,6 +18,7 @@ type EventListColumnHandlers = {
   onOpenDetail: (eventId: string) => void;
   onLifecycleAction: (eventId: string, action: EventLifecycleAction) => void;
   isActionPending?: (eventId: string, action: EventLifecycleAction) => boolean;
+  canShowLifecycleActions?: boolean;
 };
 
 const statusToneMap = {
@@ -112,7 +113,7 @@ export const createEventListColumns = (
     header: t('event-assignment:table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const actions = readLifecycleActions(record);
+      const actions = handlers.canShowLifecycleActions ? readLifecycleActions(record) : [];
 
       return (
         <div className="flex flex-wrap items-center gap-2">

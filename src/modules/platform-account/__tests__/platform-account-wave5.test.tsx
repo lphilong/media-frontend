@@ -73,7 +73,7 @@ describe('platform-account wave 5 surfaces', () => {
       screen.queryByPlaceholderText(i18n.t('platform-account:filters.ownerIdPlaceholder')),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText(i18n.t('platform-account:filters.searchPlaceholder')),
+      await screen.findByPlaceholderText(i18n.t('platform-account:filters.searchPlaceholder')),
     ).toBeTruthy();
     expect(
       screen.getByRole('combobox', { name: i18n.t('platform-account:filters.operationalStatus') }),

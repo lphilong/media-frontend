@@ -2,12 +2,15 @@ import i18n from 'i18next';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { http, HttpResponse } from 'msw';
 
 import { appRoutes } from '@app/router/router';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
-import { server } from '@test/msw/server';
+import {
+  resetIdentityAccessMockData,
+  setMockCurrentActorCapabilities,
+} from '@test/msw/identity-access-handlers';
+import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {
@@ -17,8 +20,24 @@ const renderRoute = (path: string) => {
   renderAppWithProviders(<RouterProvider router={router} />);
 };
 
+const setEventCapabilities = (
+  overrides: Partial<Pick<CurrentActorCapabilities, 'permissions' | 'roles' | 'scopeGrants'>>,
+) => {
+  setMockCurrentActorCapabilities({
+    id: 'user-event-test',
+    type: 'admin',
+    context: 'ADMIN',
+    isActive: true,
+    roles: overrides.roles ?? ['TEAM_MANAGER'],
+    permissions: overrides.permissions ?? ['event.read'],
+    scopeGrants: overrides.scopeGrants ?? { eventAssignment: ['managedGroup'] },
+    generatedAt: '2026-05-20T00:00:00.000Z',
+  });
+};
+
 describe('event assignment wave 6 surfaces', () => {
   beforeEach(async () => {
+    resetIdentityAccessMockData();
     await setLocale(DEFAULT_LOCALE);
   });
 
@@ -56,6 +75,57 @@ describe('event assignment wave 6 surfaces', () => {
     const main = screen.getByTestId('admin-shell-main');
     expect(
       within(main).queryByText(/removed|attendance|recurrence|work shift|bulk|delete|unarchive/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('TEAM_MANAGER with managedGroup scope sees Event nav and only managed Event rows', async () => {
+    setEventCapabilities({
+      roles: ['TEAM_MANAGER'],
+      permissions: ['event.read', 'event.update', 'event.manageAssignments', 'event.manageLifecycle'],
+      scopeGrants: { eventAssignment: ['managedGroup'] },
+    });
+
+    renderRoute('/events');
+
+    expect(await screen.findByTestId('nav-link-events')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('event-assignment:page.title') }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('EVT-202605-000002')).toBeInTheDocument();
+    expect(screen.getByText('EVT-202603-000003')).toBeInTheDocument();
+    expect(screen.getByText('EVT-202605-000005')).toBeInTheDocument();
+    expect(screen.queryByText('EVT-202605-000001')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('event-assignment:actions.create') }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('TEAM_MANAGER with managedGroup empty Event result shows empty state instead of No Access', async () => {
+    setEventCapabilities({
+      roles: ['TEAM_MANAGER'],
+      permissions: ['event.read'],
+      scopeGrants: { eventAssignment: ['managedGroup'] },
+    });
+
+    renderRoute('/events?search=NO_MATCH');
+
+    expect(await screen.findByText(i18n.t('event-assignment:states.emptyTitle'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
+  });
+
+  it('VIEWER_AUDITOR with global Event scope sees Event read-only', async () => {
+    setEventCapabilities({
+      roles: ['VIEWER_AUDITOR'],
+      permissions: ['event.read'],
+      scopeGrants: { eventAssignment: ['global'] },
+    });
+
+    renderRoute('/events/event-001');
+
+    expect(await screen.findByText('EVT-202605-000001')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: i18n.t('event-assignment:actions.edit') })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('event-assignment:actions.create') }),
     ).not.toBeInTheDocument();
   });
 
@@ -113,24 +183,13 @@ describe('event assignment wave 6 surfaces', () => {
   });
 
   it('requires the eventAssignment global scope for Event detail mutation actions', async () => {
-    server.use(
-      http.get('*/admin/me/capabilities', () =>
-        HttpResponse.json({
-          data: {
-            id: 'user-admin',
-            type: 'admin',
-            context: 'ADMIN',
-            isActive: true,
-            roles: ['role-admin'],
-            permissions: ['event.update', 'event.manageAssignments', 'event.manageLifecycle'],
-            scopeGrants: {},
-            generatedAt: '2026-05-20T00:00:00.000Z',
-          },
-        }),
-      ),
-    );
+    setEventCapabilities({
+      roles: ['role-admin'],
+      permissions: ['event.read', 'event.update', 'event.manageAssignments', 'event.manageLifecycle'],
+      scopeGrants: { eventAssignment: ['managedGroup'] },
+    });
 
-    renderRoute('/events/event-001');
+    renderRoute('/events/event-managed-scheduled');
 
     const edit = await screen.findByRole('button', {
       name: i18n.t('event-assignment:actions.edit'),
@@ -181,6 +240,18 @@ describe('event assignment wave 6 surfaces', () => {
 
   it('supports create, detail roster verification, and a valid lifecycle action', async () => {
     const user = userEvent.setup();
+    setEventCapabilities({
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'event.read',
+        'event.create',
+        'event.update',
+        'event.manageAssignments',
+        'event.manageLifecycle',
+      ],
+      scopeGrants: { eventAssignment: ['global'] },
+    });
+
     renderRoute('/events');
 
     await user.click(

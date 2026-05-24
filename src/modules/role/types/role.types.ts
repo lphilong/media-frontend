@@ -66,11 +66,12 @@ export type RoleTemplatePreview = {
 
 export type WorkScheduleAssignmentScope = 'self' | 'team' | 'department' | 'global';
 export type GlobalAssignmentScope = 'global';
+export type EventAssignmentScope = 'global' | 'managedGroup';
 export type KpiAssignmentScope = 'global' | 'managedGroup' | 'self';
 
 export type RoleAssignmentScopeGrants = {
   workSchedule?: WorkScheduleAssignmentScope[];
-  eventAssignment?: GlobalAssignmentScope[];
+  eventAssignment?: EventAssignmentScope[];
   contractRegistry?: GlobalAssignmentScope[];
   talentKpi?: GlobalAssignmentScope[];
   kpi?: KpiAssignmentScope[];

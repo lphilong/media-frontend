@@ -56,12 +56,13 @@
     "assignmentScopes": "Phạm vi gán",
     "backendValidation": "Gán phạm vi ảnh hưởng quyền truy cập khi chạy. Backend từ chối phạm vi actor hiện tại không được phép cấp.",
     "recommendedScopes": "Phạm vi được khuyến nghị",
-    "recommendedScopesHelp": "Phạm vi khuyến nghị không được gán tự động. Hãy áp dụng trước khi gửi nếu phù hợp với bản ghi gán này.",
+    "recommendedScopesHelp": "Phạm vi khuyến nghị được điền sẵn từ mẫu vai trò. Hãy điều chỉnh trước khi gửi nếu bản ghi gán này cần phạm vi khác.",
     "applyRecommendedScopes": "Áp dụng phạm vi khuyến nghị",
     "scopes": {
       "self": "Cá nhân",
       "team": "Nhóm",
       "department": "Phòng ban",
+      "managedGroup": "Nhóm được quản lý",
       "global": "Toàn cục"
     }
   },

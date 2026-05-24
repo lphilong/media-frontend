@@ -16,7 +16,7 @@ type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
 
 type RoleAssignmentScopeGrants = {
   workSchedule?: Array<'self' | 'team' | 'department' | 'global'>;
-  eventAssignment?: Array<'global'>;
+  eventAssignment?: Array<'global' | 'managedGroup'>;
   contractRegistry?: Array<'global'>;
   talentKpi?: Array<'global'>;
   kpi?: Array<'global' | 'managedGroup' | 'self'>;
@@ -87,6 +87,7 @@ type RoleAssignmentRecord = {
   assignmentId: string;
   roleId: string;
   userId: string;
+  roleRef?: ReferenceSummary | null;
   userRef?: ReferenceSummary | null;
   scopeGrants?: RoleAssignmentScopeGrants;
   state: RoleAssignmentState;
@@ -247,7 +248,12 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'user:view' },
       { code: 'user:create' },
       { code: 'user:provision_account' },
+      { code: 'user:password_setup:send' },
+      { code: 'orgUnit.lookup' },
+      { code: 'employmentProfile.lookup' },
       { code: 'talent.read' },
+      { code: 'talent.lookup' },
+      { code: 'talentGroup.lookup' },
       { code: 'workSchedule.read' },
       { code: 'kpi.read' },
       { code: 'kpi.readProgress' },
@@ -289,6 +295,7 @@ const roleTemplates: RoleTemplateRecord[] = [
     ],
     recommendedScopeGrants: {
       workSchedule: ['self', 'team', 'department'],
+      eventAssignment: ['managedGroup'],
       kpi: ['managedGroup'],
     },
     scopePlan: [
@@ -313,11 +320,19 @@ const roleTemplates: RoleTemplateRecord[] = [
     category: 'PRODUCTION',
     permissions: [
       { code: 'event:read' },
+      { code: 'event.lookup' },
+      { code: 'orgUnit.lookup' },
+      { code: 'employmentProfile.lookup' },
+      { code: 'talent.lookup' },
+      { code: 'talentGroup.lookup' },
+      { code: 'platformAccount.lookup' },
       { code: 'studio-resource:read' },
+      { code: 'studioResource.lookup' },
       { code: 'work-schedule:read' },
     ],
     recommendedScopeGrants: {
       workSchedule: ['department'],
+      eventAssignment: ['global'],
     },
     scopePlan: [
       {
@@ -340,8 +355,15 @@ const roleTemplates: RoleTemplateRecord[] = [
     category: 'FINANCE',
     permissions: [
       { code: 'revenue-ledger:read' },
+      { code: 'revenueLedger.lookup' },
+      { code: 'commissionRule.lookup' },
       { code: 'commission-settlement:read' },
       { code: 'contract-registry:read' },
+      { code: 'contractRegistry.lookup' },
+      { code: 'employmentProfile.lookup' },
+      { code: 'talent.lookup' },
+      { code: 'platformAccount.lookup' },
+      { code: 'event.lookup' },
       { code: 'kpi.read' },
       { code: 'kpi.readProgress' },
       { code: 'dashboard-lite:read' },
@@ -506,6 +528,10 @@ const defaultCurrentActorCapabilities: CurrentActorCapabilitiesRecord = {
   isActive: true,
   roles: ['role-admin'],
   permissions: [
+    'dashboardLite.read',
+    'user:view',
+    'role:list',
+    'role:view',
     'role:update',
     'role:activate',
     'role:deactivate',
@@ -523,38 +549,48 @@ const defaultCurrentActorCapabilities: CurrentActorCapabilitiesRecord = {
     'user:auth_linkage:unlink',
     'user:password_setup:send',
     'user:actor_kind:update',
+    'orgUnit.read',
     'orgUnit.update',
     'orgUnit.manageHierarchy',
     'orgUnit.manageLifecycle',
+    'employmentProfile.read',
     'employmentProfile.update',
     'employmentProfile.manageOrgAssignment',
     'employmentProfile.manageManagerAssignment',
     'employmentProfile.manageUserLinkage',
     'employmentProfile.manageLifecycle',
+    'talent.read',
     'talent.update',
     'talent.manageManager',
     'talent.manageEmploymentLink',
     'talent.manageCommercialParticipation',
     'talent.manageLifecycle',
+    'talentGroup.read',
     'talentGroup.update',
     'talentGroup.manageMembership',
     'talentGroup.manageLifecycle',
+    'platformAccount.read',
     'platformAccount.update',
     'platformAccount.manageOwnership',
     'platformAccount.manageCapabilities',
     'platformAccount.manageLifecycle',
+    'studioResource.read',
     'studioResource.update',
     'studioResource.manageAvailability',
     'studioResource.manageLifecycle',
+    'event.read',
     'event.update',
     'event.manageAssignments',
     'event.manageLifecycle',
+    'workSchedule.read',
     'workSchedule.update',
     'workSchedule.manageLifecycle',
+    'contractRegistry.read',
     'contractRegistry.update',
     'contractRegistry.manageOwner',
     'contractRegistry.manageFileReference',
     'contractRegistry.manageLifecycle',
+    'talentKpi.read',
     'talentKpi.update',
     'talentKpi.manageMetrics',
     'talentKpi.manageLifecycle',
@@ -568,11 +604,14 @@ const defaultCurrentActorCapabilities: CurrentActorCapabilitiesRecord = {
     'kpi.correctActual',
     'kpi.readProgress',
     'kpi.finalize',
+    'revenueLedger.read',
     'revenueLedger.update',
     'revenueLedger.manageLifecycle',
     'revenueLedger.reconcile',
+    'commissionRule.read',
     'commissionRule.update',
     'commissionRule.manageLifecycle',
+    'commissionSettlement.read',
     'commissionSettlement.update',
     'commissionSettlement.manageLifecycle',
   ],
@@ -626,6 +665,7 @@ export const resetIdentityAccessMockData = (): void => {
   assignments = initialAssignments.map((record) => ({ ...record }));
   currentActorCapabilities = cloneCurrentActorCapabilities(defaultCurrentActorCapabilities);
 };
+
 export const getMockCurrentActorCapabilities = (): CurrentActorCapabilitiesRecord =>
   cloneCurrentActorCapabilities(currentActorCapabilities);
 
@@ -740,13 +780,26 @@ const toUserRef = (userId: string): ReferenceSummary | null => {
     : null;
 };
 
-const toRoleAssignmentItem = (assignment: RoleAssignmentRecord): RoleAssignmentRecord => ({
-  ...assignment,
-  userRef: toUserRef(assignment.userId),
-});
-
 const readRole = (roleId: string): RoleRecord | undefined =>
   roles.find((record) => record.id === roleId);
+
+const toRoleRef = (roleId: string): ReferenceSummary | null => {
+  const role = readRole(roleId);
+  return role
+    ? {
+        id: role.id,
+        code: role.code,
+        name: role.name,
+        status: role.state,
+      }
+    : null;
+};
+
+const toRoleAssignmentItem = (assignment: RoleAssignmentRecord): RoleAssignmentRecord => ({
+  ...assignment,
+  roleRef: toRoleRef(assignment.roleId),
+  userRef: toUserRef(assignment.userId),
+});
 
 const toUserListItem = (record: UserRecord) => ({
   id: record.id,

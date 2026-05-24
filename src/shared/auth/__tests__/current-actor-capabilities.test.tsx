@@ -6,6 +6,9 @@ import {
   canUseAction,
   currentActorCapabilitiesSchema,
   fetchCurrentActorCapabilities,
+  hasAllPermissions,
+  hasAnyPermission,
+  hasAnyScopeGrant,
   hasPermission,
   hasScopeGrant,
   PERMISSIONS,
@@ -27,6 +30,7 @@ const capabilitiesPayload: CurrentActorCapabilities = {
   permissions: ['role:update', 'revenueLedger.update'],
   scopeGrants: {
     revenueLedger: ['global'],
+    eventAssignment: ['managedGroup'],
     kpi: ['managedGroup', 'self'],
     workSchedule: ['self', 'team'],
   },
@@ -59,6 +63,7 @@ describe('current actor capabilities', () => {
 
     expect(parsed.permissions).toEqual(['role:update', 'revenueLedger.update']);
     expect(parsed.scopeGrants.revenueLedger).toEqual(['global']);
+    expect(parsed.scopeGrants.eventAssignment).toEqual(['managedGroup']);
     expect(parsed.scopeGrants.kpi).toEqual(['managedGroup', 'self']);
     expect(() =>
       currentActorCapabilitiesSchema.parse({
@@ -81,9 +86,22 @@ describe('current actor capabilities', () => {
   it('exposes UX-only permission and scope helpers', () => {
     expect(hasPermission(capabilitiesPayload, PERMISSIONS.ROLE_UPDATE)).toBe(true);
     expect(hasPermission(capabilitiesPayload, PERMISSIONS.ROLE_ARCHIVE)).toBe(false);
+    expect(
+      hasAnyPermission(capabilitiesPayload, [PERMISSIONS.ROLE_ARCHIVE, PERMISSIONS.ROLE_UPDATE]),
+    ).toBe(true);
+    expect(
+      hasAllPermissions(capabilitiesPayload, [
+        PERMISSIONS.ROLE_UPDATE,
+        PERMISSIONS.REVENUE_LEDGER_UPDATE,
+      ]),
+    ).toBe(true);
+    expect(
+      hasAllPermissions(capabilitiesPayload, [PERMISSIONS.ROLE_UPDATE, PERMISSIONS.ROLE_ARCHIVE]),
+    ).toBe(false);
     expect(hasScopeGrant(capabilitiesPayload, 'revenueLedger', 'global')).toBe(true);
     expect(hasScopeGrant(capabilitiesPayload, 'kpi', 'managedGroup')).toBe(true);
     expect(hasScopeGrant(capabilitiesPayload, 'kpi', 'global')).toBe(false);
+    expect(hasAnyScopeGrant(capabilitiesPayload, 'kpi', ['global', 'managedGroup'])).toBe(true);
     expect(
       canUseAction(capabilitiesPayload, {
         permission: PERMISSIONS.REVENUE_LEDGER_UPDATE,

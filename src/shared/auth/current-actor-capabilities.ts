@@ -6,6 +6,9 @@ import { apiRequest } from '@shared/api';
 export const CURRENT_ACTOR_CAPABILITIES_QUERY_KEY = ['current-actor-capabilities'] as const;
 
 export const PERMISSIONS = {
+  USER_VIEW: 'user:view',
+  ROLE_LIST: 'role:list',
+  ROLE_VIEW: 'role:view',
   ROLE_UPDATE: 'role:update',
   ROLE_ACTIVATE: 'role:activate',
   ROLE_DEACTIVATE: 'role:deactivate',
@@ -23,38 +26,56 @@ export const PERMISSIONS = {
   USER_AUTH_LINKAGE_UNLINK: 'user:auth_linkage:unlink',
   USER_PASSWORD_SETUP_SEND: 'user:password_setup:send',
   USER_ACTOR_KIND_UPDATE: 'user:actor_kind:update',
+  ORG_UNIT_READ: 'orgUnit.read',
   ORG_UNIT_UPDATE: 'orgUnit.update',
+  ORG_UNIT_LOOKUP: 'orgUnit.lookup',
   ORG_UNIT_MANAGE_HIERARCHY: 'orgUnit.manageHierarchy',
   ORG_UNIT_MANAGE_LIFECYCLE: 'orgUnit.manageLifecycle',
+  EMPLOYMENT_PROFILE_READ: 'employmentProfile.read',
   EMPLOYMENT_PROFILE_UPDATE: 'employmentProfile.update',
+  EMPLOYMENT_PROFILE_LOOKUP: 'employmentProfile.lookup',
   EMPLOYMENT_PROFILE_MANAGE_ORG_ASSIGNMENT: 'employmentProfile.manageOrgAssignment',
   EMPLOYMENT_PROFILE_MANAGE_MANAGER_ASSIGNMENT: 'employmentProfile.manageManagerAssignment',
   EMPLOYMENT_PROFILE_MANAGE_USER_LINKAGE: 'employmentProfile.manageUserLinkage',
   EMPLOYMENT_PROFILE_MANAGE_LIFECYCLE: 'employmentProfile.manageLifecycle',
+  TALENT_READ: 'talent.read',
   TALENT_UPDATE: 'talent.update',
+  TALENT_LOOKUP: 'talent.lookup',
   TALENT_MANAGE_MANAGER: 'talent.manageManager',
   TALENT_MANAGE_EMPLOYMENT_LINK: 'talent.manageEmploymentLink',
   TALENT_MANAGE_COMMERCIAL_PARTICIPATION: 'talent.manageCommercialParticipation',
   TALENT_MANAGE_LIFECYCLE: 'talent.manageLifecycle',
+  TALENT_GROUP_READ: 'talentGroup.read',
   TALENT_GROUP_UPDATE: 'talentGroup.update',
+  TALENT_GROUP_LOOKUP: 'talentGroup.lookup',
   TALENT_GROUP_MANAGE_MEMBERSHIP: 'talentGroup.manageMembership',
   TALENT_GROUP_MANAGE_LIFECYCLE: 'talentGroup.manageLifecycle',
+  PLATFORM_ACCOUNT_READ: 'platformAccount.read',
   PLATFORM_ACCOUNT_UPDATE: 'platformAccount.update',
+  PLATFORM_ACCOUNT_LOOKUP: 'platformAccount.lookup',
   PLATFORM_ACCOUNT_MANAGE_OWNERSHIP: 'platformAccount.manageOwnership',
   PLATFORM_ACCOUNT_MANAGE_CAPABILITIES: 'platformAccount.manageCapabilities',
   PLATFORM_ACCOUNT_MANAGE_LIFECYCLE: 'platformAccount.manageLifecycle',
+  STUDIO_RESOURCE_READ: 'studioResource.read',
   STUDIO_RESOURCE_UPDATE: 'studioResource.update',
+  STUDIO_RESOURCE_LOOKUP: 'studioResource.lookup',
   STUDIO_RESOURCE_MANAGE_AVAILABILITY: 'studioResource.manageAvailability',
   STUDIO_RESOURCE_MANAGE_LIFECYCLE: 'studioResource.manageLifecycle',
+  EVENT_READ: 'event.read',
   EVENT_UPDATE: 'event.update',
+  EVENT_LOOKUP: 'event.lookup',
   EVENT_MANAGE_ASSIGNMENTS: 'event.manageAssignments',
   EVENT_MANAGE_LIFECYCLE: 'event.manageLifecycle',
+  WORK_SCHEDULE_READ: 'workSchedule.read',
   WORK_SCHEDULE_UPDATE: 'workSchedule.update',
   WORK_SCHEDULE_MANAGE_LIFECYCLE: 'workSchedule.manageLifecycle',
+  CONTRACT_REGISTRY_READ: 'contractRegistry.read',
   CONTRACT_REGISTRY_UPDATE: 'contractRegistry.update',
+  CONTRACT_REGISTRY_LOOKUP: 'contractRegistry.lookup',
   CONTRACT_REGISTRY_MANAGE_OWNER: 'contractRegistry.manageOwner',
   CONTRACT_REGISTRY_MANAGE_FILE_REFERENCE: 'contractRegistry.manageFileReference',
   CONTRACT_REGISTRY_MANAGE_LIFECYCLE: 'contractRegistry.manageLifecycle',
+  TALENT_KPI_READ: 'talentKpi.read',
   TALENT_KPI_UPDATE: 'talentKpi.update',
   TALENT_KPI_MANAGE_METRICS: 'talentKpi.manageMetrics',
   TALENT_KPI_MANAGE_LIFECYCLE: 'talentKpi.manageLifecycle',
@@ -68,13 +89,19 @@ export const PERMISSIONS = {
   KPI_CORRECT_ACTUAL: 'kpi.correctActual',
   KPI_READ_PROGRESS: 'kpi.readProgress',
   KPI_FINALIZE: 'kpi.finalize',
+  REVENUE_LEDGER_READ: 'revenueLedger.read',
   REVENUE_LEDGER_UPDATE: 'revenueLedger.update',
+  REVENUE_LEDGER_LOOKUP: 'revenueLedger.lookup',
   REVENUE_LEDGER_MANAGE_LIFECYCLE: 'revenueLedger.manageLifecycle',
   REVENUE_LEDGER_RECONCILE: 'revenueLedger.reconcile',
+  COMMISSION_RULE_READ: 'commissionRule.read',
   COMMISSION_RULE_UPDATE: 'commissionRule.update',
+  COMMISSION_RULE_LOOKUP: 'commissionRule.lookup',
   COMMISSION_RULE_MANAGE_LIFECYCLE: 'commissionRule.manageLifecycle',
+  COMMISSION_SETTLEMENT_READ: 'commissionSettlement.read',
   COMMISSION_SETTLEMENT_UPDATE: 'commissionSettlement.update',
   COMMISSION_SETTLEMENT_MANAGE_LIFECYCLE: 'commissionSettlement.manageLifecycle',
+  DASHBOARD_LITE_READ: 'dashboardLite.read',
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS] | string;
@@ -82,7 +109,7 @@ export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS] | st
 const scopeGrantsSchema = z
   .object({
     workSchedule: z.array(z.enum(['self', 'team', 'department', 'global'])).optional(),
-    eventAssignment: z.array(z.literal('global')).optional(),
+    eventAssignment: z.array(z.enum(['global', 'managedGroup'])).optional(),
     contractRegistry: z.array(z.literal('global')).optional(),
     talentKpi: z.array(z.literal('global')).optional(),
     kpi: z.array(z.enum(['global', 'managedGroup', 'self'])).optional(),
@@ -171,6 +198,16 @@ export const hasPermission = (
   permission: PermissionCode,
 ): boolean => Boolean(capabilities?.permissions.includes(permission));
 
+export const hasAnyPermission = (
+  capabilities: CurrentActorCapabilities | undefined,
+  permissions: readonly PermissionCode[],
+): boolean => permissions.some((permission) => hasPermission(capabilities, permission));
+
+export const hasAllPermissions = (
+  capabilities: CurrentActorCapabilities | undefined,
+  permissions: readonly PermissionCode[],
+): boolean => permissions.every((permission) => hasPermission(capabilities, permission));
+
 export const hasScopeGrant = (
   capabilities: CurrentActorCapabilities | undefined,
   module: ActorScopeGrantModule,
@@ -179,6 +216,18 @@ export const hasScopeGrant = (
   const grants = capabilities?.scopeGrants[module] as readonly string[] | undefined;
   return Boolean(grants?.includes(value));
 };
+
+export const hasAnyScopeGrant = (
+  capabilities: CurrentActorCapabilities | undefined,
+  module: ActorScopeGrantModule,
+  values: readonly ActorScopeGrantValue[],
+): boolean => values.some((value) => hasScopeGrant(capabilities, module, value));
+
+export const hasEventAssignmentReadScope = (
+  capabilities: CurrentActorCapabilities | undefined,
+): boolean =>
+  hasScopeGrant(capabilities, 'eventAssignment', 'global') ||
+  hasScopeGrant(capabilities, 'eventAssignment', 'managedGroup');
 
 export const canUseAction = (
   capabilities: CurrentActorCapabilities | undefined,

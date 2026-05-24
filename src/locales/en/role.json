@@ -56,12 +56,13 @@
     "assignmentScopes": "Assignment scopes",
     "backendValidation": "Assigning scopes affects runtime access. Backend rejects scopes the current actor cannot grant.",
     "recommendedScopes": "Recommended scopes",
-    "recommendedScopesHelp": "Recommended scopes are not assigned automatically. Apply them before submitting if they fit this user assignment.",
+    "recommendedScopesHelp": "Recommended scopes are prefilled from the role template. Adjust them before submitting if this user assignment needs a different scope.",
     "applyRecommendedScopes": "Apply recommended scopes",
     "scopes": {
       "self": "Self",
       "team": "Team",
       "department": "Department",
+      "managedGroup": "Managed group",
       "global": "Global"
     }
   },

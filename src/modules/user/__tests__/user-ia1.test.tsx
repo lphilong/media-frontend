@@ -149,6 +149,36 @@ describe('user IA-1 surfaces', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('allows HR password setup capability without unlink or disable powers', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json({
+          data: {
+            id: 'hr-operations-user',
+            type: 'admin',
+            context: 'ADMIN',
+            isActive: true,
+            roles: ['HR_OPERATIONS'],
+            permissions: ['user:view', 'user:password_setup:send'],
+            scopeGrants: {},
+            generatedAt: '2026-05-24T00:00:00.000Z',
+          },
+        }),
+      ),
+    );
+
+    renderRoute('/users/user-admin');
+
+    const passwordSetup = await screen.findByRole('button', {
+      name: i18n.t('user:actions.sendPasswordSetup'),
+    });
+    expect(passwordSetup).toBeEnabled();
+    expect(screen.getByRole('button', { name: i18n.t('user:actions.unlinkAuth0') })).toBeDisabled();
+    expect(screen.getByRole('button', { name: i18n.t('user:actions.disable') })).toBeDisabled();
+    expect(screen.queryByText(unsafeSetupDisclosurePattern)).not.toBeInTheDocument();
+  });
+
   it('still surfaces backend mutation 403 when capability hints allow the action', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -260,7 +290,9 @@ describe('user IA-1 surfaces', () => {
         name: i18n.t('user:mutations.actorKind.submit'),
       }),
     );
-    expect(await within(surface).findByText(i18n.t('user:validation.required'))).toBeInTheDocument();
+    expect(
+      await within(surface).findByText(i18n.t('user:validation.required')),
+    ).toBeInTheDocument();
 
     await user.type(
       within(surface).getByLabelText(i18n.t('user:fields.reason')),
@@ -628,12 +660,15 @@ describe('user IA-1 surfaces', () => {
 
     renderRoute('/users/user-admin');
 
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
     expect(
-      await screen.findByRole('button', { name: i18n.t('user:actions.linkAuth0') }),
-    ).toBeDisabled();
-    expect(screen.getByRole('button', { name: i18n.t('user:actions.unlinkAuth0') })).toBeDisabled();
+      screen.queryByRole('button', { name: i18n.t('user:actions.linkAuth0') }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: i18n.t('user:actions.sendPasswordSetup') }),
-    ).toBeDisabled();
+      screen.queryByRole('button', { name: i18n.t('user:actions.unlinkAuth0') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('user:actions.sendPasswordSetup') }),
+    ).not.toBeInTheDocument();
   });
 });

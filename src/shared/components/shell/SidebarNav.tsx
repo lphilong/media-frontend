@@ -8,6 +8,8 @@ import {
   type NavGroup,
   type ShellNavigationItem,
 } from '@app/router/module-definitions';
+import { canAccessModule } from '@app/router/module-access';
+import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 
 const navGroupOrder: NavGroup[] = [
   'overview',
@@ -34,6 +36,22 @@ type SidebarNavProps = {
 export const SidebarNav = ({ collapsed }: SidebarNavProps): JSX.Element => {
   const { t } = useTranslation('nav');
   const location = useLocation();
+  const capabilitiesQuery = useCurrentActorCapabilities();
+
+  const canShowItem = (item: ShellNavigationItem): boolean => {
+    if (item.children) {
+      return item.children.some(canShowItem);
+    }
+
+    if (!item.moduleId) {
+      return true;
+    }
+
+    return canAccessModule(capabilitiesQuery.data, item.moduleId);
+  };
+
+  const visibleChildren = (item: ShellNavigationItem): ShellNavigationItem[] =>
+    (item.children ?? []).filter(canShowItem);
 
   const isItemActive = (item: ShellNavigationItem): boolean => {
     if (item.to) {
@@ -43,11 +61,12 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps): JSX.Element => {
       );
     }
 
-    return item.children?.some((child) => isItemActive(child)) ?? false;
+    return visibleChildren(item).some((child) => isItemActive(child));
   };
 
   const renderNavItem = (item: ShellNavigationItem, depth = 0): JSX.Element => {
-    const hasChildren = (item.children?.length ?? 0) > 0;
+    const children = visibleChildren(item);
+    const hasChildren = children.length > 0;
     const active = isItemActive(item);
     const label = collapsed ? t(`short.${item.navItemKey}`) : t(`items.${item.navItemKey}`);
 
@@ -65,7 +84,7 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps): JSX.Element => {
           </div>
           {hasChildren ? (
             <div className={clsx('space-y-1', collapsed ? '' : 'ml-2')}>
-              {item.children!.map((child) => renderNavItem(child, depth + 1))}
+              {children.map((child) => renderNavItem(child, depth + 1))}
             </div>
           ) : null}
         </div>
@@ -100,7 +119,8 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps): JSX.Element => {
     >
       {navGroupOrder.map((group) => {
         const navGroup = shellNavigationGroups.find((groupDef) => groupDef.id === group);
-        if (!navGroup || navGroup.items.length === 0) {
+        const visibleItems = navGroup?.items.filter(canShowItem) ?? [];
+        if (!navGroup || visibleItems.length === 0) {
           return null;
         }
 
@@ -110,7 +130,7 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps): JSX.Element => {
               {navGroupIconMap[group]}
               {!collapsed ? <span>{t(`groups.${group}`)}</span> : null}
             </header>
-            <div className="space-y-1">{navGroup.items.map((item) => renderNavItem(item))}</div>
+            <div className="space-y-1">{visibleItems.map((item) => renderNavItem(item))}</div>
           </section>
         );
       })}

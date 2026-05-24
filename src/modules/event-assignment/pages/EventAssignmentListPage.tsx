@@ -20,6 +20,12 @@ import type {
 } from '@modules/event-assignment/types/event-assignment.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  hasPermission,
+  hasScopeGrant,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   AdminTableShell,
   CursorPager,
@@ -197,6 +203,7 @@ export const EventAssignmentListPage = (): JSX.Element => {
   );
 
   const flatQueryResult = useEventFlatList(flatListQuery, { enabled: routeMode === 'flat' });
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const byAssignmentQueryResult = useEventsByAssignment(byAssignmentQuery, {
     enabled: routeMode === 'by-assignment',
   });
@@ -273,16 +280,42 @@ export const EventAssignmentListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
+  const canUseGlobalEventMutations = useMemo(() => {
+    const capabilities = capabilitiesQuery.data;
+    if (!capabilities) {
+      return false;
+    }
+
+    return (
+      hasScopeGrant(capabilities, 'eventAssignment', 'global') &&
+      hasPermission(capabilities, PERMISSIONS.EVENT_MANAGE_LIFECYCLE)
+    );
+  }, [capabilitiesQuery.data]);
+
+  const canCreateGlobalEvent = useMemo(() => {
+    const capabilities = capabilitiesQuery.data;
+    if (!capabilities) {
+      return false;
+    }
+
+    return (
+      hasScopeGrant(capabilities, 'eventAssignment', 'global') &&
+      hasPermission(capabilities, 'event.create')
+    );
+  }, [capabilitiesQuery.data]);
+
   usePageActions(
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen
-        ? t('event-assignment:actions.closeCreate')
-        : t('event-assignment:actions.create')}
-    </button>,
+    canCreateGlobalEvent ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen
+          ? t('event-assignment:actions.closeCreate')
+          : t('event-assignment:actions.create')}
+      </button>
+    ) : null,
   );
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
@@ -333,12 +366,20 @@ export const EventAssignmentListPage = (): JSX.Element => {
       createEventListColumns(t, {
         onOpenDetail: (eventId) => navigate(APP_PATHS.eventDetail(eventId)),
         onLifecycleAction,
+        canShowLifecycleActions: canUseGlobalEventMutations,
         isActionPending: (eventId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.eventId === eventId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canUseGlobalEventMutations,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;

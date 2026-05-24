@@ -3,12 +3,14 @@ import { createBrowserRouter, Navigate, useParams, type RouteObject } from 'reac
 
 import { RequireAuth } from '@app/guards/RequireAuth';
 import { AdminShellLayout } from '@app/layouts/AdminShellLayout';
+import { ModuleAccessGuard } from '@app/router/ModuleAccessGuard';
 import {
   createStubCommissionBranchRoute,
   createStubModuleBranchRoute,
   type ModuleRouteHandle,
 } from '@app/router/module-route-composition';
 import { moduleRouteDefinitions, type ModuleRouteDefinition } from '@app/router/module-definitions';
+import type { ModuleAccessModuleId } from '@app/router/module-access';
 import { APP_PATHS } from '@app/router/paths';
 import { AuthCallbackPage, ForbiddenPage, LoginPage, NotFoundPage } from '@app/router/system-pages';
 import { LoadingState, ModulePlaceholderPage, PageContainer } from '@shared/components/primitives';
@@ -229,6 +231,10 @@ const RouteLoadingFallback = (): JSX.Element => (
   </PageContainer>
 );
 
+const withModuleAccess = (moduleId: ModuleAccessModuleId, element: JSX.Element): JSX.Element => (
+  <ModuleAccessGuard moduleId={moduleId}>{element}</ModuleAccessGuard>
+);
+
 function LazyModuleElement({ moduleId }: { moduleId: string }): JSX.Element {
   const LazyPage = modulePageMap[moduleId];
 
@@ -380,7 +386,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: dashboardDefinition.listPath.replace(/^\//, ''),
-        element: <LazyDashboardElement />,
+        element: withModuleAccess('dashboard', <LazyDashboardElement />),
         handle: {
           breadcrumbKey: `nav:items.${dashboardDefinition.navItemKey}`,
           titleKey: dashboardDefinition.listTitleKey,
@@ -389,7 +395,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.workPatterns.replace(/^\//, ''),
-        element: <LazyWorkPatternListElement />,
+        element: withModuleAccess('work-schedule', <LazyWorkPatternListElement />),
         handle: {
           breadcrumbKey: 'work-schedule:patterns.page.title',
           titleKey: 'work-schedule:patterns.page.title',
@@ -398,7 +404,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.workPatternDetailPattern.replace(/^\//, ''),
-        element: <LazyWorkPatternDetailElement />,
+        element: withModuleAccess('work-schedule', <LazyWorkPatternDetailElement />),
         handle: {
           breadcrumbKey: 'work-schedule:patterns.detail.pageTitle',
           titleKey: 'work-schedule:patterns.detail.pageTitle',
@@ -407,7 +413,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.holidayCalendars.replace(/^\//, ''),
-        element: <LazyHolidayCalendarListElement />,
+        element: withModuleAccess('work-schedule', <LazyHolidayCalendarListElement />),
         handle: {
           breadcrumbKey: 'work-schedule:holidayCalendars.page.title',
           titleKey: 'work-schedule:holidayCalendars.page.title',
@@ -416,7 +422,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.holidayCalendarDetailPattern.replace(/^\//, ''),
-        element: <LazyHolidayCalendarDetailElement />,
+        element: withModuleAccess('work-schedule', <LazyHolidayCalendarDetailElement />),
         handle: {
           breadcrumbKey: 'work-schedule:holidayCalendars.detail.pageTitle',
           titleKey: 'work-schedule:holidayCalendars.detail.pageTitle',
@@ -425,7 +431,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.monthlyRosters.replace(/^\//, ''),
-        element: <LazyMonthlyRosterListElement />,
+        element: withModuleAccess('work-schedule', <LazyMonthlyRosterListElement />),
         handle: {
           breadcrumbKey: 'work-schedule:monthlyRosters.page.title',
           titleKey: 'work-schedule:monthlyRosters.page.title',
@@ -434,7 +440,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.monthlyRosterDetailPattern.replace(/^\//, ''),
-        element: <LazyMonthlyRosterDetailElement />,
+        element: withModuleAccess('work-schedule', <LazyMonthlyRosterDetailElement />),
         handle: {
           breadcrumbKey: 'work-schedule:monthlyRosters.detail.pageTitle',
           titleKey: 'work-schedule:monthlyRosters.detail.pageTitle',
@@ -443,7 +449,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.kpiPlans.replace(/^\//, ''),
-        element: <LazyModuleElement moduleId="kpi" />,
+        element: withModuleAccess('kpi', <LazyModuleElement moduleId="kpi" />),
         handle: {
           breadcrumbKey: 'nav:items.kpi',
           titleKey: 'kpi:page.title',
@@ -453,9 +459,13 @@ export const appRoutes: RouteObject[] = [
       ...standardModuleDefinitions.map((definition) => {
         return createStubModuleBranchRoute({
           definition,
-          listElement: <LazyModuleElement moduleId={definition.id} />,
-          detailElement: (
-            <LazyModuleDetailElement moduleId={definition.id} definition={definition} />
+          listElement: withModuleAccess(
+            definition.id as ModuleAccessModuleId,
+            <LazyModuleElement moduleId={definition.id} />,
+          ),
+          detailElement: withModuleAccess(
+            definition.id as ModuleAccessModuleId,
+            <LazyModuleDetailElement moduleId={definition.id} definition={definition} />,
           ),
           stubRoute: !realModuleIds.has(definition.id),
         });
@@ -473,24 +483,32 @@ export const appRoutes: RouteObject[] = [
           createStubCommissionBranchRoute({
             definition: commissionRulesDefinition,
             commissionPath: APP_PATHS.commission,
-            listElement: <LazyModuleElement moduleId={commissionRulesDefinition.id} />,
-            detailElement: (
+            listElement: withModuleAccess(
+              'commission-rules',
+              <LazyModuleElement moduleId={commissionRulesDefinition.id} />,
+            ),
+            detailElement: withModuleAccess(
+              'commission-rules',
               <LazyModuleDetailElement
                 moduleId={commissionRulesDefinition.id}
                 definition={commissionRulesDefinition}
-              />
+              />,
             ),
             stubRoute: false,
           }),
           createStubCommissionBranchRoute({
             definition: commissionSettlementsDefinition,
             commissionPath: APP_PATHS.commission,
-            listElement: <LazyModuleElement moduleId={commissionSettlementsDefinition.id} />,
-            detailElement: (
+            listElement: withModuleAccess(
+              'commission-settlements',
+              <LazyModuleElement moduleId={commissionSettlementsDefinition.id} />,
+            ),
+            detailElement: withModuleAccess(
+              'commission-settlements',
               <LazyModuleDetailElement
                 moduleId={commissionSettlementsDefinition.id}
                 definition={commissionSettlementsDefinition}
-              />
+              />,
             ),
             stubRoute: false,
           }),

@@ -32,6 +32,7 @@ import type {
   RoleTemplateListItem,
   RoleTemplatePreview,
   RoleUpdatePayload,
+  EventAssignmentScope,
   WorkScheduleAssignmentScope,
   KpiAssignmentScope,
 } from '@modules/role/types/role.types';
@@ -128,7 +129,7 @@ type RoleAssignUserFormValues = {
   reason: string;
   scopeGrants: {
     workSchedule: Record<WorkScheduleAssignmentScope, boolean>;
-    eventAssignment: boolean;
+    eventAssignment: Record<EventAssignmentScope, boolean>;
     contractRegistry: boolean;
     talentKpi: boolean;
     kpi: Record<KpiAssignmentScope, boolean>;
@@ -193,6 +194,7 @@ const workScheduleScopeValues: WorkScheduleAssignmentScope[] = [
   'department',
   'global',
 ];
+const eventAssignmentScopeValues: EventAssignmentScope[] = ['managedGroup', 'global'];
 const kpiScopeValues: KpiAssignmentScope[] = ['global', 'managedGroup', 'self'];
 const adminConsoleRoleCodes = [
   'ADMIN_FULL',
@@ -220,8 +222,11 @@ const buildScopeGrants = (
   if (selectedWorkSchedule.length > 0) {
     scopeGrants.workSchedule = selectedWorkSchedule;
   }
-  if (values.eventAssignment) {
-    scopeGrants.eventAssignment = ['global'];
+  const selectedEventAssignment = eventAssignmentScopeValues.filter(
+    (scope) => values.eventAssignment[scope],
+  );
+  if (selectedEventAssignment.length > 0) {
+    scopeGrants.eventAssignment = selectedEventAssignment;
   }
   if (values.contractRegistry) {
     scopeGrants.contractRegistry = ['global'];
@@ -245,6 +250,31 @@ const buildScopeGrants = (
 
   return Object.keys(scopeGrants).length > 0 ? scopeGrants : undefined;
 };
+
+const createScopeGrantFormValues = (
+  recommendedScopeGrants?: RoleAssignmentScopeGrants,
+): RoleAssignUserFormValues['scopeGrants'] => ({
+  workSchedule: {
+    self: Boolean(recommendedScopeGrants?.workSchedule?.includes('self')),
+    team: Boolean(recommendedScopeGrants?.workSchedule?.includes('team')),
+    department: Boolean(recommendedScopeGrants?.workSchedule?.includes('department')),
+    global: Boolean(recommendedScopeGrants?.workSchedule?.includes('global')),
+  },
+  eventAssignment: {
+    managedGroup: Boolean(recommendedScopeGrants?.eventAssignment?.includes('managedGroup')),
+    global: Boolean(recommendedScopeGrants?.eventAssignment?.includes('global')),
+  },
+  contractRegistry: Boolean(recommendedScopeGrants?.contractRegistry?.includes('global')),
+  talentKpi: Boolean(recommendedScopeGrants?.talentKpi?.includes('global')),
+  kpi: {
+    global: Boolean(recommendedScopeGrants?.kpi?.includes('global')),
+    managedGroup: Boolean(recommendedScopeGrants?.kpi?.includes('managedGroup')),
+    self: Boolean(recommendedScopeGrants?.kpi?.includes('self')),
+  },
+  revenueLedger: Boolean(recommendedScopeGrants?.revenueLedger?.includes('global')),
+  commission: Boolean(recommendedScopeGrants?.commission?.includes('global')),
+  dashboardLite: Boolean(recommendedScopeGrants?.dashboardLite?.includes('global')),
+});
 
 const isPlainJsonObject = (value: unknown): value is Record<string, JsonPlainValue> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -896,25 +926,7 @@ export const RoleAssignUserSurface = ({
     defaultValues: {
       userId: '',
       reason: '',
-      scopeGrants: {
-        workSchedule: {
-          self: false,
-          team: false,
-          department: false,
-          global: false,
-        },
-        eventAssignment: false,
-        contractRegistry: false,
-        talentKpi: false,
-        kpi: {
-          global: false,
-          managedGroup: false,
-          self: false,
-        },
-        revenueLedger: false,
-        commission: false,
-        dashboardLite: false,
-      },
+      scopeGrants: createScopeGrantFormValues(recommendedScopeGrants),
     },
   });
 
@@ -932,7 +944,7 @@ export const RoleAssignUserSurface = ({
           )
             ? 'role:validation.adminRoleRequiresAdminActor'
             : 'role:validation.selfRoleRequiresStaffActor',
-          )
+        )
       : undefined;
 
   const handleSubmit = form.handleSubmit(async (values) => {
@@ -963,55 +975,22 @@ export const RoleAssignUserSurface = ({
   });
 
   const applyRecommendedScopeGrants = (): void => {
-    form.setValue(
-      'scopeGrants.workSchedule.self',
-      Boolean(recommendedScopeGrants?.workSchedule?.includes('self')),
-    );
-    form.setValue(
-      'scopeGrants.workSchedule.team',
-      Boolean(recommendedScopeGrants?.workSchedule?.includes('team')),
-    );
-    form.setValue(
-      'scopeGrants.workSchedule.department',
-      Boolean(recommendedScopeGrants?.workSchedule?.includes('department')),
-    );
-    form.setValue(
-      'scopeGrants.workSchedule.global',
-      Boolean(recommendedScopeGrants?.workSchedule?.includes('global')),
-    );
-    form.setValue(
-      'scopeGrants.eventAssignment',
-      Boolean(recommendedScopeGrants?.eventAssignment?.includes('global')),
-    );
-    form.setValue(
-      'scopeGrants.contractRegistry',
-      Boolean(recommendedScopeGrants?.contractRegistry?.includes('global')),
-    );
-    form.setValue(
-      'scopeGrants.talentKpi',
-      Boolean(recommendedScopeGrants?.talentKpi?.includes('global')),
-    );
-    form.setValue(
-      'scopeGrants.kpi.global',
-      Boolean(recommendedScopeGrants?.kpi?.includes('global')),
-    );
-    form.setValue(
-      'scopeGrants.kpi.managedGroup',
-      Boolean(recommendedScopeGrants?.kpi?.includes('managedGroup')),
-    );
-    form.setValue('scopeGrants.kpi.self', Boolean(recommendedScopeGrants?.kpi?.includes('self')));
-    form.setValue(
-      'scopeGrants.revenueLedger',
-      Boolean(recommendedScopeGrants?.revenueLedger?.includes('global')),
-    );
-    form.setValue(
-      'scopeGrants.commission',
-      Boolean(recommendedScopeGrants?.commission?.includes('global')),
-    );
-    form.setValue(
-      'scopeGrants.dashboardLite',
-      Boolean(recommendedScopeGrants?.dashboardLite?.includes('global')),
-    );
+    const nextScopeGrants = createScopeGrantFormValues(recommendedScopeGrants);
+
+    workScheduleScopeValues.forEach((scope) => {
+      form.setValue(`scopeGrants.workSchedule.${scope}`, nextScopeGrants.workSchedule[scope]);
+    });
+    eventAssignmentScopeValues.forEach((scope) => {
+      form.setValue(`scopeGrants.eventAssignment.${scope}`, nextScopeGrants.eventAssignment[scope]);
+    });
+    form.setValue('scopeGrants.contractRegistry', nextScopeGrants.contractRegistry);
+    form.setValue('scopeGrants.talentKpi', nextScopeGrants.talentKpi);
+    kpiScopeValues.forEach((scope) => {
+      form.setValue(`scopeGrants.kpi.${scope}`, nextScopeGrants.kpi[scope]);
+    });
+    form.setValue('scopeGrants.revenueLedger', nextScopeGrants.revenueLedger);
+    form.setValue('scopeGrants.commission', nextScopeGrants.commission);
+    form.setValue('scopeGrants.dashboardLite', nextScopeGrants.dashboardLite);
   };
 
   return (
@@ -1029,7 +1008,10 @@ export const RoleAssignUserSurface = ({
         isLocked={actorKindMismatch}
         lockedNotice={
           actorKindMismatchMessage ? (
-            <div role="alert" className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <div
+              role="alert"
+              className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+            >
               {actorKindMismatchMessage}
             </div>
           ) : undefined
@@ -1091,23 +1073,34 @@ export const RoleAssignUserSurface = ({
                 ))}
               </div>
             </div>
-            {[
-              'eventAssignment',
-              'contractRegistry',
-              'talentKpi',
-              'revenueLedger',
-              'commission',
-              'dashboardLite',
-            ].map((module) => (
-              <div key={module} className="rounded border border-border bg-panel p-3">
-                <CheckboxField
-                  name={`scopeGrants.${module}`}
-                  label={`${scopeModuleLabels[module as keyof typeof scopeModuleLabels]}: ${t(
-                    'role:scopePicker.scopes.global',
-                  )}`}
-                />
+            <div className="space-y-2 rounded border border-border bg-panel p-3">
+              <div className="text-xs font-medium uppercase text-muted">
+                {scopeModuleLabels.eventAssignment}
               </div>
-            ))}
+              <div className="grid gap-2 sm:grid-cols-2">
+                {eventAssignmentScopeValues.map((scope) => (
+                  <CheckboxField
+                    key={scope}
+                    name={`scopeGrants.eventAssignment.${scope}`}
+                    label={`${scopeModuleLabels.eventAssignment}: ${t(
+                      `role:scopePicker.scopes.${scope}`,
+                    )}`}
+                  />
+                ))}
+              </div>
+            </div>
+            {['contractRegistry', 'talentKpi', 'revenueLedger', 'commission', 'dashboardLite'].map(
+              (module) => (
+                <div key={module} className="rounded border border-border bg-panel p-3">
+                  <CheckboxField
+                    name={`scopeGrants.${module}`}
+                    label={`${scopeModuleLabels[module as keyof typeof scopeModuleLabels]}: ${t(
+                      'role:scopePicker.scopes.global',
+                    )}`}
+                  />
+                </div>
+              ),
+            )}
             <div className="space-y-2 rounded border border-border bg-panel p-3">
               <div className="text-xs font-medium uppercase text-muted">
                 {scopeModuleLabels.kpi}
@@ -1117,7 +1110,7 @@ export const RoleAssignUserSurface = ({
                   <CheckboxField
                     key={scope}
                     name={`scopeGrants.kpi.${scope}`}
-                    label={`kpi.${scope}`}
+                    label={`${scopeModuleLabels.kpi}: ${t(`role:scopePicker.scopes.${scope}`)}`}
                   />
                 ))}
               </div>

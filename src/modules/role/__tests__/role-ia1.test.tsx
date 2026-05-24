@@ -168,7 +168,7 @@ describe('role IA-1 surfaces', () => {
 
     expect(screen.getByText(i18n.t('role:scopePicker.recommendedScopes'))).toBeInTheDocument();
     expect(screen.getAllByText(/kpi\.global/u).length).toBeGreaterThan(0);
-    expect(screen.getByLabelText('kpi.global')).not.toBeChecked();
+    expect(screen.getByLabelText(`KPI: ${i18n.t('role:scopePicker.scopes.global')}`)).toBeChecked();
 
     await user.click(
       screen.getByRole('button', {
@@ -176,7 +176,76 @@ describe('role IA-1 surfaces', () => {
       }),
     );
 
-    expect(screen.getByLabelText('kpi.global')).toBeChecked();
+    expect(screen.getByLabelText(`KPI: ${i18n.t('role:scopePicker.scopes.global')}`)).toBeChecked();
+  });
+
+  it('assigns a compatible user and shows a clear success toast', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/roles/role-admin');
+
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('role:actions.assignToUser') }),
+    );
+    await user.type(screen.getByPlaceholderText(i18n.t('role:placeholders.userSearch')), 'Admin');
+    await user.click(screen.getByRole('button', { name: i18n.t('common:actions.search') }));
+    await user.click(await screen.findByRole('button', { name: /Admin User/u }));
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
+    );
+
+    expect(
+      await screen.findByText(
+        i18n.t('role:feedback.assignedToUserDetailed', {
+          role: 'Admin role',
+          user: 'Admin User',
+        }),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Zod|assignmentId|schema|unrecognized/i)).not.toBeInTheDocument();
+  });
+
+  it('shows concise feedback when assignment response is not recognized', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    server.use(
+      http.post('*/admin/roles/:roleId/assignments', () =>
+        HttpResponse.json({
+          data: {
+            id: 'role-admin',
+            code: 'ADMIN',
+            name: 'Admin role',
+            description: null,
+            state: 'ACTIVE',
+            permissions: [{ code: 'role:view' }],
+            delegationBand: 'LIMITED',
+            maxDelegatableBand: 'NONE',
+            assignmentRules: [],
+            updatedAt: Date.now(),
+            activatedAt: Date.now(),
+            archivedAt: null,
+          },
+        }),
+      ),
+    );
+    renderRoute('/roles/role-admin');
+
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('role:actions.assignToUser') }),
+    );
+    await user.type(screen.getByPlaceholderText(i18n.t('role:placeholders.userSearch')), 'Admin');
+    await user.click(screen.getByRole('button', { name: i18n.t('common:actions.search') }));
+    await user.click(await screen.findByRole('button', { name: /Admin User/u }));
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
+    );
+
+    expect(
+      await screen.findByText(i18n.t('role:feedback.assignmentResponseInvalid')),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Zod|assignmentId|schema|unrecognized_keys/i),
+    ).not.toBeInTheDocument();
   });
 
   it('warns and disables assignment when role and user actor kind mismatch', async () => {
