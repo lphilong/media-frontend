@@ -125,6 +125,7 @@ export type RoleAssignmentItem = {
   assignmentId: string;
   roleId: string;
   userId: string;
+  roleRef?: ReferenceSummary | null;
   userRef?: ReferenceSummary | null;
   scopeGrants?: RoleAssignmentScopeGrants | null;
   state: RoleAssignmentState;

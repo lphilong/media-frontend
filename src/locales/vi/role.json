@@ -199,6 +199,8 @@
     "permissionsUpdated": "Đã thay thế quyền của vai trò.",
     "assignmentRulesUpdated": "Đã thay thế quy tắc gán của vai trò.",
     "assignedToUser": "Đã gán vai trò cho người dùng.",
+    "assignedToUserDetailed": "Đã gán {{role}} cho {{user}}.",
+    "assignmentResponseInvalid": "Không nhận diện được phản hồi gán vai trò.",
     "assignmentRevoked": "Đã thu hồi gán vai trò."
   },
   "statesView": {

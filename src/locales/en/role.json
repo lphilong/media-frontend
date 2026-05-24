@@ -199,6 +199,8 @@
     "permissionsUpdated": "Role permissions replaced.",
     "assignmentRulesUpdated": "Role assignment rules replaced.",
     "assignedToUser": "Role assigned to user.",
+    "assignedToUserDetailed": "Assigned {{role}} to {{user}}.",
+    "assignmentResponseInvalid": "Role assignment response was not recognized.",
     "assignmentRevoked": "Role assignment revoked."
   },
   "statesView": {

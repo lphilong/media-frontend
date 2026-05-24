@@ -108,6 +108,15 @@ const roleAssignment: RoleAssignmentItem = {
   assignmentId: 'assignment-1',
   roleId: 'role-admin',
   userId: 'user-admin',
+  roleRef: {
+    id: 'role-admin',
+    code: 'ADMIN',
+    name: 'Admin role',
+  },
+  userRef: {
+    id: 'user-admin',
+    displayName: 'Admin User',
+  },
   scopeGrants: {
     workSchedule: ['self', 'team'],
   },
@@ -431,6 +440,42 @@ describe('role IA-1 query and payload shaping', () => {
         },
       }),
     );
+  });
+
+  it('parses assignment mutation responses and rejects role DTO or unsafe extras safely', async () => {
+    mockAssignmentResponse();
+    await expect(
+      assignRoleToUser('role-admin', {
+        userId: 'user-admin',
+        reason: null,
+      }),
+    ).resolves.toEqual(roleAssignment);
+
+    apiRequestMock.mockResolvedValueOnce({ data: roleDetail });
+    await expect(
+      assignRoleToUser('role-admin', {
+        userId: 'user-admin',
+        reason: null,
+      }),
+    ).rejects.toMatchObject({
+      message: 'role:feedback.assignmentResponseInvalid',
+      code: 'ROLE_ASSIGNMENT_RESPONSE_INVALID',
+    });
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        ...roleAssignment,
+        secret: 'do-not-expose',
+      },
+    });
+    await expect(
+      assignRoleToUser('role-admin', {
+        userId: 'user-admin',
+        reason: null,
+      }),
+    ).rejects.toMatchObject({
+      message: 'role:feedback.assignmentResponseInvalid',
+    });
   });
 
   it('parses role templates, previews, and create-from-template responses with strict schemas', async () => {

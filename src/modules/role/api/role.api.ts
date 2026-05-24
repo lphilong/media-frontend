@@ -28,7 +28,7 @@ import type {
   RoleTemplatePreview,
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
-import { apiRequest } from '@shared/api';
+import { apiRequest, type NormalizedApiError } from '@shared/api';
 
 const roleStateSchema = z.enum(roleStateValues);
 const roleAssignmentStateSchema = z.enum(roleAssignmentStateValues);
@@ -175,6 +175,7 @@ const assignmentItemSchema = z
     assignmentId: z.string().trim().min(1),
     roleId: z.string().trim().min(1),
     userId: z.string().trim().min(1),
+    roleRef: referenceSummarySchema.nullable().optional(),
     userRef: referenceSummarySchema.nullable().optional(),
     scopeGrants: roleAssignmentScopeGrantsSchema.nullable().optional(),
     state: roleAssignmentStateSchema,
@@ -219,6 +220,12 @@ const assignmentListResponseSchema = z
   .object({
     data: z.array(assignmentItemSchema),
     meta: cursorMetaSchema,
+  })
+  .strict();
+
+const assignmentMutationResponseSchema = z
+  .object({
+    data: assignmentItemSchema,
   })
   .strict();
 
@@ -427,7 +434,7 @@ export const assignRoleToUser = async (
     },
   });
 
-  return z.object({ data: assignmentItemSchema }).strict().parse(response).data;
+  return parseAssignmentMutationResponse(response);
 };
 
 export const revokeRoleAssignment = async (
@@ -445,7 +452,7 @@ export const revokeRoleAssignment = async (
     },
   });
 
-  return z.object({ data: assignmentItemSchema }).strict().parse(response).data;
+  return parseAssignmentMutationResponse(response);
 };
 
 export const fetchRolePermissionMatrix = async (roleId: string): Promise<RolePermissionMatrix> => {

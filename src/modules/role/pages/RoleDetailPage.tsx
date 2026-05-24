@@ -49,7 +49,11 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
+import {
+  formatCreatedDate,
+  formatBusinessTimestamp,
+  readReferenceDisplay,
+} from '@shared/formatting/formatters';
 import {
   applyActionCapabilityHints,
   createActionCapabilityHint,
@@ -333,8 +337,13 @@ export const RoleDetailPage = (): JSX.Element => {
     }
 
     try {
-      await assignToUserMutation.mutateAsync({ roleId: record.id, payload });
-      notifySuccess('role:feedback.assignedToUser');
+      const assignment = await assignToUserMutation.mutateAsync({ roleId: record.id, payload });
+      notifySuccess('role:feedback.assignedToUserDetailed', {
+        role: readReferenceDisplay(assignment.roleRef, record.name || record.code),
+        user:
+          assignment.userRef?.displayName?.trim() ||
+          readReferenceDisplay(assignment.userRef, payload.userId),
+      });
       setActiveSurface(null);
     } catch (error) {
       notifyError(error as NormalizedApiError);

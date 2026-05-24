@@ -199,6 +199,8 @@
     "permissionsUpdated": "角色权限已替换。",
     "assignmentRulesUpdated": "角色分配规则已替换。",
     "assignedToUser": "角色已分配给用户。",
+    "assignedToUserDetailed": "已将 {{role}} 分配给 {{user}}。",
+    "assignmentResponseInvalid": "无法识别角色分配响应。",
     "assignmentRevoked": "角色分配已撤销。"
   },
   "statesView": {

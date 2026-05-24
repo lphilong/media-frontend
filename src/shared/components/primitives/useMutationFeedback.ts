@@ -8,8 +8,11 @@ export const useMutationFeedback = () => {
   const { pushToast } = useToast();
 
   return {
-    notifySuccess: (messageKey = 'common:feedback.saved') => {
-      pushToast(t(messageKey), 'success');
+    notifySuccess: (
+      messageKey = 'common:feedback.saved',
+      values?: Record<string, string | number>,
+    ) => {
+      pushToast(t(messageKey, values), 'success');
     },
     notifyError: (error: NormalizedApiError, fallbackKey = 'errors:transport.generic') => {
       const message = error.message.includes(':') ? t(error.message) : error.message;
