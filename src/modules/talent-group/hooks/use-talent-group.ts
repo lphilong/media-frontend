@@ -2,24 +2,29 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   addTalentGroupMember,
+  assignTalentGroupManager,
   createTalentGroup,
   fetchTalentGroupDetail,
+  fetchTalentGroupManagerAssignments,
   fetchTalentGroupMembers,
   fetchTalentGroups,
   fetchTalentGroupsByTalent,
   performTalentGroupLifecycleAction,
   performTalentGroupMembershipLifecycleAction,
+  revokeTalentGroupManagerAssignment,
   updateTalentGroup,
   updateTalentGroupMemberLineup,
 } from '@modules/talent-group/api/talent-group.api';
 import type {
   TalentGroupAddMemberPayload,
+  TalentGroupAssignManagerPayload,
   TalentGroupByTalentQuery,
   TalentGroupCreatePayload,
   TalentGroupFlatListQuery,
   TalentGroupLifecycleAction,
   TalentGroupMembershipLifecycleAction,
   TalentGroupMembersQuery,
+  TalentGroupRevokeManagerPayload,
   TalentGroupUpdateLineupPayload,
   TalentGroupUpdatePayload,
 } from '@modules/talent-group/types/talent-group.types';
@@ -49,6 +54,8 @@ export const talentGroupQueryKeys = {
   detail: (groupId: string) => ['talent-group', 'detail', groupId] as const,
   members: (groupId: string, query: TalentGroupMembersQuery) =>
     ['talent-group', 'members', groupId, query.cursor ?? 'root', query.limit ?? 20] as const,
+  managerAssignments: (groupId: string) =>
+    ['talent-group', 'manager-assignments', groupId] as const,
 };
 
 export const useTalentGroupFlatList = (
@@ -93,6 +100,16 @@ export const useTalentGroupMembers = (
       ? talentGroupQueryKeys.members(groupId, query)
       : [...TALENT_GROUP_QUERY_ROOT, 'members'],
     queryFn: () => fetchTalentGroupMembers(groupId ?? '', query),
+    enabled: Boolean(groupId),
+  });
+};
+
+export const useTalentGroupManagerAssignments = (groupId: string | undefined) => {
+  return useQuery({
+    queryKey: groupId
+      ? talentGroupQueryKeys.managerAssignments(groupId)
+      : [...TALENT_GROUP_QUERY_ROOT, 'manager-assignments'],
+    queryFn: () => fetchTalentGroupManagerAssignments(groupId ?? ''),
     enabled: Boolean(groupId),
   });
 };
@@ -145,6 +162,42 @@ export const useTalentGroupAddMemberMutation = () => {
   return useMutation({
     mutationFn: ({ groupId, payload }: { groupId: string; payload: TalentGroupAddMemberPayload }) =>
       addTalentGroupMember(groupId, payload),
+    onSuccess: async () => {
+      await invalidateTalentGroupModuleQueries(queryClient);
+    },
+  });
+};
+
+export const useTalentGroupAssignManagerMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      groupId,
+      payload,
+    }: {
+      groupId: string;
+      payload: TalentGroupAssignManagerPayload;
+    }) => assignTalentGroupManager(groupId, payload),
+    onSuccess: async () => {
+      await invalidateTalentGroupModuleQueries(queryClient);
+    },
+  });
+};
+
+export const useTalentGroupRevokeManagerMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      groupId,
+      assignmentId,
+      payload,
+    }: {
+      groupId: string;
+      assignmentId: string;
+      payload?: TalentGroupRevokeManagerPayload;
+    }) => revokeTalentGroupManagerAssignment(groupId, assignmentId, payload),
     onSuccess: async () => {
       await invalidateTalentGroupModuleQueries(queryClient);
     },

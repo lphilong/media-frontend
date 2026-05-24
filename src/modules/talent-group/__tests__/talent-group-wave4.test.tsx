@@ -8,8 +8,12 @@ import {
   TalentGroupCreateSurface,
   TalentGroupEditSurface,
 } from '@modules/talent-group/forms/talent-group-mutation-forms';
-import { fetchTalentGroupsByTalent } from '@modules/talent-group/api/talent-group.api';
+import {
+  fetchTalentGroupManagerAssignments,
+  fetchTalentGroupsByTalent,
+} from '@modules/talent-group/api/talent-group.api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
+import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 import { renderAppWithProviders } from '@test/render-app-route';
 
 type RouteEntry = string | { pathname: string; search?: string; state?: unknown };
@@ -53,6 +57,58 @@ const openMoreFilters = async (user: ReturnType<typeof userEvent.setup>): Promis
 };
 
 describe('talent-group wave 4 surfaces', () => {
+  it('renders TEAM_MANAGER scoped TalentGroup list rows from backend-filtered MSW data', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    setMockCurrentActorCapabilities({
+      id: 'user-team-manager',
+      type: 'admin',
+      context: 'ADMIN',
+      isActive: true,
+      roles: ['TEAM_MANAGER'],
+      permissions: ['talent.read', 'talentGroup.read'],
+      scopeGrants: {
+        workSchedule: ['self', 'team', 'department'],
+        kpi: ['managedGroup'],
+      },
+      generatedAt: '2026-05-20T00:00:00.000Z',
+    });
+
+    renderRoute('/talent-groups');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('talent-group:page.title') }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('TG-000001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByText('A Team')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('TG-000002')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders an error state for TEAM_MANAGER unmanaged TalentGroup detail', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    setMockCurrentActorCapabilities({
+      id: 'user-team-manager',
+      type: 'admin',
+      context: 'ADMIN',
+      isActive: true,
+      roles: ['TEAM_MANAGER'],
+      permissions: ['talent.read', 'talentGroup.read'],
+      scopeGrants: {
+        workSchedule: ['self', 'team', 'department'],
+        kpi: ['managedGroup'],
+      },
+      generatedAt: '2026-05-20T00:00:00.000Z',
+    });
+
+    renderRoute('/talent-groups/group-002');
+
+    expect(
+      await screen.findByText(i18n.t('errors:permission.title'), {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('talent-group:actionRail.title'))).not.toBeInTheDocument();
+  });
+
   it('renders filtered flat-list rows for query-driven Talent Group routes', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/talent-groups?status=INACTIVE&search=B%20Team');
@@ -193,6 +249,17 @@ describe('talent-group wave 4 surfaces', () => {
     expect(item?.id).not.toBe(item?.groupCode);
   });
 
+  it('parses manager assignment DTOs with strict safe fields', async () => {
+    const assignments = await fetchTalentGroupManagerAssignments('group-001');
+    expect(assignments[0]).toMatchObject({
+      id: 'manager-assignment-001',
+      groupId: 'group-001',
+      managerEmploymentProfileId: 'ep-001',
+      managerHasLinkedAdminUser: true,
+    });
+    expect(assignments[0]).not.toHaveProperty('authSubject');
+  });
+
   it('renders detail roster/links and status gating for group lifecycle', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/talent-groups/group-001');
@@ -218,6 +285,56 @@ describe('talent-group wave 4 surfaces', () => {
       name: i18n.t('talent-group:related.openFilteredList'),
     });
     expect(relatedLinks.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('renders and revokes group manager assignments from the detail page', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/talent-groups/group-001');
+
+    expect(await screen.findByText(i18n.t('talent-group:managers.title'))).toBeInTheDocument();
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText(/EP-000001/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: i18n.t('talent-group:managers.revoke') }));
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('common:actions.confirmDestructive') }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(i18n.t('talent-group:managers.emptyTitle'))).toBeInTheDocument();
+    });
+  });
+
+  it('assigns a group manager using the employment profile lookup', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/talent-groups/group-001');
+
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: i18n.t('talent-group:managers.revoke') }));
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('common:actions.confirmDestructive') }),
+    );
+    expect(await screen.findByText(i18n.t('talent-group:managers.emptyTitle'))).toBeInTheDocument();
+    expect(screen.queryByText('managerEmploymentProfileId')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: i18n.t('talent-group:managers.assign') }));
+    expect(
+      await screen.findByRole('heading', {
+        name: i18n.t('talent-group:mutations.assignManager.title'),
+      }),
+    ).toBeInTheDocument();
+
+    const picker = await findPicker('talent-group-manager-employment-profile');
+    await user.click(await within(picker).findByRole('button', { name: /EP-000001/ }));
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('talent-group:mutations.assignManager.submit'),
+      }),
+    );
+
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
   });
 
   it('keeps Talent Group sort priority visible in create/edit surfaces without changing values', async () => {

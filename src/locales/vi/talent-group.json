@@ -13,6 +13,8 @@
     "description": "Mô tả",
     "externalRef": "Tham chiếu bên ngoài",
     "talentId": "Talent",
+    "managerEmploymentProfileId": "Quản lý",
+    "reason": "Lý do",
     "lineupOrder": "Thứ tự đội hình",
     "newLineupOrder": "Thứ tự đội hình mới",
     "createdAt": "Thời điểm tạo",
@@ -24,10 +26,12 @@
   },
   "placeholders": {
     "optional": "Không bắt buộc",
-    "talentSearch": "Tìm Talent theo tên hoặc mã"
+    "talentSearch": "Tìm Talent theo tên hoặc mã",
+    "managerSearch": "Tìm hồ sơ nhân sự theo tên hoặc mã"
   },
   "referenceHelp": {
-    "talentId": "Chọn Talent cần thêm vào nhóm này."
+    "talentId": "Chọn Talent cần thêm vào nhóm này.",
+    "managerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý nhóm này."
   },
   "help": {
     "displayOrder": "Số nhỏ hiển thị trước. Khoảng cách như 10, 20, 30 giúp chèn mục mới giữa các mục hiện có dễ hơn. Ví dụ: dùng 15 để đặt một mục giữa 10 và 20."
@@ -62,6 +66,11 @@
     "ACTIVE": "Hoạt động",
     "INACTIVE": "Không hoạt động",
     "REMOVED": "Đã xóa khỏi nhóm"
+  },
+  "managerRoles": {
+    "OWNER": "Chủ sở hữu",
+    "MANAGER": "Quản lý",
+    "ASSISTANT": "Trợ lý"
   },
   "actions": {
     "create": "Tạo nhóm Talent",
@@ -138,6 +147,12 @@
       "subtitle": "Cập nhật thứ tự hiển thị của thành viên trong nhóm.",
       "submit": "Cập nhật",
       "pending": "Đang cập nhật..."
+    },
+    "assignManager": {
+      "title": "Gán quản lý",
+      "subtitle": "Gán hồ sơ nhân sự làm quản lý nhóm",
+      "submit": "Gán",
+      "pending": "Đang gán..."
     }
   },
   "validation": {
@@ -145,7 +160,11 @@
     "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
     "invalidDisplayOrder": "Ưu tiên sắp xếp phải là số nguyên lớn hơn hoặc bằng 0.",
-    "invalidLineupOrder": "Thứ tự đội hình phải là số nguyên lớn hơn hoặc bằng 0."
+    "invalidLineupOrder": "Thứ tự đội hình phải là số nguyên lớn hơn hoặc bằng 0.",
+    "groupMustBeActive": "Gán quản lý cần nhóm đang hoạt động.",
+    "managerEmploymentProfileInvalid": "Chọn hồ sơ nhân sự đang hoạt động.",
+    "managerAssignmentDuplicate": "Quản lý này đã được gán cho nhóm.",
+    "managerAssignmentInactive": "Gán quản lý này không còn hoạt động."
   },
   "feedback": {
     "created": "Đã tạo nhóm Talent.",
@@ -153,7 +172,9 @@
     "memberAdded": "Đã thêm thành viên.",
     "lineupUpdated": "Đã cập nhật thứ tự đội hình.",
     "lifecycleUpdated": "Đã cập nhật vòng đời nhóm.",
-    "membershipLifecycleUpdated": "Đã cập nhật vòng đời thành viên."
+    "membershipLifecycleUpdated": "Đã cập nhật vòng đời thành viên.",
+    "managerAssigned": "Đã gán quản lý.",
+    "managerRevoked": "Đã thu hồi gán quản lý."
   },
   "confirm": {
     "activate": "Kích hoạt nhóm này?",
@@ -161,7 +182,17 @@
     "archive": "Lưu trữ nhóm này?",
     "deactivateMember": "Vô hiệu hóa thành viên này?",
     "reactivateMember": "Kích hoạt lại thành viên này?",
-    "removeMember": "Xóa thành viên này?"
+    "removeMember": "Xóa thành viên này?",
+    "revokeManager": "Thu hồi gán quản lý này?"
+  },
+  "managers": {
+    "title": "Quản lý",
+    "assign": "Gán quản lý",
+    "revoke": "Thu hồi quản lý",
+    "primary": "Chính",
+    "emptyTitle": "Chưa có quản lý đang hoạt động",
+    "emptyMessage": "Nhóm này chưa có gán quản lý đang hoạt động.",
+    "noLinkedAdminUser": "Hồ sơ nhân sự này chưa liên kết với tài khoản admin đang hoạt động."
   },
   "actionRail": {
     "title": "Hành động nhóm Talent"

@@ -11,11 +11,15 @@ import { z } from 'zod';
 
 import type {
   TalentGroupAddMemberPayload,
+  TalentGroupAssignManagerPayload,
   TalentGroupCreatePayload,
   TalentGroupUpdateLineupPayload,
   TalentGroupUpdatePayload,
 } from '@modules/talent-group/types/talent-group.types';
-import { loadTalentReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import {
+  loadEmploymentProfileReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
 import { FormGrid, GeneratedCodeNotice, ReferencePickerField, TextInputField } from '@shared/forms';
 
@@ -46,6 +50,10 @@ type TalentGroupAddMemberSurfaceProps = BaseMutationSurfaceProps & {
 type TalentGroupUpdateLineupSurfaceProps = BaseMutationSurfaceProps & {
   initialLineupOrder: number;
   onSubmit: (payload: TalentGroupUpdateLineupPayload) => Promise<void> | void;
+};
+
+type TalentGroupAssignManagerSurfaceProps = BaseMutationSurfaceProps & {
+  onSubmit: (payload: TalentGroupAssignManagerPayload) => Promise<void> | void;
 };
 
 const toNullableText = (value?: string): string | null => {
@@ -105,6 +113,17 @@ const createGroupAddMemberSchema = (
 const createLineupSchema = (numberMessage: string) => {
   return z.object({
     newLineupOrder: z.coerce.number().int(numberMessage).min(0, numberMessage),
+  });
+};
+
+const createAssignManagerSchema = (requiredMessage: string, tokenMessage: string) => {
+  return z.object({
+    managerEmploymentProfileId: z
+      .string()
+      .trim()
+      .min(1, requiredMessage)
+      .regex(/^[A-Za-z0-9_-]+$/, tokenMessage),
+    reason: z.string().trim().optional(),
   });
 };
 
@@ -422,6 +441,79 @@ export const TalentGroupUpdateLineupSurface = ({
           label={t('talent-group:fields.newLineupOrder')}
           type="number"
         />
+      </ModuleMutationSurface>
+    </FormProvider>
+  );
+};
+
+type TalentGroupAssignManagerFormValues = {
+  managerEmploymentProfileId: string;
+  reason: string;
+};
+
+export const TalentGroupAssignManagerSurface = ({
+  onCancel,
+  onSubmit,
+  isPending = false,
+}: TalentGroupAssignManagerSurfaceProps): JSX.Element => {
+  const { t } = useTranslation(['talent-group', 'common']);
+  const form = useForm<TalentGroupAssignManagerFormValues>({
+    defaultValues: {
+      managerEmploymentProfileId: '',
+      reason: '',
+    },
+  });
+
+  const schema = useMemo(
+    () =>
+      createAssignManagerSchema(
+        t('talent-group:validation.required'),
+        t('talent-group:validation.invalidReferenceToken'),
+      ),
+    [t],
+  );
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      applySchemaErrors(form.setError, parsed.error, 'managerEmploymentProfileId');
+      return;
+    }
+
+    await onSubmit({
+      managerEmploymentProfileId: parsed.data.managerEmploymentProfileId,
+      reason: toNullableText(parsed.data.reason),
+    });
+  });
+
+  return (
+    <FormProvider {...form}>
+      <ModuleMutationSurface
+        title={t('talent-group:mutations.assignManager.title')}
+        subtitle={t('talent-group:mutations.assignManager.subtitle')}
+        kind="action"
+        submitLabel={t('talent-group:mutations.assignManager.submit')}
+        pendingLabel={t('talent-group:mutations.assignManager.pending')}
+        cancelLabel={t('common:actions.cancel')}
+        onCancel={onCancel}
+        onSubmit={(event) => void handleSubmit(event)}
+        isPending={isPending}
+      >
+        <FormGrid columns={2}>
+          <ReferencePickerField
+            name="managerEmploymentProfileId"
+            label={t('talent-group:fields.managerEmploymentProfileId')}
+            pickerId="talent-group-manager-employment-profile"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('talent-group:referenceHelp.managerEmploymentProfileId')}
+            placeholder={t('talent-group:placeholders.managerSearch')}
+          />
+          <TextInputField
+            name="reason"
+            label={t('talent-group:fields.reason')}
+            placeholder={t('talent-group:placeholders.optional')}
+          />
+        </FormGrid>
       </ModuleMutationSurface>
     </FormProvider>
   );

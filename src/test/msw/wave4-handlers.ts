@@ -4,6 +4,7 @@ import {
   generatedFixtureCode,
   providedOrGeneratedFixtureCode,
 } from '@test/msw/generated-code-fixtures';
+import { getMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 
 type TalentOperationalStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE' | 'ARCHIVED';
 type TalentOrigin = 'INTERNAL' | 'EXTERNAL';
@@ -38,6 +39,8 @@ type TalentRecord = {
 
 type TalentGroupStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 type TalentGroupMembershipStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
+type TalentGroupManagerAssignmentStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
+type TalentGroupManagerRole = 'OWNER' | 'MANAGER' | 'ASSISTANT';
 
 type TalentGroupRecord = {
   id: string;
@@ -64,14 +67,29 @@ type TalentGroupMembershipRecord = {
   updatedAt: number;
 };
 
+type TalentGroupManagerAssignmentRecord = {
+  id: string;
+  groupId: string;
+  managerEmploymentProfileId: string;
+  role: TalentGroupManagerRole;
+  effectiveFrom: number;
+  effectiveTo: number | null;
+  status: TalentGroupManagerAssignmentStatus;
+  isPrimary: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
 const now = Date.parse('2026-04-22T00:00:00.000Z');
 const initialTalentSeed = 1000;
 const initialGroupSeed = 1000;
 const initialMembershipSeed = 2000;
+const initialManagerAssignmentSeed = 3000;
 
 let talentSeed = initialTalentSeed;
 let groupSeed = initialGroupSeed;
 let membershipSeed = initialMembershipSeed;
+let managerAssignmentSeed = initialManagerAssignmentSeed;
 
 const initialTalents: TalentRecord[] = [
   {
@@ -245,11 +263,29 @@ const initialMemberships: TalentGroupMembershipRecord[] = [
   },
 ];
 
+const initialManagerAssignments: TalentGroupManagerAssignmentRecord[] = [
+  {
+    id: 'manager-assignment-001',
+    groupId: 'group-001',
+    managerEmploymentProfileId: 'ep-001',
+    role: 'MANAGER',
+    effectiveFrom: now - 4_000,
+    effectiveTo: null,
+    status: 'ACTIVE',
+    isPrimary: true,
+    createdAt: now - 4_000,
+    updatedAt: now - 4_000,
+  },
+];
+
 let talents: TalentRecord[] = initialTalents.map((record) => ({ ...record }));
 let talentGroups: TalentGroupRecord[] = initialTalentGroups.map((record) => ({ ...record }));
 let memberships: TalentGroupMembershipRecord[] = initialMemberships.map((record) => ({
   ...record,
 }));
+let managerAssignments: TalentGroupManagerAssignmentRecord[] = initialManagerAssignments.map(
+  (record) => ({ ...record }),
+);
 
 const normalizeText = (value: string): string => value.trim().toLowerCase();
 const toPrefixMatch = (value: string, search: string): boolean =>
@@ -314,6 +350,61 @@ const readGroup = (groupId: string): TalentGroupRecord | undefined =>
   talentGroups.find((item) => item.id === groupId);
 const readMembership = (membershipId: string): TalentGroupMembershipRecord | undefined =>
   memberships.find((item) => item.id === membershipId);
+const readManagerAssignment = (
+  assignmentId: string,
+): TalentGroupManagerAssignmentRecord | undefined =>
+  managerAssignments.find((item) => item.id === assignmentId);
+
+const actorEmploymentProfileIds = new Map<string, string>([['user-team-manager', 'ep-001']]);
+
+const getManagedGroupScopeIds = (): Set<string> | null => {
+  const capabilities = getMockCurrentActorCapabilities();
+  const kpiScopes = capabilities.scopeGrants.kpi ?? [];
+
+  if (kpiScopes.includes('global') || !kpiScopes.includes('managedGroup')) {
+    return null;
+  }
+
+  const employmentProfileId = actorEmploymentProfileIds.get(capabilities.id);
+  if (!employmentProfileId) {
+    return new Set();
+  }
+
+  return new Set(
+    managerAssignments
+      .filter(
+        (assignment) =>
+          assignment.managerEmploymentProfileId === employmentProfileId &&
+          assignment.status === 'ACTIVE' &&
+          assignment.effectiveFrom <= Date.now() &&
+          (assignment.effectiveTo === null || assignment.effectiveTo >= Date.now()),
+      )
+      .map((assignment) => assignment.groupId),
+  );
+};
+
+const denyUnmanagedGroup = (groupId: string): Response | null => {
+  const managedGroupIds = getManagedGroupScopeIds();
+  if (managedGroupIds === null || managedGroupIds.has(groupId)) {
+    return null;
+  }
+
+  return HttpResponse.json({ message: 'errors:forbidden.message' }, { status: 403 });
+};
+
+const hasActiveManagedTalentMembership = (talentId: string): boolean => {
+  const managedGroupIds = getManagedGroupScopeIds();
+  if (managedGroupIds === null) {
+    return true;
+  }
+
+  return memberships.some(
+    (membership) =>
+      membership.talentId === talentId &&
+      membership.membershipStatus === 'ACTIVE' &&
+      managedGroupIds.has(membership.groupId),
+  );
+};
 
 const employmentProfileRefs = new Map<string, ReferenceSummary>([
   [
@@ -338,6 +429,13 @@ const employmentProfileRefs = new Map<string, ReferenceSummary>([
 
 const toEmploymentProfileRef = (employmentProfileId: string | null): ReferenceSummary | null =>
   employmentProfileId ? (employmentProfileRefs.get(employmentProfileId) ?? null) : null;
+
+const toGroupRef = (groupId: string): ReferenceSummary | null => {
+  const group = readGroup(groupId);
+  return group
+    ? { id: group.id, code: group.groupCode, name: group.name, status: group.status }
+    : null;
+};
 
 const toTalentRef = (talentId: string): ReferenceSummary | null => {
   const talent = readTalent(talentId);
@@ -415,6 +513,22 @@ const toMembershipItem = (record: TalentGroupMembershipRecord) => {
     updatedAt: record.updatedAt,
   };
 };
+
+const toManagerAssignmentItem = (record: TalentGroupManagerAssignmentRecord) => ({
+  id: record.id,
+  groupId: record.groupId,
+  managerEmploymentProfileId: record.managerEmploymentProfileId,
+  role: record.role,
+  effectiveFrom: record.effectiveFrom,
+  effectiveTo: record.effectiveTo,
+  status: record.status,
+  isPrimary: record.isPrimary,
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
+  groupRef: toGroupRef(record.groupId),
+  managerRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
+  managerHasLinkedAdminUser: record.managerEmploymentProfileId === 'ep-001',
+});
 
 const toByTalentItem = (group: TalentGroupRecord, membership: TalentGroupMembershipRecord) => {
   return {
@@ -542,14 +656,18 @@ const cloneTalents = (): TalentRecord[] => initialTalents.map((record) => ({ ...
 const cloneGroups = (): TalentGroupRecord[] => initialTalentGroups.map((record) => ({ ...record }));
 const cloneMemberships = (): TalentGroupMembershipRecord[] =>
   initialMemberships.map((record) => ({ ...record }));
+const cloneManagerAssignments = (): TalentGroupManagerAssignmentRecord[] =>
+  initialManagerAssignments.map((record) => ({ ...record }));
 
 export const resetWave4MockData = (): void => {
   talentSeed = initialTalentSeed;
   groupSeed = initialGroupSeed;
   membershipSeed = initialMembershipSeed;
+  managerAssignmentSeed = initialManagerAssignmentSeed;
   talents = cloneTalents();
   talentGroups = cloneGroups();
   memberships = cloneMemberships();
+  managerAssignments = cloneManagerAssignments();
 };
 
 export const wave4Handlers = [
@@ -569,10 +687,24 @@ export const wave4Handlers = [
     const search = searchParams.get('search');
 
     let rows = [...talents];
+    const managedGroupIds = getManagedGroupScopeIds();
+
     if (!operationalStatus) {
       rows = rows.filter((item) => item.operationalStatus !== 'ARCHIVED');
     } else {
       rows = rows.filter((item) => item.operationalStatus === operationalStatus);
+    }
+
+    if (managedGroupIds !== null) {
+      const activeManagedTalentIds = new Set(
+        memberships
+          .filter(
+            (membership) =>
+              membership.membershipStatus === 'ACTIVE' && managedGroupIds.has(membership.groupId),
+          )
+          .map((membership) => membership.talentId),
+      );
+      rows = rows.filter((item) => activeManagedTalentIds.has(item.id));
     }
 
     if (talentOrigin) {
@@ -699,7 +831,12 @@ export const wave4Handlers = [
   }),
 
   http.get('*/admin/talents/:talentId', ({ params }) => {
-    const talent = readTalent(String(params.talentId));
+    const talentId = String(params.talentId);
+    if (!hasActiveManagedTalentMembership(talentId)) {
+      return HttpResponse.json({ message: 'errors:forbidden.message' }, { status: 403 });
+    }
+
+    const talent = readTalent(talentId);
     if (!talent) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
@@ -901,10 +1038,16 @@ export const wave4Handlers = [
     const search = searchParams.get('search');
 
     let rows = [...talentGroups];
+    const managedGroupIds = getManagedGroupScopeIds();
+
     if (!status) {
       rows = rows.filter((item) => item.status !== 'ARCHIVED');
     } else {
       rows = rows.filter((item) => item.status === status);
+    }
+
+    if (managedGroupIds !== null) {
+      rows = rows.filter((item) => managedGroupIds.has(item.id));
     }
 
     if (containsTalentId) {
@@ -949,6 +1092,11 @@ export const wave4Handlers = [
         return group ? toByTalentItem(group, membership) : null;
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
+    const managedGroupIds = getManagedGroupScopeIds();
+
+    if (managedGroupIds !== null) {
+      rows = rows.filter((item) => managedGroupIds.has(item.groupId));
+    }
 
     if (status) {
       rows = rows.filter((item) => item.status === status);
@@ -997,7 +1145,13 @@ export const wave4Handlers = [
   }),
 
   http.get('*/admin/talent-groups/:groupId', ({ params }) => {
-    const group = readGroup(String(params.groupId));
+    const groupId = String(params.groupId);
+    const denied = denyUnmanagedGroup(groupId);
+    if (denied) {
+      return denied;
+    }
+
+    const group = readGroup(groupId);
     if (!group) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
@@ -1008,7 +1162,13 @@ export const wave4Handlers = [
   }),
 
   http.get('*/admin/talent-groups/:groupId/members', ({ params, request }) => {
-    const group = readGroup(String(params.groupId));
+    const groupId = String(params.groupId);
+    const denied = denyUnmanagedGroup(groupId);
+    if (denied) {
+      return denied;
+    }
+
+    const group = readGroup(groupId);
     if (!group) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
@@ -1026,6 +1186,26 @@ export const wave4Handlers = [
 
     const paged = paginate(rows, url.searchParams);
     return HttpResponse.json(paged);
+  }),
+
+  http.get('*/admin/talent-groups/:groupId/manager-assignments', ({ params }) => {
+    const groupId = String(params.groupId);
+    const denied = denyUnmanagedGroup(groupId);
+    if (denied) {
+      return denied;
+    }
+
+    const group = readGroup(groupId);
+    if (!group) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    const rows = managerAssignments
+      .filter((assignment) => assignment.groupId === group.id && assignment.status === 'ACTIVE')
+      .sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary))
+      .map(toManagerAssignmentItem);
+
+    return HttpResponse.json({ data: rows });
   }),
 
   http.patch('*/admin/talent-groups/:groupId', async ({ params, request }) => {
@@ -1167,6 +1347,83 @@ export const wave4Handlers = [
       data: toMembershipItem(nextMembership),
     });
   }),
+
+  http.post('*/admin/talent-groups/:groupId/manager-assignments', async ({ params, request }) => {
+    const group = readGroup(String(params.groupId));
+    if (!group) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (group.status !== 'ACTIVE') {
+      return HttpResponse.json(
+        { message: 'talent-group:validation.groupMustBeActive' },
+        { status: 422 },
+      );
+    }
+
+    const body = await parseJsonBody(request);
+    const managerEmploymentProfileId = String(body.managerEmploymentProfileId ?? '');
+    const managerRef = toEmploymentProfileRef(managerEmploymentProfileId);
+    if (!managerRef || managerRef.status !== 'ACTIVE') {
+      return HttpResponse.json(
+        { message: 'talent-group:validation.managerEmploymentProfileInvalid' },
+        { status: 422 },
+      );
+    }
+    if (
+      managerAssignments.some(
+        (assignment) =>
+          assignment.groupId === group.id &&
+          assignment.managerEmploymentProfileId === managerEmploymentProfileId &&
+          assignment.status === 'ACTIVE',
+      )
+    ) {
+      return HttpResponse.json(
+        { message: 'talent-group:validation.managerAssignmentDuplicate' },
+        { status: 409 },
+      );
+    }
+
+    managerAssignmentSeed += 1;
+    const nextAssignment: TalentGroupManagerAssignmentRecord = {
+      id: `manager-assignment-${managerAssignmentSeed}`,
+      groupId: group.id,
+      managerEmploymentProfileId,
+      role: 'MANAGER',
+      effectiveFrom: Date.now(),
+      effectiveTo: null,
+      status: 'ACTIVE',
+      isPrimary: !managerAssignments.some(
+        (assignment) => assignment.groupId === group.id && assignment.status === 'ACTIVE',
+      ),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    managerAssignments.push(nextAssignment);
+
+    return HttpResponse.json({ data: toManagerAssignmentItem(nextAssignment) });
+  }),
+
+  http.post(
+    '*/admin/talent-groups/:groupId/manager-assignments/:assignmentId/revoke',
+    ({ params }) => {
+      const group = readGroup(String(params.groupId));
+      const assignment = readManagerAssignment(String(params.assignmentId));
+      if (!group || !assignment || assignment.groupId !== group.id) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (assignment.status !== 'ACTIVE') {
+        return HttpResponse.json(
+          { message: 'talent-group:validation.managerAssignmentInactive' },
+          { status: 422 },
+        );
+      }
+      assignment.status = 'INACTIVE';
+      assignment.effectiveTo = Date.now();
+      assignment.updatedAt = Date.now();
+
+      return HttpResponse.json({ data: toManagerAssignmentItem(assignment) });
+    },
+  ),
 
   http.patch('*/admin/talent-groups/members/:membershipId/lineup', async ({ params, request }) => {
     const membership = readMembership(String(params.membershipId));

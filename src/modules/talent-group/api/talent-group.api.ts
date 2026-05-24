@@ -4,6 +4,7 @@ import { apiRequest } from '@shared/api';
 
 import type {
   CursorPagedResponse,
+  TalentGroupAssignManagerPayload,
   TalentGroupAddMemberPayload,
   TalentGroupByTalentListItem,
   TalentGroupByTalentQuery,
@@ -11,15 +12,19 @@ import type {
   TalentGroupFlatListQuery,
   TalentGroupLifecycleAction,
   TalentGroupMemberRecord,
+  TalentGroupManagerAssignmentRecord,
   TalentGroupMembershipLifecycleAction,
   TalentGroupMembersQuery,
   TalentGroupRecord,
+  TalentGroupRevokeManagerPayload,
   TalentGroupUpdateLineupPayload,
   TalentGroupUpdatePayload,
 } from '@modules/talent-group/types/talent-group.types';
 
 const groupStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']);
 const membershipStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'REMOVED']);
+const managerAssignmentStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'REMOVED']);
+const managerRoleSchema = z.enum(['OWNER', 'MANAGER', 'ASSISTANT']);
 const referenceSummarySchema = z
   .object({
     id: z.string().trim().min(1),
@@ -65,6 +70,24 @@ const memberSchema = z
     leftAt: z.union([z.number(), z.string()]).nullable().optional(),
     createdAt: z.union([z.number(), z.string()]),
     updatedAt: z.union([z.number(), z.string()]),
+  })
+  .strict();
+
+const managerAssignmentSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    groupId: z.string().trim().min(1),
+    managerEmploymentProfileId: z.string().trim().min(1),
+    role: managerRoleSchema,
+    effectiveFrom: z.union([z.number(), z.string()]),
+    effectiveTo: z.union([z.number(), z.string()]).nullable().optional(),
+    status: managerAssignmentStatusSchema,
+    isPrimary: z.boolean(),
+    createdAt: z.union([z.number(), z.string()]),
+    updatedAt: z.union([z.number(), z.string()]),
+    groupRef: referenceSummarySchema,
+    managerRef: referenceSummarySchema,
+    managerHasLinkedAdminUser: z.boolean(),
   })
   .strict();
 
@@ -119,6 +142,18 @@ const membersResponseSchema = z
   .object({
     data: z.array(memberSchema),
     meta: cursorMetaSchema,
+  })
+  .strict();
+
+const managerAssignmentsResponseSchema = z
+  .object({
+    data: z.array(managerAssignmentSchema),
+  })
+  .strict();
+
+const managerAssignmentMutationResponseSchema = z
+  .object({
+    data: managerAssignmentSchema,
   })
   .strict();
 
@@ -197,6 +232,17 @@ export const fetchTalentGroupMembers = async (
   return membersResponseSchema.parse(response);
 };
 
+export const fetchTalentGroupManagerAssignments = async (
+  groupId: string,
+): Promise<TalentGroupManagerAssignmentRecord[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/talent-groups/${encodeURIComponent(groupId)}/manager-assignments`,
+  });
+
+  return managerAssignmentsResponseSchema.parse(response).data;
+};
+
 export const createTalentGroup = async (
   payload: TalentGroupCreatePayload,
 ): Promise<TalentGroupRecord> => {
@@ -251,6 +297,35 @@ export const addTalentGroupMember = async (
     })
     .strict()
     .parse(response).data;
+};
+
+export const assignTalentGroupManager = async (
+  groupId: string,
+  payload: TalentGroupAssignManagerPayload,
+): Promise<TalentGroupManagerAssignmentRecord> => {
+  const response = await apiRequest<unknown, TalentGroupAssignManagerPayload>({
+    method: 'POST',
+    url: `/admin/talent-groups/${encodeURIComponent(groupId)}/manager-assignments`,
+    data: payload,
+  });
+
+  return managerAssignmentMutationResponseSchema.parse(response).data;
+};
+
+export const revokeTalentGroupManagerAssignment = async (
+  groupId: string,
+  assignmentId: string,
+  payload: TalentGroupRevokeManagerPayload = {},
+): Promise<TalentGroupManagerAssignmentRecord> => {
+  const response = await apiRequest<unknown, TalentGroupRevokeManagerPayload>({
+    method: 'POST',
+    url: `/admin/talent-groups/${encodeURIComponent(groupId)}/manager-assignments/${encodeURIComponent(
+      assignmentId,
+    )}/revoke`,
+    data: payload,
+  });
+
+  return managerAssignmentMutationResponseSchema.parse(response).data;
 };
 
 export const updateTalentGroupMemberLineup = async (

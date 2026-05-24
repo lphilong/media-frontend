@@ -499,7 +499,7 @@ const initialAssignments: RoleAssignmentRecord[] = [
   },
 ];
 
-const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
+const defaultCurrentActorCapabilities: CurrentActorCapabilitiesRecord = {
   id: 'user-admin',
   type: 'admin',
   context: 'ADMIN',
@@ -589,6 +589,10 @@ const currentActorCapabilities: CurrentActorCapabilitiesRecord = {
   generatedAt: '2026-05-20T00:00:00.000Z',
 };
 
+let currentActorCapabilities: CurrentActorCapabilitiesRecord = cloneCurrentActorCapabilities(
+  defaultCurrentActorCapabilities,
+);
+
 let users = initialUsers.map((record) => ({
   ...record,
   profile: { ...record.profile },
@@ -620,7 +624,46 @@ export const resetIdentityAccessMockData = (): void => {
     assignmentRules: record.assignmentRules.map((rule) => ({ ...rule })),
   }));
   assignments = initialAssignments.map((record) => ({ ...record }));
+  currentActorCapabilities = cloneCurrentActorCapabilities(defaultCurrentActorCapabilities);
 };
+export const getMockCurrentActorCapabilities = (): CurrentActorCapabilitiesRecord =>
+  cloneCurrentActorCapabilities(currentActorCapabilities);
+
+export const setMockCurrentActorCapabilities = (
+  capabilities: CurrentActorCapabilitiesRecord,
+): void => {
+  currentActorCapabilities = cloneCurrentActorCapabilities(capabilities);
+};
+
+function cloneCurrentActorCapabilities(
+  record: CurrentActorCapabilitiesRecord,
+): CurrentActorCapabilitiesRecord {
+  return {
+    ...record,
+    roles: [...record.roles],
+    permissions: [...record.permissions],
+    scopeGrants: {
+      ...(record.scopeGrants.workSchedule
+        ? { workSchedule: [...record.scopeGrants.workSchedule] }
+        : {}),
+      ...(record.scopeGrants.eventAssignment
+        ? { eventAssignment: [...record.scopeGrants.eventAssignment] }
+        : {}),
+      ...(record.scopeGrants.contractRegistry
+        ? { contractRegistry: [...record.scopeGrants.contractRegistry] }
+        : {}),
+      ...(record.scopeGrants.talentKpi ? { talentKpi: [...record.scopeGrants.talentKpi] } : {}),
+      ...(record.scopeGrants.kpi ? { kpi: [...record.scopeGrants.kpi] } : {}),
+      ...(record.scopeGrants.revenueLedger
+        ? { revenueLedger: [...record.scopeGrants.revenueLedger] }
+        : {}),
+      ...(record.scopeGrants.commission ? { commission: [...record.scopeGrants.commission] } : {}),
+      ...(record.scopeGrants.dashboardLite
+        ? { dashboardLite: [...record.scopeGrants.dashboardLite] }
+        : {}),
+    },
+  };
+}
 
 const parseJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
   const body = (await request.json()) as unknown;
