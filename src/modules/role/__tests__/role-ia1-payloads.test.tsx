@@ -133,9 +133,9 @@ const roleTemplateCatalog: RoleTemplateListItem[] = [
     name: 'Team Manager',
     description: 'Team operations preset',
     category: 'MANAGEMENT',
-    permissionCount: 2,
+    permissionCount: 15,
     recommendedScopeGrants: {
-      workSchedule: ['self', 'team', 'department'],
+      workSchedule: ['self', 'team'],
       eventAssignment: ['managedGroup'],
       kpi: ['managedGroup'],
     },
@@ -156,9 +156,9 @@ const roleTemplateCatalog: RoleTemplateListItem[] = [
 const roleTemplatePreview: RoleTemplatePreview = {
   template: {
     ...roleTemplateCatalog[0],
-    permissions: [{ code: 'work-schedule:read' }, { code: 'talent-kpi:read' }],
+    permissions: [{ code: 'workSchedule.read' }, { code: 'talentKpi.read' }],
   },
-  permissions: [{ code: 'work-schedule:read' }, { code: 'talent-kpi:read' }],
+  permissions: [{ code: 'workSchedule.read' }, { code: 'talentKpi.read' }],
   scopePlan: roleTemplateCatalog[0].scopePlan,
   warnings: roleTemplateCatalog[0].warnings,
   unsupportedScopeNotes: [],
@@ -602,7 +602,7 @@ describe('role IA-1 query and payload shaping', () => {
     expect(
       await screen.findByText(i18n.t('role:templates.generatedPermissions')),
     ).toBeInTheDocument();
-    expect(screen.getByText('work-schedule:read')).toBeInTheDocument();
+    expect(screen.getByText('workSchedule.read')).toBeInTheDocument();
     expect(screen.getByText('Scope plans are preview-only.')).toBeInTheDocument();
     expect(screen.getByText(/Preview-only scope plan/u)).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('role:fields.name')), 'Team Manager Copy');
@@ -777,7 +777,7 @@ describe('role IA-1 query and payload shaping', () => {
           roleCode="TEAM_MANAGER"
           templateCode="TEAM_MANAGER"
           recommendedScopeGrants={{
-            workSchedule: ['self', 'team', 'department'],
+            workSchedule: ['self', 'team'],
             kpi: ['managedGroup'],
             eventAssignment: ['managedGroup'],
           }}
@@ -787,7 +787,7 @@ describe('role IA-1 query and payload shaping', () => {
 
     expect(screen.getByLabelText(i18n.t('role:scopePicker.scopes.self'))).toBeChecked();
     expect(screen.getByLabelText(i18n.t('role:scopePicker.scopes.team'))).toBeChecked();
-    expect(screen.getByLabelText(i18n.t('role:scopePicker.scopes.department'))).toBeChecked();
+    expect(screen.getByLabelText(i18n.t('role:scopePicker.scopes.department'))).not.toBeChecked();
     expect(
       screen.getByLabelText(`Event Assignment: ${i18n.t('role:scopePicker.scopes.managedGroup')}`),
     ).toBeChecked();
@@ -804,7 +804,7 @@ describe('role IA-1 query and payload shaping', () => {
       userId: 'user-admin',
       reason: null,
       scopeGrants: {
-        workSchedule: ['self', 'team', 'department'],
+        workSchedule: ['self', 'team'],
         eventAssignment: ['managedGroup'],
         kpi: ['managedGroup'],
       },
@@ -819,7 +819,7 @@ describe('role IA-1 query and payload shaping', () => {
           roleCode="PRODUCTION_OPS"
           templateCode="PRODUCTION_OPS"
           recommendedScopeGrants={{
-            workSchedule: ['department'],
+            workSchedule: ['global'],
             eventAssignment: ['global'],
           }}
         />
@@ -842,7 +842,7 @@ describe('role IA-1 query and payload shaping', () => {
       userId: 'user-admin',
       reason: null,
       scopeGrants: {
-        workSchedule: ['department'],
+        workSchedule: ['global'],
         eventAssignment: ['global'],
       },
     });

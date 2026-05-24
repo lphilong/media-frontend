@@ -61,7 +61,7 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByRole('button', { name: /user lifecycle/i })).not.toBeInTheDocument();
   });
 
-  it('shows capability reasons for Role actions when permissions are missing', async () => {
+  it('hides Role actions when permissions are missing', async () => {
     await setLocale(DEFAULT_LOCALE);
     server.use(
       http.get('*/admin/me/capabilities', () =>
@@ -82,27 +82,35 @@ describe('role IA-1 surfaces', () => {
 
     renderRoute('/roles/role-admin');
 
-    const edit = await screen.findByRole('button', { name: i18n.t('role:actions.edit') });
-    const assign = screen.getByRole('button', { name: i18n.t('role:actions.assignToUser') });
+    expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
     const assignmentRow = (await screen.findByRole('link', { name: /admin@example.test/ })).closest(
       'tr',
     );
 
-    expect(edit).toBeDisabled();
     await waitFor(() =>
-      expect(edit).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission')),
+      expect(
+        screen.queryByRole('button', { name: i18n.t('role:actions.edit') }),
+      ).not.toBeInTheDocument(),
     );
-    expect(assign).toBeDisabled();
-    expect(assign).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission'));
+    expect(
+      screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('role:actions.replacePermissions') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('role:actions.replaceAssignmentRules') }),
+    ).not.toBeInTheDocument();
+
     expect(assignmentRow).not.toBeNull();
     if (!assignmentRow) {
       return;
     }
     expect(
-      within(assignmentRow).getByRole('button', {
+      within(assignmentRow).queryByRole('button', {
         name: i18n.t('role:actions.revokeAssignment'),
       }),
-    ).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission'));
+    ).not.toBeInTheDocument();
   });
 
   it('supports Role-owned assignment revocation from the assignment list', async () => {

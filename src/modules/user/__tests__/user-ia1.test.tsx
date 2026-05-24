@@ -106,7 +106,7 @@ describe('user IA-1 surfaces', () => {
     expect(screen.queryByText(/credential|token|session/i)).not.toBeInTheDocument();
   });
 
-  it('shows capability reasons for User actions when permissions are missing', async () => {
+  it('hides User actions when permissions are missing', async () => {
     await setLocale(DEFAULT_LOCALE);
     server.use(
       http.get('*/admin/me/capabilities', () =>
@@ -127,26 +127,21 @@ describe('user IA-1 surfaces', () => {
 
     renderRoute('/users/user-admin');
 
-    const edit = await screen.findByRole('button', { name: i18n.t('user:actions.edit') });
-    const authLinkage = screen.getByRole('button', {
-      name: i18n.t('user:actions.linkAuth0'),
+    await screen.findByText(i18n.t('user:actionRail.title'));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: i18n.t('user:actions.edit') }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: i18n.t('user:actions.linkAuth0') }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: i18n.t('user:actions.sendPasswordSetup') }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: i18n.t('user:actions.convertActorKind') }),
+      ).not.toBeInTheDocument();
     });
-    const passwordSetup = screen.getByRole('button', {
-      name: i18n.t('user:actions.sendPasswordSetup'),
-    });
-
-    expect(edit).toBeDisabled();
-    await waitFor(() =>
-      expect(edit).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission')),
-    );
-    expect(authLinkage).toBeDisabled();
-    expect(authLinkage).toHaveAccessibleDescription(
-      i18n.t('common:capabilities.missingPermission'),
-    );
-    expect(passwordSetup).toBeDisabled();
-    expect(
-      screen.queryByRole('button', { name: i18n.t('user:actions.convertActorKind') }),
-    ).not.toBeInTheDocument();
   });
 
   it('allows HR password setup capability without unlink or disable powers', async () => {
@@ -174,8 +169,14 @@ describe('user IA-1 surfaces', () => {
       name: i18n.t('user:actions.sendPasswordSetup'),
     });
     expect(passwordSetup).toBeEnabled();
-    expect(screen.getByRole('button', { name: i18n.t('user:actions.unlinkAuth0') })).toBeDisabled();
-    expect(screen.getByRole('button', { name: i18n.t('user:actions.disable') })).toBeDisabled();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: i18n.t('user:actions.unlinkAuth0') }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: i18n.t('user:actions.disable') }),
+      ).not.toBeInTheDocument();
+    });
     expect(screen.queryByText(unsafeSetupDisclosurePattern)).not.toBeInTheDocument();
   });
 
@@ -618,7 +619,7 @@ describe('user IA-1 surfaces', () => {
     );
   });
 
-  it('disables provisioning without permission', async () => {
+  it('hides provisioning without permission', async () => {
     await setLocale(DEFAULT_LOCALE);
     server.use(
       http.get('*/admin/me/capabilities', () =>
@@ -639,15 +640,12 @@ describe('user IA-1 surfaces', () => {
 
     renderRoute('/users');
 
-    const provision = await screen.findByRole('button', {
-      name: i18n.t('user:actions.provisionAccount'),
+    await screen.findByRole('heading', { name: i18n.t('user:page.title') });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: i18n.t('user:actions.provisionAccount') }),
+      ).not.toBeInTheDocument();
     });
-    expect(provision).toBeDisabled();
-    await waitFor(() =>
-      expect(provision).toHaveAccessibleDescription(
-        i18n.t('common:capabilities.missingPermission'),
-      ),
-    );
   });
 
   it('fails identity actions closed when capabilities cannot be loaded', async () => {

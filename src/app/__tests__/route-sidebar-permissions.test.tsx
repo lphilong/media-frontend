@@ -50,7 +50,7 @@ describe('route and sidebar permission model', () => {
           'kpi.readProgress',
         ],
         scopeGrants: {
-          workSchedule: ['self', 'team', 'department'],
+          workSchedule: ['self', 'team'],
           eventAssignment: ['managedGroup'],
           kpi: ['managedGroup'],
         },

@@ -38,7 +38,7 @@ describe('module access model', () => {
         'kpi.readProgress',
       ],
       scopeGrants: {
-        workSchedule: ['self', 'team', 'department'],
+        workSchedule: ['self', 'team'],
         eventAssignment: ['managedGroup'],
         kpi: ['managedGroup'],
       },

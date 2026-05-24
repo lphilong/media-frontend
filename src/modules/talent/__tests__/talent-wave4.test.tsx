@@ -57,7 +57,7 @@ describe('talent wave 4 surfaces', () => {
       roles: ['TEAM_MANAGER'],
       permissions: ['talent.read', 'talentGroup.read'],
       scopeGrants: {
-        workSchedule: ['self', 'team', 'department'],
+        workSchedule: ['self', 'team'],
         kpi: ['managedGroup'],
       },
       generatedAt: '2026-05-20T00:00:00.000Z',
@@ -86,7 +86,7 @@ describe('talent wave 4 surfaces', () => {
       roles: ['TEAM_MANAGER'],
       permissions: ['talent.read', 'talentGroup.read'],
       scopeGrants: {
-        workSchedule: ['self', 'team', 'department'],
+        workSchedule: ['self', 'team'],
         kpi: ['managedGroup'],
       },
       generatedAt: '2026-05-20T00:00:00.000Z',
@@ -127,13 +127,15 @@ describe('talent wave 4 surfaces', () => {
       await screen.findByRole('heading', { name: i18n.t('talent:page.title') }),
     ).toBeInTheDocument();
     expect(
+      await screen.findByPlaceholderText(i18n.t('talent:filters.searchPlaceholder')),
+    ).toBeTruthy();
+    expect(
       screen.queryByPlaceholderText(i18n.t('talent:filters.managerEmploymentProfileIdPlaceholder')),
     ).not.toBeInTheDocument();
-    expect(screen.getByPlaceholderText(i18n.t('talent:filters.searchPlaceholder'))).toBeTruthy();
     expect(
-      screen.getByRole('combobox', { name: i18n.t('talent:filters.operationalStatus') }),
+      await screen.findByRole('combobox', { name: i18n.t('talent:filters.operationalStatus') }),
     ).toHaveValue('ACTIVE');
-    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
     expect(
       screen.getByRole('button', {
         name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
