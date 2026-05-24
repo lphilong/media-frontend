@@ -6,13 +6,7 @@ import {
 import type { EmploymentProfileListItem } from '@modules/employment-profile/types/employment-profile.types';
 import { fetchOrgUnitDetail, fetchOrgUnits } from '@modules/org-unit/api/org-unit.api';
 import type { OrgUnitRecord } from '@modules/org-unit/types/org-unit.types';
-import {
-  fetchStudioResourceDetail,
-} from '@modules/studio-resource/api/studio-resource.api';
-import type { StudioResourceListItem } from '@modules/studio-resource/types/studio-resource.types';
-import {
-  fetchTalentGroupDetail,
-} from '@modules/talent-group/api/talent-group.api';
+import { fetchTalentGroupDetail } from '@modules/talent-group/api/talent-group.api';
 import type { TalentGroupRecord } from '@modules/talent-group/types/talent-group.types';
 import { fetchTalentDetail } from '@modules/talent/api/talent.api';
 import type { TalentRecord } from '@modules/talent/types/talent.types';
@@ -30,6 +24,7 @@ import type {
 import type { ReferenceOption } from '@shared/components/reference';
 import {
   loadEmploymentProfileReferenceOptions,
+  loadStudioResourceReferenceOptionsByIds,
   loadStudioResourceReferenceOptions,
   loadTalentGroupReferenceOptions,
   loadTalentReferenceOptions,
@@ -61,13 +56,6 @@ const toTalentGroupOption = (item: TalentGroupRecord): ReferenceOption => ({
   label: `${item.groupCode} - ${item.name}`,
   description: compactDescription([item.shortName, item.status]),
   href: APP_PATHS.talentGroupDetail(item.id),
-});
-
-const toStudioResourceOption = (item: StudioResourceListItem): ReferenceOption => ({
-  id: item.id,
-  label: `${item.resourceCode} - ${item.shortName || item.name}`,
-  description: compactDescription([item.name, item.resourceClass, item.operationalStatus]),
-  href: APP_PATHS.studioResourceDetail(item.id),
 });
 
 const toDepartmentOption = (item: OrgUnitRecord): ReferenceOption => ({
@@ -164,8 +152,17 @@ export const loadWorkShiftStudioResourceOptions = async (
 
 export const loadWorkShiftStudioResourceOptionById = async (
   studioResourceId: string,
-): Promise<ReferenceOption> =>
-  toStudioResourceOption(await fetchStudioResourceDetail(studioResourceId));
+): Promise<ReferenceOption> => {
+  const options = await loadStudioResourceReferenceOptionsByIds([studioResourceId]);
+  const option = options.find((candidate) => candidate.id === studioResourceId);
+  return (
+    option ?? {
+      id: studioResourceId,
+      label: studioResourceId,
+      href: APP_PATHS.studioResourceDetail(studioResourceId),
+    }
+  );
+};
 
 export const loadWorkShiftStudioResourceFilterOptions = async (
   search: string,

@@ -89,6 +89,22 @@ const readLifecycleConfirmKey = (action: WorkShiftLifecycleAction): string => {
   return action === 'cancel' ? 'work-schedule:confirm.cancel' : 'work-schedule:confirm.archive';
 };
 
+const toActiveSubnavSurface = (scope: ReturnType<typeof parseWorkScheduleScope>) => {
+  if (scope === 'self') {
+    return 'my-shifts';
+  }
+
+  if (scope === 'team') {
+    return 'team-shifts';
+  }
+
+  if (scope === 'department') {
+    return 'department-shifts';
+  }
+
+  return 'global-ops';
+};
+
 export const WorkScheduleDetailPage = (): JSX.Element => {
   const { workShiftId } = useParams<{ workShiftId: string }>();
   const [searchParams] = useSearchParams();
@@ -164,14 +180,14 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
         await lifecycleMutation.mutateAsync({
           workShiftId: record.id,
           action,
-          scope,
+          scope: 'global',
         });
         notifySuccess('work-schedule:feedback.lifecycleUpdated');
       } catch (error) {
         notifyError(error as NormalizedApiError);
       }
     },
-    [lifecycleMutation, notifyError, notifySuccess, record, requestDestructiveConfirm, scope, t],
+    [lifecycleMutation, notifyError, notifySuccess, record, requestDestructiveConfirm, t],
   );
 
   const actionItems = useMemo(() => {
@@ -187,13 +203,13 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
     const updateHint = createWorkScheduleCapabilityHint({
       state: capabilityState,
       permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
-      requestedScope: scope,
+      requestedScope: 'global',
       copy: capabilityCopy,
     });
     const lifecycleHint = createWorkScheduleCapabilityHint({
       state: capabilityState,
       permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
-      requestedScope: scope,
+      requestedScope: 'global',
       copy: capabilityCopy,
     });
 
@@ -227,7 +243,6 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
     lifecycleMutation.variables,
     onLifecycleAction,
     record,
-    scope,
     t,
   ]);
 
@@ -249,7 +264,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
 
   return (
     <ModuleDetailScreenShell
-      banner={<WorkScheduleSubnavigation active="work-shifts" />}
+      banner={<WorkScheduleSubnavigation active={toActiveSubnavSurface(scope)} />}
       statusBadge={
         record ? (
           <StatusBadge
@@ -480,7 +495,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                     await updateMutation.mutateAsync({
                       workShiftId: record.id,
                       payload,
-                      scope,
+                      scope: 'global',
                     });
                     notifySuccess('work-schedule:feedback.updated');
                     setActiveSurface(null);
@@ -500,7 +515,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                     await rescheduleMutation.mutateAsync({
                       workShiftId: record.id,
                       payload,
-                      scope,
+                      scope: 'global',
                     });
                     notifySuccess('work-schedule:feedback.rescheduled');
                     setActiveSurface(null);
@@ -517,7 +532,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                 isPending={reassignMutation.isPending}
                 onCancel={() => setActiveSurface(null)}
                 onSubmit={async (payload) => {
-                  if (!canUseWorkScheduleSubjectInScope(payload.newSubjectKind, scope)) {
+                  if (!canUseWorkScheduleSubjectInScope(payload.newSubjectKind, 'global')) {
                     notifyError({
                       status: null,
                       message: 'work-schedule:validation.nonGlobalEmploymentProfileOnly',
@@ -533,7 +548,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                     await reassignMutation.mutateAsync({
                       workShiftId: record.id,
                       payload,
-                      scope,
+                      scope: 'global',
                     });
                     notifySuccess('work-schedule:feedback.reassigned');
                     setActiveSurface(null);
@@ -553,7 +568,7 @@ export const WorkScheduleDetailPage = (): JSX.Element => {
                     await replaceResourcesMutation.mutateAsync({
                       workShiftId: record.id,
                       payload,
-                      scope,
+                      scope: 'global',
                     });
                     notifySuccess('work-schedule:feedback.resourcesReplaced');
                     setActiveSurface(null);

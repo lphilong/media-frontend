@@ -43,6 +43,10 @@ export const APP_PATHS = {
   workShifts: '/work-shifts',
   workShiftDetailPattern: '/work-shifts/:workShiftId',
   workShiftDetail: (workShiftId: string) => joinDetailPath('/work-shifts', workShiftId),
+  workScheduleMyShifts: '/work-schedule/my-shifts',
+  workScheduleTeamShifts: '/work-schedule/team-shifts',
+  workScheduleDepartmentShifts: '/work-schedule/department-shifts',
+  workScheduleGlobalOps: '/work-schedule/global-ops',
   workPatterns: '/work-schedule/patterns',
   workPatternDetailPattern: '/work-schedule/patterns/:workPatternId',
   workPatternDetail: (workPatternId: string) =>

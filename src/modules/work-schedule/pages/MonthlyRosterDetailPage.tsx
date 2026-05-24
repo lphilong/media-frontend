@@ -156,6 +156,19 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
     }),
     [t],
   );
+  const canMutateRosterExceptions =
+    record?.status === 'DRAFT' &&
+    !!capabilitiesQuery.data &&
+    !createWorkScheduleCapabilityHint({
+      state: {
+        capabilities: capabilitiesQuery.data,
+        isLoading: capabilitiesQuery.isLoading,
+        isError: capabilitiesQuery.isError,
+      },
+      permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
+      requestedScope: scope,
+      copy: capabilityCopy,
+    }).hidden;
 
   const onArchive = useCallback(async () => {
     if (!record) {
@@ -460,6 +473,7 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
               isUpdatePending={updateExceptionMutation.isPending}
               isRemovePending={removeExceptionMutation.isPending}
               removingExceptionId={removeExceptionMutation.variables?.rosterExceptionId}
+              canMutate={canMutateRosterExceptions}
               onAdd={onAddException}
               onUpdate={onUpdateException}
               onRemove={onRemoveException}

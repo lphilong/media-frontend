@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { APP_PATHS } from '@app/router/paths';
+import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
+import {
+  canAccessWorkScheduleSurface,
+  workScheduleSurfaceDefinitions,
+  type WorkScheduleSurfaceId,
+} from '@modules/work-schedule/work-schedule-surface-access';
 
 type WorkScheduleSubnavigationProps = {
-  active: 'work-shifts' | 'monthly-rosters' | 'work-patterns' | 'holiday-calendars';
+  active: WorkScheduleSurfaceId;
 };
 
 const itemClassName =
@@ -14,6 +19,10 @@ export const WorkScheduleSubnavigation = ({
   active,
 }: WorkScheduleSubnavigationProps): JSX.Element => {
   const { t } = useTranslation(['work-schedule']);
+  const capabilitiesQuery = useCurrentActorCapabilities();
+  const visibleSurfaces = workScheduleSurfaceDefinitions.filter((surface) =>
+    canAccessWorkScheduleSurface(capabilitiesQuery.data, surface.id),
+  );
 
   return (
     <nav
@@ -21,46 +30,19 @@ export const WorkScheduleSubnavigation = ({
       className="rounded border border-border bg-panel p-3"
     >
       <div className="flex flex-wrap gap-2">
-        <Link
-          to={APP_PATHS.workShifts}
-          className={`${itemClassName} ${
-            active === 'work-shifts'
-              ? 'border-accent bg-accent text-white'
-              : 'border-border bg-bg text-text hover:bg-slate-50'
-          }`}
-        >
-          {t('work-schedule:rosterNav.workShifts')}
-        </Link>
-        <Link
-          to={APP_PATHS.monthlyRosters}
-          className={`${itemClassName} ${
-            active === 'monthly-rosters'
-              ? 'border-accent bg-accent text-white'
-              : 'border-border bg-bg text-text hover:bg-slate-50'
-          }`}
-        >
-          {t('work-schedule:rosterNav.monthlyRosters')}
-        </Link>
-        <Link
-          to={APP_PATHS.workPatterns}
-          className={`${itemClassName} ${
-            active === 'work-patterns'
-              ? 'border-accent bg-accent text-white'
-              : 'border-border bg-bg text-text hover:bg-slate-50'
-          }`}
-        >
-          {t('work-schedule:rosterNav.workPatterns')}
-        </Link>
-        <Link
-          to={APP_PATHS.holidayCalendars}
-          className={`${itemClassName} ${
-            active === 'holiday-calendars'
-              ? 'border-accent bg-accent text-white'
-              : 'border-border bg-bg text-text hover:bg-slate-50'
-          }`}
-        >
-          {t('work-schedule:rosterNav.holidayCalendars')}
-        </Link>
+        {visibleSurfaces.map((surface) => (
+          <Link
+            key={surface.id}
+            to={surface.path}
+            className={`${itemClassName} ${
+              active === surface.id
+                ? 'border-accent bg-accent text-white'
+                : 'border-border bg-bg text-text hover:bg-slate-50'
+            }`}
+          >
+            {t(surface.labelKey)}
+          </Link>
+        ))}
       </div>
     </nav>
   );

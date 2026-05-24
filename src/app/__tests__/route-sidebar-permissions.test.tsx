@@ -69,6 +69,58 @@ describe('route and sidebar permission model', () => {
     expect(screen.queryByTestId('nav-link-commission-rules')).not.toBeInTheDocument();
   });
 
+  it('shows PRODUCTION_OPS Global Ops Schedule from legacy WorkSchedule nav', async () => {
+    await renderRoute(
+      '/work-shifts',
+      makeCapabilities({
+        roles: ['PRODUCTION_OPS'],
+        permissions: [
+          'event.read',
+          'workSchedule.read',
+          'workSchedule.create',
+          'workSchedule.update',
+          'workSchedule.manageLifecycle',
+          'platformAccount.read',
+          'studioResource.read',
+        ],
+        scopeGrants: {
+          eventAssignment: ['global'],
+          workSchedule: ['global'],
+        },
+      }),
+    );
+
+    expect(await screen.findByTestId('nav-link-work-shifts')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Global Ops Schedule' })).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
+  });
+
+  it('lets HR see department schedules without full Studio Resource navigation', async () => {
+    await renderRoute(
+      '/work-schedule/department-shifts',
+      makeCapabilities({
+        roles: ['HR_OPERATIONS'],
+        permissions: [
+          'orgUnit.read',
+          'employmentProfile.read',
+          'talent.read',
+          'talentGroup.read',
+          'workSchedule.read',
+          'studioResource.lookup',
+        ],
+        scopeGrants: {
+          workSchedule: ['department'],
+        },
+      }),
+    );
+
+    expect(await screen.findByTestId('nav-link-work-shifts')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Department Work Shifts' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-studio-resources')).not.toBeInTheDocument();
+  });
+
   it('allows TEAM_MANAGER managedGroup KPI direct route without No Access', async () => {
     await renderRoute(
       '/kpi',

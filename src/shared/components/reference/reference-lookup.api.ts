@@ -43,13 +43,14 @@ export type ReferenceLookupItem = z.infer<typeof referenceLookupItemSchema>;
 
 export const fetchReferenceLookupOptions = async (
   resource: ReferenceLookupResource,
-  query: { search?: string; limit?: number },
+  query: { search?: string; ids?: readonly string[]; limit?: number },
 ): Promise<ReferenceLookupItem[]> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: `/admin/reference/${resource}`,
     params: {
       search: query.search || undefined,
+      ids: query.ids && query.ids.length > 0 ? query.ids.join(',') : undefined,
       limit: query.limit,
     },
   });

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   loadPlatformAccountReferenceOptions,
   loadPlatformOwnerReferenceOptions,
+  loadStudioResourceReferenceOptionsByIds,
   loadTalentReferenceOptions,
 } from '@shared/components/reference/admin-reference-options';
 import { fetchReferenceLookupOptions } from '@shared/components/reference/reference-lookup.api';
@@ -37,6 +38,39 @@ describe('reference lookup API', () => {
         label: 'Mina - TAL-000001',
       }),
     ]);
+  });
+
+  it('loads selected studio resource labels through lookup ids without broad Studio Resource read', async () => {
+    const capturedUrls: URL[] = [];
+    server.use(
+      http.get('*/admin/studio-resources/:studioResourceId', () => {
+        return HttpResponse.json({ message: 'Forbidden broad read' }, { status: 403 });
+      }),
+      http.get('*/admin/reference/studio-resources', ({ request }) => {
+        capturedUrls.push(new URL(request.url));
+        return HttpResponse.json({
+          data: {
+            items: [
+              {
+                id: 'studio-hr-1',
+                label: 'Main Studio',
+                code: 'SR-000001',
+                status: 'ACTIVE',
+                type: 'ROOM',
+              },
+            ],
+          },
+        });
+      }),
+    );
+
+    await expect(loadStudioResourceReferenceOptionsByIds(['studio-hr-1'])).resolves.toEqual([
+      expect.objectContaining({
+        id: 'studio-hr-1',
+        label: 'Main Studio - SR-000001',
+      }),
+    ]);
+    expect(capturedUrls[0]?.searchParams.get('ids')).toBe('studio-hr-1');
   });
 
   it('loads ops platform options from narrow lookup without unrelated module read', async () => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
@@ -23,6 +23,11 @@ import type {
   WorkShiftLifecycleAction,
   WorkShiftSubjectKind,
 } from '@modules/work-schedule/types/work-schedule.types';
+import {
+  canAccessWorkScheduleSurface,
+  getWorkScheduleSurfaceForPath,
+  resolveDefaultWorkScheduleSurfacePath,
+} from '@modules/work-schedule/work-schedule-surface-access';
 import type { NormalizedApiError } from '@shared/api';
 import {
   canShowAction,
@@ -162,7 +167,14 @@ const readLifecycleConfirmKey = (action: WorkShiftLifecycleAction): string => {
 export const WorkScheduleListPage = (): JSX.Element => {
   const { t } = useTranslation(['work-schedule', 'common', 'errors']);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const capabilitiesQuery = useCurrentActorCapabilities();
+  const routeSurface = getWorkScheduleSurfaceForPath(location.pathname);
+  const legacyRedirectPath =
+    location.pathname === APP_PATHS.workShifts
+      ? resolveDefaultWorkScheduleSurfacePath(capabilitiesQuery.data)
+      : null;
 
   const flatListQuery = useMemo(
     () => parseScreenQueryParams(searchParams, workShiftFlatListQueryConfig),
@@ -184,12 +196,13 @@ export const WorkScheduleListPage = (): JSX.Element => {
         ? 'by-resource'
         : 'flat';
 
+  const routeSurfaceScope = routeSurface?.scope;
   const activeQuery =
     routeMode === 'by-subject'
-      ? bySubjectQuery
+      ? { ...bySubjectQuery, scope: bySubjectQuery.scope ?? routeSurfaceScope }
       : routeMode === 'by-resource'
-        ? byResourceQuery
-        : flatListQuery;
+        ? { ...byResourceQuery, scope: byResourceQuery.scope ?? routeSurfaceScope }
+        : { ...flatListQuery, scope: flatListQuery.scope ?? routeSurfaceScope };
   const currentSearch = searchParams.toString();
   const canonicalSearch = useMemo(() => {
     if (routeMode === 'by-subject') {
@@ -237,14 +250,27 @@ export const WorkScheduleListPage = (): JSX.Element => {
     [routeMode, searchParams, setSearchParams],
   );
 
-  const flatQueryResult = useWorkShiftFlatList(flatListQuery, {
-    enabled: routeMode === 'flat',
+  const scopedFlatListQuery = useMemo(
+    () => ({ ...flatListQuery, scope: flatListQuery.scope ?? routeSurfaceScope }),
+    [flatListQuery, routeSurfaceScope],
+  );
+  const scopedBySubjectQuery = useMemo(
+    () => ({ ...bySubjectQuery, scope: bySubjectQuery.scope ?? routeSurfaceScope }),
+    [bySubjectQuery, routeSurfaceScope],
+  );
+  const scopedByResourceQuery = useMemo(
+    () => ({ ...byResourceQuery, scope: byResourceQuery.scope ?? routeSurfaceScope }),
+    [byResourceQuery, routeSurfaceScope],
+  );
+
+  const flatQueryResult = useWorkShiftFlatList(scopedFlatListQuery, {
+    enabled: routeMode === 'flat' && location.pathname !== APP_PATHS.workShifts,
   });
-  const bySubjectQueryResult = useWorkShiftsBySubject(bySubjectQuery, {
-    enabled: routeMode === 'by-subject',
+  const bySubjectQueryResult = useWorkShiftsBySubject(scopedBySubjectQuery, {
+    enabled: routeMode === 'by-subject' && location.pathname !== APP_PATHS.workShifts,
   });
-  const byResourceQueryResult = useWorkShiftsByResource(byResourceQuery, {
-    enabled: routeMode === 'by-resource',
+  const byResourceQueryResult = useWorkShiftsByResource(scopedByResourceQuery, {
+    enabled: routeMode === 'by-resource' && location.pathname !== APP_PATHS.workShifts,
   });
   const listQueryResult =
     routeMode === 'by-subject'
@@ -253,7 +279,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
         ? byResourceQueryResult
         : flatQueryResult;
 
-  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateWorkShiftMutation();
   const lifecycleMutation = useWorkShiftLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -304,20 +329,21 @@ export const WorkScheduleListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
-  const workScheduleScopes: readonly WorkScheduleScope[] = ['self', 'team', 'department', 'global'];
-  const workScheduleCreateRequirements: readonly ActionCapabilityRequirement[] =
-    workScheduleScopes.map((value) => ({
+  const workScheduleCreateRequirements: readonly ActionCapabilityRequirement[] = [
+    {
       permission: PERMISSIONS.WORK_SCHEDULE_CREATE,
-      scope: { module: 'workSchedule', value },
-    }));
-  const canCreateWorkShift = canUseAnyAction(
-    capabilitiesQuery.data,
-    workScheduleCreateRequirements,
-  ).allowed;
-  const canManageWorkShiftLifecycle = canShowAction(capabilitiesQuery.data, {
-    permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
-    scope: { module: 'workSchedule', value: activeQuery.scope ?? 'global' },
-  });
+      scope: { module: 'workSchedule', value: 'global' },
+    },
+  ];
+  const canCreateWorkShift =
+    routeSurface?.id === 'global-ops' &&
+    canUseAnyAction(capabilitiesQuery.data, workScheduleCreateRequirements).allowed;
+  const canManageWorkShiftLifecycle =
+    routeSurface?.id === 'global-ops' &&
+    canShowAction(capabilitiesQuery.data, {
+      permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+      scope: { module: 'workSchedule', value: 'global' },
+    });
 
   usePageActions(
     canCreateWorkShift ? (
@@ -374,12 +400,13 @@ export const WorkScheduleListPage = (): JSX.Element => {
     payload: Parameters<typeof createMutation.mutateAsync>[0]['payload'],
     scope: WorkScheduleScope,
   ) => {
+    void scope;
     setGuidedWorkflowError(null);
 
     try {
       await createMutation.mutateAsync({
         payload,
-        scope,
+        scope: 'global',
       });
       notifySuccess('work-schedule:feedback.created');
       setIsGuidedWorkflowOpen(false);
@@ -404,21 +431,14 @@ export const WorkScheduleListPage = (): JSX.Element => {
         await lifecycleMutation.mutateAsync({
           workShiftId,
           action,
-          scope: activeQuery.scope,
+          scope: 'global',
         });
         notifySuccess('work-schedule:feedback.lifecycleUpdated');
       } catch (error) {
         notifyError(error as NormalizedApiError);
       }
     },
-    [
-      activeQuery.scope,
-      lifecycleMutation,
-      notifyError,
-      notifySuccess,
-      requestDestructiveConfirm,
-      t,
-    ],
+    [lifecycleMutation, notifyError, notifySuccess, requestDestructiveConfirm, t],
   );
 
   const columns = useMemo(
@@ -459,9 +479,10 @@ export const WorkScheduleListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
-  const visibleScopeOptions =
-    'subjectKind' in activeQuery &&
-    (activeQuery.subjectKind === 'TALENT' || activeQuery.subjectKind === 'TALENT_GROUP')
+  const visibleScopeOptions = routeSurfaceScope
+    ? ['', routeSurfaceScope]
+    : 'subjectKind' in activeQuery &&
+        (activeQuery.subjectKind === 'TALENT' || activeQuery.subjectKind === 'TALENT_GROUP')
       ? ['', 'global']
       : scopeOptions;
   const activeSubjectKind = 'subjectKind' in activeQuery ? activeQuery.subjectKind : undefined;
@@ -702,12 +723,24 @@ export const WorkScheduleListPage = (): JSX.Element => {
     t,
   ]);
 
+  if (legacyRedirectPath) {
+    return <Navigate to={legacyRedirectPath} replace />;
+  }
+
+  if (
+    routeSurface &&
+    !capabilitiesQuery.isLoading &&
+    !canAccessWorkScheduleSurface(capabilitiesQuery.data, routeSurface.id)
+  ) {
+    return <PermissionDeniedState />;
+  }
+
   return (
     <ModuleListScreenShell
       mode={routeMode === 'flat' ? 'flat-list' : 'related-list'}
       banner={
         <div className="space-y-3">
-          <WorkScheduleSubnavigation active="work-shifts" />
+          <WorkScheduleSubnavigation active={routeSurface?.id ?? 'global-ops'} />
           {routeMode !== 'flat' ? (
             <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-text">
               {t(`work-schedule:relatedModes.${routeMode}`)}
@@ -889,6 +922,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
             <WorkShiftGuidedWorkflow
               isPending={createMutation.isPending}
               error={guidedWorkflowError}
+              availableScopes={['global']}
               onCancel={() => {
                 setIsGuidedWorkflowOpen(false);
                 setGuidedWorkflowError(null);

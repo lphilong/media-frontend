@@ -56,14 +56,18 @@ describe('work schedule wave 6 surfaces', () => {
 
   it('uses readable Work Shift filters while preserving internal-id query values', async () => {
     const user = userEvent.setup();
-    const router = renderRoute('/work-shifts?subjectKind=TALENT');
+    const router = renderRoute('/work-schedule/global-ops?subjectKind=TALENT');
 
     expect(
-      await screen.findByRole('heading', { name: i18n.t('work-schedule:page.title') }),
+      await screen.findByRole('heading', {
+        name: i18n.t('work-schedule:surfaces.globalOps.title'),
+      }),
     ).toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Subject identifier')).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Resource identifier')).not.toBeInTheDocument();
-    expect(screen.getByLabelText(i18n.t('work-schedule:filters.status'))).toBeInTheDocument();
+    expect(
+      await screen.findByLabelText(i18n.t('work-schedule:filters.status'), {}, { timeout: 8000 }),
+    ).toBeInTheDocument();
     await user.click(
       screen.getByRole('button', {
         name: (name) => name.includes(i18n.t('common:filters.moreFilters')),

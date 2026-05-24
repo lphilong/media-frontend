@@ -75,6 +75,24 @@
     "by-subject": "按对象查看相关班次",
     "by-resource": "按演播室资源查看相关班次"
   },
+  "surfaces": {
+    "my": {
+      "title": "My Work Shifts",
+      "subtitle": "查看自己的排班，不提供编辑。"
+    },
+    "team": {
+      "title": "Team Work Shifts",
+      "subtitle": "查看所管理成员的团队排班。"
+    },
+    "department": {
+      "title": "Department Work Shifts",
+      "subtitle": "查看部门排班和月度班表。"
+    },
+    "globalOps": {
+      "title": "Global Ops Schedule",
+      "subtitle": "跨部门制作运营的中央调度视图。"
+    }
+  },
   "actions": {
     "create": "创建工作班次",
     "closeCreate": "关闭创建",
@@ -256,6 +274,10 @@
     }
   },
   "rosterNav": {
+    "myShifts": "My Work Shifts",
+    "teamShifts": "Team Work Shifts",
+    "departmentShifts": "Department Work Shifts / Roster",
+    "globalOps": "Global Ops Schedule",
     "label": "排班模块分区",
     "workShifts": "工作班次",
     "monthlyRosters": "月度排班",

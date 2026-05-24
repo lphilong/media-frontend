@@ -394,6 +394,42 @@ export const appRoutes: RouteObject[] = [
         } satisfies ModuleRouteHandle,
       },
       {
+        path: APP_PATHS.workScheduleMyShifts.replace(/^\//, ''),
+        element: withModuleAccess('work-schedule', <LazyModuleElement moduleId="work-schedule" />),
+        handle: {
+          breadcrumbKey: 'work-schedule:rosterNav.myShifts',
+          titleKey: 'work-schedule:surfaces.my.title',
+          subtitleKey: 'work-schedule:surfaces.my.subtitle',
+        } satisfies ModuleRouteHandle,
+      },
+      {
+        path: APP_PATHS.workScheduleTeamShifts.replace(/^\//, ''),
+        element: withModuleAccess('work-schedule', <LazyModuleElement moduleId="work-schedule" />),
+        handle: {
+          breadcrumbKey: 'work-schedule:rosterNav.teamShifts',
+          titleKey: 'work-schedule:surfaces.team.title',
+          subtitleKey: 'work-schedule:surfaces.team.subtitle',
+        } satisfies ModuleRouteHandle,
+      },
+      {
+        path: APP_PATHS.workScheduleDepartmentShifts.replace(/^\//, ''),
+        element: withModuleAccess('work-schedule', <LazyModuleElement moduleId="work-schedule" />),
+        handle: {
+          breadcrumbKey: 'work-schedule:rosterNav.departmentShifts',
+          titleKey: 'work-schedule:surfaces.department.title',
+          subtitleKey: 'work-schedule:surfaces.department.subtitle',
+        } satisfies ModuleRouteHandle,
+      },
+      {
+        path: APP_PATHS.workScheduleGlobalOps.replace(/^\//, ''),
+        element: withModuleAccess('work-schedule', <LazyModuleElement moduleId="work-schedule" />),
+        handle: {
+          breadcrumbKey: 'work-schedule:rosterNav.globalOps',
+          titleKey: 'work-schedule:surfaces.globalOps.title',
+          subtitleKey: 'work-schedule:surfaces.globalOps.subtitle',
+        } satisfies ModuleRouteHandle,
+      },
+      {
         path: APP_PATHS.workPatterns.replace(/^\//, ''),
         element: withModuleAccess('work-schedule', <LazyWorkPatternListElement />),
         handle: {

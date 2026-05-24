@@ -39,6 +39,19 @@ const loadLookupReferenceOptions = async (
   return items.map((item) => toLookupOption(item, href));
 };
 
+const loadLookupReferenceOptionsByIds = async (
+  resource: ReferenceLookupResource,
+  ids: readonly string[],
+  href: (id: string) => string,
+): Promise<ReferenceOption[]> => {
+  const items = await fetchReferenceLookupOptions(resource, {
+    ids,
+    limit: Math.min(ids.length || 1, OPTION_LIMIT),
+  });
+
+  return items.map((item) => toLookupOption(item, href));
+};
+
 const toUserOption = (item: UserListItem): ReferenceOption => ({
   id: item.id,
   label: compactDescription([item.displayName, item.email]) ?? item.displayName,
@@ -85,53 +98,38 @@ export const loadUserReferenceOptions = async (search: string): Promise<Referenc
 export const loadPlatformAccountReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions(
-    'platform-accounts',
-    search,
-    APP_PATHS.platformAccountDetail,
-  );
+  return loadLookupReferenceOptions('platform-accounts', search, APP_PATHS.platformAccountDetail);
 };
 
 export const loadStudioResourceReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions(
-    'studio-resources',
-    search,
-    APP_PATHS.studioResourceDetail,
-  );
+  return loadLookupReferenceOptions('studio-resources', search, APP_PATHS.studioResourceDetail);
 };
+
+export const loadStudioResourceReferenceOptionsByIds = async (
+  ids: readonly string[],
+): Promise<ReferenceOption[]> =>
+  loadLookupReferenceOptionsByIds('studio-resources', ids, APP_PATHS.studioResourceDetail);
 
 export const loadEventReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
   return loadLookupReferenceOptions('events', search, APP_PATHS.eventDetail);
 };
 
 export const loadContractReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions(
-    'contract-records',
-    search,
-    APP_PATHS.contractRecordDetail,
-  );
+  return loadLookupReferenceOptions('contract-records', search, APP_PATHS.contractRecordDetail);
 };
 
 export const loadRevenueEntryReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions(
-    'revenue-entries',
-    search,
-    APP_PATHS.revenueEntryDetail,
-  );
+  return loadLookupReferenceOptions('revenue-entries', search, APP_PATHS.revenueEntryDetail);
 };
 
 export const loadCommissionRuleReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions(
-    'commission-rules',
-    search,
-    APP_PATHS.commissionRuleDetail,
-  );
+  return loadLookupReferenceOptions('commission-rules', search, APP_PATHS.commissionRuleDetail);
 };
 
 export const loadPlatformOwnerReferenceOptions = (

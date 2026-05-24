@@ -27,6 +27,7 @@ type MonthlyRosterExceptionEditorProps = {
   isUpdatePending?: boolean;
   isRemovePending?: boolean;
   removingExceptionId?: string;
+  canMutate?: boolean;
   onAdd: (payload: RosterExceptionPayload) => Promise<void> | void;
   onUpdate: (
     exception: RosterExceptionRecord,
@@ -74,6 +75,7 @@ export const MonthlyRosterExceptionEditor = ({
   isUpdatePending = false,
   isRemovePending = false,
   removingExceptionId,
+  canMutate = false,
   onAdd,
   onUpdate,
   onRemove,
@@ -83,6 +85,7 @@ export const MonthlyRosterExceptionEditor = ({
   const [surface, setSurface] = useState<ExceptionSurfaceState>(null);
   const [showRemoved, setShowRemoved] = useState(false);
   const isDraft = roster.status === 'DRAFT';
+  const canMutateDraft = isDraft && canMutate;
   const activeExceptions = useMemo(
     () => (roster.exceptions ?? []).filter((exception) => exception.status === 'ACTIVE'),
     [roster.exceptions],
@@ -117,7 +120,7 @@ export const MonthlyRosterExceptionEditor = ({
             />
             {t('work-schedule:monthlyRosters.exceptions.actions.showRemoved')}
           </label>
-          {isDraft ? (
+          {canMutateDraft ? (
             <button
               type="button"
               className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
@@ -201,7 +204,7 @@ export const MonthlyRosterExceptionEditor = ({
               </thead>
               <tbody className="divide-y divide-border bg-panel">
                 {visibleExceptions.map((exception) => {
-                  const editable = isDraft && exception.status === 'ACTIVE';
+                  const editable = canMutateDraft && exception.status === 'ACTIVE';
                   const removePending =
                     isRemovePending && removingExceptionId === exception.rosterExceptionId;
 
@@ -234,27 +237,31 @@ export const MonthlyRosterExceptionEditor = ({
                       <td className="px-3 py-2">{formatNullableTimestamp(exception.removedAt)}</td>
                       <td className="px-3 py-2">
                         <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            disabled={!editable}
-                            onClick={() => {
-                              onClearError?.();
-                              setSurface({ mode: 'edit', exception });
-                            }}
-                            className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {t('work-schedule:monthlyRosters.exceptions.actions.edit')}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={!editable || removePending}
-                            onClick={() => void onRemove(exception)}
-                            className="rounded border border-danger px-2 py-1 text-xs text-danger disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {removePending
-                              ? t('work-schedule:monthlyRosters.exceptions.actions.removing')
-                              : t('work-schedule:monthlyRosters.exceptions.actions.remove')}
-                          </button>
+                          {canMutateDraft ? (
+                            <>
+                              <button
+                                type="button"
+                                disabled={!editable}
+                                onClick={() => {
+                                  onClearError?.();
+                                  setSurface({ mode: 'edit', exception });
+                                }}
+                                className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {t('work-schedule:monthlyRosters.exceptions.actions.edit')}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={!editable || removePending}
+                                onClick={() => void onRemove(exception)}
+                                className="rounded border border-danger px-2 py-1 text-xs text-danger disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {removePending
+                                  ? t('work-schedule:monthlyRosters.exceptions.actions.removing')
+                                  : t('work-schedule:monthlyRosters.exceptions.actions.remove')}
+                              </button>
+                            </>
+                          ) : null}
                         </div>
                       </td>
                     </tr>

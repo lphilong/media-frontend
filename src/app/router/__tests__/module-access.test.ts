@@ -73,7 +73,7 @@ describe('module access model', () => {
       ],
       scopeGrants: {
         eventAssignment: ['global'],
-        workSchedule: ['department'],
+        workSchedule: ['global'],
       },
     });
 
@@ -86,6 +86,26 @@ describe('module access model', () => {
         'contract-registry',
       ]),
     ).toEqual(['event-assignment', 'work-schedule', 'platform-account', 'studio-resource']);
+  });
+
+  it('allows HR_OPERATIONS department schedules and lookup-only studio resource references only', () => {
+    const capabilities = makeCapabilities({
+      roles: ['HR_OPERATIONS'],
+      permissions: [
+        'orgUnit.read',
+        'employmentProfile.read',
+        'talent.read',
+        'talentGroup.read',
+        'workSchedule.read',
+        'studioResource.lookup',
+      ],
+      scopeGrants: {
+        workSchedule: ['department'],
+      },
+    });
+
+    expect(canAccessModule(capabilities, 'work-schedule')).toBe(true);
+    expect(canAccessModule(capabilities, 'studio-resource')).toBe(false);
   });
 
   it('keeps COMMERCIAL_FINANCE lookup permissions from unlocking full modules', () => {

@@ -34,6 +34,7 @@ type WorkShiftGuidedWorkflowProps = {
     search: string,
   ) => Promise<ReferenceOption[]>;
   loadStudioResourceOptions?: (search: string) => Promise<ReferenceOption[]>;
+  availableScopes?: readonly WorkScheduleScope[];
 };
 
 type WorkflowValidationErrors = Partial<
@@ -103,6 +104,7 @@ export const WorkShiftGuidedWorkflow = ({
   error,
   loadSubjectOptions = loadWorkShiftSubjectOptions,
   loadStudioResourceOptions = loadWorkShiftStudioResourceOptions,
+  availableScopes: allowedScopes,
 }: WorkShiftGuidedWorkflowProps): JSX.Element => {
   const { t } = useTranslation(['work-schedule', 'common', 'errors']);
   const [step, setStep] = useState<WorkflowStep>('details');
@@ -121,7 +123,8 @@ export const WorkShiftGuidedWorkflow = ({
   const [errors, setErrors] = useState<WorkflowValidationErrors>({});
 
   const availableScopes =
-    subjectKind === 'EMPLOYMENT_PROFILE' ? employmentProfileScopes : globalScopes;
+    allowedScopes ??
+    (subjectKind === 'EMPLOYMENT_PROFILE' ? employmentProfileScopes : globalScopes);
   const startTimestamp = parseVietnamLocalDateTimeToUtcTimestamp(startLocal);
   const endTimestamp = parseVietnamLocalDateTimeToUtcTimestamp(endLocal);
 

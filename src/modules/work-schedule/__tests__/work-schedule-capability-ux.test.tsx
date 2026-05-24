@@ -119,6 +119,32 @@ describe('work schedule capability UX hints', () => {
     expect(screen.getByText(i18n.t('work-schedule:detail.archivedReadOnly'))).toBeInTheDocument();
   });
 
+  it('hides official Work Shift mutation actions on Team Work Shifts even with stale mutation permissions', async () => {
+    mockCapabilities({
+      permissions: [
+        'workSchedule.read',
+        'workSchedule.create',
+        'workSchedule.update',
+        'workSchedule.manageLifecycle',
+      ],
+      workScheduleScopes: ['team'],
+    });
+
+    renderRoute('/work-schedule/team-shifts');
+
+    await screen.findByText('SHIFT001');
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:actions.scheduleWorkShift'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:actions.cancel'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it('hides Monthly Roster actions for missing permission while local status still wins', async () => {
     mockCapabilities({
       permissions: ['workSchedule.read', 'workSchedule.manageLifecycle'],
@@ -147,7 +173,7 @@ describe('work schedule capability UX hints', () => {
     expect(publishedEdit).toBeDisabled();
   });
 
-  it('scope-hides only when an explicit Work Shift requested scope is present', async () => {
+  it('scope-hides Work Shift actions without global authority', async () => {
     mockCapabilities({
       permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
       workScheduleScopes: ['self'],
@@ -165,10 +191,24 @@ describe('work schedule capability UX hints', () => {
     cleanup();
     renderRoute('/work-shifts/work-shift-001');
 
-    const unscopedEdit = await screen.findByRole('button', {
+    await screen.findByText('SHIFT001');
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:actions.edit'),
+      }),
+    ).not.toBeInTheDocument();
+
+    cleanup();
+    mockCapabilities({
+      permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
+      workScheduleScopes: ['global'],
+    });
+    renderRoute('/work-shifts/work-shift-001');
+
+    const globalEdit = await screen.findByRole('button', {
       name: i18n.t('work-schedule:actions.edit'),
     });
-    await waitFor(() => expect(unscopedEdit).toBeEnabled());
+    await waitFor(() => expect(globalEdit).toBeEnabled());
   });
 
   it('scope-hides Monthly Roster actions only from explicit roster requested scope', async () => {

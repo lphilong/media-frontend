@@ -75,6 +75,24 @@
     "by-subject": "Related work shifts by subject",
     "by-resource": "Related work shifts by studio resource"
   },
+  "surfaces": {
+    "my": {
+      "title": "My Work Shifts",
+      "subtitle": "Read-only view of your own scheduled work shifts."
+    },
+    "team": {
+      "title": "Team Work Shifts",
+      "subtitle": "Read-only schedule visibility for managed team members."
+    },
+    "department": {
+      "title": "Department Work Shifts",
+      "subtitle": "Department schedule and roster visibility."
+    },
+    "globalOps": {
+      "title": "Global Ops Schedule",
+      "subtitle": "Central dispatcher schedule view for cross-department production operations."
+    }
+  },
   "actions": {
     "create": "Create work shift",
     "closeCreate": "Close create",
@@ -258,6 +276,10 @@
   "rosterNav": {
     "label": "Work Schedule sections",
     "workShifts": "Work Shifts",
+    "myShifts": "My Work Shifts",
+    "teamShifts": "Team Work Shifts",
+    "departmentShifts": "Department Work Shifts / Roster",
+    "globalOps": "Global Ops Schedule",
     "monthlyRosters": "Monthly Rosters",
     "workPatterns": "Work Patterns",
     "holidayCalendars": "Holiday Calendars",

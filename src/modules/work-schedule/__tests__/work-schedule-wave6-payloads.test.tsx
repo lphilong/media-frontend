@@ -47,108 +47,80 @@ const renderWithRouter = (ui: ReactElement) => render(<MemoryRouter>{ui}</Memory
 
 const mockReferencePickerRequests = (): void => {
   apiRequestMock.mockImplementation(async ({ url }) => {
-    if (url === '/admin/employment-profiles') {
+    if (url === '/admin/reference/employment-profiles') {
       return {
-        data: [
-          {
-            id: 'ep-001',
-            employeeCode: 'EP-000001',
-            legalName: 'Employee One',
-            displayName: 'Employee One',
-            employmentKind: 'FULL_TIME',
-            jobTitle: 'Operator',
-            orgUnitId: 'ou-sales',
-            managerEmploymentProfileId: null,
-            linkedUserId: null,
-            employmentStatus: 'ACTIVE',
-            contractStatus: 'ACTIVE',
-            createdAt: 1,
-          },
-        ],
-        meta: undefined,
+        data: {
+          items: [
+            {
+              id: 'ep-001',
+              label: 'Employee One',
+              code: 'EP-000001',
+              status: 'ACTIVE',
+              type: 'FULL_TIME',
+            },
+          ],
+        },
       };
     }
-    if (url === '/admin/talents') {
+    if (url === '/admin/reference/talents') {
       return {
-        data: [
-          {
-            id: 'talent-001',
-            talentCode: 'TAL-000001',
-            legalName: 'Talent One',
-            stageName: 'Talent One',
-            displayShortName: 'Talent',
-            talentOrigin: 'INTERNAL',
-            operationalStatus: 'ACTIVE',
-            managerEmploymentProfileId: null,
-            linkedEmploymentProfileId: null,
-            commercialParticipationStatus: 'ELIGIBLE',
-            livestreamEligible: true,
-            eventEligible: true,
-            createdAt: 1,
-            updatedAt: 1,
-          },
-        ],
-        meta: undefined,
+        data: {
+          items: [
+            {
+              id: 'talent-001',
+              label: 'Talent One',
+              code: 'TAL-000001',
+              status: 'ACTIVE',
+              type: 'INTERNAL',
+            },
+          ],
+        },
       };
     }
-    if (url === '/admin/talent-groups') {
+    if (url === '/admin/reference/talent-groups') {
       return {
-        data: [
-          {
-            id: 'group-001',
-            groupCode: 'TG-000001',
-            name: 'Group One',
-            shortName: 'Group',
-            status: 'ACTIVE',
-            displayOrder: 1,
-            createdAt: 1,
-            updatedAt: 1,
-          },
-        ],
-        meta: undefined,
+        data: {
+          items: [
+            {
+              id: 'group-001',
+              label: 'Group One',
+              code: 'TG-000001',
+              status: 'ACTIVE',
+            },
+          ],
+        },
       };
     }
-    if (url === '/admin/studio-resources') {
+    if (url === '/admin/reference/studio-resources') {
       return {
-        data: [
-          {
-            id: 'studio-001',
-            resourceCode: 'SR-000001',
-            name: 'Studio One',
-            shortName: 'Studio 1',
-            resourceClass: 'ROOM',
-            operationalStatus: 'ACTIVE',
-            locationLabel: null,
-            maxOccupancy: null,
-            createdAt: 1,
-          },
-          {
-            id: 'studio-002',
-            resourceCode: 'SR-000002',
-            name: 'Studio Two',
-            shortName: 'Studio 2',
-            resourceClass: 'ROOM',
-            operationalStatus: 'ACTIVE',
-            locationLabel: null,
-            maxOccupancy: null,
-            createdAt: 1,
-          },
-          {
-            id: 'studio-003',
-            resourceCode: 'SR-000003',
-            name: 'Studio Three',
-            shortName: 'Studio 3',
-            resourceClass: 'ROOM',
-            operationalStatus: 'ACTIVE',
-            locationLabel: null,
-            maxOccupancy: null,
-            createdAt: 1,
-          },
-        ],
-        meta: undefined,
+        data: {
+          items: [
+            {
+              id: 'studio-001',
+              label: 'Studio One',
+              code: 'SR-000001',
+              status: 'ACTIVE',
+              type: 'ROOM',
+            },
+            {
+              id: 'studio-002',
+              label: 'Studio Two',
+              code: 'SR-000002',
+              status: 'ACTIVE',
+              type: 'ROOM',
+            },
+            {
+              id: 'studio-003',
+              label: 'Studio Three',
+              code: 'SR-000003',
+              status: 'ACTIVE',
+              type: 'ROOM',
+            },
+          ],
+        },
       };
     }
-    return { data: [], meta: undefined };
+    return { data: { items: [] } };
   });
 };
 

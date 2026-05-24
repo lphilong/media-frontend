@@ -116,6 +116,10 @@ export const moduleAccessDefinitions: Readonly<
     id: 'work-schedule',
     routePaths: [
       '/work-shifts',
+      '/work-schedule/my-shifts',
+      '/work-schedule/team-shifts',
+      '/work-schedule/department-shifts',
+      '/work-schedule/global-ops',
       '/work-schedule/patterns',
       '/work-schedule/holiday-calendars',
       '/work-schedule/rosters',

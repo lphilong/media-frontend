@@ -254,6 +254,7 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'talent.read' },
       { code: 'talent.lookup' },
       { code: 'talentGroup.lookup' },
+      { code: 'studioResource.lookup' },
       { code: 'workSchedule.read' },
       { code: 'kpi.read' },
       { code: 'kpi.readProgress' },
@@ -285,7 +286,6 @@ const roleTemplates: RoleTemplateRecord[] = [
     category: 'MANAGEMENT',
     permissions: [
       { code: 'work-schedule:read' },
-      { code: 'work-schedule:update' },
       { code: 'event:read' },
       { code: 'talent-kpi:read' },
       { code: 'kpi.read' },
@@ -294,22 +294,22 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'kpi.correctActual' },
     ],
     recommendedScopeGrants: {
-      workSchedule: ['self', 'team', 'department'],
+      workSchedule: ['self', 'team'],
       eventAssignment: ['managedGroup'],
       kpi: ['managedGroup'],
     },
     scopePlan: [
       {
         module: 'Work Schedule',
-        scopes: ['self', 'team', 'department'],
+        scopes: ['self', 'team'],
         status: 'PREVIEW_ONLY',
-        note: 'Current scope support exists primarily for work schedule routes.',
+        note: 'Team Managers may view managed team schedules.',
       },
     ],
     warnings: [
       'Event Assignment and Talent KPI permissions may be global-only until object scope is implemented.',
     ],
-    implementationNotes: ['Includes work-schedule lifecycle permission examples.'],
+    implementationNotes: ['Includes work-schedule read permission only.'],
     status: 'REQUIRES_FUTURE_SCOPE',
   },
   {
@@ -331,15 +331,15 @@ const roleTemplates: RoleTemplateRecord[] = [
       { code: 'work-schedule:read' },
     ],
     recommendedScopeGrants: {
-      workSchedule: ['department'],
+      workSchedule: ['global'],
       eventAssignment: ['global'],
     },
     scopePlan: [
       {
         module: 'Work Schedule',
-        scopes: ['department'],
-        status: 'PREVIEW_ONLY',
-        note: 'Work Schedule has current department scope vocabulary.',
+        scopes: ['global'],
+        status: 'READY',
+        note: 'Production Ops is the central Work Schedule dispatcher.',
       },
     ],
     warnings: ['Event and studio scope is not materialized by this template.'],

@@ -75,6 +75,24 @@
     "by-subject": "Ca làm liên quan theo chủ thể",
     "by-resource": "Ca làm liên quan theo tài nguyên studio"
   },
+  "surfaces": {
+    "my": {
+      "title": "My Work Shifts",
+      "subtitle": "Xem ca làm của chính bạn, không chỉnh sửa."
+    },
+    "team": {
+      "title": "Team Work Shifts",
+      "subtitle": "Xem lịch của thành viên nhóm được quản lý."
+    },
+    "department": {
+      "title": "Department Work Shifts",
+      "subtitle": "Xem lịch và bảng ca của phòng ban."
+    },
+    "globalOps": {
+      "title": "Global Ops Schedule",
+      "subtitle": "Bề mặt điều phối lịch trung tâm cho vận hành sản xuất liên phòng ban."
+    }
+  },
   "actions": {
     "create": "Tạo ca làm",
     "closeCreate": "Đóng tạo mới",
@@ -256,6 +274,10 @@
     }
   },
   "rosterNav": {
+    "myShifts": "My Work Shifts",
+    "teamShifts": "Team Work Shifts",
+    "departmentShifts": "Department Work Shifts / Roster",
+    "globalOps": "Global Ops Schedule",
     "label": "Các phần lịch làm việc",
     "workShifts": "Ca làm việc",
     "monthlyRosters": "Bảng lịch tháng",

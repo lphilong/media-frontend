@@ -638,15 +638,21 @@ const filterLookupItems = (
   searchParams: URLSearchParams,
 ): ReferenceLookupItem[] => {
   const search = searchParams.get('search');
+  const ids = searchParams
+    .get('ids')
+    ?.split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
   const limit = Math.min(parsePositiveInt(searchParams.get('limit')) ?? 20, 50);
   const normalizedSearch = search ? normalizeText(search) : '';
+  const idFiltered = ids && ids.length > 0 ? items.filter((item) => ids.includes(item.id)) : items;
   const filtered = normalizedSearch
-    ? items.filter((item) =>
+    ? idFiltered.filter((item) =>
         [item.label, item.secondaryLabel, item.code, item.status, item.state, item.type].some(
           (value) => value && normalizeText(value).includes(normalizedSearch),
         ),
       )
-    : items;
+    : idFiltered;
 
   return filtered.slice(0, limit);
 };
