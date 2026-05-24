@@ -150,6 +150,8 @@
   },
   "states": {
     "loadErrorTitle": "无法加载 KPI",
-    "loadErrorMessage": "无法加载 KPI 数据。"
+    "loadErrorMessage": "无法加载 KPI 数据。",
+    "emptyPlans": "暂无 KPI 计划。",
+    "emptyManagedGroups": "你管理的团队暂无 KPI 计划。"
   }
 }

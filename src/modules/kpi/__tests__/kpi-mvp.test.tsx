@@ -81,6 +81,78 @@ describe('KPI MVP UX', () => {
     expect(screen.getByRole('heading', { name: 'KPI plans' })).toBeInTheDocument();
   });
 
+  it('TEAM_MANAGER with managedGroup scope renders KPI without access denied', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    expect(screen.queryByText('Access denied')).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('tab', { name: 'My Group KPI', selected: true }),
+    ).toBeInTheDocument();
+  });
+
+  it('TEAM_MANAGER empty managed KPI list shows empty state, not access denied', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+    server.use(http.get('*/admin/kpi/plans', () => HttpResponse.json({ data: [] })));
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    expect(
+      await screen.findByText('No KPI plans for your managed groups yet.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Access denied')).not.toBeInTheDocument();
+  });
+
+  it('TEAM_MANAGER sees only managed group KPI plans from MSW', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+    server.use(
+      http.get('*/admin/kpi/plans', () =>
+        HttpResponse.json({
+          data: [makeListPlan('kpi-plan-managed', 'Managed group KPI', 'group-001')],
+        }),
+      ),
+    );
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    expect(await screen.findByText('Managed group KPI')).toBeInTheDocument();
+    expect(screen.queryByText('Unmanaged group KPI')).not.toBeInTheDocument();
+  });
+
+  it('admin global actor still loads the global KPI list endpoint', async () => {
+    const urls: string[] = [];
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.createPlan', 'kpi.enterActual', 'kpi.correctActual'],
+      scopeGrants: { kpi: ['global'] },
+    });
+    server.use(
+      http.get('*/admin/kpi/plans', ({ request }) => {
+        urls.push(request.url);
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    await waitFor(() =>
+      expect(urls.some((url) => new URL(url).pathname === '/admin/kpi/plans')).toBe(true),
+    );
+  });
+
   it('sends backend search query from list search', async () => {
     const urls: string[] = [];
     server.use(
@@ -717,6 +789,17 @@ const makeDetail = (id: string, status: 'DRAFT' | 'PUBLISHED' | 'FINALIZED' | 'A
   ],
   allocations: [],
 });
+
+const makeListPlan = (id: string, title: string, subjectId: string) => {
+  const { targetMetrics, allocations, ...plan } = makeDetail(id, 'PUBLISHED');
+  void targetMetrics;
+  void allocations;
+  return {
+    ...plan,
+    title,
+    subjectId,
+  };
+};
 
 const makeActualEntry = (id: string, metricCode: string, value: number) => ({
   id,

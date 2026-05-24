@@ -150,6 +150,8 @@
   },
   "states": {
     "loadErrorTitle": "Unable to load KPI",
-    "loadErrorMessage": "Unable to load KPI data."
+    "loadErrorMessage": "Unable to load KPI data.",
+    "emptyPlans": "No KPI plans yet.",
+    "emptyManagedGroups": "No KPI plans for your managed groups yet."
   }
 }

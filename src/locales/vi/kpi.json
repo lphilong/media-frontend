@@ -150,6 +150,8 @@
   },
   "states": {
     "loadErrorTitle": "Không tải được KPI",
-    "loadErrorMessage": "Không tải được dữ liệu KPI."
+    "loadErrorMessage": "Không tải được dữ liệu KPI.",
+    "emptyPlans": "Chưa có kế hoạch KPI.",
+    "emptyManagedGroups": "Chưa có kế hoạch KPI cho nhóm bạn quản lý."
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -37,7 +37,10 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { formatKpiDateTime } from '@modules/kpi/formatting/kpi-formatting';
-import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
+import {
+  hasScopeGrant,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
 
 type TargetDraft = {
   metricCode: KpiMetricCode;
@@ -185,6 +188,15 @@ export const KpiListPage = (): JSX.Element => {
     'correctActual',
     capabilityCopy,
   );
+  const hasGlobalKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'global');
+  const hasManagedGroupKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'managedGroup');
+  const isManagedGroupOnlyKpiView = !hasGlobalKpiScope && hasManagedGroupKpiScope;
+
+  useEffect(() => {
+    if (isManagedGroupOnlyKpiView && activeTab === 'management') {
+      setActiveTab('group');
+    }
+  }, [activeTab, isManagedGroupOnlyKpiView]);
 
   const patchQuery = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -717,7 +729,14 @@ export const KpiListPage = (): JSX.Element => {
             onRetry={() => void plansQuery.refetch()}
           />
         ) : null}
-        {plansQuery.data ? (
+        {plansQuery.data && plansQuery.data.length === 0 ? (
+          <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
+            {isManagedGroupOnlyKpiView
+              ? t('kpi:states.emptyManagedGroups')
+              : t('kpi:states.emptyPlans')}
+          </div>
+        ) : null}
+        {plansQuery.data && plansQuery.data.length > 0 ? (
           <div className="overflow-x-auto rounded border border-border">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-100">
