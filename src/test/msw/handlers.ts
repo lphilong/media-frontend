@@ -512,6 +512,145 @@ const toDirectReportItem = (record: EmploymentProfileRecord) => {
   };
 };
 
+type ReferenceLookupItem = {
+  id: string;
+  label: string;
+  secondaryLabel?: string;
+  code?: string;
+  status?: string;
+  state?: string;
+  type?: string;
+};
+
+const staticReferenceLookups: Record<string, ReferenceLookupItem[]> = {
+  'talent-groups': [
+    {
+      id: 'group-001',
+      label: 'Creators A',
+      secondaryLabel: 'CRE-A',
+      code: 'TG-000001',
+      status: 'ACTIVE',
+    },
+  ],
+  'platform-accounts': [
+    {
+      id: 'platform-001',
+      label: 'Mina Live',
+      secondaryLabel: 'YOUTUBE',
+      code: 'PA-000001',
+      status: 'ACTIVE',
+      type: 'CHANNEL',
+    },
+  ],
+  'studio-resources': [
+    {
+      id: 'studio-001',
+      label: 'Main Studio',
+      secondaryLabel: 'Hanoi',
+      code: 'SR-000001',
+      status: 'ACTIVE',
+      type: 'ROOM',
+    },
+  ],
+  events: [
+    {
+      id: 'event-001',
+      label: 'Launch Livestream',
+      code: 'EV-000001',
+      status: 'SCHEDULED',
+    },
+  ],
+  'contract-records': [
+    {
+      id: 'contract-record-001',
+      label: 'Mina Talent Service',
+      secondaryLabel: 'TALENT',
+      code: 'CR-000001',
+      status: 'ACTIVE',
+      type: 'TALENT_SERVICE',
+    },
+  ],
+  'revenue-entries': [
+    {
+      id: 'revenue-entry-001',
+      label: 'May YouTube Revenue',
+      secondaryLabel: 'VND',
+      code: 'REV-000001',
+      status: 'DRAFT',
+      type: 'PLATFORM_LIVESTREAM',
+    },
+  ],
+  'commission-rules': [
+    {
+      id: 'commission-rule-001',
+      label: 'Mina revenue share',
+      secondaryLabel: 'TALENT',
+      code: 'COMR-000001',
+      status: 'ACTIVE',
+      type: 'REVENUE_SHARE',
+    },
+  ],
+};
+
+const toReferenceLookupItems = (resource: string): ReferenceLookupItem[] => {
+  if (resource === 'org-units') {
+    return orgUnits
+      .filter((item) => item.status !== 'ARCHIVED')
+      .map((item) => ({
+        id: item.id,
+        label: item.name,
+        code: item.code,
+        status: item.status,
+        type: item.type,
+      }));
+  }
+
+  if (resource === 'employment-profiles') {
+    return employmentProfiles
+      .filter((item) => item.employmentStatus !== 'ARCHIVED')
+      .map((item) => ({
+        id: item.id,
+        label: item.displayName || item.legalName,
+        secondaryLabel: item.jobTitle,
+        code: item.employeeCode,
+        status: item.employmentStatus,
+        state: item.contractStatus,
+      }));
+  }
+
+  if (resource === 'talents') {
+    return [
+      {
+        id: 'talent-001',
+        label: 'Mina',
+        secondaryLabel: 'Mina Nguyen',
+        code: 'TAL-000001',
+        status: 'ACTIVE',
+      },
+    ];
+  }
+
+  return staticReferenceLookups[resource] ?? [];
+};
+
+const filterLookupItems = (
+  items: ReferenceLookupItem[],
+  searchParams: URLSearchParams,
+): ReferenceLookupItem[] => {
+  const search = searchParams.get('search');
+  const limit = Math.min(parsePositiveInt(searchParams.get('limit')) ?? 20, 50);
+  const normalizedSearch = search ? normalizeText(search) : '';
+  const filtered = normalizedSearch
+    ? items.filter((item) =>
+        [item.label, item.secondaryLabel, item.code, item.status, item.state, item.type].some(
+          (value) => value && normalizeText(value).includes(normalizedSearch),
+        ),
+      )
+    : items;
+
+  return filtered.slice(0, limit);
+};
+
 const sortOrgUnits = (
   records: OrgUnitRecord[],
   sortBy: string | null,
@@ -599,6 +738,16 @@ const parseJsonBody = async (request: Request): Promise<Record<string, unknown>>
 export const handlers = [
   http.get('*/health', () => {
     return HttpResponse.json({ ok: true });
+  }),
+  http.get('*/admin/reference/:resource', ({ params, request }) => {
+    const resource = String(params.resource);
+    const url = new URL(request.url);
+
+    return HttpResponse.json({
+      data: {
+        items: filterLookupItems(toReferenceLookupItems(resource), url.searchParams),
+      },
+    });
   }),
   http.get('*/admin/dashboard-lite/snapshot', () => {
     return HttpResponse.json({

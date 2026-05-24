@@ -1,28 +1,13 @@
 import { APP_PATHS } from '@app/router/paths';
-import { fetchCommissionRules } from '@modules/commission/api/commission.api';
-import type { CommissionRuleListItem } from '@modules/commission/types/commission.types';
-import { fetchContractRecords } from '@modules/contract-registry/api/contract-registry.api';
-import type { ContractListItem } from '@modules/contract-registry/types/contract-registry.types';
-import { fetchEmploymentProfiles } from '@modules/employment-profile/api/employment-profile.api';
-import type { EmploymentProfileListItem } from '@modules/employment-profile/types/employment-profile.types';
-import { fetchEvents } from '@modules/event-assignment/api/event-assignment.api';
-import type { EventListItem } from '@modules/event-assignment/types/event-assignment.types';
-import { fetchOrgUnits } from '@modules/org-unit/api/org-unit.api';
-import type { OrgUnitRecord } from '@modules/org-unit/types/org-unit.types';
-import { fetchPlatformAccounts } from '@modules/platform-account/api/platform-account.api';
 import type { PlatformAccountOwnerKind } from '@modules/platform-account/types/platform-account.types';
-import type { PlatformAccountRecord } from '@modules/platform-account/types/platform-account.types';
-import { fetchRevenueEntries } from '@modules/revenue-ledger/api/revenue-ledger.api';
-import type { RevenueEntryListItem } from '@modules/revenue-ledger/types/revenue-ledger.types';
-import { fetchStudioResources } from '@modules/studio-resource/api/studio-resource.api';
-import type { StudioResourceListItem } from '@modules/studio-resource/types/studio-resource.types';
-import { fetchTalentGroups } from '@modules/talent-group/api/talent-group.api';
-import type { TalentGroupRecord } from '@modules/talent-group/types/talent-group.types';
-import { fetchTalents } from '@modules/talent/api/talent.api';
-import type { TalentRecord } from '@modules/talent/types/talent.types';
 import { fetchUsers } from '@modules/user/api/user.api';
 import type { UserListItem } from '@modules/user/types/user.types';
 import type { ReferenceOption } from '@shared/components/reference/AsyncReferencePicker';
+import {
+  fetchReferenceLookupOptions,
+  type ReferenceLookupItem,
+  type ReferenceLookupResource,
+} from '@shared/components/reference/reference-lookup.api';
 
 const OPTION_LIMIT = 20;
 
@@ -31,33 +16,28 @@ const compactDescription = (values: Array<string | null | undefined>): string | 
   return items.length > 0 ? items.join(' - ') : undefined;
 };
 
-const toOrgUnitOption = (item: OrgUnitRecord): ReferenceOption => ({
+const toLookupOption = (
+  item: ReferenceLookupItem,
+  href: (id: string) => string,
+): ReferenceOption => ({
   id: item.id,
-  label: `${item.name} - ${item.code}`,
-  description: compactDescription([item.status, item.type]),
-  href: APP_PATHS.orgUnitDetail(item.id),
+  label: item.code ? `${item.label} - ${item.code}` : item.label,
+  description: compactDescription([item.secondaryLabel, item.type, item.status, item.state]),
+  href: href(item.id),
 });
 
-const toEmploymentProfileOption = (item: EmploymentProfileListItem): ReferenceOption => ({
-  id: item.id,
-  label: `${item.displayName || item.legalName} - ${item.employeeCode}`,
-  description: compactDescription([item.jobTitle, item.employmentStatus, item.contractStatus]),
-  href: APP_PATHS.employmentProfileDetail(item.id),
-});
+const loadLookupReferenceOptions = async (
+  resource: ReferenceLookupResource,
+  search: string,
+  href: (id: string) => string,
+): Promise<ReferenceOption[]> => {
+  const items = await fetchReferenceLookupOptions(resource, {
+    search: search || undefined,
+    limit: OPTION_LIMIT,
+  });
 
-const toTalentOption = (item: TalentRecord): ReferenceOption => ({
-  id: item.id,
-  label: `${item.stageName} - ${item.talentCode}`,
-  description: compactDescription([item.displayShortName, item.legalName, item.operationalStatus]),
-  href: APP_PATHS.talentDetail(item.id),
-});
-
-const toTalentGroupOption = (item: TalentGroupRecord): ReferenceOption => ({
-  id: item.id,
-  label: `${item.name} - ${item.groupCode}`,
-  description: compactDescription([item.shortName, item.status]),
-  href: APP_PATHS.talentGroupDetail(item.id),
-});
+  return items.map((item) => toLookupOption(item, href));
+};
 
 const toUserOption = (item: UserListItem): ReferenceOption => ({
   id: item.id,
@@ -69,102 +49,28 @@ const toUserOption = (item: UserListItem): ReferenceOption => ({
   },
 });
 
-const toPlatformAccountOption = (item: PlatformAccountRecord): ReferenceOption => ({
-  id: item.id,
-  label: `${item.displayName} - ${item.accountCode}`,
-  description: compactDescription([
-    item.platform,
-    item.platformSurfaceType,
-    item.operationalStatus,
-  ]),
-  href: APP_PATHS.platformAccountDetail(item.id),
-});
-
-const toStudioResourceOption = (item: StudioResourceListItem): ReferenceOption => ({
-  id: item.id,
-  label: `${item.name} - ${item.resourceCode}`,
-  description: compactDescription([item.resourceClass, item.operationalStatus, item.locationLabel]),
-  href: APP_PATHS.studioResourceDetail(item.id),
-});
-
-const toEventOption = (item: EventListItem): ReferenceOption => ({
-  id: item.id,
-  label: `${item.title} - ${item.eventCode}`,
-  description: compactDescription([
-    item.status,
-    String(item.eventStartAt),
-    String(item.eventEndAt),
-  ]),
-  href: APP_PATHS.eventDetail(item.id),
-});
-
-const toContractOption = (item: ContractListItem): ReferenceOption => ({
-  id: item.id,
-  label: `${item.title} - ${item.contractCode}`,
-  description: compactDescription([item.contractKind, item.status, item.linkedEntityKind]),
-  href: APP_PATHS.contractRecordDetail(item.id),
-});
-
-const toRevenueEntryOption = (item: RevenueEntryListItem): ReferenceOption => ({
-  id: item.id,
-  label: `${item.title} - ${item.revenueEntryCode}`,
-  description: compactDescription([item.revenueKind, item.status, item.currencyCode]),
-  href: APP_PATHS.revenueEntryDetail(item.id),
-});
-
-const toCommissionRuleOption = (item: CommissionRuleListItem): ReferenceOption => ({
-  id: item.id,
-  label: `${item.title} - ${item.ruleCode}`,
-  description: compactDescription([item.settlementKind, item.beneficiaryKind, item.status]),
-  href: APP_PATHS.commissionRuleDetail(item.id),
-});
-
 export const loadOrgUnitReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  const response = await fetchOrgUnits({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'name',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toOrgUnitOption);
+  return loadLookupReferenceOptions('org-units', search, APP_PATHS.orgUnitDetail);
 };
 
 export const loadEmploymentProfileReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  const response = await fetchEmploymentProfiles({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'employeeCode',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toEmploymentProfileOption);
+  return loadLookupReferenceOptions(
+    'employment-profiles',
+    search,
+    APP_PATHS.employmentProfileDetail,
+  );
 };
 
 export const loadTalentReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  const response = await fetchTalents({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'talentCode',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toTalentOption);
+  return loadLookupReferenceOptions('talents', search, APP_PATHS.talentDetail);
 };
 
 export const loadTalentGroupReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  const response = await fetchTalentGroups({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'groupCode',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toTalentGroupOption);
+  return loadLookupReferenceOptions('talent-groups', search, APP_PATHS.talentGroupDetail);
 };
 
 export const loadUserReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
@@ -179,75 +85,53 @@ export const loadUserReferenceOptions = async (search: string): Promise<Referenc
 export const loadPlatformAccountReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  const response = await fetchPlatformAccounts({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'accountCode',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toPlatformAccountOption);
+  return loadLookupReferenceOptions(
+    'platform-accounts',
+    search,
+    APP_PATHS.platformAccountDetail,
+  );
 };
 
 export const loadStudioResourceReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  const response = await fetchStudioResources({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'resourceCode',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toStudioResourceOption);
+  return loadLookupReferenceOptions(
+    'studio-resources',
+    search,
+    APP_PATHS.studioResourceDetail,
+  );
 };
 
 export const loadEventReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  const response = await fetchEvents({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'eventCode',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toEventOption);
+  return loadLookupReferenceOptions('events', search, APP_PATHS.eventDetail);
 };
 
 export const loadContractReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  const response = await fetchContractRecords({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'contractCode',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toContractOption);
+  return loadLookupReferenceOptions(
+    'contract-records',
+    search,
+    APP_PATHS.contractRecordDetail,
+  );
 };
 
 export const loadRevenueEntryReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  const response = await fetchRevenueEntries({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'recognizedAt',
-    sortDirection: 'desc',
-  });
-
-  return response.data.map(toRevenueEntryOption);
+  return loadLookupReferenceOptions(
+    'revenue-entries',
+    search,
+    APP_PATHS.revenueEntryDetail,
+  );
 };
 
 export const loadCommissionRuleReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  const response = await fetchCommissionRules({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'ruleCode',
-    sortDirection: 'asc',
-  });
-
-  return response.data.map(toCommissionRuleOption);
+  return loadLookupReferenceOptions(
+    'commission-rules',
+    search,
+    APP_PATHS.commissionRuleDetail,
+  );
 };
 
 export const loadPlatformOwnerReferenceOptions = (

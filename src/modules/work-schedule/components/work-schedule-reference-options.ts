@@ -8,15 +8,13 @@ import { fetchOrgUnitDetail, fetchOrgUnits } from '@modules/org-unit/api/org-uni
 import type { OrgUnitRecord } from '@modules/org-unit/types/org-unit.types';
 import {
   fetchStudioResourceDetail,
-  fetchStudioResources,
 } from '@modules/studio-resource/api/studio-resource.api';
 import type { StudioResourceListItem } from '@modules/studio-resource/types/studio-resource.types';
 import {
   fetchTalentGroupDetail,
-  fetchTalentGroups,
 } from '@modules/talent-group/api/talent-group.api';
 import type { TalentGroupRecord } from '@modules/talent-group/types/talent-group.types';
-import { fetchTalentDetail, fetchTalents } from '@modules/talent/api/talent.api';
+import { fetchTalentDetail } from '@modules/talent/api/talent.api';
 import type { TalentRecord } from '@modules/talent/types/talent.types';
 import {
   fetchHolidayCalendarDetail,
@@ -30,6 +28,12 @@ import type {
   WorkShiftSubjectKind,
 } from '@modules/work-schedule/types/work-schedule.types';
 import type { ReferenceOption } from '@shared/components/reference';
+import {
+  loadEmploymentProfileReferenceOptions,
+  loadStudioResourceReferenceOptions,
+  loadTalentGroupReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 
 const OPTION_LIMIT = 20;
 
@@ -115,32 +119,14 @@ export const loadWorkShiftSubjectOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
   if (subjectKind === 'EMPLOYMENT_PROFILE') {
-    const response = await fetchEmploymentProfiles({
-      search: search || undefined,
-      limit: OPTION_LIMIT,
-      sortBy: 'employeeCode',
-      sortDirection: 'asc',
-    });
-    return response.data.map(toEmploymentProfileOption);
+    return loadEmploymentProfileReferenceOptions(search);
   }
 
   if (subjectKind === 'TALENT') {
-    const response = await fetchTalents({
-      search: search || undefined,
-      limit: OPTION_LIMIT,
-      sortBy: 'talentCode',
-      sortDirection: 'asc',
-    });
-    return response.data.map(toTalentOption);
+    return loadTalentReferenceOptions(search);
   }
 
-  const response = await fetchTalentGroups({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'groupCode',
-    sortDirection: 'asc',
-  });
-  return response.data.map(toTalentGroupOption);
+  return loadTalentGroupReferenceOptions(search);
 };
 
 export const loadWorkShiftSubjectOptionById = async (
@@ -173,13 +159,7 @@ export const loadWorkShiftSubjectFilterOptions = async (
 export const loadWorkShiftStudioResourceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  const response = await fetchStudioResources({
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-    sortBy: 'resourceCode',
-    sortDirection: 'asc',
-  });
-  return response.data.map(toStudioResourceOption);
+  return loadStudioResourceReferenceOptions(search);
 };
 
 export const loadWorkShiftStudioResourceOptionById = async (
