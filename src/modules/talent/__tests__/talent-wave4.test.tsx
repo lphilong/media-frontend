@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { appRoutes } from '@app/router/router';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
+import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 import { renderAppWithProviders } from '@test/render-app-route';
 
 const renderRoute = (path: string) => {
@@ -46,6 +47,59 @@ const openMoreFilters = async (user: ReturnType<typeof userEvent.setup>): Promis
 };
 
 describe('talent wave 4 surfaces', () => {
+  it('renders TEAM_MANAGER scoped list rows from backend-filtered MSW data', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    setMockCurrentActorCapabilities({
+      id: 'user-team-manager',
+      type: 'admin',
+      context: 'ADMIN',
+      isActive: true,
+      roles: ['TEAM_MANAGER'],
+      permissions: ['talent.read', 'talentGroup.read'],
+      scopeGrants: {
+        workSchedule: ['self', 'team', 'department'],
+        kpi: ['managedGroup'],
+      },
+      generatedAt: '2026-05-20T00:00:00.000Z',
+    });
+
+    renderRoute('/talents');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('talent:page.title') }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('TAL-000001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getAllByText('Mina').length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(screen.queryByText('TAL-000002')).not.toBeInTheDocument();
+      expect(screen.queryByText('TAL-000003')).not.toBeInTheDocument();
+    });
+  });
+
+  it('renders an error state for TEAM_MANAGER unmanaged Talent detail', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    setMockCurrentActorCapabilities({
+      id: 'user-team-manager',
+      type: 'admin',
+      context: 'ADMIN',
+      isActive: true,
+      roles: ['TEAM_MANAGER'],
+      permissions: ['talent.read', 'talentGroup.read'],
+      scopeGrants: {
+        workSchedule: ['self', 'team', 'department'],
+        kpi: ['managedGroup'],
+      },
+      generatedAt: '2026-05-20T00:00:00.000Z',
+    });
+
+    renderRoute('/talents/talent-003');
+
+    expect(
+      await screen.findByText(i18n.t('errors:permission.title'), {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('talent:actionRail.title'))).not.toBeInTheDocument();
+  });
+
   it('renders filtered list rows for query-driven Talent routes', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/talents?operationalStatus=SUSPENDED&search=Bao&hasLinkedEmploymentProfile=false');
