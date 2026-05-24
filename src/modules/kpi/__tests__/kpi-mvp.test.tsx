@@ -452,7 +452,7 @@ describe('KPI MVP UX', () => {
     expect(progress.groupTotals[0].progressPercent).toBe(125);
   });
 
-  it('shows capability-disabled reason when KPI scope is missing', async () => {
+  it('hides global KPI lifecycle action when global KPI scope is missing', async () => {
     server.use(
       http.get('*/admin/me/capabilities', () =>
         HttpResponse.json({
@@ -462,21 +462,19 @@ describe('KPI MVP UX', () => {
             context: 'ADMIN',
             isActive: true,
             roles: ['role-admin'],
-            permissions: ['kpi.finalize'],
-            scopeGrants: {},
+            permissions: ['kpi.read', 'kpi.finalize'],
+            scopeGrants: { kpi: ['managedGroup'] },
           },
         }),
       ),
     );
     renderRoute('/kpi/plans/kpi-plan-published');
-    const finalize = await screen.findByRole('button', { name: 'Finalize' });
-    expect(finalize).toBeDisabled();
-    expect(
-      screen.getByText('Your role assignment does not include the required scope.'),
-    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Finalize' })).not.toBeInTheDocument(),
+    );
   });
 
-  it('disables create with a visible reason when capability data is unavailable', async () => {
+  it('fails closed without create action when capability data is unavailable', async () => {
     let called = false;
     mockKpiCapabilities({ status: 500 });
     server.use(
@@ -487,21 +485,15 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi');
-    await waitForKpiList();
-
-    const create = await screen.findByRole('button', { name: 'Create KPI plan' });
-    await waitFor(() => expect(create).toBeDisabled());
-    expect(
-      screen.getAllByText('KPI permissions could not be verified. Try again.').length,
-    ).toBeGreaterThan(0);
-    await userEvent.click(create);
+    await screen.findByText('Access denied');
+    expect(screen.queryByRole('button', { name: 'Create KPI plan' })).not.toBeInTheDocument();
     expect(called).toBe(false);
   });
 
-  it('does not call create API without kpi.createPlan', async () => {
+  it('hides create action without kpi.createPlan', async () => {
     let called = false;
     mockKpiCapabilities({
-      permissions: ['kpi.enterActual', 'kpi.correctActual'],
+      permissions: ['kpi.read', 'kpi.enterActual', 'kpi.correctActual'],
       scopeGrants: { kpi: ['global'] },
     });
     server.use(
@@ -514,20 +506,17 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi');
     await waitForKpiList();
 
-    const create = await screen.findByRole('button', { name: 'Create KPI plan' });
-    await waitFor(() => expect(create).toBeDisabled());
-    expect(
-      screen.getAllByText('You do not have permission to perform this action.').length,
-    ).toBeGreaterThan(0);
-    await userEvent.click(create);
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Create KPI plan' })).not.toBeInTheDocument(),
+    );
     expect(called).toBe(false);
   });
 
-  it('disables actual save with a visible reason and does not POST or PATCH without kpi.enterActual', async () => {
+  it('hides actual save and does not POST or PATCH without kpi.enterActual', async () => {
     let posted = false;
     let patched = false;
     mockKpiCapabilities({
-      permissions: ['kpi.createPlan', 'kpi.correctActual'],
+      permissions: ['kpi.read', 'kpi.createPlan', 'kpi.correctActual'],
       scopeGrants: { kpi: ['global'] },
     });
     server.use(
@@ -548,20 +537,17 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi');
     await screen.findByText('Actual entry');
 
-    const save = await screen.findByRole('button', { name: 'Save changed cells' });
-    await waitFor(() => expect(save).toBeDisabled());
-    expect(
-      screen.getAllByText('You do not have permission to perform this action.').length,
-    ).toBeGreaterThan(0);
-    await userEvent.click(save);
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Save changed cells' })).not.toBeInTheDocument(),
+    );
     expect(posted).toBe(false);
     expect(patched).toBe(false);
   });
 
-  it('disables correction with a visible reason and does not call correction API without kpi.correctActual', async () => {
+  it('hides correction action and does not call correction API without kpi.correctActual', async () => {
     let called = false;
     mockKpiCapabilities({
-      permissions: ['kpi.createPlan', 'kpi.enterActual'],
+      permissions: ['kpi.read', 'kpi.createPlan', 'kpi.enterActual'],
       scopeGrants: { kpi: ['global'] },
     });
     server.use(
@@ -579,14 +565,9 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi');
     await screen.findByText('Actual entry');
 
-    const correctionButtons = await screen.findAllByRole('button', { name: 'Correction' });
-    const correction = correctionButtons.at(-1);
-    expect(correction).toBeDefined();
-    await waitFor(() => expect(correction).toBeDisabled());
-    expect(
-      screen.getAllByText('You do not have permission to perform this action.').length,
-    ).toBeGreaterThan(0);
-    await userEvent.click(correction!);
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Correction' })).not.toBeInTheDocument(),
+    );
     expect(screen.queryByRole('dialog', { name: 'Edit actual' })).not.toBeInTheDocument();
     expect(called).toBe(false);
   });
@@ -635,6 +616,7 @@ describe('KPI MVP UX', () => {
       allowed: false,
       disabled: true,
       disabledReason: 'You do not have permission to perform this action.',
+      hidden: true,
     });
     expect(
       createKpiActionCapabilityHint(
@@ -650,6 +632,7 @@ describe('KPI MVP UX', () => {
       allowed: false,
       disabled: true,
       disabledReason: 'Your role assignment does not include the required scope.',
+      hidden: true,
     });
   });
 
@@ -699,6 +682,7 @@ describe('KPI MVP UX', () => {
       allowed: false,
       disabled: true,
       disabledReason: 'Your role assignment does not include the required scope.',
+      hidden: true,
     });
     expect(
       createKpiActionCapabilityHint(
@@ -717,6 +701,7 @@ describe('KPI MVP UX', () => {
       allowed: false,
       disabled: true,
       disabledReason: 'Your role assignment does not include the required scope.',
+      hidden: true,
     });
   });
 

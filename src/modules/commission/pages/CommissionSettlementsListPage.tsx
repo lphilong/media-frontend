@@ -28,6 +28,11 @@ import {
 } from '@modules/commission/types/commission.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   AdminTableShell,
   CursorPager,
@@ -251,6 +256,7 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
           ? byRevenueEntryQueryResult
           : flatQueryResult;
 
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateCommissionSettlementMutation();
   const lifecycleMutation = useCommissionSettlementLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -274,16 +280,28 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
     }
   }, [queryShapeSignature]);
 
+  const commissionGlobalScope = { module: 'commission', value: 'global' } as const;
+  const canCreateCommissionSettlement = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.COMMISSION_SETTLEMENT_CREATE,
+    scope: commissionGlobalScope,
+  });
+  const canManageCommissionSettlementLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.COMMISSION_SETTLEMENT_MANAGE_LIFECYCLE,
+    scope: commissionGlobalScope,
+  });
+
   usePageActions(
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen
-        ? t('commission:settlements.actions.closeCreate')
-        : t('commission:settlements.actions.create')}
-    </button>,
+    canCreateCommissionSettlement ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen
+          ? t('commission:settlements.actions.closeCreate')
+          : t('commission:settlements.actions.create')}
+      </button>
+    ) : null,
   );
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
@@ -327,12 +345,20 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
         onOpenDetail: (commissionSettlementId) =>
           navigate(APP_PATHS.commissionSettlementDetail(commissionSettlementId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageCommissionSettlementLifecycle,
         isActionPending: (commissionSettlementId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.commissionSettlementId === commissionSettlementId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageCommissionSettlementLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -965,7 +991,7 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateCommissionSettlement && isCreateOpen ? (
             <CommissionSettlementCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

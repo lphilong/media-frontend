@@ -15,6 +15,7 @@ import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formattin
 type RoleListColumnHandlers = {
   onOpenDetail: (roleId: string) => void;
   onLifecycleAction: (roleId: string, action: RoleLifecycleAction) => void;
+  canShowLifecycleAction?: (action: RoleLifecycleAction) => boolean;
   isActionPending?: (roleId: string, action: RoleLifecycleAction) => boolean;
 };
 
@@ -139,7 +140,9 @@ export const createRoleListColumns = (
     header: t('role:table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const actions = readLifecycleActions(record);
+      const actions = readLifecycleActions(record).filter(
+        (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+      );
 
       return (
         <div className="flex flex-wrap items-center gap-2">
@@ -231,13 +234,14 @@ export const createRoleAssignmentColumns = (
     header: t('role:table.actions'),
     cell: ({ row }) => {
       const assignment = row.original;
+      if (handlers.canRevokeAssignment === false) {
+        return null;
+      }
+
       const canRevoke = handlers.roleState === 'ACTIVE' && assignment.state === 'ACTIVE';
-      const capabilityAllowsRevoke = handlers.canRevokeAssignment !== false;
       const disabledReason = !canRevoke
         ? t('common:capabilities.invalidStatus')
-        : !capabilityAllowsRevoke
-          ? handlers.revokeDisabledReason
-          : undefined;
+        : undefined;
       const reasonId = `role-assignment-${assignment.assignmentId}-revoke-disabled-reason`;
 
       return (
@@ -246,9 +250,7 @@ export const createRoleAssignmentColumns = (
             type="button"
             className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
             disabled={
-              !canRevoke ||
-              !capabilityAllowsRevoke ||
-              handlers.isActionPending?.(assignment.assignmentId)
+              !canRevoke || handlers.isActionPending?.(assignment.assignmentId)
             }
             aria-describedby={disabledReason ? reasonId : undefined}
             title={disabledReason}

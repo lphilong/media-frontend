@@ -15,6 +15,7 @@ import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 type HolidayCalendarListColumnHandlers = {
   onOpenDetail: (holidayCalendarId: string) => void;
   onLifecycleAction: (holidayCalendarId: string, action: HolidayCalendarLifecycleAction) => void;
+  canShowLifecycleAction?: (action: HolidayCalendarLifecycleAction) => boolean;
   isActionPending?: (holidayCalendarId: string, action: HolidayCalendarLifecycleAction) => boolean;
 };
 
@@ -88,7 +89,9 @@ export const createHolidayCalendarListColumns = (
     header: t('work-schedule:holidayCalendars.table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const actions = readLifecycleActions(record);
+      const actions = readLifecycleActions(record).filter(
+        (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+      );
 
       return (
         <div className="flex flex-wrap items-center gap-2">

@@ -18,6 +18,11 @@ import type {
 } from '@modules/platform-account/types/platform-account.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   type AppliedFilterChipItem,
   AdminTableShell,
@@ -128,6 +133,7 @@ export const PlatformAccountListPage = (): JSX.Element => {
   const navigate = useNavigate();
   const { query, patchQuery } = useRouteQueryState(platformAccountFlatListQueryConfig);
   const listQueryResult = usePlatformAccountList(query);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreatePlatformAccountMutation();
   const lifecycleMutation = usePlatformAccountLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -158,7 +164,14 @@ export const PlatformAccountListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
-  const pageActions = (
+  const canCreatePlatformAccount = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.PLATFORM_ACCOUNT_CREATE,
+  });
+  const canManagePlatformAccountLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.PLATFORM_ACCOUNT_MANAGE_LIFECYCLE,
+  });
+
+  const pageActions = canCreatePlatformAccount ? (
     <button
       type="button"
       onClick={() => setIsCreateOpen((current) => !current)}
@@ -168,7 +181,7 @@ export const PlatformAccountListPage = (): JSX.Element => {
         ? t('platform-account:actions.closeCreate')
         : t('platform-account:actions.create')}
     </button>
-  );
+  ) : null;
 
   usePageActions(pageActions);
 
@@ -243,12 +256,20 @@ export const PlatformAccountListPage = (): JSX.Element => {
         onOpenDetail: (platformAccountId) =>
           navigate(APP_PATHS.platformAccountDetail(platformAccountId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManagePlatformAccountLifecycle,
         isActionPending: (platformAccountId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.platformAccountId === platformAccountId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManagePlatformAccountLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -592,7 +613,7 @@ export const PlatformAccountListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreatePlatformAccount && isCreateOpen ? (
             <PlatformAccountCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

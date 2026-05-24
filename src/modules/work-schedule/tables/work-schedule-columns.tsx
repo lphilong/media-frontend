@@ -21,6 +21,7 @@ export type WorkShiftTableRow =
 type WorkShiftListColumnHandlers = {
   onOpenDetail: (workShiftId: string) => void;
   onLifecycleAction: (workShiftId: string, action: WorkShiftLifecycleAction) => void;
+  canShowLifecycleAction?: (action: WorkShiftLifecycleAction) => boolean;
   isActionPending?: (workShiftId: string, action: WorkShiftLifecycleAction) => boolean;
 };
 
@@ -158,7 +159,9 @@ export const createWorkShiftListColumns = (
     header: t('work-schedule:table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const actions = readLifecycleActions(record);
+      const actions = readLifecycleActions(record).filter(
+        (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+      );
 
       return (
         <div className="flex flex-wrap items-center gap-2">

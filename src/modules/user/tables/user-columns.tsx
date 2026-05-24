@@ -9,6 +9,7 @@ type UserListColumnHandlers = {
   onOpenDetail: (userId: string) => void;
   onLifecycleAction: (userId: string, action: UserLifecycleAction) => void;
   isActionPending?: (userId: string, action: UserLifecycleAction) => boolean;
+  canShowAction?: (action: UserLifecycleAction) => boolean;
   getActionDisabledReason?: (action: UserLifecycleAction) => string | undefined;
 };
 
@@ -111,7 +112,9 @@ export const createUserListColumns = (
           >
             {t('user:actions.open')}
           </button>
-          {actions.map((action) => (
+          {actions
+            .filter((action) => handlers.canShowAction?.(action) ?? true)
+            .map((action) => (
             <div key={action} className="space-y-1">
               <button
                 type="button"

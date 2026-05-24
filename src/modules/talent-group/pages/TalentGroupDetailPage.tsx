@@ -53,6 +53,7 @@ import {
 } from '@shared/components/primitives';
 import {
   applyActionCapabilityHints,
+  canShowAction,
   createActionCapabilityHint,
   PERMISSIONS,
   useCurrentActorCapabilities,
@@ -439,9 +440,12 @@ export const TalentGroupDetailPage = (): JSX.Element => {
     t,
   ]);
 
-  const canManageManagers = Boolean(
-    capabilitiesQuery.data?.permissions.includes(PERMISSIONS.TALENT_GROUP_UPDATE),
-  );
+  const canManageManagers = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.TALENT_GROUP_UPDATE,
+  });
+  const canManageMembership = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.TALENT_GROUP_MANAGE_MEMBERSHIP,
+  });
 
   const memberColumns = useMemo(
     () =>
@@ -458,9 +462,11 @@ export const TalentGroupDetailPage = (): JSX.Element => {
           membershipLifecycleMutation.isPending &&
           membershipLifecycleMutation.variables?.membershipId === membershipId &&
           membershipLifecycleMutation.variables?.action === action,
+        canShowMemberMutationActions: canManageMembership,
         isGroupArchived: record?.status === 'ARCHIVED',
       }),
     [
+      canManageMembership,
       membersQuery.data?.data,
       membershipLifecycleMutation.isPending,
       membershipLifecycleMutation.variables,

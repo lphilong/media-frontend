@@ -15,6 +15,7 @@ import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 type WorkPatternListColumnHandlers = {
   onOpenDetail: (workPatternId: string) => void;
   onLifecycleAction: (workPatternId: string, action: WorkPatternLifecycleAction) => void;
+  canShowLifecycleAction?: (action: WorkPatternLifecycleAction) => boolean;
   isActionPending?: (workPatternId: string, action: WorkPatternLifecycleAction) => boolean;
 };
 
@@ -88,7 +89,9 @@ export const createWorkPatternListColumns = (
     header: t('work-schedule:patterns.table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const actions = readLifecycleActions(record);
+      const actions = readLifecycleActions(record).filter(
+        (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+      );
 
       return (
         <div className="flex flex-wrap items-center gap-2">

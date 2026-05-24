@@ -18,6 +18,11 @@ import { createRoleListColumns } from '@modules/role/tables/role-columns';
 import type { RoleLifecycleAction, RoleListQuery } from '@modules/role/types/role.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AdminTableShell,
   CursorPager,
   ErrorState,
@@ -73,6 +78,7 @@ export const RoleListPage = (): JSX.Element => {
   const { query, patchQuery } = useRouteQueryState(roleFlatListQueryConfig);
   const listQueryResult = useRoleList(query);
   const roleTemplatesQuery = useRoleTemplates();
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateRoleMutation();
   const createFromTemplateMutation = useCreateRoleFromTemplateMutation();
   const lifecycleMutation = useRoleLifecycleMutation();
@@ -104,7 +110,21 @@ export const RoleListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
-  const pageActions = (
+  const canCreateRole = canShowAction(capabilitiesQuery.data, { permission: PERMISSIONS.ROLE_CREATE });
+  const canShowLifecycleAction = useCallback(
+    (action: RoleLifecycleAction) => {
+      const permission =
+        action === 'activate'
+          ? PERMISSIONS.ROLE_ACTIVATE
+          : action === 'deactivate'
+            ? PERMISSIONS.ROLE_DEACTIVATE
+            : PERMISSIONS.ROLE_ARCHIVE;
+      return canShowAction(capabilitiesQuery.data, { permission });
+    },
+    [capabilitiesQuery.data],
+  );
+
+  const pageActions = canCreateRole ? (
     <button
       type="button"
       onClick={() => setIsCreateOpen((current) => !current)}
@@ -112,7 +132,7 @@ export const RoleListPage = (): JSX.Element => {
     >
       {isCreateOpen ? t('role:actions.closeCreate') : t('role:actions.create')}
     </button>
-  );
+  ) : null;
 
   usePageActions(pageActions);
 
@@ -188,12 +208,20 @@ export const RoleListPage = (): JSX.Element => {
       createRoleListColumns(t, {
         onOpenDetail: (roleId) => navigate(APP_PATHS.roleDetail(roleId)),
         onLifecycleAction,
+        canShowLifecycleAction,
         isActionPending: (roleId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.roleId === roleId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canShowLifecycleAction,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -250,7 +278,7 @@ export const RoleListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateRole && isCreateOpen ? (
             <RoleCreateSurface
               isPending={createMutation.isPending || createFromTemplateMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

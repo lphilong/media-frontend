@@ -19,6 +19,11 @@ import {
 import { createMonthlyRosterListColumns } from '@modules/work-schedule/tables/monthly-roster-columns';
 import type { MonthlyRosterScope } from '@modules/work-schedule/types/work-schedule.types';
 import type { NormalizedApiError } from '@shared/api';
+import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import {
   AppliedFilterChips,
@@ -100,6 +105,7 @@ export const MonthlyRosterListPage = (): JSX.Element => {
   );
 
   const listQueryResult = useMonthlyRosterList(listQuery);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateMonthlyRosterDraftMutation();
   const archiveMutation = useArchiveMonthlyRosterMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -109,17 +115,29 @@ export const MonthlyRosterListPage = (): JSX.Element => {
   const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
+  const monthlyRosterScope = listQuery.scope ?? 'global';
+  const canCreateMonthlyRoster = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.WORK_SCHEDULE_CREATE,
+    scope: { module: 'workSchedule', value: monthlyRosterScope },
+  });
+  const canManageMonthlyRosterLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+    scope: { module: 'workSchedule', value: monthlyRosterScope },
+  });
+
   usePageActions(
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      data-action-priority="primary"
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen
-        ? t('work-schedule:monthlyRosters.actions.closeCreate')
-        : t('work-schedule:monthlyRosters.actions.create')}
-    </button>,
+    canCreateMonthlyRoster ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        data-action-priority="primary"
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen
+          ? t('work-schedule:monthlyRosters.actions.closeCreate')
+          : t('work-schedule:monthlyRosters.actions.create')}
+      </button>
+    ) : null,
   );
 
   const queryShapeSignature = useMemo(
@@ -194,11 +212,20 @@ export const MonthlyRosterListPage = (): JSX.Element => {
             APP_PATHS.monthlyRosterDetail(monthlyRosterId) + (scope ? `?scope=${scope}` : ''),
           ),
         onArchive,
+        canShowArchive: canManageMonthlyRosterLifecycle,
         isArchivePending: (monthlyRosterId) =>
           archiveMutation.isPending &&
           archiveMutation.variables?.monthlyRosterId === monthlyRosterId,
       }),
-    [archiveMutation.isPending, archiveMutation.variables, listQuery.scope, navigate, onArchive, t],
+    [
+      archiveMutation.isPending,
+      archiveMutation.variables,
+      canManageMonthlyRosterLifecycle,
+      listQuery.scope,
+      navigate,
+      onArchive,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -474,7 +501,7 @@ export const MonthlyRosterListPage = (): JSX.Element => {
         </FilterToolbar>
       }
       interactionSection={
-        isCreateOpen ? (
+        canCreateMonthlyRoster && isCreateOpen ? (
           <MonthlyRosterCreateSurface
             isPending={createMutation.isPending}
             onCancel={() => setIsCreateOpen(false)}

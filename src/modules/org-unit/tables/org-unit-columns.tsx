@@ -12,6 +12,7 @@ import type {
 type OrgUnitListColumnHandlers = {
   onOpenDetail: (orgUnitId: string) => void;
   onLifecycleAction: (orgUnitId: string, action: OrgUnitLifecycleAction) => void;
+  canShowLifecycleAction?: (action: OrgUnitLifecycleAction) => boolean;
   isActionPending?: (orgUnitId: string, action: OrgUnitLifecycleAction) => boolean;
 };
 
@@ -78,7 +79,9 @@ export const createOrgUnitListColumns = (
       header: t('org-unit:table.actions'),
       cell: ({ row }) => {
         const record = row.original;
-        const actions = readLifecycleActions(record);
+        const actions = readLifecycleActions(record).filter(
+          (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+        );
 
         return (
           <div className="flex flex-wrap items-center gap-2">

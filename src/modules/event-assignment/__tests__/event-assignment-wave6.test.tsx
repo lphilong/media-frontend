@@ -81,7 +81,12 @@ describe('event assignment wave 6 surfaces', () => {
   it('TEAM_MANAGER with managedGroup scope sees Event nav and only managed Event rows', async () => {
     setEventCapabilities({
       roles: ['TEAM_MANAGER'],
-      permissions: ['event.read', 'event.update', 'event.manageAssignments', 'event.manageLifecycle'],
+      permissions: [
+        'event.read',
+        'event.update',
+        'event.manageAssignments',
+        'event.manageLifecycle',
+      ],
       scopeGrants: { eventAssignment: ['managedGroup'] },
     });
 
@@ -109,7 +114,9 @@ describe('event assignment wave 6 surfaces', () => {
 
     renderRoute('/events?search=NO_MATCH');
 
-    expect(await screen.findByText(i18n.t('event-assignment:states.emptyTitle'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('event-assignment:states.emptyTitle')),
+    ).toBeInTheDocument();
     expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
   });
 
@@ -123,7 +130,9 @@ describe('event assignment wave 6 surfaces', () => {
     renderRoute('/events/event-001');
 
     expect(await screen.findByText('EVT-202605-000001')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: i18n.t('event-assignment:actions.edit') })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('event-assignment:actions.edit') }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('event-assignment:actions.create') }),
     ).not.toBeInTheDocument();
@@ -185,32 +194,30 @@ describe('event assignment wave 6 surfaces', () => {
   it('requires the eventAssignment global scope for Event detail mutation actions', async () => {
     setEventCapabilities({
       roles: ['role-admin'],
-      permissions: ['event.read', 'event.update', 'event.manageAssignments', 'event.manageLifecycle'],
+      permissions: [
+        'event.read',
+        'event.update',
+        'event.manageAssignments',
+        'event.manageLifecycle',
+      ],
       scopeGrants: { eventAssignment: ['managedGroup'] },
     });
 
     renderRoute('/events/event-managed-scheduled');
 
-    const edit = await screen.findByRole('button', {
-      name: i18n.t('event-assignment:actions.edit'),
-    });
-    const replaceAssignments = screen.getByRole('button', {
-      name: i18n.t('event-assignment:actions.replaceAssignments'),
-    });
+    expect(await screen.findByText('EVT-202605-000005')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('event-assignment:actions.edit') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('event-assignment:actions.replaceAssignments'),
+      }),
+    ).not.toBeInTheDocument();
     const historicalNote = screen.queryByRole('button', {
       name: i18n.t('event-assignment:actions.historicalArchiveEligible'),
     });
-
-    await waitFor(() =>
-      expect(edit).toHaveAccessibleDescription(i18n.t('common:capabilities.missingScope')),
-    );
-    expect(edit).toBeDisabled();
-    expect(replaceAssignments).toBeDisabled();
-    expect(replaceAssignments).toHaveAccessibleDescription(
-      i18n.t('common:capabilities.missingScope'),
-    );
     if (historicalNote) {
-      expect(historicalNote).toBeDisabled();
       expect(historicalNote).not.toHaveAccessibleDescription(
         i18n.t('common:capabilities.missingScope'),
       );

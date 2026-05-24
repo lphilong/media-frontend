@@ -21,6 +21,11 @@ import type {
 } from '@modules/talent-group/types/talent-group.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   type AppliedFilterChipItem,
   AdminTableShell,
@@ -155,6 +160,7 @@ export const TalentGroupListPage = (): JSX.Element => {
   });
   const listQueryResult = isByTalentView ? byTalentListQueryResult : flatListQueryResult;
 
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateTalentGroupMutation();
   const lifecycleMutation = useTalentGroupLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -195,6 +201,13 @@ export const TalentGroupListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
+  const canCreateTalentGroup = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.TALENT_GROUP_CREATE,
+  });
+  const canManageTalentGroupLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.TALENT_GROUP_MANAGE_LIFECYCLE,
+  });
+
   const pageActions = (
     <div className="flex flex-wrap items-center gap-2">
       {isByTalentView ? (
@@ -211,13 +224,17 @@ export const TalentGroupListPage = (): JSX.Element => {
           {t('talent-group:actions.exitByTalent')}
         </button>
       ) : null}
-      <button
-        type="button"
-        onClick={() => setIsCreateOpen((current) => !current)}
-        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-      >
-        {isCreateOpen ? t('talent-group:actions.closeCreate') : t('talent-group:actions.create')}
-      </button>
+      {canCreateTalentGroup ? (
+        <button
+          type="button"
+          onClick={() => setIsCreateOpen((current) => !current)}
+          className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+        >
+          {isCreateOpen
+            ? t('talent-group:actions.closeCreate')
+            : t('talent-group:actions.create')}
+        </button>
+      ) : null}
     </div>
   );
 
@@ -293,6 +310,7 @@ export const TalentGroupListPage = (): JSX.Element => {
       createTalentGroupListColumns(t, {
         onOpenDetail: (groupId) => navigate(APP_PATHS.talentGroupDetail(groupId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageTalentGroupLifecycle,
         isActionPending: (groupId, action) => {
           return (
             lifecycleMutation.isPending &&
@@ -301,7 +319,14 @@ export const TalentGroupListPage = (): JSX.Element => {
           );
         },
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageTalentGroupLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const byTalentColumns = useMemo(
@@ -309,6 +334,7 @@ export const TalentGroupListPage = (): JSX.Element => {
       createTalentGroupByTalentColumns(t, {
         onOpenDetail: (groupId) => navigate(APP_PATHS.talentGroupDetail(groupId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageTalentGroupLifecycle,
         isActionPending: (groupId, action) => {
           return (
             lifecycleMutation.isPending &&
@@ -317,7 +343,14 @@ export const TalentGroupListPage = (): JSX.Element => {
           );
         },
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageTalentGroupLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -539,7 +572,7 @@ export const TalentGroupListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateTalentGroup && isCreateOpen ? (
             <TalentGroupCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

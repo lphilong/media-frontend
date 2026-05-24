@@ -15,6 +15,11 @@ import { createHolidayCalendarListColumns } from '@modules/work-schedule/tables/
 import type { HolidayCalendarLifecycleAction } from '@modules/work-schedule/types/work-schedule.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AdminTableShell,
   CursorPager,
   ErrorState,
@@ -95,6 +100,7 @@ export const HolidayCalendarListPage = (): JSX.Element => {
   );
 
   const listQueryResult = useHolidayCalendarList(listQuery);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateHolidayCalendarMutation();
   const lifecycleMutation = useHolidayCalendarLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -102,17 +108,28 @@ export const HolidayCalendarListPage = (): JSX.Element => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [, setCursorStack] = useState(createCursorStack);
 
+  const canCreateHolidayCalendar = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.WORK_SCHEDULE_CREATE,
+    scope: { module: 'workSchedule', value: 'global' },
+  });
+  const canManageHolidayCalendarLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+    scope: { module: 'workSchedule', value: 'global' },
+  });
+
   usePageActions(
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      data-action-priority="primary"
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen
-        ? t('work-schedule:holidayCalendars.actions.closeCreate')
-        : t('work-schedule:holidayCalendars.actions.create')}
-    </button>,
+    canCreateHolidayCalendar ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        data-action-priority="primary"
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen
+          ? t('work-schedule:holidayCalendars.actions.closeCreate')
+          : t('work-schedule:holidayCalendars.actions.create')}
+      </button>
+    ) : null,
   );
 
   const queryShapeSignature = useMemo(
@@ -184,12 +201,20 @@ export const HolidayCalendarListPage = (): JSX.Element => {
         onOpenDetail: (holidayCalendarId) =>
           navigate(APP_PATHS.holidayCalendarDetail(holidayCalendarId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageHolidayCalendarLifecycle,
         isActionPending: (holidayCalendarId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.holidayCalendarId === holidayCalendarId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageHolidayCalendarLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -240,7 +265,7 @@ export const HolidayCalendarListPage = (): JSX.Element => {
         </FilterBarShell>
       }
       interactionSection={
-        isCreateOpen ? (
+        canCreateHolidayCalendar && isCreateOpen ? (
           <HolidayCalendarCreateSurface
             isPending={createMutation.isPending}
             onCancel={() => setIsCreateOpen(false)}

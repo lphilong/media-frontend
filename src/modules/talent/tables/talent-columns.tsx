@@ -12,6 +12,7 @@ import type {
 type TalentListColumnHandlers = {
   onOpenDetail: (talentId: string) => void;
   onLifecycleAction: (talentId: string, action: TalentLifecycleAction) => void;
+  canShowLifecycleAction?: (action: TalentLifecycleAction) => boolean;
   isActionPending?: (talentId: string, action: TalentLifecycleAction) => boolean;
 };
 
@@ -118,7 +119,9 @@ export const createTalentListColumns = (
       header: t('talent:table.actions'),
       cell: ({ row }) => {
         const record = row.original;
-        const actions = readLifecycleActions(record);
+        const actions = readLifecycleActions(record).filter(
+          (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+        );
 
         return (
           <div className="flex flex-wrap items-center gap-2">

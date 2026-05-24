@@ -27,6 +27,11 @@ import {
 } from '@modules/commission/types/commission.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   AdminTableShell,
   CursorPager,
@@ -216,6 +221,7 @@ export const CommissionRulesListPage = (): JSX.Element => {
         ? byContractQueryResult
         : flatQueryResult;
 
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateCommissionRuleMutation();
   const lifecycleMutation = useCommissionRuleLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -239,16 +245,28 @@ export const CommissionRulesListPage = (): JSX.Element => {
     }
   }, [queryShapeSignature]);
 
+  const commissionGlobalScope = { module: 'commission', value: 'global' } as const;
+  const canCreateCommissionRule = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.COMMISSION_RULE_CREATE,
+    scope: commissionGlobalScope,
+  });
+  const canManageCommissionRuleLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.COMMISSION_RULE_MANAGE_LIFECYCLE,
+    scope: commissionGlobalScope,
+  });
+
   usePageActions(
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen
-        ? t('commission:rules.actions.closeCreate')
-        : t('commission:rules.actions.create')}
-    </button>,
+    canCreateCommissionRule ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen
+          ? t('commission:rules.actions.closeCreate')
+          : t('commission:rules.actions.create')}
+      </button>
+    ) : null,
   );
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
@@ -292,12 +310,20 @@ export const CommissionRulesListPage = (): JSX.Element => {
         onOpenDetail: (commissionRuleId) =>
           navigate(APP_PATHS.commissionRuleDetail(commissionRuleId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageCommissionRuleLifecycle,
         isActionPending: (commissionRuleId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.commissionRuleId === commissionRuleId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageCommissionRuleLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -785,7 +811,7 @@ export const CommissionRulesListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateCommissionRule && isCreateOpen ? (
             <CommissionRuleCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

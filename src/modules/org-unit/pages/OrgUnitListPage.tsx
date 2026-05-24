@@ -14,6 +14,11 @@ import { createOrgUnitListColumns } from '@modules/org-unit/tables/org-unit-colu
 import type { OrgUnitLifecycleAction } from '@modules/org-unit/types/org-unit.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   type AppliedFilterChipItem,
   AdminTableShell,
@@ -86,6 +91,7 @@ export const OrgUnitListPage = (): JSX.Element => {
   const listQuery = useMemo(() => query, [query]);
 
   const listQueryResult = useOrgUnitList(listQuery);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateOrgUnitMutation();
   const lifecycleMutation = useOrgUnitLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -116,7 +122,14 @@ export const OrgUnitListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
-  const pageActions = (
+  const canCreateOrgUnit = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.ORG_UNIT_CREATE,
+  });
+  const canManageOrgUnitLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.ORG_UNIT_MANAGE_LIFECYCLE,
+  });
+
+  const pageActions = canCreateOrgUnit ? (
     <button
       type="button"
       onClick={() => setIsCreateOpen((current) => !current)}
@@ -124,7 +137,7 @@ export const OrgUnitListPage = (): JSX.Element => {
     >
       {isCreateOpen ? t('org-unit:actions.closeCreate') : t('org-unit:actions.create')}
     </button>
-  );
+  ) : null;
 
   usePageActions(pageActions);
 
@@ -198,6 +211,7 @@ export const OrgUnitListPage = (): JSX.Element => {
       createOrgUnitListColumns(t, {
         onOpenDetail: (orgUnitId) => navigate(APP_PATHS.orgUnitDetail(orgUnitId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageOrgUnitLifecycle,
         isActionPending: (orgUnitId, action) => {
           return (
             lifecycleMutation.isPending &&
@@ -206,7 +220,14 @@ export const OrgUnitListPage = (): JSX.Element => {
           );
         },
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageOrgUnitLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -465,7 +486,7 @@ export const OrgUnitListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateOrgUnit && isCreateOpen ? (
             <OrgUnitCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

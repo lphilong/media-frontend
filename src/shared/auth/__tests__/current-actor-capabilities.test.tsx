@@ -3,6 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { PropsWithChildren } from 'react';
 
 import {
+  applyActionCapabilityHints,
   canUseAction,
   currentActorCapabilitiesSchema,
   fetchCurrentActorCapabilities,
@@ -108,6 +109,40 @@ describe('current actor capabilities', () => {
         scope: { module: 'commission', value: 'global' },
       }),
     ).toEqual({ allowed: false, reason: 'missing-scope' });
+  });
+
+  it('hides capability-hidden actions before preserving local disabled state', () => {
+    const items = [
+      {
+        id: 'archive',
+        disabled: true,
+        disabledReason: 'Already archived',
+      },
+      {
+        id: 'activate',
+        disabled: true,
+        disabledReason: 'Not ready',
+      },
+    ];
+
+    expect(
+      applyActionCapabilityHints(items, {
+        archive: {
+          disabled: true,
+          disabledReason: 'Missing permission',
+          hidden: true,
+        },
+        activate: {
+          disabled: false,
+        },
+      }),
+    ).toEqual([
+      {
+        id: 'activate',
+        disabled: true,
+        disabledReason: 'Not ready',
+      },
+    ]);
   });
 
   it('hook handles success', async () => {

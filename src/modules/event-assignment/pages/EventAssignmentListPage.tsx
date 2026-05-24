@@ -300,7 +300,7 @@ export const EventAssignmentListPage = (): JSX.Element => {
 
     return (
       hasScopeGrant(capabilities, 'eventAssignment', 'global') &&
-      hasPermission(capabilities, 'event.create')
+      hasPermission(capabilities, PERMISSIONS.EVENT_CREATE)
     );
   }, [capabilitiesQuery.data]);
 

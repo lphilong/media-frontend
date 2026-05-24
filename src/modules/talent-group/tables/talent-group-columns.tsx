@@ -14,6 +14,7 @@ import type {
 type TalentGroupListColumnHandlers = {
   onOpenDetail: (groupId: string) => void;
   onLifecycleAction: (groupId: string, action: TalentGroupLifecycleAction) => void;
+  canShowLifecycleAction?: (action: TalentGroupLifecycleAction) => boolean;
   isActionPending?: (groupId: string, action: TalentGroupLifecycleAction) => boolean;
 };
 
@@ -25,6 +26,7 @@ type TalentGroupMemberColumnHandlers = {
     membershipId: string,
     action: TalentGroupMembershipLifecycleAction,
   ) => boolean;
+  canShowMemberMutationActions?: boolean;
   isGroupArchived?: boolean;
 };
 
@@ -94,7 +96,9 @@ export const createTalentGroupListColumns = (
       header: t('talent-group:table.actions'),
       cell: ({ row }) => {
         const record = row.original;
-        const actions = readGroupLifecycleActions(record);
+        const actions = readGroupLifecycleActions(record).filter(
+          (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+        );
 
         return (
           <div className="flex flex-wrap items-center gap-2">
@@ -184,7 +188,9 @@ export const createTalentGroupByTalentColumns = (
       header: t('talent-group:table.actions'),
       cell: ({ row }) => {
         const record = row.original;
-        const actions = readGroupLifecycleActions(record);
+        const actions = readGroupLifecycleActions(record).filter(
+          (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+        );
 
         return (
           <div className="flex flex-wrap items-center gap-2">
@@ -274,6 +280,10 @@ export const createTalentGroupMemberColumns = (
       id: 'actions',
       header: t('talent-group:membersTable.actions'),
       cell: ({ row }) => {
+        if (handlers.canShowMemberMutationActions === false) {
+          return null;
+        }
+
         const record = row.original;
         const canMutate = !handlers.isGroupArchived && record.membershipStatus !== 'REMOVED';
         const canDeactivate = canMutate && record.membershipStatus === 'ACTIVE';

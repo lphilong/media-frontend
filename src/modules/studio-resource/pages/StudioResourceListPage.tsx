@@ -21,6 +21,11 @@ import type {
 } from '@modules/studio-resource/types/studio-resource.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AdminTableShell,
   CursorPager,
   ErrorState,
@@ -157,6 +162,7 @@ export const StudioResourceListPage = (): JSX.Element => {
   });
   const listQueryResult = isAvailabilityView ? availabilityQueryResult : flatListQueryResult;
 
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateStudioResourceMutation();
   const lifecycleMutation = useStudioResourceLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -195,6 +201,13 @@ export const StudioResourceListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
+  const canCreateStudioResource = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.STUDIO_RESOURCE_CREATE,
+  });
+  const canManageStudioResourceLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.STUDIO_RESOURCE_MANAGE_LIFECYCLE,
+  });
+
   const pageActions = (
     <div className="flex flex-wrap items-center gap-2">
       <button
@@ -224,15 +237,17 @@ export const StudioResourceListPage = (): JSX.Element => {
           ? t('studio-resource:actions.exitAvailability')
           : t('studio-resource:actions.openAvailability')}
       </button>
-      <button
-        type="button"
-        onClick={() => setIsCreateOpen((current) => !current)}
-        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-      >
-        {isCreateOpen
-          ? t('studio-resource:actions.closeCreate')
-          : t('studio-resource:actions.create')}
-      </button>
+      {canCreateStudioResource ? (
+        <button
+          type="button"
+          onClick={() => setIsCreateOpen((current) => !current)}
+          className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+        >
+          {isCreateOpen
+            ? t('studio-resource:actions.closeCreate')
+            : t('studio-resource:actions.create')}
+        </button>
+      ) : null}
     </div>
   );
 
@@ -309,12 +324,20 @@ export const StudioResourceListPage = (): JSX.Element => {
         onOpenDetail: (studioResourceId) =>
           navigate(APP_PATHS.studioResourceDetail(studioResourceId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageStudioResourceLifecycle,
         isActionPending: (studioResourceId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.studioResourceId === studioResourceId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageStudioResourceLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const availabilityColumns = useMemo(
@@ -457,7 +480,7 @@ export const StudioResourceListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateStudioResource && isCreateOpen ? (
             <StudioResourceCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

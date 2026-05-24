@@ -24,6 +24,13 @@ import type {
   WorkShiftSubjectKind,
 } from '@modules/work-schedule/types/work-schedule.types';
 import type { NormalizedApiError } from '@shared/api';
+import {
+  canShowAction,
+  canUseAnyAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+  type ActionCapabilityRequirement,
+} from '@shared/auth/current-actor-capabilities';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import {
   AppliedFilterChips,
@@ -246,6 +253,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
         ? byResourceQueryResult
         : flatQueryResult;
 
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateWorkShiftMutation();
   const lifecycleMutation = useWorkShiftLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -296,22 +304,39 @@ export const WorkScheduleListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
+  const workScheduleScopes: readonly WorkScheduleScope[] = ['self', 'team', 'department', 'global'];
+  const workScheduleCreateRequirements: readonly ActionCapabilityRequirement[] =
+    workScheduleScopes.map((value) => ({
+      permission: PERMISSIONS.WORK_SCHEDULE_CREATE,
+      scope: { module: 'workSchedule', value },
+    }));
+  const canCreateWorkShift = canUseAnyAction(
+    capabilitiesQuery.data,
+    workScheduleCreateRequirements,
+  ).allowed;
+  const canManageWorkShiftLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+    scope: { module: 'workSchedule', value: activeQuery.scope ?? 'global' },
+  });
+
   usePageActions(
-    <div className="flex flex-wrap justify-end gap-2">
-      <button
-        type="button"
-        onClick={() => {
-          setIsGuidedWorkflowOpen((current) => !current);
-          setGuidedWorkflowError(null);
-        }}
-        data-action-priority="primary"
-        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-      >
-        {isGuidedWorkflowOpen
-          ? t('work-schedule:actions.closeGuidedWorkflow')
-          : t('work-schedule:actions.scheduleWorkShift')}
-      </button>
-    </div>,
+    canCreateWorkShift ? (
+      <div className="flex flex-wrap justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setIsGuidedWorkflowOpen((current) => !current);
+            setGuidedWorkflowError(null);
+          }}
+          data-action-priority="primary"
+          className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+        >
+          {isGuidedWorkflowOpen
+            ? t('work-schedule:actions.closeGuidedWorkflow')
+            : t('work-schedule:actions.scheduleWorkShift')}
+        </button>
+      </div>
+    ) : null,
   );
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
@@ -404,6 +429,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
           navigate(`${APP_PATHS.workShiftDetail(workShiftId)}${detailSearch}`);
         },
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageWorkShiftLifecycle,
         isActionPending: (workShiftId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.workShiftId === workShiftId &&
@@ -411,6 +437,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
       }),
     [
       activeQuery.scope,
+      canManageWorkShiftLifecycle,
       lifecycleMutation.isPending,
       lifecycleMutation.variables,
       navigate,
@@ -858,7 +885,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isGuidedWorkflowOpen ? (
+          {canCreateWorkShift && isGuidedWorkflowOpen ? (
             <WorkShiftGuidedWorkflow
               isPending={createMutation.isPending}
               error={guidedWorkflowError}

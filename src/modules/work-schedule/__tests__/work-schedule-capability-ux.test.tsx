@@ -24,7 +24,6 @@ const renderRoute = (path: string) => {
   return router;
 };
 
-const commonCapabilityText = (key: string): string => i18n.t(`common:capabilities.${key}`);
 const publishText = (key: string, options?: Record<string, unknown>): string =>
   i18n.t(`work-schedule:monthlyRosters.publish.${key}`, options);
 
@@ -68,57 +67,49 @@ describe('work schedule capability UX hints', () => {
     await setLocale(DEFAULT_LOCALE);
   });
 
-  it('uses permission-only hints for Work Pattern actions', async () => {
-    mockCapabilities({ permissions: [], workScheduleScopes: ['global'] });
+  it('hides Work Pattern actions when mutation permission is missing', async () => {
+    mockCapabilities({ permissions: ['workSchedule.read'], workScheduleScopes: ['global'] });
 
     renderRoute('/work-schedule/patterns/pattern-draft');
 
-    const edit = await screen.findByRole('button', {
-      name: i18n.t('work-schedule:patterns.actions.edit'),
-    });
-    await waitFor(() => expect(edit).toBeDisabled());
-    expect(screen.getAllByText(commonCapabilityText('missingPermission')).length).toBeGreaterThan(
-      0,
-    );
-    expect(screen.queryByText(commonCapabilityText('missingScope'))).not.toBeInTheDocument();
+    await screen.findByText('PATTERN_DRAFT');
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:patterns.actions.edit'),
+      }),
+    ).not.toBeInTheDocument();
   });
 
-  it('uses permission-only hints for Holiday Calendar actions', async () => {
-    mockCapabilities({ permissions: [], workScheduleScopes: ['global'] });
+  it('hides Holiday Calendar actions when mutation permission is missing', async () => {
+    mockCapabilities({ permissions: ['workSchedule.read'], workScheduleScopes: ['global'] });
 
     renderRoute('/work-schedule/holiday-calendars/holiday-calendar-draft');
 
     await screen.findByText('VN_DRAFT');
-    const editButtons = await screen.findAllByRole('button', {
-      name: i18n.t('work-schedule:holidayCalendars.actions.edit'),
-    });
-    const edit = editButtons.find(
-      (button) => button.getAttribute('title') === commonCapabilityText('missingPermission'),
-    );
-    if (!edit) {
-      throw new Error('Holiday Calendar action rail edit button was not found');
-    }
-    await waitFor(() => expect(edit).toBeDisabled());
-    expect(screen.getAllByText(commonCapabilityText('missingPermission')).length).toBeGreaterThan(
-      0,
-    );
-    expect(screen.queryByText(commonCapabilityText('missingScope'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:holidayCalendars.actions.edit'),
+      }),
+    ).not.toBeInTheDocument();
   });
 
-  it('disables Work Shift actions for missing permission while local status still wins', async () => {
-    mockCapabilities({ permissions: [], workScheduleScopes: ['global'] });
+  it('hides Work Shift actions for missing permission while local status still wins', async () => {
+    mockCapabilities({ permissions: ['workSchedule.read'], workScheduleScopes: ['global'] });
 
     renderRoute('/work-shifts/work-shift-001');
 
-    const edit = await screen.findByRole('button', {
-      name: i18n.t('work-schedule:actions.edit'),
-    });
-    await waitFor(() => expect(edit).toBeDisabled());
-    expect(screen.getAllByText(commonCapabilityText('missingPermission')).length).toBeGreaterThan(
-      0,
-    );
+    await screen.findByText('SHIFT001');
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:actions.edit'),
+      }),
+    ).not.toBeInTheDocument();
 
     cleanup();
+    mockCapabilities({
+      permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
+      workScheduleScopes: ['global'],
+    });
     renderRoute('/work-shifts/work-shift-archive');
 
     const archivedEdit = await screen.findByRole('button', {
@@ -126,48 +117,50 @@ describe('work schedule capability UX hints', () => {
     });
     expect(archivedEdit).toBeDisabled();
     expect(screen.getByText(i18n.t('work-schedule:detail.archivedReadOnly'))).toBeInTheDocument();
-    expect(screen.queryByText(commonCapabilityText('missingPermission'))).not.toBeInTheDocument();
   });
 
-  it('disables Monthly Roster actions for missing permission while local status still wins', async () => {
+  it('hides Monthly Roster actions for missing permission while local status still wins', async () => {
     mockCapabilities({
-      permissions: ['workSchedule.manageLifecycle'],
+      permissions: ['workSchedule.read', 'workSchedule.manageLifecycle'],
       workScheduleScopes: ['global'],
     });
 
     renderRoute('/work-schedule/rosters/roster-draft');
 
-    const editDraft = await screen.findByRole('button', {
-      name: i18n.t('work-schedule:monthlyRosters.actions.editDraft'),
-    });
-    await waitFor(() => expect(editDraft).toBeDisabled());
-    expect(screen.getAllByText(commonCapabilityText('missingPermission')).length).toBeGreaterThan(
-      0,
-    );
+    await screen.findByText('ROSTER_DRAFT');
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.actions.editDraft'),
+      }),
+    ).not.toBeInTheDocument();
 
     cleanup();
+    mockCapabilities({
+      permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
+      workScheduleScopes: ['global'],
+    });
     renderRoute('/work-schedule/rosters/roster-published');
 
     const publishedEdit = await screen.findByRole('button', {
       name: i18n.t('work-schedule:monthlyRosters.actions.editDraft'),
     });
     expect(publishedEdit).toBeDisabled();
-    expect(screen.queryByText(commonCapabilityText('missingPermission'))).not.toBeInTheDocument();
   });
 
-  it('scope-disables only when an explicit Work Shift requested scope is present', async () => {
+  it('scope-hides only when an explicit Work Shift requested scope is present', async () => {
     mockCapabilities({
-      permissions: ['workSchedule.update', 'workSchedule.manageLifecycle'],
+      permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
       workScheduleScopes: ['self'],
     });
 
     renderRoute('/work-shifts/work-shift-001?scope=team');
 
-    const scopedEdit = await screen.findByRole('button', {
-      name: i18n.t('work-schedule:actions.edit'),
-    });
-    await waitFor(() => expect(scopedEdit).toBeDisabled());
-    expect(screen.getAllByText(commonCapabilityText('missingScope')).length).toBeGreaterThan(0);
+    await screen.findByText('SHIFT001');
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:actions.edit'),
+      }),
+    ).not.toBeInTheDocument();
 
     cleanup();
     renderRoute('/work-shifts/work-shift-001');
@@ -176,22 +169,22 @@ describe('work schedule capability UX hints', () => {
       name: i18n.t('work-schedule:actions.edit'),
     });
     await waitFor(() => expect(unscopedEdit).toBeEnabled());
-    expect(screen.queryByText(commonCapabilityText('missingScope'))).not.toBeInTheDocument();
   });
 
-  it('scope-disables Monthly Roster actions only from explicit roster requested scope', async () => {
+  it('scope-hides Monthly Roster actions only from explicit roster requested scope', async () => {
     mockCapabilities({
-      permissions: ['workSchedule.update', 'workSchedule.manageLifecycle'],
+      permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
       workScheduleScopes: ['department'],
     });
 
     renderRoute('/work-schedule/rosters/roster-draft?scope=global');
 
-    const editDraft = await screen.findByRole('button', {
-      name: i18n.t('work-schedule:monthlyRosters.actions.editDraft'),
-    });
-    await waitFor(() => expect(editDraft).toBeDisabled());
-    expect(screen.getAllByText(commonCapabilityText('missingScope')).length).toBeGreaterThan(0);
+    await screen.findByText('ROSTER_DRAFT');
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.actions.editDraft'),
+      }),
+    ).not.toBeInTheDocument();
 
     cleanup();
     renderRoute('/work-schedule/rosters/roster-draft');
@@ -202,15 +195,17 @@ describe('work schedule capability UX hints', () => {
     await waitFor(() => expect(unscopedEditDraft).toBeEnabled());
   });
 
-  it('keeps capability fetch failure non-fatal for Work Schedule actions', async () => {
+  it('hides Work Schedule actions when capability fetch fails', async () => {
     mockCapabilities({ status: 500 });
 
     renderRoute('/work-schedule/patterns/pattern-draft');
 
-    const edit = await screen.findByRole('button', {
-      name: i18n.t('work-schedule:patterns.actions.edit'),
-    });
-    await waitFor(() => expect(edit).toBeEnabled());
+    expect(await screen.findByText('Không có quyền truy cập')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:patterns.actions.edit'),
+      }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -234,9 +229,6 @@ describe('monthly roster publish capability UX', () => {
       name: publishText('actions.openConfirmation'),
     });
     expect(publishButton).toBeDisabled();
-    await waitFor(() =>
-      expect(screen.queryByText(commonCapabilityText('missingPermission'))).not.toBeInTheDocument(),
-    );
   });
 
   it('disables publish for missing permission only when locally publishable', async () => {
@@ -251,7 +243,6 @@ describe('monthly roster publish capability UX', () => {
       name: publishText('actions.openConfirmation'),
     });
     await waitFor(() => expect(publishButton).toBeDisabled());
-    expect(screen.getByText(commonCapabilityText('missingPermission'))).toBeInTheDocument();
   });
 
   it('continues to publish with expectedPreviewHash from computedPreviewHash', async () => {

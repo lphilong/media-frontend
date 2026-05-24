@@ -12,6 +12,11 @@ import {
 import { createEmploymentProfileListColumns } from '@modules/employment-profile/tables/employment-profile-columns';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   type AppliedFilterChipItem,
   AdminTableShell,
@@ -89,6 +94,7 @@ export const EmploymentProfileListPage = (): JSX.Element => {
   const listQuery = useMemo(() => query, [query]);
 
   const listQueryResult = useEmploymentProfileList(listQuery);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateEmploymentProfileMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
 
@@ -117,7 +123,11 @@ export const EmploymentProfileListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
-  const pageActions = (
+  const canCreateEmploymentProfile = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.EMPLOYMENT_PROFILE_CREATE,
+  });
+
+  const pageActions = canCreateEmploymentProfile ? (
     <button
       type="button"
       onClick={() => setIsCreateOpen((current) => !current)}
@@ -127,7 +137,7 @@ export const EmploymentProfileListPage = (): JSX.Element => {
         ? t('employment-profile:actions.closeCreate')
         : t('employment-profile:actions.create')}
     </button>
-  );
+  ) : null;
 
   usePageActions(pageActions);
 
@@ -519,7 +529,7 @@ export const EmploymentProfileListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateEmploymentProfile && isCreateOpen ? (
             <EmploymentProfileCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

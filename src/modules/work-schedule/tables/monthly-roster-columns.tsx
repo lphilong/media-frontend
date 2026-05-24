@@ -12,6 +12,7 @@ import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formattin
 type MonthlyRosterListColumnHandlers = {
   onOpenDetail: (monthlyRosterId: string, scope?: MonthlyRosterScope) => void;
   onArchive: (monthlyRosterId: string, scope?: MonthlyRosterScope) => void;
+  canShowArchive?: boolean;
   isArchivePending?: (monthlyRosterId: string) => boolean;
   scope?: MonthlyRosterScope;
 };
@@ -88,7 +89,7 @@ export const createMonthlyRosterListColumns = (
           >
             {t('work-schedule:monthlyRosters.actions.open')}
           </button>
-          {canArchiveMonthlyRoster(record) ? (
+          {canArchiveMonthlyRoster(record) && handlers.canShowArchive !== false ? (
             <button
               type="button"
               className="rounded border border-border px-2 py-1 text-xs"

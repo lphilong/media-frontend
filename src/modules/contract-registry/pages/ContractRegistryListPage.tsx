@@ -24,6 +24,11 @@ import type {
 } from '@modules/contract-registry/types/contract-registry.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   AdminTableShell,
   CursorPager,
@@ -218,6 +223,7 @@ export const ContractRegistryListPage = (): JSX.Element => {
         ? byOwnerQueryResult
         : flatQueryResult;
 
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateContractRecordMutation();
   const lifecycleMutation = useContractLifecycleMutation();
   const expireMutation = useExpireContractRecordMutation();
@@ -259,16 +265,28 @@ export const ContractRegistryListPage = (): JSX.Element => {
     }
   }, [queryShapeSignature]);
 
+  const contractRegistryGlobalScope = { module: 'contractRegistry', value: 'global' } as const;
+  const canCreateContractRecord = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.CONTRACT_REGISTRY_CREATE,
+    scope: contractRegistryGlobalScope,
+  });
+  const canManageContractLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.CONTRACT_REGISTRY_MANAGE_LIFECYCLE,
+    scope: contractRegistryGlobalScope,
+  });
+
   usePageActions(
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen
-        ? t('contract-registry:actions.closeCreate')
-        : t('contract-registry:actions.create')}
-    </button>,
+    canCreateContractRecord ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen
+          ? t('contract-registry:actions.closeCreate')
+          : t('contract-registry:actions.create')}
+      </button>
+    ) : null,
   );
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
@@ -319,6 +337,8 @@ export const ContractRegistryListPage = (): JSX.Element => {
         onLifecycleAction,
         onDateAction: (contractRecordId, action) =>
           setActiveDateAction({ contractRecordId, action }),
+        canShowLifecycleAction: () => canManageContractLifecycle,
+        canShowDateAction: () => canManageContractLifecycle,
         isActionPending: (contractRecordId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.contractRecordId === contractRecordId &&
@@ -333,6 +353,7 @@ export const ContractRegistryListPage = (): JSX.Element => {
     [
       expireMutation.isPending,
       expireMutation.variables,
+      canManageContractLifecycle,
       lifecycleMutation.isPending,
       lifecycleMutation.variables,
       navigate,
@@ -807,7 +828,7 @@ export const ContractRegistryListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateContractRecord && isCreateOpen ? (
             <ContractCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

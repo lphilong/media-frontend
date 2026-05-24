@@ -11,6 +11,7 @@ import type {
 type StudioResourceListColumnHandlers = {
   onOpenDetail: (studioResourceId: string) => void;
   onLifecycleAction: (studioResourceId: string, action: StudioResourceLifecycleAction) => void;
+  canShowLifecycleAction?: (action: StudioResourceLifecycleAction) => boolean;
   isActionPending?: (studioResourceId: string, action: StudioResourceLifecycleAction) => boolean;
 };
 
@@ -87,7 +88,9 @@ export const createStudioResourceListColumns = (
       header: t('studio-resource:table.actions'),
       cell: ({ row }) => {
         const record = row.original;
-        const actions = readLifecycleActions(record);
+        const actions = readLifecycleActions(record).filter(
+          (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+        );
 
         return (
           <div className="flex flex-wrap items-center gap-2">

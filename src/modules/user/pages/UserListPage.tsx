@@ -23,6 +23,7 @@ import type {
 import { getProvisionPasswordSetupFeedback } from '@modules/user/utils/password-setup-feedback';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
   createActionCapabilityHint,
   PERMISSIONS,
   useCurrentActorCapabilities,
@@ -136,7 +137,7 @@ export const UserListPage = (): JSX.Element => {
     capabilityCopy,
   );
 
-  const pageActions = (
+  const pageActions = provisionCapability.hidden ? null : (
     <div className="space-y-1">
       <button
         type="button"
@@ -222,6 +223,15 @@ export const UserListPage = (): JSX.Element => {
       createUserListColumns(t, {
         onOpenDetail: (userId) => navigate(APP_PATHS.userDetail(userId)),
         onLifecycleAction,
+        canShowAction: (action) => {
+          const permission =
+            action === 'activate'
+              ? PERMISSIONS.USER_ACTIVATE
+              : action === 'disable'
+                ? PERMISSIONS.USER_DISABLE
+                : PERMISSIONS.USER_ARCHIVE;
+          return canShowAction(capabilitiesQuery.data, { permission });
+        },
         getActionDisabledReason: (action) => {
           const permission =
             action === 'activate'

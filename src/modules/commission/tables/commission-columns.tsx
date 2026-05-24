@@ -25,6 +25,7 @@ import { readReferenceDisplay, type ReferenceSummary } from '@shared/formatting/
 type RuleColumnHandlers = {
   onOpenDetail: (commissionRuleId: string) => void;
   onLifecycleAction: (commissionRuleId: string, action: CommissionRuleLifecycleAction) => void;
+  canShowLifecycleAction?: (action: CommissionRuleLifecycleAction) => boolean;
   isActionPending?: (commissionRuleId: string, action: CommissionRuleLifecycleAction) => boolean;
 };
 
@@ -34,6 +35,7 @@ type SettlementColumnHandlers = {
     commissionSettlementId: string,
     action: CommissionSettlementLifecycleAction,
   ) => void;
+  canShowLifecycleAction?: (action: CommissionSettlementLifecycleAction) => boolean;
   isActionPending?: (
     commissionSettlementId: string,
     action: CommissionSettlementLifecycleAction,
@@ -170,7 +172,9 @@ export const createCommissionRuleColumns = (
     header: t('commission:rules.table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const lifecycleActions = readCommissionRuleListLifecycleActions(record.status);
+      const lifecycleActions = readCommissionRuleListLifecycleActions(record.status).filter(
+        (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+      );
 
       return (
         <div className="flex flex-wrap items-center gap-2">
@@ -294,7 +298,9 @@ export const createCommissionSettlementColumns = (
     header: t('commission:settlements.table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const lifecycleActions = readCommissionSettlementListLifecycleActions(record.status);
+      const lifecycleActions = readCommissionSettlementListLifecycleActions(record.status).filter(
+        (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+      );
 
       return (
         <div className="flex flex-wrap items-center gap-2">

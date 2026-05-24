@@ -35,8 +35,6 @@ const renderContractRecordDetail = async (): Promise<void> => {
   expect(screen.getByText(i18n.t('contract-registry:actionRail.title'))).toBeInTheDocument();
 };
 
-const commonCapabilityText = (key: string): string => i18n.t(`common:capabilities.${key}`);
-
 const mockCapabilities = ({
   permissions = [],
   scopeGrants = {},
@@ -72,6 +70,7 @@ describe('commercial capability UX hints', () => {
   it('requires Contract Registry permission and global scope for locally available detail actions', async () => {
     mockCapabilities({
       permissions: [
+        'contractRegistry.read',
         'contractRegistry.update',
         'contractRegistry.manageOwner',
         'contractRegistry.manageFileReference',
@@ -82,20 +81,23 @@ describe('commercial capability UX hints', () => {
 
     await renderContractRecordDetail();
 
-    const editDraft = await screen.findByRole('button', {
-      name: i18n.t('contract-registry:actions.editDraftCore'),
-    });
-    await waitFor(() => expect(editDraft).toBeDisabled());
-    expect(editDraft).toHaveAccessibleDescription(commonCapabilityText('missingScope'));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', {
+          name: i18n.t('contract-registry:actions.editDraftCore'),
+        }),
+      ).not.toBeInTheDocument(),
+    );
     expect(
-      screen.getByRole('button', {
+      screen.queryByRole('button', {
         name: i18n.t('contract-registry:actions.assignOwner'),
       }),
-    ).toHaveAccessibleDescription(commonCapabilityText('missingScope'));
+    ).not.toBeInTheDocument();
 
     cleanup();
     mockCapabilities({
       permissions: [
+        'contractRegistry.read',
         'contractRegistry.manageOwner',
         'contractRegistry.manageFileReference',
         'contractRegistry.manageLifecycle',
@@ -104,32 +106,87 @@ describe('commercial capability UX hints', () => {
     });
     await renderContractRecordDetail();
 
-    const missingPermissionEdit = await screen.findByRole('button', {
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('contract-registry:actions.editDraftCore'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('preserves Contract Registry object-state disabled actions for fully capable actors', async () => {
+    mockCapabilities({
+      permissions: [
+        'contractRegistry.read',
+        'contractRegistry.update',
+        'contractRegistry.manageOwner',
+        'contractRegistry.manageFileReference',
+        'contractRegistry.manageLifecycle',
+      ],
+      scopeGrants: { contractRegistry: ['global'] },
+    });
+
+    renderRoute('/contract-records/contract-record-archived');
+
+    const editDraft = await screen.findByRole('button', {
       name: i18n.t('contract-registry:actions.editDraftCore'),
     });
-    await waitFor(() => expect(missingPermissionEdit).toBeDisabled());
-    expect(missingPermissionEdit).toHaveAccessibleDescription(
-      commonCapabilityText('missingPermission'),
-    );
+    expect(editDraft).toBeDisabled();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('contract-registry:actions.assignOwner'),
+      }),
+    ).toBeDisabled();
+  });
+
+  it('hides Contract Registry object-state disabled actions for read-only actors', async () => {
+    mockCapabilities({
+      permissions: ['contractRegistry.read'],
+      scopeGrants: { contractRegistry: ['global'] },
+    });
+
+    renderRoute('/contract-records/contract-record-archived');
+
+    expect(await screen.findByText('CON-2025-999999')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('contract-registry:actions.editDraftCore'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('contract-registry:actions.assignOwner'),
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('requires Talent KPI permission and global scope while preserving archived local disabled state', async () => {
     mockCapabilities({
-      permissions: ['talentKpi.update', 'talentKpi.manageMetrics', 'talentKpi.manageLifecycle'],
+      permissions: [
+        'talentKpi.read',
+        'talentKpi.update',
+        'talentKpi.manageMetrics',
+        'talentKpi.manageLifecycle',
+      ],
       scopeGrants: {},
     });
 
     renderRoute('/talent-kpi-records/talent-kpi-record-001');
 
-    const replaceMetrics = await screen.findByRole('button', {
-      name: i18n.t('talent-kpi:actions.replaceMetrics'),
-    });
-    await waitFor(() => expect(replaceMetrics).toBeDisabled());
-    expect(replaceMetrics).toHaveAccessibleDescription(commonCapabilityText('missingScope'));
+    await screen.findByText('Không có quyền truy cập');
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('talent-kpi:actions.replaceMetrics'),
+      }),
+    ).not.toBeInTheDocument();
 
     cleanup();
     mockCapabilities({
-      permissions: [],
+      permissions: [
+        'talentKpi.read',
+        'talentKpi.update',
+        'talentKpi.manageMetrics',
+        'talentKpi.manageLifecycle',
+      ],
       scopeGrants: { talentKpi: ['global'] },
     });
     renderRoute('/talent-kpi-records/talent-kpi-record-archived');
@@ -138,29 +195,34 @@ describe('commercial capability UX hints', () => {
       name: i18n.t('talent-kpi:actions.editDraftCore'),
     });
     expect(archivedEdit).toBeDisabled();
-    await waitFor(() =>
-      expect(screen.queryByText(commonCapabilityText('missingPermission'))).not.toBeInTheDocument(),
-    );
-    expect(screen.queryByText(commonCapabilityText('missingScope'))).not.toBeInTheDocument();
   });
 
   it('requires Commission Rule global scope and leaves fully capable local actions enabled', async () => {
     mockCapabilities({
-      permissions: ['commissionRule.update', 'commissionRule.manageLifecycle'],
+      permissions: [
+        'commissionRule.read',
+        'commissionRule.update',
+        'commissionRule.manageLifecycle',
+      ],
       scopeGrants: {},
     });
 
     renderRoute('/commission/rules/commission-rule-001');
 
-    const activate = await screen.findByRole('button', {
-      name: i18n.t('commission:rules.actions.activate'),
-    });
-    await waitFor(() => expect(activate).toBeDisabled());
-    expect(activate).toHaveAccessibleDescription(commonCapabilityText('missingScope'));
+    await screen.findByText(i18n.t('commission:rules.actionRail.title'));
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('commission:rules.actions.activate'),
+      }),
+    ).not.toBeInTheDocument();
 
     cleanup();
     mockCapabilities({
-      permissions: ['commissionRule.update', 'commissionRule.manageLifecycle'],
+      permissions: [
+        'commissionRule.read',
+        'commissionRule.update',
+        'commissionRule.manageLifecycle',
+      ],
       scopeGrants: { commission: ['global'] },
     });
     renderRoute('/commission/rules/commission-rule-001');
@@ -169,30 +231,36 @@ describe('commercial capability UX hints', () => {
       name: i18n.t('commission:rules.actions.editDraftCore'),
     });
     await waitFor(() => expect(editDraft).toBeEnabled());
-    expect(editDraft).not.toHaveAccessibleDescription(commonCapabilityText('missingScope'));
   });
 
-  it('requires Commission Settlement global scope and keeps capability fetch failure non-fatal', async () => {
+  it('requires Commission Settlement global scope and hides actions when capability fetch fails', async () => {
     mockCapabilities({
-      permissions: ['commissionSettlement.update', 'commissionSettlement.manageLifecycle'],
+      permissions: [
+        'commissionSettlement.read',
+        'commissionSettlement.update',
+        'commissionSettlement.manageLifecycle',
+      ],
       scopeGrants: {},
     });
 
     renderRoute('/commission/settlements/commission-settlement-001');
 
-    const replaceRevenueEntries = await screen.findByRole('button', {
-      name: i18n.t('commission:settlements.actions.replaceRevenueEntries'),
-    });
-    await waitFor(() => expect(replaceRevenueEntries).toBeDisabled());
-    expect(replaceRevenueEntries).toHaveAccessibleDescription(commonCapabilityText('missingScope'));
+    await screen.findByText(i18n.t('commission:settlements.actionRail.title'));
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('commission:settlements.actions.replaceRevenueEntries'),
+      }),
+    ).not.toBeInTheDocument();
 
     cleanup();
     mockCapabilities({ status: 500 });
     renderRoute('/commission/settlements/commission-settlement-001');
 
-    const editDraft = await screen.findByRole('button', {
-      name: i18n.t('commission:settlements.actions.editDraftCore'),
-    });
-    await waitFor(() => expect(editDraft).toBeEnabled());
+    expect(await screen.findByText('Không có quyền truy cập')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('commission:settlements.actions.editDraftCore'),
+      }),
+    ).not.toBeInTheDocument();
   });
 });

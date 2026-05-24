@@ -27,6 +27,7 @@ export type RevenueLedgerTableRow =
 type RevenueLedgerColumnHandlers = {
   onOpenDetail: (revenueEntryId: string) => void;
   onLifecycleAction: (revenueEntryId: string, action: RevenueLedgerLifecycleAction) => void;
+  canShowLifecycleAction?: (action: RevenueLedgerLifecycleAction) => boolean;
   isActionPending?: (revenueEntryId: string, action: RevenueLedgerLifecycleAction) => boolean;
 };
 
@@ -166,7 +167,9 @@ export const createRevenueLedgerColumns = (
     header: t('revenue-ledger:table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const lifecycleActions = readRevenueLedgerListLifecycleActions(record.status);
+      const lifecycleActions = readRevenueLedgerListLifecycleActions(record.status).filter(
+        (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+      );
 
       return (
         <div className="flex flex-wrap items-center gap-2">

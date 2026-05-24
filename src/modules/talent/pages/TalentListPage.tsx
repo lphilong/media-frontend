@@ -18,6 +18,11 @@ import {
 } from '@modules/talent/types/talent.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   type AppliedFilterChipItem,
   AdminTableShell,
@@ -96,6 +101,7 @@ export const TalentListPage = (): JSX.Element => {
   const listQuery = useMemo(() => query, [query]);
 
   const listQueryResult = useTalentList(listQuery);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateTalentMutation();
   const lifecycleMutation = useTalentLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -126,7 +132,14 @@ export const TalentListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
-  const pageActions = (
+  const canCreateTalent = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.TALENT_CREATE,
+  });
+  const canManageTalentLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.TALENT_MANAGE_LIFECYCLE,
+  });
+
+  const pageActions = canCreateTalent ? (
     <button
       type="button"
       onClick={() => setIsCreateOpen((current) => !current)}
@@ -134,7 +147,7 @@ export const TalentListPage = (): JSX.Element => {
     >
       {isCreateOpen ? t('talent:actions.closeCreate') : t('talent:actions.create')}
     </button>
-  );
+  ) : null;
 
   usePageActions(pageActions);
 
@@ -208,6 +221,7 @@ export const TalentListPage = (): JSX.Element => {
       createTalentListColumns(t, {
         onOpenDetail: (talentId) => navigate(APP_PATHS.talentDetail(talentId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageTalentLifecycle,
         isActionPending: (talentId, action) => {
           return (
             lifecycleMutation.isPending &&
@@ -216,7 +230,14 @@ export const TalentListPage = (): JSX.Element => {
           );
         },
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageTalentLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -583,7 +604,7 @@ export const TalentListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateTalent && isCreateOpen ? (
             <TalentCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

@@ -22,6 +22,11 @@ import type {
 import { revenueKindValues } from '@modules/revenue-ledger/types/revenue-ledger.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AppliedFilterChips,
   AdminTableShell,
   CursorPager,
@@ -266,6 +271,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
           ? byEventQueryResult
           : flatQueryResult;
 
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateRevenueEntryMutation();
   const lifecycleMutation = useRevenueEntryLifecycleMutation();
   const reconcileMutation = useReconcileRevenueEntryMutation();
@@ -313,14 +319,35 @@ export const RevenueLedgerListPage = (): JSX.Element => {
     }
   }, [queryShapeSignature]);
 
+  const revenueLedgerGlobalScope = { module: 'revenueLedger', value: 'global' } as const;
+  const canCreateRevenueEntry = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.REVENUE_LEDGER_CREATE,
+    scope: revenueLedgerGlobalScope,
+  });
+  const canShowRevenueLifecycleAction = useCallback(
+    (action: RevenueLedgerLifecycleAction) =>
+      canShowAction(capabilitiesQuery.data, {
+        permission:
+          action === 'reconcile'
+            ? PERMISSIONS.REVENUE_LEDGER_RECONCILE
+            : PERMISSIONS.REVENUE_LEDGER_MANAGE_LIFECYCLE,
+        scope: { module: 'revenueLedger', value: 'global' },
+      }),
+    [capabilitiesQuery.data],
+  );
+
   usePageActions(
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen ? t('revenue-ledger:actions.closeCreate') : t('revenue-ledger:actions.create')}
-    </button>,
+    canCreateRevenueEntry ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen
+          ? t('revenue-ledger:actions.closeCreate')
+          : t('revenue-ledger:actions.create')}
+      </button>
+    ) : null,
   );
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
@@ -379,6 +406,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
       createRevenueLedgerColumns(t, {
         onOpenDetail: (revenueEntryId) => navigate(APP_PATHS.revenueEntryDetail(revenueEntryId)),
         onLifecycleAction,
+        canShowLifecycleAction: canShowRevenueLifecycleAction,
         isActionPending: (revenueEntryId, action) =>
           action === 'reconcile'
             ? reconcileMutation.isPending &&
@@ -392,6 +420,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
       lifecycleMutation.variables,
       navigate,
       onLifecycleAction,
+      canShowRevenueLifecycleAction,
       reconcileMutation.isPending,
       reconcileMutation.variables,
       t,
@@ -906,7 +935,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
       }
       interactionSection={
         <>
-          {isCreateOpen ? (
+          {canCreateRevenueEntry && isCreateOpen ? (
             <RevenueEntryCreateSurface
               isPending={createMutation.isPending}
               onCancel={() => setIsCreateOpen(false)}

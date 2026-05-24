@@ -23,6 +23,8 @@ type ContractListColumnHandlers = {
   onOpenDetail: (contractRecordId: string) => void;
   onLifecycleAction: (contractRecordId: string, action: ContractLifecycleAction) => void;
   onDateAction: (contractRecordId: string, action: 'expire' | 'terminate') => void;
+  canShowLifecycleAction?: (action: ContractLifecycleAction) => boolean;
+  canShowDateAction?: (action: 'expire' | 'terminate') => boolean;
   isActionPending?: (contractRecordId: string, action: ContractLifecycleAction) => boolean;
   isDateActionPending?: (contractRecordId: string, action: 'expire' | 'terminate') => boolean;
 };
@@ -148,7 +150,9 @@ export const createContractRecordColumns = (
     header: t('contract-registry:table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const lifecycleActions = readContractListLifecycleActions(record.status);
+      const lifecycleActions = readContractListLifecycleActions(record.status).filter(
+        (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+      );
 
       return (
         <div className="flex flex-wrap items-center gap-2">
@@ -176,7 +180,7 @@ export const createContractRecordColumns = (
               {t(`contract-registry:actions.${action}`)}
             </button>
           ))}
-          {canExpireContract(record.status) ? (
+          {canExpireContract(record.status) && (handlers.canShowDateAction?.('expire') ?? true) ? (
             <button
               type="button"
               className="rounded border border-border px-2 py-1 text-xs"
@@ -189,7 +193,8 @@ export const createContractRecordColumns = (
               {t('contract-registry:actions.expire')}
             </button>
           ) : null}
-          {canTerminateContract(record.status) ? (
+          {canTerminateContract(record.status) &&
+          (handlers.canShowDateAction?.('terminate') ?? true) ? (
             <button
               type="button"
               className="rounded border border-border px-2 py-1 text-xs"

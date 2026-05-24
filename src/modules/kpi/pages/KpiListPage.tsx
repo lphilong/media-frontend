@@ -191,6 +191,8 @@ export const KpiListPage = (): JSX.Element => {
   const hasGlobalKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'global');
   const hasManagedGroupKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'managedGroup');
   const isManagedGroupOnlyKpiView = !hasGlobalKpiScope && hasManagedGroupKpiScope;
+  const canShowCreatePlan = createPlanHint.allowed;
+  const canShowActualEntrySurface = enterActualHint.allowed || correctActualHint.allowed;
 
   useEffect(() => {
     if (isManagedGroupOnlyKpiView && activeTab === 'management') {
@@ -480,21 +482,23 @@ export const KpiListPage = (): JSX.Element => {
               onChange={(event) => patchQuery({ subjectId: event.target.value || undefined })}
             />
           </label>
-          <button
-            type="button"
-            disabled={createPlanHint.disabled}
-            className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-            title={createPlanHint.disabledReason}
-            onClick={() => {
-              if (!createPlanHint.disabled) {
-                setIsCreateOpen((current) => !current);
-              }
-            }}
-          >
-            {isCreateOpen ? t('common:actions.close') : t('kpi:actions.create')}
-          </button>
+          {canShowCreatePlan ? (
+            <button
+              type="button"
+              disabled={createPlanHint.disabled}
+              className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              title={createPlanHint.disabledReason}
+              onClick={() => {
+                if (!createPlanHint.disabled) {
+                  setIsCreateOpen((current) => !current);
+                }
+              }}
+            >
+              {isCreateOpen ? t('common:actions.close') : t('kpi:actions.create')}
+            </button>
+          ) : null}
         </div>
-        {createPlanHint.disabledReason ? (
+        {canShowCreatePlan && createPlanHint.disabledReason ? (
           <p className="text-sm text-danger">{createPlanHint.disabledReason}</p>
         ) : null}
       </section>
@@ -505,7 +509,7 @@ export const KpiListPage = (): JSX.Element => {
         </section>
       ) : null}
 
-      {isCreateOpen ? (
+      {canShowCreatePlan && isCreateOpen ? (
         <section className="space-y-4 rounded-lg border border-border bg-panel p-4 shadow-shell">
           <h2 className="text-base font-semibold">{t('kpi:create.title')}</h2>
           {formError ? (
@@ -780,6 +784,7 @@ export const KpiListPage = (): JSX.Element => {
         ) : null}
       </section>
 
+      {canShowActualEntrySurface ? (
       <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
         <h2 className="text-base font-semibold">{t('kpi:actualEntry.title')}</h2>
         <div className="flex flex-wrap items-end gap-3">
@@ -817,10 +822,10 @@ export const KpiListPage = (): JSX.Element => {
             {actualError}
           </p>
         ) : null}
-        {enterActualHint.disabledReason ? (
+        {enterActualHint.allowed && enterActualHint.disabledReason ? (
           <p className="text-sm text-danger">{enterActualHint.disabledReason}</p>
         ) : null}
-        {correctActualHint.disabledReason ? (
+        {correctActualHint.allowed && correctActualHint.disabledReason ? (
           <p className="text-sm text-danger">{correctActualHint.disabledReason}</p>
         ) : null}
         {actualGridQuery.data ? (
@@ -848,7 +853,7 @@ export const KpiListPage = (): JSX.Element => {
                             cellDrafts[cellKey(row, cell)] ??
                             formatKpiMetricInput(cell.metricCode, cell.effectiveValue)
                           }
-                          disabled={enterActualHint.disabled}
+                          disabled={!enterActualHint.allowed || enterActualHint.disabled}
                           className="w-32 rounded border border-border bg-panel px-2 py-1 disabled:opacity-50"
                           onChange={(event) =>
                             setCellDrafts((current) => ({
@@ -862,7 +867,7 @@ export const KpiListPage = (): JSX.Element => {
                             ? (cell.disabledReason ?? t('kpi:actualEntry.requiresCorrection'))
                             : t('kpi:actualEntry.directEdit')}
                         </div>
-                        {cell.actualEntryId ? (
+                        {correctActualHint.allowed && cell.actualEntryId ? (
                           <button
                             type="button"
                             disabled={correctActualHint.disabled}
@@ -883,22 +888,25 @@ export const KpiListPage = (): JSX.Element => {
                 ))}
               </tbody>
             </table>
-            <div className="p-3">
-              <button
-                type="button"
-                disabled={enterActualHint.disabled}
-                className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                title={enterActualHint.disabledReason}
-                onClick={() => void saveActuals()}
-              >
-                {t('kpi:actions.saveChangedCells')}
-              </button>
-            </div>
+            {enterActualHint.allowed ? (
+              <div className="p-3">
+                <button
+                  type="button"
+                  disabled={enterActualHint.disabled}
+                  className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  title={enterActualHint.disabledReason}
+                  onClick={() => void saveActuals()}
+                >
+                  {t('kpi:actions.saveChangedCells')}
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </section>
+      ) : null}
 
-      {correctionTarget ? (
+      {correctActualHint.allowed && correctionTarget ? (
         <CorrectionPanel
           kpiPlanId={actualGridQuery.data?.kpiPlanId ?? actualPlanId}
           actualDate={actualGridQuery.data?.actualDate ?? actualDate}

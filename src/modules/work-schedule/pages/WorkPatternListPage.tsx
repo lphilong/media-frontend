@@ -15,6 +15,11 @@ import { createWorkPatternListColumns } from '@modules/work-schedule/tables/work
 import type { WorkPatternLifecycleAction } from '@modules/work-schedule/types/work-schedule.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  canShowAction,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
+import {
   AdminTableShell,
   CursorPager,
   ErrorState,
@@ -97,6 +102,7 @@ export const WorkPatternListPage = (): JSX.Element => {
   );
 
   const listQueryResult = useWorkPatternList(listQuery);
+  const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateWorkPatternMutation();
   const lifecycleMutation = useWorkPatternLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -104,17 +110,28 @@ export const WorkPatternListPage = (): JSX.Element => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [, setCursorStack] = useState(createCursorStack);
 
+  const canCreateWorkPattern = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.WORK_SCHEDULE_CREATE,
+    scope: { module: 'workSchedule', value: 'global' },
+  });
+  const canManageWorkPatternLifecycle = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+    scope: { module: 'workSchedule', value: 'global' },
+  });
+
   usePageActions(
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      data-action-priority="primary"
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen
-        ? t('work-schedule:patterns.actions.closeCreate')
-        : t('work-schedule:patterns.actions.create')}
-    </button>,
+    canCreateWorkPattern ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        data-action-priority="primary"
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen
+          ? t('work-schedule:patterns.actions.closeCreate')
+          : t('work-schedule:patterns.actions.create')}
+      </button>
+    ) : null,
   );
 
   const queryShapeSignature = useMemo(
@@ -185,12 +202,20 @@ export const WorkPatternListPage = (): JSX.Element => {
       createWorkPatternListColumns(t, {
         onOpenDetail: (workPatternId) => navigate(APP_PATHS.workPatternDetail(workPatternId)),
         onLifecycleAction,
+        canShowLifecycleAction: () => canManageWorkPatternLifecycle,
         isActionPending: (workPatternId, action) =>
           lifecycleMutation.isPending &&
           lifecycleMutation.variables?.workPatternId === workPatternId &&
           lifecycleMutation.variables?.action === action,
       }),
-    [lifecycleMutation.isPending, lifecycleMutation.variables, navigate, onLifecycleAction, t],
+    [
+      canManageWorkPatternLifecycle,
+      lifecycleMutation.isPending,
+      lifecycleMutation.variables,
+      navigate,
+      onLifecycleAction,
+      t,
+    ],
   );
 
   const listError = listQueryResult.error as NormalizedApiError | null;
@@ -245,7 +270,7 @@ export const WorkPatternListPage = (): JSX.Element => {
         </FilterBarShell>
       }
       interactionSection={
-        isCreateOpen ? (
+        canCreateWorkPattern && isCreateOpen ? (
           <WorkPatternCreateSurface
             isPending={createMutation.isPending}
             onCancel={() => setIsCreateOpen(false)}

@@ -113,6 +113,11 @@ export const KpiDetailPage = (): JSX.Element => {
     { permission: PERMISSIONS.KPI_MANAGE_ALLOCATION, scope: lifecycleScope },
     capabilityCopy,
   );
+  const draftHint = createActionCapabilityHint(
+    capabilityState,
+    { permission: PERMISSIONS.KPI_UPDATE_DRAFT, scope: lifecycleScope },
+    capabilityCopy,
+  );
 
   const runLifecycle = async (action: 'publish' | 'finalize' | 'archive'): Promise<void> => {
     const confirmed = await requestConfirm({
@@ -132,67 +137,85 @@ export const KpiDetailPage = (): JSX.Element => {
   const draftActionItems =
     plan.status === 'DRAFT'
       ? [
-          {
+          !draftHint.hidden
+            ? {
             id: 'draft-core',
             label: t('kpi:actions.updateDraft'),
-            onClick: () => undefined,
-          },
-          {
+                disabled: draftHint.disabled,
+                disabledReason: draftHint.disabledReason,
+                onClick: !draftHint.disabled ? () => undefined : undefined,
+              }
+            : undefined,
+          !draftHint.hidden
+            ? {
             id: 'replace-metrics',
             label: t('kpi:actions.replaceMetrics'),
-            onClick: () => undefined,
-          },
-          {
+                disabled: draftHint.disabled,
+                disabledReason: draftHint.disabledReason,
+                onClick: !draftHint.disabled ? () => undefined : undefined,
+              }
+            : undefined,
+          !allocationHint.hidden
+            ? {
             id: 'replace-allocations',
             label: t('kpi:actions.replaceAllocations'),
             disabled: allocationHint.disabled,
             disabledReason: allocationHint.disabledReason,
             onClick: !allocationHint.disabled ? () => undefined : undefined,
-          },
-        ]
+              }
+            : undefined,
+        ].filter((item): item is NonNullable<typeof item> => Boolean(item))
       : [];
 
   const actionItems = [
     ...draftActionItems,
-    {
-      id: 'publish',
-      label: t('kpi:actions.publish'),
-      disabled: Boolean(readDisabledReason(plan, 'publish')) || publishHint.disabled,
-      disabledReason:
-        (readDisabledReason(plan, 'publish') ? t(readDisabledReason(plan, 'publish') ?? '') : undefined) ??
-        publishHint.disabledReason,
-      onClick:
-        !readDisabledReason(plan, 'publish') && !publishHint.disabled
-          ? () => void runLifecycle('publish')
-          : undefined,
-    },
-    {
-      id: 'finalize',
-      label: t('kpi:actions.finalize'),
-      disabled: Boolean(readDisabledReason(plan, 'finalize')) || finalizeHint.disabled,
-      disabledReason:
-        (readDisabledReason(plan, 'finalize')
-          ? t(readDisabledReason(plan, 'finalize') ?? '')
-          : undefined) ?? finalizeHint.disabledReason,
-      onClick:
-        !readDisabledReason(plan, 'finalize') && !finalizeHint.disabled
-          ? () => void runLifecycle('finalize')
-          : undefined,
-    },
-    {
-      id: 'archive',
-      label: t('kpi:actions.archive'),
-      tone: 'danger' as const,
-      disabled: Boolean(readDisabledReason(plan, 'archive')) || archiveHint.disabled,
-      disabledReason:
-        (readDisabledReason(plan, 'archive') ? t(readDisabledReason(plan, 'archive') ?? '') : undefined) ??
-        archiveHint.disabledReason,
-      onClick:
-        !readDisabledReason(plan, 'archive') && !archiveHint.disabled
-          ? () => void runLifecycle('archive')
-          : undefined,
-    },
-  ];
+    !publishHint.hidden
+      ? {
+          id: 'publish',
+          label: t('kpi:actions.publish'),
+          disabled: Boolean(readDisabledReason(plan, 'publish')) || publishHint.disabled,
+          disabledReason:
+            (readDisabledReason(plan, 'publish')
+              ? t(readDisabledReason(plan, 'publish') ?? '')
+              : undefined) ?? publishHint.disabledReason,
+          onClick:
+            !readDisabledReason(plan, 'publish') && !publishHint.disabled
+              ? () => void runLifecycle('publish')
+              : undefined,
+        }
+      : undefined,
+    !finalizeHint.hidden
+      ? {
+          id: 'finalize',
+          label: t('kpi:actions.finalize'),
+          disabled: Boolean(readDisabledReason(plan, 'finalize')) || finalizeHint.disabled,
+          disabledReason:
+            (readDisabledReason(plan, 'finalize')
+              ? t(readDisabledReason(plan, 'finalize') ?? '')
+              : undefined) ?? finalizeHint.disabledReason,
+          onClick:
+            !readDisabledReason(plan, 'finalize') && !finalizeHint.disabled
+              ? () => void runLifecycle('finalize')
+              : undefined,
+        }
+      : undefined,
+    !archiveHint.hidden
+      ? {
+          id: 'archive',
+          label: t('kpi:actions.archive'),
+          tone: 'danger' as const,
+          disabled: Boolean(readDisabledReason(plan, 'archive')) || archiveHint.disabled,
+          disabledReason:
+            (readDisabledReason(plan, 'archive')
+              ? t(readDisabledReason(plan, 'archive') ?? '')
+              : undefined) ?? archiveHint.disabledReason,
+          onClick:
+            !readDisabledReason(plan, 'archive') && !archiveHint.disabled
+              ? () => void runLifecycle('archive')
+              : undefined,
+        }
+      : undefined,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   const allocationTotals = new Map<KpiMetricCode, number>();
   plan.targetMetrics.forEach((metric) => allocationTotals.set(metric.metricCode, 0));
@@ -328,7 +351,7 @@ export const KpiDetailPage = (): JSX.Element => {
               {publishBlockedByAllocation ? (
                 <p className="text-sm text-danger">{t('kpi:validation.allocationMismatch')}</p>
               ) : null}
-              {plan.status === 'DRAFT' ? (
+              {plan.status === 'DRAFT' && !allocationHint.hidden ? (
                 <button
                   type="button"
                   disabled={allocationsMutation.isPending || allocationHint.disabled}

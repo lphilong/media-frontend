@@ -82,5 +82,6 @@ export const createKpiActionCapabilityHint = (
     allowed: false,
     disabled: true,
     disabledReason: copy[result?.reason ?? 'missing-permission'],
+    hidden: true,
   };
 };

@@ -7,8 +7,10 @@ export const CURRENT_ACTOR_CAPABILITIES_QUERY_KEY = ['current-actor-capabilities
 
 export const PERMISSIONS = {
   USER_VIEW: 'user:view',
+  USER_CREATE: 'user:create',
   ROLE_LIST: 'role:list',
   ROLE_VIEW: 'role:view',
+  ROLE_CREATE: 'role:create',
   ROLE_UPDATE: 'role:update',
   ROLE_ACTIVATE: 'role:activate',
   ROLE_DEACTIVATE: 'role:deactivate',
@@ -27,11 +29,13 @@ export const PERMISSIONS = {
   USER_PASSWORD_SETUP_SEND: 'user:password_setup:send',
   USER_ACTOR_KIND_UPDATE: 'user:actor_kind:update',
   ORG_UNIT_READ: 'orgUnit.read',
+  ORG_UNIT_CREATE: 'orgUnit.create',
   ORG_UNIT_UPDATE: 'orgUnit.update',
   ORG_UNIT_LOOKUP: 'orgUnit.lookup',
   ORG_UNIT_MANAGE_HIERARCHY: 'orgUnit.manageHierarchy',
   ORG_UNIT_MANAGE_LIFECYCLE: 'orgUnit.manageLifecycle',
   EMPLOYMENT_PROFILE_READ: 'employmentProfile.read',
+  EMPLOYMENT_PROFILE_CREATE: 'employmentProfile.create',
   EMPLOYMENT_PROFILE_UPDATE: 'employmentProfile.update',
   EMPLOYMENT_PROFILE_LOOKUP: 'employmentProfile.lookup',
   EMPLOYMENT_PROFILE_MANAGE_ORG_ASSIGNMENT: 'employmentProfile.manageOrgAssignment',
@@ -39,6 +43,7 @@ export const PERMISSIONS = {
   EMPLOYMENT_PROFILE_MANAGE_USER_LINKAGE: 'employmentProfile.manageUserLinkage',
   EMPLOYMENT_PROFILE_MANAGE_LIFECYCLE: 'employmentProfile.manageLifecycle',
   TALENT_READ: 'talent.read',
+  TALENT_CREATE: 'talent.create',
   TALENT_UPDATE: 'talent.update',
   TALENT_LOOKUP: 'talent.lookup',
   TALENT_MANAGE_MANAGER: 'talent.manageManager',
@@ -46,36 +51,43 @@ export const PERMISSIONS = {
   TALENT_MANAGE_COMMERCIAL_PARTICIPATION: 'talent.manageCommercialParticipation',
   TALENT_MANAGE_LIFECYCLE: 'talent.manageLifecycle',
   TALENT_GROUP_READ: 'talentGroup.read',
+  TALENT_GROUP_CREATE: 'talentGroup.create',
   TALENT_GROUP_UPDATE: 'talentGroup.update',
   TALENT_GROUP_LOOKUP: 'talentGroup.lookup',
   TALENT_GROUP_MANAGE_MEMBERSHIP: 'talentGroup.manageMembership',
   TALENT_GROUP_MANAGE_LIFECYCLE: 'talentGroup.manageLifecycle',
   PLATFORM_ACCOUNT_READ: 'platformAccount.read',
+  PLATFORM_ACCOUNT_CREATE: 'platformAccount.create',
   PLATFORM_ACCOUNT_UPDATE: 'platformAccount.update',
   PLATFORM_ACCOUNT_LOOKUP: 'platformAccount.lookup',
   PLATFORM_ACCOUNT_MANAGE_OWNERSHIP: 'platformAccount.manageOwnership',
   PLATFORM_ACCOUNT_MANAGE_CAPABILITIES: 'platformAccount.manageCapabilities',
   PLATFORM_ACCOUNT_MANAGE_LIFECYCLE: 'platformAccount.manageLifecycle',
   STUDIO_RESOURCE_READ: 'studioResource.read',
+  STUDIO_RESOURCE_CREATE: 'studioResource.create',
   STUDIO_RESOURCE_UPDATE: 'studioResource.update',
   STUDIO_RESOURCE_LOOKUP: 'studioResource.lookup',
   STUDIO_RESOURCE_MANAGE_AVAILABILITY: 'studioResource.manageAvailability',
   STUDIO_RESOURCE_MANAGE_LIFECYCLE: 'studioResource.manageLifecycle',
   EVENT_READ: 'event.read',
+  EVENT_CREATE: 'event.create',
   EVENT_UPDATE: 'event.update',
   EVENT_LOOKUP: 'event.lookup',
   EVENT_MANAGE_ASSIGNMENTS: 'event.manageAssignments',
   EVENT_MANAGE_LIFECYCLE: 'event.manageLifecycle',
   WORK_SCHEDULE_READ: 'workSchedule.read',
+  WORK_SCHEDULE_CREATE: 'workSchedule.create',
   WORK_SCHEDULE_UPDATE: 'workSchedule.update',
   WORK_SCHEDULE_MANAGE_LIFECYCLE: 'workSchedule.manageLifecycle',
   CONTRACT_REGISTRY_READ: 'contractRegistry.read',
+  CONTRACT_REGISTRY_CREATE: 'contractRegistry.create',
   CONTRACT_REGISTRY_UPDATE: 'contractRegistry.update',
   CONTRACT_REGISTRY_LOOKUP: 'contractRegistry.lookup',
   CONTRACT_REGISTRY_MANAGE_OWNER: 'contractRegistry.manageOwner',
   CONTRACT_REGISTRY_MANAGE_FILE_REFERENCE: 'contractRegistry.manageFileReference',
   CONTRACT_REGISTRY_MANAGE_LIFECYCLE: 'contractRegistry.manageLifecycle',
   TALENT_KPI_READ: 'talentKpi.read',
+  TALENT_KPI_CREATE: 'talentKpi.create',
   TALENT_KPI_UPDATE: 'talentKpi.update',
   TALENT_KPI_MANAGE_METRICS: 'talentKpi.manageMetrics',
   TALENT_KPI_MANAGE_LIFECYCLE: 'talentKpi.manageLifecycle',
@@ -90,15 +102,18 @@ export const PERMISSIONS = {
   KPI_READ_PROGRESS: 'kpi.readProgress',
   KPI_FINALIZE: 'kpi.finalize',
   REVENUE_LEDGER_READ: 'revenueLedger.read',
+  REVENUE_LEDGER_CREATE: 'revenueLedger.create',
   REVENUE_LEDGER_UPDATE: 'revenueLedger.update',
   REVENUE_LEDGER_LOOKUP: 'revenueLedger.lookup',
   REVENUE_LEDGER_MANAGE_LIFECYCLE: 'revenueLedger.manageLifecycle',
   REVENUE_LEDGER_RECONCILE: 'revenueLedger.reconcile',
   COMMISSION_RULE_READ: 'commissionRule.read',
+  COMMISSION_RULE_CREATE: 'commissionRule.create',
   COMMISSION_RULE_UPDATE: 'commissionRule.update',
   COMMISSION_RULE_LOOKUP: 'commissionRule.lookup',
   COMMISSION_RULE_MANAGE_LIFECYCLE: 'commissionRule.manageLifecycle',
   COMMISSION_SETTLEMENT_READ: 'commissionSettlement.read',
+  COMMISSION_SETTLEMENT_CREATE: 'commissionSettlement.create',
   COMMISSION_SETTLEMENT_UPDATE: 'commissionSettlement.update',
   COMMISSION_SETTLEMENT_MANAGE_LIFECYCLE: 'commissionSettlement.manageLifecycle',
   DASHBOARD_LITE_READ: 'dashboardLite.read',
@@ -162,6 +177,7 @@ export type ActionCapabilityCheck = {
 export type ActionCapabilityHint = {
   disabled: boolean;
   disabledReason?: string;
+  hidden?: boolean;
 };
 
 export type CapabilityAwareActionItem = {
@@ -251,6 +267,31 @@ export const canUseAction = (
   return { allowed: true };
 };
 
+export const canUseAnyAction = (
+  capabilities: CurrentActorCapabilities | undefined,
+  requirements: readonly ActionCapabilityRequirement[],
+): ActionCapabilityCheck => {
+  if (requirements.length === 0) {
+    return { allowed: true };
+  }
+
+  const checks = requirements.map((requirement) => canUseAction(capabilities, requirement));
+  const allowed = checks.find((check) => check.allowed);
+  if (allowed) {
+    return allowed;
+  }
+
+  return checks.find((check) => check.reason === 'missing-permission') ?? checks[0];
+};
+
+export const canShowAction = (
+  capabilities: CurrentActorCapabilities | undefined,
+  requirement: ActionCapabilityRequirement | readonly ActionCapabilityRequirement[],
+): boolean => {
+  const requirements = Array.isArray(requirement) ? requirement : [requirement];
+  return canUseAnyAction(capabilities, requirements).allowed;
+};
+
 export const createActionCapabilityHint = (
   state: CapabilityQueryState,
   requirement: ActionCapabilityRequirement,
@@ -278,6 +319,7 @@ export const createActionCapabilityHint = (
   return {
     disabled: true,
     disabledReason: copy[result.reason ?? 'missing-permission'],
+    hidden: true,
   };
 };
 
@@ -286,11 +328,15 @@ export const applyActionCapabilityHints = <TItem extends CapabilityAwareActionIt
   hints: Readonly<Record<string, ActionCapabilityHint | undefined>>,
 ): TItem[] =>
   items.map((item) => {
+    const hint = hints[item.id];
+    if (hint?.hidden) {
+      return undefined;
+    }
+
     if (item.disabled || item.disabledReason) {
       return item;
     }
 
-    const hint = hints[item.id];
     if (!hint?.disabled) {
       return item;
     }
@@ -300,4 +346,4 @@ export const applyActionCapabilityHints = <TItem extends CapabilityAwareActionIt
       disabled: true,
       disabledReason: hint.disabledReason,
     };
-  });
+  }).filter((item): item is TItem => Boolean(item));

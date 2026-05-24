@@ -37,6 +37,7 @@ import {
 } from '@shared/components/primitives';
 import {
   applyActionCapabilityHints,
+  canShowAction,
   PERMISSIONS,
   useCurrentActorCapabilities,
   type CapabilityMissingReason,
@@ -149,6 +150,18 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
     }),
     [t],
   );
+  const capabilityState = useMemo(
+    () => ({
+      capabilities: capabilitiesQuery.data,
+      isLoading: capabilitiesQuery.isLoading,
+      isError: capabilitiesQuery.isError,
+    }),
+    [capabilitiesQuery.data, capabilitiesQuery.isError, capabilitiesQuery.isLoading],
+  );
+  const canMutateHolidayCalendar = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
+    scope: { module: 'workSchedule', value: 'global' },
+  });
   const visibleEntries = useMemo(() => {
     const entries = record?.entries ?? [];
     return showRemovedEntries ? entries : entries.filter((entry) => entry.status === 'ACTIVE');
@@ -213,14 +226,10 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
       return [];
     }
 
-    const capabilityState = {
-      capabilities: capabilitiesQuery.data,
-      isLoading: capabilitiesQuery.isLoading,
-      isError: capabilitiesQuery.isError,
-    };
     const lifecycleHint = createWorkScheduleCapabilityHint({
       state: capabilityState,
       permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
+      requestedScope: 'global',
       copy: capabilityCopy,
     });
 
@@ -237,6 +246,7 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
         edit: createWorkScheduleCapabilityHint({
           state: capabilityState,
           permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
+          requestedScope: 'global',
           copy: capabilityCopy,
         }),
         activate: lifecycleHint,
@@ -244,9 +254,7 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
       },
     );
   }, [
-    capabilitiesQuery.data,
-    capabilitiesQuery.isError,
-    capabilitiesQuery.isLoading,
+    capabilityState,
     capabilityCopy,
     lifecycleMutation.isPending,
     lifecycleMutation.variables,
@@ -429,7 +437,7 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
                     })}
                   </span>
                 </label>
-                {!isArchived ? (
+                {!isArchived && canMutateHolidayCalendar ? (
                   <button
                     type="button"
                     className="rounded border border-border bg-panel px-3 py-2 text-sm"
@@ -494,16 +502,22 @@ export const HolidayCalendarDetailPage = (): JSX.Element => {
                           <td className="px-3 py-2">{formatNullable(entry.externalRef)}</td>
                           <td className="px-3 py-2">
                             <div className="flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                className="rounded border border-border px-2 py-1 text-xs"
-                                onClick={() => setActiveSurface({ type: 'edit-entry', entry })}
-                              >
-                                {entry.status === 'REMOVED' || isArchived
-                                  ? t('work-schedule:holidayCalendars.entries.view')
-                                  : t('work-schedule:holidayCalendars.entries.edit')}
-                              </button>
-                              {entry.status === 'ACTIVE' && !isArchived ? (
+                              {entry.status === 'REMOVED' ||
+                              isArchived ||
+                              canMutateHolidayCalendar ? (
+                                <button
+                                  type="button"
+                                  className="rounded border border-border px-2 py-1 text-xs"
+                                  onClick={() => setActiveSurface({ type: 'edit-entry', entry })}
+                                >
+                                  {entry.status === 'REMOVED' || isArchived
+                                    ? t('work-schedule:holidayCalendars.entries.view')
+                                    : t('work-schedule:holidayCalendars.entries.edit')}
+                                </button>
+                              ) : null}
+                              {entry.status === 'ACTIVE' &&
+                              !isArchived &&
+                              canMutateHolidayCalendar ? (
                                 <button
                                   type="button"
                                   className="rounded border border-danger/40 px-2 py-1 text-xs text-danger"

@@ -12,6 +12,7 @@ import type {
 type PlatformAccountListColumnHandlers = {
   onOpenDetail: (platformAccountId: string) => void;
   onLifecycleAction: (platformAccountId: string, action: PlatformAccountLifecycleAction) => void;
+  canShowLifecycleAction?: (action: PlatformAccountLifecycleAction) => boolean;
   isActionPending?: (platformAccountId: string, action: PlatformAccountLifecycleAction) => boolean;
 };
 
@@ -133,7 +134,9 @@ export const createPlatformAccountListColumns = (
       header: t('platform-account:table.actions'),
       cell: ({ row }) => {
         const record = row.original;
-        const actions = readLifecycleActions(record);
+        const actions = readLifecycleActions(record).filter(
+          (action) => handlers.canShowLifecycleAction?.(action) ?? true,
+        );
 
         return (
           <div className="flex flex-wrap items-center gap-2">
