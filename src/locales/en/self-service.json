@@ -14,7 +14,7 @@
     },
     "workShifts": {
       "title": "My Work Shifts",
-      "summary": "Schedule view placeholder for a later staff surface."
+      "summary": "Read-only view of your official work shifts."
     },
     "kpi": {
       "title": "My KPI",
@@ -44,12 +44,27 @@
     "talentDisplayName": "Talent display name",
     "performanceAlias": "Performance Alias"
   },
+  "workShiftFields": {
+    "title": "Shift",
+    "status": "Status",
+    "startsAt": "Starts",
+    "endsAt": "Ends",
+    "sourceType": "Source"
+  },
+  "tables": {
+    "workShifts": "My Work Shifts"
+  },
   "status": {
     "available": "Available",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "readOnly": "Read-only"
   },
   "values": {
     "notAvailable": "Not available"
+  },
+  "empty": {
+    "workShiftsTitle": "No work shifts",
+    "workShiftsMessage": "No official shifts are available for your profile yet."
   },
   "employmentStatus": {
     "ACTIVE": "Active",
@@ -64,8 +79,19 @@
     "DISABLED": "Disabled",
     "ARCHIVED": "Archived"
   },
+  "workShiftStatus": {
+    "ACTIVE": "Active",
+    "CANCELLED": "Cancelled",
+    "ARCHIVED": "Archived"
+  },
+  "workShiftSourceType": {
+    "MANUAL": "Manual",
+    "ROSTER_GENERATED": "Roster generated"
+  },
   "errors": {
     "currentPersonTitle": "No linked Employment Profile",
-    "currentPersonMessage": "Your account is authenticated, but no staff profile is linked for self-service yet."
+    "currentPersonMessage": "Your account is authenticated, but no staff profile is linked for self-service yet.",
+    "workShiftsTitle": "Work shifts unavailable",
+    "workShiftsMessage": "Your work shifts could not be loaded."
   }
 }

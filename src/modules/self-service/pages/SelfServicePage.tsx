@@ -9,14 +9,19 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { useSelfServiceCurrentPerson } from '@modules/self-service/api/self-service.api';
 import {
+  useSelfServiceCurrentPerson,
+  useSelfServiceWorkShifts,
+} from '@modules/self-service/api/self-service.api';
+import {
+  EmptyState,
   ErrorState,
   LoadingState,
   PageContainer,
   ReadOnlyFieldGrid,
   StatusBadge,
 } from '@shared/components/primitives';
+import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type NavCard = {
   id: 'profile' | 'workShifts' | 'kpi' | 'events' | 'account';
@@ -26,7 +31,7 @@ type NavCard = {
 
 const navCards: NavCard[] = [
   { id: 'profile', icon: IdCard, statusKey: 'self-service:status.available' },
-  { id: 'workShifts', icon: CalendarDays, statusKey: 'self-service:status.comingSoon' },
+  { id: 'workShifts', icon: CalendarDays, statusKey: 'self-service:status.available' },
   { id: 'kpi', icon: ChartNoAxesColumnIncreasing, statusKey: 'self-service:status.comingSoon' },
   { id: 'events', icon: BadgeCheck, statusKey: 'self-service:status.comingSoon' },
   { id: 'account', icon: UserCog, statusKey: 'self-service:status.comingSoon' },
@@ -41,6 +46,7 @@ const statusTone = {
   PENDING: 'warning',
   DISABLED: 'danger',
   LINKED: 'success',
+  CANCELLED: 'danger',
 } as const;
 
 const emptyValue = (value: string | null | undefined, fallback: string): string =>
@@ -50,6 +56,8 @@ export const SelfServicePage = (): JSX.Element => {
   const { t } = useTranslation(['self-service', 'common', 'errors']);
   const currentPersonQuery = useSelfServiceCurrentPerson();
   const currentPerson = currentPersonQuery.data;
+  const workShiftsQuery = useSelfServiceWorkShifts(currentPersonQuery.isSuccess);
+  const workShifts = workShiftsQuery.data ?? [];
   const notAvailable = t('self-service:values.notAvailable');
 
   return (
@@ -203,6 +211,83 @@ export const SelfServicePage = (): JSX.Element => {
                     },
                   ]}
                 />
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {currentPerson ? (
+          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {t('self-service:sections.workShifts.title')}
+                </h2>
+                <p className="text-sm text-muted">
+                  {t('self-service:sections.workShifts.summary')}
+                </p>
+              </div>
+              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
+            </div>
+
+            {workShiftsQuery.isLoading ? <LoadingState lines={4} /> : null}
+
+            {workShiftsQuery.isError ? (
+              <ErrorState
+                title={t('self-service:errors.workShiftsTitle')}
+                message={t('self-service:errors.workShiftsMessage')}
+              />
+            ) : null}
+
+            {!workShiftsQuery.isLoading && !workShiftsQuery.isError && workShifts.length === 0 ? (
+              <EmptyState
+                title={t('self-service:empty.workShiftsTitle')}
+                message={t('self-service:empty.workShiftsMessage')}
+              />
+            ) : null}
+
+            {workShifts.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm" aria-label={t('self-service:tables.workShifts')}>
+                  <thead className="border-b border-border text-xs uppercase text-muted">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:workShiftFields.title')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:workShiftFields.status')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:workShiftFields.startsAt')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:workShiftFields.endsAt')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:workShiftFields.sourceType')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {workShifts.map((shift) => (
+                      <tr key={shift.workShiftId} data-testid="self-service-work-shift-row">
+                        <td className="px-3 py-3 font-medium text-text">{shift.title}</td>
+                        <td className="px-3 py-3">
+                          <StatusBadge
+                            label={t(`self-service:workShiftStatus.${shift.status}`)}
+                            status={shift.status}
+                            toneByStatus={statusTone}
+                          />
+                        </td>
+                        <td className="px-3 py-3">{formatBusinessTimestamp(shift.startsAt)}</td>
+                        <td className="px-3 py-3">{formatBusinessTimestamp(shift.endsAt)}</td>
+                        <td className="px-3 py-3">
+                          {t(`self-service:workShiftSourceType.${shift.sourceType}`)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : null}
           </section>

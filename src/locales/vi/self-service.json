@@ -14,7 +14,7 @@
     },
     "workShifts": {
       "title": "Ca làm của tôi",
-      "summary": "Chỗ giữ cho màn hình lịch làm việc nhân sự sau này."
+      "summary": "Xem chính thức các ca làm của bạn ở chế độ chỉ đọc."
     },
     "kpi": {
       "title": "KPI của tôi",
@@ -44,12 +44,27 @@
     "talentDisplayName": "Tên hiển thị Talent",
     "performanceAlias": "Nghệ danh trình diễn"
   },
+  "workShiftFields": {
+    "title": "Ca làm",
+    "status": "Trạng thái",
+    "startsAt": "Bắt đầu",
+    "endsAt": "Kết thúc",
+    "sourceType": "Nguồn"
+  },
+  "tables": {
+    "workShifts": "Ca làm của tôi"
+  },
   "status": {
     "available": "Có sẵn",
-    "comingSoon": "Sắp có"
+    "comingSoon": "Sắp có",
+    "readOnly": "Chỉ đọc"
   },
   "values": {
     "notAvailable": "Chưa có"
+  },
+  "empty": {
+    "workShiftsTitle": "Chưa có ca làm",
+    "workShiftsMessage": "Chưa có ca chính thức nào cho hồ sơ của bạn."
   },
   "employmentStatus": {
     "ACTIVE": "Đang làm",
@@ -64,8 +79,19 @@
     "DISABLED": "Đã vô hiệu",
     "ARCHIVED": "Đã lưu trữ"
   },
+  "workShiftStatus": {
+    "ACTIVE": "Đang hiệu lực",
+    "CANCELLED": "Đã hủy",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "workShiftSourceType": {
+    "MANUAL": "Thủ công",
+    "ROSTER_GENERATED": "Tạo từ bảng phân ca"
+  },
   "errors": {
     "currentPersonTitle": "Chưa liên kết Hồ sơ nhân sự",
-    "currentPersonMessage": "Tài khoản đã đăng nhập nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ."
+    "currentPersonMessage": "Tài khoản đã đăng nhập nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ.",
+    "workShiftsTitle": "Chưa thể tải ca làm",
+    "workShiftsMessage": "Không thể tải danh sách ca làm của bạn."
   }
 }

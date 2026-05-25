@@ -14,7 +14,7 @@
     },
     "workShifts": {
       "title": "我的班次",
-      "summary": "后续员工排班界面的占位。"
+      "summary": "只读查看你的正式班次。"
     },
     "kpi": {
       "title": "我的 KPI",
@@ -44,12 +44,27 @@
     "talentDisplayName": "Talent 显示名",
     "performanceAlias": "表演别名"
   },
+  "workShiftFields": {
+    "title": "班次",
+    "status": "状态",
+    "startsAt": "开始",
+    "endsAt": "结束",
+    "sourceType": "来源"
+  },
+  "tables": {
+    "workShifts": "我的班次"
+  },
   "status": {
     "available": "可用",
-    "comingSoon": "即将推出"
+    "comingSoon": "即将推出",
+    "readOnly": "只读"
   },
   "values": {
     "notAvailable": "不可用"
+  },
+  "empty": {
+    "workShiftsTitle": "暂无班次",
+    "workShiftsMessage": "你的档案暂无可显示的正式班次。"
   },
   "employmentStatus": {
     "ACTIVE": "在职",
@@ -64,8 +79,19 @@
     "DISABLED": "已禁用",
     "ARCHIVED": "已归档"
   },
+  "workShiftStatus": {
+    "ACTIVE": "有效",
+    "CANCELLED": "已取消",
+    "ARCHIVED": "已归档"
+  },
+  "workShiftSourceType": {
+    "MANUAL": "手动",
+    "ROSTER_GENERATED": "由排班生成"
+  },
   "errors": {
     "currentPersonTitle": "未关联雇佣档案",
-    "currentPersonMessage": "账号已认证，但尚未关联可用于自助服务的员工档案。"
+    "currentPersonMessage": "账号已认证，但尚未关联可用于自助服务的员工档案。",
+    "workShiftsTitle": "无法载入班次",
+    "workShiftsMessage": "无法载入你的班次。"
   }
 }

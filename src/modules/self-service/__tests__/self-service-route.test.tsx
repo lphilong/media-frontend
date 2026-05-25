@@ -61,6 +61,34 @@ describe('/self-service route', () => {
     expect(screen.queryByTestId('nav-link-employment-profiles')).not.toBeInTheDocument();
   });
 
+  it('renders read-only My Work Shifts from the self-service endpoint only', async () => {
+    let adminWorkShiftCalls = 0;
+
+    server.use(
+      http.get('*/admin/work-shifts*', () => {
+        adminWorkShiftCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByRole('heading', { name: 'My Work Shifts' })).toBeInTheDocument();
+    expect(await screen.findByText('Studio filming shift')).toBeInTheDocument();
+    expect(await screen.findByText('Content review shift')).toBeInTheDocument();
+    expect(await screen.findByText('Roster generated')).toBeInTheDocument();
+    expect(await screen.findByText('Manual')).toBeInTheDocument();
+    expect(screen.getAllByTestId('self-service-work-shift-row')).toHaveLength(2);
+    expect(document.body.textContent ?? '').not.toContain('Other Staff');
+    expect(document.body.textContent ?? '').not.toContain('subjectEmploymentProfileId');
+    expect(document.body.textContent ?? '').not.toContain('studioResourceIds');
+    expect(document.body.textContent ?? '').not.toContain('internal admin note');
+    expect(screen.queryByRole('button', { name: /create|edit|cancel|request|approve/i })).toBeNull();
+    await waitFor(() => {
+      expect(adminWorkShiftCalls).toBe(0);
+    });
+  });
+
   it('does not render forbidden person, HR, Auth0, password setup, or role data', async () => {
     await renderRoute('/self-service');
 
@@ -113,6 +141,15 @@ describe('/self-service route', () => {
     });
     expect(document.body.textContent ?? '').not.toContain('PENDING_APPROVAL');
     expect(document.body.textContent ?? '').not.toContain('legacy Active');
+  });
+
+  it('keeps Account as read-only summary only without password or profile mutation flows', async () => {
+    await renderRoute('/self-service');
+
+    expect(await screen.findByText('mina.staff@example.test')).toBeInTheDocument();
+    expect(await screen.findByTestId('self-service-nav-account')).toHaveTextContent('Coming soon');
+    expect(screen.queryByRole('button', { name: /password|change|edit|save|setup/i })).toBeNull();
+    expect(document.body.textContent ?? '').not.toMatch(/setupUrl|ticketUrl|resetUrl|temporaryPassword/i);
   });
 
   it('keeps TALENT_STAFF_SELF denied from People Hub admin EmploymentProfile route', async () => {

@@ -18,6 +18,15 @@ type SelfServiceCurrentPerson = {
   timezone?: string;
 };
 
+type SelfServiceWorkShift = {
+  workShiftId: string;
+  title: string;
+  status: 'ACTIVE' | 'CANCELLED' | 'ARCHIVED';
+  startsAt: number;
+  endsAt: number;
+  sourceType: 'MANUAL' | 'ROSTER_GENERATED';
+};
+
 const defaultSelfServiceCurrentPerson: SelfServiceCurrentPerson = {
   employmentProfileId: 'ep-self',
   employeeCode: 'EP-SELF-001',
@@ -36,16 +45,39 @@ const defaultSelfServiceCurrentPerson: SelfServiceCurrentPerson = {
   timezone: 'Asia/Saigon',
 };
 
+const defaultSelfServiceWorkShifts: SelfServiceWorkShift[] = [
+  {
+    workShiftId: 'shift-self-001',
+    title: 'Studio filming shift',
+    status: 'ACTIVE',
+    startsAt: Date.UTC(2026, 4, 26, 2, 0),
+    endsAt: Date.UTC(2026, 4, 26, 6, 0),
+    sourceType: 'ROSTER_GENERATED',
+  },
+  {
+    workShiftId: 'shift-self-002',
+    title: 'Content review shift',
+    status: 'CANCELLED',
+    startsAt: Date.UTC(2026, 4, 27, 3, 0),
+    endsAt: Date.UTC(2026, 4, 27, 5, 0),
+    sourceType: 'MANUAL',
+  },
+];
+
 let selfServiceCurrentPerson: SelfServiceCurrentPerson = {
   ...defaultSelfServiceCurrentPerson,
   linkedInternalTalent: { ...defaultSelfServiceCurrentPerson.linkedInternalTalent! },
 };
+let selfServiceWorkShifts: SelfServiceWorkShift[] = defaultSelfServiceWorkShifts.map((shift) => ({
+  ...shift,
+}));
 
 export const resetSelfServiceMockData = (): void => {
   selfServiceCurrentPerson = {
     ...defaultSelfServiceCurrentPerson,
     linkedInternalTalent: { ...defaultSelfServiceCurrentPerson.linkedInternalTalent! },
   };
+  selfServiceWorkShifts = defaultSelfServiceWorkShifts.map((shift) => ({ ...shift }));
 };
 
 export const setMockSelfServiceCurrentPerson = (value: SelfServiceCurrentPerson): void => {
@@ -57,10 +89,19 @@ export const setMockSelfServiceCurrentPerson = (value: SelfServiceCurrentPerson)
   };
 };
 
+export const setMockSelfServiceWorkShifts = (value: SelfServiceWorkShift[]): void => {
+  selfServiceWorkShifts = value.map((shift) => ({ ...shift }));
+};
+
 export const selfServiceHandlers = [
   http.get('*/self-service/me', () => {
     return HttpResponse.json({
       data: selfServiceCurrentPerson,
+    });
+  }),
+  http.get('*/self-service/work-shifts', () => {
+    return HttpResponse.json({
+      data: selfServiceWorkShifts,
     });
   }),
 ];

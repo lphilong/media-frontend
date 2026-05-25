@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { apiRequest } from '@shared/api';
 
 export const SELF_SERVICE_CURRENT_PERSON_QUERY_KEY = ['self-service', 'current-person'] as const;
+export const SELF_SERVICE_WORK_SHIFTS_QUERY_KEY = ['self-service', 'work-shifts'] as const;
 
 const linkedInternalTalentSchema = z
   .object({
@@ -37,6 +38,31 @@ const selfServiceCurrentPersonResponseSchema = z
 
 export type SelfServiceCurrentPerson = z.infer<typeof selfServiceCurrentPersonSchema>;
 
+const selfServiceWorkShiftSchema = z
+  .object({
+    workShiftId: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    status: z.enum(['ACTIVE', 'CANCELLED', 'ARCHIVED']),
+    startsAt: z.number().int(),
+    endsAt: z.number().int(),
+    sourceType: z.enum(['MANUAL', 'ROSTER_GENERATED']),
+  })
+  .strict();
+
+const selfServiceWorkShiftsResponseSchema = z
+  .object({
+    data: z.array(selfServiceWorkShiftSchema),
+    meta: z
+      .object({
+        nextCursor: z.string().trim().min(1).optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+export type SelfServiceWorkShift = z.infer<typeof selfServiceWorkShiftSchema>;
+
 export const fetchSelfServiceCurrentPerson = async (): Promise<SelfServiceCurrentPerson> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
@@ -50,5 +76,22 @@ export const useSelfServiceCurrentPerson = () =>
   useQuery({
     queryKey: SELF_SERVICE_CURRENT_PERSON_QUERY_KEY,
     queryFn: fetchSelfServiceCurrentPerson,
+    retry: false,
+  });
+
+export const fetchSelfServiceWorkShifts = async (): Promise<SelfServiceWorkShift[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/self-service/work-shifts',
+  });
+
+  return selfServiceWorkShiftsResponseSchema.parse(response).data;
+};
+
+export const useSelfServiceWorkShifts = (enabled = true) =>
+  useQuery({
+    queryKey: SELF_SERVICE_WORK_SHIFTS_QUERY_KEY,
+    queryFn: fetchSelfServiceWorkShifts,
+    enabled,
     retry: false,
   });
