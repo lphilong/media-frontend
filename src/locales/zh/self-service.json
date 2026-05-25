@@ -22,7 +22,7 @@
     },
     "events": {
       "title": "我的活动",
-      "summary": "仅占位；这里不加载活动数据。"
+      "summary": "只读查看直接分配给你的活动。"
     },
     "account": {
       "title": "账号",
@@ -51,8 +51,18 @@
     "endsAt": "结束",
     "sourceType": "来源"
   },
+  "eventFields": {
+    "eventCode": "活动编号",
+    "title": "活动",
+    "status": "状态",
+    "startsAt": "开始",
+    "endsAt": "结束",
+    "assignmentKind": "分配",
+    "assignmentStatus": "分配状态"
+  },
   "tables": {
-    "workShifts": "我的班次"
+    "workShifts": "我的班次",
+    "events": "我的活动"
   },
   "status": {
     "available": "可用",
@@ -64,7 +74,9 @@
   },
   "empty": {
     "workShiftsTitle": "暂无班次",
-    "workShiftsMessage": "你的档案暂无可显示的正式班次。"
+    "workShiftsMessage": "你的档案暂无可显示的正式班次。",
+    "eventsTitle": "暂无活动",
+    "eventsMessage": "你的档案暂无直接分配的活动。"
   },
   "employmentStatus": {
     "ACTIVE": "在职",
@@ -84,6 +96,21 @@
     "CANCELLED": "已取消",
     "ARCHIVED": "已归档"
   },
+  "eventStatus": {
+    "SCHEDULED": "已排期",
+    "IN_PROGRESS": "进行中",
+    "COMPLETED": "已完成",
+    "CANCELLED": "已取消",
+    "ARCHIVED": "已归档"
+  },
+  "eventAssignmentKind": {
+    "TALENT": "Talent",
+    "EMPLOYMENT_PROFILE": "雇佣档案"
+  },
+  "eventAssignmentStatus": {
+    "ACTIVE": "有效",
+    "REMOVED": "已移除"
+  },
   "workShiftSourceType": {
     "MANUAL": "手动",
     "ROSTER_GENERATED": "由排班生成"
@@ -92,6 +119,8 @@
     "currentPersonTitle": "未关联雇佣档案",
     "currentPersonMessage": "账号已认证，但尚未关联可用于自助服务的员工档案。",
     "workShiftsTitle": "无法载入班次",
-    "workShiftsMessage": "无法载入你的班次。"
+    "workShiftsMessage": "无法载入你的班次。",
+    "eventsTitle": "无法载入活动",
+    "eventsMessage": "无法载入你的活动。"
   }
 }

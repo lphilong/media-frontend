@@ -22,7 +22,7 @@
     },
     "events": {
       "title": "My Events",
-      "summary": "Placeholder only; event data is not loaded here."
+      "summary": "Read-only view of your directly assigned events."
     },
     "account": {
       "title": "Account",
@@ -51,8 +51,18 @@
     "endsAt": "Ends",
     "sourceType": "Source"
   },
+  "eventFields": {
+    "eventCode": "Event code",
+    "title": "Event",
+    "status": "Status",
+    "startsAt": "Starts",
+    "endsAt": "Ends",
+    "assignmentKind": "Assignment",
+    "assignmentStatus": "Assignment status"
+  },
   "tables": {
-    "workShifts": "My Work Shifts"
+    "workShifts": "My Work Shifts",
+    "events": "My Events"
   },
   "status": {
     "available": "Available",
@@ -64,7 +74,9 @@
   },
   "empty": {
     "workShiftsTitle": "No work shifts",
-    "workShiftsMessage": "No official shifts are available for your profile yet."
+    "workShiftsMessage": "No official shifts are available for your profile yet.",
+    "eventsTitle": "No events",
+    "eventsMessage": "No directly assigned events are available for your profile yet."
   },
   "employmentStatus": {
     "ACTIVE": "Active",
@@ -84,6 +96,21 @@
     "CANCELLED": "Cancelled",
     "ARCHIVED": "Archived"
   },
+  "eventStatus": {
+    "SCHEDULED": "Scheduled",
+    "IN_PROGRESS": "In progress",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled",
+    "ARCHIVED": "Archived"
+  },
+  "eventAssignmentKind": {
+    "TALENT": "Talent",
+    "EMPLOYMENT_PROFILE": "Employment Profile"
+  },
+  "eventAssignmentStatus": {
+    "ACTIVE": "Active",
+    "REMOVED": "Removed"
+  },
   "workShiftSourceType": {
     "MANUAL": "Manual",
     "ROSTER_GENERATED": "Roster generated"
@@ -92,6 +119,8 @@
     "currentPersonTitle": "No linked Employment Profile",
     "currentPersonMessage": "Your account is authenticated, but no staff profile is linked for self-service yet.",
     "workShiftsTitle": "Work shifts unavailable",
-    "workShiftsMessage": "Your work shifts could not be loaded."
+    "workShiftsMessage": "Your work shifts could not be loaded.",
+    "eventsTitle": "Events unavailable",
+    "eventsMessage": "Your events could not be loaded."
   }
 }

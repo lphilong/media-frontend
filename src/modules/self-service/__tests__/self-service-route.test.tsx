@@ -1,12 +1,15 @@
 import i18n from 'i18next';
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 
 import { appRoutes } from '@app/router/router';
 import { setLocale } from '@shared/i18n/i18n';
 import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
-import { resetSelfServiceMockData } from '@test/msw/self-service-handlers';
+import {
+  resetSelfServiceMockData,
+  setMockSelfServiceEvents,
+} from '@test/msw/self-service-handlers';
 import { server } from '@test/msw/server';
 import { renderAppWithProviders } from '@test/render-app-route';
 
@@ -33,10 +36,12 @@ const staffCapabilities = (): MockCapabilities => ({
   generatedAt: '2026-05-24T00:00:00.000Z',
 });
 
-const renderRoute = async (path: string): Promise<void> => {
+const renderRoute = async (path: string, setup?: () => void): Promise<void> => {
+  cleanup();
   await setLocale('en');
   resetSelfServiceMockData();
   setMockCurrentActorCapabilities(staffCapabilities());
+  setup?.();
 
   const router = createMemoryRouter(appRoutes, {
     initialEntries: [path],
@@ -83,7 +88,9 @@ describe('/self-service route', () => {
     expect(document.body.textContent ?? '').not.toContain('subjectEmploymentProfileId');
     expect(document.body.textContent ?? '').not.toContain('studioResourceIds');
     expect(document.body.textContent ?? '').not.toContain('internal admin note');
-    expect(screen.queryByRole('button', { name: /create|edit|cancel|request|approve/i })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /create|edit|cancel|request|approve/i }),
+    ).toBeNull();
     await waitFor(() => {
       expect(adminWorkShiftCalls).toBe(0);
     });
@@ -116,13 +123,31 @@ describe('/self-service route', () => {
     }
   });
 
-  it('keeps My Events and My KPI as placeholders without loading event or KPI APIs', async () => {
-    let eventCalls = 0;
+  it('renders read-only My Events from the self-service endpoint only', async () => {
+    let selfServiceEventCalls = 0;
+    let adminEventCalls = 0;
     let kpiCalls = 0;
 
     server.use(
-      http.get('*/admin/events', () => {
-        eventCalls += 1;
+      http.get('*/self-service/events', () => {
+        selfServiceEventCalls += 1;
+        return HttpResponse.json({
+          data: [
+            {
+              eventId: 'event-self-talent',
+              eventCode: 'EVT-SELF-TAL',
+              title: 'Creator livestream event',
+              status: 'SCHEDULED',
+              startsAt: Date.UTC(2026, 4, 28, 2, 0),
+              endsAt: Date.UTC(2026, 4, 28, 4, 0),
+              ownAssignmentKind: 'TALENT',
+              ownAssignmentStatus: 'ACTIVE',
+            },
+          ],
+        });
+      }),
+      http.get('*/admin/events*', () => {
+        adminEventCalls += 1;
         return HttpResponse.json({ data: [] });
       }),
       http.get('*/admin/kpi*', () => {
@@ -133,14 +158,80 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
-    expect(await screen.findByTestId('self-service-nav-events')).toHaveTextContent('Coming soon');
+    expect(await screen.findByTestId('self-service-nav-events')).toHaveTextContent('Available');
     expect(await screen.findByTestId('self-service-nav-kpi')).toHaveTextContent('Coming soon');
+    expect(await screen.findByRole('heading', { name: 'My Events' })).toBeInTheDocument();
+    expect(await screen.findByText('EVT-SELF-TAL')).toBeInTheDocument();
+    expect(await screen.findByText('Creator livestream event')).toBeInTheDocument();
+    expect(await screen.findByText('Talent')).toBeInTheDocument();
+    expect(screen.getAllByTestId('self-service-event-row')).toHaveLength(1);
     await waitFor(() => {
-      expect(eventCalls).toBe(0);
+      expect(selfServiceEventCalls).toBe(1);
+      expect(adminEventCalls).toBe(0);
       expect(kpiCalls).toBe(0);
     });
-    expect(document.body.textContent ?? '').not.toContain('PENDING_APPROVAL');
-    expect(document.body.textContent ?? '').not.toContain('legacy Active');
+    const bodyText = document.body.textContent ?? '';
+    for (const forbidden of [
+      'Other staff event',
+      'TalentGroup-only event',
+      'External Talent event',
+      'Removed assignment event',
+      'full roster',
+      'participantRoster',
+      'Internal production note',
+      'client budget',
+      'commercial confidential',
+      'platform-secret-account',
+      'studioResourceIds',
+      'externalRef',
+      'manager only note',
+      'PENDING_APPROVAL',
+      'legacy Active',
+    ]) {
+      expect(bodyText).not.toContain(forbidden);
+    }
+    expect(
+      screen.queryByRole('button', {
+        name: /create|edit|delete|assign|accept|decline|check[- ]?in|request|change|start|complete|cancel/i,
+      }),
+    ).toBeNull();
+  });
+
+  it('renders My Events empty, loading, and error states safely', async () => {
+    await renderRoute('/self-service', () => setMockSelfServiceEvents([]));
+
+    expect(await screen.findByText('No events')).toBeInTheDocument();
+    expect(
+      await screen.findByText('No directly assigned events are available for your profile yet.'),
+    ).toBeInTheDocument();
+
+    let resolveEvents: () => void = () => {};
+    const pendingEvents = new Promise<void>((resolve) => {
+      resolveEvents = resolve;
+    });
+    server.use(
+      http.get('*/self-service/events', async () => {
+        await pendingEvents;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/self-service');
+    expect(await screen.findByTestId('self-service-events-loading')).toBeInTheDocument();
+    resolveEvents();
+    await waitFor(() => {
+      expect(screen.queryByTestId('self-service-events-loading')).not.toBeInTheDocument();
+    });
+
+    server.use(
+      http.get('*/self-service/events', () => {
+        return HttpResponse.json({ error: { code: 'TEST_ERROR' } }, { status: 500 });
+      }),
+    );
+
+    await renderRoute('/self-service');
+    expect(await screen.findByText('Events unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Your events could not be loaded.')).toBeInTheDocument();
   });
 
   it('keeps Account as read-only summary only without password or profile mutation flows', async () => {
@@ -149,7 +240,9 @@ describe('/self-service route', () => {
     expect(await screen.findByText('mina.staff@example.test')).toBeInTheDocument();
     expect(await screen.findByTestId('self-service-nav-account')).toHaveTextContent('Coming soon');
     expect(screen.queryByRole('button', { name: /password|change|edit|save|setup/i })).toBeNull();
-    expect(document.body.textContent ?? '').not.toMatch(/setupUrl|ticketUrl|resetUrl|temporaryPassword/i);
+    expect(document.body.textContent ?? '').not.toMatch(
+      /setupUrl|ticketUrl|resetUrl|temporaryPassword/i,
+    );
   });
 
   it('keeps TALENT_STAFF_SELF denied from People Hub admin EmploymentProfile route', async () => {
@@ -157,5 +250,12 @@ describe('/self-service route', () => {
 
     expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
     expect(screen.queryByText('People Operations Hub')).not.toBeInTheDocument();
+  });
+
+  it('keeps TALENT_STAFF_SELF denied from the admin Event Assignment route', async () => {
+    await renderRoute('/events');
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('Event Assignment')).not.toBeInTheDocument();
   });
 });

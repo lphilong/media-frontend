@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   useSelfServiceCurrentPerson,
+  useSelfServiceEvents,
   useSelfServiceWorkShifts,
 } from '@modules/self-service/api/self-service.api';
 import {
@@ -33,7 +34,7 @@ const navCards: NavCard[] = [
   { id: 'profile', icon: IdCard, statusKey: 'self-service:status.available' },
   { id: 'workShifts', icon: CalendarDays, statusKey: 'self-service:status.available' },
   { id: 'kpi', icon: ChartNoAxesColumnIncreasing, statusKey: 'self-service:status.comingSoon' },
-  { id: 'events', icon: BadgeCheck, statusKey: 'self-service:status.comingSoon' },
+  { id: 'events', icon: BadgeCheck, statusKey: 'self-service:status.available' },
   { id: 'account', icon: UserCog, statusKey: 'self-service:status.comingSoon' },
 ];
 
@@ -46,7 +47,13 @@ const statusTone = {
   PENDING: 'warning',
   DISABLED: 'danger',
   LINKED: 'success',
+  SCHEDULED: 'info',
+  IN_PROGRESS: 'warning',
+  COMPLETED: 'success',
   CANCELLED: 'danger',
+  REMOVED: 'muted',
+  EMPLOYMENT_PROFILE: 'info',
+  TALENT: 'success',
 } as const;
 
 const emptyValue = (value: string | null | undefined, fallback: string): string =>
@@ -58,6 +65,8 @@ export const SelfServicePage = (): JSX.Element => {
   const currentPerson = currentPersonQuery.data;
   const workShiftsQuery = useSelfServiceWorkShifts(currentPersonQuery.isSuccess);
   const workShifts = workShiftsQuery.data ?? [];
+  const eventsQuery = useSelfServiceEvents(currentPersonQuery.isSuccess);
+  const events = eventsQuery.data ?? [];
   const notAvailable = t('self-service:values.notAvailable');
 
   return (
@@ -248,7 +257,10 @@ export const SelfServicePage = (): JSX.Element => {
 
             {workShifts.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm" aria-label={t('self-service:tables.workShifts')}>
+                <table
+                  className="min-w-full text-left text-sm"
+                  aria-label={t('self-service:tables.workShifts')}
+                >
                   <thead className="border-b border-border text-xs uppercase text-muted">
                     <tr>
                       <th className="px-3 py-2 font-medium">
@@ -283,6 +295,107 @@ export const SelfServicePage = (): JSX.Element => {
                         <td className="px-3 py-3">{formatBusinessTimestamp(shift.endsAt)}</td>
                         <td className="px-3 py-3">
                           {t(`self-service:workShiftSourceType.${shift.sourceType}`)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {currentPerson ? (
+          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">{t('self-service:sections.events.title')}</h2>
+                <p className="text-sm text-muted">{t('self-service:sections.events.summary')}</p>
+              </div>
+              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
+            </div>
+
+            {eventsQuery.isLoading ? (
+              <div data-testid="self-service-events-loading">
+                <LoadingState lines={4} />
+              </div>
+            ) : null}
+
+            {eventsQuery.isError ? (
+              <ErrorState
+                title={t('self-service:errors.eventsTitle')}
+                message={t('self-service:errors.eventsMessage')}
+              />
+            ) : null}
+
+            {!eventsQuery.isLoading && !eventsQuery.isError && events.length === 0 ? (
+              <EmptyState
+                title={t('self-service:empty.eventsTitle')}
+                message={t('self-service:empty.eventsMessage')}
+              />
+            ) : null}
+
+            {events.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table
+                  className="min-w-full text-left text-sm"
+                  aria-label={t('self-service:tables.events')}
+                >
+                  <thead className="border-b border-border text-xs uppercase text-muted">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:eventFields.eventCode')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:eventFields.title')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:eventFields.status')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:eventFields.startsAt')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:eventFields.endsAt')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:eventFields.assignmentKind')}
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        {t('self-service:eventFields.assignmentStatus')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {events.map((event) => (
+                      <tr key={event.eventId} data-testid="self-service-event-row">
+                        <td className="px-3 py-3 font-mono text-xs text-text">{event.eventCode}</td>
+                        <td className="px-3 py-3 font-medium text-text">{event.title}</td>
+                        <td className="px-3 py-3">
+                          <StatusBadge
+                            label={t(`self-service:eventStatus.${event.status}`)}
+                            status={event.status}
+                            toneByStatus={statusTone}
+                          />
+                        </td>
+                        <td className="px-3 py-3">{formatBusinessTimestamp(event.startsAt)}</td>
+                        <td className="px-3 py-3">{formatBusinessTimestamp(event.endsAt)}</td>
+                        <td className="px-3 py-3">
+                          <StatusBadge
+                            label={t(`self-service:eventAssignmentKind.${event.ownAssignmentKind}`)}
+                            status={event.ownAssignmentKind}
+                            toneByStatus={statusTone}
+                            uppercase={false}
+                          />
+                        </td>
+                        <td className="px-3 py-3">
+                          <StatusBadge
+                            label={t(
+                              `self-service:eventAssignmentStatus.${event.ownAssignmentStatus}`,
+                            )}
+                            status={event.ownAssignmentStatus}
+                            toneByStatus={statusTone}
+                          />
                         </td>
                       </tr>
                     ))}

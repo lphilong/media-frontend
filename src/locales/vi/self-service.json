@@ -22,7 +22,7 @@
     },
     "events": {
       "title": "Sự kiện của tôi",
-      "summary": "Chỉ là chỗ giữ; không tải dữ liệu sự kiện tại đây."
+      "summary": "Xem các sự kiện được phân công trực tiếp cho bạn ở chế độ chỉ đọc."
     },
     "account": {
       "title": "Tài khoản",
@@ -51,8 +51,18 @@
     "endsAt": "Kết thúc",
     "sourceType": "Nguồn"
   },
+  "eventFields": {
+    "eventCode": "Mã sự kiện",
+    "title": "Sự kiện",
+    "status": "Trạng thái",
+    "startsAt": "Bắt đầu",
+    "endsAt": "Kết thúc",
+    "assignmentKind": "Phân công",
+    "assignmentStatus": "Trạng thái phân công"
+  },
   "tables": {
-    "workShifts": "Ca làm của tôi"
+    "workShifts": "Ca làm của tôi",
+    "events": "Sự kiện của tôi"
   },
   "status": {
     "available": "Có sẵn",
@@ -64,7 +74,9 @@
   },
   "empty": {
     "workShiftsTitle": "Chưa có ca làm",
-    "workShiftsMessage": "Chưa có ca chính thức nào cho hồ sơ của bạn."
+    "workShiftsMessage": "Chưa có ca chính thức nào cho hồ sơ của bạn.",
+    "eventsTitle": "Chưa có sự kiện",
+    "eventsMessage": "Chưa có sự kiện được phân công trực tiếp cho hồ sơ của bạn."
   },
   "employmentStatus": {
     "ACTIVE": "Đang làm",
@@ -84,6 +96,21 @@
     "CANCELLED": "Đã hủy",
     "ARCHIVED": "Đã lưu trữ"
   },
+  "eventStatus": {
+    "SCHEDULED": "Đã lên lịch",
+    "IN_PROGRESS": "Đang diễn ra",
+    "COMPLETED": "Hoàn tất",
+    "CANCELLED": "Đã hủy",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "eventAssignmentKind": {
+    "TALENT": "Talent",
+    "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự"
+  },
+  "eventAssignmentStatus": {
+    "ACTIVE": "Đang hiệu lực",
+    "REMOVED": "Đã gỡ"
+  },
   "workShiftSourceType": {
     "MANUAL": "Thủ công",
     "ROSTER_GENERATED": "Tạo từ bảng phân ca"
@@ -92,6 +119,8 @@
     "currentPersonTitle": "Chưa liên kết Hồ sơ nhân sự",
     "currentPersonMessage": "Tài khoản đã đăng nhập nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ.",
     "workShiftsTitle": "Chưa thể tải ca làm",
-    "workShiftsMessage": "Không thể tải danh sách ca làm của bạn."
+    "workShiftsMessage": "Không thể tải danh sách ca làm của bạn.",
+    "eventsTitle": "Chưa thể tải sự kiện",
+    "eventsMessage": "Không thể tải danh sách sự kiện của bạn."
   }
 }
