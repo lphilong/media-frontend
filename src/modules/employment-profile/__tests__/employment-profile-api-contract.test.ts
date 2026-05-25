@@ -55,6 +55,8 @@ describe('Employment Profile API contract compatibility', () => {
   it('accepts numeric UTC-midnight employment dates in detail responses', async () => {
     const employmentStartDate = Date.UTC(2026, 0, 1);
     const employmentEndDate = Date.UTC(2026, 3, 22);
+    const hiredAt = Date.UTC(2026, 0, 2);
+    const onboardedAt = Date.UTC(2026, 0, 8);
 
     server.use(
       http.get('*/admin/employment-profiles/:employmentProfileId', () => {
@@ -70,11 +72,39 @@ describe('Employment Profile API contract compatibility', () => {
             externalRef: null,
             orgUnitId: 'ou-sales',
             managerEmploymentProfileId: null,
+            recruiterEmploymentProfileId: 'ep-recruiter',
+            recruiterEmploymentProfileRef: {
+              id: 'ep-recruiter',
+              code: 'EP-REC',
+              displayName: 'Recruiter Display',
+              name: 'Recruiter Legal',
+              status: 'ACTIVE',
+            },
+            hrOwnerEmploymentProfileId: 'ep-hr',
+            hrOwnerEmploymentProfileRef: {
+              id: 'ep-hr',
+              code: 'EP-HR',
+              displayName: 'HR Display',
+              name: 'HR Legal',
+              status: 'ACTIVE',
+            },
+            onboardingOwnerEmploymentProfileId: 'ep-onboarding',
+            onboardingOwnerEmploymentProfileRef: {
+              id: 'ep-onboarding',
+              code: 'EP-ONB',
+              displayName: 'Onboarding Display',
+              name: 'Onboarding Legal',
+              status: 'ACTIVE',
+            },
+            sourcedByEmploymentProfileId: null,
+            sourcedByEmploymentProfileRef: null,
             linkedUserId: null,
             employmentStatus: 'TERMINATED',
             contractStatus: 'TERMINATED',
             employmentStartDate,
             employmentEndDate,
+            hiredAt,
+            onboardedAt,
             createdAt: Date.UTC(2026, 0, 1, 1),
             updatedAt: Date.UTC(2026, 3, 22, 1),
           },
@@ -85,6 +115,13 @@ describe('Employment Profile API contract compatibility', () => {
     await expect(fetchEmploymentProfileDetail('ep-001')).resolves.toMatchObject({
       employmentStartDate,
       employmentEndDate,
+      recruiterEmploymentProfileId: 'ep-recruiter',
+      recruiterEmploymentProfileRef: expect.objectContaining({
+        displayName: 'Recruiter Display',
+      }),
+      sourcedByEmploymentProfileId: null,
+      hiredAt,
+      onboardedAt,
     });
   });
 

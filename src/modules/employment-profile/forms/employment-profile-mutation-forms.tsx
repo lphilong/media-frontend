@@ -48,6 +48,12 @@ type EmploymentProfileEditSurfaceProps = BaseMutationSurfaceProps & {
     displayName: string;
     employmentKind: string;
     jobTitle: string;
+    recruiterEmploymentProfileId?: string | null;
+    hrOwnerEmploymentProfileId?: string | null;
+    onboardingOwnerEmploymentProfileId?: string | null;
+    sourcedByEmploymentProfileId?: string | null;
+    hiredAt?: number | null;
+    onboardedAt?: number | null;
     externalRef?: string | null;
     titleDescription?: string | null;
   };
@@ -121,33 +127,100 @@ const isCanonicalDate = (value: string): boolean => {
   );
 };
 
-const employmentKindValues = ['EMPLOYEE', 'CONTRACTOR', 'PART_TIME', 'INTERN'] as const;
+const formatDateInputValue = (value?: number | null): string => {
+  if (!value) {
+    return '';
+  }
 
-const createEmploymentCreateSchema = (requiredMessage: string, dateMessage: string) => {
-  return z.object({
-    legalName: z.string().trim().min(1, requiredMessage),
-    displayName: z.string().trim().min(1, requiredMessage),
-    employmentKind: z.enum(employmentKindValues, { required_error: requiredMessage }),
-    jobTitle: z.string().trim().min(1, requiredMessage),
-    orgUnitId: z.string().trim().min(1, requiredMessage),
-    contractStatus: z.enum(['NONE', 'PENDING_SIGNATURE', 'ACTIVE', 'EXPIRED', 'TERMINATED']),
-    employmentStartDate: z.string().trim().refine(isCanonicalDate, dateMessage),
-    managerEmploymentProfileId: z.string().trim().optional(),
-    linkedUserId: z.string().trim().optional(),
-    externalRef: z.string().trim().optional(),
-    titleDescription: z.string().trim().optional(),
-  });
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
 };
 
-const createEmploymentEditSchema = (requiredMessage: string) => {
-  return z.object({
-    legalName: z.string().trim().min(1, requiredMessage),
-    displayName: z.string().trim().min(1, requiredMessage),
-    employmentKind: z.enum(employmentKindValues, { required_error: requiredMessage }),
-    jobTitle: z.string().trim().min(1, requiredMessage),
-    externalRef: z.string().trim().optional(),
-    titleDescription: z.string().trim().optional(),
-  });
+const employmentKindValues = ['EMPLOYEE', 'CONTRACTOR', 'PART_TIME', 'INTERN'] as const;
+
+const optionalDateSchema = (dateMessage: string) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => !value || isCanonicalDate(value), dateMessage);
+
+const assertAttributionDateOrder = (
+  hiredAt: string | undefined,
+  onboardedAt: string | undefined,
+  message: string,
+  context: z.RefinementCtx,
+): void => {
+  if (hiredAt && onboardedAt && onboardedAt < hiredAt) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['onboardedAt'],
+      message,
+    });
+  }
+};
+
+const createEmploymentCreateSchema = (
+  requiredMessage: string,
+  dateMessage: string,
+  dateOrderMessage: string,
+) => {
+  return z
+    .object({
+      legalName: z.string().trim().min(1, requiredMessage),
+      displayName: z.string().trim().min(1, requiredMessage),
+      employmentKind: z.enum(employmentKindValues, { required_error: requiredMessage }),
+      jobTitle: z.string().trim().min(1, requiredMessage),
+      orgUnitId: z.string().trim().min(1, requiredMessage),
+      contractStatus: z.enum(['NONE', 'PENDING_SIGNATURE', 'ACTIVE', 'EXPIRED', 'TERMINATED']),
+      employmentStartDate: z.string().trim().refine(isCanonicalDate, dateMessage),
+      managerEmploymentProfileId: z.string().trim().optional(),
+      linkedUserId: z.string().trim().optional(),
+      recruiterEmploymentProfileId: z.string().trim().optional(),
+      hrOwnerEmploymentProfileId: z.string().trim().optional(),
+      onboardingOwnerEmploymentProfileId: z.string().trim().optional(),
+      sourcedByEmploymentProfileId: z.string().trim().optional(),
+      hiredAt: optionalDateSchema(dateMessage),
+      onboardedAt: optionalDateSchema(dateMessage),
+      externalRef: z.string().trim().optional(),
+      titleDescription: z.string().trim().optional(),
+    })
+    .superRefine((value, context) => {
+      assertAttributionDateOrder(value.hiredAt, value.onboardedAt, dateOrderMessage, context);
+    });
+};
+
+const createEmploymentEditSchema = (
+  requiredMessage: string,
+  dateMessage: string,
+  dateOrderMessage: string,
+) => {
+  return z
+    .object({
+      legalName: z.string().trim().min(1, requiredMessage),
+      displayName: z.string().trim().min(1, requiredMessage),
+      employmentKind: z.enum(employmentKindValues, { required_error: requiredMessage }),
+      jobTitle: z.string().trim().min(1, requiredMessage),
+      recruiterEmploymentProfileId: z.string().trim().optional(),
+      hrOwnerEmploymentProfileId: z.string().trim().optional(),
+      onboardingOwnerEmploymentProfileId: z.string().trim().optional(),
+      sourcedByEmploymentProfileId: z.string().trim().optional(),
+      hiredAt: optionalDateSchema(dateMessage),
+      onboardedAt: optionalDateSchema(dateMessage),
+      externalRef: z.string().trim().optional(),
+      titleDescription: z.string().trim().optional(),
+    })
+    .superRefine((value, context) => {
+      assertAttributionDateOrder(value.hiredAt, value.onboardedAt, dateOrderMessage, context);
+    });
 };
 
 const createOrgAssignmentSchema = (requiredMessage: string) => {
@@ -229,6 +302,12 @@ type EmploymentProfileCreateFormValues = {
   employmentStartDate: string;
   managerEmploymentProfileId: string;
   linkedUserId: string;
+  recruiterEmploymentProfileId: string;
+  hrOwnerEmploymentProfileId: string;
+  onboardingOwnerEmploymentProfileId: string;
+  sourcedByEmploymentProfileId: string;
+  hiredAt: string;
+  onboardedAt: string;
   externalRef: string;
   titleDescription: string;
 };
@@ -250,6 +329,12 @@ export const EmploymentProfileCreateSurface = ({
       employmentStartDate: '',
       managerEmploymentProfileId: '',
       linkedUserId: '',
+      recruiterEmploymentProfileId: '',
+      hrOwnerEmploymentProfileId: '',
+      onboardingOwnerEmploymentProfileId: '',
+      sourcedByEmploymentProfileId: '',
+      hiredAt: '',
+      onboardedAt: '',
       externalRef: '',
       titleDescription: '',
     },
@@ -260,6 +345,7 @@ export const EmploymentProfileCreateSurface = ({
       createEmploymentCreateSchema(
         t('employment-profile:validation.required'),
         t('employment-profile:validation.invalidDate'),
+        t('employment-profile:validation.onboardedBeforeHired'),
       ),
     [t],
   );
@@ -281,6 +367,14 @@ export const EmploymentProfileCreateSurface = ({
       employmentStartDate: parsed.data.employmentStartDate,
       managerEmploymentProfileId: toNullableText(parsed.data.managerEmploymentProfileId),
       linkedUserId: toNullableText(parsed.data.linkedUserId),
+      recruiterEmploymentProfileId: toNullableText(parsed.data.recruiterEmploymentProfileId),
+      hrOwnerEmploymentProfileId: toNullableText(parsed.data.hrOwnerEmploymentProfileId),
+      onboardingOwnerEmploymentProfileId: toNullableText(
+        parsed.data.onboardingOwnerEmploymentProfileId,
+      ),
+      sourcedByEmploymentProfileId: toNullableText(parsed.data.sourcedByEmploymentProfileId),
+      hiredAt: toNullableText(parsed.data.hiredAt),
+      onboardedAt: toNullableText(parsed.data.onboardedAt),
       externalRef: toNullableText(parsed.data.externalRef),
       titleDescription: toNullableText(parsed.data.titleDescription),
     });
@@ -358,6 +452,61 @@ export const EmploymentProfileCreateSurface = ({
             clearable
             clearLabel={t('employment-profile:actions.clearLinkedUser')}
           />
+          <div className="md:col-span-2">
+            <h3 className="text-sm font-semibold text-text">
+              {t('employment-profile:detail.hrAttributionTitle')}
+            </h3>
+          </div>
+          <ReferencePickerField
+            name="recruiterEmploymentProfileId"
+            label={t('employment-profile:fields.recruiterEmploymentProfileId')}
+            pickerId="employment-profile-recruiter"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.recruiterEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearAttribution')}
+          />
+          <ReferencePickerField
+            name="hrOwnerEmploymentProfileId"
+            label={t('employment-profile:fields.hrOwnerEmploymentProfileId')}
+            pickerId="employment-profile-hr-owner"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.hrOwnerEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearAttribution')}
+          />
+          <ReferencePickerField
+            name="onboardingOwnerEmploymentProfileId"
+            label={t('employment-profile:fields.onboardingOwnerEmploymentProfileId')}
+            pickerId="employment-profile-onboarding-owner"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.onboardingOwnerEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearAttribution')}
+          />
+          <ReferencePickerField
+            name="sourcedByEmploymentProfileId"
+            label={t('employment-profile:fields.sourcedByEmploymentProfileId')}
+            pickerId="employment-profile-sourced-by"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.sourcedByEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearAttribution')}
+          />
+          <TextInputField
+            name="hiredAt"
+            label={t('employment-profile:fields.hiredAt')}
+            type="date"
+          />
+          <TextInputField
+            name="onboardedAt"
+            label={t('employment-profile:fields.onboardedAt')}
+            type="date"
+          />
           <TextInputField
             name="externalRef"
             label={t('employment-profile:fields.externalRef')}
@@ -379,6 +528,12 @@ type EmploymentProfileEditFormValues = {
   displayName: string;
   employmentKind: string;
   jobTitle: string;
+  recruiterEmploymentProfileId: string;
+  hrOwnerEmploymentProfileId: string;
+  onboardingOwnerEmploymentProfileId: string;
+  sourcedByEmploymentProfileId: string;
+  hiredAt: string;
+  onboardedAt: string;
   externalRef: string;
   titleDescription: string;
 };
@@ -396,13 +551,24 @@ export const EmploymentProfileEditSurface = ({
       displayName: initialValues.displayName,
       employmentKind: initialValues.employmentKind,
       jobTitle: initialValues.jobTitle,
+      recruiterEmploymentProfileId: initialValues.recruiterEmploymentProfileId ?? '',
+      hrOwnerEmploymentProfileId: initialValues.hrOwnerEmploymentProfileId ?? '',
+      onboardingOwnerEmploymentProfileId: initialValues.onboardingOwnerEmploymentProfileId ?? '',
+      sourcedByEmploymentProfileId: initialValues.sourcedByEmploymentProfileId ?? '',
+      hiredAt: formatDateInputValue(initialValues.hiredAt),
+      onboardedAt: formatDateInputValue(initialValues.onboardedAt),
       externalRef: initialValues.externalRef ?? '',
       titleDescription: initialValues.titleDescription ?? '',
     },
   });
 
   const schema = useMemo(
-    () => createEmploymentEditSchema(t('employment-profile:validation.required')),
+    () =>
+      createEmploymentEditSchema(
+        t('employment-profile:validation.required'),
+        t('employment-profile:validation.invalidDate'),
+        t('employment-profile:validation.onboardedBeforeHired'),
+      ),
     [t],
   );
 
@@ -418,6 +584,14 @@ export const EmploymentProfileEditSurface = ({
       displayName: parsed.data.displayName,
       employmentKind: parsed.data.employmentKind,
       jobTitle: parsed.data.jobTitle,
+      recruiterEmploymentProfileId: toNullableText(parsed.data.recruiterEmploymentProfileId),
+      hrOwnerEmploymentProfileId: toNullableText(parsed.data.hrOwnerEmploymentProfileId),
+      onboardingOwnerEmploymentProfileId: toNullableText(
+        parsed.data.onboardingOwnerEmploymentProfileId,
+      ),
+      sourcedByEmploymentProfileId: toNullableText(parsed.data.sourcedByEmploymentProfileId),
+      hiredAt: toNullableText(parsed.data.hiredAt),
+      onboardedAt: toNullableText(parsed.data.onboardedAt),
       externalRef: toNullableText(parsed.data.externalRef),
       titleDescription: toNullableText(parsed.data.titleDescription),
     });
@@ -452,6 +626,61 @@ export const EmploymentProfileEditSurface = ({
             name="externalRef"
             label={t('employment-profile:fields.externalRef')}
             placeholder={t('employment-profile:placeholders.optional')}
+          />
+          <div className="md:col-span-2">
+            <h3 className="text-sm font-semibold text-text">
+              {t('employment-profile:detail.hrAttributionTitle')}
+            </h3>
+          </div>
+          <ReferencePickerField
+            name="recruiterEmploymentProfileId"
+            label={t('employment-profile:fields.recruiterEmploymentProfileId')}
+            pickerId="employment-profile-edit-recruiter"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.recruiterEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearAttribution')}
+          />
+          <ReferencePickerField
+            name="hrOwnerEmploymentProfileId"
+            label={t('employment-profile:fields.hrOwnerEmploymentProfileId')}
+            pickerId="employment-profile-edit-hr-owner"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.hrOwnerEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearAttribution')}
+          />
+          <ReferencePickerField
+            name="onboardingOwnerEmploymentProfileId"
+            label={t('employment-profile:fields.onboardingOwnerEmploymentProfileId')}
+            pickerId="employment-profile-edit-onboarding-owner"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.onboardingOwnerEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearAttribution')}
+          />
+          <ReferencePickerField
+            name="sourcedByEmploymentProfileId"
+            label={t('employment-profile:fields.sourcedByEmploymentProfileId')}
+            pickerId="employment-profile-edit-sourced-by"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('employment-profile:referenceHelp.sourcedByEmploymentProfileId')}
+            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
+            clearable
+            clearLabel={t('employment-profile:actions.clearAttribution')}
+          />
+          <TextInputField
+            name="hiredAt"
+            label={t('employment-profile:fields.hiredAt')}
+            type="date"
+          />
+          <TextInputField
+            name="onboardedAt"
+            label={t('employment-profile:fields.onboardedAt')}
+            type="date"
           />
         </FormGrid>
         <TextInputField

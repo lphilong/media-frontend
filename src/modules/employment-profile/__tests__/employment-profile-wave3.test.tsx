@@ -6,11 +6,16 @@ import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-d
 import { appRoutes } from '@app/router/router';
 import {
   EmploymentProfileCreateSurface,
+  EmploymentProfileEditSurface,
   EmploymentProfileManagerAssignmentSurface,
   EmploymentProfileOrgAssignmentSurface,
   EmploymentProfileUserLinkSurface,
 } from '@modules/employment-profile/forms/employment-profile-mutation-forms';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
+import {
+  getMockCurrentActorCapabilities,
+  setMockCurrentActorCapabilities,
+} from '@test/msw/identity-access-handlers';
 import { renderAppWithProviders } from '@test/render-app-route';
 
 vi.mock('@shared/components/reference/admin-reference-options', () => ({
@@ -25,7 +30,7 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
   loadEmploymentProfileReferenceOptions: vi.fn(async () => [
     {
       id: 'ep-manager',
-      label: 'Manager One - EMPMGR',
+      label: 'Manager Display - EMPMGR',
       description: 'ACTIVE',
       href: '/employment-profiles/ep-manager',
     },
@@ -98,7 +103,7 @@ describe('employment profile wave 3 surfaces', () => {
     expect(await screen.findByText('EP-000002', {}, { timeout: 3000 })).toBeInTheDocument();
     expect((await screen.findAllByText('Bao', {}, { timeout: 3000 })).length).toBeGreaterThan(0);
     expect(await screen.findByText('Sales')).toBeInTheDocument();
-    expect(await screen.findByText('Alice Nguyen')).toBeInTheDocument();
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
   });
 
   it('uses readable org unit and manager selectors for relationship filters', async () => {
@@ -120,7 +125,9 @@ describe('employment profile wave 3 surfaces', () => {
       ),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('combobox', { name: i18n.t('employment-profile:filters.employmentStatus') }),
+      await screen.findByRole('combobox', {
+        name: i18n.t('employment-profile:filters.employmentStatus'),
+      }),
     ).toHaveValue('ACTIVE');
     expect(
       screen.getByPlaceholderText(i18n.t('employment-profile:filters.searchPlaceholder')),
@@ -146,7 +153,7 @@ describe('employment profile wave 3 surfaces', () => {
     const orgUnitPicker = await findPicker('employment-profile-filter-org-unit');
     const managerPicker = await findPicker('employment-profile-filter-manager');
     expect(await within(orgUnitPicker).findAllByText(/OU-SALES/)).not.toHaveLength(0);
-    expect(await within(managerPicker).findAllByText(/EMPMGR/)).not.toHaveLength(0);
+    expect(await within(managerPicker).findAllByText(/Manager Display/)).not.toHaveLength(0);
 
     await user.click(await within(orgUnitPicker).findByRole('button', { name: /OU-SALES/ }));
     await waitFor(() => {
@@ -187,7 +194,7 @@ describe('employment profile wave 3 surfaces', () => {
       ).toBeNull();
     });
 
-    await user.click(await within(managerPicker).findByRole('button', { name: /EMPMGR/ }));
+    await user.click(await within(managerPicker).findByRole('button', { name: /Manager Display/ }));
     await waitFor(() => {
       expect(
         new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
@@ -210,8 +217,22 @@ describe('employment profile wave 3 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('employment-profile:actionRail.title')),
     ).toBeInTheDocument();
-    expect(screen.getByText('01-01-2024')).toBeInTheDocument();
-    expect(screen.getByText('alice@example.test')).toBeInTheDocument();
+    expect(screen.getAllByText('01-01-2024').length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(i18n.t('employment-profile:detail.hrAttributionTitle')),
+    ).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole('link', { name: 'Bao' })
+        .some((link) => link.getAttribute('href') === '/employment-profiles/ep-002'),
+    ).toBe(true);
+    expect(screen.getByRole('link', { name: 'Chau' })).toHaveAttribute(
+      'href',
+      '/employment-profiles/ep-003',
+    );
+    expect(screen.getByText('08-01-2024')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('employment-profile:detail.notAssigned'))).toBeInTheDocument();
+    expect(screen.getByText('Alice User')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sales' })).toHaveAttribute(
       'href',
       '/org-units/ou-sales',
@@ -395,7 +416,18 @@ describe('employment profile wave 3 surfaces', () => {
       screen.getByLabelText(i18n.t('employment-profile:fields.employmentStartDate')),
       '2026-05-12',
     );
-    await selectPickerOption(user, 'employment-profile-manager', /EMPMGR/);
+    await selectPickerOption(user, 'employment-profile-manager', /Manager Display/);
+    await selectPickerOption(user, 'employment-profile-recruiter', /Manager Display/);
+    await selectPickerOption(user, 'employment-profile-hr-owner', /Manager Display/);
+    await selectPickerOption(user, 'employment-profile-onboarding-owner', /Manager Display/);
+    await user.type(
+      screen.getByLabelText(i18n.t('employment-profile:fields.hiredAt')),
+      '2026-05-13',
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('employment-profile:fields.onboardedAt')),
+      '2026-05-14',
+    );
     await selectPickerOption(user, 'employment-profile-linked-user', /Admin User/);
     await user.click(
       screen.getByRole('button', {
@@ -408,6 +440,12 @@ describe('employment profile wave 3 surfaces', () => {
         orgUnitId: 'ou-sales',
         managerEmploymentProfileId: 'ep-manager',
         linkedUserId: 'user-admin',
+        recruiterEmploymentProfileId: 'ep-manager',
+        hrOwnerEmploymentProfileId: 'ep-manager',
+        onboardingOwnerEmploymentProfileId: 'ep-manager',
+        sourcedByEmploymentProfileId: null,
+        hiredAt: '2026-05-13',
+        onboardedAt: '2026-05-14',
         externalRef: 'EXT-EMP',
       }),
     );
@@ -442,7 +480,7 @@ describe('employment profile wave 3 surfaces', () => {
         />
       </MemoryRouter>,
     );
-    await selectPickerOption(user, 'employment-profile-new-manager', /EMPMGR/);
+    await selectPickerOption(user, 'employment-profile-new-manager', /Manager Display/);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('employment-profile:mutations.assignManager.submit'),
@@ -466,6 +504,106 @@ describe('employment profile wave 3 surfaces', () => {
     );
     expect(onUserLink).toHaveBeenCalledWith({ linkedUserId: 'user-admin' });
   }, 20_000);
+
+  it('submits HR attribution from the edit surface and validates date order', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+
+    const editRender = renderAppWithProviders(
+      <MemoryRouter>
+        <EmploymentProfileEditSurface
+          initialValues={{
+            legalName: 'Edit Legal',
+            displayName: 'Edit Display',
+            employmentKind: 'EMPLOYEE',
+            jobTitle: 'Producer',
+            recruiterEmploymentProfileId: null,
+            hrOwnerEmploymentProfileId: null,
+            onboardingOwnerEmploymentProfileId: null,
+            sourcedByEmploymentProfileId: null,
+            hiredAt: null,
+            onboardedAt: null,
+            externalRef: null,
+            titleDescription: null,
+          }}
+          onCancel={() => undefined}
+          onSubmit={onEdit}
+        />
+      </MemoryRouter>,
+    );
+
+    await selectPickerOption(user, 'employment-profile-edit-recruiter', /Manager Display/);
+    await selectPickerOption(user, 'employment-profile-edit-hr-owner', /Manager Display/);
+    await selectPickerOption(user, 'employment-profile-edit-onboarding-owner', /Manager Display/);
+    await user.type(
+      screen.getByLabelText(i18n.t('employment-profile:fields.hiredAt')),
+      '2026-05-20',
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('employment-profile:fields.onboardedAt')),
+      '2026-05-19',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('employment-profile:mutations.edit.submit'),
+      }),
+    );
+
+    expect(
+      await screen.findByText(i18n.t('employment-profile:validation.onboardedBeforeHired')),
+    ).toBeInTheDocument();
+    expect(onEdit).not.toHaveBeenCalled();
+
+    await user.clear(screen.getByLabelText(i18n.t('employment-profile:fields.onboardedAt')));
+    await user.type(
+      screen.getByLabelText(i18n.t('employment-profile:fields.onboardedAt')),
+      '2026-05-21',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('employment-profile:mutations.edit.submit'),
+      }),
+    );
+
+    expect(onEdit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recruiterEmploymentProfileId: 'ep-manager',
+        hrOwnerEmploymentProfileId: 'ep-manager',
+        onboardingOwnerEmploymentProfileId: 'ep-manager',
+        sourcedByEmploymentProfileId: null,
+        hiredAt: '2026-05-20',
+        onboardedAt: '2026-05-21',
+      }),
+    );
+    expect(onEdit.mock.calls[0][0]).not.toHaveProperty('recruiterUserId');
+    expect(onEdit.mock.calls[0][0]).not.toHaveProperty('recruiterTalentId');
+    editRender.unmount();
+  }, 20_000);
+
+  it('hides attribution mutation affordance when update permission is missing', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const restricted = getMockCurrentActorCapabilities();
+    setMockCurrentActorCapabilities({
+      ...restricted,
+      roles: ['role-viewer'],
+      permissions: restricted.permissions.filter(
+        (permission) => permission !== 'employmentProfile.update',
+      ),
+    });
+
+    renderRoute('/employment-profiles/ep-001');
+
+    expect(
+      await screen.findByText(i18n.t('employment-profile:actionRail.title')),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('employment-profile:actions.edit') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('employment-profile:detail.hrAttributionTitle')),
+    ).toBeInTheDocument();
+  });
 
   it('keeps contract-status action fail-closed when no transition is supported', async () => {
     await setLocale(DEFAULT_LOCALE);

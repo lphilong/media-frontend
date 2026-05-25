@@ -14,11 +14,17 @@
     "newOrgUnitId": "Organization Unit",
     "managerEmploymentProfileId": "Manager",
     "newManagerEmploymentProfileId": "Manager",
+    "recruiterEmploymentProfileId": "Recruiter",
+    "hrOwnerEmploymentProfileId": "HR Owner",
+    "onboardingOwnerEmploymentProfileId": "Onboarding Owner",
+    "sourcedByEmploymentProfileId": "Sourced By",
     "linkedUserId": "Linked User",
     "contractStatus": "Contract Status",
     "newContractStatus": "New Contract Status",
     "employmentStartDate": "Employment Start Date",
     "employmentEndDate": "Employment End Date",
+    "hiredAt": "Hired Date",
+    "onboardedAt": "Onboarded Date",
     "titleDescription": "Title Description",
     "externalRef": "External Reference",
     "createdAt": "Created At",
@@ -41,6 +47,10 @@
     "newOrgUnitId": "Choose the organization unit this profile should move into.",
     "managerEmploymentProfileId": "Choose the manager employment profile, or leave unselected when none applies.",
     "newManagerEmploymentProfileId": "Choose the manager employment profile, or clear the selection to remove the manager.",
+    "recruiterEmploymentProfileId": "Choose the employment profile responsible for recruiting.",
+    "hrOwnerEmploymentProfileId": "Choose the employment profile responsible for HR ownership.",
+    "onboardingOwnerEmploymentProfileId": "Choose the employment profile responsible for onboarding.",
+    "sourcedByEmploymentProfileId": "Choose the employment profile that sourced or referred this person, when applicable.",
     "linkedUserId": "Choose the user account to link to this employment profile."
   },
   "states": {
@@ -110,6 +120,7 @@
     "terminate": "Terminate",
     "archive": "Archive",
     "clearManager": "Clear manager",
+    "clearAttribution": "Clear assignment",
     "clearLinkedUser": "Clear linked user"
   },
   "table": {
@@ -148,7 +159,9 @@
   "detail": {
     "summaryTitle": "Profile Summary",
     "assignmentTitle": "Assignment and Dates",
-    "noManager": "No manager assigned"
+    "hrAttributionTitle": "HR Attribution",
+    "noManager": "No manager assigned",
+    "notAssigned": "Not assigned"
   },
   "related": {
     "navigationTitle": "Related Navigation",
@@ -208,6 +221,7 @@
     "required": "This field is required.",
     "invalidToken": "Value must use supported token characters.",
     "invalidDate": "Date must be a valid YYYY-MM-DD value.",
+    "onboardedBeforeHired": "Onboarded Date must not be before Hired Date.",
     "invalidReferenceToken": "Reference ID contains unsupported characters.",
     "managerCannotBeSelf": "A profile cannot be its own manager.",
     "contractStatusTransitionNotAllowed": "This contract-status transition is not allowed."

@@ -14,11 +14,17 @@
     "newOrgUnitId": "组织单元",
     "managerEmploymentProfileId": "主管",
     "newManagerEmploymentProfileId": "主管",
+    "recruiterEmploymentProfileId": "招聘负责人",
+    "hrOwnerEmploymentProfileId": "HR 负责人",
+    "onboardingOwnerEmploymentProfileId": "入职负责人",
+    "sourcedByEmploymentProfileId": "推荐来源",
     "linkedUserId": "关联用户",
     "contractStatus": "合同状态",
     "newContractStatus": "新合同状态",
     "employmentStartDate": "员工开始日期",
     "employmentEndDate": "员工结束日期",
+    "hiredAt": "录用日期",
+    "onboardedAt": "入职日期",
     "titleDescription": "标题描述",
     "externalRef": "外部引用",
     "createdAt": "创建时间",
@@ -41,6 +47,10 @@
     "newOrgUnitId": "选择此档案要调入的组织单元。",
     "managerEmploymentProfileId": "选择主管员工档案；无主管时可不选择。",
     "newManagerEmploymentProfileId": "选择主管员工档案，或清除选择以移除主管。",
+    "recruiterEmploymentProfileId": "选择负责招聘的员工档案。",
+    "hrOwnerEmploymentProfileId": "选择负责人力资源归属的员工档案。",
+    "onboardingOwnerEmploymentProfileId": "选择负责入职的员工档案。",
+    "sourcedByEmploymentProfileId": "如适用，选择推荐或提供来源的员工档案。",
     "linkedUserId": "选择要关联到此员工档案的用户账号。"
   },
   "states": {
@@ -110,6 +120,7 @@
     "terminate": "终止",
     "archive": "归档",
     "clearManager": "清除主管",
+    "clearAttribution": "清除分配",
     "clearLinkedUser": "清除关联用户"
   },
   "table": {
@@ -148,7 +159,9 @@
   "detail": {
     "summaryTitle": "档案摘要",
     "assignmentTitle": "分配和日期",
-    "noManager": "未分配主管"
+    "hrAttributionTitle": "HR 归属",
+    "noManager": "未分配主管",
+    "notAssigned": "未分配"
   },
   "related": {
     "navigationTitle": "关联导航",
@@ -208,6 +221,7 @@
     "required": "此字段为必填。",
     "invalidToken": "值只能使用支持的标记字符。",
     "invalidDate": "日期必须是有效的 YYYY-MM-DD 值。",
+    "onboardedBeforeHired": "入职日期不能早于录用日期。",
     "invalidReferenceToken": "引用 ID 包含不支持的字符。",
     "managerCannotBeSelf": "档案不能将自己设为主管。",
     "contractStatusTransitionNotAllowed": "不支持此合同状态转换。"

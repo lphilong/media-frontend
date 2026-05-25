@@ -14,11 +14,17 @@
     "newOrgUnitId": "Đơn vị tổ chức",
     "managerEmploymentProfileId": "Quản lý",
     "newManagerEmploymentProfileId": "Quản lý",
+    "recruiterEmploymentProfileId": "Phụ trách tuyển dụng",
+    "hrOwnerEmploymentProfileId": "Phụ trách HR",
+    "onboardingOwnerEmploymentProfileId": "Phụ trách onboarding",
+    "sourcedByEmploymentProfileId": "Nguồn giới thiệu",
     "linkedUserId": "Người dùng liên kết",
     "contractStatus": "Trạng thái hợp đồng",
     "newContractStatus": "Trạng thái hợp đồng mới",
     "employmentStartDate": "Ngày bắt đầu làm việc",
     "employmentEndDate": "Ngày kết thúc làm việc",
+    "hiredAt": "Ngày tuyển dụng",
+    "onboardedAt": "Ngày onboarding",
     "titleDescription": "Mô tả chức danh",
     "externalRef": "Tham chiếu bên ngoài",
     "createdAt": "Thời điểm tạo",
@@ -41,6 +47,10 @@
     "newOrgUnitId": "Chọn đơn vị tổ chức mới cho hồ sơ này.",
     "managerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc để chưa chọn nếu không có.",
     "newManagerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc xóa lựa chọn để bỏ quản lý.",
+    "recruiterEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách tuyển dụng.",
+    "hrOwnerEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách HR.",
+    "onboardingOwnerEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách onboarding.",
+    "sourcedByEmploymentProfileId": "Chọn hồ sơ nhân sự đã giới thiệu hoặc cung cấp nguồn, nếu có.",
     "linkedUserId": "Chọn tài khoản người dùng cần liên kết với hồ sơ nhân sự này."
   },
   "states": {
@@ -110,6 +120,7 @@
     "terminate": "Kết thúc",
     "archive": "Lưu trữ",
     "clearManager": "Xóa quản lý",
+    "clearAttribution": "Xóa phân công",
     "clearLinkedUser": "Xóa người dùng liên kết"
   },
   "table": {
@@ -148,7 +159,9 @@
   "detail": {
     "summaryTitle": "Tóm tắt hồ sơ",
     "assignmentTitle": "Phân công và mốc thời gian",
-    "noManager": "Chưa gán quản lý"
+    "hrAttributionTitle": "Phân công HR",
+    "noManager": "Chưa gán quản lý",
+    "notAssigned": "Chưa phân công"
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",
@@ -208,6 +221,7 @@
     "required": "Trường này là bắt buộc.",
     "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
     "invalidDate": "Ngày phải có định dạng YYYY-MM-DD hợp lệ.",
+    "onboardedBeforeHired": "Ngày onboarding không được trước ngày tuyển dụng.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
     "managerCannotBeSelf": "Một hồ sơ không thể tự làm quản lý của chính nó.",
     "contractStatusTransitionNotAllowed": "Không hỗ trợ chuyển trạng thái hợp đồng này."

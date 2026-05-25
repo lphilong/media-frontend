@@ -55,11 +55,17 @@ type EmploymentProfileRecord = {
   externalRef?: string | null;
   orgUnitId: string;
   managerEmploymentProfileId?: string | null;
+  recruiterEmploymentProfileId?: string | null;
+  hrOwnerEmploymentProfileId?: string | null;
+  onboardingOwnerEmploymentProfileId?: string | null;
+  sourcedByEmploymentProfileId?: string | null;
   linkedUserId?: string | null;
   employmentStatus: EmploymentStatus;
   contractStatus: ContractStatus;
   employmentStartDate: number;
   employmentEndDate?: number | null;
+  hiredAt?: number | null;
+  onboardedAt?: number | null;
   createdAt: number;
   updatedAt: number;
 };
@@ -146,7 +152,10 @@ let employmentSeed = initialEmploymentSeed;
 
 const now = Date.parse('2026-04-22T00:00:00.000Z');
 
-const parseCanonicalDateToUtcMidnight = (value: unknown, fallback: number): number => {
+const parseCanonicalDateToUtcMidnight = <TFallback extends number | null>(
+  value: unknown,
+  fallback: TFallback,
+): number | TFallback => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
   }
@@ -244,11 +253,17 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     externalRef: null,
     orgUnitId: 'ou-sales',
     managerEmploymentProfileId: null,
+    recruiterEmploymentProfileId: 'ep-002',
+    hrOwnerEmploymentProfileId: 'ep-003',
+    onboardingOwnerEmploymentProfileId: 'ep-002',
+    sourcedByEmploymentProfileId: null,
     linkedUserId: 'user-alice',
     employmentStatus: 'ACTIVE',
     contractStatus: 'ACTIVE',
     employmentStartDate: Date.UTC(2024, 0, 1),
     employmentEndDate: null,
+    hiredAt: Date.UTC(2024, 0, 1),
+    onboardedAt: Date.UTC(2024, 0, 8),
     createdAt: now - 6_000,
     updatedAt: now - 5_500,
   },
@@ -465,10 +480,22 @@ const toEmploymentListItem = (record: EmploymentProfileRecord) => {
     orgUnitRef: toOrgUnitRef(record.orgUnitId),
     managerEmploymentProfileId: record.managerEmploymentProfileId ?? null,
     managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
+    recruiterEmploymentProfileId: record.recruiterEmploymentProfileId ?? null,
+    recruiterEmploymentProfileRef: toEmploymentProfileRef(record.recruiterEmploymentProfileId),
+    hrOwnerEmploymentProfileId: record.hrOwnerEmploymentProfileId ?? null,
+    hrOwnerEmploymentProfileRef: toEmploymentProfileRef(record.hrOwnerEmploymentProfileId),
+    onboardingOwnerEmploymentProfileId: record.onboardingOwnerEmploymentProfileId ?? null,
+    onboardingOwnerEmploymentProfileRef: toEmploymentProfileRef(
+      record.onboardingOwnerEmploymentProfileId,
+    ),
+    sourcedByEmploymentProfileId: record.sourcedByEmploymentProfileId ?? null,
+    sourcedByEmploymentProfileRef: toEmploymentProfileRef(record.sourcedByEmploymentProfileId),
     linkedUserId: record.linkedUserId ?? null,
     linkedUserRef: toUserRef(record.linkedUserId),
     employmentStatus: record.employmentStatus,
     contractStatus: record.contractStatus,
+    hiredAt: record.hiredAt ?? null,
+    onboardedAt: record.onboardedAt ?? null,
     createdAt: record.createdAt,
   };
 };
@@ -487,12 +514,24 @@ const toEmploymentDetail = (record: EmploymentProfileRecord) => {
     orgUnitRef: toOrgUnitRef(record.orgUnitId),
     managerEmploymentProfileId: record.managerEmploymentProfileId ?? null,
     managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
+    recruiterEmploymentProfileId: record.recruiterEmploymentProfileId ?? null,
+    recruiterEmploymentProfileRef: toEmploymentProfileRef(record.recruiterEmploymentProfileId),
+    hrOwnerEmploymentProfileId: record.hrOwnerEmploymentProfileId ?? null,
+    hrOwnerEmploymentProfileRef: toEmploymentProfileRef(record.hrOwnerEmploymentProfileId),
+    onboardingOwnerEmploymentProfileId: record.onboardingOwnerEmploymentProfileId ?? null,
+    onboardingOwnerEmploymentProfileRef: toEmploymentProfileRef(
+      record.onboardingOwnerEmploymentProfileId,
+    ),
+    sourcedByEmploymentProfileId: record.sourcedByEmploymentProfileId ?? null,
+    sourcedByEmploymentProfileRef: toEmploymentProfileRef(record.sourcedByEmploymentProfileId),
     linkedUserId: record.linkedUserId ?? null,
     linkedUserRef: toUserRef(record.linkedUserId),
     employmentStatus: record.employmentStatus,
     contractStatus: record.contractStatus,
     employmentStartDate: record.employmentStartDate,
     employmentEndDate: record.employmentEndDate ?? null,
+    hiredAt: record.hiredAt ?? null,
+    onboardedAt: record.onboardedAt ?? null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   };
@@ -1069,6 +1108,22 @@ export const handlers = [
         typeof body.managerEmploymentProfileId === 'string'
           ? body.managerEmploymentProfileId
           : null,
+      recruiterEmploymentProfileId:
+        typeof body.recruiterEmploymentProfileId === 'string'
+          ? body.recruiterEmploymentProfileId
+          : null,
+      hrOwnerEmploymentProfileId:
+        typeof body.hrOwnerEmploymentProfileId === 'string'
+          ? body.hrOwnerEmploymentProfileId
+          : null,
+      onboardingOwnerEmploymentProfileId:
+        typeof body.onboardingOwnerEmploymentProfileId === 'string'
+          ? body.onboardingOwnerEmploymentProfileId
+          : null,
+      sourcedByEmploymentProfileId:
+        typeof body.sourcedByEmploymentProfileId === 'string'
+          ? body.sourcedByEmploymentProfileId
+          : null,
       linkedUserId: typeof body.linkedUserId === 'string' ? body.linkedUserId : null,
       employmentStatus: 'ACTIVE',
       contractStatus:
@@ -1078,6 +1133,8 @@ export const handlers = [
         Date.UTC(2026, 0, 1),
       ),
       employmentEndDate: null,
+      hiredAt: parseCanonicalDateToUtcMidnight(body.hiredAt, null),
+      onboardedAt: parseCanonicalDateToUtcMidnight(body.onboardedAt, null),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -1145,6 +1202,36 @@ export const handlers = [
     profile.externalRef = (body.externalRef as string | null | undefined) ?? profile.externalRef;
     profile.titleDescription =
       (body.titleDescription as string | null | undefined) ?? profile.titleDescription;
+    if ('recruiterEmploymentProfileId' in body) {
+      profile.recruiterEmploymentProfileId =
+        typeof body.recruiterEmploymentProfileId === 'string'
+          ? body.recruiterEmploymentProfileId
+          : null;
+    }
+    if ('hrOwnerEmploymentProfileId' in body) {
+      profile.hrOwnerEmploymentProfileId =
+        typeof body.hrOwnerEmploymentProfileId === 'string'
+          ? body.hrOwnerEmploymentProfileId
+          : null;
+    }
+    if ('onboardingOwnerEmploymentProfileId' in body) {
+      profile.onboardingOwnerEmploymentProfileId =
+        typeof body.onboardingOwnerEmploymentProfileId === 'string'
+          ? body.onboardingOwnerEmploymentProfileId
+          : null;
+    }
+    if ('sourcedByEmploymentProfileId' in body) {
+      profile.sourcedByEmploymentProfileId =
+        typeof body.sourcedByEmploymentProfileId === 'string'
+          ? body.sourcedByEmploymentProfileId
+          : null;
+    }
+    if ('hiredAt' in body) {
+      profile.hiredAt = parseCanonicalDateToUtcMidnight(body.hiredAt, null);
+    }
+    if ('onboardedAt' in body) {
+      profile.onboardedAt = parseCanonicalDateToUtcMidnight(body.onboardedAt, null);
+    }
     profile.updatedAt = Date.now();
 
     return HttpResponse.json({

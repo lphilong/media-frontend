@@ -414,6 +414,18 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
   const relatedManagerHref = record?.managerEmploymentProfileId
     ? buildEntityDetailHref('employmentProfile', record.managerEmploymentProfileId)
     : undefined;
+  const relatedRecruiterHref = record?.recruiterEmploymentProfileId
+    ? buildEntityDetailHref('employmentProfile', record.recruiterEmploymentProfileId)
+    : undefined;
+  const relatedHrOwnerHref = record?.hrOwnerEmploymentProfileId
+    ? buildEntityDetailHref('employmentProfile', record.hrOwnerEmploymentProfileId)
+    : undefined;
+  const relatedOnboardingOwnerHref = record?.onboardingOwnerEmploymentProfileId
+    ? buildEntityDetailHref('employmentProfile', record.onboardingOwnerEmploymentProfileId)
+    : undefined;
+  const relatedSourcedByHref = record?.sourcedByEmploymentProfileId
+    ? buildEntityDetailHref('employmentProfile', record.sourcedByEmploymentProfileId)
+    : undefined;
   const relatedOrgUnitHref = record?.orgUnitId
     ? buildEntityDetailHref('orgUnit', record.orgUnitId)
     : undefined;
@@ -718,6 +730,87 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
       sections={
         record ? (
           <div className="space-y-4">
+            <MetadataSection title={t('employment-profile:detail.hrAttributionTitle')}>
+              <ReadOnlyFieldGrid
+                fields={[
+                  {
+                    key: 'recruiter',
+                    label: t('employment-profile:fields.recruiterEmploymentProfileId'),
+                    value: record.recruiterEmploymentProfileId ? (
+                      <ReferenceChip
+                        label={readReferenceDisplay(
+                          record.recruiterEmploymentProfileRef,
+                          record.recruiterEmploymentProfileId,
+                        )}
+                        to={relatedRecruiterHref}
+                      />
+                    ) : (
+                      t('employment-profile:detail.notAssigned')
+                    ),
+                  },
+                  {
+                    key: 'hr-owner',
+                    label: t('employment-profile:fields.hrOwnerEmploymentProfileId'),
+                    value: record.hrOwnerEmploymentProfileId ? (
+                      <ReferenceChip
+                        label={readReferenceDisplay(
+                          record.hrOwnerEmploymentProfileRef,
+                          record.hrOwnerEmploymentProfileId,
+                        )}
+                        to={relatedHrOwnerHref}
+                      />
+                    ) : (
+                      t('employment-profile:detail.notAssigned')
+                    ),
+                  },
+                  {
+                    key: 'onboarding-owner',
+                    label: t('employment-profile:fields.onboardingOwnerEmploymentProfileId'),
+                    value: record.onboardingOwnerEmploymentProfileId ? (
+                      <ReferenceChip
+                        label={readReferenceDisplay(
+                          record.onboardingOwnerEmploymentProfileRef,
+                          record.onboardingOwnerEmploymentProfileId,
+                        )}
+                        to={relatedOnboardingOwnerHref}
+                      />
+                    ) : (
+                      t('employment-profile:detail.notAssigned')
+                    ),
+                  },
+                  {
+                    key: 'sourced-by',
+                    label: t('employment-profile:fields.sourcedByEmploymentProfileId'),
+                    value: record.sourcedByEmploymentProfileId ? (
+                      <ReferenceChip
+                        label={readReferenceDisplay(
+                          record.sourcedByEmploymentProfileRef,
+                          record.sourcedByEmploymentProfileId,
+                        )}
+                        to={relatedSourcedByHref}
+                      />
+                    ) : (
+                      t('employment-profile:detail.notAssigned')
+                    ),
+                  },
+                  {
+                    key: 'hired-at',
+                    label: t('employment-profile:fields.hiredAt'),
+                    value: record.hiredAt
+                      ? formatUtcMidnightDateLike(record.hiredAt)
+                      : t('employment-profile:detail.notAssigned'),
+                  },
+                  {
+                    key: 'onboarded-at',
+                    label: t('employment-profile:fields.onboardedAt'),
+                    value: record.onboardedAt
+                      ? formatUtcMidnightDateLike(record.onboardedAt)
+                      : t('employment-profile:detail.notAssigned'),
+                  },
+                ]}
+                columns={2}
+              />
+            </MetadataSection>
             {activeSurface === 'edit' ? (
               <EmploymentProfileEditSurface
                 initialValues={{
@@ -725,6 +818,12 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                   displayName: record.displayName,
                   employmentKind: record.employmentKind,
                   jobTitle: record.jobTitle,
+                  recruiterEmploymentProfileId: record.recruiterEmploymentProfileId,
+                  hrOwnerEmploymentProfileId: record.hrOwnerEmploymentProfileId,
+                  onboardingOwnerEmploymentProfileId: record.onboardingOwnerEmploymentProfileId,
+                  sourcedByEmploymentProfileId: record.sourcedByEmploymentProfileId,
+                  hiredAt: record.hiredAt,
+                  onboardedAt: record.onboardedAt,
                   externalRef: record.externalRef,
                   titleDescription: record.titleDescription,
                 }}
