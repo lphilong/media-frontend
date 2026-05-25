@@ -186,7 +186,7 @@ export const MonthlyRosterPublishReview = ({
           isError: capabilitiesQuery.isError,
         },
         permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
-        requestedScope: scope,
+        requestedScope: 'global',
         copy: capabilityCopy,
       }),
     [
@@ -194,10 +194,13 @@ export const MonthlyRosterPublishReview = ({
       capabilitiesQuery.isError,
       capabilitiesQuery.isLoading,
       capabilityCopy,
-      scope,
     ],
   );
 
+  const shouldHidePublishAffordance =
+    publishCapabilityHint.hidden ||
+    capabilitiesQuery.isError ||
+    (!capabilitiesQuery.isLoading && !capabilitiesQuery.data);
   const isPublishLocallyAllowed =
     roster.status === 'DRAFT' && !disabledReasonKey && Boolean(preview);
   const isPublishAllowed = isPublishLocallyAllowed && !publishCapabilityHint.disabled;
@@ -217,7 +220,7 @@ export const MonthlyRosterPublishReview = ({
         monthlyRosterId: roster.monthlyRosterId,
         payload: {
           expectedPreviewHash: preview.computedPreviewHash,
-          ...(scope ? { scope } : {}),
+          scope: 'global',
         },
       });
       setLastPublishResult(result);
@@ -228,6 +231,22 @@ export const MonthlyRosterPublishReview = ({
       notifyError(error as NormalizedApiError);
     }
   };
+
+  const renderDisabledPublishButton = (): JSX.Element => (
+    <div className="mt-3 flex justify-end">
+      <button
+        type="button"
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+        disabled
+      >
+        {t('work-schedule:monthlyRosters.publish.actions.openConfirmation')}
+      </button>
+    </div>
+  );
+
+  if (shouldHidePublishAffordance) {
+    return <></>;
+  }
 
   if (roster.status === 'PUBLISHED') {
     return (
@@ -257,6 +276,10 @@ export const MonthlyRosterPublishReview = ({
             ]}
             columns={3}
           />
+          <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+            {publishDisabledReason}
+          </div>
+          {renderDisabledPublishButton()}
         </div>
       </MetadataSection>
     );
@@ -265,8 +288,14 @@ export const MonthlyRosterPublishReview = ({
   if (roster.status !== 'DRAFT') {
     return (
       <MetadataSection title={t('work-schedule:monthlyRosters.publish.title')}>
-        <div className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
-          {t('work-schedule:monthlyRosters.publish.states.unavailable')}
+        <div className="space-y-3">
+          <div className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+            {t('work-schedule:monthlyRosters.publish.states.unavailable')}
+          </div>
+          <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+            {publishDisabledReason}
+          </div>
+          {renderDisabledPublishButton()}
         </div>
       </MetadataSection>
     );

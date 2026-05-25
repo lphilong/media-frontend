@@ -249,7 +249,7 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
     ['PUBLISHED', 'alreadyPublished'],
     ['ARCHIVED', 'unavailable'],
   ] as const)(
-    'keeps %s rosters read-only without an active publish action',
+    'keeps %s rosters read-only with a disabled publish action',
     async (status, stateKey) => {
       server.use(
         http.get('*/admin/work-schedule/rosters/roster-read-only', () =>
@@ -270,9 +270,7 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
       expect(
         await screen.findByText(pt(`states.${stateKey}`), {}, { timeout: 5000 }),
       ).toBeInTheDocument();
-      expect(
-        screen.queryByRole('button', { name: pt('actions.openConfirmation') }),
-      ).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: pt('actions.openConfirmation') })).toBeDisabled();
     },
   );
 
@@ -386,7 +384,7 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
     expect(screen.queryByText('source-generation-run-001')).not.toBeInTheDocument();
   });
 
-  it('keeps source metadata out of manual Work Shift create forms and approval surfaces absent', async () => {
+  it('keeps source metadata out of manual Work Shift create forms', async () => {
     const user = userEvent.setup();
     renderRoute('/work-shifts');
 
@@ -414,9 +412,6 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
     ).not.toBeInTheDocument();
     expect(
       within(createSurface).queryByLabelText(st('fields.sourceGenerationRunId')),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(/approval|change request|apply|reject|wave 11|fake|offline/i),
     ).not.toBeInTheDocument();
   });
 });

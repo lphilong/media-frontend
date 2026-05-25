@@ -525,8 +525,11 @@ describe('monthly roster publish capability UX', () => {
     await setLocale(DEFAULT_LOCALE);
   });
 
-  it('keeps local readiness disabled reason ahead of capability disabled reason', async () => {
-    mockCapabilities({ permissions: [], workScheduleScopes: ['global'] });
+  it('keeps publish visible but disabled for capable actors when local readiness blocks it', async () => {
+    mockCapabilities({
+      permissions: ['workSchedule.manageLifecycle'],
+      workScheduleScopes: ['global'],
+    });
     mockRosterPreview(basePreview({ currentPreviewHash: 'old-hash' }));
 
     renderAppWithProviders(
@@ -542,8 +545,31 @@ describe('monthly roster publish capability UX', () => {
     expect(publishButton).toBeDisabled();
   });
 
-  it('disables publish for missing permission only when locally publishable', async () => {
+  it('hides publish for missing permission even when locally publishable', async () => {
     mockCapabilities({ permissions: [], workScheduleScopes: ['global'] });
+    mockRosterPreview(basePreview());
+
+    renderAppWithProviders(
+      <MonthlyRosterPublishReview roster={baseRosterDetail()} scope="global" />,
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', {
+          name: publishText('actions.openConfirmation'),
+        }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText(publishText('title'))).not.toBeInTheDocument();
+  });
+
+  it('shows PRODUCTION_OPS with global authority enabled publish for a valid draft roster', async () => {
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: ['workSchedule.read', 'workSchedule.manageLifecycle'],
+      workScheduleScopes: ['global'],
+    });
     mockRosterPreview(basePreview());
 
     renderAppWithProviders(
@@ -553,13 +579,81 @@ describe('monthly roster publish capability UX', () => {
     const publishButton = await screen.findByRole('button', {
       name: publishText('actions.openConfirmation'),
     });
-    await waitFor(() => expect(publishButton).toBeDisabled());
+    await waitFor(() => expect(publishButton).toBeEnabled());
+  });
+
+  it.each([
+    [
+      'HR_OPERATIONS department visibility',
+      ['HR_OPERATIONS'],
+      ['workSchedule.read'],
+      ['department'],
+    ],
+    ['TEAM_MANAGER team visibility', ['TEAM_MANAGER'], ['workSchedule.read'], ['self', 'team']],
+    ['VIEWER_AUDITOR read-only visibility', ['VIEWER_AUDITOR'], ['workSchedule.read'], ['global']],
+    ['TALENT_STAFF_SELF self visibility', ['TALENT_STAFF_SELF'], ['workSchedule.read'], ['self']],
+    [
+      'stale mutation permission without global scope',
+      ['role-capability-test'],
+      ['workSchedule.read', 'workSchedule.manageLifecycle'],
+      ['department'],
+    ],
+  ] as const)('hides publish for %s', async (_name, roles, permissions, workScheduleScopes) => {
+    mockCapabilities({
+      roles: [...roles],
+      permissions: [...permissions],
+      workScheduleScopes: [...workScheduleScopes],
+    });
+    mockRosterPreview(basePreview());
+
+    renderAppWithProviders(
+      <MonthlyRosterPublishReview roster={baseRosterDetail()} scope="department" />,
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', {
+          name: publishText('actions.openConfirmation'),
+        }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText(publishText('title'))).not.toBeInTheDocument();
+  });
+
+  it('shows capable actors a disabled publish affordance for already published roster state', async () => {
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: ['workSchedule.read', 'workSchedule.manageLifecycle'],
+      workScheduleScopes: ['global'],
+    });
+    mockRosterPreview(basePreview({ rosterStatus: 'PUBLISHED' }));
+
+    renderAppWithProviders(
+      <MonthlyRosterPublishReview
+        roster={baseRosterDetail({
+          status: 'PUBLISHED',
+          publishedAt: Date.parse('2026-05-31T00:00:00.000Z'),
+          publishedByUserId: 'production-ops-user-1',
+          publishGenerationRunId: 'generation-run-001',
+        })}
+        scope="global"
+      />,
+    );
+
+    expect(await screen.findByText(publishText('states.alreadyPublished'))).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: publishText('actions.openConfirmation'),
+      }),
+    ).toBeDisabled();
   });
 
   it('continues to publish with expectedPreviewHash from computedPreviewHash', async () => {
     const user = userEvent.setup();
     let capturedBody: Record<string, unknown> | null = null;
     mockCapabilities({
+      roles: ['PRODUCTION_OPS'],
       permissions: ['workSchedule.manageLifecycle'],
       workScheduleScopes: ['global'],
     });
