@@ -251,6 +251,47 @@
     "cancel": "Hủy ca làm này?",
     "archive": "Lưu trữ ca làm này?"
   },
+  "requests": {
+    "title": "Schedule Requests",
+    "approvalQueue": "Approval Queue",
+    "types": {
+      "CREATE_SHIFT": "Yêu cầu tạo ca",
+      "RESCHEDULE_SHIFT": "Yêu cầu đổi lịch ca",
+      "CANCEL_SHIFT": "Yêu cầu hủy ca"
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "fields": {
+      "type": "Request type",
+      "targetEmploymentProfileId": "Employment Profile",
+      "targetWorkShiftId": "Work Shift",
+      "title": "Title",
+      "startAt": "Start UTC",
+      "endAt": "End UTC",
+      "reason": "Reason",
+      "decisionNote": "Decision note"
+    },
+    "actions": {
+      "requestChange": "Request Schedule Change",
+      "approve": "Approve Request",
+      "reject": "Reject Request",
+      "cancel": "Hủy yêu cầu"
+    },
+    "feedback": {
+      "submitted": "Schedule request submitted.",
+      "submitFailed": "Schedule request could not be submitted.",
+      "approved": "Schedule request approved.",
+      "rejected": "Schedule request rejected.",
+      "cancelled": "Schedule request cancelled."
+    },
+    "confirm": {
+      "cancel": "Hủy yêu cầu lịch này?"
+    }
+  },
   "actionRail": {
     "title": "Hành động ca làm"
   },

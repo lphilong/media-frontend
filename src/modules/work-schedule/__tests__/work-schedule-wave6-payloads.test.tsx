@@ -5,10 +5,15 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import {
+  approveWorkScheduleRequest,
+  cancelWorkScheduleRequest,
+  createWorkScheduleRequest,
   createWorkShift,
   fetchWorkShifts,
+  fetchWorkScheduleRequests,
   performWorkShiftLifecycleAction,
   reassignWorkShiftSubject,
+  rejectWorkScheduleRequest,
 } from '@modules/work-schedule/api/work-schedule.api';
 import { createWorkShiftActionRailItems } from '@modules/work-schedule/actions/work-schedule-action-rail';
 import {
@@ -399,6 +404,121 @@ describe('work schedule wave 6 query and payload shaping', () => {
     });
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('shiftCode');
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('scopeGrants');
+  });
+
+  it('shapes WorkSchedule request API payloads strictly', async () => {
+    const requestRecord = {
+      id: 'request-1',
+      requestCode: 'WSR-202605-000001',
+      requestType: 'CREATE_SHIFT',
+      status: 'PENDING',
+      targetKind: 'EMPLOYMENT_PROFILE_WORK_SHIFT',
+      requestSource: 'TEAM_MANAGER',
+      targetEmploymentProfileId: 'ep-001',
+      targetEmploymentProfileRef: null,
+      targetWorkShiftId: null,
+      targetWorkShiftRef: null,
+      requestedByUserId: 'manager-user',
+      requestedByEmploymentProfileId: 'ep-manager',
+      reason: 'Coverage needed',
+      proposedStartAt: 1000,
+      proposedEndAt: 2000,
+      proposedTitle: 'Coverage',
+      proposedStudioResourceIds: [],
+      proposedDescription: null,
+      proposedExternalRef: null,
+      approvedByUserId: null,
+      approvedAt: null,
+      approvalNote: null,
+      rejectedByUserId: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      cancelledByUserId: null,
+      cancelledAt: null,
+      cancellationReason: null,
+      appliedWorkShiftId: null,
+      appliedWorkShiftRef: null,
+      createdAt: 1,
+      updatedAt: 1,
+    };
+
+    apiRequestMock.mockResolvedValue({ data: [requestRecord], meta: undefined });
+    await fetchWorkScheduleRequests({
+      status: 'PENDING',
+      requestType: 'CREATE_SHIFT',
+      limit: 10,
+    });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/admin/work-schedule/requests',
+        params: {
+          status: 'PENDING',
+          requestType: 'CREATE_SHIFT',
+          limit: 10,
+        },
+      }),
+    );
+
+    apiRequestMock.mockResolvedValue({ data: requestRecord });
+    await createWorkScheduleRequest({
+      requestType: 'CREATE_SHIFT',
+      targetEmploymentProfileId: ' ep-001 ',
+      targetWorkShiftId: ' ',
+      reason: ' Coverage needed ',
+      proposedStartAt: 1000,
+      proposedEndAt: 2000,
+      proposedTitle: ' Coverage ',
+      proposedStudioResourceIds: [],
+      proposedDescription: null,
+      proposedExternalRef: undefined,
+      scopeGrants: ['forbidden'],
+    } as Parameters<typeof createWorkScheduleRequest>[0]);
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/work-schedule/requests',
+        data: {
+          requestType: 'CREATE_SHIFT',
+          targetEmploymentProfileId: 'ep-001',
+          reason: 'Coverage needed',
+          proposedStartAt: 1000,
+          proposedEndAt: 2000,
+          proposedTitle: 'Coverage',
+          proposedStudioResourceIds: [],
+          proposedDescription: null,
+        },
+      }),
+    );
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('scopeGrants');
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('targetWorkShiftId');
+
+    await approveWorkScheduleRequest('request-1', { approvalNote: ' Approved ' });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/work-schedule/requests/request-1/approve',
+        data: { approvalNote: 'Approved' },
+      }),
+    );
+
+    await rejectWorkScheduleRequest('request-1', { rejectionReason: ' No coverage ' });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/work-schedule/requests/request-1/reject',
+        data: { rejectionReason: 'No coverage' },
+      }),
+    );
+
+    await cancelWorkScheduleRequest('request-1', { cancellationReason: ' Replaced ' });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/work-schedule/requests/request-1/cancel',
+        data: { cancellationReason: 'Replaced' },
+      }),
+    );
   });
 
   it.each(['self', 'team', 'department'] as const)(

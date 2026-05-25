@@ -251,6 +251,47 @@
     "cancel": "取消此工作班次？",
     "archive": "归档此工作班次？"
   },
+  "requests": {
+    "title": "Schedule Requests",
+    "approvalQueue": "Approval Queue",
+    "types": {
+      "CREATE_SHIFT": "创建班次请求",
+      "RESCHEDULE_SHIFT": "调整班次请求",
+      "CANCEL_SHIFT": "取消班次请求"
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "fields": {
+      "type": "Request type",
+      "targetEmploymentProfileId": "Employment Profile",
+      "targetWorkShiftId": "Work Shift",
+      "title": "Title",
+      "startAt": "Start UTC",
+      "endAt": "End UTC",
+      "reason": "Reason",
+      "decisionNote": "Decision note"
+    },
+    "actions": {
+      "requestChange": "Request Schedule Change",
+      "approve": "Approve Request",
+      "reject": "Reject Request",
+      "cancel": "取消请求"
+    },
+    "feedback": {
+      "submitted": "Schedule request submitted.",
+      "submitFailed": "Schedule request could not be submitted.",
+      "approved": "Schedule request approved.",
+      "rejected": "Schedule request rejected.",
+      "cancelled": "Schedule request cancelled."
+    },
+    "confirm": {
+      "cancel": "取消此排班请求？"
+    }
+  },
   "actionRail": {
     "title": "工作班次操作"
   },

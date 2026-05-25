@@ -251,6 +251,47 @@
     "cancel": "Cancel this work shift?",
     "archive": "Archive this work shift?"
   },
+  "requests": {
+    "title": "Schedule Requests",
+    "approvalQueue": "Approval Queue",
+    "types": {
+      "CREATE_SHIFT": "Create shift request",
+      "RESCHEDULE_SHIFT": "Reschedule shift request",
+      "CANCEL_SHIFT": "Cancel shift request"
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "fields": {
+      "type": "Request type",
+      "targetEmploymentProfileId": "Employment Profile",
+      "targetWorkShiftId": "Work Shift",
+      "title": "Title",
+      "startAt": "Start UTC",
+      "endAt": "End UTC",
+      "reason": "Reason",
+      "decisionNote": "Decision note"
+    },
+    "actions": {
+      "requestChange": "Request Schedule Change",
+      "approve": "Approve Request",
+      "reject": "Reject Request",
+      "cancel": "Cancel Request"
+    },
+    "feedback": {
+      "submitted": "Schedule request submitted.",
+      "submitFailed": "Schedule request could not be submitted.",
+      "approved": "Schedule request approved.",
+      "rejected": "Schedule request rejected.",
+      "cancelled": "Schedule request cancelled."
+    },
+    "confirm": {
+      "cancel": "Cancel this schedule request?"
+    }
+  },
   "actionRail": {
     "title": "Work shift actions"
   },

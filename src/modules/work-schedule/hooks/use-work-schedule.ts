@@ -3,9 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addHolidayCalendarEntry,
   addRosterException,
+  approveWorkScheduleRequest,
   archiveMonthlyRoster,
+  cancelWorkScheduleRequest,
   createHolidayCalendar,
   createMonthlyRosterDraft,
+  createWorkScheduleRequest,
   createWorkPattern,
   createWorkShift,
   fetchHolidayCalendarDetail,
@@ -19,11 +22,13 @@ import {
   fetchWorkShifts,
   fetchWorkShiftsByResource,
   fetchWorkShiftsBySubject,
+  fetchWorkScheduleRequests,
   performHolidayCalendarLifecycleAction,
   performWorkPatternLifecycleAction,
   performWorkShiftLifecycleAction,
   publishMonthlyRoster,
   reassignWorkShiftSubject,
+  rejectWorkScheduleRequest,
   removeHolidayCalendarEntry,
   removeRosterException,
   replaceWorkShiftResources,
@@ -51,6 +56,11 @@ import type {
   WorkPatternLifecycleAction,
   WorkPatternListQuery,
   WorkPatternUpdatePayload,
+  WorkScheduleRequestApprovePayload,
+  WorkScheduleRequestCancelPayload,
+  WorkScheduleRequestCreatePayload,
+  WorkScheduleRequestListQuery,
+  WorkScheduleRequestRejectPayload,
   WorkScheduleScope,
   WorkShiftByResourceQuery,
   WorkShiftBySubjectQuery,
@@ -92,6 +102,16 @@ const toHolidayCalendarListQueryToken = (query: HolidayCalendarListQuery): strin
 const toMonthlyRosterListQueryToken = (query: MonthlyRosterListQuery): string =>
   serializeScreenQueryParams(query, monthlyRosterListQueryConfig).toString();
 
+const toWorkScheduleRequestListQueryToken = (query: WorkScheduleRequestListQuery): string =>
+  new URLSearchParams(
+    Object.entries(query).reduce<Record<string, string>>((accumulator, [key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        accumulator[key] = String(value);
+      }
+      return accumulator;
+    }, {}),
+  ).toString();
+
 export const workScheduleQueryKeys = {
   all: (): readonly ['work-schedule'] => WORK_SCHEDULE_QUERY_ROOT,
   flatList: (query: WorkShiftListQuery) =>
@@ -129,6 +149,8 @@ export const workScheduleQueryKeys = {
       scope ?? 'scope-omitted',
     ] as const,
   monthlyRosterPublish: () => ['work-schedule', 'monthly-rosters', 'publish'] as const,
+  requestList: (query: WorkScheduleRequestListQuery) =>
+    ['work-schedule', 'requests', 'list', toWorkScheduleRequestListQueryToken(query)] as const,
 };
 
 export const useWorkShiftFlatList = (
@@ -171,6 +193,17 @@ export const useWorkShiftDetail = (workShiftId?: string, scope?: WorkScheduleSco
       : [...WORK_SCHEDULE_QUERY_ROOT, 'detail'],
     queryFn: () => fetchWorkShiftDetail(workShiftId ?? '', scope),
     enabled: Boolean(workShiftId),
+  });
+};
+
+export const useWorkScheduleRequestList = (
+  query: WorkScheduleRequestListQuery,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: workScheduleQueryKeys.requestList(query),
+    queryFn: () => fetchWorkScheduleRequests(query),
+    enabled: options?.enabled ?? true,
   });
 };
 
@@ -361,6 +394,69 @@ export const useWorkShiftLifecycleMutation = () => {
       action: WorkShiftLifecycleAction;
       scope?: WorkScheduleScope;
     }) => performWorkShiftLifecycleAction(workShiftId, action, scope),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useCreateWorkScheduleRequestMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ payload }: { payload: WorkScheduleRequestCreatePayload }) =>
+      createWorkScheduleRequest(payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useApproveWorkScheduleRequestMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      requestId,
+      payload,
+    }: {
+      requestId: string;
+      payload: WorkScheduleRequestApprovePayload;
+    }) => approveWorkScheduleRequest(requestId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useRejectWorkScheduleRequestMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      requestId,
+      payload,
+    }: {
+      requestId: string;
+      payload: WorkScheduleRequestRejectPayload;
+    }) => rejectWorkScheduleRequest(requestId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useCancelWorkScheduleRequestMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      requestId,
+      payload,
+    }: {
+      requestId: string;
+      payload?: WorkScheduleRequestCancelPayload;
+    }) => cancelWorkScheduleRequest(requestId, payload),
     onSuccess: async () => {
       await invalidateWorkScheduleQueries(queryClient);
     },

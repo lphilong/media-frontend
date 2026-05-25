@@ -23,6 +23,10 @@ export type MonthlyRosterPreviewRowKind =
   | 'HOLIDAY_SUPPRESSED';
 export type MonthlyRosterPreviewConflictKind = 'SUBJECT_OVERLAP' | 'CANDIDATE_SUBJECT_OVERLAP';
 export type WorkShiftSourceType = 'MANUAL' | 'ROSTER_GENERATED';
+export type WorkScheduleRequestType = 'CREATE_SHIFT' | 'RESCHEDULE_SHIFT' | 'CANCEL_SHIFT';
+export type WorkScheduleRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export type WorkScheduleRequestTargetKind = 'EMPLOYMENT_PROFILE_WORK_SHIFT';
+export type WorkScheduleRequestSource = 'TEAM_MANAGER';
 
 export const ROSTER_EXCEPTION_TYPES: readonly RosterExceptionType[] = [
   'WORKING_TO_OFF',
@@ -178,6 +182,76 @@ export type WorkShiftReplaceResourcesPayload = {
 };
 
 export type WorkShiftLifecycleAction = 'cancel' | 'archive';
+
+export type WorkScheduleRequestRecord = {
+  id: string;
+  requestCode: string;
+  requestType: WorkScheduleRequestType;
+  status: WorkScheduleRequestStatus;
+  targetKind: WorkScheduleRequestTargetKind;
+  requestSource: WorkScheduleRequestSource;
+  targetEmploymentProfileId: string;
+  targetEmploymentProfileRef?: ReferenceSummary | null;
+  targetWorkShiftId?: string | null;
+  targetWorkShiftRef?: ReferenceSummary | null;
+  requestedByUserId: string;
+  requestedByEmploymentProfileId?: string | null;
+  reason: string;
+  proposedStartAt?: number | string | null;
+  proposedEndAt?: number | string | null;
+  proposedTitle?: string | null;
+  proposedStudioResourceIds: string[];
+  proposedDescription?: string | null;
+  proposedExternalRef?: string | null;
+  approvedByUserId?: string | null;
+  approvedAt?: number | string | null;
+  approvalNote?: string | null;
+  rejectedByUserId?: string | null;
+  rejectedAt?: number | string | null;
+  rejectionReason?: string | null;
+  cancelledByUserId?: string | null;
+  cancelledAt?: number | string | null;
+  cancellationReason?: string | null;
+  appliedWorkShiftId?: string | null;
+  appliedWorkShiftRef?: ReferenceSummary | null;
+  createdAt: number | string;
+  updatedAt: number | string;
+};
+
+export type WorkScheduleRequestListQuery = {
+  status?: WorkScheduleRequestStatus;
+  requestType?: WorkScheduleRequestType;
+  targetEmploymentProfileId?: string;
+  targetWorkShiftId?: string;
+  requestedByUserId?: string;
+  limit?: number;
+  cursor?: string;
+};
+
+export type WorkScheduleRequestCreatePayload = {
+  requestType: WorkScheduleRequestType;
+  targetEmploymentProfileId: string;
+  targetWorkShiftId?: string | null;
+  reason: string;
+  proposedStartAt?: number | null;
+  proposedEndAt?: number | null;
+  proposedTitle?: string | null;
+  proposedStudioResourceIds?: string[];
+  proposedDescription?: string | null;
+  proposedExternalRef?: string | null;
+};
+
+export type WorkScheduleRequestApprovePayload = {
+  approvalNote?: string | null;
+};
+
+export type WorkScheduleRequestRejectPayload = {
+  rejectionReason: string;
+};
+
+export type WorkScheduleRequestCancelPayload = {
+  cancellationReason?: string | null;
+};
 
 export type CursorPagedResponse<TData> = {
   data: TData[];

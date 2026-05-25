@@ -23,6 +23,8 @@ type MonthlyRosterPreviewRowKind =
   | 'ADD_SPECIAL_SHIFT'
   | 'HOLIDAY_SUPPRESSED';
 type WorkScheduleScope = 'self' | 'team' | 'department' | 'global';
+type WorkScheduleRequestType = 'CREATE_SHIFT' | 'RESCHEDULE_SHIFT' | 'CANCEL_SHIFT';
+type WorkScheduleRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 type EventAssignmentKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
 type EventStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
 
@@ -67,6 +69,38 @@ type WorkShiftRecord = {
   sourceDepartmentOrgUnitRef?: ReferenceSummary | null;
   sourceRosterLocalDate?: string | null;
   sourceRosterSlotKey?: string | null;
+};
+
+type WorkScheduleRequestRecord = {
+  id: string;
+  requestCode: string;
+  requestType: WorkScheduleRequestType;
+  status: WorkScheduleRequestStatus;
+  targetKind: 'EMPLOYMENT_PROFILE_WORK_SHIFT';
+  requestSource: 'TEAM_MANAGER';
+  targetEmploymentProfileId: string;
+  targetWorkShiftId: string | null;
+  requestedByUserId: string;
+  requestedByEmploymentProfileId: string | null;
+  reason: string;
+  proposedStartAt: number | null;
+  proposedEndAt: number | null;
+  proposedTitle: string | null;
+  proposedStudioResourceIds: string[];
+  proposedDescription: string | null;
+  proposedExternalRef: string | null;
+  approvedByUserId: string | null;
+  approvedAt: number | null;
+  approvalNote: string | null;
+  rejectedByUserId: string | null;
+  rejectedAt: number | null;
+  rejectionReason: string | null;
+  cancelledByUserId: string | null;
+  cancelledAt: number | null;
+  cancellationReason: string | null;
+  appliedWorkShiftId: string | null;
+  createdAt: number;
+  updatedAt: number;
 };
 
 type WorkPatternRecord = {
@@ -253,6 +287,7 @@ const initialWorkPatternSeed = 700;
 const initialHolidayCalendarSeed = 710;
 const initialHolidayCalendarEntrySeed = 720;
 const initialMonthlyRosterSeed = 730;
+const initialWorkScheduleRequestSeed = 760;
 const initialEventSeed = 800;
 const initialAssignmentSeed = 900;
 
@@ -261,6 +296,7 @@ let workPatternSeed = initialWorkPatternSeed;
 let holidayCalendarSeed = initialHolidayCalendarSeed;
 let holidayCalendarEntrySeed = initialHolidayCalendarEntrySeed;
 let monthlyRosterSeed = initialMonthlyRosterSeed;
+let workScheduleRequestSeed = initialWorkScheduleRequestSeed;
 let eventSeed = initialEventSeed;
 let assignmentSeed = initialAssignmentSeed;
 
@@ -762,6 +798,39 @@ const platformAccountRefs = new Map<string, ReferenceSummary>([
 ]);
 
 let workShifts = initialWorkShifts.map((record) => ({ ...record }));
+let workScheduleRequests: WorkScheduleRequestRecord[] = [
+  {
+    id: 'work-schedule-request-001',
+    requestCode: 'WSR-202605-000001',
+    requestType: 'CREATE_SHIFT',
+    status: 'PENDING',
+    targetKind: 'EMPLOYMENT_PROFILE_WORK_SHIFT',
+    requestSource: 'TEAM_MANAGER',
+    targetEmploymentProfileId: 'ep-002',
+    targetWorkShiftId: null,
+    requestedByUserId: 'team-manager-user-1',
+    requestedByEmploymentProfileId: 'ep-manager-001',
+    reason: 'Need coverage for evening stream',
+    proposedStartAt: futureStart + 300_000,
+    proposedEndAt: futureEnd + 300_000,
+    proposedTitle: 'Evening stream coverage',
+    proposedStudioResourceIds: ['studio-001'],
+    proposedDescription: null,
+    proposedExternalRef: null,
+    approvedByUserId: null,
+    approvedAt: null,
+    approvalNote: null,
+    rejectedByUserId: null,
+    rejectedAt: null,
+    rejectionReason: null,
+    cancelledByUserId: null,
+    cancelledAt: null,
+    cancellationReason: null,
+    appliedWorkShiftId: null,
+    createdAt: now - 1_000,
+    updatedAt: now - 1_000,
+  },
+];
 let workPatterns = initialWorkPatterns.map((record) => ({ ...record }));
 let holidayCalendars = initialHolidayCalendars.map((record) => ({
   ...record,
@@ -780,9 +849,43 @@ export const resetWave6MockData = (): void => {
   holidayCalendarSeed = initialHolidayCalendarSeed;
   holidayCalendarEntrySeed = initialHolidayCalendarEntrySeed;
   monthlyRosterSeed = initialMonthlyRosterSeed;
+  workScheduleRequestSeed = initialWorkScheduleRequestSeed;
   eventSeed = initialEventSeed;
   assignmentSeed = initialAssignmentSeed;
   workShifts = initialWorkShifts.map((record) => ({ ...record }));
+  workScheduleRequests = [
+    {
+      id: 'work-schedule-request-001',
+      requestCode: 'WSR-202605-000001',
+      requestType: 'CREATE_SHIFT',
+      status: 'PENDING',
+      targetKind: 'EMPLOYMENT_PROFILE_WORK_SHIFT',
+      requestSource: 'TEAM_MANAGER',
+      targetEmploymentProfileId: 'ep-002',
+      targetWorkShiftId: null,
+      requestedByUserId: 'team-manager-user-1',
+      requestedByEmploymentProfileId: 'ep-manager-001',
+      reason: 'Need coverage for evening stream',
+      proposedStartAt: futureStart + 300_000,
+      proposedEndAt: futureEnd + 300_000,
+      proposedTitle: 'Evening stream coverage',
+      proposedStudioResourceIds: ['studio-001'],
+      proposedDescription: null,
+      proposedExternalRef: null,
+      approvedByUserId: null,
+      approvedAt: null,
+      approvalNote: null,
+      rejectedByUserId: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      cancelledByUserId: null,
+      cancelledAt: null,
+      cancellationReason: null,
+      appliedWorkShiftId: null,
+      createdAt: now - 1_000,
+      updatedAt: now - 1_000,
+    },
+  ];
   workPatterns = initialWorkPatterns.map((record) => ({ ...record }));
   holidayCalendars = initialHolidayCalendars.map((record) => ({
     ...record,
@@ -1143,6 +1246,9 @@ const isMonthlyRosterScope = (value: unknown): value is MonthlyRosterScope =>
 const isRosterExceptionType = (value: unknown): value is RosterExceptionType =>
   value === 'WORKING_TO_OFF' || value === 'CHANGE_TIME' || value === 'ADD_SPECIAL_SHIFT';
 
+const isWorkScheduleRequestType = (value: unknown): value is WorkScheduleRequestType =>
+  value === 'CREATE_SHIFT' || value === 'RESCHEDULE_SHIFT' || value === 'CANCEL_SHIFT';
+
 const isWorkPatternWeekday = (value: unknown): value is WorkPatternWeekday =>
   value === 'MON' ||
   value === 'TUE' ||
@@ -1219,6 +1325,23 @@ const toWorkShiftDetail = (record: WorkShiftRecord) => ({
   sourceDepartmentOrgUnitRef: record.sourceDepartmentOrgUnitId
     ? (orgUnitRefs.get(record.sourceDepartmentOrgUnitId) ?? null)
     : null,
+});
+
+const toWorkShiftRef = (workShiftId: string | null): ReferenceSummary | null => {
+  if (!workShiftId) {
+    return null;
+  }
+  const record = workShifts.find((item) => item.id === workShiftId);
+  return record
+    ? { id: record.id, code: record.shiftCode, title: record.title, status: record.status }
+    : null;
+};
+
+const toWorkScheduleRequestDetail = (record: WorkScheduleRequestRecord) => ({
+  ...record,
+  targetEmploymentProfileRef: employmentProfileRefs.get(record.targetEmploymentProfileId) ?? null,
+  targetWorkShiftRef: toWorkShiftRef(record.targetWorkShiftId),
+  appliedWorkShiftRef: toWorkShiftRef(record.appliedWorkShiftId),
 });
 
 const toEventListItem = (record: EventRecord) => ({
@@ -3135,6 +3258,146 @@ export const wave6Handlers = [
 
     const rows = filterWorkShiftRows(workShifts, url.searchParams);
     return HttpResponse.json(paginate(rows.map(toWorkShiftListItem), url.searchParams));
+  }),
+
+  http.get('*/admin/work-schedule/requests', ({ request }) => {
+    const url = new URL(request.url);
+    let rows = [...workScheduleRequests];
+    const status = url.searchParams.get('status');
+    const requestType = url.searchParams.get('requestType');
+
+    if (status) {
+      rows = rows.filter((item) => item.status === status);
+    }
+
+    if (requestType) {
+      rows = rows.filter((item) => item.requestType === requestType);
+    }
+
+    rows.sort((left, right) => right.createdAt - left.createdAt || left.id.localeCompare(right.id));
+    return HttpResponse.json(paginate(rows.map(toWorkScheduleRequestDetail), url.searchParams));
+  }),
+
+  http.post('*/admin/work-schedule/requests', async ({ request }) => {
+    const body = await parseJsonBody(request);
+
+    if (
+      !isWorkScheduleRequestType(body.requestType) ||
+      typeof body.targetEmploymentProfileId !== 'string' ||
+      typeof body.reason !== 'string' ||
+      body.reason.trim().length === 0
+    ) {
+      return HttpResponse.json({ message: 'work-schedule:validation.required' }, { status: 422 });
+    }
+
+    workScheduleRequestSeed += 1;
+    const record: WorkScheduleRequestRecord = {
+      id: `work-schedule-request-${workScheduleRequestSeed}`,
+      requestCode: `WSR-202605-${String(workScheduleRequestSeed).padStart(6, '0')}`,
+      requestType: body.requestType,
+      status: 'PENDING',
+      targetKind: 'EMPLOYMENT_PROFILE_WORK_SHIFT',
+      requestSource: 'TEAM_MANAGER',
+      targetEmploymentProfileId: body.targetEmploymentProfileId,
+      targetWorkShiftId:
+        typeof body.targetWorkShiftId === 'string' && body.targetWorkShiftId.trim().length > 0
+          ? body.targetWorkShiftId
+          : null,
+      requestedByUserId: getMockCurrentActorCapabilities().id,
+      requestedByEmploymentProfileId: 'ep-manager-001',
+      reason: body.reason.trim(),
+      proposedStartAt: typeof body.proposedStartAt === 'number' ? body.proposedStartAt : null,
+      proposedEndAt: typeof body.proposedEndAt === 'number' ? body.proposedEndAt : null,
+      proposedTitle: typeof body.proposedTitle === 'string' ? body.proposedTitle : null,
+      proposedStudioResourceIds: Array.isArray(body.proposedStudioResourceIds)
+        ? body.proposedStudioResourceIds.map(String)
+        : [],
+      proposedDescription:
+        typeof body.proposedDescription === 'string' ? body.proposedDescription : null,
+      proposedExternalRef:
+        typeof body.proposedExternalRef === 'string' ? body.proposedExternalRef : null,
+      approvedByUserId: null,
+      approvedAt: null,
+      approvalNote: null,
+      rejectedByUserId: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      cancelledByUserId: null,
+      cancelledAt: null,
+      cancellationReason: null,
+      appliedWorkShiftId: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    workScheduleRequests.unshift(record);
+    return HttpResponse.json({ data: toWorkScheduleRequestDetail(record) });
+  }),
+
+  http.get('*/admin/work-schedule/requests/:requestId', ({ params }) => {
+    const record = workScheduleRequests.find((item) => item.id === String(params.requestId));
+    if (!record) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    return HttpResponse.json({ data: toWorkScheduleRequestDetail(record) });
+  }),
+
+  http.post('*/admin/work-schedule/requests/:requestId/cancel', async ({ params, request }) => {
+    const record = workScheduleRequests.find((item) => item.id === String(params.requestId));
+    if (!record) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (record.status !== 'PENDING') {
+      return HttpResponse.json({ message: 'work-schedule:requests.statuses.CANCELLED' }, { status: 409 });
+    }
+    const body = await parseJsonBody(request);
+    record.status = 'CANCELLED';
+    record.cancelledByUserId = getMockCurrentActorCapabilities().id;
+    record.cancelledAt = Date.now();
+    record.cancellationReason =
+      typeof body.cancellationReason === 'string' ? body.cancellationReason : null;
+    record.updatedAt = record.cancelledAt;
+
+    return HttpResponse.json({ data: toWorkScheduleRequestDetail(record) });
+  }),
+
+  http.post('*/admin/work-schedule/requests/:requestId/approve', async ({ params, request }) => {
+    const record = workScheduleRequests.find((item) => item.id === String(params.requestId));
+    if (!record) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (record.status !== 'PENDING') {
+      return HttpResponse.json({ message: 'work-schedule:requests.statuses.APPROVED' }, { status: 409 });
+    }
+    const body = await parseJsonBody(request);
+    record.status = 'APPROVED';
+    record.approvedByUserId = getMockCurrentActorCapabilities().id;
+    record.approvedAt = Date.now();
+    record.approvalNote = typeof body.approvalNote === 'string' ? body.approvalNote : null;
+    record.appliedWorkShiftId = record.targetWorkShiftId ?? 'work-shift-approval-fixture';
+    record.updatedAt = record.approvedAt;
+
+    return HttpResponse.json({ data: toWorkScheduleRequestDetail(record) });
+  }),
+
+  http.post('*/admin/work-schedule/requests/:requestId/reject', async ({ params, request }) => {
+    const record = workScheduleRequests.find((item) => item.id === String(params.requestId));
+    if (!record) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (record.status !== 'PENDING') {
+      return HttpResponse.json({ message: 'work-schedule:requests.statuses.REJECTED' }, { status: 409 });
+    }
+    const body = await parseJsonBody(request);
+    record.status = 'REJECTED';
+    record.rejectedByUserId = getMockCurrentActorCapabilities().id;
+    record.rejectedAt = Date.now();
+    record.rejectionReason =
+      typeof body.rejectionReason === 'string' ? body.rejectionReason : 'Rejected';
+    record.updatedAt = record.rejectedAt;
+
+    return HttpResponse.json({ data: toWorkScheduleRequestDetail(record) });
   }),
 
   http.post('*/admin/work-shifts', async ({ request }) => {

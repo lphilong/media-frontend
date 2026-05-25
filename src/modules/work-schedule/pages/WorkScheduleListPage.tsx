@@ -12,6 +12,11 @@ import {
 } from '@modules/work-schedule/components/work-schedule-reference-options';
 import {
   useCreateWorkShiftMutation,
+  useApproveWorkScheduleRequestMutation,
+  useCancelWorkScheduleRequestMutation,
+  useCreateWorkScheduleRequestMutation,
+  useRejectWorkScheduleRequestMutation,
+  useWorkScheduleRequestList,
   useWorkShiftFlatList,
   useWorkShiftLifecycleMutation,
   useWorkShiftsByResource,
@@ -19,6 +24,7 @@ import {
 } from '@modules/work-schedule/hooks/use-work-schedule';
 import { createWorkShiftListColumns } from '@modules/work-schedule/tables/work-schedule-columns';
 import type {
+  WorkScheduleRequestType,
   WorkScheduleScope,
   WorkShiftLifecycleAction,
   WorkShiftSubjectKind,
@@ -32,6 +38,7 @@ import type { NormalizedApiError } from '@shared/api';
 import {
   canShowAction,
   canUseAnyAction,
+  hasScopeGrant,
   PERMISSIONS,
   useCurrentActorCapabilities,
   type ActionCapabilityRequirement,
@@ -79,6 +86,11 @@ const sortOptions = [
 const statusOptions = ['', 'ACTIVE', 'CANCELLED', 'ARCHIVED'] as const;
 const subjectKindOptions = ['', 'EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP'] as const;
 const scopeOptions = ['', 'self', 'team', 'department', 'global'] as const;
+const scheduleRequestTypeOptions: readonly WorkScheduleRequestType[] = [
+  'CREATE_SHIFT',
+  'RESCHEDULE_SHIFT',
+  'CANCEL_SHIFT',
+];
 
 const padNumber = (value: number, length = 2): string => value.toString().padStart(length, '0');
 
@@ -281,10 +293,25 @@ export const WorkScheduleListPage = (): JSX.Element => {
 
   const createMutation = useCreateWorkShiftMutation();
   const lifecycleMutation = useWorkShiftLifecycleMutation();
+  const createScheduleRequestMutation = useCreateWorkScheduleRequestMutation();
+  const approveScheduleRequestMutation = useApproveWorkScheduleRequestMutation();
+  const rejectScheduleRequestMutation = useRejectWorkScheduleRequestMutation();
+  const cancelScheduleRequestMutation = useCancelWorkScheduleRequestMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isGuidedWorkflowOpen, setIsGuidedWorkflowOpen] = useState(false);
   const [guidedWorkflowError, setGuidedWorkflowError] = useState<NormalizedApiError | null>(null);
+  const [scheduleRequestError, setScheduleRequestError] = useState<NormalizedApiError | null>(null);
+  const [scheduleRequestForm, setScheduleRequestForm] = useState({
+    requestType: 'CREATE_SHIFT' as WorkScheduleRequestType,
+    targetEmploymentProfileId: '',
+    targetWorkShiftId: '',
+    reason: '',
+    proposedTitle: '',
+    proposedStartAt: '',
+    proposedEndAt: '',
+    decisionNote: '',
+  });
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
   const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
@@ -344,6 +371,34 @@ export const WorkScheduleListPage = (): JSX.Element => {
       permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
       scope: { module: 'workSchedule', value: 'global' },
     });
+  const canCreateScheduleRequest =
+    routeSurface?.id === 'team-shifts' &&
+    canShowAction(capabilitiesQuery.data, {
+      permission: PERMISSIONS.WORK_SCHEDULE_READ,
+      scope: { module: 'workSchedule', value: 'team' },
+    });
+  const canViewScheduleRequests =
+    routeSurface?.id === 'team-shifts' ||
+    routeSurface?.id === 'department-shifts' ||
+    routeSurface?.id === 'global-ops';
+  const canApproveScheduleRequests =
+    routeSurface?.id === 'global-ops' &&
+    canShowAction(capabilitiesQuery.data, {
+      permission: PERMISSIONS.WORK_SCHEDULE_UPDATE,
+      scope: { module: 'workSchedule', value: 'global' },
+    });
+  const scheduleRequestListQuery = useWorkScheduleRequestList(
+    {
+      status: routeSurface?.id === 'global-ops' ? 'PENDING' : undefined,
+      limit: 20,
+    },
+    {
+      enabled:
+        canViewScheduleRequests &&
+        Boolean(capabilitiesQuery.data) &&
+        hasScopeGrant(capabilitiesQuery.data, 'workSchedule', routeSurfaceScope ?? 'self'),
+    },
+  );
 
   usePageActions(
     canCreateWorkShift ? (
@@ -440,6 +495,93 @@ export const WorkScheduleListPage = (): JSX.Element => {
     },
     [lifecycleMutation, notifyError, notifySuccess, requestDestructiveConfirm, t],
   );
+
+  const onSubmitScheduleRequest = async (): Promise<void> => {
+    setScheduleRequestError(null);
+
+    try {
+      await createScheduleRequestMutation.mutateAsync({
+        payload: {
+          requestType: scheduleRequestForm.requestType,
+          targetEmploymentProfileId: scheduleRequestForm.targetEmploymentProfileId,
+          targetWorkShiftId:
+            scheduleRequestForm.requestType === 'CREATE_SHIFT'
+              ? null
+              : scheduleRequestForm.targetWorkShiftId,
+          reason: scheduleRequestForm.reason,
+          proposedTitle:
+            scheduleRequestForm.requestType === 'CREATE_SHIFT'
+              ? scheduleRequestForm.proposedTitle
+              : null,
+          proposedStartAt:
+            scheduleRequestForm.requestType === 'CANCEL_SHIFT'
+              ? null
+              : (parseUtcTimestampInput(scheduleRequestForm.proposedStartAt) ?? null),
+          proposedEndAt:
+            scheduleRequestForm.requestType === 'CANCEL_SHIFT'
+              ? null
+              : (parseUtcTimestampInput(scheduleRequestForm.proposedEndAt) ?? null),
+        },
+      });
+      notifySuccess('work-schedule:requests.feedback.submitted');
+      setScheduleRequestForm((current) => ({
+        ...current,
+        targetWorkShiftId: '',
+        reason: '',
+        proposedTitle: '',
+        proposedStartAt: '',
+        proposedEndAt: '',
+      }));
+    } catch (error) {
+      const normalizedError = error as NormalizedApiError;
+      setScheduleRequestError(normalizedError);
+      notifyError(normalizedError);
+    }
+  };
+
+  const onApproveScheduleRequest = async (requestId: string): Promise<void> => {
+    try {
+      await approveScheduleRequestMutation.mutateAsync({
+        requestId,
+        payload: { approvalNote: scheduleRequestForm.decisionNote || null },
+      });
+      notifySuccess('work-schedule:requests.feedback.approved');
+    } catch (error) {
+      notifyError(error as NormalizedApiError);
+    }
+  };
+
+  const onRejectScheduleRequest = async (requestId: string): Promise<void> => {
+    try {
+      await rejectScheduleRequestMutation.mutateAsync({
+        requestId,
+        payload: { rejectionReason: scheduleRequestForm.decisionNote || 'Rejected by dispatcher' },
+      });
+      notifySuccess('work-schedule:requests.feedback.rejected');
+    } catch (error) {
+      notifyError(error as NormalizedApiError);
+    }
+  };
+
+  const onCancelScheduleRequest = async (requestId: string): Promise<void> => {
+    const confirmed = await requestDestructiveConfirm({
+      description: t('work-schedule:requests.confirm.cancel'),
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await cancelScheduleRequestMutation.mutateAsync({
+        requestId,
+        payload: { cancellationReason: 'Cancelled by requester' },
+      });
+      notifySuccess('work-schedule:requests.feedback.cancelled');
+    } catch (error) {
+      notifyError(error as NormalizedApiError);
+    }
+  };
 
   const columns = useMemo(
     () =>
@@ -917,7 +1059,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
         </FilterToolbar>
       }
       interactionSection={
-        <>
+        <div className="space-y-4">
           {canCreateWorkShift && isGuidedWorkflowOpen ? (
             <WorkShiftGuidedWorkflow
               isPending={createMutation.isPending}
@@ -930,7 +1072,240 @@ export const WorkScheduleListPage = (): JSX.Element => {
               onSubmit={onGuidedWorkflowSubmit}
             />
           ) : null}
-        </>
+          {canCreateScheduleRequest ? (
+            <section className="space-y-3 border-y border-border py-4">
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="flex min-w-[190px] flex-col gap-1">
+                  <span className="text-xs font-medium uppercase text-muted">
+                    {t('work-schedule:requests.fields.type')}
+                  </span>
+                  <select
+                    value={scheduleRequestForm.requestType}
+                    className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                    onChange={(event) =>
+                      setScheduleRequestForm((current) => ({
+                        ...current,
+                        requestType: event.target.value as WorkScheduleRequestType,
+                      }))
+                    }
+                  >
+                    {scheduleRequestTypeOptions.map((requestType) => (
+                      <option key={requestType} value={requestType}>
+                        {t(`work-schedule:requests.types.${requestType}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex min-w-[220px] flex-col gap-1">
+                  <span className="text-xs font-medium uppercase text-muted">
+                    {t('work-schedule:requests.fields.targetEmploymentProfileId')}
+                  </span>
+                  <input
+                    value={scheduleRequestForm.targetEmploymentProfileId}
+                    className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                    onChange={(event) =>
+                      setScheduleRequestForm((current) => ({
+                        ...current,
+                        targetEmploymentProfileId: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                {scheduleRequestForm.requestType !== 'CREATE_SHIFT' ? (
+                  <label className="flex min-w-[220px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('work-schedule:requests.fields.targetWorkShiftId')}
+                    </span>
+                    <input
+                      value={scheduleRequestForm.targetWorkShiftId}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        setScheduleRequestForm((current) => ({
+                          ...current,
+                          targetWorkShiftId: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                ) : null}
+                {scheduleRequestForm.requestType === 'CREATE_SHIFT' ? (
+                  <label className="flex min-w-[220px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('work-schedule:requests.fields.title')}
+                    </span>
+                    <input
+                      value={scheduleRequestForm.proposedTitle}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        setScheduleRequestForm((current) => ({
+                          ...current,
+                          proposedTitle: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                ) : null}
+                {scheduleRequestForm.requestType !== 'CANCEL_SHIFT' ? (
+                  <>
+                    <label className="flex min-w-[190px] flex-col gap-1">
+                      <span className="text-xs font-medium uppercase text-muted">
+                        {t('work-schedule:requests.fields.startAt')}
+                      </span>
+                      <input
+                        type="datetime-local"
+                        value={scheduleRequestForm.proposedStartAt}
+                        className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                        onChange={(event) =>
+                          setScheduleRequestForm((current) => ({
+                            ...current,
+                            proposedStartAt: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="flex min-w-[190px] flex-col gap-1">
+                      <span className="text-xs font-medium uppercase text-muted">
+                        {t('work-schedule:requests.fields.endAt')}
+                      </span>
+                      <input
+                        type="datetime-local"
+                        value={scheduleRequestForm.proposedEndAt}
+                        className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                        onChange={(event) =>
+                          setScheduleRequestForm((current) => ({
+                            ...current,
+                            proposedEndAt: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  </>
+                ) : null}
+                <label className="flex min-w-[260px] flex-1 flex-col gap-1">
+                  <span className="text-xs font-medium uppercase text-muted">
+                    {t('work-schedule:requests.fields.reason')}
+                  </span>
+                  <input
+                    value={scheduleRequestForm.reason}
+                    className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                    onChange={(event) =>
+                      setScheduleRequestForm((current) => ({
+                        ...current,
+                        reason: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={createScheduleRequestMutation.isPending}
+                  onClick={() => void onSubmitScheduleRequest()}
+                >
+                  {t('work-schedule:requests.actions.requestChange')}
+                </button>
+              </div>
+              {scheduleRequestError ? (
+                <p className="text-sm text-danger">
+                  {readErrorMessage(
+                    t,
+                    scheduleRequestError,
+                    'work-schedule:requests.feedback.submitFailed',
+                  )}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+          {canViewScheduleRequests && scheduleRequestListQuery.data?.data.length ? (
+            <section className="space-y-3 border-y border-border py-4">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <h2 className="text-base font-semibold text-text">
+                  {routeSurface?.id === 'global-ops'
+                    ? t('work-schedule:requests.approvalQueue')
+                    : t('work-schedule:requests.title')}
+                </h2>
+                {canApproveScheduleRequests ? (
+                  <label className="flex min-w-[260px] flex-col gap-1">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('work-schedule:requests.fields.decisionNote')}
+                    </span>
+                    <input
+                      value={scheduleRequestForm.decisionNote}
+                      className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                      onChange={(event) =>
+                        setScheduleRequestForm((current) => ({
+                          ...current,
+                          decisionNote: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                ) : null}
+              </div>
+              <div className="grid gap-2">
+                {scheduleRequestListQuery.data.data.map((request) => {
+                  const isPending = request.status === 'PENDING';
+                  const canCancelOwn =
+                    isPending && request.requestedByUserId === capabilitiesQuery.data?.id;
+                  return (
+                    <div
+                      key={request.id}
+                      className="grid gap-2 border border-border bg-panel px-3 py-2 md:grid-cols-[1fr_auto]"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                          <span>{request.requestCode}</span>
+                          <span>{t(`work-schedule:requests.types.${request.requestType}`)}</span>
+                          <span>{t(`work-schedule:requests.statuses.${request.status}`)}</span>
+                        </div>
+                        <p className="truncate text-sm text-muted">
+                          {request.targetEmploymentProfileRef?.displayName ??
+                            request.targetEmploymentProfileId}
+                          {request.targetWorkShiftRef?.title
+                            ? ` · ${request.targetWorkShiftRef.title}`
+                            : ''}
+                        </p>
+                        <p className="truncate text-sm text-text">{request.reason}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {canApproveScheduleRequests ? (
+                          <>
+                            <button
+                              type="button"
+                              className="rounded border border-border bg-surface px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={!isPending || approveScheduleRequestMutation.isPending}
+                              onClick={() => void onApproveScheduleRequest(request.id)}
+                            >
+                              {t('work-schedule:requests.actions.approve')}
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded border border-border bg-surface px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={!isPending || rejectScheduleRequestMutation.isPending}
+                              onClick={() => void onRejectScheduleRequest(request.id)}
+                            >
+                              {t('work-schedule:requests.actions.reject')}
+                            </button>
+                          </>
+                        ) : null}
+                        {canCancelOwn ? (
+                          <button
+                            type="button"
+                            className="rounded border border-border bg-surface px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={cancelScheduleRequestMutation.isPending}
+                            onClick={() => void onCancelScheduleRequest(request.id)}
+                          >
+                            {t('work-schedule:requests.actions.cancel')}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+        </div>
       }
       tableSection={
         <div className="space-y-4">

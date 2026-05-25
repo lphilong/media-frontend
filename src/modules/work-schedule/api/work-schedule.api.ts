@@ -28,6 +28,12 @@ import type {
   WorkPatternListQuery,
   WorkPatternRecord,
   WorkPatternUpdatePayload,
+  WorkScheduleRequestApprovePayload,
+  WorkScheduleRequestCancelPayload,
+  WorkScheduleRequestCreatePayload,
+  WorkScheduleRequestListQuery,
+  WorkScheduleRequestRecord,
+  WorkScheduleRequestRejectPayload,
   WorkScheduleScope,
   WorkShiftByResourceItem,
   WorkShiftByResourceQuery,
@@ -66,6 +72,13 @@ const monthlyRosterPreviewConflictKindSchema = z.enum([
   'CANDIDATE_SUBJECT_OVERLAP',
 ]);
 const workShiftSourceTypeSchema = z.enum(['MANUAL', 'ROSTER_GENERATED']);
+const workScheduleRequestTypeSchema = z.enum(['CREATE_SHIFT', 'RESCHEDULE_SHIFT', 'CANCEL_SHIFT']);
+const workScheduleRequestStatusSchema = z.enum([
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'CANCELLED',
+]);
 const timestampSchema = z.union([z.number(), z.string()]);
 const referenceSummarySchema = z
   .object({
@@ -177,6 +190,56 @@ const byResourceResponseSchema = z
 const detailResponseSchema = z
   .object({
     data: detailSchema,
+  })
+  .strict();
+
+const workScheduleRequestSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    requestCode: z.string().trim().min(1),
+    requestType: workScheduleRequestTypeSchema,
+    status: workScheduleRequestStatusSchema,
+    targetKind: z.literal('EMPLOYMENT_PROFILE_WORK_SHIFT'),
+    requestSource: z.literal('TEAM_MANAGER'),
+    targetEmploymentProfileId: z.string().trim().min(1),
+    targetEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
+    targetWorkShiftId: z.string().nullable().optional(),
+    targetWorkShiftRef: referenceSummarySchema.nullable().optional(),
+    requestedByUserId: z.string().trim().min(1),
+    requestedByEmploymentProfileId: z.string().nullable().optional(),
+    reason: z.string().trim().min(1),
+    proposedStartAt: timestampSchema.nullable().optional(),
+    proposedEndAt: timestampSchema.nullable().optional(),
+    proposedTitle: z.string().nullable().optional(),
+    proposedStudioResourceIds: z.array(z.string()),
+    proposedDescription: z.string().nullable().optional(),
+    proposedExternalRef: z.string().nullable().optional(),
+    approvedByUserId: z.string().nullable().optional(),
+    approvedAt: timestampSchema.nullable().optional(),
+    approvalNote: z.string().nullable().optional(),
+    rejectedByUserId: z.string().nullable().optional(),
+    rejectedAt: timestampSchema.nullable().optional(),
+    rejectionReason: z.string().nullable().optional(),
+    cancelledByUserId: z.string().nullable().optional(),
+    cancelledAt: timestampSchema.nullable().optional(),
+    cancellationReason: z.string().nullable().optional(),
+    appliedWorkShiftId: z.string().nullable().optional(),
+    appliedWorkShiftRef: referenceSummarySchema.nullable().optional(),
+    createdAt: timestampSchema,
+    updatedAt: timestampSchema,
+  })
+  .strict();
+
+const workScheduleRequestListResponseSchema = z
+  .object({
+    data: z.array(workScheduleRequestSchema),
+    meta: cursorMetaSchema,
+  })
+  .strict();
+
+const workScheduleRequestDetailResponseSchema = z
+  .object({
+    data: workScheduleRequestSchema,
   })
   .strict();
 
@@ -541,6 +604,18 @@ const sanitizeMonthlyRosterListQuery = (
   scope: query.scope,
 });
 
+const sanitizeWorkScheduleRequestListQuery = (
+  query: WorkScheduleRequestListQuery,
+): Record<string, string | number | undefined> => ({
+  status: query.status,
+  requestType: query.requestType,
+  targetEmploymentProfileId: query.targetEmploymentProfileId,
+  targetWorkShiftId: query.targetWorkShiftId,
+  requestedByUserId: query.requestedByUserId,
+  limit: query.limit,
+  cursor: query.cursor,
+});
+
 const rosterScopeParams = (
   scope?: MonthlyRosterScope,
 ): Record<string, MonthlyRosterScope | undefined> | undefined => {
@@ -587,6 +662,31 @@ const sanitizeCreatePayload = (payload: WorkShiftCreatePayload): WorkShiftCreate
   studioResourceIds: payload.studioResourceIds,
   description: payload.description,
   externalRef: payload.externalRef,
+});
+
+const sanitizeWorkScheduleRequestCreatePayload = (
+  payload: WorkScheduleRequestCreatePayload,
+): WorkScheduleRequestCreatePayload => ({
+  requestType: payload.requestType,
+  targetEmploymentProfileId: payload.targetEmploymentProfileId.trim(),
+  ...(payload.targetWorkShiftId?.trim()
+    ? { targetWorkShiftId: payload.targetWorkShiftId.trim() }
+    : {}),
+  reason: payload.reason.trim(),
+  ...(payload.proposedStartAt !== undefined ? { proposedStartAt: payload.proposedStartAt } : {}),
+  ...(payload.proposedEndAt !== undefined ? { proposedEndAt: payload.proposedEndAt } : {}),
+  ...(payload.proposedTitle !== undefined
+    ? { proposedTitle: sanitizeNullableText(payload.proposedTitle) }
+    : {}),
+  ...(payload.proposedStudioResourceIds !== undefined
+    ? { proposedStudioResourceIds: payload.proposedStudioResourceIds }
+    : {}),
+  ...(payload.proposedDescription !== undefined
+    ? { proposedDescription: sanitizeNullableText(payload.proposedDescription) }
+    : {}),
+  ...(payload.proposedExternalRef !== undefined
+    ? { proposedExternalRef: sanitizeNullableText(payload.proposedExternalRef) }
+    : {}),
 });
 
 const sanitizeReassignPayload = (
@@ -884,6 +984,90 @@ export const performWorkShiftLifecycleAction = async (
   });
 
   return detailResponseSchema.parse(response).data;
+};
+
+export const fetchWorkScheduleRequests = async (
+  query: WorkScheduleRequestListQuery,
+): Promise<CursorPagedResponse<WorkScheduleRequestRecord>> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/work-schedule/requests',
+    params: sanitizeWorkScheduleRequestListQuery(query),
+  });
+
+  return workScheduleRequestListResponseSchema.parse(response);
+};
+
+export const fetchWorkScheduleRequestDetail = async (
+  requestId: string,
+): Promise<WorkScheduleRequestRecord> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/work-schedule/requests/${encodeURIComponent(requestId)}`,
+  });
+
+  return workScheduleRequestDetailResponseSchema.parse(response).data;
+};
+
+export const createWorkScheduleRequest = async (
+  payload: WorkScheduleRequestCreatePayload,
+): Promise<WorkScheduleRequestRecord> => {
+  const response = await apiRequest<unknown, WorkScheduleRequestCreatePayload>({
+    method: 'POST',
+    url: '/admin/work-schedule/requests',
+    data: sanitizeWorkScheduleRequestCreatePayload(payload),
+  });
+
+  return workScheduleRequestDetailResponseSchema.parse(response).data;
+};
+
+export const approveWorkScheduleRequest = async (
+  requestId: string,
+  payload: WorkScheduleRequestApprovePayload,
+): Promise<WorkScheduleRequestRecord> => {
+  const response = await apiRequest<unknown, WorkScheduleRequestApprovePayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/requests/${encodeURIComponent(requestId)}/approve`,
+    data: {
+      ...(payload.approvalNote !== undefined
+        ? { approvalNote: sanitizeNullableText(payload.approvalNote) }
+        : {}),
+    },
+  });
+
+  return workScheduleRequestDetailResponseSchema.parse(response).data;
+};
+
+export const rejectWorkScheduleRequest = async (
+  requestId: string,
+  payload: WorkScheduleRequestRejectPayload,
+): Promise<WorkScheduleRequestRecord> => {
+  const response = await apiRequest<unknown, WorkScheduleRequestRejectPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/requests/${encodeURIComponent(requestId)}/reject`,
+    data: {
+      rejectionReason: payload.rejectionReason.trim(),
+    },
+  });
+
+  return workScheduleRequestDetailResponseSchema.parse(response).data;
+};
+
+export const cancelWorkScheduleRequest = async (
+  requestId: string,
+  payload: WorkScheduleRequestCancelPayload = {},
+): Promise<WorkScheduleRequestRecord> => {
+  const response = await apiRequest<unknown, WorkScheduleRequestCancelPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/requests/${encodeURIComponent(requestId)}/cancel`,
+    data: {
+      ...(payload.cancellationReason !== undefined
+        ? { cancellationReason: sanitizeNullableText(payload.cancellationReason) }
+        : {}),
+    },
+  });
+
+  return workScheduleRequestDetailResponseSchema.parse(response).data;
 };
 
 export const publishMonthlyRoster = async (
