@@ -18,6 +18,10 @@
   "list": {
     "title": "KPI 计划"
   },
+  "allocationQueue": {
+    "title": "KPI Allocation approval queue",
+    "empty": "No allocation approvals are waiting."
+  },
   "create": {
     "title": "创建 KPI 草稿计划",
     "submit": "创建草稿计划"
@@ -33,6 +37,10 @@
     "groupId": "Talent 组",
     "talentId": "Talent",
     "member": "成员",
+    "employmentProfileId": "Employment profile ID",
+    "note": "Note",
+    "approvalNote": "Approval note",
+    "rejectionReason": "Rejection reason",
     "status": "状态",
     "periodMonth": "KPI 月份",
     "metricCode": "指标",
@@ -77,7 +85,22 @@
   "allocation": {
     "targetTotal": "目标合计",
     "allocatedTotal": "分配合计",
-    "difference": "差额"
+    "difference": "差额",
+    "workflowStatus": "Allocation status",
+    "official": "Published allocation is official.",
+    "notOfficialUntilPublished": "Allocation does not affect official progress until published"
+  },
+  "allocationStatuses": {
+    "NONE": "No allocation",
+    "MIXED": "Mixed",
+    "DRAFT": "Allocation Draft",
+    "PENDING_APPROVAL": "Pending Approval",
+    "APPROVED": "Approved",
+    "PUBLISHED": "Published Allocation",
+    "REJECTED": "Rejected",
+    "ACTIVE": "Legacy active allocation",
+    "CLOSED": "Closed",
+    "CANCELLED": "Cancelled"
   },
   "actualEntry": {
     "title": "录入 actual",
@@ -111,6 +134,12 @@
     "updateDraft": "更新草稿",
     "replaceMetrics": "替换指标",
     "replaceAllocations": "替换分配",
+    "addAllocationMember": "Add member",
+    "saveAllocationDraft": "保存分配草稿",
+    "submitAllocation": "Submit Allocation",
+    "approveAllocation": "Approve Allocation",
+    "rejectAllocation": "Reject Allocation",
+    "publishAllocation": "Publish Allocation",
     "publish": "发布",
     "archive": "归档",
     "finalize": "终结"
@@ -125,6 +154,7 @@
     "invalidPeriodMonth": "KPI 月份必须为 YYYY-MM。",
     "invalidMetricValue": "请输入有效的指标数值。",
     "allocationMismatch": "发布前分配合计必须等于计划目标。",
+    "employmentProfileRequired": "Employment profile ID is required.",
     "invalidActualDate": "使用 DD-MM-YYYY。不要使用 YYYY-MM-DD 或斜杠日期。",
     "duplicateConflict": "Actual 已存在且值不同。请使用编辑或修正流程。",
     "reasonRequired": "必须填写修正原因。",
@@ -133,6 +163,11 @@
   "disabled": {
     "draftEditDraftOnly": "只有草稿计划可编辑。",
     "publishDraftOnly": "只有草稿计划可发布。",
+    "allocationDraftOnly": "仅可编辑分配草稿。",
+    "allocationSubmitDraftOnly": "仅可提交分配草稿。",
+    "allocationPlanPublishedOnly": "请先发布 KPI 计划，再起草分配。",
+    "allocationApprovePendingOnly": "仅可审批或拒绝待审批分配。",
+    "allocationPublishApprovedOnly": "仅可发布已审批分配。",
     "finalizePublishedOnly": "只有已发布计划可终结。",
     "alreadyArchived": "计划已归档。"
   },
@@ -146,11 +181,17 @@
     "actualSaved": "Actual 已保存。",
     "correctionCreated": "修正已提交。",
     "lifecycleUpdated": "KPI 生命周期已更新。",
-    "allocationsUpdated": "分配已替换。"
+    "allocationsUpdated": "分配已替换。",
+    "allocationDraftSaved": "Allocation draft saved.",
+    "allocationSubmitted": "Allocation submitted for approval.",
+    "allocationApproved": "Allocation approved.",
+    "allocationRejected": "Allocation rejected.",
+    "allocationPublished": "Allocation published."
   },
   "states": {
     "loadErrorTitle": "无法加载 KPI",
     "loadErrorMessage": "无法加载 KPI 数据。",
+    "capabilityUnavailable": "KPI permissions could not be verified. Try again.",
     "emptyPlans": "暂无 KPI 计划。",
     "emptyManagedGroups": "你管理的团队暂无 KPI 计划。"
   }

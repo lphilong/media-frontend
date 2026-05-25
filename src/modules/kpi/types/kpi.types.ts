@@ -24,7 +24,15 @@ export const kpiPlanStatuses = ['DRAFT', 'PUBLISHED', 'FINALIZED', 'ARCHIVED'] a
 export type KpiPlanStatus = (typeof kpiPlanStatuses)[number];
 
 export type KpiMetricUnit = 'VND' | 'COUNT' | 'HOUR';
-export type KpiAllocationStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'CANCELLED';
+export type KpiAllocationStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'PUBLISHED'
+  | 'REJECTED'
+  | 'ACTIVE'
+  | 'CLOSED'
+  | 'CANCELLED';
 
 export type KpiTargetMetricInput = {
   metricCode: KpiMetricCode;
@@ -38,6 +46,21 @@ export type KpiAllocationInput = {
   allocationEndDate?: string | null;
   targetMetrics: KpiTargetMetricInput[];
   snapshotMemberDisplayName?: string | null;
+};
+
+export type KpiAllocationDraftMemberInput = {
+  employmentProfileId: string;
+  allocationStartDate: string;
+  allocationEndDate?: string | null;
+  targetMetrics: KpiTargetMetricInput[];
+  note?: string | null;
+};
+
+export type KpiAllocationQuery = {
+  status?: KpiAllocationStatus;
+  kpiPlanId?: string;
+  groupId?: string;
+  limit?: number;
 };
 
 export type KpiCreatePlanPayload = {
@@ -98,6 +121,7 @@ export type KpiAllocation = {
   id: string;
   kpiPlanId: string;
   groupId: string;
+  memberEmploymentProfileId: string | null;
   memberTalentId: string;
   membershipId: string | null;
   allocationStatus: KpiAllocationStatus;
@@ -105,9 +129,21 @@ export type KpiAllocation = {
   allocationEndDate: string | null;
   targetMetrics: KpiTargetMetricInput[];
   snapshotMemberDisplayName: string | null;
+  note: string | null;
   createdAt: number | string;
+  createdByActorId: string | null;
   updatedAt: number | string;
+  updatedByActorId: string | null;
+  submittedAt: number | string | null;
+  submittedByActorId: string | null;
+  approvedAt: number | string | null;
+  approvedByActorId: string | null;
+  approvalNote: string | null;
+  rejectedAt: number | string | null;
+  rejectedByActorId: string | null;
+  rejectionReason: string | null;
   publishedAt: number | string | null;
+  publishedByActorId: string | null;
   closedAt: number | string | null;
 };
 

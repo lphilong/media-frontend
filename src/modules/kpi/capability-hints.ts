@@ -6,7 +6,15 @@ import type {
 } from '@shared/auth/current-actor-capabilities';
 import { canUseAction, PERMISSIONS } from '@shared/auth/current-actor-capabilities';
 
-type KpiMoneyAction = 'createPlan' | 'enterActual' | 'correctActual';
+type KpiMoneyAction =
+  | 'createPlan'
+  | 'enterActual'
+  | 'correctActual'
+  | 'draftAllocation'
+  | 'submitAllocation'
+  | 'approveAllocation'
+  | 'rejectAllocation'
+  | 'publishAllocation';
 
 type KpiCapabilityUnavailableReason = CapabilityMissingReason | 'unavailable';
 
@@ -42,6 +50,36 @@ const kpiMoneyActionRequirements = {
     {
       permission: PERMISSIONS.KPI_CORRECT_ACTUAL,
       scope: { module: 'kpi', value: 'managedGroup' },
+    },
+  ],
+  draftAllocation: [
+    {
+      permission: PERMISSIONS.KPI_ENTER_ACTUAL,
+      scope: { module: 'kpi', value: 'managedGroup' },
+    },
+  ],
+  submitAllocation: [
+    {
+      permission: PERMISSIONS.KPI_ENTER_ACTUAL,
+      scope: { module: 'kpi', value: 'managedGroup' },
+    },
+  ],
+  approveAllocation: [
+    {
+      permission: PERMISSIONS.KPI_MANAGE_ALLOCATION,
+      scope: { module: 'kpi', value: 'global' },
+    },
+  ],
+  rejectAllocation: [
+    {
+      permission: PERMISSIONS.KPI_MANAGE_ALLOCATION,
+      scope: { module: 'kpi', value: 'global' },
+    },
+  ],
+  publishAllocation: [
+    {
+      permission: PERMISSIONS.KPI_PUBLISH,
+      scope: { module: 'kpi', value: 'global' },
     },
   ],
 } satisfies Record<KpiMoneyAction, readonly ActionCapabilityRequirement[]>;

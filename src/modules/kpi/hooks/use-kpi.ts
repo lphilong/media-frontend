@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  approveKpiAllocation,
   createKpiActual,
   createKpiCorrection,
   createKpiPlan,
+  fetchKpiAllocations,
   fetchKpiActualDailyGrid,
   fetchKpiCorrectionHistory,
   fetchKpiPlanDetail,
@@ -11,13 +13,19 @@ import {
   fetchKpiProgress,
   fetchMyKpiProgress,
   performKpiLifecycleAction,
+  publishKpiAllocation,
+  rejectKpiAllocation,
   replaceKpiAllocations,
   replaceKpiTargetMetrics,
+  submitKpiAllocationDraft,
   updateKpiActual,
   updateKpiDraftCore,
+  upsertKpiAllocationDraft,
 } from '@modules/kpi/api/kpi.api';
 import type {
+  KpiAllocationDraftMemberInput,
   KpiAllocationInput,
+  KpiAllocationQuery,
   KpiCreatePlanPayload,
   KpiDraftCorePayload,
   KpiPlanQuery,
@@ -26,7 +34,7 @@ import type {
 
 const KPI_QUERY_ROOT = ['kpi'] as const;
 
-const stableQueryToken = (query: KpiPlanQuery): string => new URLSearchParams(
+const stableQueryToken = (query: Record<string, string | number | undefined>): string => new URLSearchParams(
   Object.entries(query)
     .filter(([, value]) => value !== undefined && value !== '')
     .map(([key, value]) => [key, String(value)]),
@@ -35,6 +43,7 @@ const stableQueryToken = (query: KpiPlanQuery): string => new URLSearchParams(
 export const kpiQueryKeys = {
   all: () => KPI_QUERY_ROOT,
   list: (query: KpiPlanQuery) => ['kpi', 'plans', stableQueryToken(query)] as const,
+  allocations: (query: KpiAllocationQuery) => ['kpi', 'allocations', stableQueryToken(query)] as const,
   detail: (kpiPlanId: string) => ['kpi', 'plan', kpiPlanId] as const,
   progress: (kpiPlanId: string) => ['kpi', 'progress', kpiPlanId] as const,
   myProgress: (kpiPlanId: string) => ['kpi', 'my-progress', kpiPlanId] as const,
@@ -52,6 +61,12 @@ export const useKpiPlans = (query: KpiPlanQuery) =>
   useQuery({
     queryKey: kpiQueryKeys.list(query),
     queryFn: () => fetchKpiPlans(query),
+  });
+
+export const useKpiAllocations = (query: KpiAllocationQuery) =>
+  useQuery({
+    queryKey: kpiQueryKeys.allocations(query),
+    queryFn: () => fetchKpiAllocations(query),
   });
 
 export const useKpiPlanDetail = (kpiPlanId?: string) =>
@@ -134,6 +149,54 @@ export const useReplaceKpiAllocationsMutation = () => {
   return useMutation({
     mutationFn: ({ kpiPlanId, allocations }: { kpiPlanId: string; allocations: KpiAllocationInput[] }) =>
       replaceKpiAllocations(kpiPlanId, allocations),
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const useUpsertKpiAllocationDraftMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      kpiPlanId,
+      allocations,
+    }: {
+      kpiPlanId: string;
+      allocations: KpiAllocationDraftMemberInput[];
+    }) => upsertKpiAllocationDraft(kpiPlanId, allocations),
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const useSubmitKpiAllocationDraftMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kpiPlanId }: { kpiPlanId: string }) => submitKpiAllocationDraft(kpiPlanId),
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const useApproveKpiAllocationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kpiPlanId, approvalNote }: { kpiPlanId: string; approvalNote?: string | null }) =>
+      approveKpiAllocation(kpiPlanId, approvalNote),
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const useRejectKpiAllocationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kpiPlanId, rejectionReason }: { kpiPlanId: string; rejectionReason: string }) =>
+      rejectKpiAllocation(kpiPlanId, rejectionReason),
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const usePublishKpiAllocationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kpiPlanId }: { kpiPlanId: string }) => publishKpiAllocation(kpiPlanId),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };

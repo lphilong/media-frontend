@@ -34,16 +34,37 @@ type KpiAllocation = {
   id: string;
   kpiPlanId: string;
   groupId: string;
+  memberEmploymentProfileId: string | null;
   memberTalentId: string;
   membershipId: string | null;
-  allocationStatus: 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'CANCELLED';
+  allocationStatus:
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'APPROVED'
+    | 'PUBLISHED'
+    | 'REJECTED'
+    | 'ACTIVE'
+    | 'CLOSED'
+    | 'CANCELLED';
   allocationStartDate: string;
   allocationEndDate: string | null;
   targetMetrics: Array<{ metricCode: KpiMetricCode; targetValue: number }>;
   snapshotMemberDisplayName: string | null;
+  note: string | null;
   createdAt: number;
+  createdByActorId: string | null;
   updatedAt: number;
+  updatedByActorId: string | null;
+  submittedAt: number | null;
+  submittedByActorId: string | null;
+  approvedAt: number | null;
+  approvedByActorId: string | null;
+  approvalNote: string | null;
+  rejectedAt: number | null;
+  rejectedByActorId: string | null;
+  rejectionReason: string | null;
   publishedAt: number | null;
+  publishedByActorId: string | null;
   closedAt: number | null;
 };
 
@@ -131,6 +152,7 @@ const allowedListQueryKeys = [
   'sortBy',
   'sortDirection',
 ] as const;
+const allowedAllocationListQueryKeys = ['status', 'kpiPlanId', 'groupId', 'limit'] as const;
 
 const basePlan = (overrides: Partial<KpiPlan>): KpiPlan => ({
   id: 'kpi-plan-draft',
@@ -221,9 +243,10 @@ const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
         id: `${plan.id}-alloc-1`,
         kpiPlanId: plan.id,
         groupId: 'group-001',
+        memberEmploymentProfileId: 'employment-profile-001',
         memberTalentId: 'talent-001',
         membershipId: null,
-        allocationStatus: plan.status === 'DRAFT' ? 'DRAFT' : 'ACTIVE',
+        allocationStatus: plan.status === 'DRAFT' ? 'DRAFT' : 'PUBLISHED',
         allocationStartDate: '01-05-2026',
         allocationEndDate: null,
         targetMetrics: [
@@ -231,18 +254,31 @@ const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
           { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 6 },
         ],
         snapshotMemberDisplayName: 'Luna Park',
+        note: null,
         createdAt: now,
+        createdByActorId: 'user-admin',
         updatedAt: now,
+        updatedByActorId: 'user-admin',
+        submittedAt: plan.status === 'DRAFT' ? null : now - 45_000,
+        submittedByActorId: plan.status === 'DRAFT' ? null : 'manager-user',
+        approvedAt: plan.status === 'DRAFT' ? null : now - 40_000,
+        approvedByActorId: plan.status === 'DRAFT' ? null : 'user-admin',
+        approvalNote: null,
+        rejectedAt: null,
+        rejectedByActorId: null,
+        rejectionReason: null,
         publishedAt: plan.publishedAt,
+        publishedByActorId: plan.publishedByActorId,
         closedAt: null,
       },
       {
         id: `${plan.id}-alloc-2`,
         kpiPlanId: plan.id,
         groupId: 'group-001',
+        memberEmploymentProfileId: 'employment-profile-002',
         memberTalentId: 'talent-002',
         membershipId: null,
-        allocationStatus: plan.status === 'DRAFT' ? 'DRAFT' : 'ACTIVE',
+        allocationStatus: plan.status === 'DRAFT' ? 'DRAFT' : 'PUBLISHED',
         allocationStartDate: '01-05-2026',
         allocationEndDate: null,
         targetMetrics: [
@@ -250,9 +286,21 @@ const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
           { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 4 },
         ],
         snapshotMemberDisplayName: 'Minh Tran',
+        note: null,
         createdAt: now,
+        createdByActorId: 'user-admin',
         updatedAt: now,
+        updatedByActorId: 'user-admin',
+        submittedAt: plan.status === 'DRAFT' ? null : now - 45_000,
+        submittedByActorId: plan.status === 'DRAFT' ? null : 'manager-user',
+        approvedAt: plan.status === 'DRAFT' ? null : now - 40_000,
+        approvedByActorId: plan.status === 'DRAFT' ? null : 'user-admin',
+        approvalNote: null,
+        rejectedAt: null,
+        rejectedByActorId: null,
+        rejectionReason: null,
         publishedAt: plan.publishedAt,
+        publishedByActorId: plan.publishedByActorId,
         closedAt: null,
       },
     ],
@@ -272,7 +320,10 @@ export const resetKpiMockData = (): void => {
   planSeed = 100;
   actualSeed = 100;
   correctionSeed = 100;
-  plans = initialPlans.map((plan) => ({ ...plan, subjectRef: plan.subjectRef ? { ...plan.subjectRef } : null }));
+  plans = initialPlans.map((plan) => ({
+    ...plan,
+    subjectRef: plan.subjectRef ? { ...plan.subjectRef } : null,
+  }));
   targets = Object.fromEntries(
     Object.entries(initialTargets).map(([id, items]) => [id, items.map((item) => ({ ...item }))]),
   );
@@ -418,7 +469,9 @@ const filterPlans = (request: Request) => {
   }
   if (url.searchParams.get('metricCode')) {
     rows = rows.filter((plan) =>
-      (targets[plan.id] ?? []).some((metric) => metric.metricCode === url.searchParams.get('metricCode')),
+      (targets[plan.id] ?? []).some(
+        (metric) => metric.metricCode === url.searchParams.get('metricCode'),
+      ),
     );
   }
   if (url.searchParams.get('subjectId')) {
@@ -430,9 +483,12 @@ const filterPlans = (request: Request) => {
   return rows;
 };
 
-const isNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+const isNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
 
-const validateMetricPayload = (items: unknown): items is Array<{ metricCode: KpiMetricCode; targetValue: number }> =>
+const validateMetricPayload = (
+  items: unknown,
+): items is Array<{ metricCode: KpiMetricCode; targetValue: number }> =>
   Array.isArray(items) &&
   items.length > 0 &&
   items.every(
@@ -440,9 +496,13 @@ const validateMetricPayload = (items: unknown): items is Array<{ metricCode: Kpi
       item &&
       typeof item === 'object' &&
       !Array.isArray(item) &&
-      ['REVENUE_VND', 'CONTENT_OUTPUT_COUNT', 'LIVE_HOURS', 'EVENT_COMPLETION_COUNT', 'ONBOARDED_TALENT_COUNT'].includes(
-        String((item as Record<string, unknown>).metricCode),
-      ) &&
+      [
+        'REVENUE_VND',
+        'CONTENT_OUTPUT_COUNT',
+        'LIVE_HOURS',
+        'EVENT_COMPLETION_COUNT',
+        'ONBOARDED_TALENT_COUNT',
+      ].includes(String((item as Record<string, unknown>).metricCode)) &&
       isNumber((item as Record<string, unknown>).targetValue),
   );
 
@@ -500,30 +560,32 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => ({
     targetValue: metric.targetValue,
     unit: metric.unit,
   })),
-  rows: (allocations[plan.id] ?? []).map((allocation) => ({
-    allocationId: allocation.id,
-    memberTalentId: allocation.memberTalentId,
-    memberDisplayName: allocation.snapshotMemberDisplayName,
-    allocationStatus: allocation.allocationStatus,
-    metrics: (targets[plan.id] ?? []).map((metric) => {
-      const entry = readEntry(plan.id, allocation.id, metric.metricCode, actualDate);
-      const locked = entry ? entry.editCount >= 2 || plan.status === 'FINALIZED' : false;
-      return {
-        metricCode: metric.metricCode,
-        targetValue: metric.targetValue,
-        actualEntryId: entry?.id ?? null,
-        actualValue: entry?.actualValue ?? null,
-        effectiveValue: entry?.effectiveValue ?? 0,
-        hasEntry: Boolean(entry),
-        editCount: entry?.editCount ?? 0,
-        correctionCount: entry?.correctionCount ?? 0,
-        latestCorrectionId: entry?.latestCorrectionId ?? null,
-        canDirectEdit: Boolean(entry) && !locked,
-        requiresCorrection: Boolean(entry) && locked,
-        disabledReason: locked ? 'Đã khóa' : null,
-      };
-    }),
-  })),
+  rows: (allocations[plan.id] ?? [])
+    .filter((allocation) => allocation.allocationStatus === 'PUBLISHED')
+    .map((allocation) => ({
+      allocationId: allocation.id,
+      memberTalentId: allocation.memberTalentId,
+      memberDisplayName: allocation.snapshotMemberDisplayName,
+      allocationStatus: allocation.allocationStatus,
+      metrics: (targets[plan.id] ?? []).map((metric) => {
+        const entry = readEntry(plan.id, allocation.id, metric.metricCode, actualDate);
+        const locked = entry ? entry.editCount >= 2 || plan.status === 'FINALIZED' : false;
+        return {
+          metricCode: metric.metricCode,
+          targetValue: metric.targetValue,
+          actualEntryId: entry?.id ?? null,
+          actualValue: entry?.actualValue ?? null,
+          effectiveValue: entry?.effectiveValue ?? 0,
+          hasEntry: Boolean(entry),
+          editCount: entry?.editCount ?? 0,
+          correctionCount: entry?.correctionCount ?? 0,
+          latestCorrectionId: entry?.latestCorrectionId ?? null,
+          canDirectEdit: Boolean(entry) && !locked,
+          requiresCorrection: Boolean(entry) && locked,
+          disabledReason: locked ? 'Đã khóa' : null,
+        };
+      }),
+    })),
 });
 
 export const kpiHandlers = [
@@ -532,6 +594,26 @@ export const kpiHandlers = [
     const unsupported = rejectUnsupportedQuery(url.searchParams, allowedListQueryKeys);
     if (unsupported) return unsupported;
     return HttpResponse.json({ data: filterPlans(request) });
+  }),
+  http.get('*/admin/kpi/allocations', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, allowedAllocationListQueryKeys);
+    if (unsupported) return unsupported;
+    let rows = Object.values(allocations).flat();
+    if (url.searchParams.get('status')) {
+      rows = rows.filter(
+        (allocation) => allocation.allocationStatus === url.searchParams.get('status'),
+      );
+    }
+    if (url.searchParams.get('kpiPlanId')) {
+      rows = rows.filter(
+        (allocation) => allocation.kpiPlanId === url.searchParams.get('kpiPlanId'),
+      );
+    }
+    if (url.searchParams.get('groupId')) {
+      rows = rows.filter((allocation) => allocation.groupId === url.searchParams.get('groupId'));
+    }
+    return HttpResponse.json({ data: rows });
   }),
   http.post('*/admin/kpi/plans', async ({ request }) => {
     const body = await parseJsonBody(request);
@@ -577,17 +659,33 @@ export const kpiHandlers = [
             id: `${id}-alloc-${index + 1}`,
             kpiPlanId: id,
             groupId: plan.subjectId,
+            memberEmploymentProfileId: null,
             memberTalentId: String(allocation.memberTalentId),
             membershipId: (allocation.membershipId as string | null | undefined) ?? null,
             allocationStatus: 'DRAFT',
             allocationStartDate: String(allocation.allocationStartDate),
             allocationEndDate: (allocation.allocationEndDate as string | null | undefined) ?? null,
-            targetMetrics: allocation.targetMetrics as Array<{ metricCode: KpiMetricCode; targetValue: number }>,
+            targetMetrics: allocation.targetMetrics as Array<{
+              metricCode: KpiMetricCode;
+              targetValue: number;
+            }>,
             snapshotMemberDisplayName:
               (allocation.snapshotMemberDisplayName as string | null | undefined) ?? null,
+            note: null,
             createdAt: now,
+            createdByActorId: 'user-admin',
             updatedAt: now,
+            updatedByActorId: 'user-admin',
+            submittedAt: null,
+            submittedByActorId: null,
+            approvedAt: null,
+            approvedByActorId: null,
+            approvalNote: null,
+            rejectedAt: null,
+            rejectedByActorId: null,
+            rejectionReason: null,
             publishedAt: null,
+            publishedByActorId: null,
             closedAt: null,
           };
         })
@@ -602,7 +700,14 @@ export const kpiHandlers = [
         plan: toProgressPlan(plan),
         periodElapsedPercent: 80,
         targetMetrics: targets[plan.id] ?? [],
-        groupTotals: [{ metricCode: 'REVENUE_VND', targetValue: 1000000, actualValue: 1250000, progressPercent: 125 }],
+        groupTotals: [
+          {
+            metricCode: 'REVENUE_VND',
+            targetValue: 1000000,
+            actualValue: 1250000,
+            progressPercent: 125,
+          },
+        ],
         memberProgress: [],
       },
     });
@@ -621,8 +726,18 @@ export const kpiHandlers = [
         periodElapsedPercent: 80,
         targetMetrics: targets[plan.id] ?? [],
         groupTotals: [
-          { metricCode: 'REVENUE_VND', targetValue: 1000000, actualValue: 1250000, progressPercent: 125 },
-          { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 10, actualValue: 8, progressPercent: 80 },
+          {
+            metricCode: 'REVENUE_VND',
+            targetValue: 1000000,
+            actualValue: 1250000,
+            progressPercent: 125,
+          },
+          {
+            metricCode: 'CONTENT_OUTPUT_COUNT',
+            targetValue: 10,
+            actualValue: 8,
+            progressPercent: 80,
+          },
         ],
         memberProgress: [
           {
@@ -657,6 +772,141 @@ export const kpiHandlers = [
       return HttpResponse.json({ message: 'Invalid actualDate' }, { status: 422 });
     }
     return HttpResponse.json({ data: toActualGrid(plan, actualDate) });
+  }),
+  http.put('*/admin/kpi/plans/:kpiPlanId/allocation-draft', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.status !== 'PUBLISHED') {
+      return HttpResponse.json(
+        { message: 'KPI allocation draft requires a PUBLISHED group KPI plan' },
+        { status: 409 },
+      );
+    }
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, ['allocations']);
+    if (unsupported) return unsupported;
+    if (!Array.isArray(body.allocations) || body.allocations.length === 0) {
+      return HttpResponse.json({ message: 'Invalid allocation draft' }, { status: 422 });
+    }
+    const draftItems = body.allocations as Record<string, unknown>[];
+    if (
+      draftItems.some(
+        (allocation) =>
+          !String(allocation.employmentProfileId ?? '') ||
+          'memberTalentId' in allocation ||
+          'targetKind' in allocation,
+      )
+    ) {
+      return HttpResponse.json({ message: 'Invalid allocation draft target' }, { status: 422 });
+    }
+    allocations[plan.id] = draftItems.map((allocation, index) => {
+      const employmentProfileId = String(allocation.employmentProfileId ?? '');
+      return {
+        id: `${plan.id}-alloc-${index + 1}`,
+        kpiPlanId: plan.id,
+        groupId: plan.subjectId,
+        memberEmploymentProfileId: employmentProfileId,
+        memberTalentId: employmentProfileId.replace('employment-profile', 'talent'),
+        membershipId: null,
+        allocationStatus: 'DRAFT',
+        allocationStartDate: String(allocation.allocationStartDate),
+        allocationEndDate: (allocation.allocationEndDate as string | null | undefined) ?? null,
+        targetMetrics: allocation.targetMetrics as Array<{
+          metricCode: KpiMetricCode;
+          targetValue: number;
+        }>,
+        snapshotMemberDisplayName:
+          employmentProfileId === 'employment-profile-001' ? 'Luna Park' : 'Minh Tran',
+        note: (allocation.note as string | null | undefined) ?? null,
+        createdAt: now,
+        createdByActorId: 'manager-user',
+        updatedAt: now,
+        updatedByActorId: 'manager-user',
+        submittedAt: null,
+        submittedByActorId: null,
+        approvedAt: null,
+        approvedByActorId: null,
+        approvalNote: null,
+        rejectedAt: null,
+        rejectedByActorId: null,
+        rejectionReason: null,
+        publishedAt: null,
+        publishedByActorId: null,
+        closedAt: null,
+      };
+    });
+    return HttpResponse.json({ data: toDetail(plan) });
+  }),
+  http.post('*/admin/kpi/plans/:kpiPlanId/allocation-submit', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.status !== 'PUBLISHED') {
+      return HttpResponse.json(
+        { message: 'KPI allocation draft requires a PUBLISHED group KPI plan' },
+        { status: 409 },
+      );
+    }
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, []);
+    if (unsupported) return unsupported;
+    (allocations[plan.id] ?? []).forEach((allocation) => {
+      allocation.allocationStatus = 'PENDING_APPROVAL';
+      allocation.submittedAt = now;
+      allocation.submittedByActorId = 'manager-user';
+      allocation.updatedAt = now;
+      allocation.updatedByActorId = 'manager-user';
+    });
+    return HttpResponse.json({ data: toDetail(plan) });
+  }),
+  http.post('*/admin/kpi/plans/:kpiPlanId/allocation-approve', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, ['approvalNote']);
+    if (unsupported) return unsupported;
+    (allocations[plan.id] ?? []).forEach((allocation) => {
+      allocation.allocationStatus = 'APPROVED';
+      allocation.approvedAt = now;
+      allocation.approvedByActorId = 'user-admin';
+      allocation.approvalNote = (body.approvalNote as string | null | undefined) ?? null;
+      allocation.updatedAt = now;
+      allocation.updatedByActorId = 'user-admin';
+    });
+    return HttpResponse.json({ data: toDetail(plan) });
+  }),
+  http.post('*/admin/kpi/plans/:kpiPlanId/allocation-reject', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, ['rejectionReason']);
+    if (unsupported) return unsupported;
+    if (!String(body.rejectionReason ?? '').trim()) {
+      return HttpResponse.json({ message: 'Reason required' }, { status: 422 });
+    }
+    (allocations[plan.id] ?? []).forEach((allocation) => {
+      allocation.allocationStatus = 'REJECTED';
+      allocation.rejectedAt = now;
+      allocation.rejectedByActorId = 'user-admin';
+      allocation.rejectionReason = String(body.rejectionReason);
+      allocation.updatedAt = now;
+      allocation.updatedByActorId = 'user-admin';
+    });
+    return HttpResponse.json({ data: toDetail(plan) });
+  }),
+  http.post('*/admin/kpi/plans/:kpiPlanId/allocation-publish', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, []);
+    if (unsupported) return unsupported;
+    (allocations[plan.id] ?? []).forEach((allocation) => {
+      allocation.allocationStatus = 'PUBLISHED';
+      allocation.publishedAt = now;
+      allocation.publishedByActorId = 'user-admin';
+      allocation.updatedAt = now;
+      allocation.updatedByActorId = 'user-admin';
+    });
+    return HttpResponse.json({ data: toDetail(plan) });
   }),
   http.put('*/admin/kpi/plans/:kpiPlanId/allocations', async ({ params, request }) => {
     const plan = readPlan(String(params.kpiPlanId));
@@ -719,7 +969,12 @@ export const kpiHandlers = [
   }),
   http.post('*/admin/kpi/plans/:kpiPlanId/actuals', async ({ params, request }) => {
     const body = await parseJsonBody(request);
-    const unsupported = rejectUnsupportedBody(body, ['allocationId', 'metricCode', 'actualDate', 'actualValue']);
+    const unsupported = rejectUnsupportedBody(body, [
+      'allocationId',
+      'metricCode',
+      'actualDate',
+      'actualValue',
+    ]);
     if (unsupported) return unsupported;
     const existing = readEntry(
       String(params.kpiPlanId),
@@ -731,7 +986,10 @@ export const kpiHandlers = [
       if (existing.actualValue === Number(body.actualValue)) {
         return HttpResponse.json({ data: existing });
       }
-      return HttpResponse.json({ message: 'Duplicate actual with different value' }, { status: 409 });
+      return HttpResponse.json(
+        { message: 'Duplicate actual with different value' },
+        { status: 409 },
+      );
     }
     actualSeed += 1;
     const allocation = (allocations[String(params.kpiPlanId)] ?? []).find(
@@ -779,35 +1037,38 @@ export const kpiHandlers = [
       ),
     });
   }),
-  http.post('*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId/corrections', async ({ params, request }) => {
-    const body = await parseJsonBody(request);
-    const unsupported = rejectUnsupportedBody(body, ['correctedValue', 'reason']);
-    if (unsupported) return unsupported;
-    if (!String(body.reason ?? '').trim()) {
-      return HttpResponse.json({ message: 'Reason required' }, { status: 422 });
-    }
-    const entry = actualEntries.find((item) => item.id === String(params.actualEntryId));
-    if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    correctionSeed += 1;
-    const correction: ActualCorrection = {
-      id: `correction-${correctionSeed}`,
-      actualEntryId: entry.id,
-      kpiPlanId: String(params.kpiPlanId),
-      allocationId: entry.allocationId,
-      memberTalentId: entry.memberTalentId,
-      metricCode: entry.metricCode,
-      actualDate: entry.actualDate,
-      previousValue: entry.effectiveValue,
-      correctedValue: Number(body.correctedValue),
-      reason: String(body.reason),
-      correctedByActorId: 'user-admin',
-      correctedAt: now,
-      createdAt: now,
-    };
-    corrections.push(correction);
-    entry.effectiveValue = correction.correctedValue;
-    entry.correctionCount += 1;
-    entry.latestCorrectionId = correction.id;
-    return HttpResponse.json({ data: { actualEntry: entry, correction } });
-  }),
+  http.post(
+    '*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId/corrections',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, ['correctedValue', 'reason']);
+      if (unsupported) return unsupported;
+      if (!String(body.reason ?? '').trim()) {
+        return HttpResponse.json({ message: 'Reason required' }, { status: 422 });
+      }
+      const entry = actualEntries.find((item) => item.id === String(params.actualEntryId));
+      if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      correctionSeed += 1;
+      const correction: ActualCorrection = {
+        id: `correction-${correctionSeed}`,
+        actualEntryId: entry.id,
+        kpiPlanId: String(params.kpiPlanId),
+        allocationId: entry.allocationId,
+        memberTalentId: entry.memberTalentId,
+        metricCode: entry.metricCode,
+        actualDate: entry.actualDate,
+        previousValue: entry.effectiveValue,
+        correctedValue: Number(body.correctedValue),
+        reason: String(body.reason),
+        correctedByActorId: 'user-admin',
+        correctedAt: now,
+        createdAt: now,
+      };
+      corrections.push(correction);
+      entry.effectiveValue = correction.correctedValue;
+      entry.correctionCount += 1;
+      entry.latestCorrectionId = correction.id;
+      return HttpResponse.json({ data: { actualEntry: entry, correction } });
+    },
+  ),
 ];

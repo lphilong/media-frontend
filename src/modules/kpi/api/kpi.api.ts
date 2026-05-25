@@ -4,7 +4,10 @@ import type {
   KpiActualCorrection,
   KpiActualDailyGrid,
   KpiActualEntry,
+  KpiAllocation,
+  KpiAllocationDraftMemberInput,
   KpiAllocationInput,
+  KpiAllocationQuery,
   KpiCreatePlanPayload,
   KpiDraftCorePayload,
   KpiPlanDetail,
@@ -27,7 +30,16 @@ const metricCodeSchema = z.enum([
   'ONBOARDED_TALENT_COUNT',
 ]);
 const unitSchema = z.enum(['VND', 'COUNT', 'HOUR']);
-const allocationStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'CLOSED', 'CANCELLED']);
+const allocationStatusSchema = z.enum([
+  'DRAFT',
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'PUBLISHED',
+  'REJECTED',
+  'ACTIVE',
+  'CLOSED',
+  'CANCELLED',
+]);
 
 const referenceSummarySchema = z
   .object({
@@ -60,6 +72,16 @@ const allocationInputSchema = z
   })
   .strict();
 
+const allocationDraftMemberInputSchema = z
+  .object({
+    employmentProfileId: z.string().trim().min(1),
+    allocationStartDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/),
+    allocationEndDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/).nullable().optional(),
+    targetMetrics: z.array(targetMetricInputSchema).min(1),
+    note: z.string().trim().min(1).nullable().optional(),
+  })
+  .strict();
+
 const targetMetricSchema = z
   .object({
     id: z.string().trim().min(1),
@@ -79,6 +101,7 @@ const allocationSchema = z
     id: z.string().trim().min(1),
     kpiPlanId: z.string().trim().min(1),
     groupId: z.string().trim().min(1),
+    memberEmploymentProfileId: z.string().nullable(),
     memberTalentId: z.string().trim().min(1),
     membershipId: z.string().nullable(),
     allocationStatus: allocationStatusSchema,
@@ -86,9 +109,21 @@ const allocationSchema = z
     allocationEndDate: z.string().nullable(),
     targetMetrics: z.array(targetMetricInputSchema),
     snapshotMemberDisplayName: z.string().nullable(),
+    note: z.string().nullable(),
     createdAt: timestampSchema,
+    createdByActorId: z.string().nullable(),
     updatedAt: timestampSchema,
+    updatedByActorId: z.string().nullable(),
+    submittedAt: timestampSchema.nullable(),
+    submittedByActorId: z.string().nullable(),
+    approvedAt: timestampSchema.nullable(),
+    approvedByActorId: z.string().nullable(),
+    approvalNote: z.string().nullable(),
+    rejectedAt: timestampSchema.nullable(),
+    rejectedByActorId: z.string().nullable(),
+    rejectionReason: z.string().nullable(),
     publishedAt: timestampSchema.nullable(),
+    publishedByActorId: z.string().nullable(),
     closedAt: timestampSchema.nullable(),
   })
   .strict();
@@ -278,6 +313,7 @@ const progressSchema = z
 
 const listResponseSchema = z.object({ data: z.array(planBaseSchema) }).strict();
 const detailResponseSchema = z.object({ data: planDetailSchema }).strict();
+const allocationListResponseSchema = z.object({ data: z.array(allocationSchema) }).strict();
 const actualGridResponseSchema = z.object({ data: actualGridSchema }).strict();
 const actualEntryResponseSchema = z.object({ data: actualEntrySchema }).strict();
 const correctionMutationResponseSchema = z
@@ -335,6 +371,15 @@ const sanitizeQuery = (query: KpiPlanQuery): Record<string, string | number | un
   limit: query.limit,
   sortBy: query.sortBy,
   sortDirection: query.sortDirection,
+});
+
+const sanitizeAllocationQuery = (
+  query: KpiAllocationQuery,
+): Record<string, string | number | undefined> => ({
+  status: query.status,
+  kpiPlanId: query.kpiPlanId,
+  groupId: query.groupId,
+  limit: query.limit,
 });
 
 export const sanitizeKpiCreatePlanPayload = (payload: KpiCreatePlanPayload): KpiCreatePlanPayload =>
@@ -403,6 +448,80 @@ export const replaceKpiAllocations = async (
     method: 'PUT',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocations`,
     data: z.object({ allocations: z.array(allocationInputSchema) }).strict().parse({ allocations }),
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
+export const fetchKpiAllocations = async (
+  query: KpiAllocationQuery = {},
+): Promise<KpiAllocation[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/kpi/allocations',
+    params: sanitizeAllocationQuery(query),
+  });
+  return allocationListResponseSchema.parse(response).data;
+};
+
+export const upsertKpiAllocationDraft = async (
+  kpiPlanId: string,
+  allocations: KpiAllocationDraftMemberInput[],
+): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown, { allocations: KpiAllocationDraftMemberInput[] }>({
+    method: 'PUT',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-draft`,
+    data: z
+      .object({ allocations: z.array(allocationDraftMemberInputSchema).min(1) })
+      .strict()
+      .parse({ allocations }),
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
+export const submitKpiAllocationDraft = async (kpiPlanId: string): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown, Record<string, never>>({
+    method: 'POST',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-submit`,
+    data: {},
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
+export const approveKpiAllocation = async (
+  kpiPlanId: string,
+  approvalNote?: string | null,
+): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown, { approvalNote?: string | null }>({
+    method: 'POST',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-approve`,
+    data: z
+      .object({ approvalNote: z.string().trim().min(1).nullable().optional() })
+      .strict()
+      .parse({ approvalNote: approvalNote?.trim() || null }),
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
+export const rejectKpiAllocation = async (
+  kpiPlanId: string,
+  rejectionReason: string,
+): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown, { rejectionReason: string }>({
+    method: 'POST',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-reject`,
+    data: z
+      .object({ rejectionReason: z.string().trim().min(1) })
+      .strict()
+      .parse({ rejectionReason }),
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
+export const publishKpiAllocation = async (kpiPlanId: string): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown, Record<string, never>>({
+    method: 'POST',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-publish`,
+    data: {},
   });
   return detailResponseSchema.parse(response).data;
 };
@@ -531,3 +650,11 @@ export const fetchKpiCorrectionHistory = async (
 
 export const parseKpiPlanListResponseForTest = (response: unknown): KpiPlanListItem[] =>
   listResponseSchema.parse(response).data;
+
+export const parseKpiAllocationDraftPayloadForTest = (
+  payload: unknown,
+): { allocations: KpiAllocationDraftMemberInput[] } =>
+  z.object({ allocations: z.array(allocationDraftMemberInputSchema).min(1) }).strict().parse(payload);
+
+export const parseKpiAllocationListResponseForTest = (response: unknown): KpiAllocation[] =>
+  allocationListResponseSchema.parse(response).data;

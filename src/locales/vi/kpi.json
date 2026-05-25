@@ -18,6 +18,10 @@
   "list": {
     "title": "KPI"
   },
+  "allocationQueue": {
+    "title": "Hang doi phe duyet phan bo KPI",
+    "empty": "Khong co phan bo dang cho duyet."
+  },
   "create": {
     "title": "Tạo KPI nháp",
     "submit": "Tạo KPI nháp"
@@ -33,6 +37,10 @@
     "groupId": "Nhóm Talent",
     "talentId": "Talent",
     "member": "Thành viên",
+    "employmentProfileId": "ID ho so nhan su",
+    "note": "Ghi chu",
+    "approvalNote": "Ghi chu phe duyet",
+    "rejectionReason": "Ly do tu choi",
     "status": "Trạng thái",
     "periodMonth": "Tháng KPI",
     "metricCode": "Chỉ số",
@@ -77,7 +85,22 @@
   "allocation": {
     "targetTotal": "Tổng mục tiêu",
     "allocatedTotal": "Tổng phân bổ",
-    "difference": "Chênh lệch"
+    "difference": "Chênh lệch",
+    "workflowStatus": "Trang thai phan bo",
+    "official": "Phan bo da publish la chinh thuc.",
+    "notOfficialUntilPublished": "Phan bo chua anh huong tien do chinh thuc cho den khi publish"
+  },
+  "allocationStatuses": {
+    "NONE": "Chua co phan bo",
+    "MIXED": "Hon hop",
+    "DRAFT": "Phan bo nhap",
+    "PENDING_APPROVAL": "Cho phe duyet",
+    "APPROVED": "Da phe duyet",
+    "PUBLISHED": "Phan bo da publish",
+    "REJECTED": "Bi tu choi",
+    "ACTIVE": "Phan bo ACTIVE legacy",
+    "CLOSED": "Da dong",
+    "CANCELLED": "Da huy"
   },
   "actualEntry": {
     "title": "Nhập thực đạt",
@@ -111,6 +134,12 @@
     "updateDraft": "Cập nhật nháp",
     "replaceMetrics": "Thay chỉ số",
     "replaceAllocations": "Thay phân bổ",
+    "addAllocationMember": "Them thanh vien",
+    "saveAllocationDraft": "Luu phan bo nhap",
+    "submitAllocation": "Gui phan bo",
+    "approveAllocation": "Phe duyet phan bo",
+    "rejectAllocation": "Tu choi phan bo",
+    "publishAllocation": "Publish phan bo",
     "publish": "Publish",
     "archive": "Lưu trữ",
     "finalize": "Chốt"
@@ -125,6 +154,7 @@
     "invalidPeriodMonth": "Tháng KPI phải có dạng YYYY-MM.",
     "invalidMetricValue": "Nhập giá trị chỉ số hợp lệ.",
     "allocationMismatch": "Tổng phân bổ phải bằng mục tiêu kế hoạch trước khi publish.",
+    "employmentProfileRequired": "Bat buoc co ID ho so nhan su.",
     "invalidActualDate": "Dùng DD-MM-YYYY.",
     "duplicateConflict": "Số thực đạt đã tồn tại với giá trị khác. Hãy sửa hoặc điều chỉnh.",
     "reasonRequired": "Bắt buộc nhập lý do điều chỉnh.",
@@ -133,6 +163,11 @@
   "disabled": {
     "draftEditDraftOnly": "Chỉ kế hoạch nháp được chỉnh sửa.",
     "publishDraftOnly": "Chỉ kế hoạch nháp được publish.",
+    "allocationDraftOnly": "Chi phan bo nhap duoc chinh sua.",
+    "allocationSubmitDraftOnly": "Chi phan bo nhap duoc gui phe duyet.",
+    "allocationPlanPublishedOnly": "Publish ke hoach KPI truoc khi tao phan bo nhap.",
+    "allocationApprovePendingOnly": "Chi phan bo dang cho duyet duoc phe duyet hoac tu choi.",
+    "allocationPublishApprovedOnly": "Chi phan bo da phe duyet duoc publish.",
     "finalizePublishedOnly": "Chỉ kế hoạch đã publish được chốt.",
     "alreadyArchived": "Kế hoạch đã lưu trữ."
   },
@@ -146,11 +181,17 @@
     "actualSaved": "Đã lưu số thực đạt.",
     "correctionCreated": "Đã gửi điều chỉnh.",
     "lifecycleUpdated": "Đã cập nhật vòng đời KPI.",
-    "allocationsUpdated": "Đã thay phân bổ."
+    "allocationsUpdated": "Đã thay phân bổ.",
+    "allocationDraftSaved": "Da luu phan bo nhap.",
+    "allocationSubmitted": "Da gui phan bo phe duyet.",
+    "allocationApproved": "Da phe duyet phan bo.",
+    "allocationRejected": "Da tu choi phan bo.",
+    "allocationPublished": "Da publish phan bo."
   },
   "states": {
     "loadErrorTitle": "Không tải được KPI",
     "loadErrorMessage": "Không tải được dữ liệu KPI.",
+    "capabilityUnavailable": "Khong xac minh duoc quyen KPI. Thu lai.",
     "emptyPlans": "Chưa có kế hoạch KPI.",
     "emptyManagedGroups": "Chưa có kế hoạch KPI cho nhóm bạn quản lý."
   }

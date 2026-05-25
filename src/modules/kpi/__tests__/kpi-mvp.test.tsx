@@ -12,7 +12,12 @@ import {
   parseKpiMoneyInput,
 } from '@modules/kpi/formatting/kpi-formatting';
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
-import { fetchMyKpiProgress, parseKpiPlanListResponseForTest } from '@modules/kpi/api/kpi.api';
+import {
+  fetchMyKpiProgress,
+  parseKpiAllocationDraftPayloadForTest,
+  parseKpiAllocationListResponseForTest,
+  parseKpiPlanListResponseForTest,
+} from '@modules/kpi/api/kpi.api';
 import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
@@ -297,6 +302,223 @@ describe('KPI MVP UX', () => {
     await screen.findByText('Published team KPI');
     expect(screen.queryByRole('button', { name: 'Update draft' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Replace metrics' })).not.toBeInTheDocument();
+  });
+
+  it('TEAM_MANAGER sees allocation draft and submit controls disabled until KPI plan is published', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+
+    renderRoute('/kpi/plans/kpi-plan-draft');
+    await screen.findByText('May creator KPI');
+
+    expect(
+      await screen.findByText('Publish the KPI plan before drafting allocations.'),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Save Allocation Draft' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Submit Allocation' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Approve Allocation' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Publish Allocation' })).not.toBeInTheDocument();
+  });
+
+  it('TEAM_MANAGER saves allocation draft with employment profile targets only on a published KPI plan', async () => {
+    let body: Record<string, unknown> | undefined;
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.enterActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+    server.use(
+      http.get('*/admin/kpi/plans/kpi-plan-published-draft-allocation', () =>
+        HttpResponse.json({
+          data: makeDetailWithAllocation(
+            'kpi-plan-published-draft-allocation',
+            'PUBLISHED',
+            'DRAFT',
+          ),
+        }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-published-draft-allocation/progress', () =>
+        HttpResponse.json({ data: makeProgress('kpi-plan-published-draft-allocation', []) }),
+      ),
+      http.put(
+        '*/admin/kpi/plans/kpi-plan-published-draft-allocation/allocation-draft',
+        async ({ request }) => {
+          body = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({
+            data: makeDetailWithAllocation(
+              'kpi-plan-published-draft-allocation',
+              'PUBLISHED',
+              'DRAFT',
+            ),
+          });
+        },
+      ),
+    );
+
+    renderRoute('/kpi/plans/kpi-plan-published-draft-allocation');
+    await screen.findByText('Published team KPI');
+    await userEvent.click(await waitForEnabledButton('Save Allocation Draft'));
+
+    await waitFor(() => expect(body).toBeDefined());
+    const parsed = parseKpiAllocationDraftPayloadForTest(body);
+    expect(parsed.allocations[0]).toHaveProperty('employmentProfileId');
+    expect(parsed.allocations[0]).not.toHaveProperty('memberTalentId');
+  });
+
+  it('TEAM_MANAGER submits allocation draft on a published KPI plan', async () => {
+    let called = false;
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.enterActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+    server.use(
+      http.get('*/admin/kpi/plans/kpi-plan-published-submittable-allocation', () =>
+        HttpResponse.json({
+          data: makeDetailWithAllocation(
+            'kpi-plan-published-submittable-allocation',
+            'PUBLISHED',
+            'DRAFT',
+          ),
+        }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-published-submittable-allocation/progress', () =>
+        HttpResponse.json({ data: makeProgress('kpi-plan-published-submittable-allocation', []) }),
+      ),
+      http.post(
+        '*/admin/kpi/plans/kpi-plan-published-submittable-allocation/allocation-submit',
+        () => {
+          called = true;
+          return HttpResponse.json({
+            data: makeDetailWithAllocation(
+              'kpi-plan-published-submittable-allocation',
+              'PUBLISHED',
+              'PENDING_APPROVAL',
+            ),
+          });
+        },
+      ),
+    );
+
+    renderRoute('/kpi/plans/kpi-plan-published-submittable-allocation');
+    await screen.findByText('Published team KPI');
+    await userEvent.click(await waitForEnabledButton('Submit Allocation'));
+
+    await waitFor(() => expect(called).toBe(true));
+  });
+
+  it('ADMIN_FULL sees allocation approval queue and status-gated approval actions', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.manageAllocation', 'kpi.publish'],
+      scopeGrants: { kpi: ['global'] },
+    });
+    server.use(
+      http.get('*/admin/kpi/plans/kpi-plan-approval', () =>
+        HttpResponse.json({
+          data: makeDetailWithAllocation('kpi-plan-approval', 'PUBLISHED', 'PENDING_APPROVAL'),
+        }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-approval/progress', () =>
+        HttpResponse.json({ data: makeProgress('kpi-plan-approval', []) }),
+      ),
+    );
+
+    const queueView = renderRoute('/kpi');
+    expect(
+      await screen.findByRole('heading', { name: 'KPI Allocation approval queue' }),
+    ).toBeInTheDocument();
+    queueView.unmount();
+
+    renderRoute('/kpi/plans/kpi-plan-approval');
+    await screen.findByText('Published team KPI');
+    expect(await screen.findByRole('button', { name: 'Approve Allocation' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Reject Allocation' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Publish Allocation' })).toBeDisabled();
+  });
+
+  it('ADMIN_FULL sees publish enabled only for approved allocation', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.manageAllocation', 'kpi.publish'],
+      scopeGrants: { kpi: ['global'] },
+    });
+    server.use(
+      http.get('*/admin/kpi/plans/kpi-plan-approved', () =>
+        HttpResponse.json({
+          data: makeDetailWithAllocation('kpi-plan-approved', 'PUBLISHED', 'APPROVED'),
+        }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-approved/progress', () =>
+        HttpResponse.json({ data: makeProgress('kpi-plan-approved', []) }),
+      ),
+    );
+
+    renderRoute('/kpi/plans/kpi-plan-approved');
+    await screen.findByText('Published team KPI');
+    expect(await screen.findByRole('button', { name: 'Publish Allocation' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Approve Allocation' })).toBeDisabled();
+  });
+
+  it.each([
+    ['HR_OPERATIONS', ['kpi.read'], { kpi: ['global'] }],
+    ['PRODUCTION_OPS', ['kpi.read'], { kpi: ['managedGroup'] }],
+    ['COMMERCIAL_FINANCE', ['kpi.read', 'kpi.readProgress'], { kpi: ['global'] }],
+    ['VIEWER_AUDITOR', ['kpi.read'], { kpi: ['global'] }],
+    ['TALENT_STAFF_SELF', ['kpi.readProgress'], { kpi: ['self'] }],
+  ] as Array<[string, string[], CurrentActorCapabilities['scopeGrants']]>)(
+    '%s does not see allocation draft, submit, approve, or publish',
+    async (_role, permissions, scopeGrants) => {
+      mockKpiCapabilities({ permissions, scopeGrants });
+
+      renderRoute('/kpi/plans/kpi-plan-draft');
+      await waitFor(() =>
+        expect(
+          screen.queryByText('May creator KPI') ?? screen.queryByText('Access denied'),
+        ).toBeInTheDocument(),
+      );
+
+      expect(
+        screen.queryByRole('button', { name: 'Save Allocation Draft' }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Submit Allocation' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Approve Allocation' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Publish Allocation' })).not.toBeInTheDocument();
+    },
+  );
+
+  it('shows PUBLISHED allocation as official and ACTIVE as legacy nonofficial', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.manageAllocation', 'kpi.publish'],
+      scopeGrants: { kpi: ['global'] },
+    });
+    server.use(
+      http.get('*/admin/kpi/plans/kpi-plan-official', () =>
+        HttpResponse.json({
+          data: makeDetailWithAllocation('kpi-plan-official', 'PUBLISHED', 'PUBLISHED'),
+        }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-official/progress', () =>
+        HttpResponse.json({ data: makeProgress('kpi-plan-official', []) }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-active', () =>
+        HttpResponse.json({
+          data: makeDetailWithAllocation('kpi-plan-active', 'PUBLISHED', 'ACTIVE'),
+        }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-active/progress', () =>
+        HttpResponse.json({ data: makeProgress('kpi-plan-active', []) }),
+      ),
+    );
+
+    const officialView = renderRoute('/kpi/plans/kpi-plan-official');
+    expect(await screen.findByText('Published allocation is official.')).toBeInTheDocument();
+    officialView.unmount();
+
+    renderRoute('/kpi/plans/kpi-plan-active');
+    expect(await screen.findByText('Legacy active allocation')).toBeInTheDocument();
+    expect(screen.queryByText('Published allocation is official.')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Allocation does not affect official progress until published'),
+    ).toBeInTheDocument();
   });
 
   it('shows publish confirmation and calls publish API', async () => {
@@ -713,6 +935,46 @@ describe('KPI MVP UX', () => {
     ).toThrow();
   });
 
+  it('strict allocation draft payload rejects direct Talent and scope grants', () => {
+    expect(() =>
+      parseKpiAllocationDraftPayloadForTest({
+        allocations: [
+          {
+            employmentProfileId: 'employment-profile-001',
+            memberTalentId: 'talent-001',
+            allocationStartDate: '01-05-2026',
+            targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
+          },
+        ],
+      }),
+    ).toThrow();
+    expect(() =>
+      parseKpiAllocationDraftPayloadForTest({
+        allocations: [
+          {
+            employmentProfileId: 'employment-profile-001',
+            allocationStartDate: '01-05-2026',
+            targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
+            scopeGrants: { kpi: ['global'] },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it('strict allocation list schema accepts approval audit fields and rejects unknown fields', () => {
+    expect(
+      parseKpiAllocationListResponseForTest({
+        data: [makeAllocation('kpi-plan-approved', 'APPROVED')],
+      })[0].allocationStatus,
+    ).toBe('APPROVED');
+    expect(() =>
+      parseKpiAllocationListResponseForTest({
+        data: [{ ...makeAllocation('kpi-plan-approved', 'APPROVED'), scopeGrants: {} }],
+      }),
+    ).toThrow();
+  });
+
   it('money parser never returns formatted strings', () => {
     expect(parseKpiMoneyInput('1.000.000')).toBe(1000000);
     expect(parseKpiMoneyInput('1.00.000')).toBeUndefined();
@@ -773,6 +1035,96 @@ const makeDetail = (id: string, status: 'DRAFT' | 'PUBLISHED' | 'FINALIZED' | 'A
     },
   ],
   allocations: [],
+});
+
+const makeDetailWithAllocation = (
+  id: string,
+  status: 'DRAFT' | 'PUBLISHED' | 'FINALIZED' | 'ARCHIVED',
+  allocationStatus:
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'APPROVED'
+    | 'PUBLISHED'
+    | 'REJECTED'
+    | 'ACTIVE'
+    | 'CLOSED'
+    | 'CANCELLED',
+) => ({
+  ...makeDetail(id, status),
+  allocations: [makeAllocation(id, allocationStatus)],
+});
+
+const makeAllocation = (
+  kpiPlanId: string,
+  allocationStatus:
+    | 'DRAFT'
+    | 'PENDING_APPROVAL'
+    | 'APPROVED'
+    | 'PUBLISHED'
+    | 'REJECTED'
+    | 'ACTIVE'
+    | 'CLOSED'
+    | 'CANCELLED',
+) => ({
+  id: `${kpiPlanId}-alloc-1`,
+  kpiPlanId,
+  groupId: 'group-001',
+  memberEmploymentProfileId: 'employment-profile-001',
+  memberTalentId: 'talent-001',
+  membershipId: null,
+  allocationStatus,
+  allocationStartDate: '01-05-2026',
+  allocationEndDate: null,
+  targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
+  snapshotMemberDisplayName: 'Luna Park',
+  note: null,
+  createdAt: 1,
+  createdByActorId: 'manager-user',
+  updatedAt: 1,
+  updatedByActorId: 'manager-user',
+  submittedAt: allocationStatus === 'DRAFT' ? null : 1,
+  submittedByActorId: allocationStatus === 'DRAFT' ? null : 'manager-user',
+  approvedAt: ['APPROVED', 'PUBLISHED'].includes(allocationStatus) ? 1 : null,
+  approvedByActorId: ['APPROVED', 'PUBLISHED'].includes(allocationStatus) ? 'user-admin' : null,
+  approvalNote: null,
+  rejectedAt: allocationStatus === 'REJECTED' ? 1 : null,
+  rejectedByActorId: allocationStatus === 'REJECTED' ? 'user-admin' : null,
+  rejectionReason: allocationStatus === 'REJECTED' ? 'Needs revision' : null,
+  publishedAt: allocationStatus === 'PUBLISHED' ? 1 : null,
+  publishedByActorId: allocationStatus === 'PUBLISHED' ? 'user-admin' : null,
+  closedAt: null,
+});
+
+const makeProgress = (id: string, memberProgress: unknown[]) => ({
+  plan: {
+    id,
+    planCode: 'KPI-202605-000002',
+    subjectType: 'TALENT_GROUP',
+    subjectId: 'group-001',
+    status: 'PUBLISHED',
+    periodMonth: '2026-05',
+    periodStartAt: 1777593600000,
+    periodEndAt: 1780271999999,
+    timezone: 'Asia/Ho_Chi_Minh',
+  },
+  periodElapsedPercent: 80,
+  targetMetrics: [
+    {
+      id: `${id}-metric-revenue`,
+      kpiPlanId: id,
+      metricCode: 'REVENUE_VND',
+      targetValue: 1000000,
+      unit: 'VND',
+      rollupMethod: 'SUM',
+      actualSource: 'MANUAL',
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ],
+  groupTotals: [
+    { metricCode: 'REVENUE_VND', targetValue: 1000000, actualValue: 0, progressPercent: 0 },
+  ],
+  memberProgress,
 });
 
 const makeListPlan = (id: string, title: string, subjectId: string) => {

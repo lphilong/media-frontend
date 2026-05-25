@@ -14,6 +14,7 @@ import {
 import {
   useCreateKpiActualMutation,
   useCreateKpiCorrectionMutation,
+  useKpiAllocations,
   useCreateKpiPlanMutation,
   useKpiActualDailyGrid,
   useKpiCorrectionHistory,
@@ -188,11 +189,23 @@ export const KpiListPage = (): JSX.Element => {
     'correctActual',
     capabilityCopy,
   );
+  const approveAllocationHint = createKpiActionCapabilityHint(
+    capabilityState,
+    'approveAllocation',
+    capabilityCopy,
+  );
+  const publishAllocationHint = createKpiActionCapabilityHint(
+    capabilityState,
+    'publishAllocation',
+    capabilityCopy,
+  );
+  const allocationQueueQuery = useKpiAllocations({ limit: 50 });
   const hasGlobalKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'global');
   const hasManagedGroupKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'managedGroup');
   const isManagedGroupOnlyKpiView = !hasGlobalKpiScope && hasManagedGroupKpiScope;
   const canShowCreatePlan = createPlanHint.allowed;
   const canShowActualEntrySurface = enterActualHint.allowed || correctActualHint.allowed;
+  const canShowAllocationApprovalQueue = approveAllocationHint.allowed || publishAllocationHint.allowed;
 
   useEffect(() => {
     if (isManagedGroupOnlyKpiView && activeTab === 'management') {
@@ -718,6 +731,54 @@ export const KpiListPage = (): JSX.Element => {
           >
             {t('kpi:create.submit')}
           </button>
+        </section>
+      ) : null}
+
+      {canShowAllocationApprovalQueue ? (
+        <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
+          <h2 className="text-base font-semibold">{t('kpi:allocationQueue.title')}</h2>
+          {allocationQueueQuery.isPending ? <LoadingState lines={3} /> : null}
+          {allocationQueueQuery.data && allocationQueueQuery.data.length === 0 ? (
+            <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
+              {t('kpi:allocationQueue.empty')}
+            </div>
+          ) : null}
+          {allocationQueueQuery.data && allocationQueueQuery.data.length > 0 ? (
+            <div className="overflow-x-auto rounded border border-border">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.planId')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.member')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.status')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:table.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allocationQueueQuery.data.map((allocation) => (
+                    <tr key={allocation.id} className="border-t border-border">
+                      <td className="px-3 py-2">{allocation.kpiPlanId}</td>
+                      <td className="px-3 py-2">
+                        {allocation.snapshotMemberDisplayName ?? allocation.memberEmploymentProfileId}
+                      </td>
+                      <td className="px-3 py-2">
+                        {t(`kpi:allocationStatuses.${allocation.allocationStatus}`)}
+                      </td>
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          className="rounded border border-border px-2 py-1 text-sm"
+                          onClick={() => navigate(APP_PATHS.kpiPlanDetail(allocation.kpiPlanId))}
+                        >
+                          {t('kpi:actions.open')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
