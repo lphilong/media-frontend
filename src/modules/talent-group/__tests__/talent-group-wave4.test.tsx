@@ -267,7 +267,7 @@ describe('talent-group wave 4 surfaces', () => {
     expect(await screen.findByText(i18n.t('talent-group:actionRail.title'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('talent-group:fields.displayOrder'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('talent-group:help.displayOrder'))).toBeInTheDocument();
-    expect(await screen.findByText('Mina')).toBeInTheDocument();
+    expect(await screen.findByText('Bao')).toBeInTheDocument();
     expect(screen.getByText('BaoStar')).toBeInTheDocument();
     expect(screen.queryByText('talent-003')).not.toBeInTheDocument();
 
@@ -393,7 +393,7 @@ describe('talent-group wave 4 surfaces', () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: i18n.t('common:actions.cancel') }));
 
-    const activeMemberRow = screen.getByText('Mina').closest('tr');
+    const activeMemberRow = screen.getByText('Bao').closest('tr');
     expect(activeMemberRow).not.toBeNull();
     if (!activeMemberRow) {
       return;
@@ -410,7 +410,7 @@ describe('talent-group wave 4 surfaces', () => {
 
     await waitFor(
       () => {
-        const refreshedRow = screen.getByText('Mina').closest('tr');
+        const refreshedRow = screen.getByText('Bao').closest('tr');
         expect(refreshedRow).not.toBeNull();
         if (!refreshedRow) {
           return;

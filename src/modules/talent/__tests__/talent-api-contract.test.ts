@@ -6,6 +6,8 @@ import { server } from '@test/msw/server';
 const talentListItem = {
   id: 'talent-contract-001',
   talentCode: 'TAL-CONTRACT-001',
+  displayName: 'Contract Talent',
+  performanceAlias: null,
   stageName: 'Contract Talent',
   legalName: 'Contract Talent Legal',
   displayShortName: null,

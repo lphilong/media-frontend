@@ -21,6 +21,8 @@ type ReferenceSummary = {
 type TalentRecord = {
   id: string;
   talentCode: string;
+  displayName?: string;
+  performanceAlias?: string | null;
   stageName: string;
   legalName: string;
   displayShortName: string | null;
@@ -439,20 +441,49 @@ const toGroupRef = (groupId: string): ReferenceSummary | null => {
 
 const toTalentRef = (talentId: string): ReferenceSummary | null => {
   const talent = readTalent(talentId);
+  const displayName = readTalentDisplayName(talent);
   return talent
     ? {
         id: talent.id,
         code: talent.talentCode,
-        name: talent.displayShortName ?? talent.stageName,
+        name: displayName,
+        displayName,
         status: talent.operationalStatus,
       }
     : null;
+};
+
+const readTalentDisplayName = (talent: TalentRecord | undefined): string => {
+  if (!talent) {
+    return '';
+  }
+
+  if (talent.talentOrigin === 'INTERNAL') {
+    return (
+      toEmploymentProfileRef(talent.linkedEmploymentProfileId)?.displayName ??
+      talent.displayName ??
+      talent.stageName
+    );
+  }
+
+  return talent.displayName ?? talent.displayShortName ?? talent.stageName;
+};
+
+const readTalentPerformanceAlias = (talent: TalentRecord): string | null => {
+  const displayName = readTalentDisplayName(talent);
+  if (talent.talentOrigin === 'INTERNAL') {
+    return talent.stageName && talent.stageName !== displayName ? talent.stageName : null;
+  }
+
+  return talent.stageName;
 };
 
 const toTalentListItem = (record: TalentRecord) => {
   return {
     id: record.id,
     talentCode: record.talentCode,
+    displayName: readTalentDisplayName(record),
+    performanceAlias: readTalentPerformanceAlias(record),
     stageName: record.stageName,
     legalName: record.legalName,
     displayShortName: record.displayShortName,
@@ -785,15 +816,37 @@ export const wave4Handlers = [
       );
     }
 
+    const linkedEmploymentProfileId =
+      body.linkedEmploymentProfileId === null || body.linkedEmploymentProfileId === undefined
+        ? null
+        : String(body.linkedEmploymentProfileId);
+    if (talentOrigin === 'INTERNAL' && !linkedEmploymentProfileId) {
+      return HttpResponse.json({ message: 'talent:validation.required' }, { status: 422 });
+    }
+    if (talentOrigin === 'EXTERNAL' && linkedEmploymentProfileId) {
+      return HttpResponse.json(
+        { message: 'talent:validation.invalidEmploymentLinkage' },
+        { status: 422 },
+      );
+    }
+    if (talentOrigin === 'EXTERNAL' && (!body.stageName || !body.legalName)) {
+      return HttpResponse.json({ message: 'talent:validation.required' }, { status: 422 });
+    }
+
     talentSeed += 1;
+    const linkedRef = toEmploymentProfileRef(linkedEmploymentProfileId);
+    const stageName =
+      typeof body.stageName === 'string' && body.stageName.trim().length > 0
+        ? body.stageName
+        : (linkedRef?.displayName ?? `Talent ${talentSeed}`);
     const nextRecord: TalentRecord = {
       id: `talent-${talentSeed}`,
       talentCode: providedOrGeneratedFixtureCode(
         body.talentCode,
         generatedFixtureCode('TAL', talentSeed),
       ),
-      stageName: String(body.stageName ?? `Talent ${talentSeed}`),
-      legalName: String(body.legalName ?? `Talent Legal ${talentSeed}`),
+      stageName,
+      legalName: String(body.legalName ?? linkedRef?.name ?? `Talent Legal ${talentSeed}`),
       displayShortName:
         body.displayShortName === null || body.displayShortName === undefined
           ? null
@@ -804,10 +857,7 @@ export const wave4Handlers = [
         body.managerEmploymentProfileId === null || body.managerEmploymentProfileId === undefined
           ? null
           : String(body.managerEmploymentProfileId),
-      linkedEmploymentProfileId:
-        body.linkedEmploymentProfileId === null || body.linkedEmploymentProfileId === undefined
-          ? null
-          : String(body.linkedEmploymentProfileId),
+      linkedEmploymentProfileId,
       commercialParticipationStatus,
       livestreamEligible,
       eventEligible,
@@ -853,13 +903,17 @@ export const wave4Handlers = [
     }
 
     const body = await parseJsonBody(request);
-    if (typeof body.stageName === 'string') {
-      talent.stageName = body.stageName;
+    if ('stageName' in body) {
+      talent.stageName =
+        body.stageName === null || body.stageName === ''
+          ? (toEmploymentProfileRef(talent.linkedEmploymentProfileId)?.displayName ??
+            talent.stageName)
+          : String(body.stageName);
     }
-    if (typeof body.legalName === 'string') {
+    if (typeof body.legalName === 'string' && talent.talentOrigin === 'EXTERNAL') {
       talent.legalName = body.legalName;
     }
-    if ('displayShortName' in body) {
+    if ('displayShortName' in body && talent.talentOrigin === 'EXTERNAL') {
       talent.displayShortName =
         body.displayShortName === null ? null : String(body.displayShortName);
     }

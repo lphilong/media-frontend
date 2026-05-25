@@ -280,18 +280,12 @@ describe('talent wave 4 surfaces', () => {
     expect(
       createSurfaceScope.getByText(i18n.t('talent:generatedCode.description')),
     ).toBeInTheDocument();
-    await user.type(
-      createSurfaceScope.getByLabelText(i18n.t('talent:fields.stageName')),
-      'Wave 4 Talent',
-    );
-    await user.type(
-      createSurfaceScope.getByLabelText(i18n.t('talent:fields.legalName')),
-      'Wave Four Talent',
-    );
     await user.selectOptions(
       createSurfaceScope.getByLabelText(i18n.t('talent:fields.talentOrigin')),
       'INTERNAL',
     );
+    const linkedPicker = await findPicker('talent-linked-employment-profile');
+    await user.click(await within(linkedPicker).findByText(/EP-000003/));
     await user.click(
       createSurfaceScope.getByRole('button', {
         name: i18n.t('talent:mutations.create.submit'),

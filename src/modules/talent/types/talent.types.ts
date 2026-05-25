@@ -14,6 +14,8 @@ export type TalentCommercialParticipationStatus =
 export type TalentRecord = {
   id: string;
   talentCode: string;
+  displayName: string;
+  performanceAlias?: string | null;
   stageName: string;
   legalName: string;
   displayShortName?: string | null;
@@ -49,8 +51,8 @@ export type TalentListQuery = {
 
 export type TalentCreatePayload = {
   talentCode?: string;
-  stageName: string;
-  legalName: string;
+  stageName?: string | null;
+  legalName?: string | null;
   talentOrigin: TalentOrigin;
   commercialParticipationStatus: TalentCommercialParticipationStatus;
   livestreamEligible: boolean;
@@ -63,7 +65,7 @@ export type TalentCreatePayload = {
 };
 
 export type TalentUpdatePayload = {
-  stageName?: string;
+  stageName?: string | null;
   legalName?: string;
   displayShortName?: string | null;
   externalRef?: string | null;

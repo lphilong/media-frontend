@@ -44,6 +44,7 @@ type TalentCreateSurfaceProps = BaseMutationSurfaceProps & {
 
 type TalentEditSurfaceProps = BaseMutationSurfaceProps & {
   initialValues: {
+    talentOrigin: TalentOrigin;
     stageName: string;
     legalName: string;
     displayShortName?: string | null;
@@ -112,8 +113,8 @@ const createTalentCreateSchema = (
 ) => {
   return z
     .object({
-      stageName: z.string().trim().min(1, requiredMessage),
-      legalName: z.string().trim().min(1, requiredMessage),
+      stageName: z.string().trim().optional(),
+      legalName: z.string().trim().optional(),
       talentOrigin: z.preprocess(
         (value) => toOptionalEnumValue<TalentOrigin>(value),
         z.enum(talentOriginValues, {
@@ -155,17 +156,60 @@ const createTalentCreateSchema = (
           message: blockedStatusMessage,
         });
       }
+      if (value.talentOrigin === 'INTERNAL' && !toOptionalText(value.linkedEmploymentProfileId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['linkedEmploymentProfileId'],
+          message: requiredMessage,
+        });
+      }
+      if (value.talentOrigin === 'EXTERNAL') {
+        if (!toOptionalText(value.stageName)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['stageName'],
+            message: requiredMessage,
+          });
+        }
+        if (!toOptionalText(value.legalName)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['legalName'],
+            message: requiredMessage,
+          });
+        }
+      }
     });
 };
 
-const createTalentEditSchema = (requiredMessage: string) => {
-  return z.object({
-    stageName: z.string().trim().min(1, requiredMessage),
-    legalName: z.string().trim().min(1, requiredMessage),
-    displayShortName: z.string().trim().optional(),
-    externalRef: z.string().trim().optional(),
-    profileSummary: z.string().trim().optional(),
-  });
+const createTalentEditSchema = (requiredMessage: string, talentOrigin: TalentOrigin) => {
+  return z
+    .object({
+      stageName: z.string().trim().optional(),
+      legalName: z.string().trim().optional(),
+      displayShortName: z.string().trim().optional(),
+      externalRef: z.string().trim().optional(),
+      profileSummary: z.string().trim().optional(),
+    })
+    .superRefine((value, context) => {
+      if (talentOrigin !== 'EXTERNAL') {
+        return;
+      }
+      if (!toOptionalText(value.stageName)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['stageName'],
+          message: requiredMessage,
+        });
+      }
+      if (!toOptionalText(value.legalName)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['legalName'],
+          message: requiredMessage,
+        });
+      }
+    });
 };
 
 const createManagerAssignmentSchema = (
@@ -286,6 +330,7 @@ export const TalentCreateSurface = ({
       profileSummary: '',
     },
   });
+  const selectedTalentOrigin = form.watch('talentOrigin');
 
   const schema = useMemo(
     () =>
@@ -305,8 +350,9 @@ export const TalentCreateSurface = ({
     }
 
     await onSubmit({
-      stageName: parsed.data.stageName,
-      legalName: parsed.data.legalName,
+      stageName: toNullableText(parsed.data.stageName),
+      legalName:
+        parsed.data.talentOrigin === 'EXTERNAL' ? toNullableText(parsed.data.legalName) : null,
       talentOrigin: parsed.data.talentOrigin,
       commercialParticipationStatus: parsed.data.commercialParticipationStatus,
       livestreamEligible: parsed.data.livestreamEligible,
@@ -343,8 +389,14 @@ export const TalentCreateSurface = ({
             label={t('talent:fields.talentOrigin')}
             options={talentOriginOptions}
           />
-          <TextInputField name="stageName" label={t('talent:fields.stageName')} />
-          <TextInputField name="legalName" label={t('talent:fields.legalName')} />
+          <TextInputField
+            name="stageName"
+            label={t('talent:fields.stageName')}
+            placeholder={t('talent:placeholders.optional')}
+          />
+          {selectedTalentOrigin === 'EXTERNAL' ? (
+            <TextInputField name="legalName" label={t('talent:fields.externalProfileName')} />
+          ) : null}
           <SelectField
             name="commercialParticipationStatus"
             label={t('talent:fields.commercialParticipationStatus')}
@@ -365,16 +417,22 @@ export const TalentCreateSurface = ({
             label={t('talent:fields.linkedEmploymentProfileId')}
             pickerId="talent-linked-employment-profile"
             loadOptions={loadEmploymentProfileReferenceOptions}
-            helperText={t('talent:referenceHelp.linkedEmploymentProfileId')}
+            helperText={
+              selectedTalentOrigin === 'INTERNAL'
+                ? t('talent:referenceHelp.internalDisplayNameSource')
+                : t('talent:referenceHelp.linkedEmploymentProfileId')
+            }
             placeholder={t('talent:placeholders.employmentProfileSearch')}
             clearable
             clearLabel={t('talent:actions.clearLinkedEmploymentProfile')}
           />
-          <TextInputField
-            name="displayShortName"
-            label={t('talent:fields.displayShortName')}
-            placeholder={t('talent:placeholders.optional')}
-          />
+          {selectedTalentOrigin === 'EXTERNAL' ? (
+            <TextInputField
+              name="displayShortName"
+              label={t('talent:fields.displayShortName')}
+              placeholder={t('talent:placeholders.optional')}
+            />
+          ) : null}
           <TextInputField
             name="externalRef"
             label={t('talent:fields.externalRef')}
@@ -420,7 +478,10 @@ export const TalentEditSurface = ({
     },
   });
 
-  const schema = useMemo(() => createTalentEditSchema(t('talent:validation.required')), [t]);
+  const schema = useMemo(
+    () => createTalentEditSchema(t('talent:validation.required'), initialValues.talentOrigin),
+    [initialValues.talentOrigin, t],
+  );
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
@@ -430,9 +491,15 @@ export const TalentEditSurface = ({
     }
 
     await onSubmit({
-      stageName: parsed.data.stageName,
-      legalName: parsed.data.legalName,
-      displayShortName: toNullableText(parsed.data.displayShortName),
+      stageName: toNullableText(parsed.data.stageName),
+      legalName:
+        initialValues.talentOrigin === 'EXTERNAL'
+          ? toOptionalText(parsed.data.legalName)
+          : undefined,
+      displayShortName:
+        initialValues.talentOrigin === 'EXTERNAL'
+          ? toNullableText(parsed.data.displayShortName)
+          : undefined,
       externalRef: toNullableText(parsed.data.externalRef),
       profileSummary: toNullableText(parsed.data.profileSummary),
     });
@@ -452,13 +519,25 @@ export const TalentEditSurface = ({
         isPending={isPending}
       >
         <FormGrid columns={2}>
-          <TextInputField name="stageName" label={t('talent:fields.stageName')} />
-          <TextInputField name="legalName" label={t('talent:fields.legalName')} />
           <TextInputField
-            name="displayShortName"
-            label={t('talent:fields.displayShortName')}
+            name="stageName"
+            label={t('talent:fields.stageName')}
             placeholder={t('talent:placeholders.optional')}
           />
+          {initialValues.talentOrigin === 'EXTERNAL' ? (
+            <>
+              <TextInputField name="legalName" label={t('talent:fields.externalProfileName')} />
+              <TextInputField
+                name="displayShortName"
+                label={t('talent:fields.displayShortName')}
+                placeholder={t('talent:placeholders.optional')}
+              />
+            </>
+          ) : (
+            <p className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+              {t('talent:referenceHelp.internalDisplayNameSource')}
+            </p>
+          )}
           <TextInputField
             name="externalRef"
             label={t('talent:fields.externalRef')}

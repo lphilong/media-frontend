@@ -6,8 +6,11 @@
   },
   "fields": {
     "talentCode": "Talent Code",
+    "displayName": "Display Name",
+    "performanceAlias": "Stage Name / Performance Alias",
     "stageName": "Stage Name",
     "legalName": "Legal Name",
+    "externalProfileName": "External talent profile name",
     "displayShortName": "Display Short Name",
     "talentOrigin": "Talent Origin",
     "selectTalentOrigin": "Select a talent origin",
@@ -35,7 +38,8 @@
   "referenceHelp": {
     "managerEmploymentProfileId": "Choose the manager employment profile for this talent.",
     "newManagerEmploymentProfileId": "Choose the manager employment profile, or clear the selection to remove the manager.",
-    "linkedEmploymentProfileId": "Choose the employment profile to link to this talent."
+    "linkedEmploymentProfileId": "Choose the employment profile to link to this talent.",
+    "internalDisplayNameSource": "Display name comes from Employment Profile."
   },
   "states": {
     "emptyTitle": "No talents found",
@@ -104,6 +108,8 @@
   "table": {
     "caption": "Talent list",
     "talentCode": "Talent Code",
+    "displayName": "Display Name",
+    "performanceAlias": "Alias",
     "stageName": "Stage Name",
     "legalName": "Legal Name",
     "displayShortName": "Short Name",

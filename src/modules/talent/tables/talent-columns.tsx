@@ -8,6 +8,10 @@ import type {
   TalentLifecycleAction,
   TalentRecord,
 } from '@modules/talent/types/talent.types';
+import {
+  readTalentPerformanceAlias,
+  readTalentPrimaryDisplay,
+} from '@modules/talent/utils/talent-display';
 
 type TalentListColumnHandlers = {
   onOpenDetail: (talentId: string) => void;
@@ -56,17 +60,14 @@ export const createTalentListColumns = (
       cell: (context) => <span className="font-mono">{String(context.getValue() ?? '-')}</span>,
     },
     {
-      accessorKey: 'stageName',
-      header: t('talent:table.stageName'),
+      id: 'displayName',
+      header: t('talent:table.displayName'),
+      cell: ({ row }) => readTalentPrimaryDisplay(row.original),
     },
     {
-      accessorKey: 'legalName',
-      header: t('talent:table.legalName'),
-    },
-    {
-      accessorKey: 'displayShortName',
-      header: t('talent:table.displayShortName'),
-      cell: (context) => String(context.getValue() ?? '-'),
+      id: 'performanceAlias',
+      header: t('talent:table.performanceAlias'),
+      cell: ({ row }) => readTalentPerformanceAlias(row.original) ?? '-',
     },
     {
       accessorKey: 'operationalStatus',

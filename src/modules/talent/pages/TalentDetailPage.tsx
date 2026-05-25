@@ -33,6 +33,10 @@ import type {
   TalentLifecycleAction,
   TalentOrigin,
 } from '@modules/talent/types/talent.types';
+import {
+  readTalentPerformanceAlias,
+  readTalentPrimaryDisplay,
+} from '@modules/talent/utils/talent-display';
 import type { NormalizedApiError } from '@shared/api';
 import {
   ActionRail,
@@ -428,19 +432,14 @@ export const TalentDetailPage = (): JSX.Element => {
                   value: <ReferenceChip label={record.talentCode} />,
                 },
                 {
-                  key: 'stage-name',
-                  label: t('talent:fields.stageName'),
-                  value: record.stageName,
+                  key: 'display-name',
+                  label: t('talent:fields.displayName'),
+                  value: readTalentPrimaryDisplay(record),
                 },
                 {
-                  key: 'legal-name',
-                  label: t('talent:fields.legalName'),
-                  value: record.legalName,
-                },
-                {
-                  key: 'display-short-name',
-                  label: t('talent:fields.displayShortName'),
-                  value: record.displayShortName ?? '-',
+                  key: 'performance-alias',
+                  label: t('talent:fields.performanceAlias'),
+                  value: readTalentPerformanceAlias(record) ?? '-',
                 },
                 {
                   key: 'talent-origin',
@@ -545,6 +544,7 @@ export const TalentDetailPage = (): JSX.Element => {
                 initialValues={{
                   stageName: record.stageName,
                   legalName: record.legalName,
+                  talentOrigin: record.talentOrigin,
                   displayShortName: record.displayShortName,
                   externalRef: record.externalRef,
                   profileSummary: record.profileSummary,

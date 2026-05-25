@@ -5,6 +5,9 @@
     "placeholder": "Luồng nghiệp vụ Talent chưa được triển khai."
   },
   "fields": {
+    "displayName": "Ten hien thi",
+    "performanceAlias": "Nghe danh / bi danh bieu dien",
+    "externalProfileName": "Ten ho so Talent ben ngoai",
     "talentCode": "Mã Talent",
     "stageName": "Nghệ danh",
     "legalName": "Họ và tên",
@@ -36,6 +39,7 @@
     "managerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý cho Talent này.",
     "newManagerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc xóa lựa chọn để bỏ quản lý.",
     "linkedEmploymentProfileId": "Chọn hồ sơ nhân sự cần liên kết với Talent này."
+    ,"internalDisplayNameSource": "Ten hien thi lay tu ho so nhan su."
   },
   "states": {
     "emptyTitle": "Không tìm thấy Talent",
@@ -102,6 +106,8 @@
     "clearLinkedEmploymentProfile": "Xóa hồ sơ liên kết"
   },
   "table": {
+    "displayName": "Ten hien thi",
+    "performanceAlias": "Bi danh",
     "caption": "Danh sách Talent",
     "talentCode": "Mã Talent",
     "stageName": "Nghệ danh",

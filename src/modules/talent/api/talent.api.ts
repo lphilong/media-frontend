@@ -40,6 +40,8 @@ const listTalentSchema = z
   .object({
     id: z.string().trim().min(1),
     talentCode: z.string().trim().min(1),
+    displayName: z.string().trim().min(1),
+    performanceAlias: z.string().nullable().optional(),
     stageName: z.string().trim().min(1),
     legalName: z.string().trim().min(1),
     displayShortName: z.string().nullable().optional(),

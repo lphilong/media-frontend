@@ -83,7 +83,7 @@ describe('talent wave 4 mutation payloads', () => {
     expect(commercialOptions).toEqual(['ELIGIBLE', 'RESTRICTED', 'BLOCKED']);
   });
 
-  it('omits talentCode from the normal create payload while preserving external references', async () => {
+  it('omits talentCode and legalName from internal create payload while requiring linked profile', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
     const onSubmit = vi.fn();
@@ -94,9 +94,15 @@ describe('talent wave 4 mutation payloads', () => {
       screen.getByLabelText(i18n.t('talent:fields.talentOrigin')),
       'INTERNAL',
     );
-    await user.type(screen.getByLabelText(i18n.t('talent:fields.stageName')), 'Generated Talent');
-    await user.type(screen.getByLabelText(i18n.t('talent:fields.legalName')), 'Generated Legal');
     await user.type(screen.getByLabelText(i18n.t('talent:fields.externalRef')), 'EXT-TAL');
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('talent:mutations.create.submit'),
+      }),
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    await selectPickerOption(user, 'talent-linked-employment-profile', /EP-000010/);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('talent:mutations.create.submit'),
@@ -105,11 +111,47 @@ describe('talent wave 4 mutation payloads', () => {
 
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
-        stageName: 'Generated Talent',
+        linkedEmploymentProfileId: 'ep-010',
+        legalName: null,
         externalRef: 'EXT-TAL',
       }),
     );
     expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('talentCode');
+  });
+
+  it('keeps external create names editable and required', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+
+    renderWithProviders(<TalentCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
+
+    await user.selectOptions(screen.getByLabelText(i18n.t('talent:fields.talentOrigin')), 'EXTERNAL');
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('talent:mutations.create.submit'),
+      }),
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    await user.type(screen.getByLabelText(i18n.t('talent:fields.stageName')), 'External Alias');
+    await user.type(
+      screen.getByLabelText(i18n.t('talent:fields.externalProfileName')),
+      'External Legal',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('talent:mutations.create.submit'),
+      }),
+    );
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        talentOrigin: 'EXTERNAL',
+        stageName: 'External Alias',
+        legalName: 'External Legal',
+      }),
+    );
   });
 
   it('maps manager assignment blank input to an explicit null payload', async () => {
@@ -205,6 +247,7 @@ describe('talent wave 4 mutation payloads', () => {
         initialValues={{
           stageName: 'Mina',
           legalName: 'Minh An',
+          talentOrigin: 'EXTERNAL',
           displayShortName: 'Mini',
           externalRef: 'EXT-01',
           profileSummary: 'Profile',

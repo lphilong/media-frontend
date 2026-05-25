@@ -5,6 +5,9 @@
     "placeholder": "艺人业务流程尚未在本阶段实现。"
   },
   "fields": {
+    "displayName": "显示名称",
+    "performanceAlias": "艺名 / 表演别名",
+    "externalProfileName": "外部艺人资料名称",
     "talentCode": "艺人编码",
     "stageName": "艺名",
     "legalName": "法定名称",
@@ -36,6 +39,7 @@
     "managerEmploymentProfileId": "选择此艺人的主管员工档案。",
     "newManagerEmploymentProfileId": "选择主管员工档案，或清除选择以移除主管。",
     "linkedEmploymentProfileId": "选择要关联到此艺人的员工档案。"
+    ,"internalDisplayNameSource": "显示名称来自员工档案。"
   },
   "states": {
     "emptyTitle": "未找到艺人",
@@ -102,6 +106,8 @@
     "clearLinkedEmploymentProfile": "清除关联档案"
   },
   "table": {
+    "displayName": "显示名称",
+    "performanceAlias": "别名",
     "caption": "艺人列表",
     "talentCode": "艺人编码",
     "stageName": "艺名",
