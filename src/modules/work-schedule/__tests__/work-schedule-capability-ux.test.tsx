@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { http, HttpResponse } from 'msw';
-import { cleanup, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -28,12 +28,18 @@ const publishText = (key: string, options?: Record<string, unknown>): string =>
   i18n.t(`work-schedule:monthlyRosters.publish.${key}`, options);
 
 type CapabilityResponseParams = {
+  id?: string;
+  roles?: string[];
+  type?: 'admin' | 'staff';
   permissions?: string[];
   workScheduleScopes?: Array<'self' | 'team' | 'department' | 'global'>;
   status?: number;
 };
 
 const mockCapabilities = ({
+  id = 'capability-test-user',
+  roles = ['role-capability-test'],
+  type = 'admin',
   permissions = [],
   workScheduleScopes = [],
   status,
@@ -46,11 +52,11 @@ const mockCapabilities = ({
 
       return HttpResponse.json({
         data: {
-          id: 'capability-test-user',
-          type: 'admin',
+          id,
+          type,
           context: 'ADMIN',
           isActive: true,
-          roles: ['role-capability-test'],
+          roles,
           permissions,
           scopeGrants: {
             workSchedule: workScheduleScopes,
@@ -143,6 +149,271 @@ describe('work schedule capability UX hints', () => {
         name: i18n.t('work-schedule:actions.cancel'),
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it('shows TEAM_MANAGER request entry and own pending cancel without approve or reject actions', async () => {
+    const user = userEvent.setup();
+    mockCapabilities({
+      id: 'team-manager-user-1',
+      roles: ['TEAM_MANAGER'],
+      permissions: ['workSchedule.read'],
+      workScheduleScopes: ['self', 'team'],
+    });
+
+    renderRoute('/work-schedule/team-shifts');
+
+    expect(
+      await screen.findByRole('heading', {
+        name: i18n.t('work-schedule:surfaces.team.title'),
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('SHIFT001')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.requestChange'),
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('WSR-202605-000001')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.cancel'),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.approve'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.reject'),
+      }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getByLabelText(i18n.t('work-schedule:requests.fields.targetEmploymentProfileId')),
+      { target: { value: 'ep-002' } },
+    );
+    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:requests.fields.title')), {
+      target: { value: 'Manager request coverage' },
+    });
+    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:requests.fields.startAt')), {
+      target: { value: '2026-05-25T09:00' },
+    });
+    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:requests.fields.endAt')), {
+      target: { value: '2026-05-25T11:00' },
+    });
+    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:requests.fields.reason')), {
+      target: { value: 'Need managed team coverage' },
+    });
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.requestChange'),
+      }),
+    );
+
+    expect(await screen.findByText('WSR-202605-000761')).toBeInTheDocument();
+  });
+
+  it('shows PRODUCTION_OPS approval queue with pending approve and reject affordances', async () => {
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'workSchedule.read',
+        'workSchedule.create',
+        'workSchedule.update',
+        'workSchedule.manageLifecycle',
+      ],
+      workScheduleScopes: ['global'],
+    });
+
+    renderRoute('/work-schedule/global-ops');
+
+    expect(
+      await screen.findByRole('heading', {
+        name: i18n.t('work-schedule:surfaces.globalOps.title'),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('work-schedule:requests.approvalQueue')),
+    ).toBeInTheDocument();
+    const approve = screen.getByRole('button', {
+      name: i18n.t('work-schedule:requests.actions.approve'),
+    });
+    const reject = screen.getByRole('button', {
+      name: i18n.t('work-schedule:requests.actions.reject'),
+    });
+    await waitFor(() => expect(approve).toBeEnabled());
+    expect(reject).toBeEnabled();
+  });
+
+  it('lets scoped HR view request context without approval actions', async () => {
+    mockCapabilities({
+      id: 'hr-user-1',
+      roles: ['HR_OPERATIONS'],
+      permissions: ['workSchedule.read'],
+      workScheduleScopes: ['department'],
+    });
+
+    renderRoute('/work-schedule/department-shifts');
+
+    expect(await screen.findByText('WSR-202605-000001')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('work-schedule:requests.title'))).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.approve'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.reject'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('hides request mutation actions from VIEWER_AUDITOR', async () => {
+    mockCapabilities({
+      id: 'viewer-auditor-user-1',
+      roles: ['VIEWER_AUDITOR'],
+      permissions: ['workSchedule.read'],
+      workScheduleScopes: ['global'],
+    });
+
+    renderRoute('/work-schedule/global-ops');
+
+    expect(
+      await screen.findByText(i18n.t('work-schedule:requests.approvalQueue')),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.requestChange'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.approve'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.reject'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.cancel'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not expose self-request or admin request mutation actions for TALENT_STAFF_SELF', async () => {
+    mockCapabilities({
+      id: 'talent-staff-self-user-1',
+      roles: ['TALENT_STAFF_SELF'],
+      type: 'staff',
+      permissions: ['workSchedule.read'],
+      workScheduleScopes: ['self'],
+    });
+
+    renderRoute('/work-schedule/my-shifts');
+
+    expect(
+      await screen.findByRole('heading', {
+        name: i18n.t('work-schedule:surfaces.my.title'),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.requestChange'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.approve'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.reject'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.cancel'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps request approval actions visible but disabled for capable actors on invalid request status', async () => {
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'workSchedule.read',
+        'workSchedule.create',
+        'workSchedule.update',
+        'workSchedule.manageLifecycle',
+      ],
+      workScheduleScopes: ['global'],
+    });
+    server.use(
+      http.get('*/admin/work-schedule/requests', () =>
+        HttpResponse.json({
+          data: [
+            {
+              id: 'work-schedule-request-approved',
+              requestCode: 'WSR-202605-009999',
+              requestType: 'CREATE_SHIFT',
+              status: 'APPROVED',
+              targetKind: 'EMPLOYMENT_PROFILE_WORK_SHIFT',
+              requestSource: 'TEAM_MANAGER',
+              targetEmploymentProfileId: 'ep-002',
+              targetEmploymentProfileRef: { id: 'ep-002', displayName: 'Managed Member' },
+              targetWorkShiftId: null,
+              targetWorkShiftRef: null,
+              requestedByUserId: 'team-manager-user-1',
+              requestedByEmploymentProfileId: 'ep-manager-001',
+              reason: 'Already approved request',
+              proposedStartAt: Date.parse('2026-05-25T09:00:00.000Z'),
+              proposedEndAt: Date.parse('2026-05-25T11:00:00.000Z'),
+              proposedTitle: 'Approved request',
+              proposedStudioResourceIds: [],
+              proposedDescription: null,
+              proposedExternalRef: null,
+              approvedByUserId: 'production-ops-user-1',
+              approvedAt: Date.parse('2026-05-24T09:00:00.000Z'),
+              approvalNote: null,
+              rejectedByUserId: null,
+              rejectedAt: null,
+              rejectionReason: null,
+              cancelledByUserId: null,
+              cancelledAt: null,
+              cancellationReason: null,
+              appliedWorkShiftId: 'work-shift-approval-fixture',
+              appliedWorkShiftRef: null,
+              createdAt: Date.parse('2026-05-23T09:00:00.000Z'),
+              updatedAt: Date.parse('2026-05-24T09:00:00.000Z'),
+            },
+          ],
+          meta: undefined,
+        }),
+      ),
+    );
+
+    renderRoute('/work-schedule/global-ops');
+
+    expect(await screen.findByText('WSR-202605-009999')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.approve'),
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.reject'),
+      }),
+    ).toBeDisabled();
   });
 
   it('hides Monthly Roster actions for missing permission while local status still wins', async () => {
