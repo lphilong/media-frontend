@@ -97,9 +97,9 @@ const initialTalents: TalentRecord[] = [
   {
     id: 'talent-001',
     talentCode: 'TAL-000001',
-    stageName: 'Mina',
-    legalName: 'Minh An',
-    displayShortName: 'Mina',
+    stageName: 'Mina Performance Alias',
+    legalName: 'Stale Internal Legal',
+    displayShortName: 'Stale Internal Short',
     talentOrigin: 'INTERNAL',
     operationalStatus: 'ACTIVE',
     managerEmploymentProfileId: 'ep-001',
@@ -134,8 +134,8 @@ const initialTalents: TalentRecord[] = [
     id: 'talent-003',
     talentCode: 'TAL-000003',
     stageName: 'ChauLive',
-    legalName: 'Chau Le',
-    displayShortName: 'Chau',
+    legalName: 'Stale Internal Chau Legal',
+    displayShortName: 'Stale Internal Chau Short',
     talentOrigin: 'INTERNAL',
     operationalStatus: 'INACTIVE',
     managerEmploymentProfileId: null,
@@ -460,9 +460,7 @@ const readTalentDisplayName = (talent: TalentRecord | undefined): string => {
 
   if (talent.talentOrigin === 'INTERNAL') {
     return (
-      toEmploymentProfileRef(talent.linkedEmploymentProfileId)?.displayName ??
-      talent.displayName ??
-      talent.stageName
+      toEmploymentProfileRef(talent.linkedEmploymentProfileId)?.displayName ?? talent.talentCode
     );
   }
 

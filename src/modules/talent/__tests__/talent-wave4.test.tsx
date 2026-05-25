@@ -69,7 +69,10 @@ describe('talent wave 4 surfaces', () => {
       await screen.findByRole('heading', { name: i18n.t('talent:page.title') }),
     ).toBeInTheDocument();
     expect(await screen.findByText('TAL-000001', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.getAllByText('Mina').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Bao').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Mina Performance Alias').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Stale Internal Legal')).not.toBeInTheDocument();
+    expect(screen.queryByText('Stale Internal Short')).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByText('TAL-000002')).not.toBeInTheDocument();
       expect(screen.queryByText('TAL-000003')).not.toBeInTheDocument();
@@ -109,7 +112,7 @@ describe('talent wave 4 surfaces', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('TAL-000002', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(await screen.findByText('BaoStar', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(await screen.findByText('Alice Nguyen')).toBeInTheDocument();
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
     expect(screen.queryByText(i18n.t('talent:table.talentOrigin'))).not.toBeInTheDocument();
     expect(
       screen.queryByText(i18n.t('talent:table.linkedEmploymentProfileId')),
@@ -213,11 +216,15 @@ describe('talent wave 4 surfaces', () => {
 
     expect(await screen.findByText(i18n.t('talent:actionRail.title'))).toBeInTheDocument();
     expect(screen.getByText('TAL-000001')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Alice Nguyen' })).toHaveAttribute(
+    expect(screen.getAllByText('Bao').length).toBeGreaterThan(0);
+    expect(screen.getByText('Mina Performance Alias')).toBeInTheDocument();
+    expect(screen.queryByText('Stale Internal Legal')).not.toBeInTheDocument();
+    expect(screen.queryByText('Stale Internal Short')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Alice' })).toHaveAttribute(
       'href',
       '/employment-profiles/ep-001',
     );
-    expect(screen.getByRole('link', { name: 'Bao Tran' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Bao' })).toHaveAttribute(
       'href',
       '/employment-profiles/ep-002',
     );
@@ -284,6 +291,13 @@ describe('talent wave 4 surfaces', () => {
       createSurfaceScope.getByLabelText(i18n.t('talent:fields.talentOrigin')),
       'INTERNAL',
     );
+    expect(
+      createSurfaceScope.getByLabelText(i18n.t('talent:fields.performanceAlias')),
+    ).toBeInTheDocument();
+    expect(createSurfaceScope.queryByLabelText(i18n.t('talent:fields.stageName'))).toBeNull();
+    expect(
+      createSurfaceScope.getByText(i18n.t('talent:referenceHelp.performanceAlias')),
+    ).toBeInTheDocument();
     const linkedPicker = await findPicker('talent-linked-employment-profile');
     await user.click(await within(linkedPicker).findByText(/EP-000003/));
     await user.click(

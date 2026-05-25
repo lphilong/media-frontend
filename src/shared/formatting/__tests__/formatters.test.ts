@@ -147,7 +147,7 @@ describe('formatters', () => {
         name: 'Name Wins',
         displayName: 'Display Name Loses',
       }),
-    ).toBe('Name Wins');
+    ).toBe('Display Name Loses');
     expect(
       readReferenceDisplay({
         id: 'display-001',

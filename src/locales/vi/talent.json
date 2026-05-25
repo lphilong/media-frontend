@@ -6,7 +6,7 @@
   },
   "fields": {
     "displayName": "Ten hien thi",
-    "performanceAlias": "Nghe danh / bi danh bieu dien",
+    "performanceAlias": "Bi danh bieu dien",
     "externalProfileName": "Ten ho so Talent ben ngoai",
     "talentCode": "Mã Talent",
     "stageName": "Nghệ danh",
@@ -38,8 +38,10 @@
   "referenceHelp": {
     "managerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý cho Talent này.",
     "newManagerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc xóa lựa chọn để bỏ quản lý.",
-    "linkedEmploymentProfileId": "Chọn hồ sơ nhân sự cần liên kết với Talent này."
-    ,"internalDisplayNameSource": "Ten hien thi lay tu ho so nhan su."
+    "linkedEmploymentProfileId": "Chọn hồ sơ nhân sự cần liên kết với Talent này.",
+    "internalDisplayNameSource": "Ten hien thi lay tu ho so nhan su lien ket.",
+    "performanceAlias": "Ten hien thi noi bo lay tu ho so nhan su lien ket. Bi danh bieu dien la tuy chon va chi dung trong ngu canh Talent/bieu dien.",
+    "externalStageName": "Talent ben ngoai tu quan ly nghe danh bieu dien nay."
   },
   "states": {
     "emptyTitle": "Không tìm thấy Talent",
@@ -48,7 +50,7 @@
     "loadErrorMessage": "Không thể tải dữ liệu Talent."
   },
   "filters": {
-    "searchPlaceholder": "Nhập mã Talent",
+    "searchPlaceholder": "Tìm theo mã Talent, bí danh biểu diễn hoặc nghệ danh bên ngoài",
     "operationalStatus": "Trạng thái vận hành",
     "allOperationalStatuses": "Tất cả trạng thái vận hành",
     "talentOrigin": "Nguồn Talent",
@@ -107,7 +109,7 @@
   },
   "table": {
     "displayName": "Ten hien thi",
-    "performanceAlias": "Bi danh",
+    "performanceAlias": "Bi danh bieu dien",
     "caption": "Danh sách Talent",
     "talentCode": "Mã Talent",
     "stageName": "Nghệ danh",

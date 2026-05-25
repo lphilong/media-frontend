@@ -45,7 +45,7 @@ describe('work schedule wave 6 surfaces', () => {
       await screen.findByRole('heading', { name: i18n.t('work-schedule:page.title') }),
     ).toBeInTheDocument();
     expect(await screen.findByText('SHIFT002', {}, { timeout: 8000 })).toBeInTheDocument();
-    expect(await screen.findByText('Mina')).toBeInTheDocument();
+    expect((await screen.findAllByText('Binh Tran')).length).toBeGreaterThan(0);
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('Archived work shift')).not.toBeInTheDocument();
     expect(screen.queryByText(i18n.t('work-schedule:scopes.self'))).not.toBeInTheDocument();

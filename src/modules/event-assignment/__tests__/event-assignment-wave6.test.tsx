@@ -146,10 +146,10 @@ describe('event assignment wave 6 surfaces', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('event-assignment:page.title') }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Event overlaps from:')).toBeInTheDocument();
-    expect(screen.getByText('Event overlaps until:')).toBeInTheDocument();
-    expect(screen.getByText('Event starts from:')).toBeInTheDocument();
-    expect(screen.getByText('Event starts until:')).toBeInTheDocument();
+    expect(await screen.findByText('Event overlaps from:')).toBeInTheDocument();
+    expect(await screen.findByText('Event overlaps until:')).toBeInTheDocument();
+    expect(await screen.findByText('Event starts from:')).toBeInTheDocument();
+    expect(await screen.findByText('Event starts until:')).toBeInTheDocument();
     expect(screen.getAllByText(/00:00 30-04-2026/).length).toBeGreaterThan(0);
     expect(screen.getByText(/00:00 01-05-2026/)).toBeInTheDocument();
     expect(screen.getByText(/00:00 07-05-2026/)).toBeInTheDocument();

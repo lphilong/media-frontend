@@ -6,7 +6,7 @@
   },
   "fields": {
     "displayName": "显示名称",
-    "performanceAlias": "艺名 / 表演别名",
+    "performanceAlias": "表演别名",
     "externalProfileName": "外部艺人资料名称",
     "talentCode": "艺人编码",
     "stageName": "艺名",
@@ -38,8 +38,10 @@
   "referenceHelp": {
     "managerEmploymentProfileId": "选择此艺人的主管员工档案。",
     "newManagerEmploymentProfileId": "选择主管员工档案，或清除选择以移除主管。",
-    "linkedEmploymentProfileId": "选择要关联到此艺人的员工档案。"
-    ,"internalDisplayNameSource": "显示名称来自员工档案。"
+    "linkedEmploymentProfileId": "选择要关联到此艺人的员工档案。",
+    "internalDisplayNameSource": "显示名称来自关联的员工档案。",
+    "performanceAlias": "内部人员显示名称来自关联的员工档案。表演别名为可选项，仅用于艺人/表演场景。",
+    "externalStageName": "外部艺人自行管理此表演艺名。"
   },
   "states": {
     "emptyTitle": "未找到艺人",
@@ -48,7 +50,7 @@
     "loadErrorMessage": "无法加载艺人数据。"
   },
   "filters": {
-    "searchPlaceholder": "按艺人编码、艺名、法定名称或简称搜索",
+    "searchPlaceholder": "按艺人编码、表演别名或外部艺名搜索",
     "operationalStatus": "运营状态",
     "allOperationalStatuses": "所有运营状态",
     "talentOrigin": "艺人来源",
@@ -107,7 +109,7 @@
   },
   "table": {
     "displayName": "显示名称",
-    "performanceAlias": "别名",
+    "performanceAlias": "表演别名",
     "caption": "艺人列表",
     "talentCode": "艺人编码",
     "stageName": "艺名",

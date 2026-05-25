@@ -269,6 +269,8 @@ describe('talent-group wave 4 surfaces', () => {
     expect(screen.getByText(i18n.t('talent-group:help.displayOrder'))).toBeInTheDocument();
     expect(await screen.findByText('Bao')).toBeInTheDocument();
     expect(screen.getByText('BaoStar')).toBeInTheDocument();
+    expect(screen.queryByText('Stale Internal Legal')).not.toBeInTheDocument();
+    expect(screen.queryByText('Stale Internal Short')).not.toBeInTheDocument();
     expect(screen.queryByText('talent-003')).not.toBeInTheDocument();
 
     expect(

@@ -44,13 +44,7 @@ export const readReferenceDisplay = (
   fallbackId?: string | null,
 ): string => {
   const code = ref?.code?.trim();
-  const label = readFirstText([
-    ref?.name,
-    ref?.display,
-    ref?.displayName,
-    ref?.title,
-    ref?.handle,
-  ]);
+  const label = readFirstText([ref?.display, ref?.displayName, ref?.name, ref?.title, ref?.handle]);
 
   if (label) {
     return label;

@@ -11,6 +11,10 @@ import type { TalentGroupRecord } from '@modules/talent-group/types/talent-group
 import { fetchTalentDetail } from '@modules/talent/api/talent.api';
 import type { TalentRecord } from '@modules/talent/types/talent.types';
 import {
+  readTalentPerformanceAlias,
+  readTalentPrimaryDisplay,
+} from '@modules/talent/utils/talent-display';
+import {
   fetchHolidayCalendarDetail,
   fetchHolidayCalendars,
   fetchWorkPatternDetail,
@@ -40,14 +44,18 @@ const compactDescription = (values: Array<string | null | undefined>): string | 
 const toEmploymentProfileOption = (item: EmploymentProfileListItem): ReferenceOption => ({
   id: item.id,
   label: `${item.employeeCode} - ${item.displayName || item.legalName}`,
-  description: compactDescription([item.legalName, item.jobTitle, item.employmentStatus]),
+  description: compactDescription([item.jobTitle, item.employmentStatus]),
   href: APP_PATHS.employmentProfileDetail(item.id),
 });
 
 const toTalentOption = (item: TalentRecord): ReferenceOption => ({
   id: item.id,
-  label: `${item.talentCode} - ${item.stageName}`,
-  description: compactDescription([item.legalName, item.displayShortName, item.operationalStatus]),
+  label: `${item.talentCode} - ${readTalentPrimaryDisplay(item)}`,
+  description: compactDescription([
+    item.talentOrigin === 'INTERNAL' ? readTalentPerformanceAlias(item) : item.legalName,
+    item.talentOrigin === 'EXTERNAL' ? item.displayShortName : null,
+    item.operationalStatus,
+  ]),
   href: APP_PATHS.talentDetail(item.id),
 });
 

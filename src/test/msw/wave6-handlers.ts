@@ -740,7 +740,16 @@ const employmentProfileRefs = new Map<string, ReferenceSummary>([
 ]);
 
 const talentRefs = new Map<string, ReferenceSummary>([
-  ['talent-001', { id: 'talent-001', code: 'TAL-001', name: 'Mina', status: 'ACTIVE' }],
+  [
+    'talent-001',
+    {
+      id: 'talent-001',
+      code: 'TAL-001',
+      name: 'Binh Tran',
+      displayName: 'Binh Tran',
+      status: 'ACTIVE',
+    },
+  ],
   ['talent-002', { id: 'talent-002', code: 'TAL-002', name: 'Luna', status: 'ACTIVE' }],
 ]);
 
@@ -3349,7 +3358,10 @@ export const wave6Handlers = [
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
     if (record.status !== 'PENDING') {
-      return HttpResponse.json({ message: 'work-schedule:requests.statuses.CANCELLED' }, { status: 409 });
+      return HttpResponse.json(
+        { message: 'work-schedule:requests.statuses.CANCELLED' },
+        { status: 409 },
+      );
     }
     const body = await parseJsonBody(request);
     record.status = 'CANCELLED';
@@ -3368,7 +3380,10 @@ export const wave6Handlers = [
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
     if (record.status !== 'PENDING') {
-      return HttpResponse.json({ message: 'work-schedule:requests.statuses.APPROVED' }, { status: 409 });
+      return HttpResponse.json(
+        { message: 'work-schedule:requests.statuses.APPROVED' },
+        { status: 409 },
+      );
     }
     const body = await parseJsonBody(request);
     record.status = 'APPROVED';
@@ -3387,7 +3402,10 @@ export const wave6Handlers = [
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
     if (record.status !== 'PENDING') {
-      return HttpResponse.json({ message: 'work-schedule:requests.statuses.REJECTED' }, { status: 409 });
+      return HttpResponse.json(
+        { message: 'work-schedule:requests.statuses.REJECTED' },
+        { status: 409 },
+      );
     }
     const body = await parseJsonBody(request);
     record.status = 'REJECTED';

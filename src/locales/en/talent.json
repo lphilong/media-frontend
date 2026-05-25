@@ -7,7 +7,7 @@
   "fields": {
     "talentCode": "Talent Code",
     "displayName": "Display Name",
-    "performanceAlias": "Stage Name / Performance Alias",
+    "performanceAlias": "Performance Alias",
     "stageName": "Stage Name",
     "legalName": "Legal Name",
     "externalProfileName": "External talent profile name",
@@ -39,7 +39,9 @@
     "managerEmploymentProfileId": "Choose the manager employment profile for this talent.",
     "newManagerEmploymentProfileId": "Choose the manager employment profile, or clear the selection to remove the manager.",
     "linkedEmploymentProfileId": "Choose the employment profile to link to this talent.",
-    "internalDisplayNameSource": "Display name comes from Employment Profile."
+    "internalDisplayNameSource": "Display name comes from the linked Employment Profile.",
+    "performanceAlias": "Internal person display comes from the linked Employment Profile. Performance Alias is optional and used only in talent/performance contexts.",
+    "externalStageName": "External Talent owns this performer stage name."
   },
   "states": {
     "emptyTitle": "No talents found",
@@ -48,7 +50,7 @@
     "loadErrorMessage": "Talent data could not be loaded."
   },
   "filters": {
-    "searchPlaceholder": "Search by talent code, stage name, legal name, or short name",
+    "searchPlaceholder": "Search by talent code, performance alias, external stage name, legal name, or short name",
     "operationalStatus": "Operational Status",
     "allOperationalStatuses": "All operational statuses",
     "talentOrigin": "Talent Origin",
@@ -109,7 +111,7 @@
     "caption": "Talent list",
     "talentCode": "Talent Code",
     "displayName": "Display Name",
-    "performanceAlias": "Alias",
+    "performanceAlias": "Performance Alias",
     "stageName": "Stage Name",
     "legalName": "Legal Name",
     "displayShortName": "Short Name",

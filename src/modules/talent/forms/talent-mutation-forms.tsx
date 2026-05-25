@@ -391,8 +391,17 @@ export const TalentCreateSurface = ({
           />
           <TextInputField
             name="stageName"
-            label={t('talent:fields.stageName')}
+            label={
+              selectedTalentOrigin === 'EXTERNAL'
+                ? t('talent:fields.stageName')
+                : t('talent:fields.performanceAlias')
+            }
             placeholder={t('talent:placeholders.optional')}
+            helperText={
+              selectedTalentOrigin === 'EXTERNAL'
+                ? t('talent:referenceHelp.externalStageName')
+                : t('talent:referenceHelp.performanceAlias')
+            }
           />
           {selectedTalentOrigin === 'EXTERNAL' ? (
             <TextInputField name="legalName" label={t('talent:fields.externalProfileName')} />
@@ -521,8 +530,17 @@ export const TalentEditSurface = ({
         <FormGrid columns={2}>
           <TextInputField
             name="stageName"
-            label={t('talent:fields.stageName')}
+            label={
+              initialValues.talentOrigin === 'EXTERNAL'
+                ? t('talent:fields.stageName')
+                : t('talent:fields.performanceAlias')
+            }
             placeholder={t('talent:placeholders.optional')}
+            helperText={
+              initialValues.talentOrigin === 'EXTERNAL'
+                ? t('talent:referenceHelp.externalStageName')
+                : t('talent:referenceHelp.performanceAlias')
+            }
           />
           {initialValues.talentOrigin === 'EXTERNAL' ? (
             <>
