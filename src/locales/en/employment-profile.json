@@ -19,6 +19,7 @@
     "onboardingOwnerEmploymentProfileId": "Onboarding Owner",
     "sourcedByEmploymentProfileId": "Sourced By",
     "linkedUserId": "Linked User",
+    "employmentStatus": "Employment Status",
     "contractStatus": "Contract Status",
     "newContractStatus": "New Contract Status",
     "employmentStartDate": "Employment Start Date",
@@ -157,21 +158,43 @@
     "caption": "Direct reports list"
   },
   "detail": {
+    "hubTitle": "People Operations Hub",
+    "hubSubtitle": "{{displayName}} · {{employeeCode}}",
+    "overviewTitle": "Overview",
     "summaryTitle": "Profile Summary",
     "assignmentTitle": "Assignment and Dates",
+    "accountTitle": "Account / User Link",
     "hrAttributionTitle": "HR Attribution",
     "noManager": "No manager assigned",
     "notAssigned": "Not assigned"
   },
+  "account": {
+    "linkedUserStatus": "Linked User Status",
+    "linked": "Linked",
+    "notLinked": "Not linked",
+    "accountStatus": "Account Status",
+    "email": "Email",
+    "noLinkedRecord": "No linked record"
+  },
   "related": {
     "navigationTitle": "Related Navigation",
+    "peopleHubNavigationTitle": "Related Operations",
+    "internalTalent": "Internal Talent",
+    "talentGroups": "Talent Groups",
+    "kpi": "KPI",
     "workShifts": "Work Shifts by Subject",
     "events": "Events by Assignment",
     "contractsByOwner": "Contracts by Owner",
     "contractsByLinkedEntity": "Contracts by Linked Entity",
+    "openLinkedRecord": "Open linked record",
     "openFilteredList": "Open filtered list",
+    "noLinkedRecord": "No linked record",
+    "noRelatedTalentContext": "No related Talent context",
+    "noPublishedKpiSummary": "No published KPI summary",
+    "noModuleAccess": "No access",
     "unavailable": "Unavailable",
-    "directReportsTitle": "Direct Reports"
+    "directReportsTitle": "Direct Reports",
+    "reportingTitle": "Manager / Reporting"
   },
   "mutations": {
     "create": {

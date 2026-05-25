@@ -19,6 +19,7 @@
     "onboardingOwnerEmploymentProfileId": "入职负责人",
     "sourcedByEmploymentProfileId": "推荐来源",
     "linkedUserId": "关联用户",
+    "employmentStatus": "员工状态",
     "contractStatus": "合同状态",
     "newContractStatus": "新合同状态",
     "employmentStartDate": "员工开始日期",
@@ -157,13 +158,35 @@
     "caption": "直接下属列表"
   },
   "detail": {
+    "hubTitle": "People Operations Hub",
+    "hubSubtitle": "{{displayName}} - {{employeeCode}}",
+    "overviewTitle": "概览",
+    "accountTitle": "账号 / 用户关联",
     "summaryTitle": "档案摘要",
     "assignmentTitle": "分配和日期",
     "hrAttributionTitle": "HR 归属",
     "noManager": "未分配主管",
     "notAssigned": "未分配"
   },
+  "account": {
+    "linkedUserStatus": "关联用户状态",
+    "linked": "已关联",
+    "notLinked": "未关联",
+    "accountStatus": "账号状态",
+    "email": "Email",
+    "noLinkedRecord": "无关联记录"
+  },
   "related": {
+    "peopleHubNavigationTitle": "相关运营",
+    "internalTalent": "内部人才",
+    "talentGroups": "人才组",
+    "kpi": "KPI",
+    "openLinkedRecord": "打开关联记录",
+    "noLinkedRecord": "无关联记录",
+    "noRelatedTalentContext": "无相关人才上下文",
+    "noPublishedKpiSummary": "无已发布 KPI 摘要",
+    "noModuleAccess": "无访问权限",
+    "reportingTitle": "主管 / 汇报关系",
     "navigationTitle": "关联导航",
     "workShifts": "按主体查看工作班次",
     "events": "按分配查看活动",

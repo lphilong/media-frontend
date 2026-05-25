@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -215,7 +215,26 @@ describe('employment profile wave 3 surfaces', () => {
     renderRoute('/employment-profiles/ep-001');
 
     expect(
-      await screen.findByText(i18n.t('employment-profile:actionRail.title')),
+      await screen.findByRole('heading', {
+        name: i18n.t('employment-profile:detail.hubTitle'),
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('employment-profile:actionRail.title'))).toBeInTheDocument();
+    expect(screen.getByText('Alice - EP-000001')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('employment-profile:detail.overviewTitle'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('employment-profile:detail.accountTitle'))).toBeInTheDocument();
+    const peopleHubHeading = screen.getByRole('heading', {
+      name: i18n.t('employment-profile:related.peopleHubNavigationTitle'),
+    });
+    expect(peopleHubHeading).toBeInTheDocument();
+    const peopleHubSection = peopleHubHeading.closest('section');
+    expect(peopleHubSection).not.toBeNull();
+    if (!peopleHubSection) {
+      return;
+    }
+    const peopleHub = within(peopleHubSection);
+    expect(
+      screen.getByText(i18n.t('employment-profile:related.reportingTitle')),
     ).toBeInTheDocument();
     expect(screen.getAllByText('01-01-2024').length).toBeGreaterThan(0);
     expect(
@@ -230,15 +249,43 @@ describe('employment profile wave 3 surfaces', () => {
       'href',
       '/employment-profiles/ep-003',
     );
-    expect(screen.getByText('08-01-2024')).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('employment-profile:detail.notAssigned'))).toBeInTheDocument();
-    expect(screen.getByText('Alice User')).toBeInTheDocument();
+    expect(screen.getAllByText('08-01-2024').length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(i18n.t('employment-profile:detail.notAssigned')).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Alice User' })).toHaveAttribute(
+      'href',
+      '/users/user-alice',
+    );
     expect(screen.getByRole('link', { name: 'Sales' })).toHaveAttribute(
       'href',
       '/org-units/ou-sales',
     );
     expect(await screen.findByText('EP-000002')).toBeInTheDocument();
     expect(screen.getByText('EP-000003')).toBeInTheDocument();
+    expect(
+      peopleHub.getByText(i18n.t('employment-profile:related.internalTalent')),
+    ).toBeInTheDocument();
+    expect(
+      peopleHub.getByText(i18n.t('employment-profile:related.talentGroups')),
+    ).toBeInTheDocument();
+    expect(peopleHub.getByText(i18n.t('employment-profile:related.kpi'))).toBeInTheDocument();
+    expect(
+      peopleHub
+        .getAllByRole('link', { name: i18n.t('employment-profile:related.openFilteredList') })
+        .some(
+          (link) =>
+            link.getAttribute('href') ===
+            '/kpi?subjectType=EMPLOYMENT_PROFILE&subjectId=ep-001&status=PUBLISHED',
+        ),
+    ).toBe(true);
+    expect(
+      screen.getAllByText(i18n.t('employment-profile:related.noLinkedRecord')).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText(/setupUrl/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ticketUrl/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/resetUrl/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/temporaryPassword/i)).not.toBeInTheDocument();
 
     expect(
       screen.getByRole('button', { name: i18n.t('employment-profile:actions.place-on-leave') }),
@@ -586,10 +633,9 @@ describe('employment profile wave 3 surfaces', () => {
     const restricted = getMockCurrentActorCapabilities();
     setMockCurrentActorCapabilities({
       ...restricted,
-      roles: ['role-viewer'],
-      permissions: restricted.permissions.filter(
-        (permission) => permission !== 'employmentProfile.update',
-      ),
+      roles: ['role-viewer-auditor'],
+      permissions: ['employmentProfile.read'],
+      scopeGrants: {},
     });
 
     renderRoute('/employment-profiles/ep-001');
@@ -601,8 +647,62 @@ describe('employment profile wave 3 surfaces', () => {
       screen.queryByRole('button', { name: i18n.t('employment-profile:actions.edit') }),
     ).not.toBeInTheDocument();
     expect(
+      screen.queryByRole('button', { name: i18n.t('employment-profile:actions.linkUser') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('employment-profile:actions.terminate') }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByText(i18n.t('employment-profile:detail.hrAttributionTitle')),
     ).toBeInTheDocument();
+  });
+
+  it('denies self-service-only and team-manager actors from the People Hub route', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const base = getMockCurrentActorCapabilities();
+
+    setMockCurrentActorCapabilities({
+      ...base,
+      id: 'user-staff',
+      roles: ['role-talent-staff-self'],
+      permissions: [
+        'employmentProfile.read',
+        'talent.read',
+        'workSchedule.read',
+        'event.read',
+        'talentKpi.read',
+        'kpi.readProgress',
+      ],
+      scopeGrants: {
+        workSchedule: ['self'],
+        kpi: ['self'],
+      },
+    });
+    renderRoute('/employment-profiles/ep-001');
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('employment-profile:detail.hubTitle')),
+    ).not.toBeInTheDocument();
+
+    cleanup();
+    setMockCurrentActorCapabilities({
+      ...base,
+      roles: ['role-team-manager'],
+      permissions: [
+        'workSchedule.read',
+        'event.read',
+        'talent.read',
+        'talentGroup.read',
+        'kpi.read',
+      ],
+      scopeGrants: {
+        workSchedule: ['self', 'team'],
+        eventAssignment: ['managedGroup'],
+        kpi: ['managedGroup'],
+      },
+    });
+    renderRoute('/employment-profiles/ep-001');
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
   });
 
   it('keeps contract-status action fail-closed when no transition is supported', async () => {

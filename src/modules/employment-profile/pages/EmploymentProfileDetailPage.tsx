@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 
+import { canAccessModule } from '@app/router/module-access';
+import { APP_PATHS } from '@app/router/paths';
 import {
   buildContractRegistryByLinkedEmploymentProfileHref,
   buildContractRegistryByOwnerHref,
@@ -147,6 +149,39 @@ const readLifecycleConfirmKey = (action: EmploymentProfileLifecycleAction): stri
       return 'employment-profile:confirm.archive';
   }
 };
+
+const buildKpiPlansByEmploymentProfileHref = (employmentProfileId: string): string => {
+  const params = new URLSearchParams({
+    subjectType: 'EMPLOYMENT_PROFILE',
+    subjectId: employmentProfileId,
+    status: 'PUBLISHED',
+  });
+
+  return `${APP_PATHS.kpi}?${params.toString()}`;
+};
+
+const RelatedHubCard = ({
+  title,
+  href,
+  linkLabel,
+  emptyLabel,
+}: {
+  title: string;
+  href?: string;
+  linkLabel: string;
+  emptyLabel: string;
+}): JSX.Element => (
+  <div className="rounded border border-border bg-bg px-3 py-2">
+    <p className="text-xs font-medium uppercase text-muted">{title}</p>
+    {href ? (
+      <Link to={href} className="mt-1 inline-flex text-sm text-accent hover:underline">
+        {linkLabel}
+      </Link>
+    ) : (
+      <p className="mt-1 text-sm text-muted">{emptyLabel}</p>
+    )}
+  </div>
+);
 
 export const EmploymentProfileDetailPage = (): JSX.Element => {
   const { employmentProfileId } = useParams<{ employmentProfileId: string }>();
@@ -429,16 +464,39 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
   const relatedOrgUnitHref = record?.orgUnitId
     ? buildEntityDetailHref('orgUnit', record.orgUnitId)
     : undefined;
-  const contractByOwnerHref = record ? buildContractRegistryByOwnerHref(record.id) : undefined;
-  const contractByLinkedEntityHref = record
-    ? buildContractRegistryByLinkedEmploymentProfileHref(record.id)
-    : undefined;
-  const workShiftsBySubjectHref = record
-    ? buildWorkShiftsBySubjectEmploymentProfileHref(record.id)
-    : undefined;
-  const eventsByAssignmentHref = record
-    ? buildEventsByAssignmentEmploymentProfileHref(record.id)
-    : undefined;
+  const canReadUserModule = canAccessModule(capabilitiesQuery.data, 'user');
+  const canReadTalentModule = canAccessModule(capabilitiesQuery.data, 'talent');
+  const canReadTalentGroupModule = canAccessModule(capabilitiesQuery.data, 'talent-group');
+  const canReadKpiModule = canAccessModule(capabilitiesQuery.data, 'kpi');
+  const canReadWorkScheduleModule = canAccessModule(capabilitiesQuery.data, 'work-schedule');
+  const canReadEventModule = canAccessModule(capabilitiesQuery.data, 'event-assignment');
+  const canReadContractRegistryModule = canAccessModule(
+    capabilitiesQuery.data,
+    'contract-registry',
+  );
+  const linkedUserHref =
+    canReadUserModule && record?.linkedUserId
+      ? buildEntityDetailHref('user', record.linkedUserId)
+      : undefined;
+  const contractByOwnerHref =
+    canReadContractRegistryModule && record
+      ? buildContractRegistryByOwnerHref(record.id)
+      : undefined;
+  const contractByLinkedEntityHref =
+    canReadContractRegistryModule && record
+      ? buildContractRegistryByLinkedEmploymentProfileHref(record.id)
+      : undefined;
+  const workShiftsBySubjectHref =
+    canReadWorkScheduleModule && record
+      ? buildWorkShiftsBySubjectEmploymentProfileHref(record.id)
+      : undefined;
+  const eventsByAssignmentHref =
+    canReadEventModule && record
+      ? buildEventsByAssignmentEmploymentProfileHref(record.id)
+      : undefined;
+  const kpiPlansByEmploymentProfileHref =
+    canReadKpiModule && record ? buildKpiPlansByEmploymentProfileHref(record.id) : undefined;
+  const restrictedRelatedEmptyLabel = t('employment-profile:related.noModuleAccess');
 
   const allowedContractStatuses = record
     ? readAllowedContractStatuses(record.contractStatus, record.employmentStatus)
@@ -600,6 +658,15 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
 
   return (
     <ModuleDetailScreenShell
+      title={record ? t('employment-profile:detail.hubTitle') : t('employment-profile:page.title')}
+      subtitle={
+        record
+          ? t('employment-profile:detail.hubSubtitle', {
+              displayName: record.displayName,
+              employeeCode: record.employeeCode,
+            })
+          : t('employment-profile:page.subtitle')
+      }
       statusBadge={
         record ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -618,7 +685,7 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
       }
       summarySection={
         record ? (
-          <MetadataSection title={t('employment-profile:detail.summaryTitle')}>
+          <MetadataSection title={t('employment-profile:detail.overviewTitle')}>
             <ReadOnlyFieldGrid
               fields={[
                 {
@@ -637,6 +704,11 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                   value: record.legalName,
                 },
                 {
+                  key: 'employment-status',
+                  label: t('employment-profile:fields.employmentStatus'),
+                  value: t(`employment-profile:statuses.${record.employmentStatus}`),
+                },
+                {
                   key: 'employment-kind',
                   label: t('employment-profile:fields.employmentKind'),
                   value: record.employmentKind,
@@ -647,32 +719,6 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                   value: record.jobTitle,
                 },
                 {
-                  key: 'title-description',
-                  label: t('employment-profile:fields.titleDescription'),
-                  value: record.titleDescription ?? '-',
-                },
-                {
-                  key: 'external-ref',
-                  label: t('employment-profile:fields.externalRef'),
-                  value: record.externalRef ?? '-',
-                },
-                {
-                  key: 'linked-user-id',
-                  label: t('employment-profile:fields.linkedUserId'),
-                  value: readReferenceDisplay(record.linkedUserRef, record.linkedUserId),
-                },
-              ]}
-              columns={2}
-            />
-          </MetadataSection>
-        ) : undefined
-      }
-      metadataSection={
-        record ? (
-          <MetadataSection title={t('employment-profile:detail.assignmentTitle')}>
-            <ReadOnlyFieldGrid
-              fields={[
-                {
                   key: 'org-unit',
                   label: t('employment-profile:fields.orgUnitId'),
                   value: record.orgUnitId ? (
@@ -681,7 +727,7 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                       to={relatedOrgUnitHref}
                     />
                   ) : (
-                    '-'
+                    t('employment-profile:detail.notAssigned')
                   ),
                 },
                 {
@@ -700,6 +746,11 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                   ),
                 },
                 {
+                  key: 'contract-status',
+                  label: t('employment-profile:fields.contractStatus'),
+                  value: t(`employment-profile:contractStatuses.${record.contractStatus}`),
+                },
+                {
                   key: 'start-date',
                   label: t('employment-profile:fields.employmentStartDate'),
                   value: formatUtcMidnightDateLike(record.employmentStartDate),
@@ -709,7 +760,73 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                   label: t('employment-profile:fields.employmentEndDate'),
                   value: record.employmentEndDate
                     ? formatUtcMidnightDateLike(record.employmentEndDate)
-                    : '-',
+                    : t('employment-profile:detail.notAssigned'),
+                },
+                {
+                  key: 'hired-at',
+                  label: t('employment-profile:fields.hiredAt'),
+                  value: record.hiredAt
+                    ? formatUtcMidnightDateLike(record.hiredAt)
+                    : t('employment-profile:detail.notAssigned'),
+                },
+                {
+                  key: 'onboarded-at',
+                  label: t('employment-profile:fields.onboardedAt'),
+                  value: record.onboardedAt
+                    ? formatUtcMidnightDateLike(record.onboardedAt)
+                    : t('employment-profile:detail.notAssigned'),
+                },
+                {
+                  key: 'title-description',
+                  label: t('employment-profile:fields.titleDescription'),
+                  value: record.titleDescription ?? '-',
+                },
+                {
+                  key: 'external-ref',
+                  label: t('employment-profile:fields.externalRef'),
+                  value: record.externalRef ?? '-',
+                },
+              ]}
+              columns={2}
+            />
+          </MetadataSection>
+        ) : undefined
+      }
+      metadataSection={
+        record ? (
+          <MetadataSection title={t('employment-profile:detail.accountTitle')}>
+            <ReadOnlyFieldGrid
+              fields={[
+                {
+                  key: 'linked-user-status',
+                  label: t('employment-profile:account.linkedUserStatus'),
+                  value: record.linkedUserId
+                    ? t('employment-profile:account.linked')
+                    : t('employment-profile:account.notLinked'),
+                },
+                {
+                  key: 'linked-user',
+                  label: t('employment-profile:fields.linkedUserId'),
+                  value: record.linkedUserId ? (
+                    <ReferenceChip
+                      label={readReferenceDisplay(record.linkedUserRef, record.linkedUserId)}
+                      to={linkedUserHref}
+                    />
+                  ) : (
+                    t('employment-profile:account.noLinkedRecord')
+                  ),
+                },
+                {
+                  key: 'account-status',
+                  label: t('employment-profile:account.accountStatus'),
+                  value:
+                    record.linkedUserRef?.status ?? t('employment-profile:account.noLinkedRecord'),
+                },
+                {
+                  key: 'account-email',
+                  label: t('employment-profile:account.email'),
+                  value:
+                    record.linkedUserRef?.name ?? t('employment-profile:account.noLinkedRecord'),
                 },
                 {
                   key: 'created-at',
@@ -878,80 +995,100 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
       relatedSection={
         record ? (
           <div className="space-y-4">
-            <RelatedSectionShell title={t('employment-profile:related.navigationTitle')}>
+            <RelatedSectionShell title={t('employment-profile:related.peopleHubNavigationTitle')}>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div className="rounded border border-border bg-bg px-3 py-2">
-                  <p className="text-xs font-medium uppercase text-muted">
-                    {t('employment-profile:related.workShifts')}
-                  </p>
-                  {workShiftsBySubjectHref ? (
-                    <Link
-                      to={workShiftsBySubjectHref}
-                      className="mt-1 inline-flex text-sm text-accent hover:underline"
-                    >
-                      {t('employment-profile:related.openFilteredList')}
-                    </Link>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted">
-                      {t('employment-profile:related.unavailable')}
-                    </p>
-                  )}
-                </div>
-                <div className="rounded border border-border bg-bg px-3 py-2">
-                  <p className="text-xs font-medium uppercase text-muted">
-                    {t('employment-profile:related.events')}
-                  </p>
-                  {eventsByAssignmentHref ? (
-                    <Link
-                      to={eventsByAssignmentHref}
-                      className="mt-1 inline-flex text-sm text-accent hover:underline"
-                    >
-                      {t('employment-profile:related.openFilteredList')}
-                    </Link>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted">
-                      {t('employment-profile:related.unavailable')}
-                    </p>
-                  )}
-                </div>
-                <div className="rounded border border-border bg-bg px-3 py-2">
-                  <p className="text-xs font-medium uppercase text-muted">
-                    {t('employment-profile:related.contractsByOwner')}
-                  </p>
-                  {contractByOwnerHref ? (
-                    <Link
-                      to={contractByOwnerHref}
-                      className="mt-1 inline-flex text-sm text-accent hover:underline"
-                    >
-                      {t('employment-profile:related.openFilteredList')}
-                    </Link>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted">
-                      {t('employment-profile:related.unavailable')}
-                    </p>
-                  )}
-                </div>
-                <div className="rounded border border-border bg-bg px-3 py-2">
-                  <p className="text-xs font-medium uppercase text-muted">
-                    {t('employment-profile:related.contractsByLinkedEntity')}
-                  </p>
-                  {contractByLinkedEntityHref ? (
-                    <Link
-                      to={contractByLinkedEntityHref}
-                      className="mt-1 inline-flex text-sm text-accent hover:underline"
-                    >
-                      {t('employment-profile:related.openFilteredList')}
-                    </Link>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted">
-                      {t('employment-profile:related.unavailable')}
-                    </p>
-                  )}
-                </div>
+                <RelatedHubCard
+                  title={t('employment-profile:related.internalTalent')}
+                  linkLabel={t('employment-profile:related.openLinkedRecord')}
+                  emptyLabel={
+                    canReadTalentModule
+                      ? t('employment-profile:related.noLinkedRecord')
+                      : restrictedRelatedEmptyLabel
+                  }
+                />
+                <RelatedHubCard
+                  title={t('employment-profile:related.talentGroups')}
+                  linkLabel={t('employment-profile:related.openFilteredList')}
+                  emptyLabel={
+                    canReadTalentGroupModule
+                      ? t('employment-profile:related.noRelatedTalentContext')
+                      : restrictedRelatedEmptyLabel
+                  }
+                />
+                <RelatedHubCard
+                  title={t('employment-profile:related.kpi')}
+                  href={kpiPlansByEmploymentProfileHref}
+                  linkLabel={t('employment-profile:related.openFilteredList')}
+                  emptyLabel={
+                    canReadKpiModule
+                      ? t('employment-profile:related.noPublishedKpiSummary')
+                      : restrictedRelatedEmptyLabel
+                  }
+                />
+                <RelatedHubCard
+                  title={t('employment-profile:related.workShifts')}
+                  href={workShiftsBySubjectHref}
+                  linkLabel={t('employment-profile:related.openFilteredList')}
+                  emptyLabel={
+                    canReadWorkScheduleModule
+                      ? t('employment-profile:related.unavailable')
+                      : restrictedRelatedEmptyLabel
+                  }
+                />
+                <RelatedHubCard
+                  title={t('employment-profile:related.events')}
+                  href={eventsByAssignmentHref}
+                  linkLabel={t('employment-profile:related.openFilteredList')}
+                  emptyLabel={
+                    canReadEventModule
+                      ? t('employment-profile:related.unavailable')
+                      : restrictedRelatedEmptyLabel
+                  }
+                />
+                <RelatedHubCard
+                  title={t('employment-profile:related.contractsByOwner')}
+                  href={contractByOwnerHref}
+                  linkLabel={t('employment-profile:related.openFilteredList')}
+                  emptyLabel={
+                    canReadContractRegistryModule
+                      ? t('employment-profile:related.unavailable')
+                      : restrictedRelatedEmptyLabel
+                  }
+                />
+                <RelatedHubCard
+                  title={t('employment-profile:related.contractsByLinkedEntity')}
+                  href={contractByLinkedEntityHref}
+                  linkLabel={t('employment-profile:related.openFilteredList')}
+                  emptyLabel={
+                    canReadContractRegistryModule
+                      ? t('employment-profile:related.unavailable')
+                      : restrictedRelatedEmptyLabel
+                  }
+                />
               </div>
             </RelatedSectionShell>
-            <RelatedSectionShell title={t('employment-profile:related.directReportsTitle')}>
+            <RelatedSectionShell title={t('employment-profile:related.reportingTitle')}>
               <div className="space-y-3">
+                <ReadOnlyFieldGrid
+                  fields={[
+                    {
+                      key: 'reporting-manager',
+                      label: t('employment-profile:fields.managerEmploymentProfileId'),
+                      value: record.managerEmploymentProfileId ? (
+                        <ReferenceChip
+                          label={readReferenceDisplay(
+                            record.managerEmploymentProfileRef,
+                            record.managerEmploymentProfileId,
+                          )}
+                          to={relatedManagerHref}
+                        />
+                      ) : (
+                        t('employment-profile:detail.noManager')
+                      ),
+                    },
+                  ]}
+                  columns={1}
+                />
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="text-xs uppercase text-muted" htmlFor="direct-reports-sort-by">
                     {t('employment-profile:directReports.sortBy')}

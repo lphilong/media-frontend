@@ -19,6 +19,7 @@
     "onboardingOwnerEmploymentProfileId": "Phụ trách onboarding",
     "sourcedByEmploymentProfileId": "Nguồn giới thiệu",
     "linkedUserId": "Người dùng liên kết",
+    "employmentStatus": "Trạng thái nhân sự",
     "contractStatus": "Trạng thái hợp đồng",
     "newContractStatus": "Trạng thái hợp đồng mới",
     "employmentStartDate": "Ngày bắt đầu làm việc",
@@ -157,21 +158,43 @@
     "caption": "Danh sách cấp dưới trực tiếp"
   },
   "detail": {
+    "hubTitle": "People Operations Hub",
+    "hubSubtitle": "{{displayName}} - {{employeeCode}}",
+    "overviewTitle": "Overview",
     "summaryTitle": "Tóm tắt hồ sơ",
     "assignmentTitle": "Phân công và mốc thời gian",
+    "accountTitle": "Liên kết tài khoản / người dùng",
     "hrAttributionTitle": "Phân công HR",
     "noManager": "Chưa gán quản lý",
     "notAssigned": "Chưa phân công"
   },
+  "account": {
+    "linkedUserStatus": "Trạng thái người dùng liên kết",
+    "linked": "Đã liên kết",
+    "notLinked": "Chưa liên kết",
+    "accountStatus": "Trạng thái tài khoản",
+    "email": "Email",
+    "noLinkedRecord": "Không có bản ghi liên kết"
+  },
   "related": {
     "navigationTitle": "Điều hướng liên quan",
+    "peopleHubNavigationTitle": "Vận hành liên quan",
+    "internalTalent": "Talent nội bộ",
+    "talentGroups": "Nhóm Talent",
+    "kpi": "KPI",
     "workShifts": "Ca làm việc theo chủ thể",
     "events": "Sự kiện theo phân công",
     "contractsByOwner": "Hợp đồng theo chủ sở hữu",
     "contractsByLinkedEntity": "Hợp đồng theo thực thể liên kết",
+    "openLinkedRecord": "Mở bản ghi liên kết",
     "openFilteredList": "Mở danh sách đã lọc",
+    "noLinkedRecord": "Không có bản ghi liên kết",
+    "noRelatedTalentContext": "Không có ngữ cảnh Talent liên quan",
+    "noPublishedKpiSummary": "Không có tóm tắt KPI đã công bố",
+    "noModuleAccess": "Không có quyền truy cập",
     "unavailable": "Không khả dụng",
-    "directReportsTitle": "Cấp dưới trực tiếp"
+    "directReportsTitle": "Cấp dưới trực tiếp",
+    "reportingTitle": "Quản lý / Báo cáo"
   },
   "mutations": {
     "create": {
