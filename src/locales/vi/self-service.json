@@ -1,0 +1,71 @@
+{
+  "page": {
+    "eyebrow": "Không gian nhân sự",
+    "title": "Tự phục vụ",
+    "readOnly": "Nền tảng chỉ đọc"
+  },
+  "navigation": {
+    "label": "Các mục tự phục vụ"
+  },
+  "sections": {
+    "profile": {
+      "title": "Hồ sơ của tôi",
+      "summary": "Tóm tắt hồ sơ nhân sự ở chế độ chỉ đọc."
+    },
+    "workShifts": {
+      "title": "Ca làm của tôi",
+      "summary": "Chỗ giữ cho màn hình lịch làm việc nhân sự sau này."
+    },
+    "kpi": {
+      "title": "KPI của tôi",
+      "summary": "Chỗ giữ KPI, không hiển thị dữ liệu phân bổ nháp hoặc cũ."
+    },
+    "events": {
+      "title": "Sự kiện của tôi",
+      "summary": "Chỉ là chỗ giữ; không tải dữ liệu sự kiện tại đây."
+    },
+    "account": {
+      "title": "Tài khoản",
+      "summary": "Chỗ giữ tóm tắt tài khoản, không có thao tác chỉnh sửa."
+    },
+    "linkedTalent": {
+      "title": "Talent nội bộ liên kết"
+    }
+  },
+  "fields": {
+    "displayName": "Tên hiển thị",
+    "employeeCode": "Mã nhân sự",
+    "employmentStatus": "Trạng thái nhân sự",
+    "accountEmail": "Email tài khoản",
+    "accountStatus": "Trạng thái tài khoản",
+    "locale": "Ngôn ngữ",
+    "timezone": "Múi giờ",
+    "talentCode": "Mã Talent",
+    "talentDisplayName": "Tên hiển thị Talent",
+    "performanceAlias": "Nghệ danh trình diễn"
+  },
+  "status": {
+    "available": "Có sẵn",
+    "comingSoon": "Sắp có"
+  },
+  "values": {
+    "notAvailable": "Chưa có"
+  },
+  "employmentStatus": {
+    "ACTIVE": "Đang làm",
+    "ON_LEAVE": "Đang nghỉ phép",
+    "SUSPENDED": "Tạm ngưng",
+    "TERMINATED": "Đã chấm dứt",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "accountStatus": {
+    "PENDING": "Đang chờ",
+    "ACTIVE": "Hoạt động",
+    "DISABLED": "Đã vô hiệu",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "errors": {
+    "currentPersonTitle": "Chưa liên kết Hồ sơ nhân sự",
+    "currentPersonMessage": "Tài khoản đã đăng nhập nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ."
+  }
+}

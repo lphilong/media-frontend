@@ -1,0 +1,71 @@
+{
+  "page": {
+    "eyebrow": "Staff workspace",
+    "title": "Self-Service",
+    "readOnly": "Read-only foundation"
+  },
+  "navigation": {
+    "label": "Self-service sections"
+  },
+  "sections": {
+    "profile": {
+      "title": "My Profile",
+      "summary": "Read-only staff profile summary."
+    },
+    "workShifts": {
+      "title": "My Work Shifts",
+      "summary": "Schedule view placeholder for a later staff surface."
+    },
+    "kpi": {
+      "title": "My KPI",
+      "summary": "KPI placeholder without draft or legacy allocation data."
+    },
+    "events": {
+      "title": "My Events",
+      "summary": "Placeholder only; event data is not loaded here."
+    },
+    "account": {
+      "title": "Account",
+      "summary": "Account summary placeholder without mutations."
+    },
+    "linkedTalent": {
+      "title": "Linked internal Talent"
+    }
+  },
+  "fields": {
+    "displayName": "Display name",
+    "employeeCode": "Employee code",
+    "employmentStatus": "Employment status",
+    "accountEmail": "Account email",
+    "accountStatus": "Account status",
+    "locale": "Locale",
+    "timezone": "Timezone",
+    "talentCode": "Talent code",
+    "talentDisplayName": "Talent display name",
+    "performanceAlias": "Performance Alias"
+  },
+  "status": {
+    "available": "Available",
+    "comingSoon": "Coming soon"
+  },
+  "values": {
+    "notAvailable": "Not available"
+  },
+  "employmentStatus": {
+    "ACTIVE": "Active",
+    "ON_LEAVE": "On leave",
+    "SUSPENDED": "Suspended",
+    "TERMINATED": "Terminated",
+    "ARCHIVED": "Archived"
+  },
+  "accountStatus": {
+    "PENDING": "Pending",
+    "ACTIVE": "Active",
+    "DISABLED": "Disabled",
+    "ARCHIVED": "Archived"
+  },
+  "errors": {
+    "currentPersonTitle": "No linked Employment Profile",
+    "currentPersonMessage": "Your account is authenticated, but no staff profile is linked for self-service yet."
+  }
+}

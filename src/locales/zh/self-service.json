@@ -1,0 +1,71 @@
+{
+  "page": {
+    "eyebrow": "员工工作区",
+    "title": "自助服务",
+    "readOnly": "只读基础"
+  },
+  "navigation": {
+    "label": "自助服务区域"
+  },
+  "sections": {
+    "profile": {
+      "title": "我的资料",
+      "summary": "只读员工资料摘要。"
+    },
+    "workShifts": {
+      "title": "我的班次",
+      "summary": "后续员工排班界面的占位。"
+    },
+    "kpi": {
+      "title": "我的 KPI",
+      "summary": "KPI 占位，不显示草稿或旧分配数据。"
+    },
+    "events": {
+      "title": "我的活动",
+      "summary": "仅占位；这里不加载活动数据。"
+    },
+    "account": {
+      "title": "账号",
+      "summary": "账号摘要占位，不提供修改操作。"
+    },
+    "linkedTalent": {
+      "title": "已关联内部 Talent"
+    }
+  },
+  "fields": {
+    "displayName": "显示名",
+    "employeeCode": "员工编号",
+    "employmentStatus": "雇佣状态",
+    "accountEmail": "账号邮箱",
+    "accountStatus": "账号状态",
+    "locale": "语言",
+    "timezone": "时区",
+    "talentCode": "Talent 编号",
+    "talentDisplayName": "Talent 显示名",
+    "performanceAlias": "表演别名"
+  },
+  "status": {
+    "available": "可用",
+    "comingSoon": "即将推出"
+  },
+  "values": {
+    "notAvailable": "不可用"
+  },
+  "employmentStatus": {
+    "ACTIVE": "在职",
+    "ON_LEAVE": "休假中",
+    "SUSPENDED": "已暂停",
+    "TERMINATED": "已终止",
+    "ARCHIVED": "已归档"
+  },
+  "accountStatus": {
+    "PENDING": "待处理",
+    "ACTIVE": "有效",
+    "DISABLED": "已禁用",
+    "ARCHIVED": "已归档"
+  },
+  "errors": {
+    "currentPersonTitle": "未关联雇佣档案",
+    "currentPersonMessage": "账号已认证，但尚未关联可用于自助服务的员工档案。"
+  }
+}

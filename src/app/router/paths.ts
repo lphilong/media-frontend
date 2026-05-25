@@ -4,6 +4,7 @@ const joinDetailPath = (basePath: string, entityId: string): string =>
 export const APP_PATHS = {
   root: '/',
   dashboard: '/dashboard',
+  selfService: '/self-service',
 
   users: '/users',
   userDetailPattern: '/users/:userId',

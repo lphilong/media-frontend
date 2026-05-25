@@ -27,6 +27,7 @@ export const I18N_NAMESPACES = [
   'kpi',
   'revenue-ledger',
   'commission',
+  'self-service',
 ] as const;
 
 export type I18nNamespace = (typeof I18N_NAMESPACES)[number];

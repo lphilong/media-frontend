@@ -119,7 +119,7 @@ type RoleTemplateRecord = {
 
 type CurrentActorCapabilitiesRecord = {
   id: string;
-  type: 'admin';
+  type: 'admin' | 'staff';
   context: 'ADMIN';
   isActive: boolean;
   roles: string[];

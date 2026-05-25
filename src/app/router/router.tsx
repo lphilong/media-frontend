@@ -189,6 +189,12 @@ const DashboardLitePage = lazy(() =>
   })),
 );
 
+const SelfServicePage = lazy(() =>
+  import('@modules/self-service/pages/SelfServicePage').then((module) => ({
+    default: module.SelfServicePage,
+  })),
+);
+
 const WorkPatternListPage = lazy(() =>
   import('@modules/work-schedule/pages/WorkPatternListPage').then((module) => ({
     default: module.WorkPatternListPage,
@@ -269,6 +275,14 @@ function LazyDashboardElement(): JSX.Element {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <DashboardLitePage />
+    </Suspense>
+  );
+}
+
+function LazySelfServiceElement(): JSX.Element {
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <SelfServicePage />
     </Suspense>
   );
 }
@@ -371,6 +385,14 @@ export const appRoutes: RouteObject[] = [
   {
     path: APP_PATHS.forbidden,
     element: <ForbiddenPage />,
+  },
+  {
+    path: APP_PATHS.selfService,
+    element: (
+      <RequireAuth>
+        <LazySelfServiceElement />
+      </RequireAuth>
+    ),
   },
   {
     path: APP_PATHS.root,
