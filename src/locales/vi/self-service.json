@@ -60,9 +60,33 @@
     "assignmentKind": "Phân công",
     "assignmentStatus": "Trạng thái phân công"
   },
+  "kpiFields": {
+    "period": "Period",
+    "lastUpdatedAt": "Updated",
+    "metric": "Metric",
+    "target": "Official target",
+    "actual": "Own actual",
+    "progress": "Progress"
+  },
   "tables": {
+    "kpi": "KPI",
     "workShifts": "Ca làm của tôi",
     "events": "Sự kiện của tôi"
+  },
+  "kpiStatus": {
+    "OFFICIAL_PUBLISHED": "Official published"
+  },
+  "kpiMetric": {
+    "REVENUE_VND": "Revenue",
+    "CONTENT_OUTPUT_COUNT": "Content output",
+    "LIVE_HOURS": "Live hours",
+    "EVENT_COMPLETION_COUNT": "Event completion",
+    "ONBOARDED_TALENT_COUNT": "Onboarded talent"
+  },
+  "kpiUnit": {
+    "VND": "VND",
+    "COUNT": "count",
+    "HOUR": "hours"
   },
   "status": {
     "available": "Có sẵn",
@@ -73,6 +97,8 @@
     "notAvailable": "Chưa có"
   },
   "empty": {
+    "kpiTitle": "No official KPI",
+    "kpiMessage": "No published KPI allocation is available for your linked internal Talent yet.",
     "workShiftsTitle": "Chưa có ca làm",
     "workShiftsMessage": "Chưa có ca chính thức nào cho hồ sơ của bạn.",
     "eventsTitle": "Chưa có sự kiện",
@@ -116,6 +142,8 @@
     "ROSTER_GENERATED": "Tạo từ bảng phân ca"
   },
   "errors": {
+    "kpiTitle": "KPI unavailable",
+    "kpiMessage": "Khong the tai KPI chinh thuc cua ban.",
     "currentPersonTitle": "Chưa liên kết Hồ sơ nhân sự",
     "currentPersonMessage": "Tài khoản đã đăng nhập nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ.",
     "workShiftsTitle": "Chưa thể tải ca làm",

@@ -10,8 +10,10 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import {
+  type SelfServiceKpiMetric,
   useSelfServiceCurrentPerson,
   useSelfServiceEvents,
+  useSelfServiceKpi,
   useSelfServiceWorkShifts,
 } from '@modules/self-service/api/self-service.api';
 import {
@@ -22,7 +24,11 @@ import {
   ReadOnlyFieldGrid,
   StatusBadge,
 } from '@shared/components/primitives';
-import { formatBusinessTimestamp } from '@shared/formatting/formatters';
+import {
+  formatBusinessTimestamp,
+  formatDecimal,
+  formatPercent,
+} from '@shared/formatting/formatters';
 
 type NavCard = {
   id: 'profile' | 'workShifts' | 'kpi' | 'events' | 'account';
@@ -33,7 +39,7 @@ type NavCard = {
 const navCards: NavCard[] = [
   { id: 'profile', icon: IdCard, statusKey: 'self-service:status.available' },
   { id: 'workShifts', icon: CalendarDays, statusKey: 'self-service:status.available' },
-  { id: 'kpi', icon: ChartNoAxesColumnIncreasing, statusKey: 'self-service:status.comingSoon' },
+  { id: 'kpi', icon: ChartNoAxesColumnIncreasing, statusKey: 'self-service:status.available' },
   { id: 'events', icon: BadgeCheck, statusKey: 'self-service:status.available' },
   { id: 'account', icon: UserCog, statusKey: 'self-service:status.comingSoon' },
 ];
@@ -54,10 +60,19 @@ const statusTone = {
   REMOVED: 'muted',
   EMPLOYMENT_PROFILE: 'info',
   TALENT: 'success',
+  OFFICIAL_PUBLISHED: 'success',
 } as const;
 
 const emptyValue = (value: string | null | undefined, fallback: string): string =>
   value ?? fallback;
+
+const formatMetricValue = (metric: SelfServiceKpiMetric, value: number): string => {
+  if (metric.unit === 'VND') {
+    return formatDecimal(value, 'vi-VN', 0);
+  }
+
+  return formatDecimal(value, 'vi-VN', metric.unit === 'HOUR' ? 2 : 0);
+};
 
 export const SelfServicePage = (): JSX.Element => {
   const { t } = useTranslation(['self-service', 'common', 'errors']);
@@ -65,6 +80,8 @@ export const SelfServicePage = (): JSX.Element => {
   const currentPerson = currentPersonQuery.data;
   const workShiftsQuery = useSelfServiceWorkShifts(currentPersonQuery.isSuccess);
   const workShifts = workShiftsQuery.data ?? [];
+  const kpiQuery = useSelfServiceKpi(currentPersonQuery.isSuccess);
+  const kpiItems = kpiQuery.data ?? [];
   const eventsQuery = useSelfServiceEvents(currentPersonQuery.isSuccess);
   const events = eventsQuery.data ?? [];
   const notAvailable = t('self-service:values.notAvailable');
@@ -123,6 +140,120 @@ export const SelfServicePage = (): JSX.Element => {
             title={t('self-service:errors.currentPersonTitle')}
             message={t('self-service:errors.currentPersonMessage')}
           />
+        ) : null}
+
+        {currentPerson ? (
+          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">{t('self-service:sections.kpi.title')}</h2>
+                <p className="text-sm text-muted">{t('self-service:sections.kpi.summary')}</p>
+              </div>
+              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
+            </div>
+
+            {kpiQuery.isLoading ? (
+              <div data-testid="self-service-kpi-loading">
+                <LoadingState lines={4} />
+              </div>
+            ) : null}
+
+            {kpiQuery.isError ? (
+              <ErrorState
+                title={t('self-service:errors.kpiTitle')}
+                message={t('self-service:errors.kpiMessage')}
+              />
+            ) : null}
+
+            {!kpiQuery.isLoading && !kpiQuery.isError && kpiItems.length === 0 ? (
+              <EmptyState
+                title={t('self-service:empty.kpiTitle')}
+                message={t('self-service:empty.kpiMessage')}
+              />
+            ) : null}
+
+            {kpiItems.length > 0 ? (
+              <div className="grid gap-3" data-testid="self-service-kpi-list">
+                {kpiItems.map((item) => (
+                  <article
+                    key={item.kpiPlanId}
+                    className="rounded border border-border bg-bg p-3"
+                    data-testid="self-service-kpi-item"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-text">{item.title}</h3>
+                        <p className="text-xs text-muted">
+                          {t('self-service:kpiFields.period')}: {item.periodMonth}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusBadge
+                          label={t(`self-service:kpiStatus.${item.officialStatus}`)}
+                          status={item.officialStatus}
+                          toneByStatus={statusTone}
+                          uppercase={false}
+                        />
+                        <span className="text-xs text-muted">
+                          {t('self-service:kpiFields.lastUpdatedAt')}:{' '}
+                          {formatBusinessTimestamp(item.lastUpdatedAt)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 overflow-x-auto">
+                      <table
+                        className="min-w-full text-left text-sm"
+                        aria-label={t('self-service:tables.kpi')}
+                      >
+                        <thead className="border-b border-border text-xs uppercase text-muted">
+                          <tr>
+                            <th className="px-3 py-2 font-medium">
+                              {t('self-service:kpiFields.metric')}
+                            </th>
+                            <th className="px-3 py-2 font-medium">
+                              {t('self-service:kpiFields.target')}
+                            </th>
+                            <th className="px-3 py-2 font-medium">
+                              {t('self-service:kpiFields.actual')}
+                            </th>
+                            <th className="px-3 py-2 font-medium">
+                              {t('self-service:kpiFields.progress')}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {item.metrics.map((metric) => (
+                            <tr
+                              key={`${item.kpiPlanId}-${metric.metricCode}`}
+                              data-testid="self-service-kpi-metric-row"
+                            >
+                              <td className="px-3 py-3 font-medium text-text">
+                                {t(`self-service:kpiMetric.${metric.metricCode}`)}
+                              </td>
+                              <td className="px-3 py-3">
+                                {formatMetricValue(metric, metric.targetValue)}{' '}
+                                {t(`self-service:kpiUnit.${metric.unit}`)}
+                              </td>
+                              <td className="px-3 py-3">
+                                {formatMetricValue(metric, metric.actualValue)}{' '}
+                                {t(`self-service:kpiUnit.${metric.unit}`)}
+                              </td>
+                              <td className="px-3 py-3">
+                                {metric.progressPercent === null
+                                  ? notAvailable
+                                  : formatPercent(metric.progressPercent)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </section>
         ) : null}
 
         {currentPerson ? (

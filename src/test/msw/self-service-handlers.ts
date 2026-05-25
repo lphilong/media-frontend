@@ -38,6 +38,28 @@ type SelfServiceEvent = {
   ownAssignmentStatus: 'ACTIVE' | 'REMOVED';
 };
 
+type SelfServiceKpiItem = {
+  kpiPlanId: string;
+  title: string;
+  periodMonth: string;
+  periodStartAt: number;
+  periodEndAt: number;
+  officialStatus: 'OFFICIAL_PUBLISHED';
+  lastUpdatedAt: number;
+  metrics: Array<{
+    metricCode:
+      | 'REVENUE_VND'
+      | 'CONTENT_OUTPUT_COUNT'
+      | 'LIVE_HOURS'
+      | 'EVENT_COMPLETION_COUNT'
+      | 'ONBOARDED_TALENT_COUNT';
+    unit: 'VND' | 'COUNT' | 'HOUR';
+    targetValue: number;
+    actualValue: number;
+    progressPercent: number | null;
+  }>;
+};
+
 const defaultSelfServiceCurrentPerson: SelfServiceCurrentPerson = {
   employmentProfileId: 'ep-self',
   employeeCode: 'EP-SELF-001',
@@ -146,6 +168,65 @@ const defaultSelfServiceEvents: SelfServiceEvent[] = selfServiceEventsFixtureSou
   }),
 );
 
+const selfServiceKpiFixtureSource = {
+  returned: [
+    {
+      kpiPlanId: 'kpi-plan-self-published',
+      title: 'May creator KPI',
+      periodMonth: '2026-05',
+      periodStartAt: Date.UTC(2026, 4, 1, -7, 0),
+      periodEndAt: Date.UTC(2026, 5, 1, -7, 0) - 1,
+      officialStatus: 'OFFICIAL_PUBLISHED',
+      lastUpdatedAt: Date.UTC(2026, 4, 20, 4, 0),
+      metrics: [
+        {
+          metricCode: 'REVENUE_VND',
+          unit: 'VND',
+          targetValue: 10000000,
+          actualValue: 4500000,
+          progressPercent: 45,
+        },
+        {
+          metricCode: 'LIVE_HOURS',
+          unit: 'HOUR',
+          targetValue: 40,
+          actualValue: 12.5,
+          progressPercent: 31.25,
+        },
+      ],
+      managerNote: 'manager note hidden from self-service',
+      approvalNote: 'approval note hidden from self-service',
+      submittedByActorId: 'manager-user',
+      approvedByActorId: 'admin-user',
+      publishedByActorId: 'admin-user',
+      payrollBonusCommissionFinanceCommercial: 'payroll bonus commission finance commercial',
+      groupTotal: 999999,
+      otherMemberDisplayName: 'Other Staff',
+    },
+  ],
+  excluded: [
+    { title: 'Own DRAFT KPI allocation', allocationStatus: 'DRAFT' },
+    { title: 'Own pending KPI allocation', allocationStatus: 'PENDING_APPROVAL' },
+    { title: 'Own approved KPI allocation', allocationStatus: 'APPROVED' },
+    { title: 'Own rejected KPI allocation', allocationStatus: 'REJECTED' },
+    { title: 'Own legacy active KPI allocation', allocationStatus: 'ACTIVE' },
+    { title: 'Other member published KPI allocation', allocationStatus: 'PUBLISHED' },
+  ],
+} as const;
+
+const defaultSelfServiceKpi: SelfServiceKpiItem[] = selfServiceKpiFixtureSource.returned.map(
+  (item) => ({
+    kpiPlanId: item.kpiPlanId,
+    title: item.title,
+    periodMonth: item.periodMonth,
+    periodStartAt: item.periodStartAt,
+    periodEndAt: item.periodEndAt,
+    officialStatus: item.officialStatus,
+    lastUpdatedAt: item.lastUpdatedAt,
+    metrics: item.metrics.map((metric) => ({ ...metric })),
+  }),
+);
+
 let selfServiceCurrentPerson: SelfServiceCurrentPerson = {
   ...defaultSelfServiceCurrentPerson,
   linkedInternalTalent: { ...defaultSelfServiceCurrentPerson.linkedInternalTalent! },
@@ -156,6 +237,10 @@ let selfServiceWorkShifts: SelfServiceWorkShift[] = defaultSelfServiceWorkShifts
 let selfServiceEvents: SelfServiceEvent[] = defaultSelfServiceEvents.map((event) => ({
   ...event,
 }));
+let selfServiceKpi: SelfServiceKpiItem[] = defaultSelfServiceKpi.map((item) => ({
+  ...item,
+  metrics: item.metrics.map((metric) => ({ ...metric })),
+}));
 
 export const resetSelfServiceMockData = (): void => {
   selfServiceCurrentPerson = {
@@ -164,6 +249,10 @@ export const resetSelfServiceMockData = (): void => {
   };
   selfServiceWorkShifts = defaultSelfServiceWorkShifts.map((shift) => ({ ...shift }));
   selfServiceEvents = defaultSelfServiceEvents.map((event) => ({ ...event }));
+  selfServiceKpi = defaultSelfServiceKpi.map((item) => ({
+    ...item,
+    metrics: item.metrics.map((metric) => ({ ...metric })),
+  }));
 };
 
 export const setMockSelfServiceCurrentPerson = (value: SelfServiceCurrentPerson): void => {
@@ -183,6 +272,13 @@ export const setMockSelfServiceEvents = (value: SelfServiceEvent[]): void => {
   selfServiceEvents = value.map((event) => ({ ...event }));
 };
 
+export const setMockSelfServiceKpi = (value: SelfServiceKpiItem[]): void => {
+  selfServiceKpi = value.map((item) => ({
+    ...item,
+    metrics: item.metrics.map((metric) => ({ ...metric })),
+  }));
+};
+
 export const selfServiceHandlers = [
   http.get('*/self-service/me', () => {
     return HttpResponse.json({
@@ -197,6 +293,13 @@ export const selfServiceHandlers = [
   http.get('*/self-service/events', () => {
     return HttpResponse.json({
       data: selfServiceEvents,
+    });
+  }),
+  http.get('*/self-service/kpi', () => {
+    return HttpResponse.json({
+      data: {
+        items: selfServiceKpi,
+      },
     });
   }),
 ];

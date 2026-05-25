@@ -6,6 +6,7 @@ import { apiRequest } from '@shared/api';
 export const SELF_SERVICE_CURRENT_PERSON_QUERY_KEY = ['self-service', 'current-person'] as const;
 export const SELF_SERVICE_WORK_SHIFTS_QUERY_KEY = ['self-service', 'work-shifts'] as const;
 export const SELF_SERVICE_EVENTS_QUERY_KEY = ['self-service', 'events'] as const;
+export const SELF_SERVICE_KPI_QUERY_KEY = ['self-service', 'kpi'] as const;
 
 const linkedInternalTalentSchema = z
   .object({
@@ -91,6 +92,48 @@ const selfServiceEventsResponseSchema = z
 
 export type SelfServiceEvent = z.infer<typeof selfServiceEventSchema>;
 
+const selfServiceKpiMetricSchema = z
+  .object({
+    metricCode: z.enum([
+      'REVENUE_VND',
+      'CONTENT_OUTPUT_COUNT',
+      'LIVE_HOURS',
+      'EVENT_COMPLETION_COUNT',
+      'ONBOARDED_TALENT_COUNT',
+    ]),
+    unit: z.enum(['VND', 'COUNT', 'HOUR']),
+    targetValue: z.number(),
+    actualValue: z.number(),
+    progressPercent: z.number().nullable(),
+  })
+  .strict();
+
+const selfServiceKpiItemSchema = z
+  .object({
+    kpiPlanId: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    periodMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    periodStartAt: z.number().int(),
+    periodEndAt: z.number().int(),
+    officialStatus: z.literal('OFFICIAL_PUBLISHED'),
+    lastUpdatedAt: z.number().int(),
+    metrics: z.array(selfServiceKpiMetricSchema),
+  })
+  .strict();
+
+const selfServiceKpiResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(selfServiceKpiItemSchema),
+      })
+      .strict(),
+  })
+  .strict();
+
+export type SelfServiceKpiItem = z.infer<typeof selfServiceKpiItemSchema>;
+export type SelfServiceKpiMetric = z.infer<typeof selfServiceKpiMetricSchema>;
+
 export const fetchSelfServiceCurrentPerson = async (): Promise<SelfServiceCurrentPerson> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
@@ -137,6 +180,23 @@ export const useSelfServiceEvents = (enabled = true) =>
   useQuery({
     queryKey: SELF_SERVICE_EVENTS_QUERY_KEY,
     queryFn: fetchSelfServiceEvents,
+    enabled,
+    retry: false,
+  });
+
+export const fetchSelfServiceKpi = async (): Promise<SelfServiceKpiItem[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/self-service/kpi',
+  });
+
+  return selfServiceKpiResponseSchema.parse(response).data.items;
+};
+
+export const useSelfServiceKpi = (enabled = true) =>
+  useQuery({
+    queryKey: SELF_SERVICE_KPI_QUERY_KEY,
+    queryFn: fetchSelfServiceKpi,
     enabled,
     retry: false,
   });

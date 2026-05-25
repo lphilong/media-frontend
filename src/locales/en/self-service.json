@@ -18,7 +18,7 @@
     },
     "kpi": {
       "title": "My KPI",
-      "summary": "KPI placeholder without draft or legacy allocation data."
+      "summary": "Read-only official KPI from your published allocations only."
     },
     "events": {
       "title": "My Events",
@@ -60,9 +60,18 @@
     "assignmentKind": "Assignment",
     "assignmentStatus": "Assignment status"
   },
+  "kpiFields": {
+    "period": "Period",
+    "lastUpdatedAt": "Updated",
+    "metric": "Metric",
+    "target": "Official target",
+    "actual": "Own actual",
+    "progress": "Progress"
+  },
   "tables": {
     "workShifts": "My Work Shifts",
-    "events": "My Events"
+    "events": "My Events",
+    "kpi": "My KPI"
   },
   "status": {
     "available": "Available",
@@ -75,6 +84,8 @@
   "empty": {
     "workShiftsTitle": "No work shifts",
     "workShiftsMessage": "No official shifts are available for your profile yet.",
+    "kpiTitle": "No official KPI",
+    "kpiMessage": "No published KPI allocation is available for your linked internal Talent yet.",
     "eventsTitle": "No events",
     "eventsMessage": "No directly assigned events are available for your profile yet."
   },
@@ -115,11 +126,28 @@
     "MANUAL": "Manual",
     "ROSTER_GENERATED": "Roster generated"
   },
+  "kpiStatus": {
+    "OFFICIAL_PUBLISHED": "Official published"
+  },
+  "kpiMetric": {
+    "REVENUE_VND": "Revenue",
+    "CONTENT_OUTPUT_COUNT": "Content output",
+    "LIVE_HOURS": "Live hours",
+    "EVENT_COMPLETION_COUNT": "Event completion",
+    "ONBOARDED_TALENT_COUNT": "Onboarded talent"
+  },
+  "kpiUnit": {
+    "VND": "VND",
+    "COUNT": "count",
+    "HOUR": "hours"
+  },
   "errors": {
     "currentPersonTitle": "No linked Employment Profile",
     "currentPersonMessage": "Your account is authenticated, but no staff profile is linked for self-service yet.",
     "workShiftsTitle": "Work shifts unavailable",
     "workShiftsMessage": "Your work shifts could not be loaded.",
+    "kpiTitle": "KPI unavailable",
+    "kpiMessage": "Your official KPI could not be loaded.",
     "eventsTitle": "Events unavailable",
     "eventsMessage": "Your events could not be loaded."
   }

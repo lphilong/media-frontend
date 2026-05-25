@@ -60,9 +60,33 @@
     "assignmentKind": "分配",
     "assignmentStatus": "分配状态"
   },
+  "kpiFields": {
+    "period": "Period",
+    "lastUpdatedAt": "Updated",
+    "metric": "Metric",
+    "target": "Official target",
+    "actual": "Own actual",
+    "progress": "Progress"
+  },
   "tables": {
+    "kpi": "KPI",
     "workShifts": "我的班次",
     "events": "我的活动"
+  },
+  "kpiStatus": {
+    "OFFICIAL_PUBLISHED": "Official published"
+  },
+  "kpiMetric": {
+    "REVENUE_VND": "Revenue",
+    "CONTENT_OUTPUT_COUNT": "Content output",
+    "LIVE_HOURS": "Live hours",
+    "EVENT_COMPLETION_COUNT": "Event completion",
+    "ONBOARDED_TALENT_COUNT": "Onboarded talent"
+  },
+  "kpiUnit": {
+    "VND": "VND",
+    "COUNT": "count",
+    "HOUR": "hours"
   },
   "status": {
     "available": "可用",
@@ -73,6 +97,8 @@
     "notAvailable": "不可用"
   },
   "empty": {
+    "kpiTitle": "No official KPI",
+    "kpiMessage": "No published KPI allocation is available for your linked internal Talent yet.",
     "workShiftsTitle": "暂无班次",
     "workShiftsMessage": "你的档案暂无可显示的正式班次。",
     "eventsTitle": "暂无活动",
@@ -116,6 +142,8 @@
     "ROSTER_GENERATED": "由排班生成"
   },
   "errors": {
+    "kpiTitle": "KPI unavailable",
+    "kpiMessage": "KPI jiazai shibai.",
     "currentPersonTitle": "未关联雇佣档案",
     "currentPersonMessage": "账号已认证，但尚未关联可用于自助服务的员工档案。",
     "workShiftsTitle": "无法载入班次",

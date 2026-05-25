@@ -9,6 +9,7 @@ import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handl
 import {
   resetSelfServiceMockData,
   setMockSelfServiceEvents,
+  setMockSelfServiceKpi,
 } from '@test/msw/self-service-handlers';
 import { server } from '@test/msw/server';
 import { renderAppWithProviders } from '@test/render-app-route';
@@ -159,7 +160,7 @@ describe('/self-service route', () => {
     await renderRoute('/self-service');
 
     expect(await screen.findByTestId('self-service-nav-events')).toHaveTextContent('Available');
-    expect(await screen.findByTestId('self-service-nav-kpi')).toHaveTextContent('Coming soon');
+    expect(await screen.findByTestId('self-service-nav-kpi')).toHaveTextContent('Available');
     expect(await screen.findByRole('heading', { name: 'My Events' })).toBeInTheDocument();
     expect(await screen.findByText('EVT-SELF-TAL')).toBeInTheDocument();
     expect(await screen.findByText('Creator livestream event')).toBeInTheDocument();
@@ -195,6 +196,134 @@ describe('/self-service route', () => {
         name: /create|edit|delete|assign|accept|decline|check[- ]?in|request|change|start|complete|cancel/i,
       }),
     ).toBeNull();
+  });
+
+  it('renders read-only My KPI from the self-service endpoint only', async () => {
+    let selfServiceKpiCalls = 0;
+    let adminKpiCalls = 0;
+
+    server.use(
+      http.get('*/self-service/kpi', () => {
+        selfServiceKpiCalls += 1;
+        return HttpResponse.json({
+          data: {
+            items: [
+              {
+                kpiPlanId: 'kpi-plan-self-published',
+                title: 'May creator KPI',
+                periodMonth: '2026-05',
+                periodStartAt: Date.UTC(2026, 4, 1, -7, 0),
+                periodEndAt: Date.UTC(2026, 5, 1, -7, 0) - 1,
+                officialStatus: 'OFFICIAL_PUBLISHED',
+                lastUpdatedAt: Date.UTC(2026, 4, 20, 4, 0),
+                metrics: [
+                  {
+                    metricCode: 'REVENUE_VND',
+                    unit: 'VND',
+                    targetValue: 10000000,
+                    actualValue: 4500000,
+                    progressPercent: 45,
+                  },
+                ],
+              },
+            ],
+          },
+        });
+      }),
+      http.get('*/admin/kpi*', () => {
+        adminKpiCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByRole('heading', { name: 'My KPI' })).toBeInTheDocument();
+    expect(await screen.findByText('May creator KPI')).toBeInTheDocument();
+    expect(await screen.findByText('Official published')).toBeInTheDocument();
+    expect(await screen.findByText('Revenue')).toBeInTheDocument();
+    expect(await screen.findByText('45%')).toBeInTheDocument();
+    expect(screen.getAllByTestId('self-service-kpi-item')).toHaveLength(1);
+    expect(screen.getAllByTestId('self-service-kpi-metric-row')).toHaveLength(1);
+
+    await waitFor(() => {
+      expect(selfServiceKpiCalls).toBe(1);
+      expect(adminKpiCalls).toBe(0);
+    });
+
+    const bodyText = document.body.textContent ?? '';
+    for (const forbidden of [
+      'Own DRAFT KPI allocation',
+      'Own pending KPI allocation',
+      'Own approved KPI allocation',
+      'Own rejected KPI allocation',
+      'Own legacy active KPI allocation',
+      'Other member published KPI allocation',
+      'DRAFT',
+      'PENDING_APPROVAL',
+      'APPROVED',
+      'REJECTED',
+      'ACTIVE allocation',
+      'Other Staff',
+      'group total',
+      'manager note',
+      'approval note',
+      'submittedByActorId',
+      'approvedByActorId',
+      'publishedByActorId',
+      'payroll',
+      'bonus',
+      'commission',
+      'finance',
+      'commercial',
+    ]) {
+      expect(bodyText).not.toContain(forbidden);
+    }
+
+    expect(
+      screen.queryByRole('button', {
+        name: /enter|actual|correct|correction|approve|publish|submit|reject|edit|request/i,
+      }),
+    ).toBeNull();
+  });
+
+  it('renders My KPI empty, loading, and error states safely', async () => {
+    await renderRoute('/self-service', () => setMockSelfServiceKpi([]));
+
+    expect(await screen.findByText('No official KPI')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'No published KPI allocation is available for your linked internal Talent yet.',
+      ),
+    ).toBeInTheDocument();
+
+    let resolveKpi: () => void = () => {};
+    const pendingKpi = new Promise<void>((resolve) => {
+      resolveKpi = resolve;
+    });
+    server.use(
+      http.get('*/self-service/kpi', async () => {
+        await pendingKpi;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+    );
+
+    await renderRoute('/self-service');
+    expect(await screen.findByTestId('self-service-kpi-loading')).toBeInTheDocument();
+    resolveKpi();
+    await waitFor(() => {
+      expect(screen.queryByTestId('self-service-kpi-loading')).not.toBeInTheDocument();
+    });
+
+    server.use(
+      http.get('*/self-service/kpi', () => {
+        return HttpResponse.json({ error: { code: 'TEST_ERROR' } }, { status: 500 });
+      }),
+    );
+
+    await renderRoute('/self-service');
+    expect(await screen.findByText('KPI unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Your official KPI could not be loaded.')).toBeInTheDocument();
   });
 
   it('renders My Events empty, loading, and error states safely', async () => {
