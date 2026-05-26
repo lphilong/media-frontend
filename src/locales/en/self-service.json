@@ -26,7 +26,7 @@
     },
     "account": {
       "title": "Account",
-      "summary": "Account summary placeholder without mutations."
+      "summary": "Read-only account information. Account and password changes are not available yet."
     },
     "linkedTalent": {
       "title": "Linked internal Talent"
@@ -38,6 +38,7 @@
     "employmentStatus": "Employment status",
     "accountEmail": "Account email",
     "accountStatus": "Account status",
+    "accountLinkStatus": "Account link status",
     "locale": "Locale",
     "timezone": "Timezone",
     "talentCode": "Talent code",
@@ -78,6 +79,12 @@
     "comingSoon": "Coming soon",
     "readOnly": "Read-only"
   },
+  "actions": {
+    "logout": "Log out"
+  },
+  "account": {
+    "readOnlyNote": "This account area is read-only. Email changes, password changes, and account linking changes are not available here yet."
+  },
   "values": {
     "notAvailable": "Not available"
   },
@@ -101,6 +108,9 @@
     "ACTIVE": "Active",
     "DISABLED": "Disabled",
     "ARCHIVED": "Archived"
+  },
+  "accountLinkStatus": {
+    "LINKED": "Linked"
   },
   "workShiftStatus": {
     "ACTIVE": "Active",

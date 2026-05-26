@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ChartNoAxesColumnIncreasing,
   IdCard,
+  LogOut,
   Mail,
   ShieldCheck,
   UserCog,
@@ -16,6 +17,7 @@ import {
   useSelfServiceKpi,
   useSelfServiceWorkShifts,
 } from '@modules/self-service/api/self-service.api';
+import { useAuth } from '@shared/auth/auth-context';
 import {
   EmptyState,
   ErrorState,
@@ -43,7 +45,7 @@ const navCards: NavCard[] = [
   { id: 'workShifts', icon: CalendarDays, statusKey: 'self-service:status.available' },
   { id: 'kpi', icon: ChartNoAxesColumnIncreasing, statusKey: 'self-service:status.available' },
   { id: 'events', icon: BadgeCheck, statusKey: 'self-service:status.available' },
-  { id: 'account', icon: UserCog, statusKey: 'self-service:status.comingSoon' },
+  { id: 'account', icon: UserCog, statusKey: 'self-service:status.available' },
 ];
 
 const statusTone = {
@@ -99,6 +101,7 @@ const formatMetricValue = (metric: SelfServiceKpiMetric, value: number): string 
 
 export const SelfServicePage = (): JSX.Element => {
   const { t } = useTranslation(['self-service', 'common', 'errors']);
+  const { logout } = useAuth();
   const currentPersonQuery = useSelfServiceCurrentPerson();
   const currentPerson = currentPersonQuery.data;
   const workShiftsQuery = useSelfServiceWorkShifts(currentPersonQuery.isSuccess);
@@ -121,9 +124,19 @@ export const SelfServicePage = (): JSX.Element => {
               </p>
               <h1 className="text-2xl font-semibold">{t('self-service:page.title')}</h1>
             </div>
-            <div className="inline-flex items-center gap-2 text-sm text-muted">
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              <span>{t('self-service:page.readOnly')}</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 text-sm text-muted">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                <span>{t('self-service:page.readOnly')}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-bg"
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                {t('self-service:actions.logout')}
+              </button>
             </div>
           </div>
         </PageContainer>
@@ -318,6 +331,71 @@ export const SelfServicePage = (): JSX.Element => {
                   value: currentPerson.employeeCode,
                   monospace: true,
                 },
+              ]}
+            />
+
+            {currentPerson.linkedInternalTalent ? (
+              <div className="mt-4 rounded border border-border bg-bg p-3">
+                <h3 className="text-sm font-semibold">
+                  {t('self-service:sections.linkedTalent.title')}
+                </h3>
+                <ReadOnlyFieldGrid
+                  columns={3}
+                  fields={[
+                    {
+                      key: 'talentCode',
+                      label: t('self-service:fields.talentCode'),
+                      value: currentPerson.linkedInternalTalent.talentCode,
+                      monospace: true,
+                    },
+                    {
+                      key: 'talentDisplayName',
+                      label: t('self-service:fields.talentDisplayName'),
+                      value: currentPerson.linkedInternalTalent.displayName,
+                    },
+                    {
+                      key: 'performanceAlias',
+                      label: t('self-service:fields.performanceAlias'),
+                      value: emptyValue(
+                        currentPerson.linkedInternalTalent.performanceAlias,
+                        notAvailable,
+                      ),
+                    },
+                  ]}
+                />
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {currentPerson ? (
+          <section
+            className="rounded-lg border border-border bg-panel p-4 shadow-sm"
+            data-testid="self-service-account-card"
+          >
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {t('self-service:sections.account.title')}
+                </h2>
+                <p className="text-sm text-muted">{t('self-service:sections.account.summary')}</p>
+              </div>
+              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
+            </div>
+
+            <ReadOnlyFieldGrid
+              columns={3}
+              fields={[
+                {
+                  key: 'accountEmail',
+                  label: t('self-service:fields.accountEmail'),
+                  value: (
+                    <span className="inline-flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted" aria-hidden="true" />
+                      {emptyValue(currentPerson.accountEmail, notAvailable)}
+                    </span>
+                  ),
+                },
                 {
                   key: 'accountStatus',
                   label: t('self-service:fields.accountStatus'),
@@ -332,13 +410,14 @@ export const SelfServicePage = (): JSX.Element => {
                   ),
                 },
                 {
-                  key: 'accountEmail',
-                  label: t('self-service:fields.accountEmail'),
+                  key: 'accountLinkStatus',
+                  label: t('self-service:fields.accountLinkStatus'),
                   value: (
-                    <span className="inline-flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted" aria-hidden="true" />
-                      {emptyValue(currentPerson.accountEmail, notAvailable)}
-                    </span>
+                    <StatusBadge
+                      label={t(`self-service:accountLinkStatus.${currentPerson.accountLinkStatus}`)}
+                      status={currentPerson.accountLinkStatus}
+                      toneByStatus={statusTone}
+                    />
                   ),
                 },
                 {
@@ -350,6 +429,17 @@ export const SelfServicePage = (): JSX.Element => {
                   key: 'timezone',
                   label: t('self-service:fields.timezone'),
                   value: emptyValue(currentPerson.timezone, notAvailable),
+                },
+                {
+                  key: 'displayName',
+                  label: t('self-service:fields.displayName'),
+                  value: currentPerson.displayName,
+                },
+                {
+                  key: 'employeeCode',
+                  label: t('self-service:fields.employeeCode'),
+                  value: currentPerson.employeeCode,
+                  monospace: true,
                 },
               ]}
             />
@@ -385,6 +475,8 @@ export const SelfServicePage = (): JSX.Element => {
                 />
               </div>
             ) : null}
+
+            <p className="mt-4 text-sm text-muted">{t('self-service:account.readOnlyNote')}</p>
           </section>
         ) : null}
 

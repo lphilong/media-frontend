@@ -26,7 +26,7 @@
     },
     "account": {
       "title": "Tài khoản",
-      "summary": "Chỗ giữ tóm tắt tài khoản, không có thao tác chỉnh sửa."
+      "summary": "Thông tin tài khoản chỉ đọc. Chưa hỗ trợ đổi tài khoản hoặc mật khẩu."
     },
     "linkedTalent": {
       "title": "Talent nội bộ liên kết"
@@ -38,6 +38,7 @@
     "employmentStatus": "Trạng thái nhân sự",
     "accountEmail": "Email tài khoản",
     "accountStatus": "Trạng thái tài khoản",
+    "accountLinkStatus": "Trạng thái liên kết tài khoản",
     "locale": "Ngôn ngữ",
     "timezone": "Múi giờ",
     "talentCode": "Mã Talent",
@@ -93,6 +94,12 @@
     "comingSoon": "Sắp có",
     "readOnly": "Chỉ đọc"
   },
+  "actions": {
+    "logout": "Đăng xuất"
+  },
+  "account": {
+    "readOnlyNote": "Khu vực tài khoản này chỉ đọc. Chưa hỗ trợ đổi email, đổi mật khẩu hoặc thay đổi liên kết tài khoản tại đây."
+  },
   "values": {
     "notAvailable": "Chưa có"
   },
@@ -116,6 +123,9 @@
     "ACTIVE": "Hoạt động",
     "DISABLED": "Đã vô hiệu",
     "ARCHIVED": "Đã lưu trữ"
+  },
+  "accountLinkStatus": {
+    "LINKED": "Đã liên kết"
   },
   "workShiftStatus": {
     "ACTIVE": "Đang hiệu lực",

@@ -26,7 +26,7 @@
     },
     "account": {
       "title": "账号",
-      "summary": "账号摘要占位，不提供修改操作。"
+      "summary": "只读账号信息。暂不支持账号或密码修改。"
     },
     "linkedTalent": {
       "title": "已关联内部 Talent"
@@ -38,6 +38,7 @@
     "employmentStatus": "雇佣状态",
     "accountEmail": "账号邮箱",
     "accountStatus": "账号状态",
+    "accountLinkStatus": "账号关联状态",
     "locale": "语言",
     "timezone": "时区",
     "talentCode": "Talent 编号",
@@ -93,6 +94,12 @@
     "comingSoon": "即将推出",
     "readOnly": "只读"
   },
+  "actions": {
+    "logout": "退出登录"
+  },
+  "account": {
+    "readOnlyNote": "此账号区域为只读。暂不支持邮箱修改、密码修改或账号关联变更。"
+  },
   "values": {
     "notAvailable": "不可用"
   },
@@ -116,6 +123,9 @@
     "ACTIVE": "有效",
     "DISABLED": "已禁用",
     "ARCHIVED": "已归档"
+  },
+  "accountLinkStatus": {
+    "LINKED": "已关联"
   },
   "workShiftStatus": {
     "ACTIVE": "有效",
