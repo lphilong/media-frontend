@@ -26,7 +26,7 @@
     },
     "account": {
       "title": "账号",
-      "summary": "只读账号信息。暂不支持账号或密码修改。"
+      "summary": "账号信息，可自助更新语言和时区偏好。"
     },
     "linkedTalent": {
       "title": "已关联内部 Talent"
@@ -92,13 +92,31 @@
   "status": {
     "available": "可用",
     "comingSoon": "即将推出",
-    "readOnly": "只读"
+    "readOnly": "只读",
+    "preferencesOnly": "仅偏好"
   },
   "actions": {
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "savePreferences": "保存偏好",
+    "saving": "保存中",
+    "resetPreferences": "重置"
   },
   "account": {
-    "readOnlyNote": "此账号区域为只读。暂不支持邮箱修改、密码修改或账号关联变更。"
+    "preferencesTitle": "账号偏好",
+    "preferencesSummary": "这里只能更新语言和时区。",
+    "preferencesSaved": "偏好已保存。",
+    "preferencesSaveError": "无法保存偏好。",
+    "unsupportedLocale": "请选择支持的语言。",
+    "invalidTimezone": "请选择有效时区。",
+    "currentTimezone": "当前时区：{{timezone}}",
+    "securityTitle": "账号安全",
+    "passwordInstruction": "如需修改密码，请联系 IT/Admin。",
+    "operationsNote": "如需修改邮箱、电话、地址、法律、合同或员工资料，请联系负责的 HR/Admin/IT 团队。"
+  },
+  "localeOptions": {
+    "en": "英语",
+    "vi": "越南语",
+    "zh": "中文"
   },
   "values": {
     "notAvailable": "不可用"

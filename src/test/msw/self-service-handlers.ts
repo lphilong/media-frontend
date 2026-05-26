@@ -60,6 +60,9 @@ type SelfServiceKpiItem = {
   }>;
 };
 
+const allowedPreferenceFields = new Set(['locale', 'timezone']);
+const supportedPreferenceLocales = new Set(['en', 'vi', 'zh']);
+
 const defaultSelfServiceCurrentPerson: SelfServiceCurrentPerson = {
   employmentProfileId: 'ep-self',
   employeeCode: 'EP-SELF-001',
@@ -281,6 +284,40 @@ export const setMockSelfServiceKpi = (value: SelfServiceKpiItem[]): void => {
 
 export const selfServiceHandlers = [
   http.get('*/self-service/me', () => {
+    return HttpResponse.json({
+      data: selfServiceCurrentPerson,
+    });
+  }),
+  http.patch('*/self-service/account/preferences', async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    const unsupportedFields = Object.keys(body).filter(
+      (field) => !allowedPreferenceFields.has(field),
+    );
+
+    if (
+      unsupportedFields.length > 0 ||
+      (body.locale !== undefined &&
+        (typeof body.locale !== 'string' || !supportedPreferenceLocales.has(body.locale))) ||
+      (body.timezone !== undefined && (typeof body.timezone !== 'string' || !body.timezone.trim()))
+    ) {
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'SELF_SERVICE_VALIDATION_ERROR',
+            message: 'Invalid self-service request',
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    selfServiceCurrentPerson = {
+      ...selfServiceCurrentPerson,
+      locale: typeof body.locale === 'string' ? body.locale : selfServiceCurrentPerson.locale,
+      timezone:
+        typeof body.timezone === 'string' ? body.timezone : selfServiceCurrentPerson.timezone,
+    };
+
     return HttpResponse.json({
       data: selfServiceCurrentPerson,
     });

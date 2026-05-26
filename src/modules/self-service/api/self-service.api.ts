@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import { apiRequest } from '@shared/api';
@@ -7,6 +7,15 @@ export const SELF_SERVICE_CURRENT_PERSON_QUERY_KEY = ['self-service', 'current-p
 export const SELF_SERVICE_WORK_SHIFTS_QUERY_KEY = ['self-service', 'work-shifts'] as const;
 export const SELF_SERVICE_EVENTS_QUERY_KEY = ['self-service', 'events'] as const;
 export const SELF_SERVICE_KPI_QUERY_KEY = ['self-service', 'kpi'] as const;
+
+export const SELF_SERVICE_SUPPORTED_LOCALES = ['en', 'vi', 'zh'] as const;
+export const SELF_SERVICE_TIMEZONE_OPTIONS = [
+  'Asia/Saigon',
+  'Asia/Ho_Chi_Minh',
+  'UTC',
+  'America/New_York',
+  'America/Los_Angeles',
+] as const;
 
 const linkedInternalTalentSchema = z
   .object({
@@ -46,6 +55,20 @@ const selfServiceCurrentPersonResponseSchema = z
   .strict();
 
 export type SelfServiceCurrentPerson = z.infer<typeof selfServiceCurrentPersonSchema>;
+
+const selfServiceAccountPreferencesPayloadSchema = z
+  .object({
+    locale: z.enum(SELF_SERVICE_SUPPORTED_LOCALES).optional(),
+    timezone: z.string().trim().min(1).optional(),
+  })
+  .strict()
+  .refine((value) => value.locale !== undefined || value.timezone !== undefined, {
+    message: 'At least one preference is required.',
+  });
+
+export type SelfServiceAccountPreferencesPayload = z.infer<
+  typeof selfServiceAccountPreferencesPayloadSchema
+>;
 
 const selfServiceWorkShiftSchema = z
   .object({
@@ -156,6 +179,30 @@ export const useSelfServiceCurrentPerson = () =>
     queryFn: fetchSelfServiceCurrentPerson,
     retry: false,
   });
+
+export const updateSelfServiceAccountPreferences = async (
+  payload: SelfServiceAccountPreferencesPayload,
+): Promise<SelfServiceCurrentPerson> => {
+  const parsedPayload = selfServiceAccountPreferencesPayloadSchema.parse(payload);
+  const response = await apiRequest<unknown, SelfServiceAccountPreferencesPayload>({
+    method: 'PATCH',
+    url: '/self-service/account/preferences',
+    data: parsedPayload,
+  });
+
+  return selfServiceCurrentPersonResponseSchema.parse(response).data;
+};
+
+export const useUpdateSelfServiceAccountPreferences = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateSelfServiceAccountPreferences,
+    onSuccess: (data) => {
+      queryClient.setQueryData(SELF_SERVICE_CURRENT_PERSON_QUERY_KEY, data);
+    },
+  });
+};
 
 export const fetchSelfServiceWorkShifts = async (): Promise<SelfServiceWorkShift[]> => {
   const response = await apiRequest<unknown>({

@@ -3,18 +3,27 @@ import {
   CalendarDays,
   ChartNoAxesColumnIncreasing,
   IdCard,
+  KeyRound,
   LogOut,
   Mail,
+  RotateCcw,
+  Save,
   ShieldCheck,
   UserCog,
 } from 'lucide-react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
+  SELF_SERVICE_SUPPORTED_LOCALES,
+  SELF_SERVICE_TIMEZONE_OPTIONS,
+  type SelfServiceAccountPreferencesPayload,
+  type SelfServiceCurrentPerson,
   type SelfServiceKpiMetric,
   useSelfServiceCurrentPerson,
   useSelfServiceEvents,
   useSelfServiceKpi,
+  useUpdateSelfServiceAccountPreferences,
   useSelfServiceWorkShifts,
 } from '@modules/self-service/api/self-service.api';
 import { useAuth } from '@shared/auth/auth-context';
@@ -33,6 +42,7 @@ import {
 } from '@shared/formatting/formatters';
 
 const SELF_SERVICE_CURRENT_PERSON_NOT_LINKED = 'SELF_SERVICE_CURRENT_PERSON_NOT_LINKED';
+const SELF_SERVICE_VALIDATION_ERROR = 'SELF_SERVICE_VALIDATION_ERROR';
 
 type NavCard = {
   id: 'profile' | 'workShifts' | 'kpi' | 'events' | 'account';
@@ -97,6 +107,205 @@ const formatMetricValue = (metric: SelfServiceKpiMetric, value: number): string 
   }
 
   return formatDecimal(value, 'vi-VN', metric.unit === 'HOUR' ? 2 : 0);
+};
+
+const formatPreferenceError = (error: unknown, fallback: string): string => {
+  if (!isRecord(error)) {
+    return fallback;
+  }
+
+  const code = typeof error.code === 'string' ? error.code : undefined;
+  const message = typeof error.message === 'string' ? error.message : undefined;
+
+  if (code === SELF_SERVICE_VALIDATION_ERROR) {
+    return fallback;
+  }
+
+  return message && !message.startsWith('errors:') ? message : fallback;
+};
+
+type AccountPreferencesFormProps = {
+  currentPerson: SelfServiceCurrentPerson;
+  notAvailable: string;
+};
+
+const AccountPreferencesForm = ({
+  currentPerson,
+  notAvailable,
+}: AccountPreferencesFormProps): JSX.Element => {
+  const { t } = useTranslation(['self-service']);
+  const updatePreferences = useUpdateSelfServiceAccountPreferences();
+  const [locale, setLocale] = useState(currentPerson.locale ?? 'en');
+  const [timezone, setTimezone] = useState(currentPerson.timezone ?? 'Asia/Saigon');
+  const [clientError, setClientError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    setLocale(currentPerson.locale ?? 'en');
+    setTimezone(currentPerson.timezone ?? 'Asia/Saigon');
+    setClientError(null);
+  }, [currentPerson.locale, currentPerson.timezone]);
+
+  const timezoneOptions = useMemo(() => {
+    const options: string[] = [...SELF_SERVICE_TIMEZONE_OPTIONS];
+    if (currentPerson.timezone && !options.includes(currentPerson.timezone)) {
+      options.unshift(currentPerson.timezone);
+    }
+
+    return options;
+  }, [currentPerson.timezone]);
+
+  const normalizedCurrentLocale = currentPerson.locale ?? 'en';
+  const normalizedCurrentTimezone = currentPerson.timezone ?? 'Asia/Saigon';
+  const isDirty = locale !== normalizedCurrentLocale || timezone !== normalizedCurrentTimezone;
+  const isSaving = updatePreferences.isPending;
+  const preferenceError =
+    clientError ??
+    (updatePreferences.isError
+      ? formatPreferenceError(
+          updatePreferences.error,
+          t('self-service:account.preferencesSaveError'),
+        )
+      : null);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    setClientError(null);
+    setShowSuccess(false);
+
+    const localeValue = locale as (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number];
+
+    if (!SELF_SERVICE_SUPPORTED_LOCALES.includes(localeValue)) {
+      setClientError(t('self-service:account.unsupportedLocale'));
+      return;
+    }
+
+    if (!timezone.trim()) {
+      setClientError(t('self-service:account.invalidTimezone'));
+      return;
+    }
+
+    const payload: SelfServiceAccountPreferencesPayload = {
+      locale: localeValue,
+      timezone: timezone.trim(),
+    };
+
+    updatePreferences.mutate(payload, {
+      onSuccess: (updated) => {
+        setLocale(updated.locale ?? 'en');
+        setTimezone(updated.timezone ?? 'Asia/Saigon');
+        setShowSuccess(true);
+      },
+    });
+  };
+
+  const handleReset = (): void => {
+    setLocale(normalizedCurrentLocale);
+    setTimezone(normalizedCurrentTimezone);
+    setClientError(null);
+    setShowSuccess(false);
+    updatePreferences.reset();
+  };
+
+  return (
+    <form
+      className="mt-4 rounded border border-border bg-bg p-3"
+      onSubmit={handleSubmit}
+      data-testid="self-service-account-preferences-form"
+    >
+      <div className="flex flex-col gap-1">
+        <h3 className="text-sm font-semibold">{t('self-service:account.preferencesTitle')}</h3>
+        <p className="text-xs text-muted">{t('self-service:account.preferencesSummary')}</p>
+      </div>
+
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <div>
+          <label
+            className="block text-xs font-medium uppercase tracking-wide text-muted"
+            htmlFor="self-service-account-locale"
+          >
+            {t('self-service:fields.locale')}
+          </label>
+          <select
+            id="self-service-account-locale"
+            value={locale}
+            onChange={(event) => {
+              setLocale(event.target.value);
+              setShowSuccess(false);
+            }}
+            className="mt-1 w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+          >
+            {SELF_SERVICE_SUPPORTED_LOCALES.map((option) => (
+              <option key={option} value={option}>
+                {t(`self-service:localeOptions.${option}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label
+            className="block text-xs font-medium uppercase tracking-wide text-muted"
+            htmlFor="self-service-account-timezone"
+          >
+            {t('self-service:fields.timezone')}
+          </label>
+          <select
+            id="self-service-account-timezone"
+            value={timezone}
+            onChange={(event) => {
+              setTimezone(event.target.value);
+              setShowSuccess(false);
+            }}
+            className="mt-1 w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+          >
+            {timezoneOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-xs text-muted">
+            {t('self-service:account.currentTimezone', {
+              timezone: currentPerson.timezone ?? notAvailable,
+            })}
+          </span>
+        </div>
+      </div>
+
+      {preferenceError ? (
+        <p className="mt-3 text-sm font-medium text-danger" role="alert">
+          {preferenceError}
+        </p>
+      ) : null}
+
+      {showSuccess && !preferenceError ? (
+        <p className="mt-3 text-sm font-medium text-accent" role="status">
+          {t('self-service:account.preferencesSaved')}
+        </p>
+      ) : null}
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="submit"
+          disabled={!isDirty || isSaving}
+          className="inline-flex items-center gap-2 rounded border border-text bg-text px-3 py-2 text-sm font-medium text-bg disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Save className="h-4 w-4" aria-hidden="true" />
+          {isSaving ? t('self-service:actions.saving') : t('self-service:actions.savePreferences')}
+        </button>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={!isDirty || isSaving}
+          className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-panel disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          {t('self-service:actions.resetPreferences')}
+        </button>
+      </div>
+    </form>
+  );
 };
 
 export const SelfServicePage = (): JSX.Element => {
@@ -380,7 +589,7 @@ export const SelfServicePage = (): JSX.Element => {
                 </h2>
                 <p className="text-sm text-muted">{t('self-service:sections.account.summary')}</p>
               </div>
-              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
+              <StatusBadge label={t('self-service:status.preferencesOnly')} tone="neutral" />
             </div>
 
             <ReadOnlyFieldGrid
@@ -421,16 +630,6 @@ export const SelfServicePage = (): JSX.Element => {
                   ),
                 },
                 {
-                  key: 'locale',
-                  label: t('self-service:fields.locale'),
-                  value: emptyValue(currentPerson.locale, notAvailable),
-                },
-                {
-                  key: 'timezone',
-                  label: t('self-service:fields.timezone'),
-                  value: emptyValue(currentPerson.timezone, notAvailable),
-                },
-                {
                   key: 'displayName',
                   label: t('self-service:fields.displayName'),
                   value: currentPerson.displayName,
@@ -443,6 +642,22 @@ export const SelfServicePage = (): JSX.Element => {
                 },
               ]}
             />
+
+            <AccountPreferencesForm currentPerson={currentPerson} notAvailable={notAvailable} />
+
+            <div className="mt-4 rounded border border-border bg-bg p-3">
+              <div className="flex items-start gap-2">
+                <KeyRound className="mt-0.5 h-4 w-4 text-muted" aria-hidden="true" />
+                <div>
+                  <h3 className="text-sm font-semibold">
+                    {t('self-service:account.securityTitle')}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted">
+                    {t('self-service:account.passwordInstruction')}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {currentPerson.linkedInternalTalent ? (
               <div className="mt-4 rounded border border-border bg-bg p-3">
@@ -476,7 +691,7 @@ export const SelfServicePage = (): JSX.Element => {
               </div>
             ) : null}
 
-            <p className="mt-4 text-sm text-muted">{t('self-service:account.readOnlyNote')}</p>
+            <p className="mt-4 text-sm text-muted">{t('self-service:account.operationsNote')}</p>
           </section>
         ) : null}
 

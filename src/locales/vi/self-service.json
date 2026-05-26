@@ -26,7 +26,7 @@
     },
     "account": {
       "title": "Tài khoản",
-      "summary": "Thông tin tài khoản chỉ đọc. Chưa hỗ trợ đổi tài khoản hoặc mật khẩu."
+      "summary": "Thông tin tài khoản với tùy chọn ngôn ngữ và múi giờ tự phục vụ."
     },
     "linkedTalent": {
       "title": "Talent nội bộ liên kết"
@@ -92,13 +92,31 @@
   "status": {
     "available": "Có sẵn",
     "comingSoon": "Sắp có",
-    "readOnly": "Chỉ đọc"
+    "readOnly": "Chỉ đọc",
+    "preferencesOnly": "Chỉ tùy chọn"
   },
   "actions": {
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "savePreferences": "Lưu tùy chọn",
+    "saving": "Đang lưu",
+    "resetPreferences": "Đặt lại"
   },
   "account": {
-    "readOnlyNote": "Khu vực tài khoản này chỉ đọc. Chưa hỗ trợ đổi email, đổi mật khẩu hoặc thay đổi liên kết tài khoản tại đây."
+    "preferencesTitle": "Tùy chọn tài khoản",
+    "preferencesSummary": "Chỉ ngôn ngữ và múi giờ có thể cập nhật tại đây.",
+    "preferencesSaved": "Đã lưu tùy chọn.",
+    "preferencesSaveError": "Không thể lưu tùy chọn.",
+    "unsupportedLocale": "Chọn ngôn ngữ được hỗ trợ.",
+    "invalidTimezone": "Chọn múi giờ hợp lệ.",
+    "currentTimezone": "Múi giờ hiện tại: {{timezone}}",
+    "securityTitle": "Bảo mật tài khoản",
+    "passwordInstruction": "Để đổi mật khẩu, hãy liên hệ IT/Admin.",
+    "operationsNote": "Với thay đổi email, điện thoại, địa chỉ, pháp lý, hợp đồng hoặc hồ sơ nhân sự, hãy liên hệ đội HR/Admin/IT phụ trách."
+  },
+  "localeOptions": {
+    "en": "Tiếng Anh",
+    "vi": "Tiếng Việt",
+    "zh": "Tiếng Trung"
   },
   "values": {
     "notAvailable": "Chưa có"

@@ -26,7 +26,7 @@
     },
     "account": {
       "title": "Account",
-      "summary": "Read-only account information. Account and password changes are not available yet."
+      "summary": "Account information with self-service locale and timezone preferences."
     },
     "linkedTalent": {
       "title": "Linked internal Talent"
@@ -77,13 +77,31 @@
   "status": {
     "available": "Available",
     "comingSoon": "Coming soon",
-    "readOnly": "Read-only"
+    "readOnly": "Read-only",
+    "preferencesOnly": "Preferences only"
   },
   "actions": {
-    "logout": "Log out"
+    "logout": "Log out",
+    "savePreferences": "Save preferences",
+    "saving": "Saving",
+    "resetPreferences": "Reset"
   },
   "account": {
-    "readOnlyNote": "This account area is read-only. Email changes, password changes, and account linking changes are not available here yet."
+    "preferencesTitle": "Account preferences",
+    "preferencesSummary": "Only locale and timezone can be updated here.",
+    "preferencesSaved": "Preferences saved.",
+    "preferencesSaveError": "Preferences could not be saved.",
+    "unsupportedLocale": "Choose a supported locale.",
+    "invalidTimezone": "Choose a valid timezone.",
+    "currentTimezone": "Current timezone: {{timezone}}",
+    "securityTitle": "Account security",
+    "passwordInstruction": "To change your password, contact IT/Admin.",
+    "operationsNote": "For email, phone, address, legal, contract, or staff record changes, contact the responsible HR/Admin/IT team."
+  },
+  "localeOptions": {
+    "en": "English",
+    "vi": "Vietnamese",
+    "zh": "Chinese"
   },
   "values": {
     "notAvailable": "Not available"

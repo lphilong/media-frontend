@@ -484,10 +484,10 @@ describe('/self-service route', () => {
     expect(await screen.findByText('Your events could not be loaded.')).toBeInTheDocument();
   });
 
-  it('keeps Account as read-only summary only without password or profile mutation flows', async () => {
+  it('renders Account preferences form for locale and timezone only', async () => {
     let adminUserCalls = 0;
     server.use(
-      http.get('*/admin/users*', () => {
+      http.all('*/admin/users*', () => {
         adminUserCalls += 1;
         return HttpResponse.json({ data: [] });
       }),
@@ -496,17 +496,22 @@ describe('/self-service route', () => {
     await renderRoute('/self-service');
 
     expect(await screen.findByTestId('self-service-account-card')).toBeInTheDocument();
+    expect(await screen.findByTestId('self-service-account-preferences-form')).toBeInTheDocument();
     expect(await screen.findByTestId('self-service-nav-account')).toHaveTextContent('Available');
     expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument();
     expect(await screen.findByText('mina.staff@example.test')).toBeInTheDocument();
     expect(await screen.findByText('Linked')).toBeInTheDocument();
     expect(await screen.findByText('Asia/Saigon')).toBeInTheDocument();
-    expect(screen.getAllByText('Not available').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByLabelText('Locale')).toBeInTheDocument();
+    expect(screen.getByLabelText('Timezone')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save preferences' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeDisabled();
     expect(
       screen.queryByRole('button', {
-        name: /edit|save|change email|change password|reset password|setup/i,
+        name: /change email|change password|reset password|setup|link|unlink/i,
       }),
     ).toBeNull();
+    expect(screen.queryByLabelText(/email|phone|address|display name|legal name/i)).toBeNull();
 
     const bodyText = document.body.textContent ?? '';
     for (const forbidden of [
@@ -526,13 +531,101 @@ describe('/self-service route', () => {
       'recruiterEmploymentProfileId',
       'managerEmploymentProfileId',
       'orgUnitId',
+      'Change email',
+      'Change password',
+      'Reset password',
+      'Edit phone',
+      'Edit address',
     ]) {
       expect(bodyText).not.toContain(forbidden);
     }
 
+    expect(bodyText).toContain('To change your password, contact IT/Admin.');
+    expect(bodyText).toContain(
+      'For email, phone, address, legal, contract, or staff record changes, contact the responsible HR/Admin/IT team.',
+    );
+
     await waitFor(() => {
       expect(adminUserCalls).toBe(0);
     });
+  });
+
+  it('saves only self-service locale and timezone preferences without admin User API calls', async () => {
+    const user = userEvent.setup();
+    const patchBodies: unknown[] = [];
+    let adminUserCalls = 0;
+
+    server.use(
+      http.patch('*/self-service/account/preferences', async ({ request }) => {
+        const body = await request.json();
+        patchBodies.push(body);
+        return HttpResponse.json({
+          data: {
+            employmentProfileId: 'ep-self',
+            employeeCode: 'EP-SELF-001',
+            displayName: 'Mina Staff',
+            employmentStatus: 'ACTIVE',
+            accountEmail: 'mina.staff@example.test',
+            accountStatus: 'ACTIVE',
+            accountLinkStatus: 'LINKED',
+            linkedInternalTalent: {
+              talentId: 'talent-self',
+              talentCode: 'TAL-SELF-001',
+              displayName: 'Mina Staff',
+              performanceAlias: 'Creator Mina',
+            },
+            locale: 'vi',
+            timezone: 'Asia/Ho_Chi_Minh',
+          },
+        });
+      }),
+      http.all('*/admin/users*', () => {
+        adminUserCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/self-service');
+
+    await user.selectOptions(await screen.findByLabelText('Locale'), 'vi');
+    await user.selectOptions(await screen.findByLabelText('Timezone'), 'Asia/Ho_Chi_Minh');
+    await user.click(screen.getByRole('button', { name: 'Save preferences' }));
+
+    await waitFor(() => {
+      expect(patchBodies).toEqual([{ locale: 'vi', timezone: 'Asia/Ho_Chi_Minh' }]);
+      expect(adminUserCalls).toBe(0);
+    });
+    expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
+    expect(screen.getByText('Current timezone: Asia/Ho_Chi_Minh')).toBeInTheDocument();
+  });
+
+  it('shows a safe preferences validation error and does not expose forbidden mutation fields', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.patch('*/self-service/account/preferences', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'SELF_SERVICE_VALIDATION_ERROR',
+              message: 'Invalid self-service request',
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    await renderRoute('/self-service');
+
+    await user.selectOptions(await screen.findByLabelText('Locale'), 'zh');
+    await user.click(screen.getByRole('button', { name: 'Save preferences' }));
+
+    expect(await screen.findByText('Preferences could not be saved.')).toBeInTheDocument();
+    const bodyText = document.body.textContent ?? '';
+    for (const forbidden of ['userId', 'employmentProfileId', 'role', 'scope', 'auth0']) {
+      expect(bodyText).not.toContain(forbidden);
+    }
   });
 
   it('shows a logout button that uses the existing auth logout flow', async () => {
