@@ -144,8 +144,10 @@
   "errors": {
     "kpiTitle": "KPI unavailable",
     "kpiMessage": "Khong the tai KPI chinh thuc cua ban.",
-    "currentPersonTitle": "Chưa liên kết Hồ sơ nhân sự",
-    "currentPersonMessage": "Tài khoản đã đăng nhập nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ.",
+    "currentPersonNotLinkedTitle": "Chưa liên kết Hồ sơ nhân sự",
+    "currentPersonNotLinkedMessage": "Tài khoản đã đăng nhập nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ.",
+    "currentPersonLoadTitle": "Chưa thể tải tự phục vụ",
+    "currentPersonLoadMessage": "Không thể tải hồ sơ của bạn.",
     "workShiftsTitle": "Chưa thể tải ca làm",
     "workShiftsMessage": "Không thể tải danh sách ca làm của bạn.",
     "eventsTitle": "Chưa thể tải sự kiện",

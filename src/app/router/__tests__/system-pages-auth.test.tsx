@@ -48,6 +48,26 @@ describe('auth system pages', () => {
     expect(await screen.findByText(/Login redirect failed: network unavailable/i)).toBeVisible();
   });
 
+  it('uses root landing as the default login return target', async () => {
+    const login = vi.fn().mockResolvedValue(undefined);
+    useAuthMock.mockReturnValue({
+      status: 'unauthenticated',
+      login,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/auth/login']}>
+        <Routes>
+          <Route path="/auth/login" element={<LoginPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /login/i }));
+
+    expect(login).toHaveBeenCalledWith('/');
+  });
+
   it('shows the required Auth0 audience in the login configuration diagnostic', () => {
     useAuthMock.mockReturnValue({
       status: 'configurationError',
@@ -137,7 +157,7 @@ describe('auth system pages', () => {
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent('/auth/login?');
     });
-    expect(screen.getByTestId('location')).toHaveTextContent('returnTo=%2Fdashboard');
+    expect(screen.getByTestId('location')).toHaveTextContent('returnTo=%2F');
     expect(screen.getByTestId('location')).not.toHaveTextContent('example.com');
     expect(handleCallback).not.toHaveBeenCalled();
   });

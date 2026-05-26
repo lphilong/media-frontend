@@ -142,8 +142,10 @@
     "HOUR": "hours"
   },
   "errors": {
-    "currentPersonTitle": "No linked Employment Profile",
-    "currentPersonMessage": "Your account is authenticated, but no staff profile is linked for self-service yet.",
+    "currentPersonNotLinkedTitle": "No linked Employment Profile",
+    "currentPersonNotLinkedMessage": "Your account is authenticated, but no staff profile is linked for self-service yet.",
+    "currentPersonLoadTitle": "Self-Service unavailable",
+    "currentPersonLoadMessage": "Your profile could not be loaded.",
     "workShiftsTitle": "Work shifts unavailable",
     "workShiftsMessage": "Your work shifts could not be loaded.",
     "kpiTitle": "KPI unavailable",

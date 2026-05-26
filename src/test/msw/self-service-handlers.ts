@@ -14,8 +14,8 @@ type SelfServiceCurrentPerson = {
     displayName: string;
     performanceAlias: string | null;
   };
-  locale?: string;
-  timezone?: string;
+  locale?: string | null;
+  timezone?: string | null;
 };
 
 type SelfServiceWorkShift = {
@@ -74,7 +74,7 @@ const defaultSelfServiceCurrentPerson: SelfServiceCurrentPerson = {
     displayName: 'Mina Staff',
     performanceAlias: 'Creator Mina',
   },
-  locale: 'en',
+  locale: null,
   timezone: 'Asia/Saigon',
 };
 

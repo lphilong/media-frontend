@@ -9,6 +9,7 @@ import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handl
 import {
   resetSelfServiceMockData,
   setMockSelfServiceEvents,
+  setMockSelfServiceCurrentPerson,
   setMockSelfServiceKpi,
 } from '@test/msw/self-service-handlers';
 import { server } from '@test/msw/server';
@@ -54,6 +55,24 @@ const renderRoute = async (path: string, setup?: () => void): Promise<void> => {
 };
 
 describe('/self-service route', () => {
+  it('routes staff actors from root landing into the self-service shell', async () => {
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json(
+          { error: { code: 'FORBIDDEN', message: 'Permission denied' } },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await renderRoute('/');
+
+    expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Self-Service' })).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
+  });
+
   it('renders staff shell and read-only My Profile summary outside the admin sidebar', async () => {
     await renderRoute('/self-service');
 
@@ -65,6 +84,85 @@ describe('/self-service route', () => {
     expect(await screen.findByText('Creator Mina')).toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-employment-profiles')).not.toBeInTheDocument();
+  });
+
+  it('parses nullable current-person locale and renders My Profile instead of not-linked state', async () => {
+    await renderRoute('/self-service', () =>
+      setMockSelfServiceCurrentPerson({
+        employmentProfileId: 'ep-linked-null-locale',
+        employeeCode: 'EP-LINKED-NULL',
+        displayName: 'Linked Null Locale Staff',
+        employmentStatus: 'ACTIVE',
+        accountEmail: 'linked.null.locale@example.test',
+        accountStatus: 'ACTIVE',
+        accountLinkStatus: 'LINKED',
+        linkedInternalTalent: {
+          talentId: 'talent-linked-null-locale',
+          talentCode: 'TAL-LINKED-NULL',
+          displayName: 'Linked Null Locale Staff',
+          performanceAlias: null,
+        },
+        locale: null,
+        timezone: 'Asia/Saigon',
+      }),
+    );
+
+    expect(await screen.findByRole('heading', { name: 'My Profile' })).toBeInTheDocument();
+    expect(await screen.findByText('EP-LINKED-NULL')).toBeInTheDocument();
+    expect(await screen.findByText('linked.null.locale@example.test')).toBeInTheDocument();
+    expect(await screen.findByText('TAL-LINKED-NULL')).toBeInTheDocument();
+    expect(screen.queryByText('No linked Employment Profile')).not.toBeInTheDocument();
+  });
+
+  it('renders no-linked profile state only for the backend self-service not-linked error', async () => {
+    server.use(
+      http.get('*/self-service/me', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'SELF_SERVICE_CURRENT_PERSON_NOT_LINKED',
+              message: 'No linked Employment Profile',
+            },
+          },
+          { status: 404 },
+        ),
+      ),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByText('No linked Employment Profile')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Your account is authenticated, but no staff profile is linked for self-service yet.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'My Profile' })).not.toBeInTheDocument();
+  });
+
+  it('renders generic current-person load errors for parse/client failures', async () => {
+    server.use(
+      http.get('*/self-service/me', () =>
+        HttpResponse.json({
+          data: {
+            employmentProfileId: 'ep-invalid-current-person',
+            employeeCode: 'EP-INVALID',
+            displayName: 'Invalid Current Person',
+            employmentStatus: 'ACTIVE',
+            accountStatus: 'ACTIVE',
+            accountLinkStatus: 'LINKED',
+            locale: 42,
+          },
+        }),
+      ),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByText('Self-Service unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Your profile could not be loaded.')).toBeInTheDocument();
+    expect(screen.queryByText('No linked Employment Profile')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'My Profile' })).not.toBeInTheDocument();
   });
 
   it('renders read-only My Work Shifts from the self-service endpoint only', async () => {

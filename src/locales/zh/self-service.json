@@ -144,8 +144,10 @@
   "errors": {
     "kpiTitle": "KPI unavailable",
     "kpiMessage": "KPI jiazai shibai.",
-    "currentPersonTitle": "未关联雇佣档案",
-    "currentPersonMessage": "账号已认证，但尚未关联可用于自助服务的员工档案。",
+    "currentPersonNotLinkedTitle": "未关联雇佣档案",
+    "currentPersonNotLinkedMessage": "账号已认证，但尚未关联可用于自助服务的员工档案。",
+    "currentPersonLoadTitle": "无法载入自助服务",
+    "currentPersonLoadMessage": "无法载入你的资料。",
     "workShiftsTitle": "无法载入班次",
     "workShiftsMessage": "无法载入你的班次。",
     "eventsTitle": "无法载入活动",

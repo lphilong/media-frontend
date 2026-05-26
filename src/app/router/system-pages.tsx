@@ -62,7 +62,7 @@ export const LoginPage = (): JSX.Element => {
   const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   const returnTo = useMemo(() => {
-    return resolveReturnTarget(params.get('returnTo'), APP_PATHS.dashboard);
+    return resolveReturnTarget(params.get('returnTo'), APP_PATHS.root);
   }, [params]);
 
   const callbackError = useMemo(() => {
@@ -145,7 +145,7 @@ export const AuthCallbackPage = (): JSX.Element => {
       if (auth0Error) {
         const loginParams = new URLSearchParams({
           authError: 'callback',
-          returnTo: resolveReturnTarget(params.get('returnTo'), APP_PATHS.dashboard),
+          returnTo: resolveReturnTarget(params.get('returnTo'), APP_PATHS.root),
         });
         const safeDetail = sanitizeAuthErrorDetail(params.get('error_description') ?? auth0Error);
         if (safeDetail) {
@@ -157,7 +157,7 @@ export const AuthCallbackPage = (): JSX.Element => {
 
       try {
         const returnTo = await handleCallback();
-        navigate(returnTo ?? APP_PATHS.dashboard, { replace: true });
+        navigate(returnTo ?? APP_PATHS.root, { replace: true });
       } catch (callbackError) {
         setError(
           formatAuthMessage(

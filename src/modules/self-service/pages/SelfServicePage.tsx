@@ -30,6 +30,8 @@ import {
   formatPercent,
 } from '@shared/formatting/formatters';
 
+const SELF_SERVICE_CURRENT_PERSON_NOT_LINKED = 'SELF_SERVICE_CURRENT_PERSON_NOT_LINKED';
+
 type NavCard = {
   id: 'profile' | 'workShifts' | 'kpi' | 'events' | 'account';
   icon: typeof IdCard;
@@ -66,6 +68,27 @@ const statusTone = {
 const emptyValue = (value: string | null | undefined, fallback: string): string =>
   value ?? fallback;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const isCurrentPersonNotLinkedError = (error: unknown): boolean => {
+  if (!isRecord(error)) {
+    return false;
+  }
+
+  const code = typeof error.code === 'string' ? error.code : undefined;
+  const status = typeof error.status === 'number' ? error.status : undefined;
+  const message = typeof error.message === 'string' ? error.message : undefined;
+
+  return (
+    code === SELF_SERVICE_CURRENT_PERSON_NOT_LINKED ||
+    (status === 404 &&
+      (code === SELF_SERVICE_CURRENT_PERSON_NOT_LINKED ||
+        message === 'No linked Employment Profile' ||
+        message === 'Current actor is not linked to a non-archived EmploymentProfile'))
+  );
+};
+
 const formatMetricValue = (metric: SelfServiceKpiMetric, value: number): string => {
   if (metric.unit === 'VND') {
     return formatDecimal(value, 'vi-VN', 0);
@@ -85,6 +108,7 @@ export const SelfServicePage = (): JSX.Element => {
   const eventsQuery = useSelfServiceEvents(currentPersonQuery.isSuccess);
   const events = eventsQuery.data ?? [];
   const notAvailable = t('self-service:values.notAvailable');
+  const currentPersonNotLinked = isCurrentPersonNotLinkedError(currentPersonQuery.error);
 
   return (
     <main className="min-h-screen bg-bg text-text" data-testid="self-service-shell">
@@ -137,8 +161,16 @@ export const SelfServicePage = (): JSX.Element => {
 
         {currentPersonQuery.isError ? (
           <ErrorState
-            title={t('self-service:errors.currentPersonTitle')}
-            message={t('self-service:errors.currentPersonMessage')}
+            title={t(
+              currentPersonNotLinked
+                ? 'self-service:errors.currentPersonNotLinkedTitle'
+                : 'self-service:errors.currentPersonLoadTitle',
+            )}
+            message={t(
+              currentPersonNotLinked
+                ? 'self-service:errors.currentPersonNotLinkedMessage'
+                : 'self-service:errors.currentPersonLoadMessage',
+            )}
           />
         ) : null}
 

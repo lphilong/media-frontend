@@ -3,7 +3,7 @@ import { act, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { appRoutes } from '@app/router/router';
-import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
+import { setLocale } from '@shared/i18n/i18n';
 import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 import { renderAppWithProviders } from '@test/render-app-route';
 
@@ -23,7 +23,7 @@ const makeCapabilities = (
 });
 
 const renderRoute = async (path: string, capabilities: MockCapabilities): Promise<void> => {
-  await setLocale(DEFAULT_LOCALE);
+  await setLocale('en');
   setMockCurrentActorCapabilities(capabilities);
 
   const router = createMemoryRouter(appRoutes, {
@@ -36,6 +36,23 @@ const renderRoute = async (path: string, capabilities: MockCapabilities): Promis
 };
 
 describe('route and sidebar permission model', () => {
+  it('preserves admin root landing to the dashboard shell', async () => {
+    await renderRoute(
+      '/',
+      makeCapabilities({
+        roles: ['ADMIN_FULL'],
+        permissions: ['dashboardLite.read'],
+        scopeGrants: {
+          dashboardLite: ['global'],
+        },
+      }),
+    );
+
+    expect(await screen.findByTestId('admin-shell-main')).toBeInTheDocument();
+    expect(await screen.findByTestId('nav-link-dashboard')).toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
+  });
+
   it('shows TEAM_MANAGER scoped modules and hides admin-only and finance modules', async () => {
     await renderRoute(
       '/events',

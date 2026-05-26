@@ -13,6 +13,8 @@ import { moduleRouteDefinitions, type ModuleRouteDefinition } from '@app/router/
 import type { ModuleAccessModuleId } from '@app/router/module-access';
 import { APP_PATHS } from '@app/router/paths';
 import { AuthCallbackPage, ForbiddenPage, LoginPage, NotFoundPage } from '@app/router/system-pages';
+import type { NormalizedApiError } from '@shared/api';
+import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { LoadingState, ModulePlaceholderPage, PageContainer } from '@shared/components/primitives';
 
 type LazyModuleRoute = ComponentType<Record<string, never>>;
@@ -237,6 +239,29 @@ const RouteLoadingFallback = (): JSX.Element => (
   </PageContainer>
 );
 
+const isForbiddenCapabilitiesError = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  'status' in error &&
+  (error as Partial<NormalizedApiError>).status === 403;
+
+function RootLandingRedirect(): JSX.Element {
+  const capabilitiesQuery = useCurrentActorCapabilities();
+
+  if (capabilitiesQuery.isLoading && !capabilitiesQuery.data) {
+    return <RouteLoadingFallback />;
+  }
+
+  if (
+    capabilitiesQuery.data?.type === 'staff' ||
+    (capabilitiesQuery.isError && isForbiddenCapabilitiesError(capabilitiesQuery.error))
+  ) {
+    return <Navigate to={APP_PATHS.selfService} replace />;
+  }
+
+  return <Navigate to={APP_PATHS.dashboard} replace />;
+}
+
 const withModuleAccess = (moduleId: ModuleAccessModuleId, element: JSX.Element): JSX.Element => (
   <ModuleAccessGuard moduleId={moduleId}>{element}</ModuleAccessGuard>
 );
@@ -404,7 +429,7 @@ export const appRoutes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <Navigate to={APP_PATHS.dashboard} replace />,
+        element: <RootLandingRedirect />,
       },
       {
         path: dashboardDefinition.listPath.replace(/^\//, ''),

@@ -12,6 +12,8 @@ import { createAuthAdapter, isAuthConfigurationError } from '@shared/auth/auth-a
 import type { AuthSession, AuthStatus } from '@shared/auth/auth-types';
 import { setAccessTokenProvider } from '@shared/api/token-provider';
 
+const DEFAULT_AUTH_RETURN_TO = '/';
+
 type AuthContextValue = {
   status: AuthStatus;
   session: AuthSession | null;
@@ -70,7 +72,7 @@ export const AuthProvider = ({ children }: PropsWithChildren): JSX.Element => {
 
   const login = useCallback(
     async (returnTo?: string) => {
-      await adapter.loginRedirect(returnTo ?? '/dashboard');
+      await adapter.loginRedirect(returnTo ?? DEFAULT_AUTH_RETURN_TO);
     },
     [adapter],
   );

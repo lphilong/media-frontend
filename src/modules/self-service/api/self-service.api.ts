@@ -17,6 +17,13 @@ const linkedInternalTalentSchema = z
   })
   .strict();
 
+const nullableOptionalTextSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .nullish()
+  .transform((value) => value ?? undefined);
+
 export const selfServiceCurrentPersonSchema = z
   .object({
     employmentProfileId: z.string().trim().min(1),
@@ -27,8 +34,8 @@ export const selfServiceCurrentPersonSchema = z
     accountStatus: z.enum(['PENDING', 'ACTIVE', 'DISABLED', 'ARCHIVED']).optional(),
     accountLinkStatus: z.literal('LINKED'),
     linkedInternalTalent: linkedInternalTalentSchema.optional(),
-    locale: z.string().trim().min(1).optional(),
-    timezone: z.string().trim().min(1).optional(),
+    locale: nullableOptionalTextSchema,
+    timezone: nullableOptionalTextSchema,
   })
   .strict();
 

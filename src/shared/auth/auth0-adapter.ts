@@ -139,7 +139,7 @@ export const createAuth0Adapter = (): AuthAdapter => {
         return null;
       }
     },
-    async loginRedirect(returnTo = '/dashboard') {
+    async loginRedirect(returnTo = '/') {
       const client = await getClient();
       await client.loginWithRedirect({
         appState: {
