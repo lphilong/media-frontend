@@ -24,6 +24,10 @@
       "title": "My Events",
       "summary": "Read-only view of your directly assigned events."
     },
+    "talentGroups": {
+      "title": "My Talent Groups",
+      "summary": "Read-only view of your active Talent Group memberships."
+    },
     "account": {
       "title": "Account",
       "summary": "Account information with self-service locale and timezone preferences."
@@ -39,6 +43,7 @@
     "accountEmail": "Account email",
     "accountStatus": "Account status",
     "accountLinkStatus": "Account link status",
+    "language": "Language",
     "locale": "Locale",
     "timezone": "Timezone",
     "talentCode": "Talent code",
@@ -69,10 +74,15 @@
     "actual": "Own actual",
     "progress": "Progress"
   },
+  "talentGroupFields": {
+    "managers": "Managers",
+    "members": "Members"
+  },
   "tables": {
     "workShifts": "My Work Shifts",
     "events": "My Events",
-    "kpi": "My KPI"
+    "kpi": "My KPI",
+    "talentGroups": "My Talent Groups"
   },
   "status": {
     "available": "Available",
@@ -112,7 +122,9 @@
     "kpiTitle": "No official KPI",
     "kpiMessage": "No published KPI allocation is available for your linked internal Talent yet.",
     "eventsTitle": "No events",
-    "eventsMessage": "No directly assigned events are available for your profile yet."
+    "eventsMessage": "No directly assigned events are available for your profile yet.",
+    "talentGroupsTitle": "No Talent Groups",
+    "talentGroupsMessage": "No active Talent Group memberships are available for your linked internal Talent yet."
   },
   "employmentStatus": {
     "ACTIVE": "Active",
@@ -169,6 +181,13 @@
     "COUNT": "count",
     "HOUR": "hours"
   },
+  "talentGroupStatus": {
+    "ACTIVE": "Active"
+  },
+  "talentOrigin": {
+    "INTERNAL": "Internal",
+    "EXTERNAL": "External"
+  },
   "errors": {
     "currentPersonNotLinkedTitle": "No linked Employment Profile",
     "currentPersonNotLinkedMessage": "Your account is authenticated, but no staff profile is linked for self-service yet.",
@@ -179,6 +198,8 @@
     "kpiTitle": "KPI unavailable",
     "kpiMessage": "Your official KPI could not be loaded.",
     "eventsTitle": "Events unavailable",
-    "eventsMessage": "Your events could not be loaded."
+    "eventsMessage": "Your events could not be loaded.",
+    "talentGroupsTitle": "Talent Groups unavailable",
+    "talentGroupsMessage": "Your Talent Groups could not be loaded."
   }
 }

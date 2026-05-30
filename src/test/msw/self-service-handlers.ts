@@ -60,6 +60,22 @@ type SelfServiceKpiItem = {
   }>;
 };
 
+type SelfServiceTalentGroup = {
+  talentGroupCode: string;
+  name: string;
+  status?: 'ACTIVE';
+  managers: Array<{
+    displayName: string;
+    employeeCode?: string;
+  }>;
+  members: Array<{
+    talentCode: string;
+    displayName: string;
+    performanceAlias?: string;
+    origin: 'INTERNAL' | 'EXTERNAL';
+  }>;
+};
+
 const allowedPreferenceFields = new Set(['locale', 'timezone']);
 const supportedPreferenceLocales = new Set(['en', 'vi', 'zh']);
 
@@ -230,6 +246,34 @@ const defaultSelfServiceKpi: SelfServiceKpiItem[] = selfServiceKpiFixtureSource.
   }),
 );
 
+const defaultSelfServiceTalentGroups: SelfServiceTalentGroup[] = [
+  {
+    talentGroupCode: 'TG-SELF-001',
+    name: 'Creator Team',
+    status: 'ACTIVE',
+    managers: [
+      {
+        displayName: 'Mai Manager',
+        employeeCode: 'EP-MGR-001',
+      },
+    ],
+    members: [
+      {
+        talentCode: 'TAL-SELF-001',
+        displayName: 'Mina Staff',
+        performanceAlias: 'Creator Mina',
+        origin: 'INTERNAL',
+      },
+      {
+        talentCode: 'EXT-SELF-001',
+        displayName: 'External Guest',
+        performanceAlias: 'Guest Alias',
+        origin: 'EXTERNAL',
+      },
+    ],
+  },
+];
+
 let selfServiceCurrentPerson: SelfServiceCurrentPerson = {
   ...defaultSelfServiceCurrentPerson,
   linkedInternalTalent: { ...defaultSelfServiceCurrentPerson.linkedInternalTalent! },
@@ -244,6 +288,13 @@ let selfServiceKpi: SelfServiceKpiItem[] = defaultSelfServiceKpi.map((item) => (
   ...item,
   metrics: item.metrics.map((metric) => ({ ...metric })),
 }));
+let selfServiceTalentGroups: SelfServiceTalentGroup[] = defaultSelfServiceTalentGroups.map(
+  (group) => ({
+    ...group,
+    managers: group.managers.map((manager) => ({ ...manager })),
+    members: group.members.map((member) => ({ ...member })),
+  }),
+);
 
 export const resetSelfServiceMockData = (): void => {
   selfServiceCurrentPerson = {
@@ -255,6 +306,11 @@ export const resetSelfServiceMockData = (): void => {
   selfServiceKpi = defaultSelfServiceKpi.map((item) => ({
     ...item,
     metrics: item.metrics.map((metric) => ({ ...metric })),
+  }));
+  selfServiceTalentGroups = defaultSelfServiceTalentGroups.map((group) => ({
+    ...group,
+    managers: group.managers.map((manager) => ({ ...manager })),
+    members: group.members.map((member) => ({ ...member })),
   }));
 };
 
@@ -279,6 +335,14 @@ export const setMockSelfServiceKpi = (value: SelfServiceKpiItem[]): void => {
   selfServiceKpi = value.map((item) => ({
     ...item,
     metrics: item.metrics.map((metric) => ({ ...metric })),
+  }));
+};
+
+export const setMockSelfServiceTalentGroups = (value: SelfServiceTalentGroup[]): void => {
+  selfServiceTalentGroups = value.map((group) => ({
+    ...group,
+    managers: group.managers.map((manager) => ({ ...manager })),
+    members: group.members.map((member) => ({ ...member })),
   }));
 };
 
@@ -336,6 +400,13 @@ export const selfServiceHandlers = [
     return HttpResponse.json({
       data: {
         items: selfServiceKpi,
+      },
+    });
+  }),
+  http.get('*/self-service/talent-groups', () => {
+    return HttpResponse.json({
+      data: {
+        items: selfServiceTalentGroups,
       },
     });
   }),

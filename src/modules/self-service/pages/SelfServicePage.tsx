@@ -10,6 +10,7 @@ import {
   Save,
   ShieldCheck,
   UserCog,
+  UsersRound,
 } from 'lucide-react';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +24,7 @@ import {
   useSelfServiceCurrentPerson,
   useSelfServiceEvents,
   useSelfServiceKpi,
+  useSelfServiceTalentGroups,
   useUpdateSelfServiceAccountPreferences,
   useSelfServiceWorkShifts,
 } from '@modules/self-service/api/self-service.api';
@@ -40,12 +42,13 @@ import {
   formatDecimal,
   formatPercent,
 } from '@shared/formatting/formatters';
+import { setLocale as setAppLocale } from '@shared/i18n/i18n';
 
 const SELF_SERVICE_CURRENT_PERSON_NOT_LINKED = 'SELF_SERVICE_CURRENT_PERSON_NOT_LINKED';
 const SELF_SERVICE_VALIDATION_ERROR = 'SELF_SERVICE_VALIDATION_ERROR';
 
 type NavCard = {
-  id: 'profile' | 'workShifts' | 'kpi' | 'events' | 'account';
+  id: 'profile' | 'workShifts' | 'kpi' | 'events' | 'talentGroups' | 'account';
   icon: typeof IdCard;
   statusKey: string;
 };
@@ -55,6 +58,7 @@ const navCards: NavCard[] = [
   { id: 'workShifts', icon: CalendarDays, statusKey: 'self-service:status.available' },
   { id: 'kpi', icon: ChartNoAxesColumnIncreasing, statusKey: 'self-service:status.available' },
   { id: 'events', icon: BadgeCheck, statusKey: 'self-service:status.available' },
+  { id: 'talentGroups', icon: UsersRound, statusKey: 'self-service:status.available' },
   { id: 'account', icon: UserCog, statusKey: 'self-service:status.available' },
 ];
 
@@ -74,6 +78,8 @@ const statusTone = {
   REMOVED: 'muted',
   EMPLOYMENT_PROFILE: 'info',
   TALENT: 'success',
+  INTERNAL: 'info',
+  EXTERNAL: 'warning',
   OFFICIAL_PUBLISHED: 'success',
 } as const;
 
@@ -308,6 +314,69 @@ const AccountPreferencesForm = ({
   );
 };
 
+type SelfServiceLanguageSwitcherProps = {
+  currentPerson?: SelfServiceCurrentPerson;
+};
+
+const SelfServiceLanguageSwitcher = ({
+  currentPerson,
+}: SelfServiceLanguageSwitcherProps): JSX.Element => {
+  const { t } = useTranslation(['self-service']);
+  const updatePreferences = useUpdateSelfServiceAccountPreferences();
+  const currentLocaleCandidate = currentPerson?.locale ?? 'en';
+  const currentLocale = SELF_SERVICE_SUPPORTED_LOCALES.includes(
+    currentLocaleCandidate as (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number],
+  )
+    ? (currentLocaleCandidate as (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number])
+    : 'en';
+
+  const handleChange = (value: string): void => {
+    const locale = value as (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number];
+
+    if (!SELF_SERVICE_SUPPORTED_LOCALES.includes(locale) || locale === currentLocale) {
+      return;
+    }
+
+    void setAppLocale(locale);
+    updatePreferences.mutate(
+      { locale },
+      {
+        onError: () => {
+          void setAppLocale(currentLocale);
+        },
+        onSuccess: (updated) => {
+          const updatedLocale = updated.locale as
+            | (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number]
+            | undefined;
+
+          if (updatedLocale && SELF_SERVICE_SUPPORTED_LOCALES.includes(updatedLocale)) {
+            void setAppLocale(updatedLocale);
+          }
+        },
+      },
+    );
+  };
+
+  return (
+    <label className="inline-flex items-center gap-2 text-sm text-muted">
+      <span className="sr-only">{t('self-service:fields.language')}</span>
+      <select
+        value={currentLocale}
+        disabled={!currentPerson || updatePreferences.isPending}
+        onChange={(event) => handleChange(event.target.value)}
+        className="rounded border border-border bg-bg px-2 py-2 text-sm text-text disabled:cursor-not-allowed disabled:opacity-60"
+        data-testid="self-service-language-switcher"
+      >
+        {SELF_SERVICE_SUPPORTED_LOCALES.map((option) => (
+          <option key={option} value={option}>
+            {t(`self-service:localeOptions.${option}`)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+};
+
 export const SelfServicePage = (): JSX.Element => {
   const { t } = useTranslation(['self-service', 'common', 'errors']);
   const { logout } = useAuth();
@@ -319,6 +388,8 @@ export const SelfServicePage = (): JSX.Element => {
   const kpiItems = kpiQuery.data ?? [];
   const eventsQuery = useSelfServiceEvents(currentPersonQuery.isSuccess);
   const events = eventsQuery.data ?? [];
+  const talentGroupsQuery = useSelfServiceTalentGroups(currentPersonQuery.isSuccess);
+  const talentGroups = talentGroupsQuery.data ?? [];
   const notAvailable = t('self-service:values.notAvailable');
   const currentPersonNotLinked = isCurrentPersonNotLinkedError(currentPersonQuery.error);
 
@@ -334,6 +405,7 @@ export const SelfServicePage = (): JSX.Element => {
               <h1 className="text-2xl font-semibold">{t('self-service:page.title')}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <SelfServiceLanguageSwitcher currentPerson={currentPerson} />
               <div className="inline-flex items-center gap-2 text-sm text-muted">
                 <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                 <span>{t('self-service:page.readOnly')}</span>
@@ -354,7 +426,7 @@ export const SelfServicePage = (): JSX.Element => {
       <PageContainer className="space-y-5">
         <section
           aria-label={t('self-service:navigation.label')}
-          className="grid gap-3 md:grid-cols-5"
+          className="grid gap-3 md:grid-cols-3 xl:grid-cols-6"
         >
           {navCards.map((card) => {
             const Icon = card.icon;
@@ -572,6 +644,142 @@ export const SelfServicePage = (): JSX.Element => {
                     },
                   ]}
                 />
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {currentPerson ? (
+          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {t('self-service:sections.talentGroups.title')}
+                </h2>
+                <p className="text-sm text-muted">
+                  {t('self-service:sections.talentGroups.summary')}
+                </p>
+              </div>
+              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
+            </div>
+
+            {talentGroupsQuery.isLoading ? (
+              <div data-testid="self-service-talent-groups-loading">
+                <LoadingState lines={4} />
+              </div>
+            ) : null}
+
+            {talentGroupsQuery.isError ? (
+              <ErrorState
+                title={t('self-service:errors.talentGroupsTitle')}
+                message={t('self-service:errors.talentGroupsMessage')}
+              />
+            ) : null}
+
+            {!talentGroupsQuery.isLoading &&
+            !talentGroupsQuery.isError &&
+            talentGroups.length === 0 ? (
+              <EmptyState
+                title={t('self-service:empty.talentGroupsTitle')}
+                message={t('self-service:empty.talentGroupsMessage')}
+              />
+            ) : null}
+
+            {talentGroups.length > 0 ? (
+              <div className="grid gap-3" data-testid="self-service-talent-groups-list">
+                {talentGroups.map((group) => (
+                  <article
+                    key={group.talentGroupCode}
+                    className="rounded border border-border bg-bg p-3"
+                    data-testid="self-service-talent-group-card"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-text">{group.name}</h3>
+                        <p className="font-mono text-xs text-muted">{group.talentGroupCode}</p>
+                      </div>
+                      <StatusBadge
+                        label={t('self-service:talentGroupStatus.ACTIVE')}
+                        tone="success"
+                      />
+                    </div>
+
+                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                      <div>
+                        <h4 className="text-xs font-semibold uppercase text-muted">
+                          {t('self-service:talentGroupFields.managers')}
+                        </h4>
+                        {group.managers.length > 0 ? (
+                          <ul className="mt-2 space-y-2">
+                            {group.managers.map((manager) => (
+                              <li
+                                key={`${group.talentGroupCode}-${manager.displayName}-${manager.employeeCode ?? ''}`}
+                                className="rounded border border-border bg-panel px-3 py-2"
+                              >
+                                <span className="block text-sm font-medium text-text">
+                                  {manager.displayName}
+                                </span>
+                                {manager.employeeCode ? (
+                                  <span className="font-mono text-xs text-muted">
+                                    {manager.employeeCode}
+                                  </span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 text-sm text-muted">
+                            {t('self-service:values.notAvailable')}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <h4 className="text-xs font-semibold uppercase text-muted">
+                          {t('self-service:talentGroupFields.members')}
+                        </h4>
+                        {group.members.length > 0 ? (
+                          <ul className="mt-2 space-y-2">
+                            {group.members.map((member) => (
+                              <li
+                                key={`${group.talentGroupCode}-${member.talentCode}`}
+                                className="rounded border border-border bg-panel px-3 py-2"
+                                data-testid="self-service-talent-group-member"
+                              >
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                  <div>
+                                    <span className="block text-sm font-medium text-text">
+                                      {member.displayName}
+                                    </span>
+                                    <span className="font-mono text-xs text-muted">
+                                      {member.talentCode}
+                                    </span>
+                                    {member.performanceAlias ? (
+                                      <span className="mt-1 block text-xs text-muted">
+                                        {t('self-service:fields.performanceAlias')}:{' '}
+                                        {member.performanceAlias}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <StatusBadge
+                                    label={t(`self-service:talentOrigin.${member.origin}`)}
+                                    status={member.origin}
+                                    toneByStatus={statusTone}
+                                    uppercase={false}
+                                  />
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-2 text-sm text-muted">
+                            {t('self-service:values.notAvailable')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                ))}
               </div>
             ) : null}
           </section>

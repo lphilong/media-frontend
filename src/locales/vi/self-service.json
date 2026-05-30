@@ -24,6 +24,10 @@
       "title": "Sự kiện của tôi",
       "summary": "Xem các sự kiện được phân công trực tiếp cho bạn ở chế độ chỉ đọc."
     },
+    "talentGroups": {
+      "title": "Nhóm Talent của tôi",
+      "summary": "Xem các nhóm Talent đang hoạt động của bạn ở chế độ chỉ đọc."
+    },
     "account": {
       "title": "Tài khoản",
       "summary": "Thông tin tài khoản với tùy chọn ngôn ngữ và múi giờ tự phục vụ."
@@ -39,6 +43,7 @@
     "accountEmail": "Email tài khoản",
     "accountStatus": "Trạng thái tài khoản",
     "accountLinkStatus": "Trạng thái liên kết tài khoản",
+    "language": "Ngôn ngữ",
     "locale": "Ngôn ngữ",
     "timezone": "Múi giờ",
     "talentCode": "Mã Talent",
@@ -69,10 +74,15 @@
     "actual": "Own actual",
     "progress": "Progress"
   },
+  "talentGroupFields": {
+    "managers": "Quản lý",
+    "members": "Thành viên"
+  },
   "tables": {
     "kpi": "KPI",
     "workShifts": "Ca làm của tôi",
-    "events": "Sự kiện của tôi"
+    "events": "Sự kiện của tôi",
+    "talentGroups": "Nhóm Talent của tôi"
   },
   "kpiStatus": {
     "OFFICIAL_PUBLISHED": "Official published"
@@ -127,7 +137,9 @@
     "workShiftsTitle": "Chưa có ca làm",
     "workShiftsMessage": "Chưa có ca chính thức nào cho hồ sơ của bạn.",
     "eventsTitle": "Chưa có sự kiện",
-    "eventsMessage": "Chưa có sự kiện được phân công trực tiếp cho hồ sơ của bạn."
+    "eventsMessage": "Chưa có sự kiện được phân công trực tiếp cho hồ sơ của bạn.",
+    "talentGroupsTitle": "Chưa có nhóm Talent",
+    "talentGroupsMessage": "Chưa có nhóm Talent đang hoạt động cho Talent nội bộ liên kết của bạn."
   },
   "employmentStatus": {
     "ACTIVE": "Đang làm",
@@ -169,6 +181,13 @@
     "MANUAL": "Thủ công",
     "ROSTER_GENERATED": "Tạo từ bảng phân ca"
   },
+  "talentGroupStatus": {
+    "ACTIVE": "Đang hoạt động"
+  },
+  "talentOrigin": {
+    "INTERNAL": "Nội bộ",
+    "EXTERNAL": "Bên ngoài"
+  },
   "errors": {
     "kpiTitle": "KPI unavailable",
     "kpiMessage": "Khong the tai KPI chinh thuc cua ban.",
@@ -179,6 +198,8 @@
     "workShiftsTitle": "Chưa thể tải ca làm",
     "workShiftsMessage": "Không thể tải danh sách ca làm của bạn.",
     "eventsTitle": "Chưa thể tải sự kiện",
-    "eventsMessage": "Không thể tải danh sách sự kiện của bạn."
+    "eventsMessage": "Không thể tải danh sách sự kiện của bạn.",
+    "talentGroupsTitle": "Chưa thể tải nhóm Talent",
+    "talentGroupsMessage": "Không thể tải nhóm Talent của bạn."
   }
 }

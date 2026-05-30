@@ -7,6 +7,7 @@ export const SELF_SERVICE_CURRENT_PERSON_QUERY_KEY = ['self-service', 'current-p
 export const SELF_SERVICE_WORK_SHIFTS_QUERY_KEY = ['self-service', 'work-shifts'] as const;
 export const SELF_SERVICE_EVENTS_QUERY_KEY = ['self-service', 'events'] as const;
 export const SELF_SERVICE_KPI_QUERY_KEY = ['self-service', 'kpi'] as const;
+export const SELF_SERVICE_TALENT_GROUPS_QUERY_KEY = ['self-service', 'talent-groups'] as const;
 
 export const SELF_SERVICE_SUPPORTED_LOCALES = ['en', 'vi', 'zh'] as const;
 export const SELF_SERVICE_TIMEZONE_OPTIONS = [
@@ -164,6 +165,44 @@ const selfServiceKpiResponseSchema = z
 export type SelfServiceKpiItem = z.infer<typeof selfServiceKpiItemSchema>;
 export type SelfServiceKpiMetric = z.infer<typeof selfServiceKpiMetricSchema>;
 
+const selfServiceTalentGroupManagerSchema = z
+  .object({
+    displayName: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+const selfServiceTalentGroupMemberSchema = z
+  .object({
+    talentCode: z.string().trim().min(1),
+    displayName: z.string().trim().min(1),
+    performanceAlias: z.string().trim().min(1).optional(),
+    origin: z.enum(['INTERNAL', 'EXTERNAL']),
+  })
+  .strict();
+
+const selfServiceTalentGroupSchema = z
+  .object({
+    talentGroupCode: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    status: z.literal('ACTIVE').optional(),
+    managers: z.array(selfServiceTalentGroupManagerSchema),
+    members: z.array(selfServiceTalentGroupMemberSchema),
+  })
+  .strict();
+
+const selfServiceTalentGroupsResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(selfServiceTalentGroupSchema),
+      })
+      .strict(),
+  })
+  .strict();
+
+export type SelfServiceTalentGroup = z.infer<typeof selfServiceTalentGroupSchema>;
+
 export const fetchSelfServiceCurrentPerson = async (): Promise<SelfServiceCurrentPerson> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
@@ -251,6 +290,23 @@ export const useSelfServiceKpi = (enabled = true) =>
   useQuery({
     queryKey: SELF_SERVICE_KPI_QUERY_KEY,
     queryFn: fetchSelfServiceKpi,
+    enabled,
+    retry: false,
+  });
+
+export const fetchSelfServiceTalentGroups = async (): Promise<SelfServiceTalentGroup[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/self-service/talent-groups',
+  });
+
+  return selfServiceTalentGroupsResponseSchema.parse(response).data.items;
+};
+
+export const useSelfServiceTalentGroups = (enabled = true) =>
+  useQuery({
+    queryKey: SELF_SERVICE_TALENT_GROUPS_QUERY_KEY,
+    queryFn: fetchSelfServiceTalentGroups,
     enabled,
     retry: false,
   });

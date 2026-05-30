@@ -13,6 +13,7 @@ import {
   setMockSelfServiceEvents,
   setMockSelfServiceCurrentPerson,
   setMockSelfServiceKpi,
+  setMockSelfServiceTalentGroups,
 } from '@test/msw/self-service-handlers';
 import { server } from '@test/msw/server';
 import { renderAppWithProviders } from '@test/render-app-route';
@@ -408,6 +409,103 @@ describe('/self-service route', () => {
     ).toBeNull();
   });
 
+  it('renders read-only My Talent Groups from the self-service endpoint only', async () => {
+    let selfServiceTalentGroupCalls = 0;
+    let adminTalentGroupCalls = 0;
+    let adminTalentCalls = 0;
+
+    server.use(
+      http.get('*/self-service/talent-groups', () => {
+        selfServiceTalentGroupCalls += 1;
+        return HttpResponse.json({
+          data: {
+            items: [
+              {
+                talentGroupCode: 'TG-SELF-001',
+                name: 'Creator Team',
+                status: 'ACTIVE',
+                managers: [{ displayName: 'Mai Manager', employeeCode: 'EP-MGR-001' }],
+                members: [
+                  {
+                    talentCode: 'TAL-SELF-001',
+                    displayName: 'Mina Staff',
+                    performanceAlias: 'Creator Mina',
+                    origin: 'INTERNAL',
+                  },
+                  {
+                    talentCode: 'EXT-SELF-001',
+                    displayName: 'External Guest',
+                    performanceAlias: 'Guest Alias',
+                    origin: 'EXTERNAL',
+                  },
+                ],
+              },
+            ],
+          },
+        });
+      }),
+      http.get('*/admin/talent-groups*', () => {
+        adminTalentGroupCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+      http.get('*/admin/talents*', () => {
+        adminTalentCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByTestId('self-service-nav-talentGroups')).toHaveTextContent(
+      'Available',
+    );
+    expect(await screen.findByRole('heading', { name: 'My Talent Groups' })).toBeInTheDocument();
+    expect(await screen.findByText('Creator Team')).toBeInTheDocument();
+    expect(await screen.findByText('TG-SELF-001')).toBeInTheDocument();
+    expect(await screen.findByText('Mai Manager')).toBeInTheDocument();
+    expect(await screen.findByText('EP-MGR-001')).toBeInTheDocument();
+    expect(await screen.findByText('External Guest')).toBeInTheDocument();
+    expect(screen.getAllByTestId('self-service-talent-group-card')).toHaveLength(1);
+    expect(screen.getAllByTestId('self-service-talent-group-member')).toHaveLength(2);
+    expect(document.body.textContent ?? '').toContain('Guest Alias');
+
+    await waitFor(() => {
+      expect(selfServiceTalentGroupCalls).toBe(1);
+      expect(adminTalentGroupCalls).toBe(0);
+      expect(adminTalentCalls).toBe(0);
+    });
+
+    const bodyText = document.body.textContent ?? '';
+    for (const forbidden of [
+      'group-001',
+      'talent-self',
+      'managerEmploymentProfileId',
+      'assignmentId',
+      'effectiveFrom',
+      'effectiveTo',
+      'legalName',
+      'linkedUserId',
+      'auth0|',
+      'subject',
+      'role',
+      'scopeGrants',
+      'KPI progress',
+      'WorkShift',
+      'Event roster',
+      'platform',
+      'finance',
+      'commercial',
+    ]) {
+      expect(bodyText).not.toContain(forbidden);
+    }
+
+    expect(
+      screen.queryByRole('button', {
+        name: /join|leave|edit|assign|revoke|member|manager|contact|details/i,
+      }),
+    ).toBeNull();
+  });
+
   it('renders My KPI empty, loading, and error states safely', async () => {
     await renderRoute('/self-service', () => setMockSelfServiceKpi([]));
 
@@ -445,6 +543,45 @@ describe('/self-service route', () => {
     await renderRoute('/self-service');
     expect(await screen.findByText('KPI unavailable')).toBeInTheDocument();
     expect(await screen.findByText('Your official KPI could not be loaded.')).toBeInTheDocument();
+  });
+
+  it('renders My Talent Groups empty, loading, and error states safely', async () => {
+    await renderRoute('/self-service', () => setMockSelfServiceTalentGroups([]));
+
+    expect(await screen.findByText('No Talent Groups')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'No active Talent Group memberships are available for your linked internal Talent yet.',
+      ),
+    ).toBeInTheDocument();
+
+    let resolveTalentGroups: () => void = () => {};
+    const pendingTalentGroups = new Promise<void>((resolve) => {
+      resolveTalentGroups = resolve;
+    });
+    server.use(
+      http.get('*/self-service/talent-groups', async () => {
+        await pendingTalentGroups;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+    );
+
+    await renderRoute('/self-service');
+    expect(await screen.findByTestId('self-service-talent-groups-loading')).toBeInTheDocument();
+    resolveTalentGroups();
+    await waitFor(() => {
+      expect(screen.queryByTestId('self-service-talent-groups-loading')).not.toBeInTheDocument();
+    });
+
+    server.use(
+      http.get('*/self-service/talent-groups', () => {
+        return HttpResponse.json({ error: { code: 'TEST_ERROR' } }, { status: 500 });
+      }),
+    );
+
+    await renderRoute('/self-service');
+    expect(await screen.findByText('Talent Groups unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Your Talent Groups could not be loaded.')).toBeInTheDocument();
   });
 
   it('renders My Events empty, loading, and error states safely', async () => {
@@ -597,6 +734,53 @@ describe('/self-service route', () => {
     });
     expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
     expect(screen.getByText('Current timezone: Asia/Ho_Chi_Minh')).toBeInTheDocument();
+  });
+
+  it('switches Self-Service language through the safe locale preference flow only', async () => {
+    const user = userEvent.setup();
+    const patchBodies: unknown[] = [];
+    let adminUserCalls = 0;
+
+    server.use(
+      http.patch('*/self-service/account/preferences', async ({ request }) => {
+        const body = await request.json();
+        patchBodies.push(body);
+        return HttpResponse.json({
+          data: {
+            employmentProfileId: 'ep-self',
+            employeeCode: 'EP-SELF-001',
+            displayName: 'Mina Staff',
+            employmentStatus: 'ACTIVE',
+            accountEmail: 'mina.staff@example.test',
+            accountStatus: 'ACTIVE',
+            accountLinkStatus: 'LINKED',
+            linkedInternalTalent: {
+              talentId: 'talent-self',
+              talentCode: 'TAL-SELF-001',
+              displayName: 'Mina Staff',
+              performanceAlias: 'Creator Mina',
+            },
+            locale: 'zh',
+            timezone: 'Asia/Saigon',
+          },
+        });
+      }),
+      http.all('*/admin/users*', () => {
+        adminUserCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/self-service');
+
+    await user.selectOptions(await screen.findByTestId('self-service-language-switcher'), 'zh');
+
+    await waitFor(() => {
+      expect(patchBodies).toEqual([{ locale: 'zh' }]);
+      expect(adminUserCalls).toBe(0);
+      expect(screen.getByTestId('self-service-language-switcher')).toHaveValue('zh');
+    });
+    expect(await screen.findByRole('heading', { name: '自助服务' })).toBeInTheDocument();
   });
 
   it('shows a safe preferences validation error and does not expose forbidden mutation fields', async () => {

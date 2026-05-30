@@ -24,6 +24,10 @@
       "title": "我的活动",
       "summary": "只读查看直接分配给你的活动。"
     },
+    "talentGroups": {
+      "title": "我的 Talent 组",
+      "summary": "只读查看你的有效 Talent 组成员关系。"
+    },
     "account": {
       "title": "账号",
       "summary": "账号信息，可自助更新语言和时区偏好。"
@@ -39,6 +43,7 @@
     "accountEmail": "账号邮箱",
     "accountStatus": "账号状态",
     "accountLinkStatus": "账号关联状态",
+    "language": "语言",
     "locale": "语言",
     "timezone": "时区",
     "talentCode": "Talent 编号",
@@ -69,10 +74,15 @@
     "actual": "Own actual",
     "progress": "Progress"
   },
+  "talentGroupFields": {
+    "managers": "经理",
+    "members": "成员"
+  },
   "tables": {
     "kpi": "KPI",
     "workShifts": "我的班次",
-    "events": "我的活动"
+    "events": "我的活动",
+    "talentGroups": "我的 Talent 组"
   },
   "kpiStatus": {
     "OFFICIAL_PUBLISHED": "Official published"
@@ -127,7 +137,9 @@
     "workShiftsTitle": "暂无班次",
     "workShiftsMessage": "你的档案暂无可显示的正式班次。",
     "eventsTitle": "暂无活动",
-    "eventsMessage": "你的档案暂无直接分配的活动。"
+    "eventsMessage": "你的档案暂无直接分配的活动。",
+    "talentGroupsTitle": "暂无 Talent 组",
+    "talentGroupsMessage": "你的已关联内部 Talent 暂无有效 Talent 组成员关系。"
   },
   "employmentStatus": {
     "ACTIVE": "在职",
@@ -169,6 +181,13 @@
     "MANUAL": "手动",
     "ROSTER_GENERATED": "由排班生成"
   },
+  "talentGroupStatus": {
+    "ACTIVE": "有效"
+  },
+  "talentOrigin": {
+    "INTERNAL": "内部",
+    "EXTERNAL": "外部"
+  },
   "errors": {
     "kpiTitle": "KPI unavailable",
     "kpiMessage": "KPI jiazai shibai.",
@@ -179,6 +198,8 @@
     "workShiftsTitle": "无法载入班次",
     "workShiftsMessage": "无法载入你的班次。",
     "eventsTitle": "无法载入活动",
-    "eventsMessage": "无法载入你的活动。"
+    "eventsMessage": "无法载入你的活动。",
+    "talentGroupsTitle": "无法载入 Talent 组",
+    "talentGroupsMessage": "无法载入你的 Talent 组。"
   }
 }
