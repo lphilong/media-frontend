@@ -6,6 +6,4 @@ test-results
 
 # Guardrail and copied context docs are not Prettier-managed source.
 AGENTS.md
-docs/frontend-admin-integration-inventory-user-role.md
-docs/module-template-runtime-wiring.md
-docs/modules-landscape.current-repo-state.v1.md
+
