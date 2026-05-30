@@ -14,6 +14,7 @@ import {
   setMockSelfServiceCurrentPerson,
   setMockSelfServiceKpi,
   setMockSelfServiceTalentGroups,
+  setMockSelfServiceWorkShifts,
 } from '@test/msw/self-service-handlers';
 import { server } from '@test/msw/server';
 import { renderAppWithProviders } from '@test/render-app-route';
@@ -219,6 +220,60 @@ describe('/self-service route', () => {
     });
   });
 
+  it('preserves My Work Shifts cursor metadata and loads the next page', async () => {
+    const user = userEvent.setup();
+    const requestedCursors: Array<string | null> = [];
+
+    setMockSelfServiceWorkShifts([]);
+    server.use(
+      http.get('*/self-service/work-shifts', ({ request }) => {
+        const cursor = new URL(request.url).searchParams.get('cursor');
+        requestedCursors.push(cursor);
+
+        if (cursor === 'cursor-page-2') {
+          return HttpResponse.json({
+            data: [
+              {
+                workShiftId: 'shift-page-2',
+                title: 'Second page shift',
+                status: 'ACTIVE',
+                startsAt: Date.UTC(2026, 4, 28, 2, 0),
+                endsAt: Date.UTC(2026, 4, 28, 6, 0),
+                sourceType: 'MANUAL',
+              },
+            ],
+          });
+        }
+
+        return HttpResponse.json({
+          data: [
+            {
+              workShiftId: 'shift-page-1',
+              title: 'First page shift',
+              status: 'ACTIVE',
+              startsAt: Date.UTC(2026, 4, 26, 2, 0),
+              endsAt: Date.UTC(2026, 4, 26, 6, 0),
+              sourceType: 'ROSTER_GENERATED',
+            },
+          ],
+          meta: { nextCursor: 'cursor-page-2' },
+        });
+      }),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByText('First page shift')).toBeInTheDocument();
+    expect(screen.queryByText('Second page shift')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('Second page shift')).toBeInTheDocument();
+    expect(screen.getAllByTestId('self-service-work-shift-row')).toHaveLength(2);
+
+    await waitFor(() => {
+      expect(requestedCursors).toEqual([null, 'cursor-page-2']);
+    });
+  });
+
   it('does not render forbidden person, HR, Auth0, password setup, or role data', async () => {
     await renderRoute('/self-service');
 
@@ -267,6 +322,16 @@ describe('/self-service route', () => {
               ownAssignmentStatus: 'ACTIVE',
             },
           ],
+          meta: {
+            window: {
+              recentPastDays: 30,
+              upcomingDays: 90,
+              windowStartAt: Date.UTC(2026, 3, 26, 0, 0),
+              windowEndAt: Date.UTC(2026, 7, 24, 0, 0),
+            },
+            limit: 50,
+            truncated: false,
+          },
         });
       }),
       http.get('*/admin/events*', () => {
@@ -286,6 +351,9 @@ describe('/self-service route', () => {
     expect(await screen.findByRole('heading', { name: 'My Events' })).toBeInTheDocument();
     expect(await screen.findByText('EVT-SELF-TAL')).toBeInTheDocument();
     expect(await screen.findByText('Creator livestream event')).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Showing recent events from the previous 30 days/),
+    ).toBeInTheDocument();
     expect(await screen.findByText('Talent')).toBeInTheDocument();
     expect(screen.getAllByTestId('self-service-event-row')).toHaveLength(1);
     await waitFor(() => {
@@ -318,6 +386,65 @@ describe('/self-service route', () => {
         name: /create|edit|delete|assign|accept|decline|check[- ]?in|request|change|start|complete|cancel/i,
       }),
     ).toBeNull();
+  });
+
+  it('renders My Events truncation copy when the self-service events response is capped', async () => {
+    let adminEventCalls = 0;
+
+    server.use(
+      http.get('*/self-service/events', () =>
+        HttpResponse.json({
+          data: [
+            {
+              eventId: 'event-capped',
+              eventCode: 'EVT-CAPPED',
+              title: 'Capped visible event',
+              status: 'SCHEDULED',
+              startsAt: Date.UTC(2026, 4, 28, 2, 0),
+              endsAt: Date.UTC(2026, 4, 28, 4, 0),
+              ownAssignmentKind: 'EMPLOYMENT_PROFILE',
+              ownAssignmentStatus: 'ACTIVE',
+            },
+          ],
+          meta: {
+            window: {
+              recentPastDays: 30,
+              upcomingDays: 90,
+              windowStartAt: Date.UTC(2026, 3, 26, 0, 0),
+              windowEndAt: Date.UTC(2026, 7, 24, 0, 0),
+            },
+            limit: 1,
+            truncated: true,
+          },
+        }),
+      ),
+      http.get('*/admin/events*', () => {
+        adminEventCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByText('EVT-CAPPED')).toBeInTheDocument();
+    expect(await screen.findByText('Capped visible event')).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Showing recent events from the previous 30 days/),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        /Some events are not shown because the bounded Stage 1 list limit was reached\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getAllByTestId('self-service-event-row')).toHaveLength(1);
+    expect(
+      screen.queryByRole('button', {
+        name: /create|edit|delete|assign|accept|decline|check[- ]?in|request|change|start|complete|cancel/i,
+      }),
+    ).toBeNull();
+    await waitFor(() => {
+      expect(adminEventCalls).toBe(0);
+    });
   });
 
   it('renders read-only My KPI from the self-service endpoint only', async () => {
@@ -504,6 +631,52 @@ describe('/self-service route', () => {
         name: /join|leave|edit|assign|revoke|member|manager|contact|details/i,
       }),
     ).toBeNull();
+  });
+
+  it('renders Talent Group truncation copy from self-service metadata', async () => {
+    server.use(
+      http.get('*/self-service/talent-groups', () =>
+        HttpResponse.json({
+          data: {
+            items: [
+              {
+                talentGroupCode: 'TG-CAPPED',
+                name: 'Capped Team',
+                status: 'ACTIVE',
+                managers: Array.from({ length: 5 }, (_, index) => ({
+                  displayName: `Manager ${index + 1}`,
+                })),
+                members: Array.from({ length: 50 }, (_, index) => ({
+                  talentCode: `TAL-${index + 1}`,
+                  displayName: `Member ${index + 1}`,
+                  origin: 'INTERNAL',
+                })),
+                managersTruncated: true,
+                maxManagers: 5,
+                membersTruncated: true,
+                maxMembers: 50,
+              },
+            ],
+            meta: {
+              groupsTruncated: true,
+              maxGroups: 10,
+            },
+          },
+        }),
+      ),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(
+      await screen.findByText('Showing the first 10 active Talent Groups.'),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText('Showing the first 5 managers for this group.'),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText('Showing the first 50 members for this group.'),
+    ).toBeInTheDocument();
   });
 
   it('renders My KPI empty, loading, and error states safely', async () => {

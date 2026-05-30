@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   CalendarDays,
   ChartNoAxesColumnIncreasing,
+  ChevronDown,
   IdCard,
   KeyRound,
   LogOut,
@@ -20,6 +21,7 @@ import {
   SELF_SERVICE_TIMEZONE_OPTIONS,
   type SelfServiceAccountPreferencesPayload,
   type SelfServiceCurrentPerson,
+  type SelfServiceWorkShift,
   type SelfServiceKpiMetric,
   useSelfServiceCurrentPerson,
   useSelfServiceEvents,
@@ -382,16 +384,58 @@ export const SelfServicePage = (): JSX.Element => {
   const { logout } = useAuth();
   const currentPersonQuery = useSelfServiceCurrentPerson();
   const currentPerson = currentPersonQuery.data;
-  const workShiftsQuery = useSelfServiceWorkShifts(currentPersonQuery.isSuccess);
-  const workShifts = workShiftsQuery.data ?? [];
+  const [workShiftCursor, setWorkShiftCursor] = useState<string | undefined>(undefined);
+  const [workShiftPages, setWorkShiftPages] = useState<SelfServiceWorkShift[]>([]);
+  const [workShiftNextCursor, setWorkShiftNextCursor] = useState<string | undefined>(undefined);
+  const workShiftsQuery = useSelfServiceWorkShifts(currentPersonQuery.isSuccess, workShiftCursor);
+  const workShifts = workShiftPages;
+  const isLoadingMoreWorkShifts = workShiftCursor !== undefined && workShiftsQuery.isFetching;
   const kpiQuery = useSelfServiceKpi(currentPersonQuery.isSuccess);
-  const kpiItems = kpiQuery.data ?? [];
+  const kpiItems = kpiQuery.data?.items ?? [];
   const eventsQuery = useSelfServiceEvents(currentPersonQuery.isSuccess);
-  const events = eventsQuery.data ?? [];
+  const events = eventsQuery.data?.items ?? [];
+  const eventsMeta = eventsQuery.data?.meta;
   const talentGroupsQuery = useSelfServiceTalentGroups(currentPersonQuery.isSuccess);
-  const talentGroups = talentGroupsQuery.data ?? [];
+  const talentGroups = talentGroupsQuery.data?.items ?? [];
+  const talentGroupsMeta = talentGroupsQuery.data?.meta;
   const notAvailable = t('self-service:values.notAvailable');
   const currentPersonNotLinked = isCurrentPersonNotLinkedError(currentPersonQuery.error);
+
+  useEffect(() => {
+    if (!currentPersonQuery.isSuccess) {
+      setWorkShiftCursor(undefined);
+      setWorkShiftPages([]);
+      setWorkShiftNextCursor(undefined);
+    }
+  }, [currentPersonQuery.isSuccess]);
+
+  useEffect(() => {
+    const page = workShiftsQuery.data;
+
+    if (!page) {
+      return;
+    }
+
+    setWorkShiftPages((previous) => {
+      if (!workShiftCursor) {
+        return page.items;
+      }
+
+      const seen = new Set(previous.map((shift) => shift.workShiftId));
+      return [
+        ...previous,
+        ...page.items.filter((shift) => {
+          if (seen.has(shift.workShiftId)) {
+            return false;
+          }
+
+          seen.add(shift.workShiftId);
+          return true;
+        }),
+      ];
+    });
+    setWorkShiftNextCursor(page.meta?.nextCursor);
+  }, [workShiftCursor, workShiftsQuery.data]);
 
   return (
     <main className="min-h-screen bg-bg text-text" data-testid="self-service-shell">
@@ -687,6 +731,13 @@ export const SelfServicePage = (): JSX.Element => {
 
             {talentGroups.length > 0 ? (
               <div className="grid gap-3" data-testid="self-service-talent-groups-list">
+                {talentGroupsMeta?.groupsTruncated ? (
+                  <p className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+                    {t('self-service:talentGroups.groupsTruncated', {
+                      maxGroups: talentGroupsMeta.maxGroups,
+                    })}
+                  </p>
+                ) : null}
                 {talentGroups.map((group) => (
                   <article
                     key={group.talentGroupCode}
@@ -732,6 +783,13 @@ export const SelfServicePage = (): JSX.Element => {
                             {t('self-service:values.notAvailable')}
                           </p>
                         )}
+                        {group.managersTruncated ? (
+                          <p className="mt-2 text-xs text-muted">
+                            {t('self-service:talentGroups.managersTruncated', {
+                              maxManagers: group.maxManagers,
+                            })}
+                          </p>
+                        ) : null}
                       </div>
 
                       <div>
@@ -776,6 +834,13 @@ export const SelfServicePage = (): JSX.Element => {
                             {t('self-service:values.notAvailable')}
                           </p>
                         )}
+                        {group.membersTruncated ? (
+                          <p className="mt-2 text-xs text-muted">
+                            {t('self-service:talentGroups.membersTruncated', {
+                              maxMembers: group.maxMembers,
+                            })}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </article>
@@ -917,7 +982,9 @@ export const SelfServicePage = (): JSX.Element => {
               <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
             </div>
 
-            {workShiftsQuery.isLoading ? <LoadingState lines={4} /> : null}
+            {workShiftsQuery.isLoading && workShifts.length === 0 ? (
+              <LoadingState lines={4} />
+            ) : null}
 
             {workShiftsQuery.isError ? (
               <ErrorState
@@ -978,6 +1045,21 @@ export const SelfServicePage = (): JSX.Element => {
                     ))}
                   </tbody>
                 </table>
+                {workShiftNextCursor ? (
+                  <div className="mt-3 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setWorkShiftCursor(workShiftNextCursor)}
+                      disabled={isLoadingMoreWorkShifts}
+                      className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-bg disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                      {isLoadingMoreWorkShifts
+                        ? t('self-service:actions.loadingMore')
+                        : t('self-service:actions.loadMore')}
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </section>
@@ -1004,6 +1086,18 @@ export const SelfServicePage = (): JSX.Element => {
                 title={t('self-service:errors.eventsTitle')}
                 message={t('self-service:errors.eventsMessage')}
               />
+            ) : null}
+
+            {eventsMeta?.window ? (
+              <p className="mb-3 rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+                {t('self-service:events.windowCopy', {
+                  recentPastDays: eventsMeta.window.recentPastDays,
+                  upcomingDays: eventsMeta.window.upcomingDays,
+                  windowStartAt: formatBusinessTimestamp(eventsMeta.window.windowStartAt),
+                  windowEndAt: formatBusinessTimestamp(eventsMeta.window.windowEndAt),
+                })}
+                {eventsMeta.truncated ? ` ${t('self-service:events.truncatedCopy')}` : ''}
+              </p>
             ) : null}
 
             {!eventsQuery.isLoading && !eventsQuery.isError && events.length === 0 ? (

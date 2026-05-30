@@ -386,14 +386,26 @@ export const selfServiceHandlers = [
       data: selfServiceCurrentPerson,
     });
   }),
-  http.get('*/self-service/work-shifts', () => {
+  http.get('*/self-service/work-shifts', ({ request }) => {
+    const cursor = new URL(request.url).searchParams.get('cursor');
+
     return HttpResponse.json({
-      data: selfServiceWorkShifts,
+      data: cursor ? [] : selfServiceWorkShifts,
     });
   }),
   http.get('*/self-service/events', () => {
     return HttpResponse.json({
       data: selfServiceEvents,
+      meta: {
+        window: {
+          recentPastDays: 30,
+          upcomingDays: 90,
+          windowStartAt: Date.UTC(2026, 3, 26, 0, 0),
+          windowEndAt: Date.UTC(2026, 7, 24, 0, 0),
+        },
+        limit: 50,
+        truncated: false,
+      },
     });
   }),
   http.get('*/self-service/kpi', () => {
@@ -407,6 +419,10 @@ export const selfServiceHandlers = [
     return HttpResponse.json({
       data: {
         items: selfServiceTalentGroups,
+        meta: {
+          groupsTruncated: false,
+          maxGroups: 10,
+        },
       },
     });
   }),

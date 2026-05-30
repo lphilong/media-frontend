@@ -95,6 +95,11 @@ const selfServiceWorkShiftsResponseSchema = z
   .strict();
 
 export type SelfServiceWorkShift = z.infer<typeof selfServiceWorkShiftSchema>;
+export type SelfServiceListEnvelope<TItem, TMeta = Record<string, unknown>> = {
+  items: TItem[];
+  meta?: TMeta;
+};
+export type SelfServiceWorkShiftsMeta = z.infer<typeof selfServiceWorkShiftsResponseSchema>['meta'];
 
 const selfServiceEventSchema = z
   .object({
@@ -114,7 +119,17 @@ const selfServiceEventsResponseSchema = z
     data: z.array(selfServiceEventSchema),
     meta: z
       .object({
-        nextCursor: z.string().trim().min(1).optional(),
+        window: z
+          .object({
+            recentPastDays: z.number().int().nonnegative(),
+            upcomingDays: z.number().int().nonnegative(),
+            windowStartAt: z.number().int(),
+            windowEndAt: z.number().int(),
+          })
+          .strict()
+          .optional(),
+        limit: z.number().int().positive().optional(),
+        truncated: z.boolean().optional(),
       })
       .strict()
       .optional(),
@@ -122,6 +137,7 @@ const selfServiceEventsResponseSchema = z
   .strict();
 
 export type SelfServiceEvent = z.infer<typeof selfServiceEventSchema>;
+export type SelfServiceEventsMeta = z.infer<typeof selfServiceEventsResponseSchema>['meta'];
 
 const selfServiceKpiMetricSchema = z
   .object({
@@ -157,6 +173,7 @@ const selfServiceKpiResponseSchema = z
     data: z
       .object({
         items: z.array(selfServiceKpiItemSchema),
+        meta: z.record(z.string(), z.unknown()).optional(),
       })
       .strict(),
   })
@@ -164,6 +181,7 @@ const selfServiceKpiResponseSchema = z
 
 export type SelfServiceKpiItem = z.infer<typeof selfServiceKpiItemSchema>;
 export type SelfServiceKpiMetric = z.infer<typeof selfServiceKpiMetricSchema>;
+export type SelfServiceKpiMeta = z.infer<typeof selfServiceKpiResponseSchema>['data']['meta'];
 
 const selfServiceTalentGroupManagerSchema = z
   .object({
@@ -188,6 +206,10 @@ const selfServiceTalentGroupSchema = z
     status: z.literal('ACTIVE').optional(),
     managers: z.array(selfServiceTalentGroupManagerSchema),
     members: z.array(selfServiceTalentGroupMemberSchema),
+    managersTruncated: z.boolean().optional(),
+    maxManagers: z.number().int().positive().optional(),
+    membersTruncated: z.boolean().optional(),
+    maxMembers: z.number().int().positive().optional(),
   })
   .strict();
 
@@ -196,12 +218,22 @@ const selfServiceTalentGroupsResponseSchema = z
     data: z
       .object({
         items: z.array(selfServiceTalentGroupSchema),
+        meta: z
+          .object({
+            groupsTruncated: z.boolean().optional(),
+            maxGroups: z.number().int().positive().optional(),
+          })
+          .strict()
+          .optional(),
       })
       .strict(),
   })
   .strict();
 
 export type SelfServiceTalentGroup = z.infer<typeof selfServiceTalentGroupSchema>;
+export type SelfServiceTalentGroupsMeta = z.infer<
+  typeof selfServiceTalentGroupsResponseSchema
+>['data']['meta'];
 
 export const fetchSelfServiceCurrentPerson = async (): Promise<SelfServiceCurrentPerson> => {
   const response = await apiRequest<unknown>({
@@ -243,30 +275,37 @@ export const useUpdateSelfServiceAccountPreferences = () => {
   });
 };
 
-export const fetchSelfServiceWorkShifts = async (): Promise<SelfServiceWorkShift[]> => {
+export const fetchSelfServiceWorkShifts = async (
+  cursor?: string,
+): Promise<SelfServiceListEnvelope<SelfServiceWorkShift, SelfServiceWorkShiftsMeta>> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/self-service/work-shifts',
+    params: cursor ? { cursor } : undefined,
   });
+  const parsed = selfServiceWorkShiftsResponseSchema.parse(response);
 
-  return selfServiceWorkShiftsResponseSchema.parse(response).data;
+  return { items: parsed.data, meta: parsed.meta };
 };
 
-export const useSelfServiceWorkShifts = (enabled = true) =>
+export const useSelfServiceWorkShifts = (enabled = true, cursor?: string) =>
   useQuery({
-    queryKey: SELF_SERVICE_WORK_SHIFTS_QUERY_KEY,
-    queryFn: fetchSelfServiceWorkShifts,
+    queryKey: [...SELF_SERVICE_WORK_SHIFTS_QUERY_KEY, cursor ?? null],
+    queryFn: () => fetchSelfServiceWorkShifts(cursor),
     enabled,
     retry: false,
   });
 
-export const fetchSelfServiceEvents = async (): Promise<SelfServiceEvent[]> => {
+export const fetchSelfServiceEvents = async (): Promise<
+  SelfServiceListEnvelope<SelfServiceEvent, SelfServiceEventsMeta>
+> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/self-service/events',
   });
+  const parsed = selfServiceEventsResponseSchema.parse(response);
 
-  return selfServiceEventsResponseSchema.parse(response).data;
+  return { items: parsed.data, meta: parsed.meta };
 };
 
 export const useSelfServiceEvents = (enabled = true) =>
@@ -277,13 +316,16 @@ export const useSelfServiceEvents = (enabled = true) =>
     retry: false,
   });
 
-export const fetchSelfServiceKpi = async (): Promise<SelfServiceKpiItem[]> => {
+export const fetchSelfServiceKpi = async (): Promise<
+  SelfServiceListEnvelope<SelfServiceKpiItem, SelfServiceKpiMeta>
+> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/self-service/kpi',
   });
+  const parsed = selfServiceKpiResponseSchema.parse(response);
 
-  return selfServiceKpiResponseSchema.parse(response).data.items;
+  return { items: parsed.data.items, meta: parsed.data.meta };
 };
 
 export const useSelfServiceKpi = (enabled = true) =>
@@ -294,13 +336,16 @@ export const useSelfServiceKpi = (enabled = true) =>
     retry: false,
   });
 
-export const fetchSelfServiceTalentGroups = async (): Promise<SelfServiceTalentGroup[]> => {
+export const fetchSelfServiceTalentGroups = async (): Promise<
+  SelfServiceListEnvelope<SelfServiceTalentGroup, SelfServiceTalentGroupsMeta>
+> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/self-service/talent-groups',
   });
+  const parsed = selfServiceTalentGroupsResponseSchema.parse(response);
 
-  return selfServiceTalentGroupsResponseSchema.parse(response).data.items;
+  return { items: parsed.data.items, meta: parsed.data.meta };
 };
 
 export const useSelfServiceTalentGroups = (enabled = true) =>

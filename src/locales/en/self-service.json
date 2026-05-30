@@ -94,7 +94,18 @@
     "logout": "Log out",
     "savePreferences": "Save preferences",
     "saving": "Saving",
-    "resetPreferences": "Reset"
+    "resetPreferences": "Reset",
+    "loadMore": "Load more",
+    "loadingMore": "Loading more"
+  },
+  "events": {
+    "windowCopy": "Showing recent events from the previous {{recentPastDays}} days and upcoming events for the next {{upcomingDays}} days ({{windowStartAt}} to {{windowEndAt}}).",
+    "truncatedCopy": "Some events are not shown because the bounded Stage 1 list limit was reached."
+  },
+  "talentGroups": {
+    "groupsTruncated": "Showing the first {{maxGroups}} active Talent Groups.",
+    "managersTruncated": "Showing the first {{maxManagers}} managers for this group.",
+    "membersTruncated": "Showing the first {{maxMembers}} members for this group."
   },
   "account": {
     "preferencesTitle": "Account preferences",
