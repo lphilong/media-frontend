@@ -592,6 +592,14 @@ const staticReferenceLookups: Record<string, ReferenceLookupItem[]> = {
       status: 'ACTIVE',
       type: 'ROOM',
     },
+    {
+      id: 'studio-002',
+      label: 'Podcast Booth',
+      secondaryLabel: 'Hanoi',
+      code: 'SR-000002',
+      status: 'ACTIVE',
+      type: 'ROOM',
+    },
   ],
   events: [
     {

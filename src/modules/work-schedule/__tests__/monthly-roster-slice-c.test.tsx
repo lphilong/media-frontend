@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { http, HttpResponse } from 'msw';
-import { screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -383,9 +383,10 @@ describe('monthly roster slice C exception editor', () => {
 
     expect(await screen.findByText(t('copy.readOnly'))).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: t('actions.add') })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: t('actions.edit') })).toBeDisabled();
-    expect(screen.getByRole('button', { name: t('actions.remove') })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: t('actions.edit') })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: t('actions.remove') })).not.toBeInTheDocument();
 
+    cleanup();
     renderRoute('/work-schedule/rosters/roster-archived');
 
     expect(await screen.findByText(t('copy.readOnly'))).toBeInTheDocument();

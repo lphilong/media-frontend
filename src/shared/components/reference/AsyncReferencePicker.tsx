@@ -16,11 +16,18 @@ export type ReferenceOption = {
 
 type AsyncReferencePickerState = 'idle' | 'loading' | 'ready' | 'error';
 
+export type AsyncReferencePickerLoadContext = {
+  signal: AbortSignal;
+};
+
 export type AsyncReferencePickerProps = {
   pickerId: string;
   value?: string;
   onChange: (nextId?: string) => void;
-  loadOptions: (search: string) => Promise<ReferenceOption[]>;
+  loadOptions: (
+    search: string,
+    context?: AsyncReferencePickerLoadContext,
+  ) => Promise<ReferenceOption[]>;
   disabled?: boolean;
   exactOneId?: boolean;
   placeholder?: string;
@@ -31,7 +38,10 @@ export type AsyncReferencePickerProps = {
   disabledSlot?: ReactNode;
   onValidityChange?: (isValid: boolean) => void;
   onSelectedOptionChange?: (option: ReferenceOption | undefined) => void;
+  debounceMs?: number;
 };
+
+const DEFAULT_SEARCH_DEBOUNCE_MS = 250;
 
 const findSelectedOption = (
   value: string | undefined,
@@ -59,12 +69,17 @@ export const AsyncReferencePicker = ({
   disabledSlot,
   onValidityChange,
   onSelectedOptionChange,
+  debounceMs = DEFAULT_SEARCH_DEBOUNCE_MS,
 }: AsyncReferencePickerProps): JSX.Element => {
   const { t } = useTranslation(['common', 'errors']);
   const [search, setSearch] = useState('');
   const [state, setState] = useState<AsyncReferencePickerState>('idle');
   const [options, setOptions] = useState<ReferenceOption[]>([]);
   const requestIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+  const previousSearchRef = useRef<string | undefined>(undefined);
 
   const selected = useMemo(() => findSelectedOption(value, options), [options, value]);
 
@@ -76,39 +91,101 @@ export const AsyncReferencePicker = ({
     onSelectedOptionChange?.(selected);
   }, [onSelectedOptionChange, selected]);
 
+  const clearDebounceTimer = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  }, []);
+
+  const abortCurrentRequest = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+  }, []);
+
   const reload = useCallback(
     async (query: string): Promise<void> => {
+      clearDebounceTimer();
+      abortCurrentRequest();
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
       setState('loading');
 
       try {
-        const result = await loadOptions(query);
-        if (requestId !== requestIdRef.current) {
+        const result = await loadOptions(query, { signal: abortController.signal });
+        if (
+          abortController.signal.aborted ||
+          requestId !== requestIdRef.current ||
+          !mountedRef.current
+        ) {
           return;
         }
 
         setOptions(result);
         setState('ready');
       } catch {
-        if (requestId !== requestIdRef.current) {
+        if (
+          abortController.signal.aborted ||
+          requestId !== requestIdRef.current ||
+          !mountedRef.current
+        ) {
           return;
         }
 
         setState('error');
+      } finally {
+        if (abortControllerRef.current === abortController) {
+          abortControllerRef.current = null;
+        }
       }
     },
-    [loadOptions],
+    [abortCurrentRequest, clearDebounceTimer, loadOptions],
   );
 
   useEffect(() => {
     if (disabled) {
+      clearDebounceTimer();
+      abortCurrentRequest();
+      requestIdRef.current += 1;
       setState('idle');
       return;
     }
 
-    void reload(search);
-  }, [disabled, reload, search]);
+    clearDebounceTimer();
+    const previousSearch = previousSearchRef.current;
+    const searchChanged = previousSearch !== undefined && previousSearch !== search;
+    previousSearchRef.current = search;
+
+    if (!searchChanged) {
+      void reload(search);
+      return;
+    }
+
+    abortCurrentRequest();
+    requestIdRef.current += 1;
+    debounceTimerRef.current = setTimeout(
+      () => {
+        debounceTimerRef.current = null;
+        void reload(search);
+      },
+      Math.max(0, debounceMs),
+    );
+
+    return clearDebounceTimer;
+  }, [abortCurrentRequest, clearDebounceTimer, debounceMs, disabled, reload, search]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      requestIdRef.current += 1;
+      clearDebounceTimer();
+      abortCurrentRequest();
+    };
+  }, [abortCurrentRequest, clearDebounceTimer]);
 
   const showEmpty = state === 'ready' && options.length === 0;
   const selectedLabel = selected?.label ?? value;

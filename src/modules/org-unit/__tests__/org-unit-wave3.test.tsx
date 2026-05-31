@@ -124,9 +124,11 @@ describe('org unit wave 3 surfaces', () => {
       await screen.findByRole('heading', { name: i18n.t('org-unit:page.title') }),
     ).toBeInTheDocument();
     expect(
+      await screen.findByPlaceholderText(i18n.t('org-unit:filters.searchPlaceholder')),
+    ).toBeInTheDocument();
+    expect(
       screen.queryByPlaceholderText(i18n.t('org-unit:filters.parentOrgUnitIdPlaceholder')),
     ).not.toBeInTheDocument();
-    expect(screen.getByPlaceholderText(i18n.t('org-unit:filters.searchPlaceholder'))).toBeTruthy();
     expect(screen.getByRole('combobox', { name: i18n.t('org-unit:filters.status') })).toHaveValue(
       'ACTIVE',
     );
@@ -228,7 +230,7 @@ describe('org unit wave 3 surfaces', () => {
     expect(within(childRow).queryByText('ACTIVE')).not.toBeInTheDocument();
   });
 
-  it('adds permission-only capability reasons while local Org Unit status still wins', async () => {
+  it('keeps read access while mutation permissions and local Org Unit status gate actions', async () => {
     await setLocale(DEFAULT_LOCALE);
     server.use(
       http.get('*/admin/me/capabilities', () =>
@@ -239,7 +241,7 @@ describe('org unit wave 3 surfaces', () => {
             context: 'ADMIN',
             isActive: true,
             roles: ['role-admin'],
-            permissions: [],
+            permissions: ['orgUnit.read', 'orgUnit.manageLifecycle'],
             scopeGrants: {},
             generatedAt: '2026-05-20T00:00:00.000Z',
           },
@@ -249,25 +251,30 @@ describe('org unit wave 3 surfaces', () => {
 
     renderRoute('/org-units/ou-root');
 
-    const edit = await screen.findByRole('button', { name: i18n.t('org-unit:actions.edit') });
+    expect(await screen.findByText(i18n.t('org-unit:actionRail.title'))).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('org-unit:actions.edit') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('org-unit:actions.move') }),
+    ).not.toBeInTheDocument();
+
     const activate = screen.getByRole('button', { name: i18n.t('org-unit:actions.activate') });
     const deactivate = screen.getByRole('button', {
       name: i18n.t('org-unit:actions.deactivate'),
     });
 
-    await waitFor(() =>
-      expect(edit).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission')),
-    );
-    expect(edit).toBeDisabled();
-    expect(deactivate).toBeDisabled();
-    expect(deactivate).toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission'));
     expect(activate).toBeDisabled();
     expect(activate).not.toHaveAccessibleDescription(
       i18n.t('common:capabilities.missingPermission'),
     );
+    expect(deactivate).toBeEnabled();
+    expect(deactivate).not.toHaveAccessibleDescription(
+      i18n.t('common:capabilities.missingPermission'),
+    );
   });
 
-  it('does not hard-block Org Unit actions when capability fetch fails', async () => {
+  it('fails closed before rendering Org Unit actions when capability fetch fails', async () => {
     await setLocale(DEFAULT_LOCALE);
     server.use(
       http.get('*/admin/me/capabilities', () =>
@@ -277,9 +284,13 @@ describe('org unit wave 3 surfaces', () => {
 
     renderRoute('/org-units/ou-root');
 
-    const edit = await screen.findByRole('button', { name: i18n.t('org-unit:actions.edit') });
-    await waitFor(() => expect(edit).toBeEnabled());
-    expect(edit).not.toHaveAccessibleDescription(i18n.t('common:capabilities.missingPermission'));
+    expect(await screen.findByText('Không có quyền truy cập')).toBeInTheDocument();
+    expect(
+      screen.getByText('Backend đã từ chối quyền truy cập tài nguyên này.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('org-unit:actions.edit') }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders readable parent org unit refs on detail while links stay id-based', async () => {

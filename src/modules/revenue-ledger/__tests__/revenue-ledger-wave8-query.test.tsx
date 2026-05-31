@@ -150,7 +150,7 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('revenue-ledger:page.title') }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Reconciled from:')).toBeInTheDocument();
+    expect(await screen.findByText('Reconciled from:')).toBeInTheDocument();
     expect(screen.getByText('Reconciled until:')).toBeInTheDocument();
     expect(screen.getAllByText(/02:40 02-02-2026/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/20:26 28-05-2026/).length).toBeGreaterThan(0);
@@ -270,7 +270,7 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     expect(screen.queryByText('event-001')).not.toBeInTheDocument();
   });
 
-  it('shows capability scope reason for Revenue Ledger actions', async () => {
+  it('hides Revenue Ledger actions when capability scope is missing', async () => {
     server.use(
       http.get('*/admin/me/capabilities', () =>
         HttpResponse.json({
@@ -280,7 +280,11 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
             context: 'ADMIN',
             isActive: true,
             roles: ['role-admin'],
-            permissions: ['revenueLedger.update', 'revenueLedger.manageLifecycle'],
+            permissions: [
+              'revenueLedger.read',
+              'revenueLedger.update',
+              'revenueLedger.manageLifecycle',
+            ],
             scopeGrants: {},
             generatedAt: '2026-05-20T00:00:00.000Z',
           },
@@ -290,19 +294,17 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
 
     renderRoute('/revenue-entries/revenue-entry-001');
 
-    const editDraftCore = await screen.findByRole('button', {
-      name: i18n.t('revenue-ledger:actions.editDraftCore'),
-    });
-    const finalize = screen.getByRole('button', {
-      name: i18n.t('revenue-ledger:actions.finalize'),
-    });
-
-    expect(editDraftCore).toBeDisabled();
-    await waitFor(() =>
-      expect(editDraftCore).toHaveAccessibleDescription(i18n.t('common:capabilities.missingScope')),
-    );
-    expect(finalize).toBeDisabled();
-    expect(finalize).toHaveAccessibleDescription(i18n.t('common:capabilities.missingScope'));
+    expect(await screen.findByText('REV-202604-000001')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('revenue-ledger:actions.editDraftCore'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('revenue-ledger:actions.finalize'),
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('keeps invalid Revenue Ledger status reason ahead of capability reasons', async () => {
@@ -315,8 +317,14 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
             context: 'ADMIN',
             isActive: true,
             roles: ['role-admin'],
-            permissions: [],
-            scopeGrants: {},
+            permissions: [
+              'revenueLedger.read',
+              'revenueLedger.update',
+              'revenueLedger.manageLifecycle',
+            ],
+            scopeGrants: {
+              revenueLedger: ['global'],
+            },
             generatedAt: '2026-05-20T00:00:00.000Z',
           },
         }),

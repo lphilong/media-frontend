@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
@@ -18,6 +18,10 @@ import { setLocale } from '@shared/i18n/i18n';
 describe('AsyncReferencePicker', () => {
   beforeEach(async () => {
     await setLocale('en');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('supports async option loading and exact-one-id selection', async () => {
@@ -97,6 +101,181 @@ describe('AsyncReferencePicker', () => {
     await waitFor(() => {
       expect(screen.queryByText('Loading')).not.toBeInTheDocument();
     });
+  });
+
+  it('debounces rapid search input before loading options', async () => {
+    vi.useFakeTimers();
+    const loadOptions = vi.fn(async () => []);
+
+    render(
+      <AsyncReferencePicker
+        pickerId="talent"
+        onChange={vi.fn()}
+        loadOptions={loadOptions}
+        value={undefined}
+      />,
+    );
+
+    expect(loadOptions).toHaveBeenCalledTimes(1);
+    expect(loadOptions).toHaveBeenLastCalledWith('', {
+      signal: expect.any(AbortSignal),
+    });
+    loadOptions.mockClear();
+
+    const input = screen.getByLabelText('Search');
+    fireEvent.change(input, { target: { value: 'a' } });
+    fireEvent.change(input, { target: { value: 'ab' } });
+    fireEvent.change(input, { target: { value: 'abc' } });
+
+    act(() => {
+      vi.advanceTimersByTime(249);
+    });
+
+    expect(loadOptions).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(1);
+    });
+
+    expect(loadOptions).toHaveBeenCalledTimes(1);
+    expect(loadOptions).toHaveBeenLastCalledWith('abc', {
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it('rejects stale responses that resolve during the debounce window', async () => {
+    vi.useFakeTimers();
+    let resolveOld: (options: Array<{ id: string; label: string }>) => void = () => {};
+    let resolveNew: (options: Array<{ id: string; label: string }>) => void = () => {};
+    let oldSignal: AbortSignal | undefined;
+    let newSignal: AbortSignal | undefined;
+    const loadOptions = vi.fn(
+      (search: string, context?: { signal: AbortSignal }) =>
+        new Promise<Array<{ id: string; label: string }>>((resolve) => {
+          if (search === '') {
+            oldSignal = context?.signal;
+            resolveOld = resolve;
+            return;
+          }
+
+          newSignal = context?.signal;
+          resolveNew = resolve;
+        }),
+    );
+
+    render(
+      <AsyncReferencePicker
+        pickerId="talent"
+        onChange={vi.fn()}
+        loadOptions={loadOptions}
+        value={undefined}
+      />,
+    );
+
+    expect(loadOptions).toHaveBeenCalledTimes(1);
+    expect(oldSignal?.aborted).toBe(false);
+
+    fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'new' } });
+
+    expect(oldSignal?.aborted).toBe(true);
+
+    await act(async () => {
+      resolveOld([{ id: 'old', label: 'Old result' }]);
+    });
+
+    expect(screen.queryByText('Old result')).not.toBeInTheDocument();
+    expect(loadOptions).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      vi.advanceTimersByTime(250);
+    });
+
+    expect(loadOptions).toHaveBeenCalledTimes(2);
+    expect(loadOptions).toHaveBeenLastCalledWith('new', {
+      signal: expect.any(AbortSignal),
+    });
+    expect(newSignal?.aborted).toBe(false);
+
+    await act(async () => {
+      resolveNew([{ id: 'new', label: 'New result' }]);
+    });
+
+    expect(screen.getByText('New result')).toBeInTheDocument();
+    expect(screen.queryByText('Old result')).not.toBeInTheDocument();
+  });
+
+  it('keeps stale responses from overwriting newer options', async () => {
+    let resolveFirst: (options: Array<{ id: string; label: string }>) => void = () => {};
+    let resolveSecond: (options: Array<{ id: string; label: string }>) => void = () => {};
+    const loadOptions = vi.fn(
+      (search: string) =>
+        new Promise<Array<{ id: string; label: string }>>((resolve) => {
+          if (search === 'first') {
+            resolveFirst = resolve;
+            return;
+          }
+
+          if (search === 'second') {
+            resolveSecond = resolve;
+            return;
+          }
+
+          resolve([]);
+        }),
+    );
+
+    render(
+      <AsyncReferencePicker
+        pickerId="talent"
+        onChange={vi.fn()}
+        loadOptions={loadOptions}
+        value={undefined}
+        debounceMs={10_000}
+      />,
+    );
+
+    const input = screen.getByLabelText('Search');
+    fireEvent.change(input, { target: { value: 'first' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    fireEvent.change(input, { target: { value: 'second' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    await act(async () => {
+      resolveFirst([{ id: 'old', label: 'Old result' }]);
+    });
+
+    expect(screen.queryByText('Old result')).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolveSecond([{ id: 'new', label: 'New result' }]);
+    });
+
+    expect(await screen.findByText('New result')).toBeInTheDocument();
+    expect(screen.queryByText('Old result')).not.toBeInTheDocument();
+  });
+
+  it('aborts in-flight option loading on unmount', async () => {
+    vi.useFakeTimers();
+    let observedSignal: AbortSignal | undefined;
+    const loadOptions = vi.fn(
+      (_search: string, context?: { signal: AbortSignal }) =>
+        new Promise<Array<{ id: string; label: string }>>(() => {
+          observedSignal = context?.signal;
+        }),
+    );
+
+    const { unmount } = render(
+      <AsyncReferencePicker
+        pickerId="talent"
+        onChange={vi.fn()}
+        loadOptions={loadOptions}
+        value={undefined}
+      />,
+    );
+
+    expect(observedSignal?.aborted).toBe(false);
+    unmount();
+    expect(observedSignal?.aborted).toBe(true);
   });
 
   it('renders compact inline load errors with retry instead of the shared ErrorState card', async () => {
