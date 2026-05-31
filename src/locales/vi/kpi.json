@@ -35,8 +35,11 @@
     "subjectType": "Loại đối tượng",
     "subjectId": "ID đối tượng",
     "groupId": "Nhóm Talent",
+    "targetGroup": "Nhóm mục tiêu",
+    "talent": "Talent",
     "talentId": "Talent",
     "member": "Thành viên",
+    "managedMember": "Thành viên quản lý",
     "employmentProfileId": "ID ho so nhan su",
     "note": "Ghi chu",
     "approvalNote": "Ghi chu phe duyet",
@@ -47,6 +50,8 @@
     "targetValue": "Mục tiêu",
     "publishedAt": "Đã publish lúc",
     "finalizedAt": "Đã chốt lúc",
+    "planPublishedAt": "Thời điểm publish kế hoạch",
+    "planFinalizedAt": "Thời điểm chốt kế hoạch",
     "archivedAt": "Đã lưu trữ lúc",
     "actualDate": "Ngày thực đạt"
   },
@@ -55,7 +60,9 @@
     "searchPlaceholder": "Tìm mã hoặc tiêu đề kế hoạch",
     "allStatuses": "Tất cả trạng thái",
     "allSubjectTypes": "Tất cả loại đối tượng",
-    "allMetrics": "Tất cả chỉ số"
+    "allMetrics": "Tất cả chỉ số",
+    "subjectPlaceholder": "Tìm theo tên hoặc mã",
+    "managedMemberPlaceholder": "Tìm thành viên quản lý"
   },
   "subjectTypes": {
     "TALENT": "Talent",
@@ -120,7 +127,12 @@
     "percent": "Tiến độ",
     "memberBreakdown": "Chi tiết thành viên",
     "actualEntryCount": "Số thực đạt",
-    "missingEntryCount": "Số thiếu"
+    "missingEntryCount": "Số thiếu",
+    "officialPosture": "Trạng thái chính thức",
+    "publishedOnly": "Chỉ tính đã publish",
+    "elapsed": "Tiến độ tháng",
+    "actualSource": "Nguồn actual",
+    "publishedAllocationsOnly": "Chỉ phân bổ đã publish"
   },
   "actions": {
     "create": "Tạo KPI",
@@ -193,6 +205,10 @@
     "loadErrorMessage": "Không tải được dữ liệu KPI.",
     "capabilityUnavailable": "Khong xac minh duoc quyen KPI. Thu lai.",
     "emptyPlans": "Chưa có kế hoạch KPI.",
-    "emptyManagedGroups": "Chưa có kế hoạch KPI cho nhóm bạn quản lý."
+    "emptyManagedGroups": "Chưa có kế hoạch KPI cho nhóm bạn quản lý.",
+    "notFinalizedYet": "Chưa chốt",
+    "noManagedMembers": "Không có thành viên quản lý phù hợp cho kế hoạch này.",
+    "progressUnavailable": "Không có dữ liệu tiến độ cho kế hoạch hoặc người dùng này.",
+    "memberProgressEmpty": "Chưa có tiến độ thành viên đã publish."
   }
 }

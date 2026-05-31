@@ -1,7 +1,7 @@
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { appRoutes } from '@app/router/router';
@@ -13,10 +13,15 @@ import {
 } from '@modules/kpi/formatting/kpi-formatting';
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import {
+  approveKpiAllocation,
+  fetchKpiManagedMembers,
   fetchMyKpiProgress,
   parseKpiAllocationDraftPayloadForTest,
   parseKpiAllocationListResponseForTest,
   parseKpiPlanListResponseForTest,
+  publishKpiAllocation,
+  rejectKpiAllocation,
+  submitKpiAllocationDraft,
 } from '@modules/kpi/api/kpi.api';
 import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { setLocale } from '@shared/i18n/i18n';
@@ -28,8 +33,14 @@ const renderRoute = (path: string) => {
   return renderAppWithProviders(<RouterProvider router={router} />);
 };
 
+const lazyRouteContentWait = { timeout: 5_000 };
+
 const waitForKpiList = async () => {
-  await screen.findByRole('heading', { name: 'KPI plans' });
+  await screen.findByRole('heading', { name: 'KPI plans' }, lazyRouteContentWait);
+};
+
+const waitForPublishedKpiDetail = async () => {
+  await screen.findByRole('heading', { name: 'Published team KPI' }, lazyRouteContentWait);
 };
 
 const waitForEnabledButton = async (name: string): Promise<HTMLElement> => {
@@ -156,6 +167,9 @@ describe('KPI MVP UX', () => {
     await waitFor(() =>
       expect(urls.some((url) => new URL(url).pathname === '/admin/kpi/plans')).toBe(true),
     );
+    expect(screen.getByRole('tab', { name: 'KPI Management', selected: true })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'My Group KPI' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'My KPI' })).not.toBeInTheDocument();
   });
 
   it('sends backend search query from list search', async () => {
@@ -189,6 +203,12 @@ describe('KPI MVP UX', () => {
     expect(captured.searchParams.get('periodMonth')).toBe('2026-05');
     expect(captured.searchParams.get('metricCode')).toBe('REVENUE_VND');
     expect(captured.searchParams.get('subjectId')).toBe('group-001');
+  });
+
+  it('uses native month controls for monthly KPI cycles', async () => {
+    const { container } = renderRoute('/kpi?periodMonth=2026-05');
+    await waitForKpiList();
+    expect(container.querySelector('input[type="month"][value="2026-05"]')).toBeInTheDocument();
   });
 
   it('create plan form parses money display input to a numeric API value', async () => {
@@ -299,9 +319,17 @@ describe('KPI MVP UX', () => {
 
   it('hides draft edit controls for a published plan', async () => {
     renderRoute('/kpi/plans/kpi-plan-published');
-    await screen.findByText('Published team KPI');
+    await waitForPublishedKpiDetail();
     expect(screen.queryByRole('button', { name: 'Update draft' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Replace metrics' })).not.toBeInTheDocument();
+  });
+
+  it('shows explicit lifecycle copy when a published plan is not finalized yet', async () => {
+    renderRoute('/kpi/plans/kpi-plan-published');
+    await waitForPublishedKpiDetail();
+    expect(screen.getByText('Plan published at')).toBeInTheDocument();
+    expect(screen.getByText('Plan finalized at')).toBeInTheDocument();
+    expect(screen.getByText('Not finalized yet')).toBeInTheDocument();
   });
 
   it('TEAM_MANAGER sees allocation draft and submit controls disabled until KPI plan is published', async () => {
@@ -357,13 +385,90 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi/plans/kpi-plan-published-draft-allocation');
-    await screen.findByText('Published team KPI');
+    await waitForPublishedKpiDetail();
     await userEvent.click(await waitForEnabledButton('Save Allocation Draft'));
 
     await waitFor(() => expect(body).toBeDefined());
     const parsed = parseKpiAllocationDraftPayloadForTest(body);
     expect(parsed.allocations[0]).toHaveProperty('employmentProfileId');
     expect(parsed.allocations[0]).not.toHaveProperty('memberTalentId');
+  });
+
+  it('TEAM_MANAGER allocation picker uses the scoped managed-member endpoint', async () => {
+    let managedMemberLookupCalled = false;
+    let genericEmploymentProfileLookupCalled = false;
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.enterActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+    server.use(
+      http.get('*/admin/kpi/plans/kpi-plan-published-draft-allocation', () =>
+        HttpResponse.json({
+          data: makeDetailWithAllocation(
+            'kpi-plan-published-draft-allocation',
+            'PUBLISHED',
+            'DRAFT',
+          ),
+        }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-published-draft-allocation/progress', () =>
+        HttpResponse.json({ data: makeProgress('kpi-plan-published-draft-allocation', []) }),
+      ),
+      http.get('*/admin/kpi/plans/kpi-plan-published-draft-allocation/managed-members', () => {
+        managedMemberLookupCalled = true;
+        return HttpResponse.json({
+          data: [
+            {
+              employmentProfileId: 'employment-profile-001',
+              employeeCode: 'EMP-001',
+              displayName: 'Luna Park',
+              talentId: 'talent-luna',
+              talentCode: 'LUNA',
+              groupId: 'group-001',
+            },
+          ],
+        });
+      }),
+      http.get('*/admin/reference/employment-profiles', () => {
+        genericEmploymentProfileLookupCalled = true;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+    );
+
+    const { container } = renderRoute('/kpi/plans/kpi-plan-published-draft-allocation');
+    await waitForPublishedKpiDetail();
+    const picker = container.querySelector('[data-picker-id="kpi-managed-member-0"]');
+    expect(picker).not.toBeNull();
+    await userEvent.click(within(picker as HTMLElement).getByRole('button', { name: 'Search' }));
+
+    await waitFor(() => expect(managedMemberLookupCalled).toBe(true));
+    expect(genericEmploymentProfileLookupCalled).toBe(false);
+  });
+
+  it('managed-member API returns only safe picker fields', async () => {
+    const members = await fetchKpiManagedMembers('kpi-plan-published', {
+      search: 'Luna',
+      limit: 10,
+    });
+
+    expect(members).toEqual([
+      {
+        employmentProfileId: 'employment-profile-001',
+        employeeCode: 'EP-000001',
+        displayName: 'Luna Park',
+        talentId: 'talent-001',
+        talentCode: 'TAL-000001',
+        groupId: 'group-001',
+      },
+    ]);
+    expect(Object.keys(members[0]).sort()).toEqual([
+      'displayName',
+      'employeeCode',
+      'employmentProfileId',
+      'groupId',
+      'talentCode',
+      'talentId',
+    ]);
   });
 
   it('TEAM_MANAGER submits allocation draft on a published KPI plan', async () => {
@@ -401,7 +506,7 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi/plans/kpi-plan-published-submittable-allocation');
-    await screen.findByText('Published team KPI');
+    await waitForPublishedKpiDetail();
     await userEvent.click(await waitForEnabledButton('Submit Allocation'));
 
     await waitFor(() => expect(called).toBe(true));
@@ -430,7 +535,7 @@ describe('KPI MVP UX', () => {
     queueView.unmount();
 
     renderRoute('/kpi/plans/kpi-plan-approval');
-    await screen.findByText('Published team KPI');
+    await waitForPublishedKpiDetail();
     expect(await screen.findByRole('button', { name: 'Approve Allocation' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Reject Allocation' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Publish Allocation' })).toBeDisabled();
@@ -453,7 +558,7 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi/plans/kpi-plan-approved');
-    await screen.findByText('Published team KPI');
+    await waitForPublishedKpiDetail();
     expect(await screen.findByRole('button', { name: 'Publish Allocation' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Approve Allocation' })).toBeDisabled();
   });
@@ -541,7 +646,7 @@ describe('KPI MVP UX', () => {
 
   it('shows finalize confirmation and calls finalize API', async () => {
     renderRoute('/kpi/plans/kpi-plan-published');
-    await screen.findByText('Published team KPI');
+    await waitForPublishedKpiDetail();
     await userEvent.click(screen.getByRole('button', { name: 'Finalize' }));
     expect(await screen.findByTestId('confirm-dialog')).toHaveTextContent('payroll/reporting');
     await userEvent.click(screen.getByTestId('confirm-dialog-confirm'));
@@ -550,7 +655,7 @@ describe('KPI MVP UX', () => {
 
   it('shows archive confirmation and calls archive API', async () => {
     renderRoute('/kpi/plans/kpi-plan-published');
-    await screen.findByText('Published team KPI');
+    await waitForPublishedKpiDetail();
     await userEvent.click(screen.getByRole('button', { name: 'Archive' }));
     expect(await screen.findByTestId('confirm-dialog')).toHaveTextContent('Archive this KPI plan?');
     await userEvent.click(screen.getByTestId('confirm-dialog-confirm'));
@@ -662,16 +767,32 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText('125%')).toBeInTheDocument();
   });
 
-  it('self view does not show member rows', async () => {
+  it('does not expose My KPI as an admin KPI tab', async () => {
     renderRoute('/kpi');
-    await userEvent.click(await screen.findByRole('tab', { name: 'My KPI' }));
-    expect(screen.getByText(/does not show other member rows/i)).toBeInTheDocument();
+    await waitForKpiList();
+    expect(screen.queryByRole('tab', { name: 'My KPI' })).not.toBeInTheDocument();
   });
 
   it('self-progress API returns no member rows for talent self view', async () => {
     const progress = await fetchMyKpiProgress('kpi-plan-published');
     expect(progress.memberProgress).toEqual([]);
     expect(progress.groupTotals[0].progressPercent).toBe(125);
+  });
+
+  it('MSW rejects allocation publish when the allocation predecessor state is not approved', async () => {
+    await expect(publishKpiAllocation('kpi-plan-published')).rejects.toThrow();
+  });
+
+  it('MSW rejects allocation submit when the allocation predecessor state is not draft', async () => {
+    await expect(submitKpiAllocationDraft('kpi-plan-published')).rejects.toThrow();
+  });
+
+  it('MSW rejects allocation approve when the allocation predecessor state is not pending approval', async () => {
+    await expect(approveKpiAllocation('kpi-plan-published')).rejects.toThrow();
+  });
+
+  it('MSW rejects allocation reject when the allocation predecessor state is not pending approval', async () => {
+    await expect(rejectKpiAllocation('kpi-plan-published', 'Needs changes')).rejects.toThrow();
   });
 
   it('hides global KPI lifecycle action when global KPI scope is missing', async () => {

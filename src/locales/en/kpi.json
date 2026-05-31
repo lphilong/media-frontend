@@ -35,8 +35,11 @@
     "subjectType": "Subject type",
     "subjectId": "Subject ID",
     "groupId": "Talent group",
+    "targetGroup": "Target group",
+    "talent": "Talent",
     "talentId": "Talent",
     "member": "Member",
+    "managedMember": "Managed member",
     "employmentProfileId": "Employment profile ID",
     "note": "Note",
     "approvalNote": "Approval note",
@@ -47,6 +50,8 @@
     "targetValue": "Target",
     "publishedAt": "Published at",
     "finalizedAt": "Finalized at",
+    "planPublishedAt": "Plan published at",
+    "planFinalizedAt": "Plan finalized at",
     "archivedAt": "Archived at",
     "actualDate": "Actual date"
   },
@@ -55,7 +60,9 @@
     "searchPlaceholder": "Search plan code or title",
     "allStatuses": "All statuses",
     "allSubjectTypes": "All subject types",
-    "allMetrics": "All metrics"
+    "allMetrics": "All metrics",
+    "subjectPlaceholder": "Search by name or code",
+    "managedMemberPlaceholder": "Search managed members"
   },
   "subjectTypes": {
     "TALENT": "Talent",
@@ -120,7 +127,12 @@
     "percent": "Progress",
     "memberBreakdown": "Member breakdown",
     "actualEntryCount": "Actual entries",
-    "missingEntryCount": "Missing entries"
+    "missingEntryCount": "Missing entries",
+    "officialPosture": "Official posture",
+    "publishedOnly": "Published-only",
+    "elapsed": "Period elapsed",
+    "actualSource": "Actual source",
+    "publishedAllocationsOnly": "Published allocations only"
   },
   "actions": {
     "create": "Create KPI plan",
@@ -193,6 +205,10 @@
     "loadErrorMessage": "Unable to load KPI data.",
     "capabilityUnavailable": "KPI permissions could not be verified. Try again.",
     "emptyPlans": "No KPI plans yet.",
-    "emptyManagedGroups": "No KPI plans for your managed groups yet."
+    "emptyManagedGroups": "No KPI plans for your managed groups yet.",
+    "notFinalizedYet": "Not finalized yet",
+    "noManagedMembers": "No managed members are available for this plan.",
+    "progressUnavailable": "Progress is unavailable for this plan or actor.",
+    "memberProgressEmpty": "No published member progress is available yet."
   }
 }

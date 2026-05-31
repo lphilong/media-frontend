@@ -68,6 +68,15 @@ type KpiAllocation = {
   closedAt: number | null;
 };
 
+type ManagedMember = {
+  employmentProfileId: string;
+  employeeCode: string | null;
+  displayName: string;
+  talentId: string;
+  talentCode: string | null;
+  groupId: string;
+};
+
 type KpiPlan = {
   id: string;
   planCode: string;
@@ -153,6 +162,25 @@ const allowedListQueryKeys = [
   'sortDirection',
 ] as const;
 const allowedAllocationListQueryKeys = ['status', 'kpiPlanId', 'groupId', 'limit'] as const;
+const allowedManagedMemberQueryKeys = ['search', 'limit'] as const;
+const managedMembers: ManagedMember[] = [
+  {
+    employmentProfileId: 'employment-profile-001',
+    employeeCode: 'EP-000001',
+    displayName: 'Luna Park',
+    talentId: 'talent-001',
+    talentCode: 'TAL-000001',
+    groupId: 'group-001',
+  },
+  {
+    employmentProfileId: 'employment-profile-002',
+    employeeCode: 'EP-000002',
+    displayName: 'Minh Tran',
+    talentId: 'talent-002',
+    talentCode: 'TAL-000002',
+    groupId: 'group-001',
+  },
+];
 
 const basePlan = (overrides: Partial<KpiPlan>): KpiPlan => ({
   id: 'kpi-plan-draft',
@@ -428,6 +456,23 @@ const parseJsonBody = async (request: Request): Promise<Record<string, unknown>>
 };
 
 const readPlan = (id: string) => plans.find((plan) => plan.id === id);
+
+const requireAllocationStatus = (
+  plan: KpiPlan,
+  expectedStatus: KpiAllocation['allocationStatus'],
+) => {
+  const rows = allocations[plan.id] ?? [];
+  if (
+    rows.length === 0 ||
+    rows.some((allocation) => allocation.allocationStatus !== expectedStatus)
+  ) {
+    return HttpResponse.json(
+      { message: `KPI allocation requires status ${expectedStatus}` },
+      { status: 409 },
+    );
+  }
+  return undefined;
+};
 
 const toDetail = (plan: KpiPlan) => ({
   ...plan,
@@ -764,6 +809,32 @@ export const kpiHandlers = [
       },
     });
   }),
+  http.get('*/admin/kpi/plans/:kpiPlanId/managed-members', ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.status !== 'PUBLISHED' || plan.subjectType !== 'TALENT_GROUP') {
+      return HttpResponse.json(
+        { message: 'KPI allocation draft requires a PUBLISHED group KPI plan' },
+        { status: 409 },
+      );
+    }
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, allowedManagedMemberQueryKeys);
+    if (unsupported) return unsupported;
+    const search = url.searchParams.get('search')?.toLowerCase();
+    const limit = Number(url.searchParams.get('limit') ?? 20);
+    const rows = managedMembers
+      .filter((item) => item.groupId === plan.subjectId)
+      .filter((item) =>
+        search
+          ? `${item.displayName} ${item.employeeCode ?? ''} ${item.talentCode ?? ''}`
+              .toLowerCase()
+              .includes(search)
+          : true,
+      )
+      .slice(0, Number.isFinite(limit) ? limit : 20);
+    return HttpResponse.json({ data: rows });
+  }),
   http.get('*/admin/kpi/plans/:kpiPlanId/actuals', ({ params, request }) => {
     const plan = readPlan(String(params.kpiPlanId));
     if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
@@ -782,6 +853,8 @@ export const kpiHandlers = [
         { status: 409 },
       );
     }
+    const currentStatusError = requireAllocationStatus(plan, 'DRAFT');
+    if (currentStatusError) return currentStatusError;
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['allocations']);
     if (unsupported) return unsupported;
@@ -846,6 +919,8 @@ export const kpiHandlers = [
         { status: 409 },
       );
     }
+    const currentStatusError = requireAllocationStatus(plan, 'DRAFT');
+    if (currentStatusError) return currentStatusError;
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, []);
     if (unsupported) return unsupported;
@@ -864,6 +939,8 @@ export const kpiHandlers = [
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['approvalNote']);
     if (unsupported) return unsupported;
+    const currentStatusError = requireAllocationStatus(plan, 'PENDING_APPROVAL');
+    if (currentStatusError) return currentStatusError;
     (allocations[plan.id] ?? []).forEach((allocation) => {
       allocation.allocationStatus = 'APPROVED';
       allocation.approvedAt = now;
@@ -883,6 +960,8 @@ export const kpiHandlers = [
     if (!String(body.rejectionReason ?? '').trim()) {
       return HttpResponse.json({ message: 'Reason required' }, { status: 422 });
     }
+    const currentStatusError = requireAllocationStatus(plan, 'PENDING_APPROVAL');
+    if (currentStatusError) return currentStatusError;
     (allocations[plan.id] ?? []).forEach((allocation) => {
       allocation.allocationStatus = 'REJECTED';
       allocation.rejectedAt = now;
@@ -899,6 +978,8 @@ export const kpiHandlers = [
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, []);
     if (unsupported) return unsupported;
+    const currentStatusError = requireAllocationStatus(plan, 'APPROVED');
+    if (currentStatusError) return currentStatusError;
     (allocations[plan.id] ?? []).forEach((allocation) => {
       allocation.allocationStatus = 'PUBLISHED';
       allocation.publishedAt = now;

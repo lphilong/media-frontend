@@ -10,6 +10,7 @@ import type {
   KpiAllocationQuery,
   KpiCreatePlanPayload,
   KpiDraftCorePayload,
+  KpiManagedMemberPickerItem,
   KpiPlanDetail,
   KpiPlanListItem,
   KpiPlanQuery,
@@ -65,8 +66,16 @@ const allocationInputSchema = z
   .object({
     memberTalentId: z.string().trim().min(1),
     membershipId: z.string().trim().min(1).nullable().optional(),
-    allocationStartDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/),
-    allocationEndDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/).nullable().optional(),
+    allocationStartDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/),
+    allocationEndDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/)
+      .nullable()
+      .optional(),
     targetMetrics: z.array(targetMetricInputSchema),
     snapshotMemberDisplayName: z.string().trim().min(1).nullable().optional(),
   })
@@ -75,8 +84,16 @@ const allocationInputSchema = z
 const allocationDraftMemberInputSchema = z
   .object({
     employmentProfileId: z.string().trim().min(1),
-    allocationStartDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/),
-    allocationEndDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/).nullable().optional(),
+    allocationStartDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/),
+    allocationEndDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/)
+      .nullable()
+      .optional(),
     targetMetrics: z.array(targetMetricInputSchema).min(1),
     note: z.string().trim().min(1).nullable().optional(),
   })
@@ -139,7 +156,10 @@ const planBaseSchema = z
     subjectRef: referenceSummarySchema.nullable().optional(),
     status: statusSchema,
     currencyCode: z.literal('VND'),
-    periodMonth: z.string().trim().regex(/^\d{4}-\d{2}$/),
+    periodMonth: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}$/),
     periodStartAt: timestampSchema,
     periodEndAt: timestampSchema,
     timezone: z.string().trim().min(1),
@@ -189,7 +209,10 @@ const actualGridSchema = z
     status: statusSchema,
     subjectType: subjectTypeSchema,
     subjectId: z.string().trim().min(1),
-    actualDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/),
+    actualDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/),
     policy: z
       .object({
         timezone: z.literal('Asia/Ho_Chi_Minh'),
@@ -236,7 +259,10 @@ const actualEntrySchema = z
     allocationId: z.string().trim().min(1),
     memberTalentId: z.string().trim().min(1),
     metricCode: metricCodeSchema,
-    actualDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/),
+    actualDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/),
     actualValue: z.number(),
     effectiveValue: z.number(),
     editCount: z.number().int(),
@@ -259,7 +285,10 @@ const correctionSchema = z
     allocationId: z.string().trim().min(1),
     memberTalentId: z.string().trim().min(1),
     metricCode: metricCodeSchema,
-    actualDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/),
+    actualDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/),
     previousValue: z.number(),
     correctedValue: z.number(),
     reason: z.string().trim().min(1),
@@ -311,6 +340,17 @@ const progressSchema = z
   })
   .strict();
 
+const managedMemberSchema = z
+  .object({
+    employmentProfileId: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1).nullable(),
+    displayName: z.string().trim().min(1),
+    talentId: z.string().trim().min(1),
+    talentCode: z.string().trim().min(1).nullable(),
+    groupId: z.string().trim().min(1),
+  })
+  .strict();
+
 const listResponseSchema = z.object({ data: z.array(planBaseSchema) }).strict();
 const detailResponseSchema = z.object({ data: planDetailSchema }).strict();
 const allocationListResponseSchema = z.object({ data: z.array(allocationSchema) }).strict();
@@ -328,6 +368,7 @@ const correctionMutationResponseSchema = z
   .strict();
 const correctionListResponseSchema = z.object({ data: z.array(correctionSchema) }).strict();
 const progressResponseSchema = z.object({ data: progressSchema }).strict();
+const managedMemberListResponseSchema = z.object({ data: z.array(managedMemberSchema) }).strict();
 
 const createPayloadSchema = z
   .object({
@@ -336,7 +377,10 @@ const createPayloadSchema = z
     subjectType: executableSubjectTypeSchema,
     subjectId: z.string().trim().min(1),
     currencyCode: z.literal('VND').optional(),
-    periodMonth: z.string().trim().regex(/^\d{4}-\d{2}$/),
+    periodMonth: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}$/),
     periodStartAt: z.number(),
     periodEndAt: z.number(),
     timezone: z.string().trim().min(1).optional(),
@@ -433,9 +477,12 @@ export const replaceKpiTargetMetrics = async (
   const response = await apiRequest<unknown, { targetMetrics: KpiTargetMetricInput[] }>({
     method: 'PUT',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/target-metrics`,
-    data: z.object({ targetMetrics: z.array(targetMetricInputSchema) }).strict().parse({
-      targetMetrics,
-    }),
+    data: z
+      .object({ targetMetrics: z.array(targetMetricInputSchema) })
+      .strict()
+      .parse({
+        targetMetrics,
+      }),
   });
   return detailResponseSchema.parse(response).data;
 };
@@ -447,7 +494,10 @@ export const replaceKpiAllocations = async (
   const response = await apiRequest<unknown, { allocations: KpiAllocationInput[] }>({
     method: 'PUT',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocations`,
-    data: z.object({ allocations: z.array(allocationInputSchema) }).strict().parse({ allocations }),
+    data: z
+      .object({ allocations: z.array(allocationInputSchema) })
+      .strict()
+      .parse({ allocations }),
   });
   return detailResponseSchema.parse(response).data;
 };
@@ -546,6 +596,21 @@ export const fetchKpiProgress = async (kpiPlanId: string): Promise<KpiProgressVi
   return progressResponseSchema.parse(response).data;
 };
 
+export const fetchKpiManagedMembers = async (
+  kpiPlanId: string,
+  query: { search?: string; limit?: number } = {},
+): Promise<KpiManagedMemberPickerItem[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/managed-members`,
+    params: {
+      search: query.search || undefined,
+      limit: query.limit,
+    },
+  });
+  return managedMemberListResponseSchema.parse(response).data;
+};
+
 export const fetchMyKpiProgress = async (planId: string): Promise<KpiProgressView> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
@@ -587,7 +652,10 @@ export const createKpiActual = async (payload: {
       .object({
         allocationId: z.string().trim().min(1),
         metricCode: metricCodeSchema,
-        actualDate: z.string().trim().regex(/^\d{2}-\d{2}-\d{4}$/),
+        actualDate: z
+          .string()
+          .trim()
+          .regex(/^\d{2}-\d{2}-\d{4}$/),
         actualValue: z.number(),
       })
       .strict()
@@ -654,7 +722,10 @@ export const parseKpiPlanListResponseForTest = (response: unknown): KpiPlanListI
 export const parseKpiAllocationDraftPayloadForTest = (
   payload: unknown,
 ): { allocations: KpiAllocationDraftMemberInput[] } =>
-  z.object({ allocations: z.array(allocationDraftMemberInputSchema).min(1) }).strict().parse(payload);
+  z
+    .object({ allocations: z.array(allocationDraftMemberInputSchema).min(1) })
+    .strict()
+    .parse(payload);
 
 export const parseKpiAllocationListResponseForTest = (response: unknown): KpiAllocation[] =>
   allocationListResponseSchema.parse(response).data;

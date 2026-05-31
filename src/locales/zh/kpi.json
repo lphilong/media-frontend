@@ -35,8 +35,11 @@
     "subjectType": "对象类型",
     "subjectId": "对象 ID",
     "groupId": "Talent 组",
+    "targetGroup": "目标小组",
+    "talent": "Talent",
     "talentId": "Talent",
     "member": "成员",
+    "managedMember": "管理成员",
     "employmentProfileId": "Employment profile ID",
     "note": "Note",
     "approvalNote": "Approval note",
@@ -47,6 +50,8 @@
     "targetValue": "目标",
     "publishedAt": "发布时间",
     "finalizedAt": "已终结时间",
+    "planPublishedAt": "计划发布时间",
+    "planFinalizedAt": "计划终结时间",
     "archivedAt": "归档时间",
     "actualDate": "Actual 日期"
   },
@@ -55,7 +60,9 @@
     "searchPlaceholder": "搜索计划编码或标题",
     "allStatuses": "全部状态",
     "allSubjectTypes": "全部对象类型",
-    "allMetrics": "全部指标"
+    "allMetrics": "全部指标",
+    "subjectPlaceholder": "按名称或代码搜索",
+    "managedMemberPlaceholder": "搜索管理成员"
   },
   "subjectTypes": {
     "TALENT": "Talent",
@@ -120,7 +127,12 @@
     "percent": "进度",
     "memberBreakdown": "成员明细",
     "actualEntryCount": "Actual 数",
-    "missingEntryCount": "缺失数"
+    "missingEntryCount": "缺失数",
+    "officialPosture": "官方口径",
+    "publishedOnly": "仅已发布",
+    "elapsed": "周期进度",
+    "actualSource": "Actual 来源",
+    "publishedAllocationsOnly": "仅已发布分配"
   },
   "actions": {
     "create": "创建 KPI",
@@ -193,6 +205,10 @@
     "loadErrorMessage": "无法加载 KPI 数据。",
     "capabilityUnavailable": "KPI permissions could not be verified. Try again.",
     "emptyPlans": "暂无 KPI 计划。",
-    "emptyManagedGroups": "你管理的团队暂无 KPI 计划。"
+    "emptyManagedGroups": "你管理的团队暂无 KPI 计划。",
+    "notFinalizedYet": "尚未终结",
+    "noManagedMembers": "此计划没有可选的管理成员。",
+    "progressUnavailable": "此计划或当前用户无法查看进度。",
+    "memberProgressEmpty": "暂无已发布成员进度。"
   }
 }

@@ -42,6 +42,11 @@ import {
   hasScopeGrant,
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
+import { ReferenceFilterField } from '@shared/components/reference';
+import {
+  loadTalentGroupReferenceOptions,
+  loadTalentReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 
 type TargetDraft = {
   metricCode: KpiMetricCode;
@@ -94,8 +99,8 @@ const toMonthBounds = (periodMonth: string): { start: number; end: number } | un
     return undefined;
   }
   return {
-    start: Date.UTC(year, month - 1, 1),
-    end: Date.UTC(year, month, 1) - 1,
+    start: Date.UTC(year, month - 1, 1, -7, 0, 0, 0),
+    end: Date.UTC(year, month, 1, -7, 0, 0, 0) - 1,
   };
 };
 
@@ -203,15 +208,24 @@ export const KpiListPage = (): JSX.Element => {
   const hasGlobalKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'global');
   const hasManagedGroupKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'managedGroup');
   const isManagedGroupOnlyKpiView = !hasGlobalKpiScope && hasManagedGroupKpiScope;
+  const visibleTabs = useMemo(
+    () =>
+      [
+        hasGlobalKpiScope ? 'management' : undefined,
+        hasManagedGroupKpiScope ? 'group' : undefined,
+      ].filter((tab): tab is 'management' | 'group' => Boolean(tab)),
+    [hasGlobalKpiScope, hasManagedGroupKpiScope],
+  );
   const canShowCreatePlan = createPlanHint.allowed;
   const canShowActualEntrySurface = enterActualHint.allowed || correctActualHint.allowed;
-  const canShowAllocationApprovalQueue = approveAllocationHint.allowed || publishAllocationHint.allowed;
+  const canShowAllocationApprovalQueue =
+    approveAllocationHint.allowed || publishAllocationHint.allowed;
 
   useEffect(() => {
-    if (isManagedGroupOnlyKpiView && activeTab === 'management') {
-      setActiveTab('group');
+    if (visibleTabs.length > 0 && !visibleTabs.includes(activeTab as 'management' | 'group')) {
+      setActiveTab(visibleTabs[0]);
     }
-  }, [activeTab, isManagedGroupOnlyKpiView]);
+  }, [activeTab, visibleTabs]);
 
   const patchQuery = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -398,7 +412,7 @@ export const KpiListPage = (): JSX.Element => {
     <PageContainer className="space-y-4">
       <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
         <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('kpi:tabs.label')}>
-          {(['management', 'group', 'my'] as const).map((tab) => (
+          {visibleTabs.map((tab) => (
             <button
               key={tab}
               type="button"
@@ -462,6 +476,7 @@ export const KpiListPage = (): JSX.Element => {
               {t('kpi:fields.periodMonth')}
             </span>
             <input
+              type="month"
               value={query.periodMonth ?? ''}
               className="rounded border border-border bg-panel px-2 py-1.5"
               placeholder="2026-05"
@@ -485,16 +500,26 @@ export const KpiListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          <label className="flex min-w-[180px] flex-col gap-1 text-sm">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('kpi:fields.subjectId')}
-            </span>
-            <input
-              value={query.subjectId ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5"
-              onChange={(event) => patchQuery({ subjectId: event.target.value || undefined })}
+          {query.subjectType === 'TALENT' || query.subjectType === 'TALENT_GROUP' ? (
+            <ReferenceFilterField
+              label={
+                query.subjectType === 'TALENT_GROUP'
+                  ? t('kpi:fields.targetGroup')
+                  : t('kpi:fields.talent')
+              }
+              pickerId="kpi-filter-subject"
+              value={query.subjectId}
+              loadOptions={
+                query.subjectType === 'TALENT'
+                  ? loadTalentReferenceOptions
+                  : loadTalentGroupReferenceOptions
+              }
+              onChange={(nextId) => patchQuery({ subjectId: nextId })}
+              placeholder={t('kpi:filters.subjectPlaceholder')}
+              clearLabel={t('common:actions.clear')}
+              className="min-w-[260px]"
             />
-          </label>
+          ) : null}
           {canShowCreatePlan ? (
             <button
               type="button"
@@ -515,12 +540,6 @@ export const KpiListPage = (): JSX.Element => {
           <p className="text-sm text-danger">{createPlanHint.disabledReason}</p>
         ) : null}
       </section>
-
-      {activeTab === 'my' ? (
-        <section className="rounded border border-border bg-panel p-4 text-sm text-text">
-          {t('kpi:tabs.myClosed')}
-        </section>
-      ) : null}
 
       {canShowCreatePlan && isCreateOpen ? (
         <section className="space-y-4 rounded-lg border border-border bg-panel p-4 shadow-shell">
@@ -547,13 +566,26 @@ export const KpiListPage = (): JSX.Element => {
             <label className="flex flex-col gap-1 text-sm">
               <span>
                 {subjectType === 'TALENT_GROUP'
-                  ? t('kpi:fields.groupId')
-                  : t('kpi:fields.talentId')}
+                  ? t('kpi:fields.targetGroup')
+                  : t('kpi:fields.talent')}
               </span>
-              <input
+              <ReferenceFilterField
+                label={
+                  subjectType === 'TALENT_GROUP'
+                    ? t('kpi:fields.targetGroup')
+                    : t('kpi:fields.talent')
+                }
+                pickerId="kpi-create-subject"
                 value={subjectId}
-                className="rounded border border-border bg-panel px-2 py-1.5"
-                onChange={(event) => setSubjectId(event.target.value)}
+                loadOptions={
+                  subjectType === 'TALENT'
+                    ? loadTalentReferenceOptions
+                    : loadTalentGroupReferenceOptions
+                }
+                onChange={(nextId) => setSubjectId(nextId ?? '')}
+                placeholder={t('kpi:filters.subjectPlaceholder')}
+                clearLabel={t('common:actions.clear')}
+                className=""
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -567,6 +599,7 @@ export const KpiListPage = (): JSX.Element => {
             <label className="flex flex-col gap-1 text-sm">
               <span>{t('kpi:fields.periodMonth')}</span>
               <input
+                type="month"
                 value={periodMonth}
                 className="rounded border border-border bg-panel px-2 py-1.5"
                 onChange={(event) => setPeriodMonth(event.target.value)}
@@ -658,7 +691,30 @@ export const KpiListPage = (): JSX.Element => {
                   <tbody>
                     {allocations.map((allocation, allocationIndex) => (
                       <tr key={allocation.memberTalentId} className="border-t border-border">
-                        <td className="px-3 py-2">{allocation.memberName}</td>
+                        <td className="min-w-[260px] px-3 py-2">
+                          <ReferenceFilterField
+                            label={t('kpi:fields.member')}
+                            pickerId={`kpi-create-allocation-${allocationIndex}`}
+                            value={allocation.memberTalentId}
+                            loadOptions={loadTalentReferenceOptions}
+                            onChange={(nextId) =>
+                              setAllocations((current) =>
+                                current.map((item, itemIndex) =>
+                                  itemIndex === allocationIndex
+                                    ? {
+                                        ...item,
+                                        memberTalentId: nextId ?? '',
+                                        memberName: nextId ?? '',
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                            placeholder={t('kpi:filters.subjectPlaceholder')}
+                            clearLabel={t('common:actions.clear')}
+                            className=""
+                          />
+                        </td>
                         {targets.map((target) => (
                           <td key={target.metricCode} className="px-3 py-2">
                             <input
@@ -759,7 +815,8 @@ export const KpiListPage = (): JSX.Element => {
                     <tr key={allocation.id} className="border-t border-border">
                       <td className="px-3 py-2">{allocation.kpiPlanId}</td>
                       <td className="px-3 py-2">
-                        {allocation.snapshotMemberDisplayName ?? allocation.memberEmploymentProfileId}
+                        {allocation.snapshotMemberDisplayName ??
+                          allocation.memberEmploymentProfileId}
                       </td>
                       <td className="px-3 py-2">
                         {t(`kpi:allocationStatuses.${allocation.allocationStatus}`)}
@@ -846,125 +903,125 @@ export const KpiListPage = (): JSX.Element => {
       </section>
 
       {canShowActualEntrySurface ? (
-      <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
-        <h2 className="text-base font-semibold">{t('kpi:actualEntry.title')}</h2>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{t('kpi:fields.planId')}</span>
-            <input
-              value={actualPlanId}
-              className="rounded border border-border bg-panel px-2 py-1.5"
-              onChange={(event) => setActualPlanId(event.target.value)}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{t('kpi:fields.actualDate')}</span>
-            <input
-              value={actualDate}
-              className="rounded border border-border bg-panel px-2 py-1.5"
-              onChange={(event) => setActualDate(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            className="rounded border border-border px-3 py-2 text-sm"
-            onClick={() => void actualGridQuery.refetch()}
-          >
-            {t('kpi:actions.loadGrid')}
-          </button>
-        </div>
-        {!isStrictKpiDate(actualDate) ? (
-          <p className="text-sm text-danger" role="alert">
-            {t('kpi:validation.invalidActualDate')}
-          </p>
-        ) : null}
-        {actualError ? (
-          <p className="text-sm text-danger" role="alert">
-            {actualError}
-          </p>
-        ) : null}
-        {enterActualHint.allowed && enterActualHint.disabledReason ? (
-          <p className="text-sm text-danger">{enterActualHint.disabledReason}</p>
-        ) : null}
-        {correctActualHint.allowed && correctActualHint.disabledReason ? (
-          <p className="text-sm text-danger">{correctActualHint.disabledReason}</p>
-        ) : null}
-        {actualGridQuery.data ? (
-          <div className="overflow-x-auto rounded border border-border">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-100">
-                <tr>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.member')}</th>
-                  {actualGridQuery.data.targetMetrics.map((metric) => (
-                    <th key={metric.metricCode} className="px-3 py-2 text-left">
-                      {t(`kpi:metricCodes.${metric.metricCode}`)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {actualGridQuery.data.rows.map((row) => (
-                  <tr key={row.allocationId} className="border-t border-border">
-                    <td className="px-3 py-2">{row.memberDisplayName ?? row.memberTalentId}</td>
-                    {row.metrics.map((cell) => (
-                      <td key={cell.metricCode} className="space-y-1 px-3 py-2">
-                        <input
-                          aria-label={`${row.memberDisplayName ?? row.memberTalentId} ${t(`kpi:metricCodes.${cell.metricCode}`)} actual`}
-                          value={
-                            cellDrafts[cellKey(row, cell)] ??
-                            formatKpiMetricInput(cell.metricCode, cell.effectiveValue)
-                          }
-                          disabled={!enterActualHint.allowed || enterActualHint.disabled}
-                          className="w-32 rounded border border-border bg-panel px-2 py-1 disabled:opacity-50"
-                          onChange={(event) =>
-                            setCellDrafts((current) => ({
-                              ...current,
-                              [cellKey(row, cell)]: event.target.value,
-                            }))
-                          }
-                        />
-                        <div className="text-xs text-muted">
-                          {cell.requiresCorrection || !cell.canDirectEdit
-                            ? (cell.disabledReason ?? t('kpi:actualEntry.requiresCorrection'))
-                            : t('kpi:actualEntry.directEdit')}
-                        </div>
-                        {correctActualHint.allowed && cell.actualEntryId ? (
-                          <button
-                            type="button"
-                            disabled={correctActualHint.disabled}
-                            className="rounded border border-border px-2 py-1 text-xs disabled:opacity-50"
-                            title={correctActualHint.disabledReason}
-                            onClick={() => {
-                              if (!correctActualHint.disabled) {
-                                setCorrectionTarget({ row, cell });
-                              }
-                            }}
-                          >
-                            {t('kpi:actions.correction')}
-                          </button>
-                        ) : null}
-                      </td>
+        <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
+          <h2 className="text-base font-semibold">{t('kpi:actualEntry.title')}</h2>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span>{t('kpi:fields.planId')}</span>
+              <input
+                value={actualPlanId}
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                onChange={(event) => setActualPlanId(event.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span>{t('kpi:fields.actualDate')}</span>
+              <input
+                value={actualDate}
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                onChange={(event) => setActualDate(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="rounded border border-border px-3 py-2 text-sm"
+              onClick={() => void actualGridQuery.refetch()}
+            >
+              {t('kpi:actions.loadGrid')}
+            </button>
+          </div>
+          {!isStrictKpiDate(actualDate) ? (
+            <p className="text-sm text-danger" role="alert">
+              {t('kpi:validation.invalidActualDate')}
+            </p>
+          ) : null}
+          {actualError ? (
+            <p className="text-sm text-danger" role="alert">
+              {actualError}
+            </p>
+          ) : null}
+          {enterActualHint.allowed && enterActualHint.disabledReason ? (
+            <p className="text-sm text-danger">{enterActualHint.disabledReason}</p>
+          ) : null}
+          {correctActualHint.allowed && correctActualHint.disabledReason ? (
+            <p className="text-sm text-danger">{correctActualHint.disabledReason}</p>
+          ) : null}
+          {actualGridQuery.data ? (
+            <div className="overflow-x-auto rounded border border-border">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.member')}</th>
+                    {actualGridQuery.data.targetMetrics.map((metric) => (
+                      <th key={metric.metricCode} className="px-3 py-2 text-left">
+                        {t(`kpi:metricCodes.${metric.metricCode}`)}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {enterActualHint.allowed ? (
-              <div className="p-3">
-                <button
-                  type="button"
-                  disabled={enterActualHint.disabled}
-                  className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                  title={enterActualHint.disabledReason}
-                  onClick={() => void saveActuals()}
-                >
-                  {t('kpi:actions.saveChangedCells')}
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </section>
+                </thead>
+                <tbody>
+                  {actualGridQuery.data.rows.map((row) => (
+                    <tr key={row.allocationId} className="border-t border-border">
+                      <td className="px-3 py-2">{row.memberDisplayName ?? row.memberTalentId}</td>
+                      {row.metrics.map((cell) => (
+                        <td key={cell.metricCode} className="space-y-1 px-3 py-2">
+                          <input
+                            aria-label={`${row.memberDisplayName ?? row.memberTalentId} ${t(`kpi:metricCodes.${cell.metricCode}`)} actual`}
+                            value={
+                              cellDrafts[cellKey(row, cell)] ??
+                              formatKpiMetricInput(cell.metricCode, cell.effectiveValue)
+                            }
+                            disabled={!enterActualHint.allowed || enterActualHint.disabled}
+                            className="w-32 rounded border border-border bg-panel px-2 py-1 disabled:opacity-50"
+                            onChange={(event) =>
+                              setCellDrafts((current) => ({
+                                ...current,
+                                [cellKey(row, cell)]: event.target.value,
+                              }))
+                            }
+                          />
+                          <div className="text-xs text-muted">
+                            {cell.requiresCorrection || !cell.canDirectEdit
+                              ? (cell.disabledReason ?? t('kpi:actualEntry.requiresCorrection'))
+                              : t('kpi:actualEntry.directEdit')}
+                          </div>
+                          {correctActualHint.allowed && cell.actualEntryId ? (
+                            <button
+                              type="button"
+                              disabled={correctActualHint.disabled}
+                              className="rounded border border-border px-2 py-1 text-xs disabled:opacity-50"
+                              title={correctActualHint.disabledReason}
+                              onClick={() => {
+                                if (!correctActualHint.disabled) {
+                                  setCorrectionTarget({ row, cell });
+                                }
+                              }}
+                            >
+                              {t('kpi:actions.correction')}
+                            </button>
+                          ) : null}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {enterActualHint.allowed ? (
+                <div className="p-3">
+                  <button
+                    type="button"
+                    disabled={enterActualHint.disabled}
+                    className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                    title={enterActualHint.disabledReason}
+                    onClick={() => void saveActuals()}
+                  >
+                    {t('kpi:actions.saveChangedCells')}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
       {correctActualHint.allowed && correctionTarget ? (

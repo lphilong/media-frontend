@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
+import { fetchKpiManagedMembers } from '@modules/kpi/api/kpi.api';
 import {
   createActionCapabilityHint,
   PERMISSIONS,
@@ -44,6 +45,7 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { AsyncReferencePicker, type ReferenceOption } from '@shared/components/reference';
 
 const readDisabledReason = (plan: KpiPlanDetail, action: 'publish' | 'finalize' | 'archive') => {
   if (action === 'publish' && plan.status !== 'DRAFT') {
@@ -124,6 +126,17 @@ export const KpiDetailPage = (): JSX.Element => {
   const [allocationDraftRows, setAllocationDraftRows] = useState<AllocationDraftRow[]>([]);
   const [approvalNote, setApprovalNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  const loadManagedMemberOptions = useCallback(
+    async (search: string): Promise<ReferenceOption[]> => {
+      const items = await fetchKpiManagedMembers(kpiPlanId ?? '', { search, limit: 20 });
+      return items.map((item) => ({
+        id: item.employmentProfileId,
+        label: item.employeeCode ? `${item.displayName} - ${item.employeeCode}` : item.displayName,
+        description: [item.talentCode, item.groupId].filter(Boolean).join(' - ') || undefined,
+      }));
+    },
+    [kpiPlanId],
+  );
 
   const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
     () => ({
@@ -464,7 +477,6 @@ export const KpiDetailPage = (): JSX.Element => {
   );
 
   const publishBlockedByAllocation = plan.status === 'DRAFT' && !allocationMatches;
-
   return (
     <DetailPageShell
       banner={
@@ -491,13 +503,15 @@ export const KpiDetailPage = (): JSX.Element => {
                 { key: 'period', label: t('kpi:fields.periodMonth'), value: plan.periodMonth },
                 {
                   key: 'publishedAt',
-                  label: t('kpi:fields.publishedAt'),
+                  label: t('kpi:fields.planPublishedAt'),
                   value: formatKpiDateTime(plan.publishedAt),
                 },
                 {
                   key: 'finalizedAt',
-                  label: t('kpi:fields.finalizedAt'),
-                  value: formatKpiDateTime(plan.finalizedAt),
+                  label: t('kpi:fields.planFinalizedAt'),
+                  value: plan.finalizedAt
+                    ? formatKpiDateTime(plan.finalizedAt)
+                    : t('kpi:states.notFinalizedYet'),
                 },
                 {
                   key: 'archivedAt',
@@ -578,20 +592,27 @@ export const KpiDetailPage = (): JSX.Element => {
                               key={`${row.employmentProfileId}-${rowIndex}`}
                               className="border-t border-border"
                             >
-                              <td className="px-3 py-2">
-                                <input
-                                  aria-label={`${t('kpi:fields.employmentProfileId')} ${rowIndex + 1}`}
+                              <td className="min-w-[280px] px-3 py-2">
+                                <AsyncReferencePicker
+                                  pickerId={`kpi-managed-member-${rowIndex}`}
                                   value={row.employmentProfileId}
                                   disabled={Boolean(allocationDraftDisabledReason)}
-                                  className="w-44 rounded border border-border bg-panel px-2 py-1 disabled:opacity-50"
-                                  onChange={(event) =>
+                                  resourceLabel={t('kpi:fields.managedMember')}
+                                  placeholder={t('kpi:filters.managedMemberPlaceholder')}
+                                  loadOptions={loadManagedMemberOptions}
+                                  onChange={(nextId) =>
                                     setAllocationDraftRows((current) =>
                                       current.map((item, index) =>
                                         index === rowIndex
-                                          ? { ...item, employmentProfileId: event.target.value }
+                                          ? { ...item, employmentProfileId: nextId ?? '' }
                                           : item,
                                       ),
                                     )
+                                  }
+                                  emptySlot={
+                                    <p className="text-xs text-muted">
+                                      {t('kpi:states.noManagedMembers')}
+                                    </p>
                                   }
                                 />
                               </td>
@@ -875,8 +896,30 @@ export const KpiDetailPage = (): JSX.Element => {
           ) : null}
 
           <MetadataSection title={t('kpi:sections.progress')}>
-            {progressQuery.data ? (
+            {progressQuery.isError ? (
+              <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
+                {t('kpi:states.progressUnavailable')}
+              </div>
+            ) : progressQuery.data ? (
               <div className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded border border-border p-3 text-sm">
+                    <div className="text-xs uppercase text-muted">
+                      {t('kpi:progress.officialPosture')}
+                    </div>
+                    <div>{t('kpi:progress.publishedOnly')}</div>
+                  </div>
+                  <div className="rounded border border-border p-3 text-sm">
+                    <div className="text-xs uppercase text-muted">{t('kpi:progress.elapsed')}</div>
+                    <div>{progressQuery.data.periodElapsedPercent.toFixed(1)}%</div>
+                  </div>
+                  <div className="rounded border border-border p-3 text-sm">
+                    <div className="text-xs uppercase text-muted">
+                      {t('kpi:progress.actualSource')}
+                    </div>
+                    <div>{t('kpi:progress.publishedAllocationsOnly')}</div>
+                  </div>
+                </div>
                 <div className="overflow-x-auto rounded border border-border">
                   <table className="min-w-full text-sm">
                     <thead className="bg-slate-100">
@@ -905,7 +948,8 @@ export const KpiDetailPage = (): JSX.Element => {
                     </tbody>
                   </table>
                 </div>
-                {plan.subjectType === 'TALENT_GROUP' ? (
+                {plan.subjectType === 'TALENT_GROUP' &&
+                progressQuery.data.memberProgress.length > 0 ? (
                   <div className="overflow-x-auto rounded border border-border">
                     <table className="min-w-full text-sm">
                       <caption className="sr-only">{t('kpi:progress.memberBreakdown')}</caption>
@@ -939,6 +983,10 @@ export const KpiDetailPage = (): JSX.Element => {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                ) : plan.subjectType === 'TALENT_GROUP' ? (
+                  <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
+                    {t('kpi:states.memberProgressEmpty')}
                   </div>
                 ) : null}
               </div>

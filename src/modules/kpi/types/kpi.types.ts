@@ -56,6 +56,15 @@ export type KpiAllocationDraftMemberInput = {
   note?: string | null;
 };
 
+export type KpiManagedMemberPickerItem = {
+  employmentProfileId: string;
+  employeeCode: string | null;
+  displayName: string;
+  talentId: string;
+  talentCode: string | null;
+  groupId: string;
+};
+
 export type KpiAllocationQuery = {
   status?: KpiAllocationStatus;
   kpiPlanId?: string;
@@ -265,7 +274,15 @@ export type KpiActualCorrection = {
 export type KpiProgressView = {
   plan: Pick<
     KpiPlanListItem,
-    'id' | 'planCode' | 'subjectType' | 'subjectId' | 'status' | 'periodMonth' | 'periodStartAt' | 'periodEndAt' | 'timezone'
+    | 'id'
+    | 'planCode'
+    | 'subjectType'
+    | 'subjectId'
+    | 'status'
+    | 'periodMonth'
+    | 'periodStartAt'
+    | 'periodEndAt'
+    | 'timezone'
   >;
   periodElapsedPercent: number;
   targetMetrics: KpiTargetMetric[];
