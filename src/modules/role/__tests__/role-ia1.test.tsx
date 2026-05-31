@@ -50,7 +50,7 @@ describe('role IA-1 surfaces', () => {
 
     const userLink = await screen.findByRole(
       'link',
-      { name: /admin@example.test/ },
+      { name: /Admin User/u },
       { timeout: 3000 },
     );
     expect(userLink).toHaveAttribute('href', '/users/user-admin');
@@ -83,9 +83,7 @@ describe('role IA-1 surfaces', () => {
     renderRoute('/roles/role-admin');
 
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
-    const assignmentRow = (await screen.findByRole('link', { name: /admin@example.test/ })).closest(
-      'tr',
-    );
+    const assignmentRow = (await screen.findByRole('link', { name: /Admin User/u })).closest('tr');
 
     await waitFor(() =>
       expect(
@@ -119,9 +117,7 @@ describe('role IA-1 surfaces', () => {
     renderRoute('/roles/role-admin');
 
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
-    const assignmentRow = (await screen.findByRole('link', { name: /admin@example.test/ })).closest(
-      'tr',
-    );
+    const assignmentRow = (await screen.findByRole('link', { name: /Admin User/u })).closest('tr');
     expect(assignmentRow).not.toBeNull();
     if (!assignmentRow) {
       return;
@@ -151,7 +147,7 @@ describe('role IA-1 surfaces', () => {
 
     await waitFor(
       () => {
-        const refreshedRow = screen.getByRole('link', { name: /admin@example.test/ }).closest('tr');
+        const refreshedRow = screen.getByRole('link', { name: /Admin User/u }).closest('tr');
         expect(refreshedRow).not.toBeNull();
         if (!refreshedRow) {
           return;
