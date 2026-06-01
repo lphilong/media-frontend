@@ -179,6 +179,7 @@
   },
   "validation": {
     "invalidPeriodMonth": "KPI 月份必须为 YYYY-MM。",
+    "pastPeriodMonth": "请选择当前月份或未来月份。",
     "invalidMetricValue": "请输入有效的指标数值。",
     "allocationMismatch": "发布前分配合计必须等于计划目标。",
     "employmentProfileRequired": "Employment profile ID is required.",

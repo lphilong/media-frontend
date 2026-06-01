@@ -179,6 +179,7 @@
   },
   "validation": {
     "invalidPeriodMonth": "Use period month as YYYY-MM.",
+    "pastPeriodMonth": "Choose the current month or a future month.",
     "invalidMetricValue": "Enter a valid numeric metric value.",
     "allocationMismatch": "Allocation total must equal plan target before publish.",
     "employmentProfileRequired": "Employment profile ID is required.",

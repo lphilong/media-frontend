@@ -53,12 +53,6 @@ type TargetDraft = {
   value: string;
 };
 
-type AllocationDraft = {
-  memberTalentId: string;
-  memberName: string;
-  values: Partial<Record<KpiMetricCode, string>>;
-};
-
 type CorrectionTarget = {
   row: KpiActualGridRow;
   cell: KpiActualGridMetricCell;
@@ -133,17 +127,10 @@ const toMonthBounds = (periodMonth: string): { start: number; end: number } | un
   };
 };
 
-const toAllocationContractStartDate = (periodMonth: string): string | undefined =>
-  /^\d{4}-\d{2}$/.test(periodMonth) ? `${periodMonth}-01` : undefined;
-
-const createEmptyAllocation = (index: number): AllocationDraft => ({
-  memberTalentId: `talent-00${index}`,
-  memberName: index === 1 ? 'Luna Park' : 'Minh Tran',
-  values: {
-    REVENUE_VND: index === 1 ? '600.000' : '400.000',
-    CONTENT_OUTPUT_COUNT: index === 1 ? '6' : '4',
-  },
-});
+const currentHcmMonth = (now = Date.now()): string => {
+  const local = new Date(now + 7 * 60 * 60 * 1000);
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
+};
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -172,16 +159,11 @@ export const KpiListPage = (): JSX.Element => {
 
   const [activeTab, setActiveTab] = useState<'management' | 'group' | 'my'>('management');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [subjectType, setSubjectType] = useState<'TALENT' | 'TALENT_GROUP'>('TALENT_GROUP');
   const [subjectId, setSubjectId] = useState('group-001');
   const [title, setTitle] = useState('May KPI plan');
-  const [periodMonth, setPeriodMonth] = useState('2026-05');
+  const [periodMonth, setPeriodMonth] = useState(() => currentHcmMonth());
   const [description, setDescription] = useState('');
   const [targets, setTargets] = useState<TargetDraft[]>(defaultTargets);
-  const [allocations, setAllocations] = useState<AllocationDraft[]>([
-    createEmptyAllocation(1),
-    createEmptyAllocation(2),
-  ]);
   const [formError, setFormError] = useState<string | null>(null);
 
   const [actualPlanId, setActualPlanId] = useState('kpi-plan-published');
@@ -304,30 +286,6 @@ export const KpiListPage = (): JSX.Element => {
       : undefined;
   }, [targets]);
 
-  const allocationTotals = useMemo(() => {
-    const totals = new Map<KpiMetricCode, number>();
-    targets.forEach((target) => totals.set(target.metricCode, 0));
-    allocations.forEach((allocation) => {
-      targets.forEach((target) => {
-        const parsed = parseKpiMetricInput(
-          target.metricCode,
-          allocation.values[target.metricCode] ?? '',
-        );
-        totals.set(target.metricCode, (totals.get(target.metricCode) ?? 0) + (parsed ?? 0));
-      });
-    });
-    return totals;
-  }, [allocations, targets]);
-
-  const allocationMatches = useMemo(() => {
-    if (!parsedTargets) {
-      return false;
-    }
-    return parsedTargets.every(
-      (target) => allocationTotals.get(target.metricCode) === target.targetValue,
-    );
-  }, [allocationTotals, parsedTargets]);
-
   const submitCreate = async (): Promise<void> => {
     setFormError(null);
     if (createPlanHint.disabled) {
@@ -339,24 +297,20 @@ export const KpiListPage = (): JSX.Element => {
       setFormError(t('kpi:validation.invalidPeriodMonth'));
       return;
     }
-    const allocationStartDate = toAllocationContractStartDate(periodMonth);
-    if (!allocationStartDate) {
-      setFormError(t('kpi:validation.invalidPeriodMonth'));
+    const minPeriodMonth = currentHcmMonth();
+    if (periodMonth < minPeriodMonth) {
+      setFormError(t('kpi:validation.pastPeriodMonth'));
       return;
     }
     if (!parsedTargets) {
       setFormError(t('kpi:validation.invalidMetricValue'));
       return;
     }
-    if (subjectType === 'TALENT_GROUP' && !allocationMatches) {
-      setFormError(t('kpi:validation.allocationMismatch'));
-      return;
-    }
 
     const payload: KpiCreatePlanPayload = {
       title,
       description: description.trim() || null,
-      subjectType,
+      subjectType: 'TALENT_GROUP',
       subjectId,
       currencyCode: 'VND',
       periodMonth,
@@ -364,24 +318,6 @@ export const KpiListPage = (): JSX.Element => {
       periodEndAt: bounds.end,
       timezone: 'Asia/Ho_Chi_Minh',
       targetMetrics: parsedTargets,
-      allocations:
-        subjectType === 'TALENT_GROUP'
-          ? allocations.map((allocation) => ({
-              memberTalentId: allocation.memberTalentId,
-              membershipId: null,
-              allocationStartDate,
-              allocationEndDate: null,
-              snapshotMemberDisplayName: allocation.memberName,
-              targetMetrics: parsedTargets.map((target) => ({
-                metricCode: target.metricCode,
-                targetValue:
-                  parseKpiMetricInput(
-                    target.metricCode,
-                    allocation.values[target.metricCode] ?? '',
-                  ) ?? 0,
-              })),
-            }))
-          : undefined,
       externalRef: null,
     };
 
@@ -664,38 +600,19 @@ export const KpiListPage = (): JSX.Element => {
             </p>
           ) : null}
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm">
+            <div className="flex flex-col gap-1 text-sm">
               <span>{t('kpi:fields.subjectType')}</span>
-              <select
-                value={subjectType}
-                className="rounded border border-border bg-panel px-2 py-1.5"
-                onChange={(event) =>
-                  setSubjectType(event.target.value as 'TALENT' | 'TALENT_GROUP')
-                }
-              >
-                <option value="TALENT_GROUP">{t('kpi:subjectTypes.TALENT_GROUP')}</option>
-                <option value="TALENT">{t('kpi:subjectTypes.TALENT')}</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span>
-                {subjectType === 'TALENT_GROUP'
-                  ? t('kpi:fields.targetGroup')
-                  : t('kpi:fields.talent')}
+              <span className="rounded border border-border bg-slate-50 px-2 py-1.5">
+                {t('kpi:subjectTypes.TALENT_GROUP')}
               </span>
+            </div>
+            <label className="flex flex-col gap-1 text-sm">
+              <span>{t('kpi:fields.targetGroup')}</span>
               <ReferenceFilterField
-                label={
-                  subjectType === 'TALENT_GROUP'
-                    ? t('kpi:fields.targetGroup')
-                    : t('kpi:fields.talent')
-                }
+                label={t('kpi:fields.targetGroup')}
                 pickerId="kpi-create-subject"
                 value={subjectId}
-                loadOptions={
-                  subjectType === 'TALENT'
-                    ? loadTalentReferenceOptions
-                    : loadTalentGroupReferenceOptions
-                }
+                loadOptions={loadTalentGroupReferenceOptions}
                 onChange={(nextId) => setSubjectId(nextId ?? '')}
                 placeholder={t('kpi:filters.subjectPlaceholder')}
                 clearLabel={t('common:actions.clear')}
@@ -715,6 +632,7 @@ export const KpiListPage = (): JSX.Element => {
               <input
                 type="month"
                 value={periodMonth}
+                min={currentHcmMonth()}
                 className="rounded border border-border bg-panel px-2 py-1.5"
                 onChange={(event) => setPeriodMonth(event.target.value)}
               />
@@ -787,114 +705,9 @@ export const KpiListPage = (): JSX.Element => {
             </button>
           </div>
 
-          {subjectType === 'TALENT_GROUP' ? (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold">{t('kpi:sections.allocations')}</h3>
-              <div className="overflow-x-auto rounded border border-border">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-slate-100">
-                    <tr>
-                      <th className="px-3 py-2 text-left">{t('kpi:fields.member')}</th>
-                      {targets.map((target) => (
-                        <th key={target.metricCode} className="px-3 py-2 text-left">
-                          {t(`kpi:metricCodes.${target.metricCode}`)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allocations.map((allocation, allocationIndex) => (
-                      <tr key={allocation.memberTalentId} className="border-t border-border">
-                        <td className="min-w-[260px] px-3 py-2">
-                          <ReferenceFilterField
-                            label={t('kpi:fields.member')}
-                            pickerId={`kpi-create-allocation-${allocationIndex}`}
-                            value={allocation.memberTalentId}
-                            loadOptions={loadTalentReferenceOptions}
-                            onChange={(nextId) =>
-                              setAllocations((current) =>
-                                current.map((item, itemIndex) =>
-                                  itemIndex === allocationIndex
-                                    ? {
-                                        ...item,
-                                        memberTalentId: nextId ?? '',
-                                        memberName: nextId ?? '',
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                            placeholder={t('kpi:filters.subjectPlaceholder')}
-                            clearLabel={t('common:actions.clear')}
-                            className=""
-                          />
-                        </td>
-                        {targets.map((target) => (
-                          <td key={target.metricCode} className="px-3 py-2">
-                            <input
-                              aria-label={`${allocation.memberName} ${t(`kpi:metricCodes.${target.metricCode}`)}`}
-                              value={allocation.values[target.metricCode] ?? ''}
-                              className="w-32 rounded border border-border bg-panel px-2 py-1"
-                              onChange={(event) =>
-                                setAllocations((current) =>
-                                  current.map((item, itemIndex) =>
-                                    itemIndex === allocationIndex
-                                      ? {
-                                          ...item,
-                                          values: {
-                                            ...item.values,
-                                            [target.metricCode]: event.target.value,
-                                          },
-                                        }
-                                      : item,
-                                  ),
-                                )
-                              }
-                            />
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                    <tr className="border-t border-border font-medium">
-                      <td className="px-3 py-2">{t('kpi:allocation.allocatedTotal')}</td>
-                      {targets.map((target) => (
-                        <td key={target.metricCode} className="px-3 py-2">
-                          {formatKpiNumber(
-                            target.metricCode,
-                            allocationTotals.get(target.metricCode) ?? 0,
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                    <tr className="border-t border-border font-medium">
-                      <td className="px-3 py-2">{t('kpi:allocation.difference')}</td>
-                      {targets.map((target) => {
-                        const targetValue =
-                          parseKpiMetricInput(target.metricCode, target.value) ?? 0;
-                        const diff = (allocationTotals.get(target.metricCode) ?? 0) - targetValue;
-                        return (
-                          <td key={target.metricCode} className="px-3 py-2">
-                            {formatKpiNumber(target.metricCode, diff)}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              {!allocationMatches ? (
-                <p className="text-sm text-danger">{t('kpi:validation.allocationMismatch')}</p>
-              ) : null}
-            </div>
-          ) : null}
-
           <button
             type="button"
-            disabled={
-              createMutation.isPending ||
-              createPlanHint.disabled ||
-              (subjectType === 'TALENT_GROUP' && Boolean(parsedTargets) && !allocationMatches)
-            }
+            disabled={createMutation.isPending || createPlanHint.disabled}
             title={createPlanHint.disabledReason}
             className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
             onClick={() => void submitCreate()}

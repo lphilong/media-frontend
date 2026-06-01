@@ -20,8 +20,11 @@ import { apiRequest } from '@shared/api';
 
 const timestampSchema = z.union([z.number(), z.string()]);
 const subjectTypeSchema = z.enum(['TALENT', 'TALENT_GROUP', 'EMPLOYMENT_PROFILE', 'ORG_UNIT']);
-const executableSubjectTypeSchema = z.enum(['TALENT', 'TALENT_GROUP']);
 const statusSchema = z.enum(['DRAFT', 'PUBLISHED', 'FINALIZED', 'ARCHIVED']);
+const periodMonthSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 const metricCodeSchema = z.enum([
   'REVENUE_VND',
   'CONTENT_OUTPUT_COUNT',
@@ -220,10 +223,7 @@ const planBaseSchema = z
     subjectRef: referenceSummarySchema.nullable().optional(),
     status: statusSchema,
     currencyCode: z.literal('VND'),
-    periodMonth: z
-      .string()
-      .trim()
-      .regex(/^\d{4}-\d{2}$/),
+    periodMonth: periodMonthSchema,
     periodStartAt: timestampSchema,
     periodEndAt: timestampSchema,
     timezone: z.string().trim().min(1),
@@ -438,51 +438,42 @@ const correctionListResponseSchema = z.object({ data: z.array(correctionSchema) 
 const progressResponseSchema = z.object({ data: progressSchema }).strict();
 const managedMemberListResponseSchema = z.object({ data: z.array(managedMemberSchema) }).strict();
 
+export const getCurrentHcmMonthForKpiCreate = (now = Date.now()): string => {
+  const local = new Date(now + 7 * 60 * 60 * 1000);
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
+};
+
+export const isPastKpiCreatePeriodMonth = (periodMonth: string, now = Date.now()): boolean =>
+  periodMonth < getCurrentHcmMonthForKpiCreate(now);
+
 const createPayloadSchema = z
   .object({
     title: z.string().trim().min(1),
     description: z.string().nullable().optional(),
-    subjectType: executableSubjectTypeSchema,
+    subjectType: z.literal('TALENT_GROUP'),
     subjectId: z.string().trim().min(1),
     currencyCode: z.literal('VND').optional(),
-    periodMonth: z
-      .string()
-      .trim()
-      .regex(/^\d{4}-\d{2}$/),
+    periodMonth: periodMonthSchema.refine((value) => !isPastKpiCreatePeriodMonth(value), {
+      message: 'KPI periodMonth cannot be before the current HCM month',
+    }),
     periodStartAt: z.number(),
     periodEndAt: z.number(),
     timezone: z.string().trim().min(1).optional(),
     targetMetrics: requiredTargetMetricInputArraySchema,
-    allocations: z
-      .array(allocationInputSchema)
-      .superRefine((items, context) => {
-        const seen = new Set<string>();
-        items.forEach((item, index) => {
-          if (seen.has(item.memberTalentId)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: [index, 'memberTalentId'],
-              message: `Duplicate KPI allocation memberTalentId: ${item.memberTalentId}`,
-            });
-          }
-          seen.add(item.memberTalentId);
-        });
-      })
-      .optional(),
     externalRef: z.string().nullable().optional(),
   })
   .strict();
 
-const draftCorePayloadSchema = createPayloadSchema
-  .pick({
-    title: true,
-    description: true,
-    currencyCode: true,
-    periodMonth: true,
-    periodStartAt: true,
-    periodEndAt: true,
-    timezone: true,
-    externalRef: true,
+const draftCorePayloadSchema = z
+  .object({
+    title: z.string().trim().min(1),
+    description: z.string().nullable().optional(),
+    currencyCode: z.literal('VND').optional(),
+    periodMonth: periodMonthSchema,
+    periodStartAt: z.number(),
+    periodEndAt: z.number(),
+    timezone: z.string().trim().min(1).optional(),
+    externalRef: z.string().nullable().optional(),
   })
   .partial()
   .strict();

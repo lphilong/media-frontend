@@ -1,6 +1,6 @@
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -27,6 +27,7 @@ import {
   rejectKpiAllocation,
   replaceKpiAllocations,
   replaceKpiTargetMetrics,
+  sanitizeKpiCreatePlanPayload,
   submitKpiAllocationDraft,
   upsertKpiAllocationDraft,
 } from '@modules/kpi/api/kpi.api';
@@ -37,6 +38,8 @@ import { server } from '@test/msw/server';
 
 const may2026PeriodStartAt = Date.UTC(2026, 4, 1, -7, 0, 0, 0);
 const may2026PeriodEndAt = Date.UTC(2026, 5, 1, -7, 0, 0, 0) - 1;
+const june2026PeriodStartAt = Date.UTC(2026, 5, 1, -7, 0, 0, 0);
+const june2026PeriodEndAt = Date.UTC(2026, 6, 1, -7, 0, 0, 0) - 1;
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, { initialEntries: [path] });
@@ -98,6 +101,15 @@ const kpiCapabilityCopy = {
 };
 
 describe('KPI MVP UX', () => {
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-06-15T00:00:00+07:00'));
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(async () => {
     await setLocale('en');
   });
@@ -386,18 +398,21 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi');
     await waitForKpiList();
     await userEvent.click(await waitForEnabledButton('Create KPI plan'));
+    const createSection = screen
+      .getByRole('heading', { name: 'Create draft KPI plan' })
+      .closest('section');
+    expect(createSection).not.toBeNull();
+    expect(within(createSection!).getByText('Talent group')).toBeInTheDocument();
+    expect(within(createSection!).queryByRole('option', { name: 'Talent' })).not.toBeInTheDocument();
+    expect(within(createSection!).queryByText('Allocations')).not.toBeInTheDocument();
     await userEvent.click(await waitForEnabledButton('Create draft plan'));
     await waitFor(() => expect(body).toBeDefined());
+    expect(body?.subjectType).toBe('TALENT_GROUP');
+    expect(body).not.toHaveProperty('allocations');
     expect((body?.targetMetrics as Array<{ targetValue: number }>)[0].targetValue).toBe(1000000);
     expect(typeof (body?.targetMetrics as Array<{ targetValue: number }>)[0].targetValue).toBe(
       'number',
     );
-    expect(
-      (body?.allocations as Array<{ allocationStartDate: string }>)[0].allocationStartDate,
-    ).toBe('2026-05-01');
-    expect(
-      (body?.allocations as Array<{ allocationStartDate: string }>)[0].allocationStartDate,
-    ).not.toBe('01-05-2026');
   });
 
   it('rejects malformed money before calling create API', async () => {
@@ -443,18 +458,26 @@ describe('KPI MVP UX', () => {
     expect(parseKpiHoursInput('1.555')).toBeUndefined();
   });
 
-  it('shows allocation totals/difference and blocks publish UI on mismatch', async () => {
+  it('create plan form blocks past periodMonth before calling create API', async () => {
+    let called = false;
+    server.use(
+      http.post('*/admin/kpi/plans', () => {
+        called = true;
+        return HttpResponse.json({ data: {} });
+      }),
+    );
     renderRoute('/kpi');
     await waitForKpiList();
     await userEvent.click(await waitForEnabledButton('Create KPI plan'));
-    expect(screen.getByText('Allocated total')).toBeInTheDocument();
-    const lunaRevenue = screen.getByLabelText('Luna Park Revenue VND');
-    await userEvent.clear(lunaRevenue);
-    await userEvent.type(lunaRevenue, '500.000');
-    expect(
-      screen.getByText('Allocation total must equal plan target before publish.'),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Create draft plan' })).toBeDisabled();
+    const month = screen.getAllByLabelText('Period month').find((element) => {
+      const input = element as HTMLInputElement;
+      return input.type === 'month' && Boolean(input.min);
+    }) as HTMLInputElement;
+    await userEvent.clear(month);
+    await userEvent.type(month, '2026-05');
+    await userEvent.click(await waitForEnabledButton('Create draft plan'));
+    expect(await screen.findByText('Choose the current month or a future month.')).toBeInTheDocument();
+    expect(called).toBe(false);
   });
 
   it('hides draft edit controls for a published plan', async () => {
@@ -1049,31 +1072,20 @@ describe('KPI MVP UX', () => {
       title: 'Strict allocation draft plan',
       subjectType: 'TALENT_GROUP',
       subjectId: 'group-001',
-      periodMonth: '2026-05',
-      periodStartAt: may2026PeriodStartAt,
-      periodEndAt: may2026PeriodEndAt,
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
       targetMetrics: [
         { metricCode: 'REVENUE_VND', targetValue: 1000 },
         { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 10 },
         { metricCode: 'LIVE_HOURS', targetValue: 1.25 },
-      ],
-      allocations: [
-        {
-          memberTalentId: 'talent-001',
-          allocationStartDate: '2026-05-01',
-          targetMetrics: [
-            { metricCode: 'REVENUE_VND', targetValue: 1000 },
-            { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 10 },
-            { metricCode: 'LIVE_HOURS', targetValue: 1.25 },
-          ],
-        },
       ],
     });
     await performKpiLifecycleAction(plan.id, 'publish');
 
     const baseAllocation = {
       employmentProfileId: 'employment-profile-001',
-      allocationStartDate: '2026-05-01',
+      allocationStartDate: '2026-06-01',
       targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
     };
     const invalidPayloads = [
@@ -1124,44 +1136,37 @@ describe('KPI MVP UX', () => {
     }
   });
 
-  it('MSW rejects invalid create-plan nested allocation payloads', async () => {
+  it('MSW rejects create-plan allocations, TALENT subject create, and past periodMonth', async () => {
     const basePayload = {
       title: 'Invalid create plan',
       subjectType: 'TALENT_GROUP',
       subjectId: 'group-001',
-      periodMonth: '2026-05',
-      periodStartAt: may2026PeriodStartAt,
-      periodEndAt: may2026PeriodEndAt,
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
       targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
     };
 
-    for (const allocations of [
-      [
-        {
-          memberTalentId: 'talent-001',
-          allocationStartDate: '01-05-2026',
-          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
-        },
-      ],
-      [
-        {
-          memberTalentId: 'talent-001',
-          allocationStartDate: '2026-05-01',
-          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000, extra: true }],
-        },
-      ],
-      [
-        {
-          memberTalentId: 'talent-001',
-          allocationStartDate: '2026-05-01',
-          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
-          targetKind: 'TALENT',
-        },
-      ],
-    ]) {
-      const response = await mswJson('POST', '/admin/kpi/plans', { ...basePayload, allocations });
-      expect(response.status).toBe(400);
-    }
+    const allocationResponse = await mswJson('POST', '/admin/kpi/plans', {
+      ...basePayload,
+      allocations: [],
+    });
+    expect(allocationResponse.status).toBe(422);
+
+    const talentResponse = await mswJson('POST', '/admin/kpi/plans', {
+      ...basePayload,
+      subjectType: 'TALENT',
+      subjectId: 'talent-001',
+    });
+    expect(talentResponse.status).toBe(400);
+
+    const pastResponse = await mswJson('POST', '/admin/kpi/plans', {
+      ...basePayload,
+      periodMonth: '2026-05',
+      periodStartAt: may2026PeriodStartAt,
+      periodEndAt: may2026PeriodEndAt,
+    });
+    expect(pastResponse.status).toBe(400);
   });
 
   it('MSW validates replace allocations and replace target metrics payloads', async () => {
@@ -1187,19 +1192,19 @@ describe('KPI MVP UX', () => {
       title: 'Mismatched allocation total plan',
       subjectType: 'TALENT_GROUP',
       subjectId: 'group-001',
-      periodMonth: '2026-05',
-      periodStartAt: may2026PeriodStartAt,
-      periodEndAt: may2026PeriodEndAt,
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
       targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
-      allocations: [
-        {
-          memberTalentId: 'talent-001',
-          allocationStartDate: '2026-05-01',
-          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 900 }],
-        },
-      ],
     });
     await performKpiLifecycleAction(plan.id, 'publish');
+    await upsertKpiAllocationDraft(plan.id, [
+        {
+          employmentProfileId: 'employment-profile-001',
+          allocationStartDate: '2026-06-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 900 }],
+        },
+    ]);
     await submitKpiAllocationDraft(plan.id);
     await approveKpiAllocation(plan.id);
 
@@ -1215,6 +1220,40 @@ describe('KPI MVP UX', () => {
   });
 
   it('frontend KPI Zod rejects backend-invalid target metric semantics', async () => {
+    expect(() =>
+      sanitizeKpiCreatePlanPayload({
+        title: 'Talent create',
+        subjectType: 'TALENT',
+        subjectId: 'talent-001',
+        periodMonth: '2026-06',
+        periodStartAt: june2026PeriodStartAt,
+        periodEndAt: june2026PeriodEndAt,
+        targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+      } as never),
+    ).toThrow();
+    expect(() =>
+      sanitizeKpiCreatePlanPayload({
+        title: 'Allocation create',
+        subjectType: 'TALENT_GROUP',
+        subjectId: 'group-001',
+        periodMonth: '2026-06',
+        periodStartAt: june2026PeriodStartAt,
+        periodEndAt: june2026PeriodEndAt,
+        targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+        allocations: [],
+      } as never),
+    ).toThrow();
+    expect(() =>
+      sanitizeKpiCreatePlanPayload({
+        title: 'Past create',
+        subjectType: 'TALENT_GROUP',
+        subjectId: 'group-001',
+        periodMonth: '2026-05',
+        periodStartAt: may2026PeriodStartAt,
+        periodEndAt: may2026PeriodEndAt,
+        targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+      }),
+    ).toThrow();
     await expect(
       replaceKpiTargetMetrics('kpi-plan-draft', [{ metricCode: 'REVENUE_VND', targetValue: -1 }]),
     ).rejects.toThrow();

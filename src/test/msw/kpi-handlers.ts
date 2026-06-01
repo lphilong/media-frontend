@@ -185,7 +185,7 @@ const integerTargetMetricCodes = new Set<KpiMetricCode>([
   'ONBOARDED_TALENT_COUNT',
 ]);
 const subjectTypes: KpiSubjectType[] = ['TALENT', 'TALENT_GROUP', 'EMPLOYMENT_PROFILE', 'ORG_UNIT'];
-const executableSubjectTypes: KpiSubjectType[] = ['TALENT', 'TALENT_GROUP'];
+const createSubjectTypes: KpiSubjectType[] = ['TALENT_GROUP'];
 const planStatuses: KpiStatus[] = ['DRAFT', 'PUBLISHED', 'FINALIZED', 'ARCHIVED'];
 const allocationStatuses: KpiAllocation['allocationStatus'][] = [
   'DRAFT',
@@ -214,6 +214,7 @@ const allowedManagedMemberQueryKeys = ['search', 'limit'] as const;
 const allowedSortByValues = ['periodMonth', 'planCode', 'createdAt'];
 const allowedSortDirections = ['ASC', 'DESC'];
 const maxListLimit = 100;
+const currentKpiCreateMonth = '2026-06';
 const managedMembers: ManagedMember[] = [
   {
     employmentProfileId: 'employment-profile-001',
@@ -839,6 +840,9 @@ const actualDateInPlanPeriod = (plan: KpiPlan, actualDate: string): boolean => {
   return `${parsed.year}-${String(parsed.month).padStart(2, '0')}` === plan.periodMonth;
 };
 
+const isPastCreatePeriodMonth = (periodMonth: string): boolean =>
+  periodMonth < currentKpiCreateMonth;
+
 const validateMetricPayload = (
   items: unknown,
   options: {
@@ -1179,7 +1183,6 @@ export const kpiHandlers = [
       'periodEndAt',
       'timezone',
       'targetMetrics',
-      'allocations',
       'externalRef',
     ]);
     if (unsupported) return unsupported;
@@ -1188,7 +1191,7 @@ export const kpiHandlers = [
     }
     if (
       typeof body.subjectType !== 'string' ||
-      !executableSubjectTypes.includes(body.subjectType as KpiSubjectType)
+      !createSubjectTypes.includes(body.subjectType as KpiSubjectType)
     ) {
       return validationError(`KPI subjectType is unsupported: ${String(body.subjectType)}`);
     }
@@ -1201,20 +1204,17 @@ export const kpiHandlers = [
     if (typeof body.periodMonth !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(body.periodMonth)) {
       return validationError('KPI periodMonth must use YYYY-MM format');
     }
+    if (isPastCreatePeriodMonth(body.periodMonth)) {
+      return validationError(
+        `KPI periodMonth ${body.periodMonth} is before the current HCM month ${currentKpiCreateMonth}`,
+      );
+    }
     if (!isNumber(body.periodStartAt) || !isNumber(body.periodEndAt)) {
       return validationError('KPI periodStartAt/periodEndAt must be numeric timestamps');
     }
     const targetValidation = validateMetricPayload(body.targetMetrics);
     if (!targetValidation.ok) {
       return validationError(targetValidation.message, targetValidation.status);
-    }
-    const planMetricCodes = new Set(targetValidation.value.map((metric) => metric.metricCode));
-    const allocationValidation =
-      body.allocations === undefined
-        ? ({ ok: true, value: [] } as const)
-        : validatePlanAllocationPayload(body.allocations, planMetricCodes);
-    if (!allocationValidation.ok) {
-      return validationError(allocationValidation.message, allocationValidation.status);
     }
     planSeed += 1;
     const id = `kpi-plan-${planSeed}`;
@@ -1233,40 +1233,7 @@ export const kpiHandlers = [
     });
     plans.push(plan);
     targets[id] = toTargetMetrics(id, targetValidation.value);
-    allocations[id] =
-      allocationValidation.value.length > 0
-        ? allocationValidation.value.map((allocation, index) => {
-            return {
-              id: `${id}-alloc-${index + 1}`,
-              kpiPlanId: id,
-              groupId: plan.subjectId,
-              memberEmploymentProfileId: null,
-              memberTalentId: allocation.memberTalentId,
-              membershipId: allocation.membershipId,
-              allocationStatus: 'DRAFT',
-              allocationStartDate: allocation.allocationStartDate,
-              allocationEndDate: allocation.allocationEndDate,
-              targetMetrics: allocation.targetMetrics,
-              snapshotMemberDisplayName: allocation.snapshotMemberDisplayName,
-              note: null,
-              createdAt: now,
-              createdByActorId: 'user-admin',
-              updatedAt: now,
-              updatedByActorId: 'user-admin',
-              submittedAt: null,
-              submittedByActorId: null,
-              approvedAt: null,
-              approvedByActorId: null,
-              approvalNote: null,
-              rejectedAt: null,
-              rejectedByActorId: null,
-              rejectionReason: null,
-              publishedAt: null,
-              publishedByActorId: null,
-              closedAt: null,
-            };
-          })
-        : [];
+    allocations[id] = [];
     return HttpResponse.json({ data: toDetail(plan) });
   }),
   http.get('*/admin/kpi/my-progress', ({ request }) => {
@@ -1391,8 +1358,12 @@ export const kpiHandlers = [
         { status: 409 },
       );
     }
-    const currentStatusError = requireAllocationStatus(plan, 'DRAFT');
-    if (currentStatusError) return currentStatusError;
+    if ((allocations[plan.id] ?? []).some((allocation) => allocation.allocationStatus !== 'DRAFT')) {
+      return HttpResponse.json(
+        { message: 'KPI allocation draft can be edited only while all rows are DRAFT' },
+        { status: 409 },
+      );
+    }
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['allocations']);
     if (unsupported) return unsupported;

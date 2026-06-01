@@ -75,7 +75,7 @@ export type KpiAllocationQuery = {
 export type KpiCreatePlanPayload = {
   title: string;
   description?: string | null;
-  subjectType: KpiExecutableSubjectType;
+  subjectType: 'TALENT_GROUP';
   subjectId: string;
   currencyCode?: 'VND';
   periodMonth: string;
@@ -83,7 +83,6 @@ export type KpiCreatePlanPayload = {
   periodEndAt: number;
   timezone?: string;
   targetMetrics: KpiTargetMetricInput[];
-  allocations?: KpiAllocationInput[];
   externalRef?: string | null;
 };
 
