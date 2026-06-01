@@ -177,6 +177,26 @@ const metricUnits: Record<KpiMetricCode, KpiUnit> = {
   EVENT_COMPLETION_COUNT: 'COUNT',
   ONBOARDED_TALENT_COUNT: 'COUNT',
 };
+const metricCodes = Object.keys(metricUnits) as KpiMetricCode[];
+const integerTargetMetricCodes = new Set<KpiMetricCode>([
+  'REVENUE_VND',
+  'CONTENT_OUTPUT_COUNT',
+  'EVENT_COMPLETION_COUNT',
+  'ONBOARDED_TALENT_COUNT',
+]);
+const subjectTypes: KpiSubjectType[] = ['TALENT', 'TALENT_GROUP', 'EMPLOYMENT_PROFILE', 'ORG_UNIT'];
+const executableSubjectTypes: KpiSubjectType[] = ['TALENT', 'TALENT_GROUP'];
+const planStatuses: KpiStatus[] = ['DRAFT', 'PUBLISHED', 'FINALIZED', 'ARCHIVED'];
+const allocationStatuses: KpiAllocation['allocationStatus'][] = [
+  'DRAFT',
+  'PENDING_APPROVAL',
+  'APPROVED',
+  'PUBLISHED',
+  'REJECTED',
+  'ACTIVE',
+  'CLOSED',
+  'CANCELLED',
+];
 const allowedListQueryKeys = [
   'subjectType',
   'subjectId',
@@ -191,6 +211,9 @@ const allowedListQueryKeys = [
 ] as const;
 const allowedAllocationListQueryKeys = ['status', 'kpiPlanId', 'groupId', 'limit'] as const;
 const allowedManagedMemberQueryKeys = ['search', 'limit'] as const;
+const allowedSortByValues = ['periodMonth', 'planCode', 'createdAt'];
+const allowedSortDirections = ['ASC', 'DESC'];
+const maxListLimit = 100;
 const managedMembers: ManagedMember[] = [
   {
     employmentProfileId: 'employment-profile-001',
@@ -372,18 +395,18 @@ const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
 );
 
 initialAllocations['kpi-plan-draft'] = [];
-initialAllocations['kpi-plan-finalized'] = (
-  initialAllocations['kpi-plan-finalized'] ?? []
-).map((allocation, index) => ({
-  ...allocation,
-  allocationStatus: index === 0 ? 'PENDING_APPROVAL' : 'APPROVED',
-  submittedAt: now - 70_000,
-  submittedByActorId: 'manager-user',
-  approvedAt: index === 0 ? null : now - 60_000,
-  approvedByActorId: index === 0 ? null : 'user-admin',
-  publishedAt: null,
-  publishedByActorId: null,
-}));
+initialAllocations['kpi-plan-finalized'] = (initialAllocations['kpi-plan-finalized'] ?? []).map(
+  (allocation, index) => ({
+    ...allocation,
+    allocationStatus: index === 0 ? 'PENDING_APPROVAL' : 'APPROVED',
+    submittedAt: now - 70_000,
+    submittedByActorId: 'manager-user',
+    approvedAt: index === 0 ? null : now - 60_000,
+    approvedByActorId: index === 0 ? null : 'user-admin',
+    publishedAt: null,
+    publishedByActorId: null,
+  }),
+);
 initialAllocations['kpi-plan-legacy-active'] = (
   initialAllocations['kpi-plan-legacy-active'] ?? []
 ).map((allocation, index) => ({
@@ -503,6 +526,67 @@ const rejectUnsupportedBody = (body: Record<string, unknown>, allowedKeys: reado
   return undefined;
 };
 
+const parseLimitQuery = (value: string | null) => {
+  if (value == null || value === '') return 50;
+  const numeric = Number(value);
+  if (!Number.isInteger(numeric) || numeric < 1 || numeric > maxListLimit) {
+    return null;
+  }
+  return numeric;
+};
+
+const validateListQuery = (searchParams: URLSearchParams) => {
+  const subjectType = searchParams.get('subjectType');
+  if (subjectType && !subjectTypes.includes(subjectType as KpiSubjectType)) {
+    return validationError(`KPI subjectType is unsupported: ${subjectType}`);
+  }
+  const status = searchParams.get('status');
+  if (status && !planStatuses.includes(status as KpiStatus)) {
+    return validationError(`KPI status is unsupported: ${status}`);
+  }
+  const metricCode = searchParams.get('metricCode');
+  if (metricCode && !metricCodes.includes(metricCode as KpiMetricCode)) {
+    return validationError(`KPI metricCode is unsupported: ${metricCode}`);
+  }
+  const periodMonth = searchParams.get('periodMonth');
+  if (periodMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(periodMonth)) {
+    return validationError('KPI periodMonth must use YYYY-MM format');
+  }
+  const limit = parseLimitQuery(searchParams.get('limit'));
+  if (limit == null) {
+    return validationError(`KPI limit must be an integer between 1 and ${maxListLimit}`);
+  }
+  const sortBy = searchParams.get('sortBy');
+  if (sortBy && !allowedSortByValues.includes(sortBy)) {
+    return validationError(`KPI sortBy is unsupported: ${sortBy}`);
+  }
+  const sortDirection = searchParams.get('sortDirection');
+  if (sortDirection && !allowedSortDirections.includes(sortDirection.toUpperCase())) {
+    return validationError(`KPI sortDirection is unsupported: ${sortDirection}`);
+  }
+  return undefined;
+};
+
+const validateAllocationListQuery = (searchParams: URLSearchParams) => {
+  const status = searchParams.get('status');
+  if (status && !allocationStatuses.includes(status as KpiAllocation['allocationStatus'])) {
+    return validationError(`KPI allocationStatus is unsupported: ${status}`);
+  }
+  const limit = parseLimitQuery(searchParams.get('limit'));
+  if (limit == null) {
+    return validationError(`KPI limit must be an integer between 1 and ${maxListLimit}`);
+  }
+  return undefined;
+};
+
+const validateManagedMemberQuery = (searchParams: URLSearchParams) => {
+  const limit = parseLimitQuery(searchParams.get('limit'));
+  if (limit == null) {
+    return validationError(`KPI limit must be an integer between 1 and ${maxListLimit}`);
+  }
+  return undefined;
+};
+
 const parseJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
   if (!request.headers.get('content-type')?.includes('application/json')) {
     return {};
@@ -532,6 +616,56 @@ const requireAllocationStatus = (
   return undefined;
 };
 
+const validatePublishAllocationPreconditions = (plan: KpiPlan) => {
+  const rows = allocations[plan.id] ?? [];
+  if (rows.length === 0) {
+    return HttpResponse.json(
+      { message: 'KPI TALENT_GROUP publish requires allocation rows' },
+      { status: 409 },
+    );
+  }
+  const targetRows = targets[plan.id] ?? [];
+  const totals = new Map<KpiMetricCode, number>();
+  targetRows.forEach((metric) => totals.set(metric.metricCode, 0));
+  for (const allocation of rows) {
+    if (
+      !managedMembers.some(
+        (member) =>
+          member.groupId === plan.subjectId && member.talentId === allocation.memberTalentId,
+      )
+    ) {
+      return HttpResponse.json(
+        {
+          message: `KPI allocation memberTalentId must still be an active member at publish: ${allocation.memberTalentId}`,
+        },
+        { status: 409 },
+      );
+    }
+    for (const metric of allocation.targetMetrics) {
+      const metricValidation = validateMetricPayload([metric], {
+        path: 'allocations[].targetMetrics',
+        allowedMetricCodes: new Set(targetRows.map((target) => target.metricCode)),
+      });
+      if (!metricValidation.ok) {
+        return validationError(metricValidation.message, metricValidation.status);
+      }
+      totals.set(metric.metricCode, (totals.get(metric.metricCode) ?? 0) + metric.targetValue);
+    }
+  }
+  for (const target of targetRows) {
+    const total = totals.get(target.metricCode) ?? 0;
+    if (Math.abs(total - target.targetValue) > 0.000001) {
+      return HttpResponse.json(
+        {
+          message: `KPI allocation total for ${target.metricCode} must equal plan target ${target.targetValue}; received ${total}`,
+        },
+        { status: 409 },
+      );
+    }
+  }
+  return undefined;
+};
+
 const toDetail = (plan: KpiPlan) => ({
   ...plan,
   targetMetrics: targets[plan.id] ?? [],
@@ -541,9 +675,8 @@ const toDetail = (plan: KpiPlan) => ({
 const toAllocationWorkflowSummary = (rows: KpiAllocation[]): KpiAllocationWorkflowSummary => {
   const byStatus = {
     draft: rows.filter((allocation) => allocation.allocationStatus === 'DRAFT').length,
-    pendingApproval: rows.filter(
-      (allocation) => allocation.allocationStatus === 'PENDING_APPROVAL',
-    ).length,
+    pendingApproval: rows.filter((allocation) => allocation.allocationStatus === 'PENDING_APPROVAL')
+      .length,
     approved: rows.filter((allocation) => allocation.allocationStatus === 'APPROVED').length,
     published: rows.filter((allocation) => allocation.allocationStatus === 'PUBLISHED').length,
     rejected: rows.filter((allocation) => allocation.allocationStatus === 'REJECTED').length,
@@ -618,28 +751,305 @@ const filterPlans = (request: Request) => {
   return rows;
 };
 
+type ValidationResult<T> = { ok: true; value: T } | { ok: false; message: string; status?: number };
+type MetricInput = { metricCode: KpiMetricCode; targetValue: number };
+type PlanAllocationInput = {
+  memberTalentId: string;
+  membershipId: string | null;
+  allocationStartDate: string;
+  allocationEndDate: string | null;
+  targetMetrics: MetricInput[];
+  snapshotMemberDisplayName: string | null;
+};
+type DraftAllocationInput = {
+  employmentProfileId: string;
+  allocationStartDate: string;
+  allocationEndDate: string | null;
+  targetMetrics: MetricInput[];
+  note: string | null;
+};
+
+const validationError = (message: string, status = 400) =>
+  HttpResponse.json({ message }, { status });
+
+const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const rejectUnknownRecordKeys = (
+  value: Record<string, unknown>,
+  allowedKeys: readonly string[],
+  path: string,
+): ValidationResult<Record<string, unknown>> => {
+  const allowed = new Set(allowedKeys);
+  const unsupported = Object.keys(value).find((key) => !allowed.has(key));
+  if (unsupported) {
+    return { ok: false, message: `Unsupported ${path} key: ${unsupported}` };
+  }
+  return { ok: true, value };
+};
+
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
+const hasAtMostDecimalPlaces = (value: number, places: number): boolean =>
+  Number.isInteger(Number((value * 10 ** places).toFixed(8)));
+
+const parseContractDate = (value: unknown): string | null => {
+  if (typeof value !== 'string' || !allocationContractDatePattern.test(value)) {
+    return null;
+  }
+  const [yearText, monthText, dayText] = value.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return value;
+};
+
+const parseActualDate = (
+  value: unknown,
+): { day: number; month: number; year: number; text: string } | null => {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return { day, month, year, text: value };
+};
+
+const actualDateInPlanPeriod = (plan: KpiPlan, actualDate: string): boolean => {
+  const parsed = parseActualDate(actualDate);
+  if (!parsed) return false;
+  return `${parsed.year}-${String(parsed.month).padStart(2, '0')}` === plan.periodMonth;
+};
+
 const validateMetricPayload = (
   items: unknown,
-): items is Array<{ metricCode: KpiMetricCode; targetValue: number }> =>
-  Array.isArray(items) &&
-  items.length > 0 &&
-  items.every(
-    (item) =>
-      item &&
-      typeof item === 'object' &&
-      !Array.isArray(item) &&
+  options: {
+    path?: string;
+    requireNonEmpty?: boolean;
+    allowedMetricCodes?: ReadonlySet<KpiMetricCode>;
+  } = {},
+): ValidationResult<MetricInput[]> => {
+  const path = options.path ?? 'targetMetrics';
+  if (!Array.isArray(items)) {
+    return { ok: false, message: `KPI ${path} must be an array` };
+  }
+  if (options.requireNonEmpty !== false && items.length === 0) {
+    return { ok: false, message: `KPI ${path} requires at least one metric` };
+  }
+
+  const seen = new Set<KpiMetricCode>();
+  const normalized: MetricInput[] = [];
+  for (const [index, item] of items.entries()) {
+    if (!isPlainRecord(item)) {
+      return { ok: false, message: `KPI ${path}[${index}] must be an object` };
+    }
+    const keys = rejectUnknownRecordKeys(item, ['metricCode', 'targetValue'], `${path}[${index}]`);
+    if (!keys.ok) return keys;
+
+    const metricCode = item.metricCode;
+    if (typeof metricCode !== 'string' || !metricCodes.includes(metricCode as KpiMetricCode)) {
+      return { ok: false, message: `KPI metricCode is unsupported: ${String(metricCode)}` };
+    }
+    const normalizedCode = metricCode as KpiMetricCode;
+    if (options.allowedMetricCodes && !options.allowedMetricCodes.has(normalizedCode)) {
+      return {
+        ok: false,
+        message: `KPI allocation metricCode ${normalizedCode} is not in plan target metrics`,
+      };
+    }
+    if (seen.has(normalizedCode)) {
+      return { ok: false, message: `KPI ${path} duplicates metricCode ${normalizedCode}` };
+    }
+    seen.add(normalizedCode);
+
+    const targetValue = item.targetValue;
+    if (!isNumber(targetValue) || targetValue < 0) {
+      return {
+        ok: false,
+        message: `KPI ${normalizedCode} requires a finite non-negative numeric target value`,
+      };
+    }
+    if (integerTargetMetricCodes.has(normalizedCode) && !Number.isInteger(targetValue)) {
+      return { ok: false, message: `${normalizedCode} requires an integer target value` };
+    }
+    if (normalizedCode === 'LIVE_HOURS' && !hasAtMostDecimalPlaces(targetValue, 2)) {
+      return { ok: false, message: 'LIVE_HOURS supports at most 2 decimal places' };
+    }
+    normalized.push({ metricCode: normalizedCode, targetValue });
+  }
+  return { ok: true, value: normalized };
+};
+
+const validatePlanAllocationPayload = (
+  items: unknown,
+  planMetricCodes: ReadonlySet<KpiMetricCode>,
+): ValidationResult<PlanAllocationInput[]> => {
+  if (!Array.isArray(items)) {
+    return { ok: false, message: 'KPI allocations must be an array' };
+  }
+
+  const seenMembers = new Set<string>();
+  const normalized: PlanAllocationInput[] = [];
+  for (const [index, item] of items.entries()) {
+    if (!isPlainRecord(item)) {
+      return { ok: false, message: `KPI allocations[${index}] must be an object` };
+    }
+    const keys = rejectUnknownRecordKeys(
+      item,
       [
-        'REVENUE_VND',
-        'CONTENT_OUTPUT_COUNT',
-        'LIVE_HOURS',
-        'EVENT_COMPLETION_COUNT',
-        'ONBOARDED_TALENT_COUNT',
-      ].includes(String((item as Record<string, unknown>).metricCode)) &&
-      isNumber((item as Record<string, unknown>).targetValue),
-  );
+        'memberTalentId',
+        'membershipId',
+        'allocationStartDate',
+        'allocationEndDate',
+        'targetMetrics',
+        'snapshotMemberDisplayName',
+      ],
+      `allocations[${index}]`,
+    );
+    if (!keys.ok) return keys;
+
+    const memberTalentId =
+      typeof item.memberTalentId === 'string' ? item.memberTalentId.trim() : '';
+    if (!memberTalentId) {
+      return { ok: false, message: `KPI allocations[${index}].memberTalentId is required` };
+    }
+    if (seenMembers.has(memberTalentId)) {
+      return { ok: false, message: `KPI allocations duplicate memberTalentId ${memberTalentId}` };
+    }
+    seenMembers.add(memberTalentId);
+
+    const allocationStartDate = parseContractDate(item.allocationStartDate);
+    if (!allocationStartDate) {
+      return {
+        ok: false,
+        message: `KPI allocations[${index}].allocationStartDate must use YYYY-MM-DD`,
+      };
+    }
+    const allocationEndDate =
+      item.allocationEndDate == null ? null : parseContractDate(item.allocationEndDate);
+    if (item.allocationEndDate != null && !allocationEndDate) {
+      return {
+        ok: false,
+        message: `KPI allocations[${index}].allocationEndDate must use YYYY-MM-DD`,
+      };
+    }
+    const metrics = validateMetricPayload(item.targetMetrics, {
+      path: `allocations[${index}].targetMetrics`,
+      requireNonEmpty: false,
+      allowedMetricCodes: planMetricCodes,
+    });
+    if (!metrics.ok) return metrics;
+
+    normalized.push({
+      memberTalentId,
+      membershipId: (item.membershipId as string | null | undefined) ?? null,
+      allocationStartDate,
+      allocationEndDate,
+      targetMetrics: metrics.value,
+      snapshotMemberDisplayName:
+        (item.snapshotMemberDisplayName as string | null | undefined) ?? null,
+    });
+  }
+  return { ok: true, value: normalized };
+};
+
+const validateDraftAllocationPayload = (
+  items: unknown,
+  plan: KpiPlan,
+): ValidationResult<DraftAllocationInput[]> => {
+  if (!Array.isArray(items) || items.length === 0) {
+    return { ok: false, message: 'Invalid allocation draft' };
+  }
+
+  const planMetricCodes = new Set((targets[plan.id] ?? []).map((metric) => metric.metricCode));
+  const seenProfiles = new Set<string>();
+  const normalized: DraftAllocationInput[] = [];
+  for (const [index, item] of items.entries()) {
+    if (!isPlainRecord(item)) {
+      return { ok: false, message: `KPI allocations[${index}] must be an object` };
+    }
+    const keys = rejectUnknownRecordKeys(
+      item,
+      ['employmentProfileId', 'allocationStartDate', 'allocationEndDate', 'targetMetrics', 'note'],
+      `allocations[${index}]`,
+    );
+    if (!keys.ok) return keys;
+
+    const employmentProfileId =
+      typeof item.employmentProfileId === 'string' ? item.employmentProfileId.trim() : '';
+    if (!employmentProfileId) {
+      return { ok: false, message: `KPI allocations[${index}].employmentProfileId is required` };
+    }
+    if (seenProfiles.has(employmentProfileId)) {
+      return {
+        ok: false,
+        message: `KPI allocations duplicate employmentProfileId ${employmentProfileId}`,
+      };
+    }
+    seenProfiles.add(employmentProfileId);
+    if (
+      !managedMembers.some(
+        (member) =>
+          member.groupId === plan.subjectId && member.employmentProfileId === employmentProfileId,
+      )
+    ) {
+      return {
+        ok: false,
+        message: `KPI allocation employmentProfileId is not an active managed member: ${employmentProfileId}`,
+        status: 409,
+      };
+    }
+
+    const allocationStartDate = parseContractDate(item.allocationStartDate);
+    if (!allocationStartDate) {
+      return {
+        ok: false,
+        message: `KPI allocations[${index}].allocationStartDate must use YYYY-MM-DD`,
+      };
+    }
+    const allocationEndDate =
+      item.allocationEndDate == null ? null : parseContractDate(item.allocationEndDate);
+    if (item.allocationEndDate != null && !allocationEndDate) {
+      return {
+        ok: false,
+        message: `KPI allocations[${index}].allocationEndDate must use YYYY-MM-DD`,
+      };
+    }
+    const metrics = validateMetricPayload(item.targetMetrics, {
+      path: `allocations[${index}].targetMetrics`,
+      requireNonEmpty: false,
+      allowedMetricCodes: planMetricCodes,
+    });
+    if (!metrics.ok) return metrics;
+
+    normalized.push({
+      employmentProfileId,
+      allocationStartDate,
+      allocationEndDate,
+      targetMetrics: metrics.value,
+      note: (item.note as string | null | undefined) ?? null,
+    });
+  }
+  return { ok: true, value: normalized };
+};
 
 const toTargetMetrics = (
   kpiPlanId: string,
@@ -728,12 +1138,17 @@ export const kpiHandlers = [
     const url = new URL(request.url);
     const unsupported = rejectUnsupportedQuery(url.searchParams, allowedListQueryKeys);
     if (unsupported) return unsupported;
-    return HttpResponse.json({ data: filterPlans(request).map(toListPlan) });
+    const invalid = validateListQuery(url.searchParams);
+    if (invalid) return invalid;
+    const limit = parseLimitQuery(url.searchParams.get('limit')) ?? 50;
+    return HttpResponse.json({ data: filterPlans(request).slice(0, limit).map(toListPlan) });
   }),
   http.get('*/admin/kpi/allocations', ({ request }) => {
     const url = new URL(request.url);
     const unsupported = rejectUnsupportedQuery(url.searchParams, allowedAllocationListQueryKeys);
     if (unsupported) return unsupported;
+    const invalid = validateAllocationListQuery(url.searchParams);
+    if (invalid) return invalid;
     let rows = Object.values(allocations).flat();
     if (url.searchParams.get('status')) {
       rows = rows.filter(
@@ -748,7 +1163,8 @@ export const kpiHandlers = [
     if (url.searchParams.get('groupId')) {
       rows = rows.filter((allocation) => allocation.groupId === url.searchParams.get('groupId'));
     }
-    return HttpResponse.json({ data: rows });
+    const limit = parseLimitQuery(url.searchParams.get('limit')) ?? 50;
+    return HttpResponse.json({ data: rows.slice(0, limit) });
   }),
   http.post('*/admin/kpi/plans', async ({ request }) => {
     const body = await parseJsonBody(request);
@@ -767,21 +1183,38 @@ export const kpiHandlers = [
       'externalRef',
     ]);
     if (unsupported) return unsupported;
-    if (!validateMetricPayload(body.targetMetrics)) {
-      return HttpResponse.json({ message: 'Invalid target metrics' }, { status: 422 });
+    if (!body.title || typeof body.title !== 'string') {
+      return validationError('KPI title is required');
     }
     if (
-      Array.isArray(body.allocations) &&
-      body.allocations.some((item) => {
-        const allocation = item as Record<string, unknown>;
-        return (
-          !allocationContractDatePattern.test(String(allocation.allocationStartDate ?? '')) ||
-          (allocation.allocationEndDate != null &&
-            !allocationContractDatePattern.test(String(allocation.allocationEndDate)))
-        );
-      })
+      typeof body.subjectType !== 'string' ||
+      !executableSubjectTypes.includes(body.subjectType as KpiSubjectType)
     ) {
-      return HttpResponse.json({ message: 'Invalid allocation date' }, { status: 422 });
+      return validationError(`KPI subjectType is unsupported: ${String(body.subjectType)}`);
+    }
+    if (!body.subjectId || typeof body.subjectId !== 'string') {
+      return validationError('KPI subjectId is required');
+    }
+    if (body.currencyCode != null && body.currencyCode !== 'VND') {
+      return validationError('KPI currencyCode supports only VND');
+    }
+    if (typeof body.periodMonth !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(body.periodMonth)) {
+      return validationError('KPI periodMonth must use YYYY-MM format');
+    }
+    if (!isNumber(body.periodStartAt) || !isNumber(body.periodEndAt)) {
+      return validationError('KPI periodStartAt/periodEndAt must be numeric timestamps');
+    }
+    const targetValidation = validateMetricPayload(body.targetMetrics);
+    if (!targetValidation.ok) {
+      return validationError(targetValidation.message, targetValidation.status);
+    }
+    const planMetricCodes = new Set(targetValidation.value.map((metric) => metric.metricCode));
+    const allocationValidation =
+      body.allocations === undefined
+        ? ({ ok: true, value: [] } as const)
+        : validatePlanAllocationPayload(body.allocations, planMetricCodes);
+    if (!allocationValidation.ok) {
+      return validationError(allocationValidation.message, allocationValidation.status);
     }
     planSeed += 1;
     const id = `kpi-plan-${planSeed}`;
@@ -799,45 +1232,41 @@ export const kpiHandlers = [
       externalRef: (body.externalRef as string | null | undefined) ?? null,
     });
     plans.push(plan);
-    targets[id] = toTargetMetrics(id, body.targetMetrics);
-    allocations[id] = Array.isArray(body.allocations)
-      ? body.allocations.map((item, index) => {
-          const allocation = item as Record<string, unknown>;
-          return {
-            id: `${id}-alloc-${index + 1}`,
-            kpiPlanId: id,
-            groupId: plan.subjectId,
-            memberEmploymentProfileId: null,
-            memberTalentId: String(allocation.memberTalentId),
-            membershipId: (allocation.membershipId as string | null | undefined) ?? null,
-            allocationStatus: 'DRAFT',
-            allocationStartDate: String(allocation.allocationStartDate),
-            allocationEndDate: (allocation.allocationEndDate as string | null | undefined) ?? null,
-            targetMetrics: allocation.targetMetrics as Array<{
-              metricCode: KpiMetricCode;
-              targetValue: number;
-            }>,
-            snapshotMemberDisplayName:
-              (allocation.snapshotMemberDisplayName as string | null | undefined) ?? null,
-            note: null,
-            createdAt: now,
-            createdByActorId: 'user-admin',
-            updatedAt: now,
-            updatedByActorId: 'user-admin',
-            submittedAt: null,
-            submittedByActorId: null,
-            approvedAt: null,
-            approvedByActorId: null,
-            approvalNote: null,
-            rejectedAt: null,
-            rejectedByActorId: null,
-            rejectionReason: null,
-            publishedAt: null,
-            publishedByActorId: null,
-            closedAt: null,
-          };
-        })
-      : [];
+    targets[id] = toTargetMetrics(id, targetValidation.value);
+    allocations[id] =
+      allocationValidation.value.length > 0
+        ? allocationValidation.value.map((allocation, index) => {
+            return {
+              id: `${id}-alloc-${index + 1}`,
+              kpiPlanId: id,
+              groupId: plan.subjectId,
+              memberEmploymentProfileId: null,
+              memberTalentId: allocation.memberTalentId,
+              membershipId: allocation.membershipId,
+              allocationStatus: 'DRAFT',
+              allocationStartDate: allocation.allocationStartDate,
+              allocationEndDate: allocation.allocationEndDate,
+              targetMetrics: allocation.targetMetrics,
+              snapshotMemberDisplayName: allocation.snapshotMemberDisplayName,
+              note: null,
+              createdAt: now,
+              createdByActorId: 'user-admin',
+              updatedAt: now,
+              updatedByActorId: 'user-admin',
+              submittedAt: null,
+              submittedByActorId: null,
+              approvedAt: null,
+              approvedByActorId: null,
+              approvalNote: null,
+              rejectedAt: null,
+              rejectedByActorId: null,
+              rejectionReason: null,
+              publishedAt: null,
+              publishedByActorId: null,
+              closedAt: null,
+            };
+          })
+        : [];
     return HttpResponse.json({ data: toDetail(plan) });
   }),
   http.get('*/admin/kpi/my-progress', ({ request }) => {
@@ -924,8 +1353,10 @@ export const kpiHandlers = [
     const url = new URL(request.url);
     const unsupported = rejectUnsupportedQuery(url.searchParams, allowedManagedMemberQueryKeys);
     if (unsupported) return unsupported;
+    const invalid = validateManagedMemberQuery(url.searchParams);
+    if (invalid) return invalid;
     const search = url.searchParams.get('search')?.toLowerCase();
-    const limit = Number(url.searchParams.get('limit') ?? 20);
+    const limit = parseLimitQuery(url.searchParams.get('limit')) ?? 20;
     const rows = managedMembers
       .filter((item) => item.groupId === plan.subjectId)
       .filter((item) =>
@@ -935,15 +1366,19 @@ export const kpiHandlers = [
               .includes(search)
           : true,
       )
-      .slice(0, Number.isFinite(limit) ? limit : 20);
+      .slice(0, limit);
     return HttpResponse.json({ data: rows });
   }),
   http.get('*/admin/kpi/plans/:kpiPlanId/actuals', ({ params, request }) => {
     const plan = readPlan(String(params.kpiPlanId));
     if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     const actualDate = new URL(request.url).searchParams.get('actualDate');
-    if (!actualDate || !/^\d{2}-\d{2}-\d{4}$/.test(actualDate)) {
-      return HttpResponse.json({ message: 'Invalid actualDate' }, { status: 422 });
+    if (
+      typeof actualDate !== 'string' ||
+      !parseActualDate(actualDate) ||
+      !actualDateInPlanPeriod(plan, actualDate)
+    ) {
+      return validationError('Invalid actualDate');
     }
     return HttpResponse.json({ data: toActualGrid(plan, actualDate) });
   }),
@@ -964,22 +1399,12 @@ export const kpiHandlers = [
     if (!Array.isArray(body.allocations) || body.allocations.length === 0) {
       return HttpResponse.json({ message: 'Invalid allocation draft' }, { status: 422 });
     }
-    const draftItems = body.allocations as Record<string, unknown>[];
-    if (
-      draftItems.some(
-        (allocation) =>
-          !String(allocation.employmentProfileId ?? '') ||
-          !allocationContractDatePattern.test(String(allocation.allocationStartDate ?? '')) ||
-          (allocation.allocationEndDate != null &&
-            !allocationContractDatePattern.test(String(allocation.allocationEndDate))) ||
-          'memberTalentId' in allocation ||
-          'targetKind' in allocation,
-      )
-    ) {
-      return HttpResponse.json({ message: 'Invalid allocation draft target' }, { status: 422 });
+    const draftValidation = validateDraftAllocationPayload(body.allocations, plan);
+    if (!draftValidation.ok) {
+      return validationError(draftValidation.message, draftValidation.status);
     }
-    allocations[plan.id] = draftItems.map((allocation, index) => {
-      const employmentProfileId = String(allocation.employmentProfileId ?? '');
+    allocations[plan.id] = draftValidation.value.map((allocation, index) => {
+      const employmentProfileId = allocation.employmentProfileId;
       return {
         id: `${plan.id}-alloc-${index + 1}`,
         kpiPlanId: plan.id,
@@ -988,15 +1413,12 @@ export const kpiHandlers = [
         memberTalentId: employmentProfileId.replace('employment-profile', 'talent'),
         membershipId: null,
         allocationStatus: 'DRAFT',
-        allocationStartDate: String(allocation.allocationStartDate),
-        allocationEndDate: (allocation.allocationEndDate as string | null | undefined) ?? null,
-        targetMetrics: allocation.targetMetrics as Array<{
-          metricCode: KpiMetricCode;
-          targetValue: number;
-        }>,
+        allocationStartDate: allocation.allocationStartDate,
+        allocationEndDate: allocation.allocationEndDate,
+        targetMetrics: allocation.targetMetrics,
         snapshotMemberDisplayName:
           employmentProfileId === 'employment-profile-001' ? 'Luna Park' : 'Minh Tran',
-        note: (allocation.note as string | null | undefined) ?? null,
+        note: allocation.note,
         createdAt: now,
         createdByActorId: 'manager-user',
         updatedAt: now,
@@ -1086,6 +1508,8 @@ export const kpiHandlers = [
     if (unsupported) return unsupported;
     const currentStatusError = requireAllocationStatus(plan, 'APPROVED');
     if (currentStatusError) return currentStatusError;
+    const preconditionError = validatePublishAllocationPreconditions(plan);
+    if (preconditionError) return preconditionError;
     (allocations[plan.id] ?? []).forEach((allocation) => {
       allocation.allocationStatus = 'PUBLISHED';
       allocation.publishedAt = now;
@@ -1098,21 +1522,68 @@ export const kpiHandlers = [
   http.put('*/admin/kpi/plans/:kpiPlanId/allocations', async ({ params, request }) => {
     const plan = readPlan(String(params.kpiPlanId));
     if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.status !== 'DRAFT') {
+      return HttpResponse.json(
+        { message: 'KPI allocations can be replaced only while plan is DRAFT' },
+        { status: 409 },
+      );
+    }
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['allocations']);
     if (unsupported) return unsupported;
+    const planMetricCodes = new Set((targets[plan.id] ?? []).map((metric) => metric.metricCode));
+    const allocationValidation = validatePlanAllocationPayload(body.allocations, planMetricCodes);
+    if (!allocationValidation.ok) {
+      return validationError(allocationValidation.message, allocationValidation.status);
+    }
+    allocations[plan.id] = allocationValidation.value.map((allocation, index) => ({
+      id: `${plan.id}-alloc-${index + 1}`,
+      kpiPlanId: plan.id,
+      groupId: plan.subjectId,
+      memberEmploymentProfileId: null,
+      memberTalentId: allocation.memberTalentId,
+      membershipId: allocation.membershipId,
+      allocationStatus: 'DRAFT',
+      allocationStartDate: allocation.allocationStartDate,
+      allocationEndDate: allocation.allocationEndDate,
+      targetMetrics: allocation.targetMetrics,
+      snapshotMemberDisplayName: allocation.snapshotMemberDisplayName,
+      note: null,
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      submittedAt: null,
+      submittedByActorId: null,
+      approvedAt: null,
+      approvedByActorId: null,
+      approvalNote: null,
+      rejectedAt: null,
+      rejectedByActorId: null,
+      rejectionReason: null,
+      publishedAt: null,
+      publishedByActorId: null,
+      closedAt: null,
+    }));
     return HttpResponse.json({ data: toDetail(plan) });
   }),
   http.put('*/admin/kpi/plans/:kpiPlanId/target-metrics', async ({ params, request }) => {
     const plan = readPlan(String(params.kpiPlanId));
     if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.status !== 'DRAFT') {
+      return HttpResponse.json(
+        { message: 'KPI target metrics can be replaced only while plan is DRAFT' },
+        { status: 409 },
+      );
+    }
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['targetMetrics']);
     if (unsupported) return unsupported;
-    if (!validateMetricPayload(body.targetMetrics)) {
-      return HttpResponse.json({ message: 'Invalid target metrics' }, { status: 422 });
+    const targetValidation = validateMetricPayload(body.targetMetrics);
+    if (!targetValidation.ok) {
+      return validationError(targetValidation.message, targetValidation.status);
     }
-    targets[plan.id] = toTargetMetrics(plan.id, body.targetMetrics);
+    targets[plan.id] = toTargetMetrics(plan.id, targetValidation.value);
     return HttpResponse.json({ data: toDetail(plan) });
   }),
   http.patch('*/admin/kpi/plans/:kpiPlanId/draft-core', async ({ params, request }) => {
@@ -1155,6 +1626,8 @@ export const kpiHandlers = [
     return HttpResponse.json({ data: toDetail(plan) });
   }),
   http.post('*/admin/kpi/plans/:kpiPlanId/actuals', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, [
       'allocationId',
@@ -1163,10 +1636,45 @@ export const kpiHandlers = [
       'actualValue',
     ]);
     if (unsupported) return unsupported;
+    if (
+      !parseActualDate(body.actualDate) ||
+      !actualDateInPlanPeriod(plan, String(body.actualDate))
+    ) {
+      return validationError('Invalid actualDate');
+    }
+    const metricCode = body.metricCode as KpiMetricCode;
+    if (!metricCodes.includes(metricCode)) {
+      return validationError(`KPI metricCode is unsupported: ${String(body.metricCode)}`);
+    }
+    if (!isNumber(body.actualValue) || body.actualValue < 0) {
+      return validationError(
+        `KPI ${metricCode} requires a finite non-negative numeric actual value`,
+      );
+    }
+    if (integerTargetMetricCodes.has(metricCode) && !Number.isInteger(body.actualValue)) {
+      return validationError(`${metricCode} requires an integer actual value`);
+    }
+    if (metricCode === 'LIVE_HOURS' && !hasAtMostDecimalPlaces(body.actualValue, 2)) {
+      return validationError('LIVE_HOURS supports at most 2 decimal places');
+    }
+    const allocation = (allocations[String(params.kpiPlanId)] ?? []).find(
+      (item) => item.id === String(body.allocationId),
+    );
+    if (!allocation || allocation.allocationStatus !== 'PUBLISHED') {
+      return HttpResponse.json(
+        { message: 'KPI actual requires a published allocation' },
+        { status: 409 },
+      );
+    }
+    if (!allocation.targetMetrics.some((metric) => metric.metricCode === metricCode)) {
+      return validationError(
+        `KPI allocation metricCode ${metricCode} is not in allocation targets`,
+      );
+    }
     const existing = readEntry(
       String(params.kpiPlanId),
       String(body.allocationId),
-      body.metricCode as KpiMetricCode,
+      metricCode,
       String(body.actualDate),
     );
     if (existing) {
@@ -1179,15 +1687,12 @@ export const kpiHandlers = [
       );
     }
     actualSeed += 1;
-    const allocation = (allocations[String(params.kpiPlanId)] ?? []).find(
-      (item) => item.id === String(body.allocationId),
-    );
     const entry: ActualEntry = {
       id: `actual-${actualSeed}`,
       kpiPlanId: String(params.kpiPlanId),
       allocationId: String(body.allocationId),
       memberTalentId: allocation?.memberTalentId ?? 'talent-unknown',
-      metricCode: body.metricCode as KpiMetricCode,
+      metricCode,
       actualDate: String(body.actualDate),
       actualValue: Number(body.actualValue),
       effectiveValue: Number(body.actualValue),

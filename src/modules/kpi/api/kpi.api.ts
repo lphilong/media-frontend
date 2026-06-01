@@ -29,6 +29,12 @@ const metricCodeSchema = z.enum([
   'EVENT_COMPLETION_COUNT',
   'ONBOARDED_TALENT_COUNT',
 ]);
+const integerTargetMetricCodes = new Set<z.infer<typeof metricCodeSchema>>([
+  'REVENUE_VND',
+  'CONTENT_OUTPUT_COUNT',
+  'EVENT_COMPLETION_COUNT',
+  'ONBOARDED_TALENT_COUNT',
+]);
 const unitSchema = z.enum(['VND', 'COUNT', 'HOUR']);
 const allocationStatusSchema = z.enum([
   'DRAFT',
@@ -79,12 +85,57 @@ const referenceSummarySchema = z
   })
   .strict();
 
+const hasAtMostDecimalPlaces = (value: number, places: number): boolean =>
+  Number.isInteger(Number((value * 10 ** places).toFixed(8)));
+
+const rejectDuplicateTargetMetricCodes = (
+  items: KpiTargetMetricInput[],
+  context: z.RefinementCtx,
+): void => {
+  const seen = new Set<KpiTargetMetricInput['metricCode']>();
+  items.forEach((item, index) => {
+    if (seen.has(item.metricCode)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [index, 'metricCode'],
+        message: `Duplicate KPI target metric code: ${item.metricCode}`,
+      });
+    }
+    seen.add(item.metricCode);
+  });
+};
+
 const targetMetricInputSchema = z
   .object({
     metricCode: metricCodeSchema,
-    targetValue: z.number(),
+    targetValue: z.number().finite().nonnegative(),
   })
-  .strict();
+  .strict()
+  .superRefine((metric, context) => {
+    if (integerTargetMetricCodes.has(metric.metricCode) && !Number.isInteger(metric.targetValue)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['targetValue'],
+        message: `${metric.metricCode} target value must be an integer.`,
+      });
+    }
+    if (metric.metricCode === 'LIVE_HOURS' && !hasAtMostDecimalPlaces(metric.targetValue, 2)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['targetValue'],
+        message: 'LIVE_HOURS target value supports at most two decimal places.',
+      });
+    }
+  });
+
+const targetMetricInputArraySchema = z
+  .array(targetMetricInputSchema)
+  .superRefine(rejectDuplicateTargetMetricCodes);
+
+const requiredTargetMetricInputArraySchema = z
+  .array(targetMetricInputSchema)
+  .min(1)
+  .superRefine(rejectDuplicateTargetMetricCodes);
 
 const allocationContractDateSchema = z
   .string()
@@ -97,7 +148,7 @@ const allocationInputSchema = z
     membershipId: z.string().trim().min(1).nullable().optional(),
     allocationStartDate: allocationContractDateSchema,
     allocationEndDate: allocationContractDateSchema.nullable().optional(),
-    targetMetrics: z.array(targetMetricInputSchema),
+    targetMetrics: targetMetricInputArraySchema,
     snapshotMemberDisplayName: z.string().trim().min(1).nullable().optional(),
   })
   .strict();
@@ -107,7 +158,7 @@ const allocationDraftMemberInputSchema = z
     employmentProfileId: z.string().trim().min(1),
     allocationStartDate: allocationContractDateSchema,
     allocationEndDate: allocationContractDateSchema.nullable().optional(),
-    targetMetrics: z.array(targetMetricInputSchema).min(1),
+    targetMetrics: requiredTargetMetricInputArraySchema,
     note: z.string().trim().min(1).nullable().optional(),
   })
   .strict();
@@ -401,8 +452,23 @@ const createPayloadSchema = z
     periodStartAt: z.number(),
     periodEndAt: z.number(),
     timezone: z.string().trim().min(1).optional(),
-    targetMetrics: z.array(targetMetricInputSchema).min(1),
-    allocations: z.array(allocationInputSchema).optional(),
+    targetMetrics: requiredTargetMetricInputArraySchema,
+    allocations: z
+      .array(allocationInputSchema)
+      .superRefine((items, context) => {
+        const seen = new Set<string>();
+        items.forEach((item, index) => {
+          if (seen.has(item.memberTalentId)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: [index, 'memberTalentId'],
+              message: `Duplicate KPI allocation memberTalentId: ${item.memberTalentId}`,
+            });
+          }
+          seen.add(item.memberTalentId);
+        });
+      })
+      .optional(),
     externalRef: z.string().nullable().optional(),
   })
   .strict();
@@ -494,12 +560,9 @@ export const replaceKpiTargetMetrics = async (
   const response = await apiRequest<unknown, { targetMetrics: KpiTargetMetricInput[] }>({
     method: 'PUT',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/target-metrics`,
-    data: z
-      .object({ targetMetrics: z.array(targetMetricInputSchema) })
-      .strict()
-      .parse({
-        targetMetrics,
-      }),
+    data: z.object({ targetMetrics: requiredTargetMetricInputArraySchema }).strict().parse({
+      targetMetrics,
+    }),
   });
   return detailResponseSchema.parse(response).data;
 };
@@ -512,7 +575,21 @@ export const replaceKpiAllocations = async (
     method: 'PUT',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocations`,
     data: z
-      .object({ allocations: z.array(allocationInputSchema) })
+      .object({
+        allocations: z.array(allocationInputSchema).superRefine((items, context) => {
+          const seen = new Set<string>();
+          items.forEach((item, index) => {
+            if (seen.has(item.memberTalentId)) {
+              context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [index, 'memberTalentId'],
+                message: `Duplicate KPI allocation memberTalentId: ${item.memberTalentId}`,
+              });
+            }
+            seen.add(item.memberTalentId);
+          });
+        }),
+      })
       .strict()
       .parse({ allocations }),
   });
@@ -538,7 +615,24 @@ export const upsertKpiAllocationDraft = async (
     method: 'PUT',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-draft`,
     data: z
-      .object({ allocations: z.array(allocationDraftMemberInputSchema).min(1) })
+      .object({
+        allocations: z
+          .array(allocationDraftMemberInputSchema)
+          .min(1)
+          .superRefine((items, context) => {
+            const seen = new Set<string>();
+            items.forEach((item, index) => {
+              if (seen.has(item.employmentProfileId)) {
+                context.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  path: [index, 'employmentProfileId'],
+                  message: `Duplicate KPI allocation employmentProfileId: ${item.employmentProfileId}`,
+                });
+              }
+              seen.add(item.employmentProfileId);
+            });
+          }),
+      })
       .strict()
       .parse({ allocations }),
   });
@@ -740,7 +834,24 @@ export const parseKpiAllocationDraftPayloadForTest = (
   payload: unknown,
 ): { allocations: KpiAllocationDraftMemberInput[] } =>
   z
-    .object({ allocations: z.array(allocationDraftMemberInputSchema).min(1) })
+    .object({
+      allocations: z
+        .array(allocationDraftMemberInputSchema)
+        .min(1)
+        .superRefine((items, context) => {
+          const seen = new Set<string>();
+          items.forEach((item, index) => {
+            if (seen.has(item.employmentProfileId)) {
+              context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: [index, 'employmentProfileId'],
+                message: `Duplicate KPI allocation employmentProfileId: ${item.employmentProfileId}`,
+              });
+            }
+            seen.add(item.employmentProfileId);
+          });
+        }),
+    })
     .strict()
     .parse(payload);
 

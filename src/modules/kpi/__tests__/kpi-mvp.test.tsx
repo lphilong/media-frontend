@@ -14,14 +14,21 @@ import {
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import {
   approveKpiAllocation,
+  createKpiPlan,
+  fetchKpiActualDailyGrid,
+  fetchKpiPlans,
   fetchKpiManagedMembers,
   fetchMyKpiProgress,
   parseKpiAllocationDraftPayloadForTest,
   parseKpiAllocationListResponseForTest,
   parseKpiPlanListResponseForTest,
+  performKpiLifecycleAction,
   publishKpiAllocation,
   rejectKpiAllocation,
+  replaceKpiAllocations,
+  replaceKpiTargetMetrics,
   submitKpiAllocationDraft,
+  upsertKpiAllocationDraft,
 } from '@modules/kpi/api/kpi.api';
 import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { setLocale } from '@shared/i18n/i18n';
@@ -51,6 +58,13 @@ const waitForEnabledButton = async (name: string): Promise<HTMLElement> => {
   await waitFor(() => expect(button).toBeEnabled());
   return button;
 };
+
+const mswJson = (method: 'GET' | 'POST' | 'PUT', path: string, data?: unknown) =>
+  fetch(`http://localhost${path}`, {
+    method,
+    headers: data === undefined ? undefined : { 'content-type': 'application/json' },
+    body: data === undefined ? undefined : JSON.stringify(data),
+  });
 
 type KpiCapabilityMockParams = {
   permissions?: string[];
@@ -192,10 +206,12 @@ describe('KPI MVP UX', () => {
       http.get('*/admin/kpi/plans', ({ request }) => {
         urls.push(request.url);
         return HttpResponse.json({
-          data: [makeListPlan('kpi-plan-admin-draft', 'Admin draft KPI', 'group-001', {
-            status: 'DRAFT',
-            allocationWorkflowSummary: makeAllocationWorkflowSummary(),
-          })],
+          data: [
+            makeListPlan('kpi-plan-admin-draft', 'Admin draft KPI', 'group-001', {
+              status: 'DRAFT',
+              allocationWorkflowSummary: makeAllocationWorkflowSummary(),
+            }),
+          ],
         });
       }),
     );
@@ -496,7 +512,9 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByText(/Could not load Managed member options/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/KPI_PERMISSION_SCOPE_ERROR/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/KPI progress read scope denied/i)).not.toBeInTheDocument();
-    expect(screen.queryByText('Progress is unavailable for this plan or actor.')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Progress is unavailable for this plan or actor.'),
+    ).not.toBeInTheDocument();
     expect(screen.getByText('Published-only')).toBeInTheDocument();
     expect(screen.getByText('Published allocations only')).toBeInTheDocument();
     expect(
@@ -1026,6 +1044,224 @@ describe('KPI MVP UX', () => {
     await expect(rejectKpiAllocation('kpi-plan-published', 'Needs changes')).rejects.toThrow();
   });
 
+  it('MSW rejects invalid nested allocation draft rows and metrics', async () => {
+    const plan = await createKpiPlan({
+      title: 'Strict allocation draft plan',
+      subjectType: 'TALENT_GROUP',
+      subjectId: 'group-001',
+      periodMonth: '2026-05',
+      periodStartAt: may2026PeriodStartAt,
+      periodEndAt: may2026PeriodEndAt,
+      targetMetrics: [
+        { metricCode: 'REVENUE_VND', targetValue: 1000 },
+        { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 10 },
+        { metricCode: 'LIVE_HOURS', targetValue: 1.25 },
+      ],
+      allocations: [
+        {
+          memberTalentId: 'talent-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [
+            { metricCode: 'REVENUE_VND', targetValue: 1000 },
+            { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 10 },
+            { metricCode: 'LIVE_HOURS', targetValue: 1.25 },
+          ],
+        },
+      ],
+    });
+    await performKpiLifecycleAction(plan.id, 'publish');
+
+    const baseAllocation = {
+      employmentProfileId: 'employment-profile-001',
+      allocationStartDate: '2026-05-01',
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+    };
+    const invalidPayloads = [
+      { allocations: [{ ...baseAllocation, scopeGrants: { kpi: ['global'] } }] },
+      {
+        allocations: [
+          {
+            ...baseAllocation,
+            targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000, extra: true }],
+          },
+        ],
+      },
+      { allocations: [baseAllocation, baseAllocation] },
+      {
+        allocations: [
+          {
+            ...baseAllocation,
+            targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: -1 }],
+          },
+        ],
+      },
+      {
+        allocations: [
+          {
+            ...baseAllocation,
+            targetMetrics: [{ metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 1.5 }],
+          },
+        ],
+      },
+      {
+        allocations: [
+          {
+            ...baseAllocation,
+            targetMetrics: [{ metricCode: 'LIVE_HOURS', targetValue: 1.234 }],
+          },
+        ],
+      },
+    ];
+
+    for (const payload of invalidPayloads) {
+      const response = await mswJson(
+        'PUT',
+        `/admin/kpi/plans/${plan.id}/allocation-draft`,
+        payload,
+      );
+      expect(response.ok).toBe(false);
+      expect([400, 409]).toContain(response.status);
+    }
+  });
+
+  it('MSW rejects invalid create-plan nested allocation payloads', async () => {
+    const basePayload = {
+      title: 'Invalid create plan',
+      subjectType: 'TALENT_GROUP',
+      subjectId: 'group-001',
+      periodMonth: '2026-05',
+      periodStartAt: may2026PeriodStartAt,
+      periodEndAt: may2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+    };
+
+    for (const allocations of [
+      [
+        {
+          memberTalentId: 'talent-001',
+          allocationStartDate: '01-05-2026',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+        },
+      ],
+      [
+        {
+          memberTalentId: 'talent-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000, extra: true }],
+        },
+      ],
+      [
+        {
+          memberTalentId: 'talent-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+          targetKind: 'TALENT',
+        },
+      ],
+    ]) {
+      const response = await mswJson('POST', '/admin/kpi/plans', { ...basePayload, allocations });
+      expect(response.status).toBe(400);
+    }
+  });
+
+  it('MSW validates replace allocations and replace target metrics payloads', async () => {
+    const invalidTarget = await mswJson('PUT', '/admin/kpi/plans/kpi-plan-draft/target-metrics', {
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000, extra: true }],
+    });
+    expect(invalidTarget.status).toBe(400);
+
+    const invalidAllocation = await mswJson('PUT', '/admin/kpi/plans/kpi-plan-draft/allocations', {
+      allocations: [
+        {
+          memberTalentId: 'talent-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 100.5 }],
+        },
+      ],
+    });
+    expect(invalidAllocation.status).toBe(400);
+  });
+
+  it('MSW rejects allocation publish when allocation totals do not match plan targets', async () => {
+    const plan = await createKpiPlan({
+      title: 'Mismatched allocation total plan',
+      subjectType: 'TALENT_GROUP',
+      subjectId: 'group-001',
+      periodMonth: '2026-05',
+      periodStartAt: may2026PeriodStartAt,
+      periodEndAt: may2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+      allocations: [
+        {
+          memberTalentId: 'talent-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 900 }],
+        },
+      ],
+    });
+    await performKpiLifecycleAction(plan.id, 'publish');
+    await submitKpiAllocationDraft(plan.id);
+    await approveKpiAllocation(plan.id);
+
+    await expect(publishKpiAllocation(plan.id)).rejects.toThrow();
+  });
+
+  it('MSW rejects invalid KPI query values and actual dates', async () => {
+    await expect(fetchKpiPlans({ status: 'BROKEN' } as never)).rejects.toThrow();
+    await expect(fetchKpiPlans({ periodMonth: '2026-13' } as never)).rejects.toThrow();
+    await expect(fetchKpiPlans({ limit: 101 })).rejects.toThrow();
+    await expect(fetchKpiActualDailyGrid('kpi-plan-published', '31-02-2026')).rejects.toThrow();
+    await expect(fetchKpiActualDailyGrid('kpi-plan-published', '01-06-2026')).rejects.toThrow();
+  });
+
+  it('frontend KPI Zod rejects backend-invalid target metric semantics', async () => {
+    await expect(
+      replaceKpiTargetMetrics('kpi-plan-draft', [{ metricCode: 'REVENUE_VND', targetValue: -1 }]),
+    ).rejects.toThrow();
+    await expect(
+      replaceKpiTargetMetrics('kpi-plan-draft', [
+        { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 1.5 },
+      ]),
+    ).rejects.toThrow();
+    await expect(
+      replaceKpiTargetMetrics('kpi-plan-draft', [{ metricCode: 'LIVE_HOURS', targetValue: 1.234 }]),
+    ).rejects.toThrow();
+    await expect(
+      replaceKpiTargetMetrics('kpi-plan-draft', [
+        { metricCode: 'REVENUE_VND', targetValue: 1000 },
+        { metricCode: 'REVENUE_VND', targetValue: 1000 },
+      ]),
+    ).rejects.toThrow();
+    await expect(
+      replaceKpiAllocations('kpi-plan-draft', [
+        {
+          memberTalentId: 'talent-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+        },
+        {
+          memberTalentId: 'talent-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+        },
+      ]),
+    ).rejects.toThrow();
+    await expect(
+      upsertKpiAllocationDraft('kpi-plan-published', [
+        {
+          employmentProfileId: 'employment-profile-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+        },
+        {
+          employmentProfileId: 'employment-profile-001',
+          allocationStartDate: '2026-05-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+        },
+      ]),
+    ).rejects.toThrow();
+  });
+
   it('hides global KPI lifecycle action when global KPI scope is missing', async () => {
     server.use(
       http.get('*/admin/me/capabilities', () =>
@@ -1287,7 +1523,9 @@ describe('KPI MVP UX', () => {
     ).toBe(1);
     expect(() =>
       parseKpiPlanListResponseForTest({
-        data: [{ ...makeListPlan('kpi-plan-x', 'Strict summary KPI', 'group-001'), unexpected: true }],
+        data: [
+          { ...makeListPlan('kpi-plan-x', 'Strict summary KPI', 'group-001'), unexpected: true },
+        ],
       }),
     ).toThrow();
   });
@@ -1521,9 +1759,11 @@ type TestAllocationWorkflowSummary = {
   officialPublishedCount: number;
 };
 
-const makeAllocationWorkflowSummary = (overrides: {
-  byStatus?: Partial<TestAllocationWorkflowSummary['byStatus']>;
-} = {}): TestAllocationWorkflowSummary => {
+const makeAllocationWorkflowSummary = (
+  overrides: {
+    byStatus?: Partial<TestAllocationWorkflowSummary['byStatus']>;
+  } = {},
+): TestAllocationWorkflowSummary => {
   const byStatus = {
     draft: 0,
     pendingApproval: 0,
