@@ -209,6 +209,15 @@ const allowedListQueryKeys = [
   'sortBy',
   'sortDirection',
 ] as const;
+const allowedActualWorkspaceListQueryKeys = [
+  'periodMonth',
+  'groupId',
+  'subjectId',
+  'search',
+  'limit',
+  'sortBy',
+  'sortDirection',
+] as const;
 const allowedAllocationListQueryKeys = ['status', 'kpiPlanId', 'groupId', 'limit'] as const;
 const allowedManagedMemberQueryKeys = ['search', 'limit'] as const;
 const allowedSortByValues = ['periodMonth', 'planCode', 'createdAt'];
@@ -494,7 +503,7 @@ export const resetKpiMockData = (): void => {
       actualDate: '16-05-2026',
       actualValue: 200000,
       effectiveValue: 250000,
-      editCount: 2,
+      editCount: 3,
       correctionCount: 1,
       latestCorrectionId: 'correction-001',
       createdAt: now,
@@ -595,6 +604,26 @@ const validateAllocationListQuery = (searchParams: URLSearchParams) => {
   const limit = parseLimitQuery(searchParams.get('limit'));
   if (limit == null) {
     return validationError(`KPI limit must be an integer between 1 and ${maxListLimit}`);
+  }
+  return undefined;
+};
+
+const validateActualWorkspaceListQuery = (searchParams: URLSearchParams) => {
+  const periodMonth = searchParams.get('periodMonth');
+  if (periodMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(periodMonth)) {
+    return validationError('KPI periodMonth must use YYYY-MM format');
+  }
+  const limit = parseLimitQuery(searchParams.get('limit'));
+  if (limit == null) {
+    return validationError(`KPI limit must be an integer between 1 and ${maxListLimit}`);
+  }
+  const sortBy = searchParams.get('sortBy');
+  if (sortBy && !['periodMonth', 'planCode'].includes(sortBy)) {
+    return validationError(`KPI actual workspace sortBy is unsupported: ${sortBy}`);
+  }
+  const sortDirection = searchParams.get('sortDirection');
+  if (sortDirection && !allowedSortDirections.includes(sortDirection.toUpperCase())) {
+    return validationError(`KPI sortDirection is unsupported: ${sortDirection}`);
   }
   return undefined;
 };
@@ -859,6 +888,33 @@ const actualDateInPlanPeriod = (plan: KpiPlan, actualDate: string): boolean => {
   return `${parsed.year}-${String(parsed.month).padStart(2, '0')}` === plan.periodMonth;
 };
 
+const hcmLocalDateTimeToUtcMs = (actualDate: string, localTime: string, dayOffset = 0): number => {
+  const parsed = parseActualDate(actualDate);
+  if (!parsed) return Number.NaN;
+  const [hourText, minuteText] = localTime.split(':');
+  return Date.UTC(
+    parsed.year,
+    parsed.month - 1,
+    parsed.day + dayOffset,
+    Number(hourText) - 7,
+    Number(minuteText),
+    0,
+    0,
+  );
+};
+
+const isDirectEditWindowOpen = (actualDate: string, currentTime = Date.now()): boolean => {
+  const windowStart = hcmLocalDateTimeToUtcMs(actualDate, '00:00');
+  const windowEnd = hcmLocalDateTimeToUtcMs(actualDate, '10:00', 1);
+  return currentTime >= windowStart && currentTime <= windowEnd;
+};
+
+const directEditWindowClosed = () =>
+  HttpResponse.json(
+    { message: 'KPI actual direct edit window is closed; correction is required' },
+    { status: 409 },
+  );
+
 const isPastCreatePeriodMonth = (periodMonth: string): boolean =>
   periodMonth < currentKpiCreateMonth;
 
@@ -1104,7 +1160,19 @@ const readEntry = (
       entry.actualDate === actualDate,
   );
 
-const toActualGrid = (plan: KpiPlan, actualDate: string) => ({
+const toActualGrid = (plan: KpiPlan, actualDate: string) => {
+  const isPublished = plan.status === 'PUBLISHED';
+  const isFinalized = plan.status === 'FINALIZED';
+  const isWindowOpen = isDirectEditWindowOpen(actualDate);
+  const isGridDirectEditOpen = isPublished && isWindowOpen;
+  const gridDisabledReason = isFinalized
+    ? 'PLAN_FINALIZED'
+    : !isPublished
+      ? 'PLAN_NOT_PUBLISHED'
+      : isWindowOpen
+        ? null
+        : 'DIRECT_EDIT_WINDOW_CLOSED';
+  return {
   kpiPlanId: plan.id,
   planCode: plan.planCode,
   status: plan.status,
@@ -1113,15 +1181,15 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => ({
   actualDate,
   policy: {
     timezone: 'Asia/Ho_Chi_Minh',
-    entryOpenLocalTime: '06:00',
-    entryLockLocalTime: '23:00',
-    maxDirectEditsPerEntry: 2,
+    entryOpenLocalTime: '00:00',
+    entryLockLocalTime: '10:00',
+    maxDirectEditsPerEntry: 3,
     correctionAllowedUntil: 'PLAN_FINALIZED',
   },
   editability: {
-    isDirectEditOpen: plan.status === 'PUBLISHED',
-    isPlanFinalized: plan.status === 'FINALIZED',
-    disabledReason: plan.status === 'FINALIZED' ? 'Đã chốt' : null,
+    isDirectEditOpen: isGridDirectEditOpen,
+    isPlanFinalized: isFinalized,
+    disabledReason: gridDisabledReason,
   },
   targetMetrics: (targets[plan.id] ?? []).map((metric) => ({
     metricCode: metric.metricCode,
@@ -1137,7 +1205,7 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => ({
       allocationStatus: allocation.allocationStatus,
       metrics: (targets[plan.id] ?? []).map((metric) => {
         const entry = readEntry(plan.id, allocation.id, metric.metricCode, actualDate);
-        const locked = entry ? entry.editCount >= 2 || plan.status === 'FINALIZED' : false;
+        const locked = entry ? entry.editCount >= 3 || !isGridDirectEditOpen : false;
         return {
           metricCode: metric.metricCode,
           targetValue: metric.targetValue,
@@ -1150,13 +1218,183 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => ({
           latestCorrectionId: entry?.latestCorrectionId ?? null,
           canDirectEdit: Boolean(entry) && !locked,
           requiresCorrection: Boolean(entry) && locked,
-          disabledReason: locked ? 'Đã khóa' : null,
+          disabledReason: locked ? (gridDisabledReason ?? 'DIRECT_EDIT_LIMIT_EXCEEDED') : null,
         };
       }),
     })),
-});
+  };
+};
+
+const workspaceMemberActuals: Record<
+  string,
+  Record<string, { revenue: number; content: number; missing: number }>
+> = {
+  'kpi-plan-published': {
+    'kpi-plan-published-alloc-1': { revenue: 500000, content: 5, missing: 0 },
+    'kpi-plan-published-alloc-2': { revenue: 250000, content: 3, missing: 1 },
+  },
+};
+
+const achievementPercent = (actualValue: number, targetValue: number): number | null =>
+  targetValue === 0 ? null : Number(((actualValue / targetValue) * 100).toFixed(2));
+
+const toActualWorkspaceMember = (allocation: KpiAllocation) => {
+  const actuals = workspaceMemberActuals[allocation.kpiPlanId]?.[allocation.id] ?? {
+    revenue: 0,
+    content: 0,
+    missing: 0,
+  };
+  const revenueTarget =
+    allocation.targetMetrics.find((metric) => metric.metricCode === 'REVENUE_VND')?.targetValue ?? 0;
+  const contentTarget =
+    allocation.targetMetrics.find((metric) => metric.metricCode === 'CONTENT_OUTPUT_COUNT')
+      ?.targetValue ?? 0;
+  return {
+    allocationId: allocation.id,
+    allocationStatus: 'PUBLISHED' as const,
+    memberDisplayName: allocation.snapshotMemberDisplayName,
+    revenue: {
+      metricCode: 'REVENUE_VND' as const,
+      targetValue: revenueTarget,
+      actualValue: actuals.revenue,
+      achievementPercent: achievementPercent(actuals.revenue, revenueTarget),
+    },
+    supportingMetrics: [
+      {
+        metricCode: 'CONTENT_OUTPUT_COUNT' as const,
+        targetValue: contentTarget,
+        actualValue: actuals.content,
+        achievementPercent: achievementPercent(actuals.content, contentTarget),
+      },
+    ],
+    missingSignal: {
+      count: actuals.missing,
+      semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' as const,
+    },
+    actionHints: {
+      canReadActualGrid: true,
+      canEnterActual: true,
+    },
+  };
+};
+
+const toActualWorkspaceSummary = (plan: KpiPlan) => {
+  const planAllocations = allocations[plan.id] ?? [];
+  const publishedAllocations = planAllocations.filter(
+    (allocation) => allocation.allocationStatus === 'PUBLISHED',
+  );
+  const members = publishedAllocations.map(toActualWorkspaceMember);
+  const operationalTargetValue = members.reduce((sum, member) => sum + member.revenue.targetValue, 0);
+  const actualValue = members.reduce((sum, member) => sum + member.revenue.actualValue, 0);
+  const contentTarget = members.reduce(
+    (sum, member) => sum + member.supportingMetrics[0].targetValue,
+    0,
+  );
+  const contentActual = members.reduce(
+    (sum, member) => sum + member.supportingMetrics[0].actualValue,
+    0,
+  );
+  const planTargetValue =
+    (targets[plan.id] ?? []).find((metric) => metric.metricCode === 'REVENUE_VND')?.targetValue ??
+    null;
+  return {
+    planId: plan.id,
+    planCode: plan.planCode,
+    title: plan.title,
+    periodMonth: plan.periodMonth,
+    subjectType: 'TALENT_GROUP' as const,
+    subjectId: plan.subjectId,
+    subjectRef: plan.subjectRef ?? null,
+    planStatus: plan.status,
+    revenue: {
+      metricCode: 'REVENUE_VND' as const,
+      operationalTargetValue,
+      planTargetValue,
+      actualValue,
+      achievementPercent: achievementPercent(actualValue, operationalTargetValue),
+      targetSource: 'ALLOCATED' as const,
+      targetMismatch: planTargetValue !== operationalTargetValue,
+    },
+    allocationCoverage: {
+      publishedAllocationCount: publishedAllocations.length,
+      totalAllocationCount: planAllocations.length,
+      isAllExistingAllocationsPublished:
+        planAllocations.length > 0 && publishedAllocations.length === planAllocations.length,
+    },
+    supportingMetrics: [
+      {
+        metricCode: 'CONTENT_OUTPUT_COUNT' as const,
+        targetValue: contentTarget,
+        actualValue: contentActual,
+        achievementPercent: achievementPercent(contentActual, contentTarget),
+      },
+    ],
+    missingSignal: {
+      count: members.reduce((sum, member) => sum + member.missingSignal.count, 0),
+      semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' as const,
+    },
+    closing: {
+      periodState: plan.status === 'FINALIZED' ? ('CLOSED' as const) : ('CURRENT' as const),
+    },
+    actionHints: {
+      canReadActualGrid: true,
+      canEnterActual: plan.status === 'PUBLISHED',
+    },
+  };
+};
+
+const listActualWorkspacePlans = (request: Request) => {
+  const url = new URL(request.url);
+  const groupId = url.searchParams.get('groupId');
+  const subjectId = url.searchParams.get('subjectId');
+  const periodMonth = url.searchParams.get('periodMonth');
+  const search = url.searchParams.get('search')?.toLowerCase();
+  const sortBy = url.searchParams.get('sortBy') ?? 'periodMonth';
+  const direction = url.searchParams.get('sortDirection') === 'ASC' ? 1 : -1;
+  return plans
+    .filter((plan) => plan.subjectType === 'TALENT_GROUP')
+    .filter((plan) => (!groupId ? true : plan.subjectId === groupId))
+    .filter((plan) => (!subjectId ? true : plan.subjectId === subjectId))
+    .filter((plan) => (!periodMonth ? true : plan.periodMonth === periodMonth))
+    .filter((plan) =>
+      search ? `${plan.planCode} ${plan.title}`.toLowerCase().includes(search) : true,
+    )
+    .sort((left, right) =>
+      sortBy === 'planCode'
+        ? direction * left.planCode.localeCompare(right.planCode)
+        : direction * left.periodMonth.localeCompare(right.periodMonth),
+    );
+};
 
 export const kpiHandlers = [
+  http.get('*/admin/kpi/actual-workspace/plans', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(
+      url.searchParams,
+      allowedActualWorkspaceListQueryKeys,
+    );
+    if (unsupported) return unsupported;
+    const invalid = validateActualWorkspaceListQuery(url.searchParams);
+    if (invalid) return invalid;
+    const limit = parseLimitQuery(url.searchParams.get('limit')) ?? 50;
+    return HttpResponse.json({
+      data: listActualWorkspacePlans(request).slice(0, limit).map(toActualWorkspaceSummary),
+    });
+  }),
+  http.get('*/admin/kpi/actual-workspace/plans/:kpiPlanId', ({ params }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan || plan.subjectType !== 'TALENT_GROUP') {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    return HttpResponse.json({
+      data: {
+        ...toActualWorkspaceSummary(plan),
+        members: (allocations[plan.id] ?? [])
+          .filter((allocation) => allocation.allocationStatus === 'PUBLISHED')
+          .map(toActualWorkspaceMember),
+      },
+    });
+  }),
   http.get('*/admin/kpi/plans', ({ request }) => {
     const url = new URL(request.url);
     const unsupported = rejectUnsupportedQuery(url.searchParams, allowedListQueryKeys);
@@ -1597,12 +1835,13 @@ export const kpiHandlers = [
     return HttpResponse.json({ data: toDetail(plan) });
   }),
   http.post('*/admin/kpi/plans/:kpiPlanId/:action', async ({ params, request }) => {
+    const action = String(params.action);
+    if (action === 'actuals') return;
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, []);
     if (unsupported) return unsupported;
     const plan = readPlan(String(params.kpiPlanId));
     if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    const action = String(params.action);
     if (action === 'publish') {
       plan.status = 'PUBLISHED';
       plan.publishedAt = now;
@@ -1633,6 +1872,12 @@ export const kpiHandlers = [
       !actualDateInPlanPeriod(plan, String(body.actualDate))
     ) {
       return validationError('Invalid actualDate');
+    }
+    if (plan.status !== 'PUBLISHED') {
+      return HttpResponse.json({ message: 'KPI actual requires a published plan' }, { status: 409 });
+    }
+    if (!isDirectEditWindowOpen(String(body.actualDate))) {
+      return directEditWindowClosed();
     }
     const metricCode = body.metricCode as KpiMetricCode;
     if (!metricCodes.includes(metricCode)) {
@@ -1702,11 +1947,25 @@ export const kpiHandlers = [
     return HttpResponse.json({ data: entry });
   }),
   http.patch('*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['actualValue']);
     if (unsupported) return unsupported;
     const entry = actualEntries.find((item) => item.id === String(params.actualEntryId));
     if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.status !== 'PUBLISHED') {
+      return HttpResponse.json({ message: 'KPI actual requires a published plan' }, { status: 409 });
+    }
+    if (!isDirectEditWindowOpen(entry.actualDate)) {
+      return directEditWindowClosed();
+    }
+    if (entry.editCount >= 3) {
+      return HttpResponse.json(
+        { message: 'KPI actual direct edit limit exceeded; correction is required' },
+        { status: 409 },
+      );
+    }
     entry.actualValue = Number(body.actualValue);
     entry.effectiveValue = Number(body.actualValue);
     entry.editCount += 1;

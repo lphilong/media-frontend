@@ -49,6 +49,7 @@
     "subjectType": "Subject type",
     "subjectId": "Subject ID",
     "groupId": "Talent group",
+    "group": "Group",
     "targetGroup": "Target group",
     "talent": "Talent",
     "talentId": "Talent",
@@ -69,7 +70,8 @@
     "planPublishedAt": "Plan published at",
     "planFinalizedAt": "Plan finalized at",
     "archivedAt": "Archived at",
-    "actualDate": "Actual date"
+    "actualDate": "Actual date",
+    "allocationId": "Allocation ID"
   },
   "filters": {
     "search": "Search",
@@ -142,6 +144,27 @@
     "title": "Actual entry",
     "directEdit": "Direct edit",
     "requiresCorrection": "Correction required"
+  },
+  "actualWorkspace": {
+    "title": "Actual Workspace",
+    "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
+    "revenueTarget": "Revenue target",
+    "revenueActual": "Revenue actual",
+    "achievement": "Achievement %",
+    "allocationCoverage": "Allocation workflow coverage",
+    "missingSignal": "Limited missing signal",
+    "limitedMissingSignal": "limited calendar-day signal",
+    "supportingMetrics": "Supporting metrics",
+    "closingState": "Closing state",
+    "selectedPlan": "Selected group plan",
+    "viewDetail": "View detail",
+    "noAllocations": "No allocations",
+    "unnamedMember": "Unnamed member",
+    "periodStates": {
+      "CURRENT": "Current",
+      "CLOSING": "Closing",
+      "CLOSED": "Closed"
+    }
   },
   "correction": {
     "title": "Edit actual",
@@ -239,6 +262,13 @@
     "notFinalizedYet": "Not finalized yet",
     "noManagedMembers": "No managed members are available for this plan.",
     "progressUnavailable": "Progress is unavailable for this plan or actor.",
-    "memberProgressEmpty": "No published member progress is available yet."
+    "memberProgressEmpty": "No published member progress is available yet.",
+    "emptyActualWorkspace": "No group plans are available for actual entry.",
+    "actualWorkspaceLoadErrorTitle": "Unable to load Actual Workspace",
+    "actualWorkspaceLoadErrorMessage": "Unable to load Actual Workspace plans.",
+    "actualWorkspaceDetailLoadErrorTitle": "Unable to load group plan detail",
+    "actualWorkspaceDetailLoadErrorMessage": "Unable to load the selected group plan detail.",
+    "actualGridLoadErrorTitle": "Unable to load actual grid",
+    "actualGridLoadErrorMessage": "Unable to load the actual grid for the selected date."
   }
 }

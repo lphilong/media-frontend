@@ -4,6 +4,9 @@ import type {
   KpiActualCorrection,
   KpiActualDailyGrid,
   KpiActualEntry,
+  KpiActualWorkspacePlanDetail,
+  KpiActualWorkspacePlanQuery,
+  KpiActualWorkspacePlanSummary,
   KpiAllocation,
   KpiAllocationDraftMemberInput,
   KpiAllocationInput,
@@ -253,6 +256,100 @@ const planListItemSchema = planBaseSchema.extend({
   allocationWorkflowSummary: allocationWorkflowSummarySchema,
 });
 
+const actualWorkspaceMetricSummarySchema = z
+  .object({
+    metricCode: metricCodeSchema,
+    targetValue: z.number(),
+    actualValue: z.number(),
+    achievementPercent: z.number().nullable(),
+  })
+  .strict();
+
+const actualWorkspaceRevenueSummarySchema = z
+  .object({
+    metricCode: z.literal('REVENUE_VND'),
+    operationalTargetValue: z.number(),
+    planTargetValue: z.number().nullable(),
+    actualValue: z.number(),
+    achievementPercent: z.number().nullable(),
+    targetSource: z.literal('ALLOCATED'),
+    targetMismatch: z.boolean(),
+  })
+  .strict();
+
+const actualWorkspaceAllocationCoverageSchema = z
+  .object({
+    publishedAllocationCount: z.number().int().nonnegative(),
+    totalAllocationCount: z.number().int().nonnegative(),
+    isAllExistingAllocationsPublished: z.boolean(),
+  })
+  .strict();
+
+const actualWorkspaceMissingSignalSchema = z
+  .object({
+    count: z.number().int().nonnegative(),
+    semantics: z.literal('CALENDAR_DAY_METRIC_SLOT_LIMITED'),
+  })
+  .strict();
+
+const actualWorkspaceClosingSchema = z
+  .object({
+    periodState: z.enum(['CURRENT', 'CLOSING', 'CLOSED']),
+    entryOpenUntil: z.number().optional(),
+  })
+  .strict();
+
+const actualWorkspaceActionHintsSchema = z
+  .object({
+    canReadActualGrid: z.boolean(),
+    canEnterActual: z.boolean(),
+  })
+  .strict();
+
+const actualWorkspacePlanSummarySchema = z
+  .object({
+    planId: z.string().trim().min(1),
+    planCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    periodMonth: periodMonthSchema,
+    subjectType: z.literal('TALENT_GROUP'),
+    subjectId: z.string().trim().min(1),
+    subjectRef: referenceSummarySchema.nullable(),
+    planStatus: statusSchema,
+    revenue: actualWorkspaceRevenueSummarySchema,
+    allocationCoverage: actualWorkspaceAllocationCoverageSchema,
+    supportingMetrics: z.array(actualWorkspaceMetricSummarySchema),
+    missingSignal: actualWorkspaceMissingSignalSchema,
+    closing: actualWorkspaceClosingSchema,
+    actionHints: actualWorkspaceActionHintsSchema,
+  })
+  .strict();
+
+const actualWorkspaceMemberSummarySchema = z
+  .object({
+    allocationId: z.string().trim().min(1),
+    allocationStatus: z.literal('PUBLISHED'),
+    memberDisplayName: z.string().nullable(),
+    revenue: z
+      .object({
+        metricCode: z.literal('REVENUE_VND'),
+        targetValue: z.number(),
+        actualValue: z.number(),
+        achievementPercent: z.number().nullable(),
+      })
+      .strict(),
+    supportingMetrics: z.array(actualWorkspaceMetricSummarySchema),
+    missingSignal: actualWorkspaceMissingSignalSchema,
+    actionHints: actualWorkspaceActionHintsSchema,
+  })
+  .strict();
+
+const actualWorkspacePlanDetailSchema = actualWorkspacePlanSummarySchema
+  .extend({
+    members: z.array(actualWorkspaceMemberSummarySchema),
+  })
+  .strict();
+
 const actualCellSchema = z
   .object({
     metricCode: metricCodeSchema,
@@ -284,9 +381,9 @@ const actualGridSchema = z
     policy: z
       .object({
         timezone: z.literal('Asia/Ho_Chi_Minh'),
-        entryOpenLocalTime: z.literal('06:00'),
-        entryLockLocalTime: z.literal('23:00'),
-        maxDirectEditsPerEntry: z.number().int(),
+        entryOpenLocalTime: z.literal('00:00'),
+        entryLockLocalTime: z.literal('10:00'),
+        maxDirectEditsPerEntry: z.literal(3),
         correctionAllowedUntil: z.literal('PLAN_FINALIZED'),
       })
       .strict(),
@@ -421,6 +518,12 @@ const managedMemberSchema = z
 
 const listResponseSchema = z.object({ data: z.array(planListItemSchema) }).strict();
 const detailResponseSchema = z.object({ data: planDetailSchema }).strict();
+const actualWorkspaceListResponseSchema = z
+  .object({ data: z.array(actualWorkspacePlanSummarySchema) })
+  .strict();
+const actualWorkspaceDetailResponseSchema = z
+  .object({ data: actualWorkspacePlanDetailSchema })
+  .strict();
 const allocationListResponseSchema = z.object({ data: z.array(allocationSchema) }).strict();
 const actualGridResponseSchema = z.object({ data: actualGridSchema }).strict();
 const actualEntryResponseSchema = z.object({ data: actualEntrySchema }).strict();
@@ -500,6 +603,22 @@ const sanitizeAllocationQuery = (
   limit: query.limit,
 });
 
+const actualWorkspacePlanQuerySchema = z
+  .object({
+    periodMonth: periodMonthSchema.optional(),
+    groupId: z.string().trim().min(1).optional(),
+    subjectId: z.string().trim().min(1).optional(),
+    search: z.string().trim().min(1).optional(),
+    limit: z.number().int().positive().max(100).optional(),
+    sortBy: z.enum(['periodMonth', 'planCode']).optional(),
+    sortDirection: z.enum(['ASC', 'DESC']).optional(),
+  })
+  .strict();
+
+const sanitizeActualWorkspacePlanQuery = (
+  query: KpiActualWorkspacePlanQuery,
+): Record<string, string | number | undefined> => actualWorkspacePlanQuerySchema.parse(query);
+
 export const sanitizeKpiCreatePlanPayload = (payload: KpiCreatePlanPayload): KpiCreatePlanPayload =>
   createPayloadSchema.parse(payload);
 
@@ -513,6 +632,27 @@ export const fetchKpiPlans = async (query: KpiPlanQuery) => {
     params: sanitizeQuery(query),
   });
   return listResponseSchema.parse(response).data;
+};
+
+export const fetchKpiActualWorkspacePlans = async (
+  query: KpiActualWorkspacePlanQuery = {},
+): Promise<KpiActualWorkspacePlanSummary[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/kpi/actual-workspace/plans',
+    params: sanitizeActualWorkspacePlanQuery(query),
+  });
+  return actualWorkspaceListResponseSchema.parse(response).data;
+};
+
+export const fetchKpiActualWorkspacePlanDetail = async (
+  kpiPlanId: string,
+): Promise<KpiActualWorkspacePlanDetail> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/kpi/actual-workspace/plans/${encodeURIComponent(kpiPlanId)}`,
+  });
+  return actualWorkspaceDetailResponseSchema.parse(response).data;
 };
 
 export const createKpiPlan = async (payload: KpiCreatePlanPayload): Promise<KpiPlanDetail> => {
@@ -820,6 +960,9 @@ export const fetchKpiCorrectionHistory = async (
 
 export const parseKpiPlanListResponseForTest = (response: unknown) =>
   listResponseSchema.parse(response).data;
+
+export const parseKpiActualWorkspacePlanDetailResponseForTest = (response: unknown) =>
+  actualWorkspaceDetailResponseSchema.parse(response).data;
 
 export const parseKpiAllocationDraftPayloadForTest = (
   payload: unknown,

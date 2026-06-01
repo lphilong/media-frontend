@@ -41,6 +41,8 @@
     "submit": "Tạo KPI nháp"
   },
   "fields": {
+    "group": "Nhom",
+    "allocationId": "ID phan bo",
     "planId": "ID kế hoạch",
     "planCode": "Mã kế hoạch",
     "title": "Tiêu đề",
@@ -143,6 +145,27 @@
     "directEdit": "Sửa trực tiếp",
     "requiresCorrection": "Cần điều chỉnh"
   },
+  "actualWorkspace": {
+    "title": "Khong gian nhap actual",
+    "policy": "Co the nhap truc tiep tu D 00:00 den D+1 10:00 Asia/Ho_Chi_Minh, tinh ca hai moc. Moi muc duoc sua truc tiep toi da 3 lan.",
+    "revenueTarget": "Muc tieu doanh thu",
+    "revenueActual": "Doanh thu thuc dat",
+    "achievement": "Thanh tich %",
+    "allocationCoverage": "Do bao phu quy trinh phan bo",
+    "missingSignal": "Tin hieu thieu han che",
+    "limitedMissingSignal": "tin hieu theo ngay co gioi han",
+    "supportingMetrics": "Chi so ho tro",
+    "closingState": "Trang thai dong ky",
+    "selectedPlan": "Ke hoach nhom da chon",
+    "viewDetail": "Xem chi tiet",
+    "noAllocations": "Chua co phan bo",
+    "unnamedMember": "Thanh vien chua co ten",
+    "periodStates": {
+      "CURRENT": "Hien tai",
+      "CLOSING": "Dang dong ky",
+      "CLOSED": "Da dong"
+    }
+  },
   "correction": {
     "title": "Chỉnh sửa actual",
     "previousValue": "Giá trị trước",
@@ -231,6 +254,13 @@
     "allocationPublished": "Da publish phan bo."
   },
   "states": {
+    "emptyActualWorkspace": "Khong co ke hoach nhom de nhap actual.",
+    "actualWorkspaceLoadErrorTitle": "Khong tai duoc khong gian nhap actual",
+    "actualWorkspaceLoadErrorMessage": "Khong tai duoc danh sach ke hoach nhap actual.",
+    "actualWorkspaceDetailLoadErrorTitle": "Khong tai duoc chi tiet ke hoach nhom",
+    "actualWorkspaceDetailLoadErrorMessage": "Khong tai duoc chi tiet ke hoach nhom da chon.",
+    "actualGridLoadErrorTitle": "Khong tai duoc bang actual",
+    "actualGridLoadErrorMessage": "Khong tai duoc bang actual cho ngay da chon.",
     "loadErrorTitle": "Không tải được KPI",
     "loadErrorMessage": "Không tải được dữ liệu KPI.",
     "capabilityUnavailable": "Khong xac minh duoc quyen KPI. Thu lai.",

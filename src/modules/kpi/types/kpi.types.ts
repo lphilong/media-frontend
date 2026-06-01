@@ -113,6 +113,16 @@ export type KpiPlanQuery = {
   sortDirection?: 'ASC' | 'DESC';
 };
 
+export type KpiActualWorkspacePlanQuery = {
+  periodMonth?: string;
+  groupId?: string;
+  subjectId?: string;
+  search?: string;
+  limit?: number;
+  sortBy?: 'periodMonth' | 'planCode';
+  sortDirection?: 'ASC' | 'DESC';
+};
+
 export type KpiTargetMetric = {
   id: string;
   kpiPlanId: string;
@@ -220,9 +230,9 @@ export type KpiActualDailyGrid = {
   actualDate: string;
   policy: {
     timezone: 'Asia/Ho_Chi_Minh';
-    entryOpenLocalTime: '06:00';
-    entryLockLocalTime: '23:00';
-    maxDirectEditsPerEntry: number;
+    entryOpenLocalTime: '00:00';
+    entryLockLocalTime: '10:00';
+    maxDirectEditsPerEntry: 3;
     correctionAllowedUntil: 'PLAN_FINALIZED';
   };
   editability: {
@@ -301,4 +311,78 @@ export type KpiProgressView = {
     actualEntryCount: number;
     missingEntryCount: number;
   }>;
+};
+
+export type KpiActualWorkspaceMetricSummary = {
+  metricCode: KpiMetricCode;
+  targetValue: number;
+  actualValue: number;
+  achievementPercent: number | null;
+};
+
+export type KpiActualWorkspaceRevenueSummary = {
+  metricCode: 'REVENUE_VND';
+  operationalTargetValue: number;
+  planTargetValue: number | null;
+  actualValue: number;
+  achievementPercent: number | null;
+  targetSource: 'ALLOCATED';
+  targetMismatch: boolean;
+};
+
+export type KpiActualWorkspaceAllocationCoverage = {
+  publishedAllocationCount: number;
+  totalAllocationCount: number;
+  isAllExistingAllocationsPublished: boolean;
+};
+
+export type KpiActualWorkspaceMissingSignal = {
+  count: number;
+  semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED';
+};
+
+export type KpiActualWorkspaceClosing = {
+  periodState: 'CURRENT' | 'CLOSING' | 'CLOSED';
+  entryOpenUntil?: number;
+};
+
+export type KpiActualWorkspaceActionHints = {
+  canReadActualGrid: boolean;
+  canEnterActual: boolean;
+};
+
+export type KpiActualWorkspacePlanSummary = {
+  planId: string;
+  planCode: string;
+  title: string;
+  periodMonth: string;
+  subjectType: 'TALENT_GROUP';
+  subjectId: string;
+  subjectRef: ReferenceSummary | null;
+  planStatus: KpiPlanStatus;
+  revenue: KpiActualWorkspaceRevenueSummary;
+  allocationCoverage: KpiActualWorkspaceAllocationCoverage;
+  supportingMetrics: KpiActualWorkspaceMetricSummary[];
+  missingSignal: KpiActualWorkspaceMissingSignal;
+  closing: KpiActualWorkspaceClosing;
+  actionHints: KpiActualWorkspaceActionHints;
+};
+
+export type KpiActualWorkspaceMemberSummary = {
+  allocationId: string;
+  allocationStatus: 'PUBLISHED';
+  memberDisplayName: string | null;
+  revenue: {
+    metricCode: 'REVENUE_VND';
+    targetValue: number;
+    actualValue: number;
+    achievementPercent: number | null;
+  };
+  supportingMetrics: KpiActualWorkspaceMetricSummary[];
+  missingSignal: KpiActualWorkspaceMissingSignal;
+  actionHints: KpiActualWorkspaceActionHints;
+};
+
+export type KpiActualWorkspacePlanDetail = KpiActualWorkspacePlanSummary & {
+  members: KpiActualWorkspaceMemberSummary[];
 };

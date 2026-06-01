@@ -7,6 +7,8 @@ import {
   createKpiPlan,
   fetchKpiAllocations,
   fetchKpiActualDailyGrid,
+  fetchKpiActualWorkspacePlanDetail,
+  fetchKpiActualWorkspacePlans,
   fetchKpiCorrectionHistory,
   fetchKpiPlanDetail,
   fetchKpiPlans,
@@ -26,6 +28,7 @@ import type {
   KpiAllocationDraftMemberInput,
   KpiAllocationInput,
   KpiAllocationQuery,
+  KpiActualWorkspacePlanQuery,
   KpiCreatePlanPayload,
   KpiDraftCorePayload,
   KpiPlanQuery,
@@ -43,6 +46,10 @@ const stableQueryToken = (query: Record<string, string | number | undefined>): s
 export const kpiQueryKeys = {
   all: () => KPI_QUERY_ROOT,
   list: (query: KpiPlanQuery) => ['kpi', 'plans', stableQueryToken(query)] as const,
+  actualWorkspacePlans: (query: KpiActualWorkspacePlanQuery) =>
+    ['kpi', 'actual-workspace', 'plans', stableQueryToken(query)] as const,
+  actualWorkspacePlanDetail: (kpiPlanId: string) =>
+    ['kpi', 'actual-workspace', 'plan', kpiPlanId] as const,
   allocations: (query: KpiAllocationQuery) => ['kpi', 'allocations', stableQueryToken(query)] as const,
   detail: (kpiPlanId: string) => ['kpi', 'plan', kpiPlanId] as const,
   progress: (kpiPlanId: string) => ['kpi', 'progress', kpiPlanId] as const,
@@ -62,6 +69,25 @@ export const useKpiPlans = (query: KpiPlanQuery, options?: { enabled?: boolean }
     queryKey: kpiQueryKeys.list(query),
     queryFn: () => fetchKpiPlans(query),
     enabled: options?.enabled ?? true,
+  });
+
+export const useKpiActualWorkspacePlans = (
+  query: KpiActualWorkspacePlanQuery,
+  options?: { enabled?: boolean },
+) =>
+  useQuery({
+    queryKey: kpiQueryKeys.actualWorkspacePlans(query),
+    queryFn: () => fetchKpiActualWorkspacePlans(query),
+    enabled: options?.enabled ?? true,
+  });
+
+export const useKpiActualWorkspacePlanDetail = (kpiPlanId?: string) =>
+  useQuery({
+    queryKey: kpiPlanId
+      ? kpiQueryKeys.actualWorkspacePlanDetail(kpiPlanId)
+      : ['kpi', 'actual-workspace', 'plan'],
+    queryFn: () => fetchKpiActualWorkspacePlanDetail(kpiPlanId ?? ''),
+    enabled: Boolean(kpiPlanId),
   });
 
 export const useKpiAllocations = (query: KpiAllocationQuery) =>

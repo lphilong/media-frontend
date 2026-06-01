@@ -41,6 +41,8 @@
     "submit": "创建草稿计划"
   },
   "fields": {
+    "group": "Group",
+    "allocationId": "Allocation ID",
     "planId": "计划 ID",
     "planCode": "计划编码",
     "title": "标题",
@@ -143,6 +145,27 @@
     "directEdit": "直接编辑",
     "requiresCorrection": "需要修正"
   },
+  "actualWorkspace": {
+    "title": "Actual Workspace",
+    "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
+    "revenueTarget": "Revenue target",
+    "revenueActual": "Revenue actual",
+    "achievement": "Achievement %",
+    "allocationCoverage": "Allocation workflow coverage",
+    "missingSignal": "Limited missing signal",
+    "limitedMissingSignal": "limited calendar-day signal",
+    "supportingMetrics": "Supporting metrics",
+    "closingState": "Closing state",
+    "selectedPlan": "Selected group plan",
+    "viewDetail": "View detail",
+    "noAllocations": "No allocations",
+    "unnamedMember": "Unnamed member",
+    "periodStates": {
+      "CURRENT": "Current",
+      "CLOSING": "Closing",
+      "CLOSED": "Closed"
+    }
+  },
   "correction": {
     "title": "编辑 actual",
     "previousValue": "原值",
@@ -231,6 +254,13 @@
     "allocationPublished": "Allocation published."
   },
   "states": {
+    "emptyActualWorkspace": "No group plans are available for actual entry.",
+    "actualWorkspaceLoadErrorTitle": "Unable to load Actual Workspace",
+    "actualWorkspaceLoadErrorMessage": "Unable to load Actual Workspace plans.",
+    "actualWorkspaceDetailLoadErrorTitle": "Unable to load group plan detail",
+    "actualWorkspaceDetailLoadErrorMessage": "Unable to load the selected group plan detail.",
+    "actualGridLoadErrorTitle": "Unable to load actual grid",
+    "actualGridLoadErrorMessage": "Unable to load the actual grid for the selected date.",
     "loadErrorTitle": "无法加载 KPI",
     "loadErrorMessage": "无法加载 KPI 数据。",
     "capabilityUnavailable": "KPI permissions could not be verified. Try again.",

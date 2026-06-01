@@ -16,11 +16,13 @@ import {
   approveKpiAllocation,
   createKpiPlan,
   fetchKpiActualDailyGrid,
+  fetchKpiActualWorkspacePlans,
   fetchKpiPlans,
   fetchKpiManagedMembers,
   fetchMyKpiProgress,
   parseKpiAllocationDraftPayloadForTest,
   parseKpiAllocationListResponseForTest,
+  parseKpiActualWorkspacePlanDetailResponseForTest,
   parseKpiPlanListResponseForTest,
   performKpiLifecycleAction,
   publishKpiAllocation,
@@ -68,10 +70,28 @@ const selectAdminWorkspaceTab = async (name: string): Promise<void> => {
 
 const openProgressActualsTab = async (): Promise<void> => {
   await selectAdminWorkspaceTab('Progress & Actuals');
-  await screen.findByRole('heading', { name: 'Actual entry' });
+  await screen.findByRole('heading', { name: 'Actual Workspace' });
 };
 
-const mswJson = (method: 'GET' | 'POST' | 'PUT', path: string, data?: unknown) =>
+const openPublishedWorkspacePlan = async (): Promise<void> => {
+  await openProgressActualsTab();
+  const workspaceRow = (await screen.findByText('KPI-202605-000002')).closest('tr');
+  expect(workspaceRow).not.toBeNull();
+  await userEvent.click(within(workspaceRow!).getByRole('button', { name: 'View detail' }));
+  await screen.findByText('kpi-plan-published-alloc-1');
+};
+
+const openPublishedActualGrid = async (): Promise<void> => {
+  vi.setSystemTime(new Date('2026-05-16T09:00:00+07:00'));
+  await openPublishedWorkspacePlan();
+  const actualDate = screen.getByLabelText('Actual date');
+  await userEvent.clear(actualDate);
+  await userEvent.type(actualDate, '16-05-2026');
+  await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
+  await screen.findByLabelText('Luna Park Revenue VND actual');
+};
+
+const mswJson = (method: 'GET' | 'POST' | 'PUT' | 'PATCH', path: string, data?: unknown) =>
   fetch(`http://localhost${path}`, {
     method,
     headers: data === undefined ? undefined : { 'content-type': 'application/json' },
@@ -120,6 +140,7 @@ describe('KPI MVP UX', () => {
   });
 
   beforeEach(async () => {
+    vi.setSystemTime(new Date('2026-06-15T00:00:00+07:00'));
     await setLocale('en');
   });
 
@@ -266,17 +287,17 @@ describe('KPI MVP UX', () => {
     expect(
       screen.queryByRole('heading', { name: 'KPI Allocation approval queue' }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Actual entry' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Actual Workspace' })).not.toBeInTheDocument();
 
     await selectAdminWorkspaceTab('Approval Queue');
     expect(
       await screen.findByRole('heading', { name: 'KPI Allocation approval queue' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'KPI plans' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Actual entry' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Actual Workspace' })).not.toBeInTheDocument();
 
     await selectAdminWorkspaceTab('Progress & Actuals');
-    expect(await screen.findByRole('heading', { name: 'Actual entry' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Actual Workspace' })).toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: 'KPI Allocation approval queue' }),
     ).not.toBeInTheDocument();
@@ -285,6 +306,38 @@ describe('KPI MVP UX', () => {
     await selectAdminWorkspaceTab('Plans');
     expect(await screen.findByRole('heading', { name: 'KPI plans' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create KPI plan' })).toBeInTheDocument();
+  });
+
+  it('renders the backend Actual Workspace revenue-first list without a progress bar', async () => {
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+
+    const row = (await screen.findByText('KPI-202605-000002')).closest('tr');
+    expect(row).not.toBeNull();
+    expect(within(row!).getByText('Creator Team')).toBeInTheDocument();
+    expect(within(row!).getByText('05-2026')).toBeInTheDocument();
+    expect(within(row!).getByText('1.000.000 VND')).toBeInTheDocument();
+    expect(within(row!).getByText('750.000 VND')).toBeInTheDocument();
+    expect(within(row!).getByText('75%')).toBeInTheDocument();
+    expect(within(row!).getByText('2/2')).toBeInTheDocument();
+    expect(within(row!).getByText(/limited calendar-day signal/i)).toBeInTheDocument();
+    expect(within(row!).getByText(/Content output count: 8\/10 \(80%\)/)).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.getByText(/D 00:00 through D\+1 10:00 Asia\/Ho_Chi_Minh, inclusive/i))
+      .toBeInTheDocument();
+
+    await userEvent.click(within(row!).getByRole('button', { name: 'View detail' }));
+    expect(await screen.findByText('Luna Park')).toBeInTheDocument();
+    expect(await screen.findByText('kpi-plan-published-alloc-1')).toBeInTheDocument();
+    expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('employment-profile-001')).not.toBeInTheDocument();
+  });
+
+  it('uses the backend Actual Workspace list endpoint and rejects derived sort input', async () => {
+    expect((await fetchKpiActualWorkspacePlans({ limit: 10 }))[0].planCode).toBeDefined();
+    await expect(
+      fetchKpiActualWorkspacePlans({ sortBy: 'achievement' as never }),
+    ).rejects.toThrow();
   });
 
   it('approval queue defaults to actionable status-filtered rows and exposes history views', async () => {
@@ -555,7 +608,7 @@ describe('KPI MVP UX', () => {
 
   it('actual entry UI rejects YYYY-MM-DD before saving', async () => {
     renderRoute('/kpi');
-    await openProgressActualsTab();
+    await openPublishedWorkspacePlan();
     const actualDate = screen.getByLabelText('Actual date');
     await userEvent.clear(actualDate);
     await userEvent.type(actualDate, '2026-05-16');
@@ -1051,16 +1104,129 @@ describe('KPI MVP UX', () => {
   });
 
   it('loads actual grid endpoint and sends actualDate as DD-MM-YYYY', async () => {
-    let captured = new URL('http://example.test');
+    const captured: URL[] = [];
     server.use(
       http.get('*/admin/kpi/plans/:kpiPlanId/actuals', ({ request }) => {
-        captured = new URL(request.url);
+        captured.push(new URL(request.url));
         return HttpResponse.json({ data: makeActualGrid() });
       }),
     );
     renderRoute('/kpi');
     await openProgressActualsTab();
-    await waitFor(() => expect(captured.searchParams.get('actualDate')).toBe('16-05-2026'));
+    expect(captured).toHaveLength(0);
+    expect(screen.queryByDisplayValue('kpi-plan-published')).not.toBeInTheDocument();
+    const workspaceRow = (await screen.findByText('KPI-202605-000002')).closest('tr');
+    expect(workspaceRow).not.toBeNull();
+    await userEvent.click(within(workspaceRow!).getByRole('button', { name: 'View detail' }));
+    await screen.findByText('kpi-plan-published-alloc-1');
+    expect(captured).toHaveLength(0);
+    expect(screen.getByLabelText('Actual date')).not.toHaveValue('16-05-2026');
+    await userEvent.clear(screen.getByLabelText('Actual date'));
+    await userEvent.type(screen.getByLabelText('Actual date'), '16-05-2026');
+    await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
+    await waitFor(() => expect(captured).toHaveLength(1));
+    expect(captured[0].searchParams.get('actualDate')).toBe('16-05-2026');
+  });
+
+  it('uses neutral member copy across the actual grid, aria label, and correction panel', async () => {
+    const grid = makeActualGrid();
+    server.use(
+      http.get('*/admin/kpi/plans/:kpiPlanId/actuals', () =>
+        HttpResponse.json({
+          data: {
+            ...grid,
+            rows: [
+              {
+                ...grid.rows[0],
+                memberTalentId: 'talent-private',
+                memberDisplayName: null,
+                metrics: [
+                  {
+                    ...grid.rows[0].metrics[0],
+                    actualEntryId: 'actual-locked',
+                    actualValue: 250000,
+                    effectiveValue: 250000,
+                    hasEntry: true,
+                    editCount: 3,
+                    correctionCount: 1,
+                    canDirectEdit: false,
+                    requiresCorrection: true,
+                    disabledReason: 'DIRECT_EDIT_LIMIT_EXCEEDED',
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    renderRoute('/kpi');
+    await openPublishedWorkspacePlan();
+    const actualDate = screen.getByLabelText('Actual date');
+    await userEvent.clear(actualDate);
+    await userEvent.type(actualDate, '16-05-2026');
+    await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
+    expect(await screen.findByLabelText('Unnamed member Revenue VND actual')).toBeInTheDocument();
+    expect(screen.getByText('Unnamed member')).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('talent-private');
+    expect(screen.queryByLabelText(/talent-private/i)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Correction' }));
+    expect(await screen.findByRole('dialog', { name: 'Edit actual' })).toHaveTextContent(
+      'Unnamed member',
+    );
+    expect(screen.getByRole('dialog', { name: 'Edit actual' })).not.toHaveTextContent(
+      'talent-private',
+    );
+  });
+
+  it('MSW enforces the HCM direct-entry window for grid, create, and direct update', async () => {
+    const createPayload = {
+      allocationId: 'kpi-plan-published-alloc-1',
+      metricCode: 'CONTENT_OUTPUT_COUNT',
+      actualDate: '16-05-2026',
+      actualValue: 3,
+    };
+
+    vi.setSystemTime(new Date('2026-05-15T23:59:59+07:00'));
+    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability)
+      .toMatchObject({ isDirectEditOpen: false, disabledReason: 'DIRECT_EDIT_WINDOW_CLOSED' });
+    expect((await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).status)
+      .toBe(409);
+
+    vi.setSystemTime(new Date('2026-05-16T00:00:00+07:00'));
+    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability)
+      .toMatchObject({ isDirectEditOpen: true, disabledReason: null });
+    expect((await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).ok)
+      .toBe(true);
+
+    vi.setSystemTime(new Date('2026-05-17T10:00:00+07:00'));
+    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability)
+      .toMatchObject({ isDirectEditOpen: true, disabledReason: null });
+    expect(
+      (
+        await mswJson('PATCH', '/admin/kpi/plans/kpi-plan-published/actuals/actual-editable', {
+          actualValue: 510000,
+        })
+      ).ok,
+    ).toBe(true);
+
+    vi.setSystemTime(new Date('2026-05-17T10:00:01+07:00'));
+    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability)
+      .toMatchObject({ isDirectEditOpen: false, disabledReason: 'DIRECT_EDIT_WINDOW_CLOSED' });
+    expect(
+      (
+        await mswJson('PATCH', '/admin/kpi/plans/kpi-plan-published/actuals/actual-editable', {
+          actualValue: 520000,
+        })
+      ).status,
+    ).toBe(409);
+    expect((await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).status)
+      .toBe(409);
+
+    vi.setSystemTime(new Date('2026-06-01T10:00:00+07:00'));
+    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '31-05-2026')).editability)
+      .toMatchObject({ isDirectEditOpen: true, disabledReason: null });
   });
 
   it('uses POST for missing actual cells and PATCH for existing editable cells', async () => {
@@ -1081,7 +1247,7 @@ describe('KPI MVP UX', () => {
       }),
     );
     renderRoute('/kpi');
-    await openProgressActualsTab();
+    await openPublishedActualGrid();
     const lunaRevenue = await screen.findByLabelText('Luna Park Revenue VND actual');
     await userEvent.clear(lunaRevenue);
     await userEvent.type(lunaRevenue, '510.000');
@@ -1094,7 +1260,7 @@ describe('KPI MVP UX', () => {
 
   it('opens correction modal for locked cells and renders history', async () => {
     renderRoute('/kpi');
-    await openProgressActualsTab();
+    await openPublishedActualGrid();
     const minhRevenue = await screen.findByLabelText('Minh Tran Revenue VND actual');
     await userEvent.clear(minhRevenue);
     await userEvent.type(minhRevenue, '300.000');
@@ -1110,7 +1276,7 @@ describe('KPI MVP UX', () => {
       ),
     );
     renderRoute('/kpi');
-    await openProgressActualsTab();
+    await openPublishedActualGrid();
     const lunaContent = await screen.findByLabelText('Luna Park Content output count actual');
     await userEvent.clear(lunaContent);
     await userEvent.type(lunaContent, '3');
@@ -1135,7 +1301,7 @@ describe('KPI MVP UX', () => {
       ),
     );
     renderRoute('/kpi');
-    await openProgressActualsTab();
+    await openPublishedActualGrid();
     const correctionButtons = await screen.findAllByRole('button', { name: 'Correction' });
     await waitFor(() => expect(correctionButtons.at(-1)).toBeEnabled());
     await userEvent.click(correctionButtons.at(-1)!);
@@ -1333,6 +1499,13 @@ describe('KPI MVP UX', () => {
     await expect(fetchKpiPlans({ limit: 101 })).rejects.toThrow();
     await expect(fetchKpiActualDailyGrid('kpi-plan-published', '31-02-2026')).rejects.toThrow();
     await expect(fetchKpiActualDailyGrid('kpi-plan-published', '01-06-2026')).rejects.toThrow();
+    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).policy).toEqual({
+      timezone: 'Asia/Ho_Chi_Minh',
+      entryOpenLocalTime: '00:00',
+      entryLockLocalTime: '10:00',
+      maxDirectEditsPerEntry: 3,
+      correctionAllowedUntil: 'PLAN_FINALIZED',
+    });
   });
 
   it('frontend KPI Zod rejects backend-invalid target metric semantics', async () => {
@@ -1500,7 +1673,7 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi');
-    await openProgressActualsTab();
+    await openPublishedActualGrid();
 
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Save changed cells' })).not.toBeInTheDocument(),
@@ -1528,7 +1701,7 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi');
-    await openProgressActualsTab();
+    await openPublishedActualGrid();
 
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Correction' })).not.toBeInTheDocument(),
@@ -1681,6 +1854,31 @@ describe('KPI MVP UX', () => {
         data: [
           { ...makeListPlan('kpi-plan-x', 'Strict summary KPI', 'group-001'), unexpected: true },
         ],
+      }),
+    ).toThrow();
+  });
+
+  it('strict Actual Workspace detail schema rejects raw member identifiers', () => {
+    const detail = makeActualWorkspaceDetail();
+    expect(parseKpiActualWorkspacePlanDetailResponseForTest({ data: detail }).members[0])
+      .toMatchObject({
+        allocationId: 'kpi-plan-published-alloc-1',
+        memberDisplayName: 'Luna Park',
+      });
+    expect(() =>
+      parseKpiActualWorkspacePlanDetailResponseForTest({
+        data: {
+          ...detail,
+          members: [{ ...detail.members[0], memberTalentId: 'talent-001' }],
+        },
+      }),
+    ).toThrow();
+    expect(() =>
+      parseKpiActualWorkspacePlanDetailResponseForTest({
+        data: {
+          ...detail,
+          members: [{ ...detail.members[0], memberEmploymentProfileId: 'employment-profile-001' }],
+        },
       }),
     ).toThrow();
   });
@@ -1968,6 +2166,65 @@ const makeListPlan = (
   };
 };
 
+const makeActualWorkspaceDetail = () => ({
+  planId: 'kpi-plan-published',
+  planCode: 'KPI-202605-000002',
+  title: 'Published team KPI',
+  periodMonth: '2026-05',
+  subjectType: 'TALENT_GROUP',
+  subjectId: 'group-001',
+  subjectRef: { id: 'group-001', code: 'TG-001', name: 'Creator Team', status: 'ACTIVE' },
+  planStatus: 'PUBLISHED',
+  revenue: {
+    metricCode: 'REVENUE_VND',
+    operationalTargetValue: 1000000,
+    planTargetValue: 1000000,
+    actualValue: 750000,
+    achievementPercent: 75,
+    targetSource: 'ALLOCATED',
+    targetMismatch: false,
+  },
+  allocationCoverage: {
+    publishedAllocationCount: 2,
+    totalAllocationCount: 2,
+    isAllExistingAllocationsPublished: true,
+  },
+  supportingMetrics: [
+    {
+      metricCode: 'CONTENT_OUTPUT_COUNT',
+      targetValue: 10,
+      actualValue: 8,
+      achievementPercent: 80,
+    },
+  ],
+  missingSignal: { count: 1, semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' },
+  closing: { periodState: 'CURRENT' },
+  actionHints: { canReadActualGrid: true, canEnterActual: true },
+  members: [
+    {
+      allocationId: 'kpi-plan-published-alloc-1',
+      allocationStatus: 'PUBLISHED',
+      memberDisplayName: 'Luna Park',
+      revenue: {
+        metricCode: 'REVENUE_VND',
+        targetValue: 600000,
+        actualValue: 500000,
+        achievementPercent: 83.33,
+      },
+      supportingMetrics: [
+        {
+          metricCode: 'CONTENT_OUTPUT_COUNT',
+          targetValue: 6,
+          actualValue: 5,
+          achievementPercent: 83.33,
+        },
+      ],
+      missingSignal: { count: 0, semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' },
+      actionHints: { canReadActualGrid: true, canEnterActual: true },
+    },
+  ],
+});
+
 const makeActualEntry = (id: string, metricCode: string, value: number) => ({
   id,
   kpiPlanId: 'kpi-plan-published',
@@ -2013,9 +2270,9 @@ const makeActualGrid = () => ({
   actualDate: '16-05-2026',
   policy: {
     timezone: 'Asia/Ho_Chi_Minh',
-    entryOpenLocalTime: '06:00',
-    entryLockLocalTime: '23:00',
-    maxDirectEditsPerEntry: 2,
+    entryOpenLocalTime: '00:00',
+    entryLockLocalTime: '10:00',
+    maxDirectEditsPerEntry: 3,
     correctionAllowedUntil: 'PLAN_FINALIZED',
   },
   editability: {
