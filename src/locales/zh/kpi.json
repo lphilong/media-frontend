@@ -99,6 +99,19 @@
     "official": "Published allocation is official.",
     "notOfficialUntilPublished": "Allocation does not affect official progress until published"
   },
+  "allocationWorkflow": {
+    "title": "分配流程",
+    "noAllocations": "无分配",
+    "draft": "草稿",
+    "pendingApproval": "待审批",
+    "approved": "已审批",
+    "published": "已发布",
+    "rejected": "已拒绝",
+    "legacyActive": "旧版 active",
+    "closed": "已关闭",
+    "cancelled": "已取消",
+    "officialPublished": "正式已发布"
+  },
   "allocationStatuses": {
     "NONE": "No allocation",
     "MIXED": "Mixed",

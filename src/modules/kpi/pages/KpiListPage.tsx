@@ -65,6 +65,35 @@ type CorrectionTarget = {
   proposedValue?: string;
 };
 
+type AllocationWorkflowSummary = {
+  total: number;
+  byStatus: {
+    draft: number;
+    pendingApproval: number;
+    approved: number;
+    published: number;
+    rejected: number;
+    active: number;
+    closed: number;
+    cancelled: number;
+  };
+  officialPublishedCount: number;
+};
+
+const allocationWorkflowStatusEntries: Array<{
+  key: keyof AllocationWorkflowSummary['byStatus'];
+  labelKey: string;
+}> = [
+  { key: 'draft', labelKey: 'kpi:allocationWorkflow.draft' },
+  { key: 'pendingApproval', labelKey: 'kpi:allocationWorkflow.pendingApproval' },
+  { key: 'approved', labelKey: 'kpi:allocationWorkflow.approved' },
+  { key: 'published', labelKey: 'kpi:allocationWorkflow.published' },
+  { key: 'rejected', labelKey: 'kpi:allocationWorkflow.rejected' },
+  { key: 'active', labelKey: 'kpi:allocationWorkflow.legacyActive' },
+  { key: 'closed', labelKey: 'kpi:allocationWorkflow.closed' },
+  { key: 'cancelled', labelKey: 'kpi:allocationWorkflow.cancelled' },
+];
+
 const defaultTargets: TargetDraft[] = [
   { metricCode: 'REVENUE_VND', value: '1.000.000' },
   { metricCode: 'CONTENT_OUTPUT_COUNT', value: '10' },
@@ -424,6 +453,42 @@ export const KpiListPage = (): JSX.Element => {
   };
 
   const listError = plansQuery.error as NormalizedApiError | null;
+  const renderAllocationWorkflowSummary = (summary: AllocationWorkflowSummary) => {
+    if (summary.total === 0) {
+      return (
+        <span className="inline-flex rounded border border-dashed border-border px-2 py-1 text-xs text-muted">
+          {t('kpi:allocationWorkflow.noAllocations')}
+        </span>
+      );
+    }
+
+    const nonzeroStatuses = allocationWorkflowStatusEntries.filter(
+      (entry) => summary.byStatus[entry.key] > 0,
+    );
+
+    return (
+      <div
+        className="flex max-w-[320px] flex-wrap gap-1"
+        aria-label={t('kpi:allocationWorkflow.title')}
+      >
+        {nonzeroStatuses.map((entry) => (
+          <span
+            key={entry.key}
+            className="inline-flex items-center gap-1 rounded border border-border bg-slate-50 px-2 py-1 text-xs"
+          >
+            <span>{t(entry.labelKey)}</span>
+            <span className="font-semibold">{summary.byStatus[entry.key]}</span>
+          </span>
+        ))}
+        {summary.officialPublishedCount > 0 ? (
+          <span className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-800">
+            <span>{t('kpi:allocationWorkflow.officialPublished')}</span>
+            <span className="font-semibold">{summary.officialPublishedCount}</span>
+          </span>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <PageContainer className="space-y-4">
@@ -908,6 +973,9 @@ export const KpiListPage = (): JSX.Element => {
                   <th className="px-3 py-2 text-left">{t('kpi:fields.title')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.subject')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.planStatus')}</th>
+                  <th className="px-3 py-2 text-left">
+                    {t('kpi:allocationWorkflow.title')}
+                  </th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.periodMonth')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.publishedAt')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.finalizedAt')}</th>
@@ -923,6 +991,9 @@ export const KpiListPage = (): JSX.Element => {
                       {plan.subjectRef?.displayName ?? plan.subjectRef?.name ?? plan.subjectId}
                     </td>
                     <td className="px-3 py-2">{t(`kpi:statuses.${plan.status}`)}</td>
+                    <td className="px-3 py-2">
+                      {renderAllocationWorkflowSummary(plan.allocationWorkflowSummary)}
+                    </td>
                     <td className="px-3 py-2">{plan.periodMonth}</td>
                     <td className="px-3 py-2">{formatKpiDateTime(plan.publishedAt)}</td>
                     <td className="px-3 py-2">{formatKpiDateTime(plan.finalizedAt)}</td>

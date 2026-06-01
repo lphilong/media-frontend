@@ -105,6 +105,31 @@ type KpiPlan = {
   externalRef: string | null;
 };
 
+type KpiAllocationWorkflowSummary = {
+  total: number;
+  byStatus: {
+    draft: number;
+    pendingApproval: number;
+    approved: number;
+    published: number;
+    rejected: number;
+    active: number;
+    closed: number;
+    cancelled: number;
+  };
+  hasDraft: boolean;
+  hasPendingApproval: boolean;
+  hasApproved: boolean;
+  hasPublished: boolean;
+  hasRejected: boolean;
+  hasLegacyActive: boolean;
+  officialPublishedCount: number;
+};
+
+type KpiListPlan = KpiPlan & {
+  allocationWorkflowSummary: KpiAllocationWorkflowSummary;
+};
+
 type ActualEntry = {
   id: string;
   kpiPlanId: string;
@@ -231,6 +256,14 @@ const initialPlans = [
     finalizedAt: now - 40_000,
     finalizedByActorId: 'user-admin',
   }),
+  basePlan({
+    id: 'kpi-plan-legacy-active',
+    planCode: 'KPI-202605-000004',
+    title: 'Legacy workflow KPI',
+    status: 'PUBLISHED',
+    publishedAt: now - 60_000,
+    publishedByActorId: 'user-admin',
+  }),
 ];
 
 const initialTargets: Record<string, KpiTargetMetric[]> = Object.fromEntries(
@@ -334,6 +367,28 @@ const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
     ],
   ]),
 );
+
+initialAllocations['kpi-plan-draft'] = [];
+initialAllocations['kpi-plan-finalized'] = (
+  initialAllocations['kpi-plan-finalized'] ?? []
+).map((allocation, index) => ({
+  ...allocation,
+  allocationStatus: index === 0 ? 'PENDING_APPROVAL' : 'APPROVED',
+  submittedAt: now - 70_000,
+  submittedByActorId: 'manager-user',
+  approvedAt: index === 0 ? null : now - 60_000,
+  approvedByActorId: index === 0 ? null : 'user-admin',
+  publishedAt: null,
+  publishedByActorId: null,
+}));
+initialAllocations['kpi-plan-legacy-active'] = (
+  initialAllocations['kpi-plan-legacy-active'] ?? []
+).map((allocation, index) => ({
+  ...allocation,
+  allocationStatus: index === 0 ? 'ACTIVE' : 'PUBLISHED',
+  publishedAt: index === 0 ? null : allocation.publishedAt,
+  publishedByActorId: index === 0 ? null : allocation.publishedByActorId,
+}));
 
 let planSeed = 100;
 let actualSeed = 100;
@@ -478,6 +533,38 @@ const toDetail = (plan: KpiPlan) => ({
   ...plan,
   targetMetrics: targets[plan.id] ?? [],
   allocations: allocations[plan.id] ?? [],
+});
+
+const toAllocationWorkflowSummary = (rows: KpiAllocation[]): KpiAllocationWorkflowSummary => {
+  const byStatus = {
+    draft: rows.filter((allocation) => allocation.allocationStatus === 'DRAFT').length,
+    pendingApproval: rows.filter(
+      (allocation) => allocation.allocationStatus === 'PENDING_APPROVAL',
+    ).length,
+    approved: rows.filter((allocation) => allocation.allocationStatus === 'APPROVED').length,
+    published: rows.filter((allocation) => allocation.allocationStatus === 'PUBLISHED').length,
+    rejected: rows.filter((allocation) => allocation.allocationStatus === 'REJECTED').length,
+    active: rows.filter((allocation) => allocation.allocationStatus === 'ACTIVE').length,
+    closed: rows.filter((allocation) => allocation.allocationStatus === 'CLOSED').length,
+    cancelled: rows.filter((allocation) => allocation.allocationStatus === 'CANCELLED').length,
+  };
+
+  return {
+    total: rows.length,
+    byStatus,
+    hasDraft: byStatus.draft > 0,
+    hasPendingApproval: byStatus.pendingApproval > 0,
+    hasApproved: byStatus.approved > 0,
+    hasPublished: byStatus.published > 0,
+    hasRejected: byStatus.rejected > 0,
+    hasLegacyActive: byStatus.active > 0,
+    officialPublishedCount: byStatus.published,
+  };
+};
+
+const toListPlan = (plan: KpiPlan): KpiListPlan => ({
+  ...plan,
+  allocationWorkflowSummary: toAllocationWorkflowSummary(allocations[plan.id] ?? []),
 });
 
 const toProgressPlan = (plan: KpiPlan) => ({
@@ -638,7 +725,7 @@ export const kpiHandlers = [
     const url = new URL(request.url);
     const unsupported = rejectUnsupportedQuery(url.searchParams, allowedListQueryKeys);
     if (unsupported) return unsupported;
-    return HttpResponse.json({ data: filterPlans(request) });
+    return HttpResponse.json({ data: filterPlans(request).map(toListPlan) });
   }),
   http.get('*/admin/kpi/allocations', ({ request }) => {
     const url = new URL(request.url);

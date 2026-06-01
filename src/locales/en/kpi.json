@@ -99,6 +99,19 @@
     "official": "Published allocation is official.",
     "notOfficialUntilPublished": "Allocation does not affect official progress until published"
   },
+  "allocationWorkflow": {
+    "title": "Allocation workflow",
+    "noAllocations": "No allocations",
+    "draft": "Draft",
+    "pendingApproval": "Pending approval",
+    "approved": "Approved",
+    "published": "Published",
+    "rejected": "Rejected",
+    "legacyActive": "Legacy active",
+    "closed": "Closed",
+    "cancelled": "Cancelled",
+    "officialPublished": "Official published"
+  },
   "allocationStatuses": {
     "NONE": "No allocation",
     "MIXED": "Mixed",

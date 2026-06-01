@@ -12,7 +12,6 @@ import type {
   KpiDraftCorePayload,
   KpiManagedMemberPickerItem,
   KpiPlanDetail,
-  KpiPlanListItem,
   KpiPlanQuery,
   KpiProgressView,
   KpiTargetMetricInput,
@@ -41,6 +40,31 @@ const allocationStatusSchema = z.enum([
   'CLOSED',
   'CANCELLED',
 ]);
+
+const allocationWorkflowSummarySchema = z
+  .object({
+    total: z.number().int().nonnegative(),
+    byStatus: z
+      .object({
+        draft: z.number().int().nonnegative(),
+        pendingApproval: z.number().int().nonnegative(),
+        approved: z.number().int().nonnegative(),
+        published: z.number().int().nonnegative(),
+        rejected: z.number().int().nonnegative(),
+        active: z.number().int().nonnegative(),
+        closed: z.number().int().nonnegative(),
+        cancelled: z.number().int().nonnegative(),
+      })
+      .strict(),
+    hasDraft: z.boolean(),
+    hasPendingApproval: z.boolean(),
+    hasApproved: z.boolean(),
+    hasPublished: z.boolean(),
+    hasRejected: z.boolean(),
+    hasLegacyActive: z.boolean(),
+    officialPublishedCount: z.number().int().nonnegative(),
+  })
+  .strict();
 
 const referenceSummarySchema = z
   .object({
@@ -184,6 +208,10 @@ const planDetailSchema = planBaseSchema
     allocations: z.array(allocationSchema),
   })
   .strict();
+
+const planListItemSchema = planBaseSchema.extend({
+  allocationWorkflowSummary: allocationWorkflowSummarySchema,
+});
 
 const actualCellSchema = z
   .object({
@@ -351,7 +379,7 @@ const managedMemberSchema = z
   })
   .strict();
 
-const listResponseSchema = z.object({ data: z.array(planBaseSchema) }).strict();
+const listResponseSchema = z.object({ data: z.array(planListItemSchema) }).strict();
 const detailResponseSchema = z.object({ data: planDetailSchema }).strict();
 const allocationListResponseSchema = z.object({ data: z.array(allocationSchema) }).strict();
 const actualGridResponseSchema = z.object({ data: actualGridSchema }).strict();
@@ -432,7 +460,7 @@ export const sanitizeKpiCreatePlanPayload = (payload: KpiCreatePlanPayload): Kpi
 export const sanitizeKpiDraftCorePayload = (payload: KpiDraftCorePayload): KpiDraftCorePayload =>
   draftCorePayloadSchema.parse(payload);
 
-export const fetchKpiPlans = async (query: KpiPlanQuery): Promise<KpiPlanListItem[]> => {
+export const fetchKpiPlans = async (query: KpiPlanQuery) => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/admin/kpi/plans',
@@ -716,7 +744,7 @@ export const fetchKpiCorrectionHistory = async (
   return correctionListResponseSchema.parse(response).data;
 };
 
-export const parseKpiPlanListResponseForTest = (response: unknown): KpiPlanListItem[] =>
+export const parseKpiPlanListResponseForTest = (response: unknown) =>
   listResponseSchema.parse(response).data;
 
 export const parseKpiAllocationDraftPayloadForTest = (

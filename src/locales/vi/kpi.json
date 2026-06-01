@@ -99,6 +99,19 @@
     "official": "Phan bo da publish la chinh thuc.",
     "notOfficialUntilPublished": "Phan bo chua anh huong tien do chinh thuc cho den khi publish"
   },
+  "allocationWorkflow": {
+    "title": "Luồng phân bổ",
+    "noAllocations": "Chưa có phân bổ",
+    "draft": "Nháp",
+    "pendingApproval": "Chờ duyệt",
+    "approved": "Đã duyệt",
+    "published": "Đã publish",
+    "rejected": "Đã từ chối",
+    "legacyActive": "Active cũ",
+    "closed": "Đã đóng",
+    "cancelled": "Đã hủy",
+    "officialPublished": "Đã publish chính thức"
+  },
   "allocationStatuses": {
     "NONE": "Chua co phan bo",
     "MIXED": "Hon hop",

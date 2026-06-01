@@ -138,7 +138,11 @@ describe('KPI MVP UX', () => {
       http.get('*/admin/kpi/plans', ({ request }) => {
         captured = new URL(request.url);
         const rows = [
-          makeListPlan('kpi-plan-managed', 'Managed group KPI', 'group-001'),
+          makeListPlan('kpi-plan-managed', 'Managed group KPI', 'group-001', {
+            allocationWorkflowSummary: makeAllocationWorkflowSummary({
+              byStatus: { published: 2 },
+            }),
+          }),
           makeListPlan('kpi-plan-draft-managed', 'Draft managed group KPI', 'group-001', {
             status: 'DRAFT',
           }),
@@ -168,6 +172,11 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByText('Draft managed group KPI')).not.toBeInTheDocument();
     expect(screen.queryByText('Talent KPI')).not.toBeInTheDocument();
     expect(screen.getAllByText('Plan status').length).toBeGreaterThan(0);
+    const row = screen.getByText('Managed group KPI').closest('tr');
+    expect(row).not.toBeNull();
+    expect(within(row!).getByLabelText('Allocation workflow')).toBeInTheDocument();
+    expect(within(row!).getByText('Official published')).toBeInTheDocument();
+    expect(within(row!).getAllByText('2').length).toBeGreaterThan(0);
   });
 
   it('admin global actor still loads the global KPI list endpoint and can see draft plans', async () => {
@@ -182,6 +191,7 @@ describe('KPI MVP UX', () => {
         return HttpResponse.json({
           data: [makeListPlan('kpi-plan-admin-draft', 'Admin draft KPI', 'group-001', {
             status: 'DRAFT',
+            allocationWorkflowSummary: makeAllocationWorkflowSummary(),
           })],
         });
       }),
@@ -198,6 +208,83 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByRole('tab', { name: 'My KPI' })).not.toBeInTheDocument();
     expect(await screen.findByText('Admin draft KPI')).toBeInTheDocument();
     expect(screen.getAllByText('Draft').length).toBeGreaterThan(0);
+    const row = screen.getByText('Admin draft KPI').closest('tr');
+    expect(row).not.toBeNull();
+    expect(within(row!).getByText('No allocations')).toBeInTheDocument();
+  });
+
+  it('renders allocation workflow summaries from backend list rows', async () => {
+    server.use(
+      http.get('*/admin/kpi/plans', () =>
+        HttpResponse.json({
+          data: [
+            makeListPlan('kpi-plan-zero', 'No allocation KPI', 'group-001', {
+              status: 'DRAFT',
+              allocationWorkflowSummary: makeAllocationWorkflowSummary(),
+            }),
+            makeListPlan('kpi-plan-mixed', 'Backend mixed workflow KPI', 'group-001', {
+              allocationWorkflowSummary: makeAllocationWorkflowSummary({
+                byStatus: {
+                  draft: 2,
+                  pendingApproval: 1,
+                  published: 3,
+                  active: 1,
+                },
+              }),
+            }),
+          ],
+        }),
+      ),
+    );
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    const zeroRow = (await screen.findByText('No allocation KPI')).closest('tr');
+    expect(zeroRow).not.toBeNull();
+    expect(within(zeroRow!).getByText('No allocations')).toBeInTheDocument();
+
+    const mixedRow = screen.getByText('Backend mixed workflow KPI').closest('tr');
+    expect(mixedRow).not.toBeNull();
+    expect(within(mixedRow!).getByText('Draft')).toBeInTheDocument();
+    expect(within(mixedRow!).getByText('Pending approval')).toBeInTheDocument();
+    expect(within(mixedRow!).getAllByText('Published').length).toBeGreaterThan(0);
+    expect(within(mixedRow!).getByText('Legacy active')).toBeInTheDocument();
+    expect(within(mixedRow!).getByText('Official published')).toBeInTheDocument();
+    expect(within(mixedRow!).getAllByText('3').length).toBeGreaterThan(0);
+    expect(within(mixedRow!).queryByText('Mixed')).not.toBeInTheDocument();
+  });
+
+  it('does not infer allocation workflow from plan title text', async () => {
+    server.use(
+      http.get('*/admin/kpi/plans', () =>
+        HttpResponse.json({
+          data: [
+            makeListPlan(
+              'kpi-plan-title-says-pending',
+              'Title says Pending Approval but backend says legacy active',
+              'group-001',
+              {
+                allocationWorkflowSummary: makeAllocationWorkflowSummary({
+                  byStatus: { active: 1 },
+                }),
+              },
+            ),
+          ],
+        }),
+      ),
+    );
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    const row = (
+      await screen.findByText('Title says Pending Approval but backend says legacy active')
+    ).closest('tr');
+    expect(row).not.toBeNull();
+    expect(within(row!).getByText('Legacy active')).toBeInTheDocument();
+    expect(within(row!).queryByText('Pending approval')).not.toBeInTheDocument();
+    expect(within(row!).queryByText('Official published')).not.toBeInTheDocument();
   });
 
   it('sends backend search query from list search', async () => {
@@ -1120,10 +1207,15 @@ describe('KPI MVP UX', () => {
     });
   });
 
-  it('strict API schema rejects unexpected fields', () => {
+  it('strict API schema accepts allocation workflow summary and rejects unexpected fields', () => {
+    expect(
+      parseKpiPlanListResponseForTest({
+        data: [makeListPlan('kpi-plan-x', 'Strict summary KPI', 'group-001')],
+      })[0].allocationWorkflowSummary.officialPublishedCount,
+    ).toBe(1);
     expect(() =>
       parseKpiPlanListResponseForTest({
-        data: [{ ...makeDetail('kpi-plan-x', 'DRAFT'), unexpected: true }],
+        data: [{ ...makeListPlan('kpi-plan-x', 'Strict summary KPI', 'group-001'), unexpected: true }],
       }),
     ).toThrow();
   });
@@ -1320,11 +1412,62 @@ const makeProgress = (id: string, memberProgress: unknown[]) => ({
   memberProgress,
 });
 
+type TestAllocationWorkflowSummary = {
+  total: number;
+  byStatus: {
+    draft: number;
+    pendingApproval: number;
+    approved: number;
+    published: number;
+    rejected: number;
+    active: number;
+    closed: number;
+    cancelled: number;
+  };
+  hasDraft: boolean;
+  hasPendingApproval: boolean;
+  hasApproved: boolean;
+  hasPublished: boolean;
+  hasRejected: boolean;
+  hasLegacyActive: boolean;
+  officialPublishedCount: number;
+};
+
+const makeAllocationWorkflowSummary = (overrides: {
+  byStatus?: Partial<TestAllocationWorkflowSummary['byStatus']>;
+} = {}): TestAllocationWorkflowSummary => {
+  const byStatus = {
+    draft: 0,
+    pendingApproval: 0,
+    approved: 0,
+    published: 0,
+    rejected: 0,
+    active: 0,
+    closed: 0,
+    cancelled: 0,
+    ...overrides.byStatus,
+  };
+
+  return {
+    total: Object.values(byStatus).reduce((sum, count) => sum + count, 0),
+    byStatus,
+    hasDraft: byStatus.draft > 0,
+    hasPendingApproval: byStatus.pendingApproval > 0,
+    hasApproved: byStatus.approved > 0,
+    hasPublished: byStatus.published > 0,
+    hasRejected: byStatus.rejected > 0,
+    hasLegacyActive: byStatus.active > 0,
+    officialPublishedCount: byStatus.published,
+  };
+};
+
 const makeListPlan = (
   id: string,
   title: string,
   subjectId: string,
-  overrides: Partial<ReturnType<typeof makeDetail>> = {},
+  overrides: Partial<ReturnType<typeof makeDetail>> & {
+    allocationWorkflowSummary?: TestAllocationWorkflowSummary;
+  } = {},
 ) => {
   const { targetMetrics, allocations, ...plan } = {
     ...makeDetail(id, overrides.status ?? 'PUBLISHED'),
@@ -1336,6 +1479,9 @@ const makeListPlan = (
     ...plan,
     title,
     subjectId,
+    allocationWorkflowSummary:
+      overrides.allocationWorkflowSummary ??
+      makeAllocationWorkflowSummary({ byStatus: { published: 1 } }),
   };
 };
 
