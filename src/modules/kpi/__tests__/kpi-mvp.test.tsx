@@ -28,6 +28,9 @@ import { setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import { server } from '@test/msw/server';
 
+const may2026PeriodStartAt = Date.UTC(2026, 4, 1, -7, 0, 0, 0);
+const may2026PeriodEndAt = Date.UTC(2026, 5, 1, -7, 0, 0, 0) - 1;
+
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, { initialEntries: [path] });
   return renderAppWithProviders(<RouterProvider router={router} />);
@@ -343,8 +346,8 @@ describe('KPI MVP UX', () => {
             status: 'DRAFT',
             currencyCode: 'VND',
             periodMonth: '2026-05',
-            periodStartAt: 1777593600000,
-            periodEndAt: 1780271999999,
+            periodStartAt: may2026PeriodStartAt,
+            periodEndAt: may2026PeriodEndAt,
             timezone: 'Asia/Ho_Chi_Minh',
             actualPolicySnapshot: null,
             publishedAt: null,
@@ -373,6 +376,12 @@ describe('KPI MVP UX', () => {
     expect(typeof (body?.targetMetrics as Array<{ targetValue: number }>)[0].targetValue).toBe(
       'number',
     );
+    expect(
+      (body?.allocations as Array<{ allocationStartDate: string }>)[0].allocationStartDate,
+    ).toBe('2026-05-01');
+    expect(
+      (body?.allocations as Array<{ allocationStartDate: string }>)[0].allocationStartDate,
+    ).not.toBe('01-05-2026');
   });
 
   it('rejects malformed money before calling create API', async () => {
@@ -548,6 +557,69 @@ describe('KPI MVP UX', () => {
     const parsed = parseKpiAllocationDraftPayloadForTest(body);
     expect(parsed.allocations[0]).toHaveProperty('employmentProfileId');
     expect(parsed.allocations[0]).not.toHaveProperty('memberTalentId');
+    expect(parsed.allocations[0]?.allocationStartDate).toBe('2026-05-01');
+    expect(parsed.allocations[0]?.allocationStartDate).not.toBe('');
+  });
+
+  it('TEAM_MANAGER default allocation draft date uses periodMonth for local period timestamps', async () => {
+    let body: Record<string, unknown> | undefined;
+    const planId = 'kpi-plan-local-period-empty-allocation';
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.enterActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+    server.use(
+      http.get(`*/admin/kpi/plans/${planId}`, () =>
+        HttpResponse.json({
+          data: {
+            ...makeDetail(planId, 'PUBLISHED'),
+            periodMonth: '2026-05',
+            periodStartAt: may2026PeriodStartAt,
+            periodEndAt: may2026PeriodEndAt,
+            allocations: [],
+          },
+        }),
+      ),
+      http.get(`*/admin/kpi/plans/${planId}/progress`, () =>
+        HttpResponse.json({ data: makeProgress(planId, []) }),
+      ),
+      http.get(`*/admin/kpi/plans/${planId}/managed-members`, () =>
+        HttpResponse.json({
+          data: [
+            {
+              employmentProfileId: 'employment-profile-001',
+              employeeCode: 'EMP-001',
+              displayName: 'Luna Park',
+              talentId: 'talent-luna',
+              talentCode: 'LUNA',
+              groupId: 'group-001',
+            },
+          ],
+        }),
+      ),
+      http.put(`*/admin/kpi/plans/${planId}/allocation-draft`, async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          data: makeDetailWithAllocation(planId, 'PUBLISHED', 'DRAFT'),
+        });
+      }),
+    );
+
+    const { container } = renderRoute(`/kpi/plans/${planId}`);
+    await waitForPublishedKpiDetail();
+    const picker = await waitFor(() => {
+      const element = container.querySelector('[data-picker-id="kpi-managed-member-0"]');
+      expect(element).not.toBeNull();
+      return element as HTMLElement;
+    });
+    await userEvent.click(within(picker).getByRole('button', { name: 'Search' }));
+    await userEvent.click(await within(picker).findByRole('button', { name: /Luna Park/ }));
+    await userEvent.click(await waitForEnabledButton('Save Allocation Draft'));
+
+    await waitFor(() => expect(body).toBeDefined());
+    const parsed = parseKpiAllocationDraftPayloadForTest(body);
+    expect(parsed.allocations[0]?.allocationStartDate).toBe('2026-05-01');
+    expect(parsed.allocations[0]?.allocationStartDate).not.toBe('2026-04-30');
   });
 
   it('TEAM_MANAGER allocation picker uses the scoped managed-member endpoint', async () => {
@@ -1227,7 +1299,7 @@ describe('KPI MVP UX', () => {
           {
             employmentProfileId: 'employment-profile-001',
             memberTalentId: 'talent-001',
-            allocationStartDate: '01-05-2026',
+            allocationStartDate: '2026-05-01',
             targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
           },
         ],
@@ -1238,13 +1310,29 @@ describe('KPI MVP UX', () => {
         allocations: [
           {
             employmentProfileId: 'employment-profile-001',
-            allocationStartDate: '01-05-2026',
+            allocationStartDate: '2026-05-01',
             targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
             scopeGrants: { kpi: ['global'] },
           },
         ],
       }),
     ).toThrow();
+  });
+
+  it('strict allocation draft payload rejects empty or non-contract start dates', () => {
+    for (const allocationStartDate of ['', '01-05-2026']) {
+      expect(() =>
+        parseKpiAllocationDraftPayloadForTest({
+          allocations: [
+            {
+              employmentProfileId: 'employment-profile-001',
+              allocationStartDate,
+              targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
+            },
+          ],
+        }),
+      ).toThrow();
+    }
   });
 
   it('strict allocation list schema accepts approval audit fields and rejects unknown fields', () => {
@@ -1291,8 +1379,8 @@ const makeDetail = (id: string, status: 'DRAFT' | 'PUBLISHED' | 'FINALIZED' | 'A
   status,
   currencyCode: 'VND',
   periodMonth: '2026-05',
-  periodStartAt: 1777593600000,
-  periodEndAt: 1780271999999,
+  periodStartAt: may2026PeriodStartAt,
+  periodEndAt: may2026PeriodEndAt,
   timezone: 'Asia/Ho_Chi_Minh',
   actualPolicySnapshot: null,
   publishedAt: 1,
@@ -1358,7 +1446,7 @@ const makeAllocation = (
   memberTalentId: 'talent-001',
   membershipId: null,
   allocationStatus,
-  allocationStartDate: '01-05-2026',
+  allocationStartDate: '2026-05-01',
   allocationEndDate: null,
   targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
   snapshotMemberDisplayName: 'Luna Park',
@@ -1388,8 +1476,8 @@ const makeProgress = (id: string, memberProgress: unknown[]) => ({
     subjectId: 'group-001',
     status: 'PUBLISHED',
     periodMonth: '2026-05',
-    periodStartAt: 1777593600000,
-    periodEndAt: 1780271999999,
+    periodStartAt: may2026PeriodStartAt,
+    periodEndAt: may2026PeriodEndAt,
     timezone: 'Asia/Ho_Chi_Minh',
   },
   periodElapsedPercent: 80,

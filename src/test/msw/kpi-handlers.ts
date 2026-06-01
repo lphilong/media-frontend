@@ -167,6 +167,9 @@ type ActualCorrection = {
 };
 
 const now = Date.parse('2026-05-16T09:30:00.000Z');
+const allocationContractDatePattern = /^\d{4}-\d{2}-\d{2}$/;
+const may2026PeriodStartAt = Date.UTC(2026, 4, 1, -7, 0, 0, 0);
+const may2026PeriodEndAt = Date.UTC(2026, 5, 1, -7, 0, 0, 0) - 1;
 const metricUnits: Record<KpiMetricCode, KpiUnit> = {
   REVENUE_VND: 'VND',
   CONTENT_OUTPUT_COUNT: 'COUNT',
@@ -218,8 +221,8 @@ const basePlan = (overrides: Partial<KpiPlan>): KpiPlan => ({
   status: 'DRAFT',
   currencyCode: 'VND',
   periodMonth: '2026-05',
-  periodStartAt: Date.UTC(2026, 4, 1),
-  periodEndAt: Date.UTC(2026, 5, 1) - 1,
+  periodStartAt: may2026PeriodStartAt,
+  periodEndAt: may2026PeriodEndAt,
   timezone: 'Asia/Ho_Chi_Minh',
   actualPolicySnapshot: null,
   publishedAt: null,
@@ -308,7 +311,7 @@ const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
         memberTalentId: 'talent-001',
         membershipId: null,
         allocationStatus: plan.status === 'DRAFT' ? 'DRAFT' : 'PUBLISHED',
-        allocationStartDate: '01-05-2026',
+        allocationStartDate: '2026-05-01',
         allocationEndDate: null,
         targetMetrics: [
           { metricCode: 'REVENUE_VND', targetValue: 600000 },
@@ -340,7 +343,7 @@ const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
         memberTalentId: 'talent-002',
         membershipId: null,
         allocationStatus: plan.status === 'DRAFT' ? 'DRAFT' : 'PUBLISHED',
-        allocationStartDate: '01-05-2026',
+        allocationStartDate: '2026-05-01',
         allocationEndDate: null,
         targetMetrics: [
           { metricCode: 'REVENUE_VND', targetValue: 400000 },
@@ -767,6 +770,19 @@ export const kpiHandlers = [
     if (!validateMetricPayload(body.targetMetrics)) {
       return HttpResponse.json({ message: 'Invalid target metrics' }, { status: 422 });
     }
+    if (
+      Array.isArray(body.allocations) &&
+      body.allocations.some((item) => {
+        const allocation = item as Record<string, unknown>;
+        return (
+          !allocationContractDatePattern.test(String(allocation.allocationStartDate ?? '')) ||
+          (allocation.allocationEndDate != null &&
+            !allocationContractDatePattern.test(String(allocation.allocationEndDate)))
+        );
+      })
+    ) {
+      return HttpResponse.json({ message: 'Invalid allocation date' }, { status: 422 });
+    }
     planSeed += 1;
     const id = `kpi-plan-${planSeed}`;
     const plan = basePlan({
@@ -953,6 +969,9 @@ export const kpiHandlers = [
       draftItems.some(
         (allocation) =>
           !String(allocation.employmentProfileId ?? '') ||
+          !allocationContractDatePattern.test(String(allocation.allocationStartDate ?? '')) ||
+          (allocation.allocationEndDate != null &&
+            !allocationContractDatePattern.test(String(allocation.allocationEndDate))) ||
           'memberTalentId' in allocation ||
           'targetKind' in allocation,
       )

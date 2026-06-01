@@ -86,20 +86,17 @@ const targetMetricInputSchema = z
   })
   .strict();
 
+const allocationContractDateSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/);
+
 const allocationInputSchema = z
   .object({
     memberTalentId: z.string().trim().min(1),
     membershipId: z.string().trim().min(1).nullable().optional(),
-    allocationStartDate: z
-      .string()
-      .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/),
-    allocationEndDate: z
-      .string()
-      .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/)
-      .nullable()
-      .optional(),
+    allocationStartDate: allocationContractDateSchema,
+    allocationEndDate: allocationContractDateSchema.nullable().optional(),
     targetMetrics: z.array(targetMetricInputSchema),
     snapshotMemberDisplayName: z.string().trim().min(1).nullable().optional(),
   })
@@ -108,16 +105,8 @@ const allocationInputSchema = z
 const allocationDraftMemberInputSchema = z
   .object({
     employmentProfileId: z.string().trim().min(1),
-    allocationStartDate: z
-      .string()
-      .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/),
-    allocationEndDate: z
-      .string()
-      .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/)
-      .nullable()
-      .optional(),
+    allocationStartDate: allocationContractDateSchema,
+    allocationEndDate: allocationContractDateSchema.nullable().optional(),
     targetMetrics: z.array(targetMetricInputSchema).min(1),
     note: z.string().trim().min(1).nullable().optional(),
   })

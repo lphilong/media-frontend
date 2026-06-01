@@ -67,6 +67,9 @@ type AllocationDraftRow = {
   values: Partial<Record<KpiMetricCode, string>>;
 };
 
+const toContractDate = (periodMonth: KpiPlanDetail['periodMonth']): string =>
+  /^\d{4}-\d{2}$/.test(periodMonth) ? `${periodMonth}-01` : '';
+
 const officialAllocationStatuses = new Set<KpiAllocationStatus>(['PUBLISHED']);
 
 const readAllocationWorkflowStatus = (
@@ -99,7 +102,7 @@ const toDraftRows = (plan: KpiPlanDetail): AllocationDraftRow[] =>
     : [
         {
           employmentProfileId: '',
-          allocationStartDate: '01-05-2026',
+          allocationStartDate: toContractDate(plan.periodMonth),
           note: '',
           values: Object.fromEntries(
             plan.targetMetrics.map((metric) => [metric.metricCode, '0']),
@@ -689,7 +692,7 @@ export const KpiDetailPage = (): JSX.Element => {
                             ...current,
                             {
                               employmentProfileId: '',
-                              allocationStartDate: '01-05-2026',
+                              allocationStartDate: toContractDate(plan.periodMonth),
                               note: '',
                               values: Object.fromEntries(
                                 plan.targetMetrics.map((metric) => [metric.metricCode, '0']),

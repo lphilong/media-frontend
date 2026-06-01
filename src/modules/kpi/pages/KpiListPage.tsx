@@ -133,6 +133,9 @@ const toMonthBounds = (periodMonth: string): { start: number; end: number } | un
   };
 };
 
+const toAllocationContractStartDate = (periodMonth: string): string | undefined =>
+  /^\d{4}-\d{2}$/.test(periodMonth) ? `${periodMonth}-01` : undefined;
+
 const createEmptyAllocation = (index: number): AllocationDraft => ({
   memberTalentId: `talent-00${index}`,
   memberName: index === 1 ? 'Luna Park' : 'Minh Tran',
@@ -336,6 +339,11 @@ export const KpiListPage = (): JSX.Element => {
       setFormError(t('kpi:validation.invalidPeriodMonth'));
       return;
     }
+    const allocationStartDate = toAllocationContractStartDate(periodMonth);
+    if (!allocationStartDate) {
+      setFormError(t('kpi:validation.invalidPeriodMonth'));
+      return;
+    }
     if (!parsedTargets) {
       setFormError(t('kpi:validation.invalidMetricValue'));
       return;
@@ -361,7 +369,7 @@ export const KpiListPage = (): JSX.Element => {
           ? allocations.map((allocation) => ({
               memberTalentId: allocation.memberTalentId,
               membershipId: null,
-              allocationStartDate: '01-05-2026',
+              allocationStartDate,
               allocationEndDate: null,
               snapshotMemberDisplayName: allocation.memberName,
               targetMetrics: parsedTargets.map((target) => ({
