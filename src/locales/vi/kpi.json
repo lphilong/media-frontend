@@ -45,6 +45,8 @@
     "approvalNote": "Ghi chu phe duyet",
     "rejectionReason": "Ly do tu choi",
     "status": "Trạng thái",
+    "planStatus": "Trạng thái kế hoạch",
+    "allocationStatus": "Trạng thái phân bổ",
     "periodMonth": "Tháng KPI",
     "metricCode": "Chỉ số",
     "targetValue": "Mục tiêu",

@@ -45,6 +45,8 @@
     "approvalNote": "Approval note",
     "rejectionReason": "Rejection reason",
     "status": "Status",
+    "planStatus": "Plan status",
+    "allocationStatus": "Allocation status",
     "periodMonth": "Period month",
     "metricCode": "Metric",
     "targetValue": "Target",

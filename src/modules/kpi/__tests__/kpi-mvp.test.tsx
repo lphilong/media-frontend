@@ -128,27 +128,49 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByText('Access denied')).not.toBeInTheDocument();
   });
 
-  it('TEAM_MANAGER sees only managed group KPI plans from MSW', async () => {
+  it('TEAM_MANAGER My Group KPI requests published TalentGroup plans and renders no draft or Talent plans', async () => {
+    let captured = new URL('http://example.test');
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
       scopeGrants: { kpi: ['managedGroup'] },
     });
     server.use(
-      http.get('*/admin/kpi/plans', () =>
-        HttpResponse.json({
-          data: [makeListPlan('kpi-plan-managed', 'Managed group KPI', 'group-001')],
-        }),
-      ),
+      http.get('*/admin/kpi/plans', ({ request }) => {
+        captured = new URL(request.url);
+        const rows = [
+          makeListPlan('kpi-plan-managed', 'Managed group KPI', 'group-001'),
+          makeListPlan('kpi-plan-draft-managed', 'Draft managed group KPI', 'group-001', {
+            status: 'DRAFT',
+          }),
+          makeListPlan('kpi-plan-talent', 'Talent KPI', 'talent-001', {
+            subjectType: 'TALENT',
+          }),
+        ];
+        return HttpResponse.json({
+          data: rows.filter(
+            (plan) =>
+              plan.status === captured.searchParams.get('status') &&
+              plan.subjectType === captured.searchParams.get('subjectType'),
+          ),
+        });
+      }),
     );
 
-    renderRoute('/kpi');
+    renderRoute('/kpi?status=DRAFT&subjectType=TALENT&subjectId=talent-001');
     await waitForKpiList();
 
+    await waitFor(() => {
+      expect(captured.searchParams.get('status')).toBe('PUBLISHED');
+      expect(captured.searchParams.get('subjectType')).toBe('TALENT_GROUP');
+    });
+    expect(captured.searchParams.get('subjectId')).toBeNull();
     expect(await screen.findByText('Managed group KPI')).toBeInTheDocument();
-    expect(screen.queryByText('Unmanaged group KPI')).not.toBeInTheDocument();
+    expect(screen.queryByText('Draft managed group KPI')).not.toBeInTheDocument();
+    expect(screen.queryByText('Talent KPI')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Plan status').length).toBeGreaterThan(0);
   });
 
-  it('admin global actor still loads the global KPI list endpoint', async () => {
+  it('admin global actor still loads the global KPI list endpoint and can see draft plans', async () => {
     const urls: string[] = [];
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.createPlan', 'kpi.enterActual', 'kpi.correctActual'],
@@ -157,7 +179,11 @@ describe('KPI MVP UX', () => {
     server.use(
       http.get('*/admin/kpi/plans', ({ request }) => {
         urls.push(request.url);
-        return HttpResponse.json({ data: [] });
+        return HttpResponse.json({
+          data: [makeListPlan('kpi-plan-admin-draft', 'Admin draft KPI', 'group-001', {
+            status: 'DRAFT',
+          })],
+        });
       }),
     );
 
@@ -170,6 +196,8 @@ describe('KPI MVP UX', () => {
     expect(screen.getByRole('tab', { name: 'KPI Management', selected: true })).toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'My Group KPI' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'My KPI' })).not.toBeInTheDocument();
+    expect(await screen.findByText('Admin draft KPI')).toBeInTheDocument();
+    expect(screen.getAllByText('Draft').length).toBeGreaterThan(0);
   });
 
   it('sends backend search query from list search', async () => {
@@ -327,16 +355,35 @@ describe('KPI MVP UX', () => {
   it('shows explicit lifecycle copy when a published plan is not finalized yet', async () => {
     renderRoute('/kpi/plans/kpi-plan-published');
     await waitForPublishedKpiDetail();
+    expect(screen.getByText('Plan status')).toBeInTheDocument();
     expect(screen.getByText('Plan published at')).toBeInTheDocument();
     expect(screen.getByText('Plan finalized at')).toBeInTheDocument();
     expect(screen.getByText('Not finalized yet')).toBeInTheDocument();
   });
 
   it('TEAM_MANAGER sees allocation draft and submit controls disabled until KPI plan is published', async () => {
+    let managedMemberLookupCalled = false;
+    let progressLookupCalled = false;
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
       scopeGrants: { kpi: ['managedGroup'] },
     });
+    server.use(
+      http.get('*/admin/kpi/plans/kpi-plan-draft/managed-members', () => {
+        managedMemberLookupCalled = true;
+        return HttpResponse.json(
+          { message: 'KPI_PERMISSION_SCOPE_ERROR: Permission or scope denied' },
+          { status: 403 },
+        );
+      }),
+      http.get('*/admin/kpi/plans/kpi-plan-draft/progress', () => {
+        progressLookupCalled = true;
+        return HttpResponse.json(
+          { message: 'KPI_PERMISSION_SCOPE_ERROR: KPI progress read scope denied' },
+          { status: 403 },
+        );
+      }),
+    );
 
     renderRoute('/kpi/plans/kpi-plan-draft');
     await screen.findByText('May creator KPI');
@@ -346,6 +393,21 @@ describe('KPI MVP UX', () => {
     ).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: 'Save Allocation Draft' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Submit Allocation' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add member' })).toBeDisabled();
+    for (const searchButton of screen.getAllByRole('button', { name: 'Search' })) {
+      expect(searchButton).toBeDisabled();
+    }
+    expect(screen.queryByText(/Could not load Managed member options/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/KPI_PERMISSION_SCOPE_ERROR/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/KPI progress read scope denied/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('Progress is unavailable for this plan or actor.')).not.toBeInTheDocument();
+    expect(screen.getByText('Published-only')).toBeInTheDocument();
+    expect(screen.getByText('Published allocations only')).toBeInTheDocument();
+    expect(
+      screen.getByText('Allocation does not affect official progress until published'),
+    ).toBeInTheDocument();
+    expect(managedMemberLookupCalled).toBe(false);
+    expect(progressLookupCalled).toBe(false);
     expect(screen.queryByRole('button', { name: 'Approve Allocation' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Publish Allocation' })).not.toBeInTheDocument();
   });
@@ -386,6 +448,13 @@ describe('KPI MVP UX', () => {
 
     renderRoute('/kpi/plans/kpi-plan-published-draft-allocation');
     await waitForPublishedKpiDetail();
+    expect(screen.getByText('Plan status')).toBeInTheDocument();
+    expect(screen.getAllByText('Published').length).toBeGreaterThan(0);
+    expect(screen.getByText('Allocation status')).toBeInTheDocument();
+    expect(screen.getByText('Allocation Draft')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Publish the KPI plan before drafting allocations.'),
+    ).not.toBeInTheDocument();
     await userEvent.click(await waitForEnabledButton('Save Allocation Draft'));
 
     await waitFor(() => expect(body).toBeDefined());
@@ -437,8 +506,11 @@ describe('KPI MVP UX', () => {
 
     const { container } = renderRoute('/kpi/plans/kpi-plan-published-draft-allocation');
     await waitForPublishedKpiDetail();
-    const picker = container.querySelector('[data-picker-id="kpi-managed-member-0"]');
-    expect(picker).not.toBeNull();
+    const picker = await waitFor(() => {
+      const element = container.querySelector('[data-picker-id="kpi-managed-member-0"]');
+      expect(element).not.toBeNull();
+      return element as HTMLElement;
+    });
     await userEvent.click(within(picker as HTMLElement).getByRole('button', { name: 'Search' }));
 
     await waitFor(() => expect(managedMemberLookupCalled).toBe(true));
@@ -1248,8 +1320,16 @@ const makeProgress = (id: string, memberProgress: unknown[]) => ({
   memberProgress,
 });
 
-const makeListPlan = (id: string, title: string, subjectId: string) => {
-  const { targetMetrics, allocations, ...plan } = makeDetail(id, 'PUBLISHED');
+const makeListPlan = (
+  id: string,
+  title: string,
+  subjectId: string,
+  overrides: Partial<ReturnType<typeof makeDetail>> = {},
+) => {
+  const { targetMetrics, allocations, ...plan } = {
+    ...makeDetail(id, overrides.status ?? 'PUBLISHED'),
+    ...overrides,
+  };
   void targetMetrics;
   void allocations;
   return {

@@ -134,7 +134,6 @@ export const KpiListPage = (): JSX.Element => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = useMemo(() => readPlanQuery(searchParams), [searchParams]);
-  const plansQuery = useKpiPlans(query);
   const capabilitiesQuery = useCurrentActorCapabilities();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const createMutation = useCreateKpiPlanMutation();
@@ -207,7 +206,6 @@ export const KpiListPage = (): JSX.Element => {
   const allocationQueueQuery = useKpiAllocations({ limit: 50 });
   const hasGlobalKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'global');
   const hasManagedGroupKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'managedGroup');
-  const isManagedGroupOnlyKpiView = !hasGlobalKpiScope && hasManagedGroupKpiScope;
   const visibleTabs = useMemo(
     () =>
       [
@@ -216,10 +214,29 @@ export const KpiListPage = (): JSX.Element => {
       ].filter((tab): tab is 'management' | 'group' => Boolean(tab)),
     [hasGlobalKpiScope, hasManagedGroupKpiScope],
   );
+  const selectedTab: 'management' | 'group' | undefined = visibleTabs.includes(
+    activeTab as 'management' | 'group',
+  )
+    ? (activeTab as 'management' | 'group')
+    : visibleTabs[0];
+  const isManagedGroupKpiView = selectedTab === 'group';
   const canShowCreatePlan = createPlanHint.allowed;
   const canShowActualEntrySurface = enterActualHint.allowed || correctActualHint.allowed;
   const canShowAllocationApprovalQueue =
     approveAllocationHint.allowed || publishAllocationHint.allowed;
+  const effectiveQuery = useMemo<KpiPlanQuery>(
+    () =>
+      isManagedGroupKpiView
+        ? {
+            ...query,
+            subjectId: undefined,
+            status: 'PUBLISHED',
+            subjectType: 'TALENT_GROUP',
+          }
+        : query,
+    [isManagedGroupKpiView, query],
+  );
+  const plansQuery = useKpiPlans(effectiveQuery, { enabled: visibleTabs.length > 0 });
 
   useEffect(() => {
     if (visibleTabs.length > 0 && !visibleTabs.includes(activeTab as 'management' | 'group')) {
@@ -417,7 +434,7 @@ export const KpiListPage = (): JSX.Element => {
               key={tab}
               type="button"
               role="tab"
-              aria-selected={activeTab === tab}
+              aria-selected={selectedTab === tab}
               className="rounded border border-border px-3 py-2 text-sm font-medium aria-selected:bg-accent aria-selected:text-white"
               onClick={() => setActiveTab(tab)}
             >
@@ -437,40 +454,63 @@ export const KpiListPage = (): JSX.Element => {
               onChange={(event) => patchQuery({ search: event.target.value || undefined })}
             />
           </label>
-          <label className="flex min-w-[160px] flex-col gap-1 text-sm">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('kpi:fields.status')}
-            </span>
-            <select
-              value={query.status ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5"
-              onChange={(event) => patchQuery({ status: event.target.value || undefined })}
-            >
-              <option value="">{t('kpi:filters.allStatuses')}</option>
-              {kpiPlanStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {t(`kpi:statuses.${status}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1 text-sm">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('kpi:fields.subjectType')}
-            </span>
-            <select
-              value={query.subjectType ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5"
-              onChange={(event) => patchQuery({ subjectType: event.target.value || undefined })}
-            >
-              <option value="">{t('kpi:filters.allSubjectTypes')}</option>
-              {kpiSubjectTypes.map((type) => (
-                <option key={type} value={type}>
-                  {t(`kpi:subjectTypes.${type}`)}
-                </option>
-              ))}
-            </select>
-          </label>
+          {isManagedGroupKpiView ? (
+            <>
+              <div className="flex min-w-[160px] flex-col gap-1 text-sm">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('kpi:fields.planStatus')}
+                </span>
+                <span className="rounded border border-border bg-slate-50 px-2 py-1.5">
+                  {t('kpi:statuses.PUBLISHED')}
+                </span>
+              </div>
+              <div className="flex min-w-[180px] flex-col gap-1 text-sm">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('kpi:fields.subjectType')}
+                </span>
+                <span className="rounded border border-border bg-slate-50 px-2 py-1.5">
+                  {t('kpi:subjectTypes.TALENT_GROUP')}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <label className="flex min-w-[160px] flex-col gap-1 text-sm">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('kpi:fields.planStatus')}
+                </span>
+                <select
+                  value={query.status ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5"
+                  onChange={(event) => patchQuery({ status: event.target.value || undefined })}
+                >
+                  <option value="">{t('kpi:filters.allStatuses')}</option>
+                  {kpiPlanStatuses.map((status) => (
+                    <option key={status} value={status}>
+                      {t(`kpi:statuses.${status}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex min-w-[180px] flex-col gap-1 text-sm">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('kpi:fields.subjectType')}
+                </span>
+                <select
+                  value={query.subjectType ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5"
+                  onChange={(event) => patchQuery({ subjectType: event.target.value || undefined })}
+                >
+                  <option value="">{t('kpi:filters.allSubjectTypes')}</option>
+                  {kpiSubjectTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {t(`kpi:subjectTypes.${type}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
           <label className="flex min-w-[150px] flex-col gap-1 text-sm">
             <span className="text-xs font-medium uppercase text-muted">
               {t('kpi:fields.periodMonth')}
@@ -500,7 +540,8 @@ export const KpiListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-          {query.subjectType === 'TALENT' || query.subjectType === 'TALENT_GROUP' ? (
+          {!isManagedGroupKpiView &&
+          (query.subjectType === 'TALENT' || query.subjectType === 'TALENT_GROUP') ? (
             <ReferenceFilterField
               label={
                 query.subjectType === 'TALENT_GROUP'
@@ -806,7 +847,7 @@ export const KpiListPage = (): JSX.Element => {
                   <tr>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.planId')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.member')}</th>
-                    <th className="px-3 py-2 text-left">{t('kpi:fields.status')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.allocationStatus')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:table.actions')}</th>
                   </tr>
                 </thead>
@@ -853,7 +894,7 @@ export const KpiListPage = (): JSX.Element => {
         ) : null}
         {plansQuery.data && plansQuery.data.length === 0 ? (
           <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
-            {isManagedGroupOnlyKpiView
+            {isManagedGroupKpiView
               ? t('kpi:states.emptyManagedGroups')
               : t('kpi:states.emptyPlans')}
           </div>
@@ -866,7 +907,7 @@ export const KpiListPage = (): JSX.Element => {
                   <th className="px-3 py-2 text-left">{t('kpi:fields.planCode')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.title')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.subject')}</th>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.status')}</th>
+                  <th className="px-3 py-2 text-left">{t('kpi:fields.planStatus')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.periodMonth')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.publishedAt')}</th>
                   <th className="px-3 py-2 text-left">{t('kpi:fields.finalizedAt')}</th>

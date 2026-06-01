@@ -57,10 +57,11 @@ const invalidateKpi = async (queryClient: ReturnType<typeof useQueryClient>) => 
   await queryClient.invalidateQueries({ queryKey: KPI_QUERY_ROOT });
 };
 
-export const useKpiPlans = (query: KpiPlanQuery) =>
+export const useKpiPlans = (query: KpiPlanQuery, options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: kpiQueryKeys.list(query),
     queryFn: () => fetchKpiPlans(query),
+    enabled: options?.enabled ?? true,
   });
 
 export const useKpiAllocations = (query: KpiAllocationQuery) =>

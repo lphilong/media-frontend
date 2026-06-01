@@ -111,7 +111,12 @@ export const KpiDetailPage = (): JSX.Element => {
   const { kpiPlanId } = useParams<{ kpiPlanId: string }>();
   const { t } = useTranslation(['kpi', 'common']);
   const detailQuery = useKpiPlanDetail(kpiPlanId);
-  const progressQuery = useKpiProgress(kpiPlanId);
+  const loadedPlan = detailQuery.data;
+  const canLoadManagedMembers = Boolean(
+    kpiPlanId && loadedPlan?.status === 'PUBLISHED' && loadedPlan.subjectType === 'TALENT_GROUP',
+  );
+  const canLoadKpiProgress = Boolean(kpiPlanId && loadedPlan?.status === 'PUBLISHED');
+  const progressQuery = useKpiProgress(canLoadKpiProgress ? kpiPlanId : undefined);
   const lifecycleMutation = useKpiLifecycleMutation();
   const allocationsMutation = useReplaceKpiAllocationsMutation();
   const allocationDraftMutation = useUpsertKpiAllocationDraftMutation();
@@ -128,6 +133,10 @@ export const KpiDetailPage = (): JSX.Element => {
   const [rejectionReason, setRejectionReason] = useState('');
   const loadManagedMemberOptions = useCallback(
     async (search: string): Promise<ReferenceOption[]> => {
+      if (!canLoadManagedMembers || !kpiPlanId) {
+        return [];
+      }
+
       const items = await fetchKpiManagedMembers(kpiPlanId ?? '', { search, limit: 20 });
       return items.map((item) => ({
         id: item.employmentProfileId,
@@ -135,7 +144,7 @@ export const KpiDetailPage = (): JSX.Element => {
         description: [item.talentCode, item.groupId].filter(Boolean).join(' - ') || undefined,
       }));
     },
-    [kpiPlanId],
+    [canLoadManagedMembers, kpiPlanId],
   );
 
   const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
@@ -499,6 +508,11 @@ export const KpiDetailPage = (): JSX.Element => {
           <MetadataSection title={t('kpi:sections.lifecycle')}>
             <ReadOnlyFieldGrid
               fields={[
+                {
+                  key: 'planStatus',
+                  label: t('kpi:fields.planStatus'),
+                  value: t(`kpi:statuses.${plan.status}`),
+                },
                 { key: 'subject', label: t('kpi:fields.subject'), value: plan.subjectId },
                 { key: 'period', label: t('kpi:fields.periodMonth'), value: plan.periodMonth },
                 {
@@ -896,7 +910,22 @@ export const KpiDetailPage = (): JSX.Element => {
           ) : null}
 
           <MetadataSection title={t('kpi:sections.progress')}>
-            {progressQuery.isError ? (
+            {!canLoadKpiProgress ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded border border-border p-3 text-sm">
+                  <div className="text-xs uppercase text-muted">
+                    {t('kpi:progress.officialPosture')}
+                  </div>
+                  <div>{t('kpi:progress.publishedOnly')}</div>
+                </div>
+                <div className="rounded border border-border p-3 text-sm">
+                  <div className="text-xs uppercase text-muted">
+                    {t('kpi:progress.actualSource')}
+                  </div>
+                  <div>{t('kpi:progress.publishedAllocationsOnly')}</div>
+                </div>
+              </div>
+            ) : progressQuery.isError ? (
               <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
                 {t('kpi:states.progressUnavailable')}
               </div>

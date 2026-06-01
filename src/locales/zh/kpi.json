@@ -45,6 +45,8 @@
     "approvalNote": "Approval note",
     "rejectionReason": "Rejection reason",
     "status": "状态",
+    "planStatus": "计划状态",
+    "allocationStatus": "分配状态",
     "periodMonth": "KPI 月份",
     "metricCode": "指标",
     "targetValue": "目标",
