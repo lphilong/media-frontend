@@ -291,6 +291,14 @@ const initialPlans = [
     publishedAt: now - 60_000,
     publishedByActorId: 'user-admin',
   }),
+  basePlan({
+    id: 'kpi-plan-rejected',
+    planCode: 'KPI-202605-000005',
+    title: 'Rejected allocation KPI',
+    status: 'PUBLISHED',
+    publishedAt: now - 65_000,
+    publishedByActorId: 'user-admin',
+  }),
 ];
 
 const initialTargets: Record<string, KpiTargetMetric[]> = Object.fromEntries(
@@ -416,6 +424,17 @@ initialAllocations['kpi-plan-legacy-active'] = (
   publishedAt: index === 0 ? null : allocation.publishedAt,
   publishedByActorId: index === 0 ? null : allocation.publishedByActorId,
 }));
+initialAllocations['kpi-plan-rejected'] = (initialAllocations['kpi-plan-rejected'] ?? []).map(
+  (allocation) => ({
+    ...allocation,
+    allocationStatus: 'REJECTED',
+    rejectedAt: now - 55_000,
+    rejectedByActorId: 'user-admin',
+    rejectionReason: 'Needs revision',
+    publishedAt: null,
+    publishedByActorId: null,
+  }),
+);
 
 let planSeed = 100;
 let actualSeed = 100;
@@ -1358,7 +1377,9 @@ export const kpiHandlers = [
         { status: 409 },
       );
     }
-    if ((allocations[plan.id] ?? []).some((allocation) => allocation.allocationStatus !== 'DRAFT')) {
+    if (
+      (allocations[plan.id] ?? []).some((allocation) => allocation.allocationStatus !== 'DRAFT')
+    ) {
       return HttpResponse.json(
         { message: 'KPI allocation draft can be edited only while all rows are DRAFT' },
         { status: 409 },

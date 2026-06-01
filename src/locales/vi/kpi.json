@@ -15,12 +15,26 @@
     "my": "KPI của tôi",
     "myClosed": "KPI cá nhân."
   },
+  "adminWorkspace": {
+    "label": "Không gian quản trị KPI",
+    "plans": "Kế hoạch",
+    "approvalQueue": "Hàng đợi duyệt",
+    "progressActuals": "Tiến độ và actual"
+  },
   "list": {
     "title": "KPI"
   },
   "allocationQueue": {
     "title": "Hang doi phe duyet phan bo KPI",
-    "empty": "Khong co phan bo dang cho duyet."
+    "empty": "Khong co phan bo dang cho duyet.",
+    "viewsLabel": "Các chế độ xem hàng đợi phân bổ",
+    "views": {
+      "actionNeeded": "Cần xử lý",
+      "pendingApproval": "Chờ phê duyệt",
+      "readyToPublish": "Sẵn sàng publish",
+      "published": "Đã publish",
+      "rejected": "Đã từ chối"
+    }
   },
   "create": {
     "title": "Tạo KPI nháp",

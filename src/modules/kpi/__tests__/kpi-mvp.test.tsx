@@ -62,6 +62,15 @@ const waitForEnabledButton = async (name: string): Promise<HTMLElement> => {
   return button;
 };
 
+const selectAdminWorkspaceTab = async (name: string): Promise<void> => {
+  await userEvent.click(await screen.findByRole('tab', { name }));
+};
+
+const openProgressActualsTab = async (): Promise<void> => {
+  await selectAdminWorkspaceTab('Progress & Actuals');
+  await screen.findByRole('heading', { name: 'Actual entry' });
+};
+
 const mswJson = (method: 'GET' | 'POST' | 'PUT', path: string, data?: unknown) =>
   fetch(`http://localhost${path}`, {
     method,
@@ -139,6 +148,8 @@ describe('KPI MVP UX', () => {
     expect(
       await screen.findByRole('tab', { name: 'My Group KPI', selected: true }),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Approval Queue' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Progress & Actuals' })).not.toBeInTheDocument();
   });
 
   it('TEAM_MANAGER empty managed KPI list shows empty state, not access denied', async () => {
@@ -203,9 +214,11 @@ describe('KPI MVP UX', () => {
     expect(screen.getAllByText('Plan status').length).toBeGreaterThan(0);
     const row = screen.getByText('Managed group KPI').closest('tr');
     expect(row).not.toBeNull();
-    expect(within(row!).getByLabelText('Allocation workflow')).toBeInTheDocument();
-    expect(within(row!).getByText('Official published')).toBeInTheDocument();
-    expect(within(row!).getAllByText('2').length).toBeGreaterThan(0);
+    const workflow = within(row!).getByLabelText('Allocation workflow');
+    expect(workflow).toBeInTheDocument();
+    expect(within(workflow).getByText('Official published')).toBeInTheDocument();
+    expect(within(workflow).queryByText('Published')).not.toBeInTheDocument();
+    expect(within(workflow).getByText('2')).toBeInTheDocument();
   });
 
   it('admin global actor still loads the global KPI list endpoint and can see draft plans', async () => {
@@ -244,6 +257,81 @@ describe('KPI MVP UX', () => {
     expect(within(row!).getByText('No allocations')).toBeInTheDocument();
   });
 
+  it('admin workspace tabs isolate plans, approval queue, and progress actuals', async () => {
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    expect(screen.getByRole('tab', { name: 'Plans', selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'KPI plans' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'KPI Allocation approval queue' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Actual entry' })).not.toBeInTheDocument();
+
+    await selectAdminWorkspaceTab('Approval Queue');
+    expect(
+      await screen.findByRole('heading', { name: 'KPI Allocation approval queue' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'KPI plans' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Actual entry' })).not.toBeInTheDocument();
+
+    await selectAdminWorkspaceTab('Progress & Actuals');
+    expect(await screen.findByRole('heading', { name: 'Actual entry' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'KPI Allocation approval queue' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'KPI plans' })).not.toBeInTheDocument();
+
+    await selectAdminWorkspaceTab('Plans');
+    expect(await screen.findByRole('heading', { name: 'KPI plans' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create KPI plan' })).toBeInTheDocument();
+  });
+
+  it('approval queue defaults to actionable status-filtered rows and exposes history views', async () => {
+    const capturedStatuses: Array<string | null> = [];
+    server.use(
+      http.get('*/admin/kpi/allocations', ({ request }) => {
+        const status = new URL(request.url).searchParams.get('status');
+        capturedStatuses.push(status);
+        const rows = {
+          PENDING_APPROVAL: [makeAllocation('kpi-plan-pending-queue', 'PENDING_APPROVAL')],
+          APPROVED: [makeAllocation('kpi-plan-approved-queue', 'APPROVED')],
+          PUBLISHED: [makeAllocation('kpi-plan-published-queue', 'PUBLISHED')],
+          REJECTED: [makeAllocation('kpi-plan-rejected-queue', 'REJECTED')],
+          DRAFT: [makeAllocation('kpi-plan-draft-queue', 'DRAFT')],
+        };
+        return HttpResponse.json({
+          data: rows[status as keyof typeof rows] ?? [],
+        });
+      }),
+    );
+
+    renderRoute('/kpi');
+    await waitForKpiList();
+    await selectAdminWorkspaceTab('Approval Queue');
+
+    expect(
+      await screen.findByRole('tab', { name: 'Action needed', selected: true }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(capturedStatuses).toContain('PENDING_APPROVAL');
+      expect(capturedStatuses).toContain('APPROVED');
+    });
+    expect(await screen.findByText('kpi-plan-pending-queue')).toBeInTheDocument();
+    expect(await screen.findByText('kpi-plan-approved-queue')).toBeInTheDocument();
+    expect(screen.queryByText('kpi-plan-published-queue')).not.toBeInTheDocument();
+    expect(screen.queryByText('kpi-plan-rejected-queue')).not.toBeInTheDocument();
+    expect(screen.queryByText('kpi-plan-draft-queue')).not.toBeInTheDocument();
+
+    await selectAdminWorkspaceTab('Published');
+    expect(await screen.findByText('kpi-plan-published-queue')).toBeInTheDocument();
+    expect(screen.queryByText('kpi-plan-pending-queue')).not.toBeInTheDocument();
+
+    await selectAdminWorkspaceTab('Rejected');
+    expect(await screen.findByText('kpi-plan-rejected-queue')).toBeInTheDocument();
+    expect(screen.queryByText('kpi-plan-approved-queue')).not.toBeInTheDocument();
+  });
+
   it('renders allocation workflow summaries from backend list rows', async () => {
     server.use(
       http.get('*/admin/kpi/plans', () =>
@@ -277,12 +365,13 @@ describe('KPI MVP UX', () => {
 
     const mixedRow = screen.getByText('Backend mixed workflow KPI').closest('tr');
     expect(mixedRow).not.toBeNull();
-    expect(within(mixedRow!).getByText('Draft')).toBeInTheDocument();
-    expect(within(mixedRow!).getByText('Pending approval')).toBeInTheDocument();
-    expect(within(mixedRow!).getAllByText('Published').length).toBeGreaterThan(0);
-    expect(within(mixedRow!).getByText('Legacy active')).toBeInTheDocument();
-    expect(within(mixedRow!).getByText('Official published')).toBeInTheDocument();
-    expect(within(mixedRow!).getAllByText('3').length).toBeGreaterThan(0);
+    const mixedWorkflow = within(mixedRow!).getByLabelText('Allocation workflow');
+    expect(within(mixedWorkflow).getByText('Draft')).toBeInTheDocument();
+    expect(within(mixedWorkflow).getByText('Pending approval')).toBeInTheDocument();
+    expect(within(mixedWorkflow).queryByText('Published')).not.toBeInTheDocument();
+    expect(within(mixedWorkflow).getByText('Legacy active')).toBeInTheDocument();
+    expect(within(mixedWorkflow).getByText('Official published')).toBeInTheDocument();
+    expect(within(mixedWorkflow).getByText('3')).toBeInTheDocument();
     expect(within(mixedRow!).queryByText('Mixed')).not.toBeInTheDocument();
   });
 
@@ -357,6 +446,27 @@ describe('KPI MVP UX', () => {
     expect(container.querySelector('input[type="month"][value="2026-05"]')).toBeInTheDocument();
   });
 
+  it('displays KPI plan periodMonth as MM-YYYY while preserving query format', async () => {
+    let captured = new URL('http://example.test');
+    server.use(
+      http.get('*/admin/kpi/plans', ({ request }) => {
+        captured = new URL(request.url);
+        return HttpResponse.json({
+          data: [makeListPlan('kpi-plan-period-display', 'Period display KPI', 'group-001')],
+        });
+      }),
+    );
+
+    renderRoute('/kpi?periodMonth=2026-05');
+    await waitForKpiList();
+
+    const row = (await screen.findByText('Period display KPI')).closest('tr');
+    expect(row).not.toBeNull();
+    expect(within(row!).getByText('05-2026')).toBeInTheDocument();
+    expect(within(row!).queryByText('2026-05')).not.toBeInTheDocument();
+    expect(captured.searchParams.get('periodMonth')).toBe('2026-05');
+  });
+
   it('create plan form parses money display input to a numeric API value', async () => {
     let body: Record<string, unknown> | undefined;
     server.use(
@@ -403,7 +513,9 @@ describe('KPI MVP UX', () => {
       .closest('section');
     expect(createSection).not.toBeNull();
     expect(within(createSection!).getByText('Talent group')).toBeInTheDocument();
-    expect(within(createSection!).queryByRole('option', { name: 'Talent' })).not.toBeInTheDocument();
+    expect(
+      within(createSection!).queryByRole('option', { name: 'Talent' }),
+    ).not.toBeInTheDocument();
     expect(within(createSection!).queryByText('Allocations')).not.toBeInTheDocument();
     await userEvent.click(await waitForEnabledButton('Create draft plan'));
     await waitFor(() => expect(body).toBeDefined());
@@ -443,7 +555,7 @@ describe('KPI MVP UX', () => {
 
   it('actual entry UI rejects YYYY-MM-DD before saving', async () => {
     renderRoute('/kpi');
-    await screen.findByText('Actual entry');
+    await openProgressActualsTab();
     const actualDate = screen.getByLabelText('Actual date');
     await userEvent.clear(actualDate);
     await userEvent.type(actualDate, '2026-05-16');
@@ -476,7 +588,9 @@ describe('KPI MVP UX', () => {
     await userEvent.clear(month);
     await userEvent.type(month, '2026-05');
     await userEvent.click(await waitForEnabledButton('Create draft plan'));
-    expect(await screen.findByText('Choose the current month or a future month.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Choose the current month or a future month.'),
+    ).toBeInTheDocument();
     expect(called).toBe(false);
   });
 
@@ -801,6 +915,8 @@ describe('KPI MVP UX', () => {
     );
 
     const queueView = renderRoute('/kpi');
+    await waitForKpiList();
+    await selectAdminWorkspaceTab('Approval Queue');
     expect(
       await screen.findByRole('heading', { name: 'KPI Allocation approval queue' }),
     ).toBeInTheDocument();
@@ -943,7 +1059,7 @@ describe('KPI MVP UX', () => {
       }),
     );
     renderRoute('/kpi');
-    await screen.findByText('Actual entry');
+    await openProgressActualsTab();
     await waitFor(() => expect(captured.searchParams.get('actualDate')).toBe('16-05-2026'));
   });
 
@@ -965,7 +1081,7 @@ describe('KPI MVP UX', () => {
       }),
     );
     renderRoute('/kpi');
-    await screen.findByText('Actual entry');
+    await openProgressActualsTab();
     const lunaRevenue = await screen.findByLabelText('Luna Park Revenue VND actual');
     await userEvent.clear(lunaRevenue);
     await userEvent.type(lunaRevenue, '510.000');
@@ -978,7 +1094,7 @@ describe('KPI MVP UX', () => {
 
   it('opens correction modal for locked cells and renders history', async () => {
     renderRoute('/kpi');
-    await screen.findByText('Actual entry');
+    await openProgressActualsTab();
     const minhRevenue = await screen.findByLabelText('Minh Tran Revenue VND actual');
     await userEvent.clear(minhRevenue);
     await userEvent.type(minhRevenue, '300.000');
@@ -994,7 +1110,7 @@ describe('KPI MVP UX', () => {
       ),
     );
     renderRoute('/kpi');
-    await screen.findByText('Actual entry');
+    await openProgressActualsTab();
     const lunaContent = await screen.findByLabelText('Luna Park Content output count actual');
     await userEvent.clear(lunaContent);
     await userEvent.type(lunaContent, '3');
@@ -1019,7 +1135,7 @@ describe('KPI MVP UX', () => {
       ),
     );
     renderRoute('/kpi');
-    await screen.findByText('Actual entry');
+    await openProgressActualsTab();
     const correctionButtons = await screen.findAllByRole('button', { name: 'Correction' });
     await waitFor(() => expect(correctionButtons.at(-1)).toBeEnabled());
     await userEvent.click(correctionButtons.at(-1)!);
@@ -1199,11 +1315,11 @@ describe('KPI MVP UX', () => {
     });
     await performKpiLifecycleAction(plan.id, 'publish');
     await upsertKpiAllocationDraft(plan.id, [
-        {
-          employmentProfileId: 'employment-profile-001',
-          allocationStartDate: '2026-06-01',
-          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 900 }],
-        },
+      {
+        employmentProfileId: 'employment-profile-001',
+        allocationStartDate: '2026-06-01',
+        targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 900 }],
+      },
     ]);
     await submitKpiAllocationDraft(plan.id);
     await approveKpiAllocation(plan.id);
@@ -1384,7 +1500,7 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi');
-    await screen.findByText('Actual entry');
+    await openProgressActualsTab();
 
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Save changed cells' })).not.toBeInTheDocument(),
@@ -1412,7 +1528,7 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi');
-    await screen.findByText('Actual entry');
+    await openProgressActualsTab();
 
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Correction' })).not.toBeInTheDocument(),

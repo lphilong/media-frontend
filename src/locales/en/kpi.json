@@ -15,12 +15,26 @@
     "my": "My KPI",
     "myClosed": "Self KPI uses the backend my-progress endpoint and does not show other member rows."
   },
+  "adminWorkspace": {
+    "label": "KPI admin workspace",
+    "plans": "Plans",
+    "approvalQueue": "Approval Queue",
+    "progressActuals": "Progress & Actuals"
+  },
   "list": {
     "title": "KPI plans"
   },
   "allocationQueue": {
     "title": "KPI Allocation approval queue",
-    "empty": "No allocation approvals are waiting."
+    "empty": "No allocation approvals are waiting.",
+    "viewsLabel": "Allocation queue views",
+    "views": {
+      "actionNeeded": "Action needed",
+      "pendingApproval": "Pending approval",
+      "readyToPublish": "Ready to publish",
+      "published": "Published",
+      "rejected": "Rejected"
+    }
   },
   "create": {
     "title": "Create draft KPI plan",

@@ -15,12 +15,26 @@
     "my": "我的 KPI",
     "myClosed": "个人 KPI 使用后端 my-progress 端点，不显示其他成员行。"
   },
+  "adminWorkspace": {
+    "label": "KPI 管理工作区",
+    "plans": "计划",
+    "approvalQueue": "审批队列",
+    "progressActuals": "进度与 actual"
+  },
   "list": {
     "title": "KPI 计划"
   },
   "allocationQueue": {
-    "title": "KPI Allocation approval queue",
-    "empty": "No allocation approvals are waiting."
+    "title": "KPI 分配审批队列",
+    "empty": "暂无待审批的分配。",
+    "viewsLabel": "分配队列视图",
+    "views": {
+      "actionNeeded": "待处理",
+      "pendingApproval": "待审批",
+      "readyToPublish": "可发布",
+      "published": "已发布",
+      "rejected": "已拒绝"
+    }
   },
   "create": {
     "title": "创建 KPI 草稿计划",

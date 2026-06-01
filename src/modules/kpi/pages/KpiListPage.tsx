@@ -24,6 +24,7 @@ import {
 import type {
   KpiActualGridMetricCell,
   KpiActualGridRow,
+  KpiAllocation,
   KpiCreatePlanPayload,
   KpiMetricCode,
   KpiPlanQuery,
@@ -88,6 +89,23 @@ const allocationWorkflowStatusEntries: Array<{
   { key: 'cancelled', labelKey: 'kpi:allocationWorkflow.cancelled' },
 ];
 
+type AdminWorkspaceTab = 'plans' | 'approvalQueue' | 'progressActuals';
+type AllocationQueueView =
+  | 'actionNeeded'
+  | 'pendingApproval'
+  | 'readyToPublish'
+  | 'published'
+  | 'rejected';
+
+const adminWorkspaceTabs: AdminWorkspaceTab[] = ['plans', 'approvalQueue', 'progressActuals'];
+const allocationQueueViews: AllocationQueueView[] = [
+  'actionNeeded',
+  'pendingApproval',
+  'readyToPublish',
+  'published',
+  'rejected',
+];
+
 const defaultTargets: TargetDraft[] = [
   { metricCode: 'REVENUE_VND', value: '1.000.000' },
   { metricCode: 'CONTENT_OUTPUT_COUNT', value: '10' },
@@ -132,6 +150,11 @@ const currentHcmMonth = (now = Date.now()): string => {
   return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 
+const formatPeriodMonth = (value: string | null | undefined): string => {
+  const match = /^(\d{4})-(\d{2})$/.exec(value ?? '');
+  return match ? `${match[2]}-${match[1]}` : (value ?? '-');
+};
+
 const readErrorMessage = (
   t: (key: string) => string,
   error: NormalizedApiError | null | undefined,
@@ -158,6 +181,9 @@ export const KpiListPage = (): JSX.Element => {
   const createMutation = useCreateKpiPlanMutation();
 
   const [activeTab, setActiveTab] = useState<'management' | 'group' | 'my'>('management');
+  const [adminWorkspaceTab, setAdminWorkspaceTab] = useState<AdminWorkspaceTab>('plans');
+  const [allocationQueueView, setAllocationQueueView] =
+    useState<AllocationQueueView>('actionNeeded');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [subjectId, setSubjectId] = useState('group-001');
   const [title, setTitle] = useState('May KPI plan');
@@ -217,7 +243,13 @@ export const KpiListPage = (): JSX.Element => {
     'publishAllocation',
     capabilityCopy,
   );
-  const allocationQueueQuery = useKpiAllocations({ limit: 50 });
+  const pendingAllocationQueueQuery = useKpiAllocations({
+    status: 'PENDING_APPROVAL',
+    limit: 50,
+  });
+  const approvedAllocationQueueQuery = useKpiAllocations({ status: 'APPROVED', limit: 50 });
+  const publishedAllocationQueueQuery = useKpiAllocations({ status: 'PUBLISHED', limit: 50 });
+  const rejectedAllocationQueueQuery = useKpiAllocations({ status: 'REJECTED', limit: 50 });
   const hasGlobalKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'global');
   const hasManagedGroupKpiScope = hasScopeGrant(capabilitiesQuery.data, 'kpi', 'managedGroup');
   const visibleTabs = useMemo(
@@ -238,6 +270,19 @@ export const KpiListPage = (): JSX.Element => {
   const canShowActualEntrySurface = enterActualHint.allowed || correctActualHint.allowed;
   const canShowAllocationApprovalQueue =
     approveAllocationHint.allowed || publishAllocationHint.allowed;
+  const visibleAdminWorkspaceTabs = useMemo(
+    () =>
+      adminWorkspaceTabs.filter((tab) => {
+        if (tab === 'approvalQueue') {
+          return canShowAllocationApprovalQueue;
+        }
+        if (tab === 'progressActuals') {
+          return canShowActualEntrySurface;
+        }
+        return true;
+      }),
+    [canShowActualEntrySurface, canShowAllocationApprovalQueue],
+  );
   const effectiveQuery = useMemo<KpiPlanQuery>(
     () =>
       isManagedGroupKpiView
@@ -257,6 +302,16 @@ export const KpiListPage = (): JSX.Element => {
       setActiveTab(visibleTabs[0]);
     }
   }, [activeTab, visibleTabs]);
+
+  useEffect(() => {
+    if (
+      selectedTab === 'management' &&
+      visibleAdminWorkspaceTabs.length > 0 &&
+      !visibleAdminWorkspaceTabs.includes(adminWorkspaceTab)
+    ) {
+      setAdminWorkspaceTab(visibleAdminWorkspaceTabs[0]);
+    }
+  }, [adminWorkspaceTab, selectedTab, visibleAdminWorkspaceTabs]);
 
   const patchQuery = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -407,7 +462,9 @@ export const KpiListPage = (): JSX.Element => {
     }
 
     const nonzeroStatuses = allocationWorkflowStatusEntries.filter(
-      (entry) => summary.byStatus[entry.key] > 0,
+      (entry) =>
+        summary.byStatus[entry.key] > 0 &&
+        !(entry.key === 'published' && summary.officialPublishedCount > 0),
     );
 
     return (
@@ -434,6 +491,53 @@ export const KpiListPage = (): JSX.Element => {
     );
   };
 
+  const queueQueryByStatus: Record<
+    Exclude<AllocationQueueView, 'actionNeeded'>,
+    typeof pendingAllocationQueueQuery
+  > = {
+    pendingApproval: pendingAllocationQueueQuery,
+    readyToPublish: approvedAllocationQueueQuery,
+    published: publishedAllocationQueueQuery,
+    rejected: rejectedAllocationQueueQuery,
+  };
+  const actionNeededQueueData = useMemo<KpiAllocation[] | undefined>(() => {
+    if (!pendingAllocationQueueQuery.data || !approvedAllocationQueueQuery.data) {
+      return undefined;
+    }
+    return [...pendingAllocationQueueQuery.data, ...approvedAllocationQueueQuery.data];
+  }, [approvedAllocationQueueQuery.data, pendingAllocationQueueQuery.data]);
+  const allocationQueueData =
+    allocationQueueView === 'actionNeeded'
+      ? actionNeededQueueData
+      : queueQueryByStatus[allocationQueueView].data;
+  const allocationQueueIsPending =
+    allocationQueueView === 'actionNeeded'
+      ? pendingAllocationQueueQuery.isPending || approvedAllocationQueueQuery.isPending
+      : queueQueryByStatus[allocationQueueView].isPending;
+  const allocationQueueError =
+    allocationQueueView === 'actionNeeded'
+      ? ((pendingAllocationQueueQuery.error ??
+          approvedAllocationQueueQuery.error) as NormalizedApiError | null)
+      : (queueQueryByStatus[allocationQueueView].error as NormalizedApiError | null);
+  const allocationQueueIsError = Boolean(allocationQueueError);
+  const refetchAllocationQueue = () =>
+    allocationQueueView === 'actionNeeded'
+      ? Promise.all([
+          pendingAllocationQueueQuery.refetch(),
+          approvedAllocationQueueQuery.refetch(),
+        ]).then(() => undefined)
+      : queueQueryByStatus[allocationQueueView].refetch().then(() => undefined);
+  const isAdminPlansSectionVisible =
+    selectedTab === 'group' || (selectedTab === 'management' && adminWorkspaceTab === 'plans');
+  const isApprovalQueueSectionVisible =
+    selectedTab === 'management' &&
+    adminWorkspaceTab === 'approvalQueue' &&
+    canShowAllocationApprovalQueue;
+  const isProgressActualsSectionVisible =
+    selectedTab === 'management' &&
+    adminWorkspaceTab === 'progressActuals' &&
+    canShowActualEntrySurface;
+
   return (
     <PageContainer className="space-y-4">
       <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
@@ -451,147 +555,173 @@ export const KpiListPage = (): JSX.Element => {
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex min-w-[220px] flex-col gap-1 text-sm">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('kpi:filters.search')}
-            </span>
-            <input
-              value={query.search ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5"
-              placeholder={t('kpi:filters.searchPlaceholder')}
-              onChange={(event) => patchQuery({ search: event.target.value || undefined })}
-            />
-          </label>
-          {isManagedGroupKpiView ? (
-            <>
-              <div className="flex min-w-[160px] flex-col gap-1 text-sm">
+        {selectedTab === 'management' ? (
+          <div
+            className="flex flex-wrap gap-2"
+            role="tablist"
+            aria-label={t('kpi:adminWorkspace.label')}
+          >
+            {visibleAdminWorkspaceTabs.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={adminWorkspaceTab === tab}
+                className="rounded border border-border px-3 py-2 text-sm font-medium aria-selected:bg-accent aria-selected:text-white"
+                onClick={() => setAdminWorkspaceTab(tab)}
+              >
+                {t(`kpi:adminWorkspace.${tab}`)}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {isAdminPlansSectionVisible ? (
+          <>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="flex min-w-[220px] flex-col gap-1 text-sm">
                 <span className="text-xs font-medium uppercase text-muted">
-                  {t('kpi:fields.planStatus')}
+                  {t('kpi:filters.search')}
                 </span>
-                <span className="rounded border border-border bg-slate-50 px-2 py-1.5">
-                  {t('kpi:statuses.PUBLISHED')}
-                </span>
-              </div>
-              <div className="flex min-w-[180px] flex-col gap-1 text-sm">
+                <input
+                  value={query.search ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5"
+                  placeholder={t('kpi:filters.searchPlaceholder')}
+                  onChange={(event) => patchQuery({ search: event.target.value || undefined })}
+                />
+              </label>
+              {isManagedGroupKpiView ? (
+                <>
+                  <div className="flex min-w-[160px] flex-col gap-1 text-sm">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('kpi:fields.planStatus')}
+                    </span>
+                    <span className="rounded border border-border bg-slate-50 px-2 py-1.5">
+                      {t('kpi:statuses.PUBLISHED')}
+                    </span>
+                  </div>
+                  <div className="flex min-w-[180px] flex-col gap-1 text-sm">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('kpi:fields.subjectType')}
+                    </span>
+                    <span className="rounded border border-border bg-slate-50 px-2 py-1.5">
+                      {t('kpi:subjectTypes.TALENT_GROUP')}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <label className="flex min-w-[160px] flex-col gap-1 text-sm">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('kpi:fields.planStatus')}
+                    </span>
+                    <select
+                      value={query.status ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5"
+                      onChange={(event) => patchQuery({ status: event.target.value || undefined })}
+                    >
+                      <option value="">{t('kpi:filters.allStatuses')}</option>
+                      {kpiPlanStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {t(`kpi:statuses.${status}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex min-w-[180px] flex-col gap-1 text-sm">
+                    <span className="text-xs font-medium uppercase text-muted">
+                      {t('kpi:fields.subjectType')}
+                    </span>
+                    <select
+                      value={query.subjectType ?? ''}
+                      className="rounded border border-border bg-panel px-2 py-1.5"
+                      onChange={(event) =>
+                        patchQuery({ subjectType: event.target.value || undefined })
+                      }
+                    >
+                      <option value="">{t('kpi:filters.allSubjectTypes')}</option>
+                      {kpiSubjectTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {t(`kpi:subjectTypes.${type}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              )}
+              <label className="flex min-w-[150px] flex-col gap-1 text-sm">
                 <span className="text-xs font-medium uppercase text-muted">
-                  {t('kpi:fields.subjectType')}
+                  {t('kpi:fields.periodMonth')}
                 </span>
-                <span className="rounded border border-border bg-slate-50 px-2 py-1.5">
-                  {t('kpi:subjectTypes.TALENT_GROUP')}
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <label className="flex min-w-[160px] flex-col gap-1 text-sm">
+                <input
+                  type="month"
+                  value={query.periodMonth ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5"
+                  placeholder="2026-05"
+                  onChange={(event) => patchQuery({ periodMonth: event.target.value || undefined })}
+                />
+              </label>
+              <label className="flex min-w-[210px] flex-col gap-1 text-sm">
                 <span className="text-xs font-medium uppercase text-muted">
-                  {t('kpi:fields.planStatus')}
+                  {t('kpi:fields.metricCode')}
                 </span>
                 <select
-                  value={query.status ?? ''}
+                  value={query.metricCode ?? ''}
                   className="rounded border border-border bg-panel px-2 py-1.5"
-                  onChange={(event) => patchQuery({ status: event.target.value || undefined })}
+                  onChange={(event) => patchQuery({ metricCode: event.target.value || undefined })}
                 >
-                  <option value="">{t('kpi:filters.allStatuses')}</option>
-                  {kpiPlanStatuses.map((status) => (
-                    <option key={status} value={status}>
-                      {t(`kpi:statuses.${status}`)}
+                  <option value="">{t('kpi:filters.allMetrics')}</option>
+                  {kpiMetricCodes.map((metricCode) => (
+                    <option key={metricCode} value={metricCode}>
+                      {t(`kpi:metricCodes.${metricCode}`)}
                     </option>
                   ))}
                 </select>
               </label>
-              <label className="flex min-w-[180px] flex-col gap-1 text-sm">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('kpi:fields.subjectType')}
-                </span>
-                <select
-                  value={query.subjectType ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5"
-                  onChange={(event) => patchQuery({ subjectType: event.target.value || undefined })}
+              {!isManagedGroupKpiView &&
+              (query.subjectType === 'TALENT' || query.subjectType === 'TALENT_GROUP') ? (
+                <ReferenceFilterField
+                  label={
+                    query.subjectType === 'TALENT_GROUP'
+                      ? t('kpi:fields.targetGroup')
+                      : t('kpi:fields.talent')
+                  }
+                  pickerId="kpi-filter-subject"
+                  value={query.subjectId}
+                  loadOptions={
+                    query.subjectType === 'TALENT'
+                      ? loadTalentReferenceOptions
+                      : loadTalentGroupReferenceOptions
+                  }
+                  onChange={(nextId) => patchQuery({ subjectId: nextId })}
+                  placeholder={t('kpi:filters.subjectPlaceholder')}
+                  clearLabel={t('common:actions.clear')}
+                  className="min-w-[260px]"
+                />
+              ) : null}
+              {canShowCreatePlan ? (
+                <button
+                  type="button"
+                  disabled={createPlanHint.disabled}
+                  className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  title={createPlanHint.disabledReason}
+                  onClick={() => {
+                    if (!createPlanHint.disabled) {
+                      setIsCreateOpen((current) => !current);
+                    }
+                  }}
                 >
-                  <option value="">{t('kpi:filters.allSubjectTypes')}</option>
-                  {kpiSubjectTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {t(`kpi:subjectTypes.${type}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          )}
-          <label className="flex min-w-[150px] flex-col gap-1 text-sm">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('kpi:fields.periodMonth')}
-            </span>
-            <input
-              type="month"
-              value={query.periodMonth ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5"
-              placeholder="2026-05"
-              onChange={(event) => patchQuery({ periodMonth: event.target.value || undefined })}
-            />
-          </label>
-          <label className="flex min-w-[210px] flex-col gap-1 text-sm">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('kpi:fields.metricCode')}
-            </span>
-            <select
-              value={query.metricCode ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5"
-              onChange={(event) => patchQuery({ metricCode: event.target.value || undefined })}
-            >
-              <option value="">{t('kpi:filters.allMetrics')}</option>
-              {kpiMetricCodes.map((metricCode) => (
-                <option key={metricCode} value={metricCode}>
-                  {t(`kpi:metricCodes.${metricCode}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          {!isManagedGroupKpiView &&
-          (query.subjectType === 'TALENT' || query.subjectType === 'TALENT_GROUP') ? (
-            <ReferenceFilterField
-              label={
-                query.subjectType === 'TALENT_GROUP'
-                  ? t('kpi:fields.targetGroup')
-                  : t('kpi:fields.talent')
-              }
-              pickerId="kpi-filter-subject"
-              value={query.subjectId}
-              loadOptions={
-                query.subjectType === 'TALENT'
-                  ? loadTalentReferenceOptions
-                  : loadTalentGroupReferenceOptions
-              }
-              onChange={(nextId) => patchQuery({ subjectId: nextId })}
-              placeholder={t('kpi:filters.subjectPlaceholder')}
-              clearLabel={t('common:actions.clear')}
-              className="min-w-[260px]"
-            />
-          ) : null}
-          {canShowCreatePlan ? (
-            <button
-              type="button"
-              disabled={createPlanHint.disabled}
-              className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-              title={createPlanHint.disabledReason}
-              onClick={() => {
-                if (!createPlanHint.disabled) {
-                  setIsCreateOpen((current) => !current);
-                }
-              }}
-            >
-              {isCreateOpen ? t('common:actions.close') : t('kpi:actions.create')}
-            </button>
-          ) : null}
-        </div>
-        {canShowCreatePlan && createPlanHint.disabledReason ? (
-          <p className="text-sm text-danger">{createPlanHint.disabledReason}</p>
+                  {isCreateOpen ? t('common:actions.close') : t('kpi:actions.create')}
+                </button>
+              ) : null}
+            </div>
+            {canShowCreatePlan && createPlanHint.disabledReason ? (
+              <p className="text-sm text-danger">{createPlanHint.disabledReason}</p>
+            ) : null}
+          </>
         ) : null}
       </section>
 
-      {canShowCreatePlan && isCreateOpen ? (
+      {isAdminPlansSectionVisible && canShowCreatePlan && isCreateOpen ? (
         <section className="space-y-4 rounded-lg border border-border bg-panel p-4 shadow-shell">
           <h2 className="text-base font-semibold">{t('kpi:create.title')}</h2>
           {formError ? (
@@ -717,16 +847,42 @@ export const KpiListPage = (): JSX.Element => {
         </section>
       ) : null}
 
-      {canShowAllocationApprovalQueue ? (
+      {isApprovalQueueSectionVisible ? (
         <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
           <h2 className="text-base font-semibold">{t('kpi:allocationQueue.title')}</h2>
-          {allocationQueueQuery.isPending ? <LoadingState lines={3} /> : null}
-          {allocationQueueQuery.data && allocationQueueQuery.data.length === 0 ? (
+          <div
+            className="flex flex-wrap gap-2"
+            role="tablist"
+            aria-label={t('kpi:allocationQueue.viewsLabel')}
+          >
+            {allocationQueueViews.map((view) => (
+              <button
+                key={view}
+                type="button"
+                role="tab"
+                aria-selected={allocationQueueView === view}
+                className="rounded border border-border px-3 py-2 text-sm font-medium aria-selected:bg-accent aria-selected:text-white"
+                onClick={() => setAllocationQueueView(view)}
+              >
+                {t(`kpi:allocationQueue.views.${view}`)}
+              </button>
+            ))}
+          </div>
+          {allocationQueueIsPending ? <LoadingState lines={3} /> : null}
+          {allocationQueueIsError ? (
+            <ErrorState
+              title={t('kpi:states.loadErrorTitle')}
+              message={readErrorMessage(t, allocationQueueError, 'kpi:states.loadErrorMessage')}
+              actionLabel={t('common:actions.retry')}
+              onRetry={() => void refetchAllocationQueue()}
+            />
+          ) : null}
+          {allocationQueueData && allocationQueueData.length === 0 ? (
             <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
               {t('kpi:allocationQueue.empty')}
             </div>
           ) : null}
-          {allocationQueueQuery.data && allocationQueueQuery.data.length > 0 ? (
+          {allocationQueueData && allocationQueueData.length > 0 ? (
             <div className="overflow-x-auto rounded border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-100">
@@ -738,7 +894,7 @@ export const KpiListPage = (): JSX.Element => {
                   </tr>
                 </thead>
                 <tbody>
-                  {allocationQueueQuery.data.map((allocation) => (
+                  {allocationQueueData.map((allocation) => (
                     <tr key={allocation.id} className="border-t border-border">
                       <td className="px-3 py-2">{allocation.kpiPlanId}</td>
                       <td className="px-3 py-2">
@@ -766,76 +922,76 @@ export const KpiListPage = (): JSX.Element => {
         </section>
       ) : null}
 
-      <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
-        <h2 className="text-base font-semibold">{t('kpi:list.title')}</h2>
-        {plansQuery.isPending ? <LoadingState lines={6} /> : null}
-        {plansQuery.isError && listError?.permissionDenied ? <PermissionDeniedState /> : null}
-        {plansQuery.isError && !listError?.permissionDenied ? (
-          <ErrorState
-            title={t('kpi:states.loadErrorTitle')}
-            message={readErrorMessage(t, listError, 'kpi:states.loadErrorMessage')}
-            actionLabel={t('common:actions.retry')}
-            onRetry={() => void plansQuery.refetch()}
-          />
-        ) : null}
-        {plansQuery.data && plansQuery.data.length === 0 ? (
-          <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
-            {isManagedGroupKpiView
-              ? t('kpi:states.emptyManagedGroups')
-              : t('kpi:states.emptyPlans')}
-          </div>
-        ) : null}
-        {plansQuery.data && plansQuery.data.length > 0 ? (
-          <div className="overflow-x-auto rounded border border-border">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-100">
-                <tr>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.planCode')}</th>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.title')}</th>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.subject')}</th>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.planStatus')}</th>
-                  <th className="px-3 py-2 text-left">
-                    {t('kpi:allocationWorkflow.title')}
-                  </th>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.periodMonth')}</th>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.publishedAt')}</th>
-                  <th className="px-3 py-2 text-left">{t('kpi:fields.finalizedAt')}</th>
-                  <th className="px-3 py-2 text-left">{t('kpi:table.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plansQuery.data.map((plan) => (
-                  <tr key={plan.id} className="border-t border-border">
-                    <td className="px-3 py-2">{plan.planCode}</td>
-                    <td className="px-3 py-2">{plan.title}</td>
-                    <td className="px-3 py-2">
-                      {plan.subjectRef?.displayName ?? plan.subjectRef?.name ?? plan.subjectId}
-                    </td>
-                    <td className="px-3 py-2">{t(`kpi:statuses.${plan.status}`)}</td>
-                    <td className="px-3 py-2">
-                      {renderAllocationWorkflowSummary(plan.allocationWorkflowSummary)}
-                    </td>
-                    <td className="px-3 py-2">{plan.periodMonth}</td>
-                    <td className="px-3 py-2">{formatKpiDateTime(plan.publishedAt)}</td>
-                    <td className="px-3 py-2">{formatKpiDateTime(plan.finalizedAt)}</td>
-                    <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        className="rounded border border-border px-2 py-1 text-sm"
-                        onClick={() => navigate(APP_PATHS.kpiPlanDetail(plan.id))}
-                      >
-                        {t('kpi:actions.open')}
-                      </button>
-                    </td>
+      {isAdminPlansSectionVisible ? (
+        <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
+          <h2 className="text-base font-semibold">{t('kpi:list.title')}</h2>
+          {plansQuery.isPending ? <LoadingState lines={6} /> : null}
+          {plansQuery.isError && listError?.permissionDenied ? <PermissionDeniedState /> : null}
+          {plansQuery.isError && !listError?.permissionDenied ? (
+            <ErrorState
+              title={t('kpi:states.loadErrorTitle')}
+              message={readErrorMessage(t, listError, 'kpi:states.loadErrorMessage')}
+              actionLabel={t('common:actions.retry')}
+              onRetry={() => void plansQuery.refetch()}
+            />
+          ) : null}
+          {plansQuery.data && plansQuery.data.length === 0 ? (
+            <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
+              {isManagedGroupKpiView
+                ? t('kpi:states.emptyManagedGroups')
+                : t('kpi:states.emptyPlans')}
+            </div>
+          ) : null}
+          {plansQuery.data && plansQuery.data.length > 0 ? (
+            <div className="overflow-x-auto rounded border border-border">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.planCode')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.title')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.subject')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.planStatus')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:allocationWorkflow.title')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.periodMonth')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.publishedAt')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.finalizedAt')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:table.actions')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </section>
+                </thead>
+                <tbody>
+                  {plansQuery.data.map((plan) => (
+                    <tr key={plan.id} className="border-t border-border">
+                      <td className="px-3 py-2">{plan.planCode}</td>
+                      <td className="px-3 py-2">{plan.title}</td>
+                      <td className="px-3 py-2">
+                        {plan.subjectRef?.displayName ?? plan.subjectRef?.name ?? plan.subjectId}
+                      </td>
+                      <td className="px-3 py-2">{t(`kpi:statuses.${plan.status}`)}</td>
+                      <td className="px-3 py-2">
+                        {renderAllocationWorkflowSummary(plan.allocationWorkflowSummary)}
+                      </td>
+                      <td className="px-3 py-2">{formatPeriodMonth(plan.periodMonth)}</td>
+                      <td className="px-3 py-2">{formatKpiDateTime(plan.publishedAt)}</td>
+                      <td className="px-3 py-2">{formatKpiDateTime(plan.finalizedAt)}</td>
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          className="rounded border border-border px-2 py-1 text-sm"
+                          onClick={() => navigate(APP_PATHS.kpiPlanDetail(plan.id))}
+                        >
+                          {t('kpi:actions.open')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
-      {canShowActualEntrySurface ? (
+      {isProgressActualsSectionVisible ? (
         <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
           <h2 className="text-base font-semibold">{t('kpi:actualEntry.title')}</h2>
           <div className="flex flex-wrap items-end gap-3">
