@@ -267,13 +267,6 @@ const planBaseSchema = z
   })
   .strict();
 
-const planDetailSchema = planBaseSchema
-  .extend({
-    targetMetrics: z.array(targetMetricSchema),
-    allocations: z.array(allocationSchema),
-  })
-  .strict();
-
 const planListItemSchema = planBaseSchema.extend({
   allocationWorkflowSummary: allocationWorkflowSummarySchema,
 });
@@ -341,6 +334,60 @@ const actualWorkspaceActionHintsSchema = z
   })
   .strict();
 
+const finalResultRevenueSchema = z
+  .object({
+    metricCode: z.literal('REVENUE_VND'),
+    planTargetValue: z.number().nullable(),
+    operationalTargetValue: z.number(),
+    actualValue: z.number(),
+    achievementPercent: z.number().nullable(),
+    targetMismatch: z.boolean(),
+  })
+  .strict();
+
+const finalResultMemberSchema = z
+  .object({
+    allocationId: z.string().trim().min(1),
+    memberDisplayName: z.string().nullable(),
+    allocationStatus: z.literal('PUBLISHED'),
+    revenue: z
+      .object({
+        metricCode: z.literal('REVENUE_VND'),
+        targetValue: z.number(),
+        actualValue: z.number(),
+        achievementPercent: z.number().nullable(),
+      })
+      .strict(),
+    supportingMetrics: z.array(actualWorkspaceMetricSummarySchema),
+    actualEntryStatusSummary: actualEntryStatusSummarySchema,
+  })
+  .strict();
+
+const finalResultSchema = z
+  .object({
+    snapshotVersion: z.literal(1),
+    planId: z.string().trim().min(1),
+    planCode: z.string().trim().min(1),
+    periodMonth: periodMonthSchema,
+    subjectType: subjectTypeSchema,
+    subjectId: z.string().trim().min(1),
+    finalizedAt: timestampSchema,
+    revenue: finalResultRevenueSchema,
+    allocationCoverage: actualWorkspaceAllocationCoverageSchema,
+    actualEntryStatusSummary: actualEntryStatusSummarySchema,
+    supportingMetrics: z.array(actualWorkspaceMetricSummarySchema),
+    members: z.array(finalResultMemberSchema),
+  })
+  .strict();
+
+const planDetailSchema = planBaseSchema
+  .extend({
+    finalResult: finalResultSchema.nullable().optional(),
+    targetMetrics: z.array(targetMetricSchema),
+    allocations: z.array(allocationSchema),
+  })
+  .strict();
+
 const actualWorkspacePlanSummarySchema = z
   .object({
     planId: z.string().trim().min(1),
@@ -383,6 +430,7 @@ const actualWorkspaceMemberSummarySchema = z
 
 const actualWorkspacePlanDetailSchema = actualWorkspacePlanSummarySchema
   .extend({
+    finalResult: finalResultSchema.nullable().optional(),
     members: z.array(actualWorkspaceMemberSummarySchema),
   })
   .strict();
@@ -1070,6 +1118,9 @@ export const fetchKpiCorrectionHistory = async (
 
 export const parseKpiPlanListResponseForTest = (response: unknown) =>
   listResponseSchema.parse(response).data;
+
+export const parseKpiPlanDetailResponseForTest = (response: unknown) =>
+  detailResponseSchema.parse(response).data;
 
 export const parseKpiActualWorkspacePlanDetailResponseForTest = (response: unknown) =>
   actualWorkspaceDetailResponseSchema.parse(response).data;

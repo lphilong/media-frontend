@@ -28,7 +28,9 @@ import {
   useUpsertKpiAllocationDraftMutation,
 } from '@modules/kpi/hooks/use-kpi';
 import type {
+  KpiActualEntryStatusSummary,
   KpiAllocationStatus,
+  KpiFinalResultSnapshot,
   KpiMetricCode,
   KpiPlanDetail,
 } from '@modules/kpi/types/kpi.types';
@@ -71,6 +73,138 @@ const toContractDate = (periodMonth: KpiPlanDetail['periodMonth']): string =>
   /^\d{4}-\d{2}$/.test(periodMonth) ? `${periodMonth}-01` : '';
 
 const officialAllocationStatuses = new Set<KpiAllocationStatus>(['PUBLISHED']);
+
+const formatFinalAchievement = (value: number | null): string =>
+  value === null ? '-' : `${Number(value.toFixed(2))}%`;
+
+const renderFinalStatusSummary = (
+  t: (key: string) => string,
+  summary: KpiActualEntryStatusSummary,
+): string =>
+  [
+    `${t('kpi:actualStatusSummary.entered')}: ${summary.enteredEntryCount}`,
+    `${t('kpi:actualStatusSummary.enteredZero')}: ${summary.enteredZeroCount}`,
+    `${t('kpi:actualStatusSummary.overdue')}: ${summary.overdueEntryCount}`,
+    `${t('kpi:actualStatusSummary.dueOpen')}: ${summary.pendingEntryCount}`,
+    `${t('kpi:actualStatusSummary.excused')}: ${summary.excusedEntryCount}`,
+    `${t('kpi:actualStatusSummary.notRequired')}: ${summary.notRequiredEntryCount}`,
+    `${t('kpi:actualStatusSummary.notDue')}: ${summary.notDueEntryCount}`,
+  ].join(' | ');
+
+const KpiFinalResultSnapshotSection = ({
+  status,
+  finalResult,
+}: {
+  status: KpiPlanDetail['status'];
+  finalResult?: KpiFinalResultSnapshot | null;
+}): JSX.Element | null => {
+  const { t } = useTranslation('kpi');
+  if (status !== 'FINALIZED') {
+    return null;
+  }
+
+  return (
+    <section
+      aria-label={t('finalResult.title')}
+      className="space-y-3 rounded border border-border bg-panel p-4"
+    >
+      <div>
+        <h3 className="font-semibold">{t('finalResult.title')}</h3>
+        <p className="text-sm text-muted">{t('finalResult.captured')}</p>
+        <p className="text-sm text-muted">{t('finalResult.readOnly')}</p>
+      </div>
+      {!finalResult ? (
+        <p className="text-sm text-muted">{t('finalResult.unavailable')}</p>
+      ) : (
+        <>
+          <div className="grid gap-2 text-sm md:grid-cols-3">
+            <div>
+              <span className="text-muted">{t('finalResult.status')}: </span>
+              {t('finalResult.closed')}
+            </div>
+            <div>
+              <span className="text-muted">{t('fields.finalizedAt')}: </span>
+              {formatKpiDateTime(finalResult.finalizedAt)}
+            </div>
+            <div>
+              <span className="text-muted">{t('actualWorkspace.revenueTarget')}: </span>
+              {formatKpiNumber('REVENUE_VND', finalResult.revenue.operationalTargetValue)}
+            </div>
+            <div>
+              <span className="text-muted">{t('actualWorkspace.revenueActual')}: </span>
+              {formatKpiNumber('REVENUE_VND', finalResult.revenue.actualValue)}
+            </div>
+            <div>
+              <span className="text-muted">{t('actualWorkspace.achievement')}: </span>
+              {formatFinalAchievement(finalResult.revenue.achievementPercent)}
+            </div>
+            <div>
+              <span className="text-muted">{t('finalResult.targetMismatch')}: </span>
+              {t(`finalResult.boolean.${String(finalResult.revenue.targetMismatch)}`)}
+            </div>
+            <div>
+              <span className="text-muted">{t('actualWorkspace.allocationCoverage')}: </span>
+              {finalResult.allocationCoverage.publishedAllocationCount}/
+              {finalResult.allocationCoverage.totalAllocationCount}
+            </div>
+            <div className="md:col-span-3">
+              <span className="text-muted">{t('actualWorkspace.statusSummary')}: </span>
+              {renderFinalStatusSummary(t, finalResult.actualEntryStatusSummary)}
+            </div>
+            {finalResult.supportingMetrics.length > 0 ? (
+              <div className="md:col-span-3">
+                <span className="text-muted">{t('actualWorkspace.supportingMetrics')}: </span>
+                {finalResult.supportingMetrics
+                  .map(
+                    (metric) =>
+                      `${t(`metricCodes.${metric.metricCode}`)}: ${formatKpiNumber(
+                        metric.metricCode,
+                        metric.actualValue,
+                      )}/${formatKpiNumber(metric.metricCode, metric.targetValue)} (${formatFinalAchievement(
+                        metric.achievementPercent,
+                      )})`,
+                  )
+                  .join(' | ')}
+              </div>
+            ) : null}
+          </div>
+          {finalResult.members.length > 0 ? (
+            <div className="overflow-x-auto rounded border border-border">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left">{t('fields.member')}</th>
+                    <th className="px-3 py-2 text-left">{t('actualWorkspace.revenueTarget')}</th>
+                    <th className="px-3 py-2 text-left">{t('actualWorkspace.revenueActual')}</th>
+                    <th className="px-3 py-2 text-left">{t('actualWorkspace.achievement')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {finalResult.members.map((member) => (
+                    <tr key={member.allocationId} className="border-t border-border">
+                      <td className="px-3 py-2">
+                        {member.memberDisplayName ?? t('actualWorkspace.unnamedMember')}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatKpiNumber('REVENUE_VND', member.revenue.targetValue)}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatKpiNumber('REVENUE_VND', member.revenue.actualValue)}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatFinalAchievement(member.revenue.achievementPercent)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </>
+      )}
+    </section>
+  );
+};
 
 const readAllocationWorkflowStatus = (
   plan: KpiPlanDetail,
@@ -544,6 +678,8 @@ export const KpiDetailPage = (): JSX.Element => {
             />
           </MetadataSection>
 
+          <KpiFinalResultSnapshotSection status={plan.status} finalResult={plan.finalResult} />
+
           <MetadataSection title={t('kpi:sections.targetMetrics')}>
             <div className="overflow-x-auto rounded border border-border">
               <table className="min-w-full text-sm">
@@ -834,7 +970,8 @@ export const KpiDetailPage = (): JSX.Element => {
                     {plan.allocations.map((allocation) => (
                       <tr key={allocation.id} className="border-t border-border">
                         <td className="px-3 py-2">
-                          {allocation.snapshotMemberDisplayName ?? allocation.memberTalentId}
+                          {allocation.snapshotMemberDisplayName ??
+                            t('kpi:actualWorkspace.unnamedMember')}
                         </td>
                         {plan.targetMetrics.map((metric) => {
                           const value =
@@ -1009,7 +1146,12 @@ export const KpiDetailPage = (): JSX.Element => {
                             key={`${row.allocationId}-${row.metricCode}`}
                             className="border-t border-border"
                           >
-                            <td className="px-3 py-2">{row.memberTalentId}</td>
+                            <td className="px-3 py-2">
+                              {plan.allocations.find(
+                                (allocation) => allocation.id === row.allocationId,
+                              )?.snapshotMemberDisplayName ??
+                                t('kpi:actualWorkspace.unnamedMember')}
+                            </td>
                             <td className="px-3 py-2">{t(`kpi:metricCodes.${row.metricCode}`)}</td>
                             <td className="px-3 py-2">
                               {row.progressPercent === null ? '-' : `${row.progressPercent}%`}

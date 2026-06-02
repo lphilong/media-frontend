@@ -19,6 +19,7 @@ import {
   fetchKpiActualDailyGrid,
   fetchKpiActualWorkspacePlans,
   fetchKpiCorrectionHistory,
+  fetchKpiPlanDetail,
   fetchKpiPlans,
   fetchKpiManagedMembers,
   fetchMyKpiProgress,
@@ -30,6 +31,7 @@ import {
   parseKpiCorrectionListResponseForTest,
   parseKpiCorrectionMutationResponseForTest,
   parseKpiPlanListResponseForTest,
+  parseKpiPlanDetailResponseForTest,
   markKpiActualExcuse,
   performKpiLifecycleAction,
   publishKpiAllocation,
@@ -355,6 +357,25 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText('kpi-plan-published-alloc-1')).toBeInTheDocument();
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('employment-profile-001')).not.toBeInTheDocument();
+  });
+
+  it('shows finalized result snapshot and null-snapshot fallback in Actual Workspace detail', async () => {
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+
+    const finalizedRow = (await screen.findByText('KPI-202604-000003')).closest('tr');
+    expect(finalizedRow).not.toBeNull();
+    await userEvent.click(within(finalizedRow!).getByRole('button', { name: 'View detail' }));
+    expect(await screen.findByRole('heading', { name: 'Finalized result' })).toBeInTheDocument();
+    expect(screen.getByText('Captured when the KPI was finalized.')).toBeInTheDocument();
+    expect(screen.getByText('850.000 VND')).toBeInTheDocument();
+
+    const noSnapshotRow = (await screen.findByText('KPI-202603-000004')).closest('tr');
+    expect(noSnapshotRow).not.toBeNull();
+    await userEvent.click(within(noSnapshotRow!).getByRole('button', { name: 'View detail' }));
+    expect(
+      await screen.findByText('Final result snapshot is not available for this finalized plan.'),
+    ).toBeInTheDocument();
   });
 
   it('shows Load more, appends Actual Workspace cursor pages, and hides it after the last page', async () => {
@@ -1416,6 +1437,37 @@ describe('KPI MVP UX', () => {
     expect(screen.getByText('Not finalized yet')).toBeInTheDocument();
   });
 
+  it('shows the backend-owned finalized result snapshot on KPI detail without raw IDs or finance copy', async () => {
+    renderRoute('/kpi/plans/kpi-plan-finalized');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Finalized team KPI' }, lazyRouteContentWait),
+    ).toBeInTheDocument();
+    const finalResult = screen.getByLabelText('Finalized result');
+    expect(within(finalResult).getByRole('heading', { name: 'Finalized result' })).toBeInTheDocument();
+    expect(screen.getByText('Captured when the KPI was finalized.')).toBeInTheDocument();
+    expect(screen.getByText(/Read-only after finalization/)).toBeInTheDocument();
+    expect(screen.getAllByText('Luna Park').length).toBeGreaterThan(0);
+    expect(screen.getByText('850.000 VND')).toBeInTheDocument();
+    expect(within(finalResult).queryByText('user-admin')).not.toBeInTheDocument();
+    expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('employment-profile-001')).not.toBeInTheDocument();
+    expect(
+      within(finalResult).queryByText(/final score|payroll|payout|settlement/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows safe fallback copy for a finalized KPI detail without a snapshot', async () => {
+    renderRoute('/kpi/plans/kpi-plan-finalized-no-snapshot');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Finalized KPI without snapshot' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Final result snapshot is not available for this finalized plan.'),
+    ).toBeInTheDocument();
+  });
+
   it('TEAM_MANAGER sees allocation draft and submit controls disabled until KPI plan is published', async () => {
     let managedMemberLookupCalled = false;
     let progressLookupCalled = false;
@@ -1847,6 +1899,33 @@ describe('KPI MVP UX', () => {
     );
     await userEvent.click(screen.getByTestId('confirm-dialog-confirm'));
     expect(await screen.findByText('KPI lifecycle updated.')).toBeInTheDocument();
+
+    const finalized = await fetchKpiPlanDetail('kpi-plan-published');
+    expect(finalized.status).toBe('FINALIZED');
+    expect(finalized.finalResult).toMatchObject({
+      snapshotVersion: 1,
+      planId: 'kpi-plan-published',
+      planCode: 'KPI-202605-000002',
+      subjectType: 'TALENT_GROUP',
+      subjectId: 'group-001',
+    });
+    const serializedFinalResult = JSON.stringify(finalized.finalResult);
+    for (const forbidden of [
+      'finalizedByActorId',
+      'memberTalentId',
+      'memberEmploymentProfileId',
+      'finalScore',
+      'payroll',
+      'payout',
+      'settlement',
+    ]) {
+      expect(serializedFinalResult).not.toContain(forbidden);
+    }
+
+    const listed = await fetchKpiPlans({});
+    const finalizedListItem = listed.find((plan) => plan.id === 'kpi-plan-published');
+    expect(finalizedListItem?.status).toBe('FINALIZED');
+    expect(finalizedListItem).not.toHaveProperty('finalResult');
   });
 
   it('shows archive confirmation and calls archive API', async () => {
@@ -2903,6 +2982,55 @@ describe('KPI MVP UX', () => {
     ).toThrow();
   });
 
+  it('strict finalized result schemas accept safe snapshots and reject forbidden fields', () => {
+    const finalResult = makeFinalResultSnapshot();
+    expect(
+      parseKpiPlanDetailResponseForTest({
+        data: { ...makeDetail('kpi-plan-finalized', 'FINALIZED'), finalResult },
+      }).finalResult,
+    ).toMatchObject({ snapshotVersion: 1, finalizedAt: 2 });
+    expect(
+      parseKpiActualWorkspacePlanDetailResponseForTest({
+        data: { ...makeActualWorkspaceDetail(), planStatus: 'FINALIZED', finalResult },
+      }).finalResult,
+    ).toMatchObject({ snapshotVersion: 1, members: [{ memberDisplayName: 'Luna Park' }] });
+
+    for (const forbidden of [
+      'finalScore',
+      'rank',
+      'payroll',
+      'payout',
+      'settlement',
+      'commission',
+      'accounting',
+      'tax',
+      'ERP',
+      'finalizedByActorId',
+    ]) {
+      expect(() =>
+        parseKpiPlanDetailResponseForTest({
+          data: {
+            ...makeDetail('kpi-plan-finalized', 'FINALIZED'),
+            finalResult: { ...finalResult, [forbidden]: 'forbidden' },
+          },
+        }),
+      ).toThrow();
+    }
+    for (const forbidden of ['memberTalentId', 'memberEmploymentProfileId']) {
+      expect(() =>
+        parseKpiPlanDetailResponseForTest({
+          data: {
+            ...makeDetail('kpi-plan-finalized', 'FINALIZED'),
+            finalResult: {
+              ...finalResult,
+              members: [{ ...finalResult.members[0], [forbidden]: 'forbidden' }],
+            },
+          },
+        }),
+      ).toThrow();
+    }
+  });
+
   it('strict correction DTO schema accepts backend-safe exposure and rejects raw IDs', () => {
     const correction = makeCorrection(300000);
 
@@ -3277,6 +3405,60 @@ const makeActualEntryStatusSummary = (
   notRequiredEntryCount: 0,
   notDueEntryCount: 1,
   ...overrides,
+});
+
+const makeFinalResultSnapshot = () => ({
+  snapshotVersion: 1,
+  planId: 'kpi-plan-finalized',
+  planCode: 'KPI-202604-000003',
+  periodMonth: '2026-04',
+  subjectType: 'TALENT_GROUP',
+  subjectId: 'group-001',
+  finalizedAt: 2,
+  revenue: {
+    metricCode: 'REVENUE_VND',
+    planTargetValue: 1000000,
+    operationalTargetValue: 1000000,
+    actualValue: 850000,
+    achievementPercent: 85,
+    targetMismatch: false,
+  },
+  allocationCoverage: {
+    publishedAllocationCount: 2,
+    totalAllocationCount: 2,
+    isAllExistingAllocationsPublished: true,
+  },
+  actualEntryStatusSummary: makeActualEntryStatusSummary(),
+  supportingMetrics: [
+    {
+      metricCode: 'CONTENT_OUTPUT_COUNT',
+      targetValue: 10,
+      actualValue: 8,
+      achievementPercent: 80,
+    },
+  ],
+  members: [
+    {
+      allocationId: 'kpi-plan-finalized-alloc-1',
+      memberDisplayName: 'Luna Park',
+      allocationStatus: 'PUBLISHED',
+      revenue: {
+        metricCode: 'REVENUE_VND',
+        targetValue: 600000,
+        actualValue: 550000,
+        achievementPercent: 91.67,
+      },
+      supportingMetrics: [
+        {
+          metricCode: 'CONTENT_OUTPUT_COUNT',
+          targetValue: 6,
+          actualValue: 5,
+          achievementPercent: 83.33,
+        },
+      ],
+      actualEntryStatusSummary: makeActualEntryStatusSummary(),
+    },
+  ],
 });
 
 const makeListPlan = (

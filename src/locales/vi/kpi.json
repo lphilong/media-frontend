@@ -233,6 +233,19 @@
       "CLOSED": "Da dong"
     }
   },
+  "finalResult": {
+    "title": "Ket qua da chot",
+    "captured": "Duoc ghi nhan khi KPI duoc chot.",
+    "readOnly": "Chi doc sau khi chot. Actual, dieu chinh, mien tru va phan bo khong the thay doi.",
+    "unavailable": "Khong co anh chup ket qua cuoi cung cho ke hoach da chot nay.",
+    "status": "Trang thai chot",
+    "closed": "Da dong",
+    "targetMismatch": "Chenh lech muc tieu",
+    "boolean": {
+      "true": "Co",
+      "false": "Khong"
+    }
+  },
   "correction": {
     "title": "Chỉnh sửa actual",
     "previousValue": "Giá trị trước",

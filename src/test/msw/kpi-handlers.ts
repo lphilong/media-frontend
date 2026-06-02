@@ -114,6 +114,7 @@ type KpiPlan = {
   publishedByActorId: string | null;
   finalizedAt: number | null;
   finalizedByActorId: string | null;
+  finalResult?: KpiFinalResultSnapshot | null;
   archivedAt: number | null;
   archivedByActorId: string | null;
   createdAt: number;
@@ -121,6 +122,72 @@ type KpiPlan = {
   updatedAt: number;
   updatedByActorId: string;
   externalRef: string | null;
+};
+
+type KpiFinalResultSnapshot = {
+  snapshotVersion: 1;
+  planId: string;
+  planCode: string;
+  periodMonth: string;
+  subjectType: KpiSubjectType;
+  subjectId: string;
+  finalizedAt: number;
+  revenue: {
+    metricCode: 'REVENUE_VND';
+    planTargetValue: number | null;
+    operationalTargetValue: number;
+    actualValue: number;
+    achievementPercent: number | null;
+    targetMismatch: boolean;
+  };
+  allocationCoverage: {
+    publishedAllocationCount: number;
+    totalAllocationCount: number;
+    isAllExistingAllocationsPublished: boolean;
+  };
+  actualEntryStatusSummary: {
+    expectedEntryCount: number;
+    enteredEntryCount: number;
+    enteredZeroCount: number;
+    pendingEntryCount: number;
+    overdueEntryCount: number;
+    excusedEntryCount: number;
+    notRequiredEntryCount: number;
+    notDueEntryCount: number;
+  };
+  supportingMetrics: Array<{
+    metricCode: KpiMetricCode;
+    targetValue: number;
+    actualValue: number;
+    achievementPercent: number | null;
+  }>;
+  members: Array<{
+    allocationId: string;
+    memberDisplayName: string | null;
+    allocationStatus: 'PUBLISHED';
+    revenue: {
+      metricCode: 'REVENUE_VND';
+      targetValue: number;
+      actualValue: number;
+      achievementPercent: number | null;
+    };
+    supportingMetrics: Array<{
+      metricCode: KpiMetricCode;
+      targetValue: number;
+      actualValue: number;
+      achievementPercent: number | null;
+    }>;
+    actualEntryStatusSummary: {
+      expectedEntryCount: number;
+      enteredEntryCount: number;
+      enteredZeroCount: number;
+      pendingEntryCount: number;
+      overdueEntryCount: number;
+      excusedEntryCount: number;
+      notRequiredEntryCount: number;
+      notDueEntryCount: number;
+    };
+  }>;
 };
 
 type KpiAllocationWorkflowSummary = {
@@ -144,7 +211,7 @@ type KpiAllocationWorkflowSummary = {
   officialPublishedCount: number;
 };
 
-type KpiListPlan = KpiPlan & {
+type KpiListPlan = Omit<KpiPlan, 'finalResult'> & {
   allocationWorkflowSummary: KpiAllocationWorkflowSummary;
 };
 
@@ -308,6 +375,7 @@ const basePlan = (overrides: Partial<KpiPlan>): KpiPlan => ({
   publishedByActorId: null,
   finalizedAt: null,
   finalizedByActorId: null,
+  finalResult: null,
   archivedAt: null,
   archivedByActorId: null,
   createdAt: now - 100_000,
@@ -337,6 +405,117 @@ const initialPlans = [
     publishedAt: now - 80_000,
     finalizedAt: now - 40_000,
     finalizedByActorId: 'user-admin',
+    finalResult: {
+      snapshotVersion: 1,
+      planId: 'kpi-plan-finalized',
+      planCode: 'KPI-202604-000003',
+      periodMonth: '2026-04',
+      subjectType: 'TALENT_GROUP',
+      subjectId: 'group-001',
+      finalizedAt: now - 40_000,
+      revenue: {
+        metricCode: 'REVENUE_VND',
+        planTargetValue: 1000000,
+        operationalTargetValue: 1000000,
+        actualValue: 850000,
+        achievementPercent: 85,
+        targetMismatch: false,
+      },
+      allocationCoverage: {
+        publishedAllocationCount: 2,
+        totalAllocationCount: 2,
+        isAllExistingAllocationsPublished: true,
+      },
+      actualEntryStatusSummary: {
+        expectedEntryCount: 120,
+        enteredEntryCount: 116,
+        enteredZeroCount: 1,
+        pendingEntryCount: 0,
+        overdueEntryCount: 2,
+        excusedEntryCount: 1,
+        notRequiredEntryCount: 1,
+        notDueEntryCount: 0,
+      },
+      supportingMetrics: [
+        {
+          metricCode: 'CONTENT_OUTPUT_COUNT',
+          targetValue: 10,
+          actualValue: 8,
+          achievementPercent: 80,
+        },
+      ],
+      members: [
+        {
+          allocationId: 'kpi-plan-finalized-alloc-1',
+          memberDisplayName: 'Luna Park',
+          allocationStatus: 'PUBLISHED',
+          revenue: {
+            metricCode: 'REVENUE_VND',
+            targetValue: 600000,
+            actualValue: 550000,
+            achievementPercent: 91.67,
+          },
+          supportingMetrics: [
+            {
+              metricCode: 'CONTENT_OUTPUT_COUNT',
+              targetValue: 6,
+              actualValue: 5,
+              achievementPercent: 83.33,
+            },
+          ],
+          actualEntryStatusSummary: {
+            expectedEntryCount: 60,
+            enteredEntryCount: 58,
+            enteredZeroCount: 0,
+            pendingEntryCount: 0,
+            overdueEntryCount: 1,
+            excusedEntryCount: 1,
+            notRequiredEntryCount: 0,
+            notDueEntryCount: 0,
+          },
+        },
+        {
+          allocationId: 'kpi-plan-finalized-alloc-2',
+          memberDisplayName: 'Minh Tran',
+          allocationStatus: 'PUBLISHED',
+          revenue: {
+            metricCode: 'REVENUE_VND',
+            targetValue: 400000,
+            actualValue: 300000,
+            achievementPercent: 75,
+          },
+          supportingMetrics: [
+            {
+              metricCode: 'CONTENT_OUTPUT_COUNT',
+              targetValue: 4,
+              actualValue: 3,
+              achievementPercent: 75,
+            },
+          ],
+          actualEntryStatusSummary: {
+            expectedEntryCount: 60,
+            enteredEntryCount: 58,
+            enteredZeroCount: 1,
+            pendingEntryCount: 0,
+            overdueEntryCount: 1,
+            excusedEntryCount: 0,
+            notRequiredEntryCount: 1,
+            notDueEntryCount: 0,
+          },
+        },
+      ],
+    },
+  }),
+  basePlan({
+    id: 'kpi-plan-finalized-no-snapshot',
+    planCode: 'KPI-202603-000004',
+    title: 'Finalized KPI without snapshot',
+    periodMonth: '2026-03',
+    status: 'FINALIZED',
+    publishedAt: now - 90_000,
+    finalizedAt: now - 45_000,
+    finalizedByActorId: 'user-admin',
+    finalResult: null,
   }),
   basePlan({
     id: 'kpi-plan-legacy-active',
@@ -945,10 +1124,14 @@ const toAllocationWorkflowSummary = (rows: KpiAllocation[]): KpiAllocationWorkfl
   };
 };
 
-const toListPlan = (plan: KpiPlan): KpiListPlan => ({
-  ...plan,
-  allocationWorkflowSummary: toAllocationWorkflowSummary(allocations[plan.id] ?? []),
-});
+const toListPlan = (plan: KpiPlan): KpiListPlan => {
+  const { finalResult, ...listPlan } = plan;
+  void finalResult;
+  return {
+    ...listPlan,
+    allocationWorkflowSummary: toAllocationWorkflowSummary(allocations[plan.id] ?? []),
+  };
+};
 
 const toProgressPlan = (plan: KpiPlan) => ({
   id: plan.id,
@@ -1722,6 +1905,41 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
   };
 };
 
+const toFinalResultSnapshot = (plan: KpiPlan, finalizedAt: number): KpiFinalResultSnapshot => {
+  const summary = toActualWorkspaceSummary(plan);
+  const members = (allocations[plan.id] ?? [])
+    .filter((allocation) => allocation.allocationStatus === 'PUBLISHED')
+    .map(toActualWorkspaceMember);
+  return {
+    snapshotVersion: 1,
+    planId: plan.id,
+    planCode: plan.planCode,
+    periodMonth: plan.periodMonth,
+    subjectType: plan.subjectType,
+    subjectId: plan.subjectId,
+    finalizedAt,
+    revenue: {
+      metricCode: summary.revenue.metricCode,
+      planTargetValue: summary.revenue.planTargetValue,
+      operationalTargetValue: summary.revenue.operationalTargetValue,
+      actualValue: summary.revenue.actualValue,
+      achievementPercent: summary.revenue.achievementPercent,
+      targetMismatch: summary.revenue.targetMismatch,
+    },
+    allocationCoverage: summary.allocationCoverage,
+    actualEntryStatusSummary: summary.actualEntryStatusSummary,
+    supportingMetrics: summary.supportingMetrics,
+    members: members.map((member) => ({
+      allocationId: member.allocationId,
+      memberDisplayName: member.memberDisplayName,
+      allocationStatus: member.allocationStatus,
+      revenue: member.revenue,
+      supportingMetrics: member.supportingMetrics,
+      actualEntryStatusSummary: member.actualEntryStatusSummary,
+    })),
+  };
+};
+
 type ActualWorkspaceSortBy = 'periodMonth' | 'planCode' | 'revenueActual' | 'achievementPercent';
 type ActualWorkspaceSortDirection = 'ASC' | 'DESC';
 type ActualWorkspaceStatusFilters = {
@@ -2014,6 +2232,7 @@ export const kpiHandlers = [
     return HttpResponse.json({
       data: {
         ...toActualWorkspaceSummary(plan),
+        finalResult: plan.status === 'FINALIZED' ? (plan.finalResult ?? null) : null,
         members: (allocations[plan.id] ?? [])
           .filter((allocation) => allocation.allocationStatus === 'PUBLISHED')
           .map(toActualWorkspaceMember),
@@ -2593,6 +2812,7 @@ export const kpiHandlers = [
       plan.status = 'PUBLISHED';
       plan.publishedAt = now;
     } else if (action === 'finalize') {
+      plan.finalResult = toFinalResultSnapshot(plan, now);
       plan.status = 'FINALIZED';
       plan.finalizedAt = now;
     } else if (action === 'archive') {

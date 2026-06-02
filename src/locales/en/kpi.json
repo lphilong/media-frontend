@@ -233,6 +233,19 @@
       "CLOSED": "Closed"
     }
   },
+  "finalResult": {
+    "title": "Finalized result",
+    "captured": "Captured when the KPI was finalized.",
+    "readOnly": "Read-only after finalization. Actuals, corrections, excuses, and allocations can no longer change.",
+    "unavailable": "Final result snapshot is not available for this finalized plan.",
+    "status": "Finalized status",
+    "closed": "Closed",
+    "targetMismatch": "Target mismatch",
+    "boolean": {
+      "true": "Yes",
+      "false": "No"
+    }
+  },
   "correction": {
     "title": "Edit actual",
     "previousValue": "Previous value",

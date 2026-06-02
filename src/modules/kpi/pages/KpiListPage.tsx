@@ -1255,7 +1255,7 @@ export const KpiListPage = (): JSX.Element => {
                       <td className="px-3 py-2">{allocation.kpiPlanId}</td>
                       <td className="px-3 py-2">
                         {allocation.snapshotMemberDisplayName ??
-                          allocation.memberEmploymentProfileId}
+                          t('kpi:actualWorkspace.unnamedMember')}
                       </td>
                       <td className="px-3 py-2">
                         {t(`kpi:allocationStatuses.${allocation.allocationStatus}`)}
@@ -1616,6 +1616,87 @@ export const KpiListPage = (): JSX.Element => {
                   - {formatPeriodMonth(actualWorkspaceDetailQuery.data.periodMonth)}
                 </p>
               </div>
+              {actualWorkspaceDetailQuery.data.planStatus === 'FINALIZED' ? (
+                <section
+                  aria-label={t('kpi:finalResult.title')}
+                  className="space-y-2 rounded border border-border bg-panel p-3 text-sm"
+                >
+                  <div>
+                    <h3 className="font-semibold">{t('kpi:finalResult.title')}</h3>
+                    <p className="text-muted">{t('kpi:finalResult.captured')}</p>
+                    <p className="text-muted">{t('kpi:finalResult.readOnly')}</p>
+                  </div>
+                  {actualWorkspaceDetailQuery.data.finalResult ? (
+                    <div className="grid gap-2 md:grid-cols-3">
+                      <div>
+                        <span className="text-muted">{t('kpi:fields.finalizedAt')}: </span>
+                        {formatKpiDateTime(actualWorkspaceDetailQuery.data.finalResult.finalizedAt)}
+                      </div>
+                      <div>
+                        <span className="text-muted">
+                          {t('kpi:actualWorkspace.revenueTarget')}:{' '}
+                        </span>
+                        {formatKpiNumber(
+                          'REVENUE_VND',
+                          actualWorkspaceDetailQuery.data.finalResult.revenue.operationalTargetValue,
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-muted">
+                          {t('kpi:actualWorkspace.revenueActual')}:{' '}
+                        </span>
+                        {formatKpiNumber(
+                          'REVENUE_VND',
+                          actualWorkspaceDetailQuery.data.finalResult.revenue.actualValue,
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-muted">{t('kpi:actualWorkspace.achievement')}: </span>
+                        {formatAchievement(
+                          actualWorkspaceDetailQuery.data.finalResult.revenue.achievementPercent,
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-muted">
+                          {t('kpi:actualWorkspace.allocationCoverage')}:{' '}
+                        </span>
+                        {renderAllocationCoverage(
+                          actualWorkspaceDetailQuery.data.finalResult.allocationCoverage,
+                        )}
+                      </div>
+                      <div className="md:col-span-3">
+                        <span className="text-muted">
+                          {t('kpi:actualWorkspace.statusSummary')}:{' '}
+                        </span>
+                        {renderActualEntryStatusSummary(
+                          actualWorkspaceDetailQuery.data.finalResult.actualEntryStatusSummary,
+                        )}
+                      </div>
+                      <div className="md:col-span-3">
+                        <span className="text-muted">
+                          {t('kpi:actualWorkspace.supportingMetrics')}:{' '}
+                        </span>
+                        {renderSupportingMetrics(
+                          actualWorkspaceDetailQuery.data.finalResult.supportingMetrics,
+                        )}
+                      </div>
+                      {actualWorkspaceDetailQuery.data.finalResult.members.length > 0 ? (
+                        <div className="md:col-span-3">
+                          <span className="text-muted">{t('kpi:fields.member')}: </span>
+                          {actualWorkspaceDetailQuery.data.finalResult.members
+                            .map(
+                              (member) =>
+                                member.memberDisplayName ?? t('kpi:actualWorkspace.unnamedMember'),
+                            )
+                            .join(', ')}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="text-muted">{t('kpi:finalResult.unavailable')}</p>
+                  )}
+                </section>
+              ) : null}
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="rounded border border-border p-3 text-sm">
                   <div className="text-xs uppercase text-muted">

@@ -246,6 +246,7 @@ export type KpiPlanListItem = {
 };
 
 export type KpiPlanDetail = KpiPlanListItem & {
+  finalResult?: KpiFinalResultSnapshot | null;
   targetMetrics: KpiTargetMetric[];
   allocations: KpiAllocation[];
 };
@@ -405,6 +406,40 @@ export type KpiActualWorkspaceActionHints = {
   canEnterActual: boolean;
 };
 
+export type KpiFinalResultSnapshot = {
+  snapshotVersion: 1;
+  planId: string;
+  planCode: string;
+  periodMonth: string;
+  subjectType: KpiSubjectType;
+  subjectId: string;
+  finalizedAt: number | string;
+  revenue: {
+    metricCode: 'REVENUE_VND';
+    planTargetValue: number | null;
+    operationalTargetValue: number;
+    actualValue: number;
+    achievementPercent: number | null;
+    targetMismatch: boolean;
+  };
+  allocationCoverage: KpiActualWorkspaceAllocationCoverage;
+  actualEntryStatusSummary: KpiActualEntryStatusSummary;
+  supportingMetrics: KpiActualWorkspaceMetricSummary[];
+  members: Array<{
+    allocationId: string;
+    memberDisplayName: string | null;
+    allocationStatus: 'PUBLISHED';
+    revenue: {
+      metricCode: 'REVENUE_VND';
+      targetValue: number;
+      actualValue: number;
+      achievementPercent: number | null;
+    };
+    supportingMetrics: KpiActualWorkspaceMetricSummary[];
+    actualEntryStatusSummary: KpiActualEntryStatusSummary;
+  }>;
+};
+
 export type KpiActualWorkspacePlanSummary = {
   planId: string;
   planCode: string;
@@ -447,6 +482,7 @@ export type KpiActualWorkspaceMemberSummary = {
 };
 
 export type KpiActualWorkspacePlanDetail = KpiActualWorkspacePlanSummary & {
+  finalResult?: KpiFinalResultSnapshot | null;
   members: KpiActualWorkspaceMemberSummary[];
 };
 
