@@ -280,7 +280,11 @@ export const KpiDetailPage = (): JSX.Element => {
     allocationWorkflowStatus !== 'MIXED' &&
     officialAllocationStatuses.has(allocationWorkflowStatus);
   const allocationPlanStateDisabledReason =
-    plan.status !== 'PUBLISHED' ? t('kpi:disabled.allocationPlanPublishedOnly') : undefined;
+    plan.status === 'FINALIZED'
+      ? t('kpi:errors.finalizedReadOnly')
+      : plan.status !== 'PUBLISHED'
+        ? t('kpi:disabled.allocationPlanPublishedOnly')
+        : undefined;
   const allocationDraftDisabledReason =
     allocationPlanStateDisabledReason ??
     (allocationWorkflowStatus !== 'DRAFT' && allocationWorkflowStatus !== 'NONE'
@@ -292,9 +296,10 @@ export const KpiDetailPage = (): JSX.Element => {
       ? t('kpi:disabled.allocationSubmitDraftOnly')
       : undefined);
   const allocationApproveDisabledReason =
-    allocationWorkflowStatus !== 'PENDING_APPROVAL'
+    allocationPlanStateDisabledReason ??
+    (allocationWorkflowStatus !== 'PENDING_APPROVAL'
       ? t('kpi:disabled.allocationApprovePendingOnly')
-      : undefined;
+      : undefined);
   const allocationPublishDisabledReason =
     allocationWorkflowStatus !== 'APPROVED'
       ? t('kpi:disabled.allocationPublishApprovedOnly')

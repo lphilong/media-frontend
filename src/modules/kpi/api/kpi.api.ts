@@ -501,7 +501,6 @@ const correctionSchema = z
     actualEntryId: z.string().trim().min(1),
     kpiPlanId: z.string().trim().min(1),
     allocationId: z.string().trim().min(1),
-    memberTalentId: z.string().trim().min(1),
     metricCode: metricCodeSchema,
     actualDate: z
       .string()
@@ -510,7 +509,6 @@ const correctionSchema = z
     previousValue: z.number(),
     correctedValue: z.number(),
     reason: z.string().trim().min(1),
-    correctedByActorId: z.string().trim().min(1),
     correctedAt: timestampSchema,
     createdAt: timestampSchema,
   })
@@ -1081,6 +1079,12 @@ export const parseKpiActualWorkspacePlanListResponseForTest = (response: unknown
 
 export const parseKpiActualDailyGridResponseForTest = (response: unknown) =>
   actualGridResponseSchema.parse(response).data;
+
+export const parseKpiCorrectionMutationResponseForTest = (response: unknown) =>
+  correctionMutationResponseSchema.parse(response).data;
+
+export const parseKpiCorrectionListResponseForTest = (response: unknown) =>
+  correctionListResponseSchema.parse(response).data;
 
 export const parseKpiAllocationDraftPayloadForTest = (
   payload: unknown,

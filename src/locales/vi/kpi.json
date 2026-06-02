@@ -308,10 +308,15 @@
     "finalizePublishedOnly": "Chỉ kế hoạch đã publish được chốt.",
     "alreadyArchived": "Kế hoạch đã lưu trữ."
   },
+  "errors": {
+    "correctionDirectEditWindow": "Hay sua truc tiep truoc cutoff hang ngay. Dieu chinh chi dung sau khi het cua so sua truc tiep.",
+    "correctionActiveExcuse": "Bo mien tru hoac khong bat buoc truoc khi dieu chinh.",
+    "finalizedReadOnly": "KPI da chot chi duoc doc."
+  },
   "confirm": {
     "publish": "Publish kế hoạch KPI này? Mục tiêu và phân bổ sẽ bị khóa.",
     "archive": "Lưu trữ kế hoạch KPI này?",
-    "finalize": "Chốt kế hoạch KPI này? Việc chốt sẽ khóa số thực đạt và điều chỉnh cho payroll/reporting."
+    "finalize": "Chốt kế hoạch KPI này? Việc chốt sẽ khóa số thực đạt và điều chỉnh."
   },
   "feedback": {
     "created": "Đã tạo kế hoạch KPI.",
@@ -336,6 +341,7 @@
     "actualGridLoadErrorTitle": "Khong tai duoc bang actual",
     "actualGridLoadErrorMessage": "Khong tai duoc bang actual cho ngay da chon.",
     "actualExcuseMutationErrorMessage": "Khong cap nhat duoc mien tru actual.",
+    "correctionMutationErrorMessage": "Khong gui duoc dieu chinh.",
     "loadErrorTitle": "Không tải được KPI",
     "loadErrorMessage": "Không tải được dữ liệu KPI.",
     "capabilityUnavailable": "Khong xac minh duoc quyen KPI. Thu lai.",

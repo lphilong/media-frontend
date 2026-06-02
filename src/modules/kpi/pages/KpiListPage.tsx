@@ -230,6 +230,28 @@ const readErrorMessage = (
   return error.message.includes(':') ? t(error.message) : error.message;
 };
 
+const readKpiSafeErrorMessage = (
+  t: (key: string) => string,
+  error: NormalizedApiError | null | undefined,
+  fallbackKey: string,
+): string => {
+  const message = error?.message ?? '';
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes('use direct edit before cutoff') ||
+    normalized.includes('allowed only after the direct edit window')
+  ) {
+    return t('kpi:errors.correctionDirectEditWindow');
+  }
+  if (normalized.includes('active excuse') || normalized.includes('not-required')) {
+    return t('kpi:errors.correctionActiveExcuse');
+  }
+  if (normalized.includes('finalized kpi') || normalized.includes('plan_finalized')) {
+    return t('kpi:errors.finalizedReadOnly');
+  }
+  return readErrorMessage(t, error, fallbackKey);
+};
+
 const isConflict = (error: unknown): boolean => {
   const apiError = error as NormalizedApiError | undefined;
   return apiError?.status === 409;
@@ -1766,6 +1788,9 @@ export const KpiListPage = (): JSX.Element => {
               ) : null}
               {actualGridQuery.data ? (
                 <div className="overflow-x-auto rounded border border-border">
+                  {actualGridQuery.data.editability.isPlanFinalized ? (
+                    <p className="p-3 text-sm text-danger">{t('kpi:errors.finalizedReadOnly')}</p>
+                  ) : null}
                   <table className="min-w-full text-sm">
                     <thead className="bg-slate-100">
                       <tr>
@@ -1824,7 +1849,11 @@ export const KpiListPage = (): JSX.Element => {
                                   ? (cell.disabledReason ?? t('kpi:actualEntry.requiresCorrection'))
                                   : t('kpi:actualEntry.directEdit')}
                               </div>
-                              {correctActualHint.allowed && cell.actualEntryId ? (
+                              {correctActualHint.allowed &&
+                              cell.actualEntryId &&
+                              !actualGridQuery.data.editability.isPlanFinalized &&
+                              cell.dailyActualStatus !== 'EXCUSED' &&
+                              cell.dailyActualStatus !== 'NOT_REQUIRED' ? (
                                 <button
                                   type="button"
                                   disabled={correctActualHint.disabled}
@@ -1994,7 +2023,7 @@ const CorrectionPanel = ({
   onClose: () => void;
 }): JSX.Element => {
   const { t } = useTranslation(['kpi', 'common']);
-  const { notifyError, notifySuccess } = useMutationFeedback();
+  const { notifySuccess } = useMutationFeedback();
   const correctionMutation = useCreateKpiCorrectionMutation();
   const historyQuery = useKpiCorrectionHistory(kpiPlanId, target.cell.actualEntryId ?? undefined);
   const [correctedValue, setCorrectedValue] = useState(
@@ -2034,7 +2063,13 @@ const CorrectionPanel = ({
       notifySuccess('kpi:feedback.correctionCreated');
       onClose();
     } catch (submitError) {
-      notifyError(submitError as NormalizedApiError);
+      setError(
+        readKpiSafeErrorMessage(
+          t,
+          submitError as NormalizedApiError,
+          'kpi:states.correctionMutationErrorMessage',
+        ),
+      );
     }
   };
 

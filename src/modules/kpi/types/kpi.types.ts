@@ -325,13 +325,11 @@ export type KpiActualCorrection = {
   actualEntryId: string;
   kpiPlanId: string;
   allocationId: string;
-  memberTalentId: string;
   metricCode: KpiMetricCode;
   actualDate: string;
   previousValue: number;
   correctedValue: number;
   reason: string;
-  correctedByActorId: string;
   correctedAt: number | string;
   createdAt: number | string;
 };

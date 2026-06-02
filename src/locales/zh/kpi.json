@@ -308,10 +308,15 @@
     "finalizePublishedOnly": "只有已发布计划可终结。",
     "alreadyArchived": "计划已归档。"
   },
+  "errors": {
+    "correctionDirectEditWindow": "请在每日截止前使用直接编辑。修正仅在直接编辑窗口关闭后可用。",
+    "correctionActiveExcuse": "请先取消 excused 或 not-required 状态，再进行修正。",
+    "finalizedReadOnly": "已终结的 KPI 为只读。"
+  },
   "confirm": {
     "publish": "发布此 KPI 计划？目标和分配将被锁定。",
     "archive": "归档此 KPI 计划？",
-    "finalize": "终结此 KPI 计划？终结会锁定 actual 和修正用于薪酬/报表。"
+    "finalize": "终结此 KPI 计划？终结会锁定 actual 和修正。"
   },
   "feedback": {
     "created": "KPI 计划已创建。",
@@ -336,6 +341,7 @@
     "actualGridLoadErrorTitle": "Unable to load actual grid",
     "actualGridLoadErrorMessage": "Unable to load the actual grid for the selected date.",
     "actualExcuseMutationErrorMessage": "Unable to update the actual excuse.",
+    "correctionMutationErrorMessage": "Unable to submit the correction.",
     "loadErrorTitle": "无法加载 KPI",
     "loadErrorMessage": "无法加载 KPI 数据。",
     "capabilityUnavailable": "KPI permissions could not be verified. Try again.",

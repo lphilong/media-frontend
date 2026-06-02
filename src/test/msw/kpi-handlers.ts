@@ -173,13 +173,11 @@ type ActualCorrection = {
   actualEntryId: string;
   kpiPlanId: string;
   allocationId: string;
-  memberTalentId: string;
   metricCode: KpiMetricCode;
   actualDate: string;
   previousValue: number;
   correctedValue: number;
   reason: string;
-  correctedByActorId: string;
   correctedAt: number;
   createdAt: number;
 };
@@ -606,6 +604,63 @@ export const resetKpiMockData = (): void => {
       lastEditedAt: now,
       lastEditedByActorId: 'user-admin',
     },
+    {
+      id: 'actual-excused-conflict',
+      kpiPlanId: 'kpi-plan-published',
+      allocationId: 'kpi-plan-published-alloc-1',
+      memberTalentId: 'talent-001',
+      metricCode: 'CONTENT_OUTPUT_COUNT',
+      actualDate: '15-05-2026',
+      actualValue: 5,
+      effectiveValue: 5,
+      editCount: 1,
+      correctionCount: 0,
+      latestCorrectionId: null,
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      lastEditedAt: now,
+      lastEditedByActorId: 'user-admin',
+    },
+    {
+      id: 'actual-not-required-conflict',
+      kpiPlanId: 'kpi-plan-published',
+      allocationId: 'kpi-plan-published-alloc-1',
+      memberTalentId: 'talent-001',
+      metricCode: 'CONTENT_OUTPUT_COUNT',
+      actualDate: '14-05-2026',
+      actualValue: 4,
+      effectiveValue: 4,
+      editCount: 1,
+      correctionCount: 0,
+      latestCorrectionId: null,
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      lastEditedAt: now,
+      lastEditedByActorId: 'user-admin',
+    },
+    {
+      id: 'actual-finalized',
+      kpiPlanId: 'kpi-plan-finalized',
+      allocationId: 'kpi-plan-finalized-alloc-1',
+      memberTalentId: 'talent-001',
+      metricCode: 'REVENUE_VND',
+      actualDate: '16-04-2026',
+      actualValue: 100000,
+      effectiveValue: 100000,
+      editCount: 1,
+      correctionCount: 0,
+      latestCorrectionId: null,
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      lastEditedAt: now,
+      lastEditedByActorId: 'user-admin',
+    },
   ];
   corrections = [
     {
@@ -613,18 +668,49 @@ export const resetKpiMockData = (): void => {
       actualEntryId: 'actual-locked',
       kpiPlanId: 'kpi-plan-published',
       allocationId: 'kpi-plan-published-alloc-2',
-      memberTalentId: 'talent-002',
       metricCode: 'REVENUE_VND',
       actualDate: '16-05-2026',
       previousValue: 200000,
       correctedValue: 250000,
       reason: 'Backend approved adjustment',
-      correctedByActorId: 'user-admin',
       correctedAt: now,
       createdAt: now,
     },
   ];
-  actualExcuses = [];
+  actualExcuses = [
+    {
+      id: 'actual-excuse-correction-conflict',
+      kpiPlanId: 'kpi-plan-published',
+      allocationId: 'kpi-plan-published-alloc-1',
+      metricCode: 'CONTENT_OUTPUT_COUNT',
+      actualDate: '15-05-2026',
+      status: 'EXCUSED',
+      reasonCode: 'MEMBER_LEAVE',
+      reasonText: 'Approved leave',
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      deletedAt: null,
+      deletedByActorId: null,
+    },
+    {
+      id: 'actual-not-required-correction-conflict',
+      kpiPlanId: 'kpi-plan-published',
+      allocationId: 'kpi-plan-published-alloc-1',
+      metricCode: 'CONTENT_OUTPUT_COUNT',
+      actualDate: '14-05-2026',
+      status: 'NOT_REQUIRED',
+      reasonCode: 'NO_OPERATION_REQUIRED',
+      reasonText: 'No operation required',
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      deletedAt: null,
+      deletedByActorId: null,
+    },
+  ];
 };
 
 resetKpiMockData();
@@ -1027,6 +1113,18 @@ const directEditWindowClosed = () =>
     { status: 409 },
   );
 
+const correctionDuringDirectEditWindow = () =>
+  HttpResponse.json(
+    {
+      message:
+        'KPI actual correction is allowed only after the direct edit window closes; use direct edit before cutoff',
+    },
+    { status: 409 },
+  );
+
+const finalizedKpiReadOnly = () =>
+  HttpResponse.json({ message: 'Finalized KPI is read-only' }, { status: 409 });
+
 const isPastCreatePeriodMonth = (periodMonth: string): boolean =>
   periodMonth < currentKpiCreateMonth;
 
@@ -1296,6 +1394,20 @@ const exposeExcuse = (excuse: ActualExcuse) => ({
   createdByActorId: excuse.createdByActorId,
   updatedAt: excuse.updatedAt,
   updatedByActorId: excuse.updatedByActorId,
+});
+
+const exposeCorrection = (correction: ActualCorrection) => ({
+  id: correction.id,
+  actualEntryId: correction.actualEntryId,
+  kpiPlanId: correction.kpiPlanId,
+  allocationId: correction.allocationId,
+  metricCode: correction.metricCode,
+  actualDate: correction.actualDate,
+  previousValue: correction.previousValue,
+  correctedValue: correction.correctedValue,
+  reason: correction.reason,
+  correctedAt: correction.correctedAt,
+  createdAt: correction.createdAt,
 });
 
 const getDailyActualStatus = ({
@@ -2210,6 +2322,9 @@ export const kpiHandlers = [
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['approvalNote']);
     if (unsupported) return unsupported;
+    if (plan.status === 'FINALIZED') {
+      return finalizedKpiReadOnly();
+    }
     const currentStatusError = requireAllocationStatus(plan, 'PENDING_APPROVAL');
     if (currentStatusError) return currentStatusError;
     (allocations[plan.id] ?? []).forEach((allocation) => {
@@ -2228,6 +2343,9 @@ export const kpiHandlers = [
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['rejectionReason']);
     if (unsupported) return unsupported;
+    if (plan.status === 'FINALIZED') {
+      return finalizedKpiReadOnly();
+    }
     if (!String(body.rejectionReason ?? '').trim()) {
       return HttpResponse.json({ message: 'Reason required' }, { status: 422 });
     }
@@ -2631,7 +2749,7 @@ export const kpiHandlers = [
         (item) =>
           item.kpiPlanId === String(params.kpiPlanId) &&
           item.actualEntryId === String(params.actualEntryId),
-      ),
+      ).map(exposeCorrection),
     });
   }),
   http.post(
@@ -2645,19 +2763,63 @@ export const kpiHandlers = [
       }
       const entry = actualEntries.find((item) => item.id === String(params.actualEntryId));
       if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (entry.kpiPlanId !== String(params.kpiPlanId)) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const plan = readPlan(String(params.kpiPlanId));
+      if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (plan.status === 'FINALIZED') {
+        return finalizedKpiReadOnly();
+      }
+      if (plan.status !== 'PUBLISHED') {
+        return HttpResponse.json(
+          { message: 'KPI actual correction requires a published plan' },
+          { status: 409 },
+        );
+      }
+      const allocation = (allocations[plan.id] ?? []).find(
+        (item) => item.id === entry.allocationId,
+      );
+      if (!allocation || allocation.allocationStatus !== 'PUBLISHED') {
+        return HttpResponse.json(
+          { message: 'KPI actual correction requires a published allocation' },
+          { status: 409 },
+        );
+      }
+      if (isDirectEditWindowOpen(entry.actualDate)) {
+        return correctionDuringDirectEditWindow();
+      }
+      if (readActiveExcuse(plan.id, entry.allocationId, entry.metricCode, entry.actualDate)) {
+        return HttpResponse.json(
+          {
+            message:
+              'KPI actual slot has an active excuse or not-required mark; unmark it before correction',
+          },
+          { status: 409 },
+        );
+      }
+      if (!isNumber(body.correctedValue) || body.correctedValue < 0) {
+        return validationError(
+          `KPI ${entry.metricCode} requires a finite non-negative numeric corrected value`,
+        );
+      }
+      if (integerTargetMetricCodes.has(entry.metricCode) && !Number.isInteger(body.correctedValue)) {
+        return validationError(`${entry.metricCode} requires an integer corrected value`);
+      }
+      if (entry.metricCode === 'LIVE_HOURS' && !hasAtMostDecimalPlaces(body.correctedValue, 2)) {
+        return validationError('LIVE_HOURS supports at most 2 decimal places');
+      }
       correctionSeed += 1;
       const correction: ActualCorrection = {
         id: `correction-${correctionSeed}`,
         actualEntryId: entry.id,
         kpiPlanId: String(params.kpiPlanId),
         allocationId: entry.allocationId,
-        memberTalentId: entry.memberTalentId,
         metricCode: entry.metricCode,
         actualDate: entry.actualDate,
         previousValue: entry.effectiveValue,
         correctedValue: Number(body.correctedValue),
-        reason: String(body.reason),
-        correctedByActorId: 'user-admin',
+        reason: String(body.reason).trim(),
         correctedAt: now,
         createdAt: now,
       };
@@ -2665,7 +2827,7 @@ export const kpiHandlers = [
       entry.effectiveValue = correction.correctedValue;
       entry.correctionCount += 1;
       entry.latestCorrectionId = correction.id;
-      return HttpResponse.json({ data: { actualEntry: entry, correction } });
+      return HttpResponse.json({ data: { actualEntry: entry, correction: exposeCorrection(correction) } });
     },
   ),
 ];

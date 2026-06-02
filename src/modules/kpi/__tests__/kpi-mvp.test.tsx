@@ -14,9 +14,11 @@ import {
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import {
   approveKpiAllocation,
+  createKpiCorrection,
   createKpiPlan,
   fetchKpiActualDailyGrid,
   fetchKpiActualWorkspacePlans,
+  fetchKpiCorrectionHistory,
   fetchKpiPlans,
   fetchKpiManagedMembers,
   fetchMyKpiProgress,
@@ -25,6 +27,8 @@ import {
   parseKpiActualDailyGridResponseForTest,
   parseKpiActualWorkspacePlanListResponseForTest,
   parseKpiActualWorkspacePlanDetailResponseForTest,
+  parseKpiCorrectionListResponseForTest,
+  parseKpiCorrectionMutationResponseForTest,
   parseKpiPlanListResponseForTest,
   markKpiActualExcuse,
   performKpiLifecycleAction,
@@ -1838,7 +1842,9 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi/plans/kpi-plan-published');
     await waitForPublishedKpiDetail();
     await userEvent.click(screen.getByRole('button', { name: 'Finalize' }));
-    expect(await screen.findByTestId('confirm-dialog')).toHaveTextContent('payroll/reporting');
+    expect(await screen.findByTestId('confirm-dialog')).toHaveTextContent(
+      'Finalizing locks actuals and corrections.',
+    );
     await userEvent.click(screen.getByTestId('confirm-dialog-confirm'));
     expect(await screen.findByText('KPI lifecycle updated.')).toBeInTheDocument();
   });
@@ -2157,6 +2163,9 @@ describe('KPI MVP UX', () => {
     await userEvent.click(await waitForEnabledButton('Save changed cells'));
     expect(await screen.findByRole('dialog', { name: 'Edit actual' })).toBeInTheDocument();
     expect(await screen.findByText('Correction history')).toBeInTheDocument();
+    expect(await screen.findByText(/Backend approved adjustment/)).toBeInTheDocument();
+    expect(screen.queryByText('user-admin')).not.toBeInTheDocument();
+    expect(screen.queryByText('talent-002')).not.toBeInTheDocument();
   });
 
   it('shows duplicate POST conflict message', async () => {
@@ -2197,13 +2206,133 @@ describe('KPI MVP UX', () => {
     await userEvent.click(correctionButtons.at(-1)!);
     await userEvent.click(await waitForEnabledButton('Submit correction'));
     expect(await screen.findByText('Correction reason is required.')).toBeInTheDocument();
-    await userEvent.type(screen.getByLabelText('Correction reason'), 'Payroll correction');
+    await userEvent.type(screen.getByLabelText('Correction reason'), 'Operational correction');
     const corrected = screen.getByLabelText('Corrected value');
     await userEvent.clear(corrected);
     await userEvent.type(corrected, '300.000');
     await userEvent.click(await waitForEnabledButton('Submit correction'));
     await waitFor(() => expect(body?.correctedValue).toBe(300000));
     expect(typeof body?.correctedValue).toBe('number');
+  });
+
+  it('shows safe direct-edit window copy when correction is submitted before cutoff', async () => {
+    renderRoute('/kpi');
+    await openPublishedActualGrid();
+
+    const correctionButtons = await screen.findAllByRole('button', { name: 'Correction' });
+    await userEvent.click(correctionButtons.at(-1)!);
+    await userEvent.type(screen.getByLabelText('Correction reason'), 'Operational correction');
+    const corrected = screen.getByLabelText('Corrected value');
+    await userEvent.clear(corrected);
+    await userEvent.type(corrected, '300.000');
+    await userEvent.click(await waitForEnabledButton('Submit correction'));
+
+    expect(
+      await screen.findByText(/Use direct edit before the daily cutoff/i),
+    ).toBeInTheDocument();
+  });
+
+  it('MSW rejects correction at exact D+1 10:00 HCM and allows post-cutoff correction', async () => {
+    vi.setSystemTime(new Date('2026-05-17T10:00:00+07:00'));
+    await expect(
+      createKpiCorrection({
+        kpiPlanId: 'kpi-plan-published',
+        actualEntryId: 'actual-locked',
+        correctedValue: 300000,
+        reason: 'At cutoff',
+      }),
+    ).rejects.toThrow(/direct edit/i);
+
+    vi.setSystemTime(new Date('2026-05-17T10:00:01+07:00'));
+    const result = await createKpiCorrection({
+      kpiPlanId: 'kpi-plan-published',
+      actualEntryId: 'actual-locked',
+      correctedValue: 300000,
+      reason: 'After cutoff',
+    });
+
+    expect(result.actualEntry.actualValue).toBe(200000);
+    expect(result.actualEntry.effectiveValue).toBe(300000);
+    expect(result.actualEntry.correctionCount).toBe(2);
+    expect(result.correction.previousValue).toBe(250000);
+    expect(result.correction.correctedValue).toBe(300000);
+    expect('correctedByActorId' in result.correction).toBe(false);
+    expect('memberTalentId' in result.correction).toBe(false);
+  });
+
+  it('MSW allows repeated post-cutoff corrections and returns safe history DTOs', async () => {
+    vi.setSystemTime(new Date('2026-05-17T10:00:01+07:00'));
+
+    await createKpiCorrection({
+      kpiPlanId: 'kpi-plan-published',
+      actualEntryId: 'actual-locked',
+      correctedValue: 300000,
+      reason: 'First correction',
+    });
+    const second = await createKpiCorrection({
+      kpiPlanId: 'kpi-plan-published',
+      actualEntryId: 'actual-locked',
+      correctedValue: 350000,
+      reason: 'Second correction',
+    });
+    const history = await fetchKpiCorrectionHistory('kpi-plan-published', 'actual-locked');
+
+    expect(second.correction.previousValue).toBe(300000);
+    expect(second.actualEntry.effectiveValue).toBe(350000);
+    expect(second.actualEntry.correctionCount).toBe(3);
+    expect(history).toHaveLength(3);
+    expect(history.every((item) => !('correctedByActorId' in item))).toBe(true);
+    expect(history.every((item) => !('memberTalentId' in item))).toBe(true);
+  });
+
+  it('MSW blocks active EXCUSED and NOT_REQUIRED correction until unmarked', async () => {
+    vi.setSystemTime(new Date('2026-05-17T10:00:01+07:00'));
+
+    await expect(
+      createKpiCorrection({
+        kpiPlanId: 'kpi-plan-published',
+        actualEntryId: 'actual-excused-conflict',
+        correctedValue: 6,
+        reason: 'Excused correction',
+      }),
+    ).rejects.toThrow(/unmark/i);
+    await expect(
+      createKpiCorrection({
+        kpiPlanId: 'kpi-plan-published',
+        actualEntryId: 'actual-not-required-conflict',
+        correctedValue: 6,
+        reason: 'Not required correction',
+      }),
+    ).rejects.toThrow(/unmark/i);
+
+    await unmarkKpiActualExcuse({
+      kpiPlanId: 'kpi-plan-published',
+      excuseId: 'actual-excuse-correction-conflict',
+    });
+    const result = await createKpiCorrection({
+      kpiPlanId: 'kpi-plan-published',
+      actualEntryId: 'actual-excused-conflict',
+      correctedValue: 6,
+      reason: 'After unmark',
+    });
+    expect(result.actualEntry.effectiveValue).toBe(6);
+  });
+
+  it('MSW blocks correction and allocation approve/reject after FINALIZED', async () => {
+    vi.setSystemTime(new Date('2026-05-17T10:00:01+07:00'));
+
+    await expect(
+      createKpiCorrection({
+        kpiPlanId: 'kpi-plan-finalized',
+        actualEntryId: 'actual-finalized',
+        correctedValue: 120000,
+        reason: 'Finalized correction',
+      }),
+    ).rejects.toThrow(/read-only/i);
+    await expect(approveKpiAllocation('kpi-plan-finalized', null)).rejects.toThrow(/read-only/i);
+    await expect(rejectKpiAllocation('kpi-plan-finalized', 'Cannot approve')).rejects.toThrow(
+      /read-only/i,
+    );
   });
 
   it('displays progress over 100 percent', async () => {
@@ -2774,6 +2903,40 @@ describe('KPI MVP UX', () => {
     ).toThrow();
   });
 
+  it('strict correction DTO schema accepts backend-safe exposure and rejects raw IDs', () => {
+    const correction = makeCorrection(300000);
+
+    expect(parseKpiCorrectionListResponseForTest({ data: [correction] })[0]).toMatchObject({
+      id: 'correction-test',
+      actualEntryId: 'actual-locked',
+      correctedValue: 300000,
+      reason: 'Operational correction',
+    });
+    expect(
+      parseKpiCorrectionMutationResponseForTest({
+        data: {
+          actualEntry: makeActualEntry('actual-locked', 'REVENUE_VND', 300000),
+          correction,
+        },
+      }).correction.correctedValue,
+    ).toBe(300000);
+    expect(() =>
+      parseKpiCorrectionListResponseForTest({
+        data: [{ ...correction, correctedByActorId: 'user-admin' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      parseKpiCorrectionListResponseForTest({
+        data: [{ ...correction, memberTalentId: 'talent-002' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      parseKpiCorrectionListResponseForTest({
+        data: [{ ...correction, memberEmploymentProfileId: 'employment-profile-002' }],
+      }),
+    ).toThrow();
+  });
+
   it('strict API schema accepts actual status and excuse DTOs and rejects invalid status values', () => {
     const grid = makeActualStatusGrid();
     expect(parseKpiActualDailyGridResponseForTest({ data: grid }).rows[1].metrics[0]).toMatchObject(
@@ -3328,13 +3491,11 @@ const makeCorrection = (value: number) => ({
   actualEntryId: 'actual-locked',
   kpiPlanId: 'kpi-plan-published',
   allocationId: 'kpi-plan-published-alloc-2',
-  memberTalentId: 'talent-002',
   metricCode: 'REVENUE_VND',
   actualDate: '16-05-2026',
   previousValue: 250000,
   correctedValue: value,
-  reason: 'Payroll correction',
-  correctedByActorId: 'user-admin',
+  reason: 'Operational correction',
   correctedAt: 1,
   createdAt: 1,
 });

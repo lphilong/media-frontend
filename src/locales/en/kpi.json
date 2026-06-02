@@ -308,10 +308,15 @@
     "finalizePublishedOnly": "Only published plans can be finalized.",
     "alreadyArchived": "Plan is already archived."
   },
+  "errors": {
+    "correctionDirectEditWindow": "Use direct edit before the daily cutoff. Correction is available after the direct-edit window closes.",
+    "correctionActiveExcuse": "Unmark the excuse or not-required status before correction.",
+    "finalizedReadOnly": "Finalized KPI is read-only."
+  },
   "confirm": {
     "publish": "Publish this KPI plan? Targets and allocations will be locked.",
     "archive": "Archive this KPI plan?",
-    "finalize": "Finalize this KPI plan? Finalizing locks actuals and corrections for payroll/reporting."
+    "finalize": "Finalize this KPI plan? Finalizing locks actuals and corrections."
   },
   "feedback": {
     "created": "KPI plan created.",
@@ -344,6 +349,7 @@
     "actualWorkspaceDetailLoadErrorMessage": "Unable to load the selected group plan detail.",
     "actualGridLoadErrorTitle": "Unable to load actual grid",
     "actualGridLoadErrorMessage": "Unable to load the actual grid for the selected date.",
-    "actualExcuseMutationErrorMessage": "Unable to update the actual excuse."
+    "actualExcuseMutationErrorMessage": "Unable to update the actual excuse.",
+    "correctionMutationErrorMessage": "Unable to submit the correction."
   }
 }
