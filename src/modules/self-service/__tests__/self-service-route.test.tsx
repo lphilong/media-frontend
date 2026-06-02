@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { act, cleanup, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
@@ -78,6 +78,74 @@ const renderRoute = async (path: string, setup?: () => void): Promise<void> => {
     renderAppWithProviders(<RouterProvider router={router} />);
   });
 };
+
+const makeSelfServiceKpiItem = (
+  overrides: Partial<{
+    kpiPlanId: string;
+    planCode: string;
+    title: string;
+    periodMonth: string;
+    periodStartAt: number;
+    periodEndAt: number;
+    officialStatus: 'OFFICIAL_PUBLISHED' | 'OFFICIAL_FINALIZED';
+    isCurrentPeriod: boolean;
+    isPreviousPeriod: boolean;
+    lastUpdatedAt: number;
+    metrics: Array<{
+      metricCode:
+        | 'REVENUE_VND'
+        | 'CONTENT_OUTPUT_COUNT'
+        | 'LIVE_HOURS'
+        | 'EVENT_COMPLETION_COUNT'
+        | 'ONBOARDED_TALENT_COUNT';
+      unit: 'VND' | 'COUNT' | 'HOUR';
+      targetValue: number;
+      actualValue: number;
+      progressPercent: number | null;
+    }>;
+    actualEntryStatusSummary: {
+      expectedEntryCount: number;
+      enteredEntryCount: number;
+      enteredZeroCount: number;
+      pendingEntryCount: number;
+      overdueEntryCount: number;
+      excusedEntryCount: number;
+      notRequiredEntryCount: number;
+      notDueEntryCount: number;
+    };
+  }> = {},
+) => ({
+  kpiPlanId: overrides.kpiPlanId ?? 'kpi-plan-current',
+  planCode: overrides.planCode ?? 'KPI-SELF-202606',
+  title: overrides.title ?? 'June creator KPI',
+  periodMonth: overrides.periodMonth ?? '2026-06',
+  periodStartAt: overrides.periodStartAt ?? Date.UTC(2026, 5, 1, -7, 0),
+  periodEndAt: overrides.periodEndAt ?? Date.UTC(2026, 6, 1, -7, 0) - 1,
+  officialStatus: overrides.officialStatus ?? 'OFFICIAL_PUBLISHED',
+  isCurrentPeriod: overrides.isCurrentPeriod ?? true,
+  isPreviousPeriod: overrides.isPreviousPeriod ?? false,
+  isReadOnly: true as const,
+  lastUpdatedAt: overrides.lastUpdatedAt ?? Date.UTC(2026, 5, 10, 4, 0),
+  metrics: overrides.metrics ?? [
+    {
+      metricCode: 'REVENUE_VND' as const,
+      unit: 'VND' as const,
+      targetValue: 10000000,
+      actualValue: 4500000,
+      progressPercent: 45,
+    },
+  ],
+  actualEntryStatusSummary: overrides.actualEntryStatusSummary ?? {
+    expectedEntryCount: 62,
+    enteredEntryCount: 12,
+    enteredZeroCount: 1,
+    pendingEntryCount: 4,
+    overdueEntryCount: 2,
+    excusedEntryCount: 1,
+    notRequiredEntryCount: 1,
+    notDueEntryCount: 42,
+  },
+});
 
 describe('/self-service route', () => {
   it('routes staff actors from root landing into the self-service shell', async () => {
@@ -536,6 +604,196 @@ describe('/self-service route', () => {
     ).toBeNull();
   });
 
+  it('renders the new My KPI current, history, finalized status, and status summary contract', async () => {
+    let adminKpiCalls = 0;
+    let actualExcuseCalls = 0;
+    const current = makeSelfServiceKpiItem({
+      kpiPlanId: 'kpi-plan-current-june',
+      title: 'June creator KPI',
+      periodMonth: '2026-06',
+    });
+    const latestPrevious = makeSelfServiceKpiItem({
+      kpiPlanId: 'kpi-plan-previous-may',
+      planCode: 'KPI-SELF-202605',
+      title: 'May creator KPI',
+      periodMonth: '2026-05',
+      isCurrentPeriod: false,
+      isPreviousPeriod: true,
+      actualEntryStatusSummary: {
+        expectedEntryCount: 60,
+        enteredEntryCount: 58,
+        enteredZeroCount: 2,
+        pendingEntryCount: 0,
+        overdueEntryCount: 0,
+        excusedEntryCount: 1,
+        notRequiredEntryCount: 1,
+        notDueEntryCount: 0,
+      },
+    });
+    const finalizedPrevious = makeSelfServiceKpiItem({
+      kpiPlanId: 'kpi-plan-previous-april',
+      planCode: 'KPI-SELF-202604',
+      title: 'April creator KPI',
+      periodMonth: '2026-04',
+      officialStatus: 'OFFICIAL_FINALIZED',
+      isCurrentPeriod: false,
+      isPreviousPeriod: true,
+      actualEntryStatusSummary: {
+        expectedEntryCount: 62,
+        enteredEntryCount: 62,
+        enteredZeroCount: 0,
+        pendingEntryCount: 0,
+        overdueEntryCount: 0,
+        excusedEntryCount: 0,
+        notRequiredEntryCount: 0,
+        notDueEntryCount: 0,
+      },
+    });
+
+    await renderRoute('/self-service', () => {
+      setMockSelfServiceKpi({
+        items: [current],
+        current,
+        latestPrevious,
+        history: [latestPrevious, finalizedPrevious],
+      });
+      server.use(
+        http.get('*/admin/kpi*', () => {
+          adminKpiCalls += 1;
+          return HttpResponse.json({ data: [] });
+        }),
+        http.all('*/admin/kpi/plans/:kpiPlanId/actual-excuses*', () => {
+          actualExcuseCalls += 1;
+          return HttpResponse.json({ data: [] });
+        }),
+      );
+    });
+
+    expect(await screen.findByText('June creator KPI')).toBeInTheDocument();
+    expect(screen.getByText('Current period')).toBeInTheDocument();
+    expect(screen.getByText('Previous KPI history')).toBeInTheDocument();
+    expect(screen.getByText('May creator KPI')).toBeInTheDocument();
+    expect(screen.getByText('April creator KPI')).toBeInTheDocument();
+    expect(screen.getByText('Official finalized')).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('self-service-kpi-current')).getByText('June creator KPI'),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('self-service-kpi-current')).queryByText('May creator KPI'),
+    ).toBeNull();
+
+    const historyCards = within(screen.getByTestId('self-service-kpi-history')).getAllByTestId(
+      'self-service-kpi-item',
+    );
+    expect(historyCards[0]).toHaveTextContent('May creator KPI');
+    expect(historyCards[1]).toHaveTextContent('April creator KPI');
+
+    const currentSummary = within(screen.getAllByTestId('self-service-kpi-status-summary')[0]);
+    expect(currentSummary.getByText('Actual status summary')).toBeInTheDocument();
+    expect(
+      currentSummary.getByText('Status is based on manager-entered daily actuals. Read-only.'),
+    ).toBeInTheDocument();
+    expect(currentSummary.getByText('Entered zero')).toBeInTheDocument();
+    expect(currentSummary.getByText('Overdue')).toBeInTheDocument();
+    expect(currentSummary.getByText('Excused')).toBeInTheDocument();
+    expect(currentSummary.getByText('Not required')).toBeInTheDocument();
+    expect(currentSummary.getAllByText('1').length).toBeGreaterThanOrEqual(3);
+    expect(currentSummary.getByText('2')).toBeInTheDocument();
+
+    const bodyText = document.body.textContent ?? '';
+    for (const forbidden of [
+      'memberTalentId',
+      'memberEmploymentProfileId',
+      'allocationId',
+      'submittedByActorId',
+      'approvedByActorId',
+      'actualExcuse',
+      'actorId',
+    ]) {
+      expect(bodyText).not.toContain(forbidden);
+    }
+    expect(
+      screen.queryByRole('button', {
+        name: /enter|actual|correct|correction|mark|unmark|excuse|approve|publish|submit|reject|edit|request/i,
+      }),
+    ).toBeNull();
+    await waitFor(() => {
+      expect(adminKpiCalls).toBe(0);
+      expect(actualExcuseCalls).toBe(0);
+    });
+  });
+
+  it('keeps current separate from previous and shows latest previous only as read-only context', async () => {
+    const latestPrevious = makeSelfServiceKpiItem({
+      kpiPlanId: 'kpi-plan-previous-only',
+      title: 'May creator KPI',
+      periodMonth: '2026-05',
+      isCurrentPeriod: false,
+      isPreviousPeriod: true,
+    });
+
+    await renderRoute('/self-service', () =>
+      setMockSelfServiceKpi({
+        items: [],
+        current: null,
+        latestPrevious,
+        history: [latestPrevious],
+      }),
+    );
+
+    expect(
+      await screen.findByText('No current-period KPI has been published yet.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Previous KPI history is shown below if available.'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('self-service-kpi-latest-previous')).toHaveTextContent(
+      'May creator KPI',
+    );
+    expect(screen.getAllByText('Previous period').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Not current KPI').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Read-only').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('No official KPI')).not.toBeInTheDocument();
+  });
+
+  it('uses items only as old-shape current compatibility and does not invent previous history', async () => {
+    server.use(
+      http.get('*/self-service/kpi', () =>
+        HttpResponse.json({
+          data: {
+            items: [
+              {
+                kpiPlanId: 'kpi-plan-old-shape',
+                title: 'Old shape current KPI',
+                periodMonth: '2026-06',
+                periodStartAt: Date.UTC(2026, 5, 1, -7, 0),
+                periodEndAt: Date.UTC(2026, 6, 1, -7, 0) - 1,
+                officialStatus: 'OFFICIAL_PUBLISHED',
+                lastUpdatedAt: Date.UTC(2026, 5, 10, 4, 0),
+                metrics: [
+                  {
+                    metricCode: 'LIVE_HOURS',
+                    unit: 'HOUR',
+                    targetValue: 40,
+                    actualValue: 20,
+                    progressPercent: 50,
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+      ),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByText('Old shape current KPI')).toBeInTheDocument();
+    expect(screen.getByText('Current period')).toBeInTheDocument();
+    expect(screen.getByText('No previous KPI history')).toBeInTheDocument();
+    expect(screen.getAllByTestId('self-service-kpi-item')).toHaveLength(1);
+  });
+
   it('renders read-only My Talent Groups from the self-service endpoint only', async () => {
     let selfServiceTalentGroupCalls = 0;
     let adminTalentGroupCalls = 0;
@@ -682,12 +940,13 @@ describe('/self-service route', () => {
   it('renders My KPI empty, loading, and error states safely', async () => {
     await renderRoute('/self-service', () => setMockSelfServiceKpi([]));
 
-    expect(await screen.findByText('No official KPI')).toBeInTheDocument();
     expect(
-      await screen.findByText(
-        'No published KPI allocation is available for your linked internal Talent yet.',
-      ),
+      await screen.findByText('No current-period KPI has been published yet.'),
     ).toBeInTheDocument();
+    expect(await screen.findAllByText('Previous KPI history is not available yet.')).toHaveLength(
+      2,
+    );
+    expect(await screen.findByText('No previous KPI history')).toBeInTheDocument();
 
     let resolveKpi: () => void = () => {};
     const pendingKpi = new Promise<void>((resolve) => {
@@ -696,7 +955,9 @@ describe('/self-service route', () => {
     server.use(
       http.get('*/self-service/kpi', async () => {
         await pendingKpi;
-        return HttpResponse.json({ data: { items: [] } });
+        return HttpResponse.json({
+          data: { items: [], current: null, latestPrevious: null, history: [] },
+        });
       }),
     );
 

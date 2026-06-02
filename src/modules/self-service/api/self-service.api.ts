@@ -155,16 +155,34 @@ const selfServiceKpiMetricSchema = z
   })
   .strict();
 
+const selfServiceKpiActualEntryStatusSummarySchema = z
+  .object({
+    expectedEntryCount: z.number().int().nonnegative(),
+    enteredEntryCount: z.number().int().nonnegative(),
+    enteredZeroCount: z.number().int().nonnegative(),
+    pendingEntryCount: z.number().int().nonnegative(),
+    overdueEntryCount: z.number().int().nonnegative(),
+    excusedEntryCount: z.number().int().nonnegative(),
+    notRequiredEntryCount: z.number().int().nonnegative(),
+    notDueEntryCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
 const selfServiceKpiItemSchema = z
   .object({
     kpiPlanId: z.string().trim().min(1),
+    planCode: z.string().trim().min(1).optional(),
     title: z.string().trim().min(1),
     periodMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
     periodStartAt: z.number().int(),
     periodEndAt: z.number().int(),
-    officialStatus: z.literal('OFFICIAL_PUBLISHED'),
+    officialStatus: z.enum(['OFFICIAL_PUBLISHED', 'OFFICIAL_FINALIZED']),
+    isCurrentPeriod: z.boolean().optional(),
+    isPreviousPeriod: z.boolean().optional(),
+    isReadOnly: z.literal(true).optional(),
     lastUpdatedAt: z.number().int(),
     metrics: z.array(selfServiceKpiMetricSchema),
+    actualEntryStatusSummary: selfServiceKpiActualEntryStatusSummarySchema.optional(),
   })
   .strict();
 
@@ -173,6 +191,9 @@ const selfServiceKpiResponseSchema = z
     data: z
       .object({
         items: z.array(selfServiceKpiItemSchema),
+        current: selfServiceKpiItemSchema.nullable().optional(),
+        latestPrevious: selfServiceKpiItemSchema.nullable().optional(),
+        history: z.array(selfServiceKpiItemSchema).optional(),
         meta: z.record(z.string(), z.unknown()).optional(),
       })
       .strict(),
@@ -181,7 +202,17 @@ const selfServiceKpiResponseSchema = z
 
 export type SelfServiceKpiItem = z.infer<typeof selfServiceKpiItemSchema>;
 export type SelfServiceKpiMetric = z.infer<typeof selfServiceKpiMetricSchema>;
+export type SelfServiceKpiActualEntryStatusSummary = z.infer<
+  typeof selfServiceKpiActualEntryStatusSummarySchema
+>;
 export type SelfServiceKpiMeta = z.infer<typeof selfServiceKpiResponseSchema>['data']['meta'];
+export type SelfServiceKpiEnvelope = {
+  items: SelfServiceKpiItem[];
+  current?: SelfServiceKpiItem | null;
+  latestPrevious?: SelfServiceKpiItem | null;
+  history?: SelfServiceKpiItem[];
+  meta?: SelfServiceKpiMeta;
+};
 
 const selfServiceTalentGroupManagerSchema = z
   .object({
@@ -316,16 +347,23 @@ export const useSelfServiceEvents = (enabled = true) =>
     retry: false,
   });
 
-export const fetchSelfServiceKpi = async (): Promise<
-  SelfServiceListEnvelope<SelfServiceKpiItem, SelfServiceKpiMeta>
-> => {
+export const fetchSelfServiceKpi = async (): Promise<SelfServiceKpiEnvelope> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/self-service/kpi',
   });
   const parsed = selfServiceKpiResponseSchema.parse(response);
+  const hasCurrent = Object.prototype.hasOwnProperty.call(parsed.data, 'current');
+  const hasLatestPrevious = Object.prototype.hasOwnProperty.call(parsed.data, 'latestPrevious');
+  const hasHistory = Object.prototype.hasOwnProperty.call(parsed.data, 'history');
 
-  return { items: parsed.data.items, meta: parsed.data.meta };
+  return {
+    items: parsed.data.items,
+    ...(hasCurrent ? { current: parsed.data.current } : {}),
+    ...(hasLatestPrevious ? { latestPrevious: parsed.data.latestPrevious } : {}),
+    ...(hasHistory ? { history: parsed.data.history ?? [] } : {}),
+    meta: parsed.data.meta,
+  };
 };
 
 export const useSelfServiceKpi = (enabled = true) =>

@@ -40,11 +40,15 @@ type SelfServiceEvent = {
 
 type SelfServiceKpiItem = {
   kpiPlanId: string;
+  planCode?: string;
   title: string;
   periodMonth: string;
   periodStartAt: number;
   periodEndAt: number;
-  officialStatus: 'OFFICIAL_PUBLISHED';
+  officialStatus: 'OFFICIAL_PUBLISHED' | 'OFFICIAL_FINALIZED';
+  isCurrentPeriod?: boolean;
+  isPreviousPeriod?: boolean;
+  isReadOnly?: true;
   lastUpdatedAt: number;
   metrics: Array<{
     metricCode:
@@ -58,6 +62,23 @@ type SelfServiceKpiItem = {
     actualValue: number;
     progressPercent: number | null;
   }>;
+  actualEntryStatusSummary?: {
+    expectedEntryCount: number;
+    enteredEntryCount: number;
+    enteredZeroCount: number;
+    pendingEntryCount: number;
+    overdueEntryCount: number;
+    excusedEntryCount: number;
+    notRequiredEntryCount: number;
+    notDueEntryCount: number;
+  };
+};
+
+type SelfServiceKpiResponse = {
+  items: SelfServiceKpiItem[];
+  current?: SelfServiceKpiItem | null;
+  latestPrevious?: SelfServiceKpiItem | null;
+  history?: SelfServiceKpiItem[];
 };
 
 type SelfServiceTalentGroup = {
@@ -191,11 +212,15 @@ const selfServiceKpiFixtureSource = {
   returned: [
     {
       kpiPlanId: 'kpi-plan-self-published',
+      planCode: 'KPI-SELF-202605',
       title: 'May creator KPI',
       periodMonth: '2026-05',
       periodStartAt: Date.UTC(2026, 4, 1, -7, 0),
       periodEndAt: Date.UTC(2026, 5, 1, -7, 0) - 1,
       officialStatus: 'OFFICIAL_PUBLISHED',
+      isCurrentPeriod: true,
+      isPreviousPeriod: false,
+      isReadOnly: true,
       lastUpdatedAt: Date.UTC(2026, 4, 20, 4, 0),
       metrics: [
         {
@@ -213,6 +238,16 @@ const selfServiceKpiFixtureSource = {
           progressPercent: 31.25,
         },
       ],
+      actualEntryStatusSummary: {
+        expectedEntryCount: 62,
+        enteredEntryCount: 12,
+        enteredZeroCount: 1,
+        pendingEntryCount: 4,
+        overdueEntryCount: 2,
+        excusedEntryCount: 1,
+        notRequiredEntryCount: 1,
+        notDueEntryCount: 42,
+      },
       managerNote: 'manager note hidden from self-service',
       approvalNote: 'approval note hidden from self-service',
       submittedByActorId: 'manager-user',
@@ -221,6 +256,72 @@ const selfServiceKpiFixtureSource = {
       payrollBonusCommissionFinanceCommercial: 'payroll bonus commission finance commercial',
       groupTotal: 999999,
       otherMemberDisplayName: 'Other Staff',
+    },
+  ],
+  previous: [
+    {
+      kpiPlanId: 'kpi-plan-self-april-published',
+      planCode: 'KPI-SELF-202604',
+      title: 'April creator KPI',
+      periodMonth: '2026-04',
+      periodStartAt: Date.UTC(2026, 3, 1, -7, 0),
+      periodEndAt: Date.UTC(2026, 4, 1, -7, 0) - 1,
+      officialStatus: 'OFFICIAL_PUBLISHED',
+      isCurrentPeriod: false,
+      isPreviousPeriod: true,
+      isReadOnly: true,
+      lastUpdatedAt: Date.UTC(2026, 3, 30, 4, 0),
+      metrics: [
+        {
+          metricCode: 'REVENUE_VND',
+          unit: 'VND',
+          targetValue: 9000000,
+          actualValue: 8200000,
+          progressPercent: 91.11,
+        },
+      ],
+      actualEntryStatusSummary: {
+        expectedEntryCount: 60,
+        enteredEntryCount: 58,
+        enteredZeroCount: 2,
+        pendingEntryCount: 0,
+        overdueEntryCount: 0,
+        excusedEntryCount: 1,
+        notRequiredEntryCount: 1,
+        notDueEntryCount: 0,
+      },
+    },
+    {
+      kpiPlanId: 'kpi-plan-self-march-finalized',
+      planCode: 'KPI-SELF-202603',
+      title: 'March creator KPI',
+      periodMonth: '2026-03',
+      periodStartAt: Date.UTC(2026, 2, 1, -7, 0),
+      periodEndAt: Date.UTC(2026, 3, 1, -7, 0) - 1,
+      officialStatus: 'OFFICIAL_FINALIZED',
+      isCurrentPeriod: false,
+      isPreviousPeriod: true,
+      isReadOnly: true,
+      lastUpdatedAt: Date.UTC(2026, 2, 31, 4, 0),
+      metrics: [
+        {
+          metricCode: 'LIVE_HOURS',
+          unit: 'HOUR',
+          targetValue: 35,
+          actualValue: 36,
+          progressPercent: 102.86,
+        },
+      ],
+      actualEntryStatusSummary: {
+        expectedEntryCount: 62,
+        enteredEntryCount: 62,
+        enteredZeroCount: 0,
+        pendingEntryCount: 0,
+        overdueEntryCount: 0,
+        excusedEntryCount: 0,
+        notRequiredEntryCount: 0,
+        notDueEntryCount: 0,
+      },
     },
   ],
   excluded: [
@@ -236,13 +337,36 @@ const selfServiceKpiFixtureSource = {
 const defaultSelfServiceKpi: SelfServiceKpiItem[] = selfServiceKpiFixtureSource.returned.map(
   (item) => ({
     kpiPlanId: item.kpiPlanId,
+    planCode: item.planCode,
     title: item.title,
     periodMonth: item.periodMonth,
     periodStartAt: item.periodStartAt,
     periodEndAt: item.periodEndAt,
     officialStatus: item.officialStatus,
+    isCurrentPeriod: item.isCurrentPeriod,
+    isPreviousPeriod: item.isPreviousPeriod,
+    isReadOnly: item.isReadOnly,
     lastUpdatedAt: item.lastUpdatedAt,
     metrics: item.metrics.map((metric) => ({ ...metric })),
+    actualEntryStatusSummary: { ...item.actualEntryStatusSummary },
+  }),
+);
+
+const defaultSelfServiceKpiHistory: SelfServiceKpiItem[] = selfServiceKpiFixtureSource.previous.map(
+  (item) => ({
+    kpiPlanId: item.kpiPlanId,
+    planCode: item.planCode,
+    title: item.title,
+    periodMonth: item.periodMonth,
+    periodStartAt: item.periodStartAt,
+    periodEndAt: item.periodEndAt,
+    officialStatus: item.officialStatus,
+    isCurrentPeriod: item.isCurrentPeriod,
+    isPreviousPeriod: item.isPreviousPeriod,
+    isReadOnly: item.isReadOnly,
+    lastUpdatedAt: item.lastUpdatedAt,
+    metrics: item.metrics.map((metric) => ({ ...metric })),
+    actualEntryStatusSummary: { ...item.actualEntryStatusSummary },
   }),
 );
 
@@ -284,10 +408,35 @@ let selfServiceWorkShifts: SelfServiceWorkShift[] = defaultSelfServiceWorkShifts
 let selfServiceEvents: SelfServiceEvent[] = defaultSelfServiceEvents.map((event) => ({
   ...event,
 }));
-let selfServiceKpi: SelfServiceKpiItem[] = defaultSelfServiceKpi.map((item) => ({
+const cloneSelfServiceKpiItem = (item: SelfServiceKpiItem): SelfServiceKpiItem => ({
   ...item,
   metrics: item.metrics.map((metric) => ({ ...metric })),
-}));
+  actualEntryStatusSummary: item.actualEntryStatusSummary
+    ? { ...item.actualEntryStatusSummary }
+    : undefined,
+});
+
+const cloneSelfServiceKpiResponse = (value: SelfServiceKpiResponse): SelfServiceKpiResponse => ({
+  items: value.items.map(cloneSelfServiceKpiItem),
+  ...(Object.prototype.hasOwnProperty.call(value, 'current')
+    ? { current: value.current ? cloneSelfServiceKpiItem(value.current) : null }
+    : {}),
+  ...(Object.prototype.hasOwnProperty.call(value, 'latestPrevious')
+    ? {
+        latestPrevious: value.latestPrevious ? cloneSelfServiceKpiItem(value.latestPrevious) : null,
+      }
+    : {}),
+  ...(Object.prototype.hasOwnProperty.call(value, 'history')
+    ? { history: (value.history ?? []).map(cloneSelfServiceKpiItem) }
+    : {}),
+});
+
+let selfServiceKpi: SelfServiceKpiResponse = cloneSelfServiceKpiResponse({
+  items: defaultSelfServiceKpi,
+  current: defaultSelfServiceKpi[0] ?? null,
+  latestPrevious: defaultSelfServiceKpiHistory[0] ?? null,
+  history: defaultSelfServiceKpiHistory,
+});
 let selfServiceTalentGroups: SelfServiceTalentGroup[] = defaultSelfServiceTalentGroups.map(
   (group) => ({
     ...group,
@@ -303,10 +452,12 @@ export const resetSelfServiceMockData = (): void => {
   };
   selfServiceWorkShifts = defaultSelfServiceWorkShifts.map((shift) => ({ ...shift }));
   selfServiceEvents = defaultSelfServiceEvents.map((event) => ({ ...event }));
-  selfServiceKpi = defaultSelfServiceKpi.map((item) => ({
-    ...item,
-    metrics: item.metrics.map((metric) => ({ ...metric })),
-  }));
+  selfServiceKpi = cloneSelfServiceKpiResponse({
+    items: defaultSelfServiceKpi,
+    current: defaultSelfServiceKpi[0] ?? null,
+    latestPrevious: defaultSelfServiceKpiHistory[0] ?? null,
+    history: defaultSelfServiceKpiHistory,
+  });
   selfServiceTalentGroups = defaultSelfServiceTalentGroups.map((group) => ({
     ...group,
     managers: group.managers.map((manager) => ({ ...manager })),
@@ -331,11 +482,20 @@ export const setMockSelfServiceEvents = (value: SelfServiceEvent[]): void => {
   selfServiceEvents = value.map((event) => ({ ...event }));
 };
 
-export const setMockSelfServiceKpi = (value: SelfServiceKpiItem[]): void => {
-  selfServiceKpi = value.map((item) => ({
-    ...item,
-    metrics: item.metrics.map((metric) => ({ ...metric })),
-  }));
+export const setMockSelfServiceKpi = (
+  value: SelfServiceKpiItem[] | SelfServiceKpiResponse,
+): void => {
+  if (Array.isArray(value)) {
+    selfServiceKpi = cloneSelfServiceKpiResponse({
+      items: value,
+      current: value[0] ?? null,
+      latestPrevious: null,
+      history: [],
+    });
+    return;
+  }
+
+  selfServiceKpi = cloneSelfServiceKpiResponse(value);
 };
 
 export const setMockSelfServiceTalentGroups = (value: SelfServiceTalentGroup[]): void => {
@@ -410,9 +570,7 @@ export const selfServiceHandlers = [
   }),
   http.get('*/self-service/kpi', () => {
     return HttpResponse.json({
-      data: {
-        items: selfServiceKpi,
-      },
+      data: selfServiceKpi,
     });
   }),
   http.get('*/self-service/talent-groups', () => {

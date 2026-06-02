@@ -22,6 +22,8 @@ import {
   type SelfServiceAccountPreferencesPayload,
   type SelfServiceCurrentPerson,
   type SelfServiceWorkShift,
+  type SelfServiceKpiActualEntryStatusSummary,
+  type SelfServiceKpiItem,
   type SelfServiceKpiMetric,
   useSelfServiceCurrentPerson,
   useSelfServiceEvents,
@@ -83,6 +85,7 @@ const statusTone = {
   INTERNAL: 'info',
   EXTERNAL: 'warning',
   OFFICIAL_PUBLISHED: 'success',
+  OFFICIAL_FINALIZED: 'success',
 } as const;
 
 const emptyValue = (value: string | null | undefined, fallback: string): string =>
@@ -115,6 +118,147 @@ const formatMetricValue = (metric: SelfServiceKpiMetric, value: number): string 
   }
 
   return formatDecimal(value, 'vi-VN', metric.unit === 'HOUR' ? 2 : 0);
+};
+
+const kpiSummaryFields: Array<{
+  key: keyof SelfServiceKpiActualEntryStatusSummary;
+  labelKey: string;
+}> = [
+  { key: 'expectedEntryCount', labelKey: 'self-service:kpiStatusSummary.expected' },
+  { key: 'enteredEntryCount', labelKey: 'self-service:kpiStatusSummary.entered' },
+  { key: 'enteredZeroCount', labelKey: 'self-service:kpiStatusSummary.enteredZero' },
+  { key: 'pendingEntryCount', labelKey: 'self-service:kpiStatusSummary.dueOpen' },
+  { key: 'overdueEntryCount', labelKey: 'self-service:kpiStatusSummary.overdue' },
+  { key: 'excusedEntryCount', labelKey: 'self-service:kpiStatusSummary.excused' },
+  { key: 'notRequiredEntryCount', labelKey: 'self-service:kpiStatusSummary.notRequired' },
+  { key: 'notDueEntryCount', labelKey: 'self-service:kpiStatusSummary.notDue' },
+];
+
+type SelfServiceKpiCardProps = {
+  item: SelfServiceKpiItem;
+  periodKind: 'current' | 'previous';
+  notAvailable: string;
+};
+
+const SelfServiceKpiCard = ({
+  item,
+  periodKind,
+  notAvailable,
+}: SelfServiceKpiCardProps): JSX.Element => {
+  const { t } = useTranslation(['self-service']);
+  const summary = item.actualEntryStatusSummary;
+
+  return (
+    <article
+      className="rounded border border-border bg-bg p-3"
+      data-period-kind={periodKind}
+      data-testid="self-service-kpi-item"
+    >
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold text-text">{item.title}</h3>
+            <StatusBadge
+              label={t(`self-service:kpiPeriod.${periodKind}`)}
+              tone={periodKind === 'current' ? 'info' : 'neutral'}
+              uppercase={false}
+            />
+            {periodKind === 'previous' ? (
+              <>
+                <StatusBadge
+                  label={t('self-service:kpiPeriod.notCurrent')}
+                  tone="neutral"
+                  uppercase={false}
+                />
+                <StatusBadge
+                  label={t('self-service:status.readOnly')}
+                  tone="neutral"
+                  uppercase={false}
+                />
+              </>
+            ) : null}
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            {t('self-service:kpiFields.period')}: {item.periodMonth}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge
+            label={t(`self-service:kpiStatus.${item.officialStatus}`)}
+            status={item.officialStatus}
+            toneByStatus={statusTone}
+            uppercase={false}
+          />
+          <span className="text-xs text-muted">
+            {t('self-service:kpiFields.lastUpdatedAt')}:{' '}
+            {formatBusinessTimestamp(item.lastUpdatedAt)}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-3 overflow-x-auto">
+        <table className="min-w-full text-left text-sm" aria-label={t('self-service:tables.kpi')}>
+          <thead className="border-b border-border text-xs uppercase text-muted">
+            <tr>
+              <th className="px-3 py-2 font-medium">{t('self-service:kpiFields.metric')}</th>
+              <th className="px-3 py-2 font-medium">{t('self-service:kpiFields.target')}</th>
+              <th className="px-3 py-2 font-medium">{t('self-service:kpiFields.actual')}</th>
+              <th className="px-3 py-2 font-medium">{t('self-service:kpiFields.progress')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {item.metrics.map((metric) => (
+              <tr
+                key={`${item.kpiPlanId}-${metric.metricCode}`}
+                data-testid="self-service-kpi-metric-row"
+              >
+                <td className="px-3 py-3 font-medium text-text">
+                  {t(`self-service:kpiMetric.${metric.metricCode}`)}
+                </td>
+                <td className="px-3 py-3">
+                  {formatMetricValue(metric, metric.targetValue)}{' '}
+                  {t(`self-service:kpiUnit.${metric.unit}`)}
+                </td>
+                <td className="px-3 py-3">
+                  {formatMetricValue(metric, metric.actualValue)}{' '}
+                  {t(`self-service:kpiUnit.${metric.unit}`)}
+                </td>
+                <td className="px-3 py-3">
+                  {metric.progressPercent === null
+                    ? notAvailable
+                    : formatPercent(metric.progressPercent)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {summary ? (
+        <div
+          className="mt-3 rounded border border-border bg-panel px-3 py-2"
+          data-testid="self-service-kpi-status-summary"
+        >
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h4 className="text-xs font-semibold uppercase text-muted">
+              {t('self-service:kpiStatusSummary.title')}
+            </h4>
+            <span className="text-xs text-muted">
+              {t('self-service:kpiStatusSummary.readOnlySource')}
+            </span>
+          </div>
+          <dl className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {kpiSummaryFields.map((field) => (
+              <div key={field.key} className="rounded border border-border bg-bg px-2 py-1">
+                <dt className="text-xs text-muted">{t(field.labelKey)}</dt>
+                <dd className="text-sm font-semibold text-text">{summary[field.key]}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+    </article>
+  );
 };
 
 const formatPreferenceError = (error: unknown, fallback: string): string => {
@@ -391,7 +535,12 @@ export const SelfServicePage = (): JSX.Element => {
   const workShifts = workShiftPages;
   const isLoadingMoreWorkShifts = workShiftCursor !== undefined && workShiftsQuery.isFetching;
   const kpiQuery = useSelfServiceKpi(currentPersonQuery.isSuccess);
-  const kpiItems = kpiQuery.data?.items ?? [];
+  const kpiData = kpiQuery.data;
+  const hasCurrentKpiField =
+    kpiData !== undefined && Object.prototype.hasOwnProperty.call(kpiData, 'current');
+  const currentKpi = hasCurrentKpiField ? (kpiData.current ?? null) : (kpiData?.items[0] ?? null);
+  const latestPreviousKpi = kpiData?.latestPrevious ?? null;
+  const kpiHistory = kpiData?.history ?? [];
   const eventsQuery = useSelfServiceEvents(currentPersonQuery.isSuccess);
   const events = eventsQuery.data?.items ?? [];
   const eventsMeta = eventsQuery.data?.meta;
@@ -535,92 +684,59 @@ export const SelfServicePage = (): JSX.Element => {
               />
             ) : null}
 
-            {!kpiQuery.isLoading && !kpiQuery.isError && kpiItems.length === 0 ? (
-              <EmptyState
-                title={t('self-service:empty.kpiTitle')}
-                message={t('self-service:empty.kpiMessage')}
-              />
-            ) : null}
+            {!kpiQuery.isLoading && !kpiQuery.isError ? (
+              <div className="space-y-4" data-testid="self-service-kpi-list">
+                <div className="grid gap-2" data-testid="self-service-kpi-current">
+                  <h3 className="text-sm font-semibold">{t('self-service:kpiSections.current')}</h3>
+                  {currentKpi ? (
+                    <SelfServiceKpiCard
+                      item={currentKpi}
+                      periodKind="current"
+                      notAvailable={notAvailable}
+                    />
+                  ) : (
+                    <EmptyState
+                      title={t('self-service:empty.kpiCurrentTitle')}
+                      message={t(
+                        latestPreviousKpi
+                          ? 'self-service:empty.kpiCurrentWithPreviousMessage'
+                          : 'self-service:empty.kpiCurrentMessage',
+                      )}
+                    />
+                  )}
+                </div>
 
-            {kpiItems.length > 0 ? (
-              <div className="grid gap-3" data-testid="self-service-kpi-list">
-                {kpiItems.map((item) => (
-                  <article
-                    key={item.kpiPlanId}
-                    className="rounded border border-border bg-bg p-3"
-                    data-testid="self-service-kpi-item"
-                  >
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <h3 className="text-sm font-semibold text-text">{item.title}</h3>
-                        <p className="text-xs text-muted">
-                          {t('self-service:kpiFields.period')}: {item.periodMonth}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <StatusBadge
-                          label={t(`self-service:kpiStatus.${item.officialStatus}`)}
-                          status={item.officialStatus}
-                          toneByStatus={statusTone}
-                          uppercase={false}
-                        />
-                        <span className="text-xs text-muted">
-                          {t('self-service:kpiFields.lastUpdatedAt')}:{' '}
-                          {formatBusinessTimestamp(item.lastUpdatedAt)}
-                        </span>
-                      </div>
-                    </div>
+                {!currentKpi && latestPreviousKpi ? (
+                  <div className="grid gap-2" data-testid="self-service-kpi-latest-previous">
+                    <h3 className="text-sm font-semibold">
+                      {t('self-service:kpiSections.latestPrevious')}
+                    </h3>
+                    <SelfServiceKpiCard
+                      item={latestPreviousKpi}
+                      periodKind="previous"
+                      notAvailable={notAvailable}
+                    />
+                  </div>
+                ) : null}
 
-                    <div className="mt-3 overflow-x-auto">
-                      <table
-                        className="min-w-full text-left text-sm"
-                        aria-label={t('self-service:tables.kpi')}
-                      >
-                        <thead className="border-b border-border text-xs uppercase text-muted">
-                          <tr>
-                            <th className="px-3 py-2 font-medium">
-                              {t('self-service:kpiFields.metric')}
-                            </th>
-                            <th className="px-3 py-2 font-medium">
-                              {t('self-service:kpiFields.target')}
-                            </th>
-                            <th className="px-3 py-2 font-medium">
-                              {t('self-service:kpiFields.actual')}
-                            </th>
-                            <th className="px-3 py-2 font-medium">
-                              {t('self-service:kpiFields.progress')}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                          {item.metrics.map((metric) => (
-                            <tr
-                              key={`${item.kpiPlanId}-${metric.metricCode}`}
-                              data-testid="self-service-kpi-metric-row"
-                            >
-                              <td className="px-3 py-3 font-medium text-text">
-                                {t(`self-service:kpiMetric.${metric.metricCode}`)}
-                              </td>
-                              <td className="px-3 py-3">
-                                {formatMetricValue(metric, metric.targetValue)}{' '}
-                                {t(`self-service:kpiUnit.${metric.unit}`)}
-                              </td>
-                              <td className="px-3 py-3">
-                                {formatMetricValue(metric, metric.actualValue)}{' '}
-                                {t(`self-service:kpiUnit.${metric.unit}`)}
-                              </td>
-                              <td className="px-3 py-3">
-                                {metric.progressPercent === null
-                                  ? notAvailable
-                                  : formatPercent(metric.progressPercent)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </article>
-                ))}
+                <div className="grid gap-2" data-testid="self-service-kpi-history">
+                  <h3 className="text-sm font-semibold">{t('self-service:kpiSections.history')}</h3>
+                  {kpiHistory.length > 0 ? (
+                    kpiHistory.map((item) => (
+                      <SelfServiceKpiCard
+                        key={item.kpiPlanId}
+                        item={item}
+                        periodKind="previous"
+                        notAvailable={notAvailable}
+                      />
+                    ))
+                  ) : (
+                    <EmptyState
+                      title={t('self-service:empty.kpiHistoryTitle')}
+                      message={t('self-service:empty.kpiHistoryMessage')}
+                    />
+                  )}
+                </div>
               </div>
             ) : null}
           </section>

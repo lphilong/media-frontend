@@ -74,6 +74,28 @@
     "actual": "Own actual",
     "progress": "Progress"
   },
+  "kpiSections": {
+    "current": "KPI ky hien tai",
+    "latestPrevious": "Ngu canh ky truoc",
+    "history": "Lich su KPI truoc"
+  },
+  "kpiPeriod": {
+    "current": "Ky hien tai",
+    "previous": "Ky truoc",
+    "notCurrent": "Khong phai KPI hien tai"
+  },
+  "kpiStatusSummary": {
+    "title": "Tom tat trang thai actual",
+    "readOnlySource": "Trang thai dua tren actual hang ngay do quan ly nhap. Chi doc.",
+    "expected": "Can nhap",
+    "entered": "Da nhap",
+    "enteredZero": "Da nhap 0",
+    "dueOpen": "Dang mo",
+    "overdue": "Qua han",
+    "excused": "Mien",
+    "notRequired": "Khong bat buoc",
+    "notDue": "Chua den han"
+  },
   "talentGroupFields": {
     "managers": "Quản lý",
     "members": "Thành viên"
@@ -85,7 +107,8 @@
     "talentGroups": "Nhóm Talent của tôi"
   },
   "kpiStatus": {
-    "OFFICIAL_PUBLISHED": "Official published"
+    "OFFICIAL_PUBLISHED": "Official published",
+    "OFFICIAL_FINALIZED": "Official finalized"
   },
   "kpiMetric": {
     "REVENUE_VND": "Revenue",
@@ -143,8 +166,11 @@
     "notAvailable": "Chưa có"
   },
   "empty": {
-    "kpiTitle": "No official KPI",
-    "kpiMessage": "No published KPI allocation is available for your linked internal Talent yet.",
+    "kpiCurrentTitle": "Chua co KPI ky hien tai duoc publish.",
+    "kpiCurrentMessage": "Chua co lich su KPI truoc.",
+    "kpiCurrentWithPreviousMessage": "Lich su KPI truoc duoc hien thi ben duoi neu co.",
+    "kpiHistoryTitle": "Chua co lich su KPI truoc",
+    "kpiHistoryMessage": "Chua co lich su KPI truoc.",
     "workShiftsTitle": "Chưa có ca làm",
     "workShiftsMessage": "Chưa có ca chính thức nào cho hồ sơ của bạn.",
     "eventsTitle": "Chưa có sự kiện",

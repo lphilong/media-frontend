@@ -74,6 +74,28 @@
     "actual": "Own actual",
     "progress": "Progress"
   },
+  "kpiSections": {
+    "current": "Current KPI",
+    "latestPrevious": "Previous period context",
+    "history": "Previous KPI history"
+  },
+  "kpiPeriod": {
+    "current": "Current period",
+    "previous": "Previous period",
+    "notCurrent": "Not current KPI"
+  },
+  "kpiStatusSummary": {
+    "title": "Actual status summary",
+    "readOnlySource": "Status is based on manager-entered daily actuals. Read-only.",
+    "expected": "Expected",
+    "entered": "Entered",
+    "enteredZero": "Entered zero",
+    "dueOpen": "Due open",
+    "overdue": "Overdue",
+    "excused": "Excused",
+    "notRequired": "Not required",
+    "notDue": "Not due"
+  },
   "talentGroupFields": {
     "managers": "经理",
     "members": "成员"
@@ -85,7 +107,8 @@
     "talentGroups": "我的 Talent 组"
   },
   "kpiStatus": {
-    "OFFICIAL_PUBLISHED": "Official published"
+    "OFFICIAL_PUBLISHED": "Official published",
+    "OFFICIAL_FINALIZED": "Official finalized"
   },
   "kpiMetric": {
     "REVENUE_VND": "Revenue",
@@ -143,8 +166,11 @@
     "notAvailable": "不可用"
   },
   "empty": {
-    "kpiTitle": "No official KPI",
-    "kpiMessage": "No published KPI allocation is available for your linked internal Talent yet.",
+    "kpiCurrentTitle": "No current-period KPI has been published yet.",
+    "kpiCurrentMessage": "Previous KPI history is not available yet.",
+    "kpiCurrentWithPreviousMessage": "Previous KPI history is shown below if available.",
+    "kpiHistoryTitle": "No previous KPI history",
+    "kpiHistoryMessage": "Previous KPI history is not available yet.",
     "workShiftsTitle": "暂无班次",
     "workShiftsMessage": "你的档案暂无可显示的正式班次。",
     "eventsTitle": "暂无活动",
