@@ -22,9 +22,11 @@ import {
   fetchMyKpiProgress,
   parseKpiAllocationDraftPayloadForTest,
   parseKpiAllocationListResponseForTest,
+  parseKpiActualDailyGridResponseForTest,
   parseKpiActualWorkspacePlanListResponseForTest,
   parseKpiActualWorkspacePlanDetailResponseForTest,
   parseKpiPlanListResponseForTest,
+  markKpiActualExcuse,
   performKpiLifecycleAction,
   publishKpiAllocation,
   rejectKpiAllocation,
@@ -32,6 +34,7 @@ import {
   replaceKpiTargetMetrics,
   sanitizeKpiCreatePlanPayload,
   submitKpiAllocationDraft,
+  unmarkKpiActualExcuse,
   upsertKpiAllocationDraft,
 } from '@modules/kpi/api/kpi.api';
 import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
@@ -92,7 +95,11 @@ const openPublishedActualGrid = async (): Promise<void> => {
   await screen.findByLabelText('Luna Park Revenue VND actual');
 };
 
-const mswJson = (method: 'GET' | 'POST' | 'PUT' | 'PATCH', path: string, data?: unknown) =>
+const mswJson = (
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  path: string,
+  data?: unknown,
+) =>
   fetch(`http://localhost${path}`, {
     method,
     headers: data === undefined ? undefined : { 'content-type': 'application/json' },
@@ -1660,6 +1667,57 @@ describe('KPI MVP UX', () => {
     expect(captured[0].searchParams.get('actualDate')).toBe('16-05-2026');
   });
 
+  it('displays backend daily actual statuses, safe excuse reasons, and gated excuse actions', async () => {
+    server.use(
+      http.get('*/admin/kpi/plans/:kpiPlanId/actuals', () =>
+        HttpResponse.json({ data: makeActualStatusGrid() }),
+      ),
+    );
+
+    renderRoute('/kpi');
+    await openPublishedActualGrid();
+
+    expect(await screen.findAllByText('Due open')).not.toHaveLength(0);
+    expect(screen.getAllByText('Overdue')).not.toHaveLength(0);
+    expect(screen.getAllByText('Entered')).not.toHaveLength(0);
+    expect(screen.getAllByText('Entered zero')).not.toHaveLength(0);
+    expect(screen.getAllByText('Not due')).not.toHaveLength(0);
+    expect(screen.getAllByText('Excused')).not.toHaveLength(0);
+    expect(screen.getAllByText('Not required')).not.toHaveLength(0);
+    expect(screen.getByText(/Member leave: Approved leave/i)).toBeInTheDocument();
+    expect(screen.getByText(/No operation required: No stream scheduled/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Mark excused' })).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: 'Mark not required' })).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: 'Unmark excuse' })).toHaveLength(2);
+    const limitedSignals = screen.getAllByText(/limited calendar-day signal/i);
+    expect(limitedSignals).not.toHaveLength(0);
+    limitedSignals.forEach((signal) => expect(signal.textContent).not.toMatch(/overdue/i));
+  });
+
+  it('marks and unmarks actual excuses through MSW and blocks actual entry while active', async () => {
+    renderRoute('/kpi');
+    await openPublishedActualGrid();
+
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Mark excused' }))[0]);
+    await userEvent.click(await waitForEnabledButton('Submit excuse'));
+    expect(await screen.findByText(/reason code and reason text are required/i)).toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText('Reason code'), 'MEMBER_LEAVE');
+    await userEvent.type(screen.getByLabelText('Reason text'), 'Approved leave');
+    await userEvent.click(await waitForEnabledButton('Submit excuse'));
+    expect(await screen.findByText(/Member leave: Approved leave/i)).toBeInTheDocument();
+
+    const lunaContent = await screen.findByLabelText('Luna Park Content output count actual');
+    await userEvent.clear(lunaContent);
+    await userEvent.type(lunaContent, '3');
+    await userEvent.click(await waitForEnabledButton('Save changed cells'));
+    expect(await screen.findByText(/active excuse/i)).toBeInTheDocument();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Unmark excuse' }));
+    await waitFor(() => expect(screen.queryByText(/Member leave: Approved leave/i)).not.toBeInTheDocument());
+    expect(await screen.findAllByText('Due open')).not.toHaveLength(0);
+  });
+
   it('uses neutral member copy across the actual grid, aria label, and correction panel', async () => {
     const grid = makeActualGrid();
     server.use(
@@ -1761,6 +1819,84 @@ describe('KPI MVP UX', () => {
       .toMatchObject({ isDirectEditOpen: true, disabledReason: null });
   });
 
+  it('MSW mirrors actual excuse validation, conflicts, and unmark restore', async () => {
+    vi.setSystemTime(new Date('2026-05-16T09:00:00+07:00'));
+    const basePayload = {
+      allocationId: 'kpi-plan-published-alloc-1',
+      metricCode: 'CONTENT_OUTPUT_COUNT' as const,
+      actualDate: '16-05-2026',
+      status: 'EXCUSED' as const,
+      reasonCode: 'MEMBER_LEAVE' as const,
+      reasonText: 'Approved leave',
+    };
+
+    expect(
+      (
+        await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actual-excuses', {
+          ...basePayload,
+          unexpected: true,
+        })
+      ).status,
+    ).toBe(422);
+    expect(
+      (
+        await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actual-excuses', {
+          ...basePayload,
+          reasonText: '',
+        })
+      ).status,
+    ).toBe(422);
+    expect(
+      (
+        await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actual-excuses', {
+          ...basePayload,
+          status: 'WAIVED',
+        })
+      ).status,
+    ).toBe(422);
+    await expect(
+      markKpiActualExcuse({
+        ...basePayload,
+        kpiPlanId: 'kpi-plan-published',
+        metricCode: 'REVENUE_VND',
+      }),
+    ).rejects.toThrow(/actual entry already exists/i);
+
+    await markKpiActualExcuse({ ...basePayload, kpiPlanId: 'kpi-plan-published' });
+    const excusedGrid = await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026');
+    const excusedCell = excusedGrid.rows[0].metrics.find(
+      (metric) => metric.metricCode === 'CONTENT_OUTPUT_COUNT',
+    );
+    expect(excusedCell).toMatchObject({
+      dailyActualStatus: 'EXCUSED',
+      canUnmarkExcused: true,
+      actualExcuse: { reasonCode: 'MEMBER_LEAVE' },
+    });
+    expect(
+      (
+        await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', {
+          allocationId: 'kpi-plan-published-alloc-1',
+          metricCode: 'CONTENT_OUTPUT_COUNT',
+          actualDate: '16-05-2026',
+          actualValue: 3,
+        })
+      ).status,
+    ).toBe(409);
+
+    await unmarkKpiActualExcuse({
+      kpiPlanId: 'kpi-plan-published',
+      excuseId: excusedCell?.actualExcuse?.id ?? '',
+    });
+    const restoredGrid = await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026');
+    expect(
+      restoredGrid.rows[0].metrics.find((metric) => metric.metricCode === 'CONTENT_OUTPUT_COUNT'),
+    ).toMatchObject({
+      dailyActualStatus: 'DUE_OPEN',
+      actualExcuse: null,
+      canMarkExcused: true,
+    });
+  });
+
   it('uses POST for missing actual cells and PATCH for existing editable cells', async () => {
     let posted = false;
     let patched = false;
@@ -1813,7 +1949,7 @@ describe('KPI MVP UX', () => {
     await userEvent.clear(lunaContent);
     await userEvent.type(lunaContent, '3');
     await userEvent.click(await waitForEnabledButton('Save changed cells'));
-    expect(await screen.findByText(/already exists with a different value/i)).toBeInTheDocument();
+    expect(await screen.findByText(/duplicate actual with different value/i)).toBeInTheDocument();
   });
 
   it('requires correction reason and sends numeric corrected value', async () => {
@@ -2415,6 +2551,65 @@ describe('KPI MVP UX', () => {
     ).toThrow();
   });
 
+  it('strict API schema accepts actual status and excuse DTOs and rejects invalid status values', () => {
+    const grid = makeActualStatusGrid();
+    expect(parseKpiActualDailyGridResponseForTest({ data: grid }).rows[1].metrics[0])
+      .toMatchObject({
+        dailyActualStatus: 'EXCUSED',
+        actualExcuse: {
+          id: 'excuse-ui',
+          reasonCode: 'MEMBER_LEAVE',
+          reasonText: 'Approved leave',
+        },
+        canUnmarkExcused: true,
+      });
+    expect(
+      parseKpiActualWorkspacePlanListResponseForTest({
+        data: [makeActualWorkspaceSummary()],
+      }).data[0].actualEntryStatusSummary.excusedEntryCount,
+    ).toBe(1);
+    expect(() =>
+      parseKpiActualDailyGridResponseForTest({
+        data: {
+          ...grid,
+          rows: [
+            {
+              ...grid.rows[0],
+              metrics: [{ ...grid.rows[0].metrics[0], dailyActualStatus: 'MISSING' }],
+            },
+          ],
+        },
+      }),
+    ).toThrow();
+    expect(() =>
+      parseKpiActualDailyGridResponseForTest({
+        data: {
+          ...grid,
+          rows: [
+            {
+              ...grid.rows[1],
+              metrics: [
+                {
+                  ...grid.rows[1].metrics[0],
+                  actualExcuse: {
+                    id: 'invalid-excuse',
+                    status: 'WAIVED',
+                    reasonCode: 'MEMBER_LEAVE',
+                    reasonText: 'Approved leave',
+                    createdAt: 1,
+                    createdByActorId: 'user-admin',
+                    updatedAt: 1,
+                    updatedByActorId: 'user-admin',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    ).toThrow();
+  });
+
   it('strict allocation draft payload rejects direct Talent and scope grants', () => {
     expect(() =>
       parseKpiAllocationDraftPayloadForTest({
@@ -2674,6 +2869,29 @@ const makeAllocationWorkflowSummary = (
   };
 };
 
+const makeActualEntryStatusSummary = (
+  overrides: Partial<{
+    expectedEntryCount: number;
+    enteredEntryCount: number;
+    enteredZeroCount: number;
+    pendingEntryCount: number;
+    overdueEntryCount: number;
+    excusedEntryCount: number;
+    notRequiredEntryCount: number;
+    notDueEntryCount: number;
+  }> = {},
+) => ({
+  expectedEntryCount: 6,
+  enteredEntryCount: 2,
+  enteredZeroCount: 1,
+  pendingEntryCount: 1,
+  overdueEntryCount: 0,
+  excusedEntryCount: 1,
+  notRequiredEntryCount: 0,
+  notDueEntryCount: 1,
+  ...overrides,
+});
+
 const makeListPlan = (
   id: string,
   title: string,
@@ -2730,6 +2948,7 @@ const makeActualWorkspaceDetail = () => ({
     },
   ],
   missingSignal: { count: 1, semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' },
+  actualEntryStatusSummary: makeActualEntryStatusSummary(),
   closing: { periodState: 'CURRENT' },
   actionHints: { canReadActualGrid: true, canEnterActual: true },
   members: [
@@ -2752,6 +2971,13 @@ const makeActualWorkspaceDetail = () => ({
         },
       ],
       missingSignal: { count: 0, semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' },
+      actualEntryStatusSummary: makeActualEntryStatusSummary({
+        expectedEntryCount: 3,
+        enteredEntryCount: 1,
+        pendingEntryCount: 0,
+        excusedEntryCount: 1,
+        notDueEntryCount: 1,
+      }),
       actionHints: { canReadActualGrid: true, canEnterActual: true },
     },
   ],
@@ -2916,10 +3142,14 @@ const makeActualGrid = () => ({
           actualValue: null,
           effectiveValue: 0,
           hasEntry: false,
+          dailyActualStatus: 'DUE_OPEN',
+          actualExcuse: null,
           editCount: 0,
           correctionCount: 0,
           latestCorrectionId: null,
           canDirectEdit: false,
+          canMarkExcused: true,
+          canUnmarkExcused: false,
           requiresCorrection: false,
           disabledReason: null,
         },
@@ -2927,3 +3157,106 @@ const makeActualGrid = () => ({
     },
   ],
 });
+
+const makeActualStatusGrid = () => {
+  const grid = makeActualGrid();
+  const targetMetrics = [
+    { metricCode: 'REVENUE_VND', targetValue: 1000000, unit: 'VND' },
+    { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 10, unit: 'COUNT' },
+    { metricCode: 'LIVE_HOURS', targetValue: 20, unit: 'HOUR' },
+    { metricCode: 'EVENT_COMPLETION_COUNT', targetValue: 4, unit: 'COUNT' },
+    { metricCode: 'ONBOARDED_TALENT_COUNT', targetValue: 2, unit: 'COUNT' },
+  ] as const;
+  const baseCell = grid.rows[0].metrics[0];
+  const excuseAudit = {
+    createdAt: 1,
+    createdByActorId: 'user-admin',
+    updatedAt: 1,
+    updatedByActorId: 'user-admin',
+  };
+  return {
+    ...grid,
+    targetMetrics,
+    rows: [
+      {
+        ...grid.rows[0],
+        metrics: [
+          {
+            ...baseCell,
+            metricCode: 'REVENUE_VND',
+            actualEntryId: 'actual-entered',
+            actualValue: 100,
+            effectiveValue: 100,
+            hasEntry: true,
+            dailyActualStatus: 'ENTERED',
+            canMarkExcused: false,
+          },
+          {
+            ...baseCell,
+            metricCode: 'CONTENT_OUTPUT_COUNT',
+            actualEntryId: 'actual-zero',
+            actualValue: 0,
+            effectiveValue: 0,
+            hasEntry: true,
+            dailyActualStatus: 'ENTERED_ZERO',
+            canMarkExcused: false,
+          },
+          {
+            ...baseCell,
+            metricCode: 'LIVE_HOURS',
+            dailyActualStatus: 'DUE_OPEN',
+            canMarkExcused: true,
+          },
+          {
+            ...baseCell,
+            metricCode: 'EVENT_COMPLETION_COUNT',
+            dailyActualStatus: 'OVERDUE',
+            canMarkExcused: true,
+          },
+          {
+            ...baseCell,
+            metricCode: 'ONBOARDED_TALENT_COUNT',
+            dailyActualStatus: 'NOT_DUE',
+            canMarkExcused: true,
+          },
+        ],
+      },
+      {
+        allocationId: 'kpi-plan-published-alloc-2',
+        memberTalentId: 'talent-002',
+        memberDisplayName: 'Minh Tran',
+        allocationStatus: 'PUBLISHED',
+        metrics: [
+          {
+            ...baseCell,
+            metricCode: 'REVENUE_VND',
+            dailyActualStatus: 'EXCUSED',
+            actualExcuse: {
+              id: 'excuse-ui',
+              status: 'EXCUSED',
+              reasonCode: 'MEMBER_LEAVE',
+              reasonText: 'Approved leave',
+              ...excuseAudit,
+            },
+            canMarkExcused: false,
+            canUnmarkExcused: true,
+          },
+          {
+            ...baseCell,
+            metricCode: 'CONTENT_OUTPUT_COUNT',
+            dailyActualStatus: 'NOT_REQUIRED',
+            actualExcuse: {
+              id: 'not-required-ui',
+              status: 'NOT_REQUIRED',
+              reasonCode: 'NO_OPERATION_REQUIRED',
+              reasonText: 'No stream scheduled',
+              ...excuseAudit,
+            },
+            canMarkExcused: false,
+            canUnmarkExcused: true,
+          },
+        ],
+      },
+    ],
+  };
+};

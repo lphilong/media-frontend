@@ -145,6 +145,44 @@
     "directEdit": "直接编辑",
     "requiresCorrection": "需要修正"
   },
+  "dailyActualStatuses": {
+    "NOT_DUE": "Not due",
+    "DUE_OPEN": "Due open",
+    "OVERDUE": "Overdue",
+    "ENTERED": "Entered",
+    "ENTERED_ZERO": "Entered zero",
+    "EXCUSED": "Excused",
+    "NOT_REQUIRED": "Not required",
+    "BLOCKED_BY_PLAN_STATUS": "Plan blocked",
+    "BLOCKED_BY_ALLOCATION_STATUS": "Allocation blocked"
+  },
+  "actualExcuseStatuses": {
+    "EXCUSED": "Excused",
+    "NOT_REQUIRED": "Not required"
+  },
+  "actualExcuseReasonCodes": {
+    "MEMBER_LEAVE": "Member leave",
+    "SCHEDULED_OFF": "Scheduled off",
+    "HOLIDAY_OR_CLOSURE": "Holiday or closure",
+    "NO_OPERATION_REQUIRED": "No operation required",
+    "DATA_SOURCE_UNAVAILABLE": "Data source unavailable",
+    "OTHER": "Other"
+  },
+  "actualStatusSummary": {
+    "dueOpen": "Due open",
+    "overdue": "Overdue",
+    "entered": "Entered",
+    "enteredZero": "Entered zero",
+    "excused": "Excused",
+    "notRequired": "Not required",
+    "notDue": "Not due",
+    "none": "No expected entries"
+  },
+  "actualExcuse": {
+    "reasonCode": "Reason code",
+    "reasonText": "Reason text",
+    "selectReasonCode": "Select reason"
+  },
   "actualWorkspace": {
     "title": "Actual Workspace",
     "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
@@ -173,6 +211,7 @@
     "loadingMore": "正在加载...",
     "missingSignal": "Limited missing signal",
     "limitedMissingSignal": "limited calendar-day signal",
+    "statusSummary": "Actual status summary",
     "supportingMetrics": "Supporting metrics",
     "closingState": "Closing state",
     "selectedPlan": "Selected group plan",
@@ -214,6 +253,10 @@
     "saveChangedCells": "保存已变更单元格",
     "correction": "修正",
     "submitCorrection": "提交修正",
+    "markExcused": "Mark excused",
+    "markNotRequired": "Mark not required",
+    "submitExcuse": "Submit excuse",
+    "unmarkExcuse": "Unmark excuse",
     "updateDraft": "更新草稿",
     "replaceMetrics": "替换指标",
     "replaceAllocations": "替换分配",
@@ -242,6 +285,7 @@
     "invalidActualDate": "使用 DD-MM-YYYY。不要使用 YYYY-MM-DD 或斜杠日期。",
     "duplicateConflict": "Actual 已存在且值不同。请使用编辑或修正流程。",
     "reasonRequired": "必须填写修正原因。",
+    "excuseReasonRequired": "Excuse reason code and reason text are required.",
     "missingActualEntry": "修正需要已有 actual。"
   },
   "disabled": {
@@ -270,7 +314,9 @@
     "allocationSubmitted": "Allocation submitted for approval.",
     "allocationApproved": "Allocation approved.",
     "allocationRejected": "Allocation rejected.",
-    "allocationPublished": "Allocation published."
+    "allocationPublished": "Allocation published.",
+    "actualExcuseMarked": "Actual excuse marked.",
+    "actualExcuseUnmarked": "Actual excuse removed."
   },
   "states": {
     "emptyActualWorkspace": "No group plans are available for actual entry.",
@@ -280,6 +326,7 @@
     "actualWorkspaceDetailLoadErrorMessage": "Unable to load the selected group plan detail.",
     "actualGridLoadErrorTitle": "Unable to load actual grid",
     "actualGridLoadErrorMessage": "Unable to load the actual grid for the selected date.",
+    "actualExcuseMutationErrorMessage": "Unable to update the actual excuse.",
     "loadErrorTitle": "无法加载 KPI",
     "loadErrorMessage": "无法加载 KPI 数据。",
     "capabilityUnavailable": "KPI permissions could not be verified. Try again.",

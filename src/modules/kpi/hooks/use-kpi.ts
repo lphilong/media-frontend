@@ -14,12 +14,14 @@ import {
   fetchKpiPlans,
   fetchKpiProgress,
   fetchMyKpiProgress,
+  markKpiActualExcuse,
   performKpiLifecycleAction,
   publishKpiAllocation,
   rejectKpiAllocation,
   replaceKpiAllocations,
   replaceKpiTargetMetrics,
   submitKpiAllocationDraft,
+  unmarkKpiActualExcuse,
   updateKpiActual,
   updateKpiDraftCore,
   upsertKpiAllocationDraft,
@@ -31,8 +33,10 @@ import type {
   KpiActualWorkspacePlanQuery,
   KpiCreatePlanPayload,
   KpiDraftCorePayload,
+  MarkKpiActualExcusePayload,
   KpiPlanQuery,
   KpiTargetMetricInput,
+  UnmarkKpiActualExcusePayload,
 } from '@modules/kpi/types/kpi.types';
 
 const KPI_QUERY_ROOT = ['kpi'] as const;
@@ -254,6 +258,22 @@ export const useUpdateKpiActualMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateKpiActual,
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const useMarkKpiActualExcuseMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: MarkKpiActualExcusePayload) => markKpiActualExcuse(payload),
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const useUnmarkKpiActualExcuseMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UnmarkKpiActualExcusePayload) => unmarkKpiActualExcuse(payload),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };

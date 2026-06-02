@@ -13,11 +13,13 @@ import type {
   KpiAllocationQuery,
   KpiCreatePlanPayload,
   KpiDraftCorePayload,
+  MarkKpiActualExcusePayload,
   KpiManagedMemberPickerItem,
   KpiPlanDetail,
   KpiPlanQuery,
   KpiProgressView,
   KpiTargetMetricInput,
+  UnmarkKpiActualExcusePayload,
 } from '@modules/kpi/types/kpi.types';
 import { apiRequest } from '@shared/api';
 
@@ -51,6 +53,26 @@ const allocationStatusSchema = z.enum([
   'ACTIVE',
   'CLOSED',
   'CANCELLED',
+]);
+const dailyActualStatusSchema = z.enum([
+  'NOT_DUE',
+  'DUE_OPEN',
+  'OVERDUE',
+  'ENTERED',
+  'ENTERED_ZERO',
+  'EXCUSED',
+  'NOT_REQUIRED',
+  'BLOCKED_BY_PLAN_STATUS',
+  'BLOCKED_BY_ALLOCATION_STATUS',
+]);
+const actualExcuseStatusSchema = z.enum(['EXCUSED', 'NOT_REQUIRED']);
+const actualExcuseReasonCodeSchema = z.enum([
+  'MEMBER_LEAVE',
+  'SCHEDULED_OFF',
+  'HOLIDAY_OR_CLOSURE',
+  'NO_OPERATION_REQUIRED',
+  'DATA_SOURCE_UNAVAILABLE',
+  'OTHER',
 ]);
 
 const allocationWorkflowSummarySchema = z
@@ -292,6 +314,19 @@ const actualWorkspaceMissingSignalSchema = z
   })
   .strict();
 
+const actualEntryStatusSummarySchema = z
+  .object({
+    expectedEntryCount: z.number().int().nonnegative(),
+    enteredEntryCount: z.number().int().nonnegative(),
+    enteredZeroCount: z.number().int().nonnegative(),
+    pendingEntryCount: z.number().int().nonnegative(),
+    overdueEntryCount: z.number().int().nonnegative(),
+    excusedEntryCount: z.number().int().nonnegative(),
+    notRequiredEntryCount: z.number().int().nonnegative(),
+    notDueEntryCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
 const actualWorkspaceClosingSchema = z
   .object({
     periodState: z.enum(['CURRENT', 'CLOSING', 'CLOSED']),
@@ -320,6 +355,7 @@ const actualWorkspacePlanSummarySchema = z
     allocationCoverage: actualWorkspaceAllocationCoverageSchema,
     supportingMetrics: z.array(actualWorkspaceMetricSummarySchema),
     missingSignal: actualWorkspaceMissingSignalSchema,
+    actualEntryStatusSummary: actualEntryStatusSummarySchema,
     closing: actualWorkspaceClosingSchema,
     actionHints: actualWorkspaceActionHintsSchema,
   })
@@ -340,6 +376,7 @@ const actualWorkspaceMemberSummarySchema = z
       .strict(),
     supportingMetrics: z.array(actualWorkspaceMetricSummarySchema),
     missingSignal: actualWorkspaceMissingSignalSchema,
+    actualEntryStatusSummary: actualEntryStatusSummarySchema,
     actionHints: actualWorkspaceActionHintsSchema,
   })
   .strict();
@@ -358,10 +395,26 @@ const actualCellSchema = z
     actualValue: z.number().nullable(),
     effectiveValue: z.number(),
     hasEntry: z.boolean(),
+    dailyActualStatus: dailyActualStatusSchema,
+    actualExcuse: z
+      .object({
+        id: z.string().trim().min(1),
+        status: actualExcuseStatusSchema,
+        reasonCode: actualExcuseReasonCodeSchema,
+        reasonText: z.string().trim().min(1),
+        createdAt: timestampSchema,
+        createdByActorId: z.string().trim().min(1),
+        updatedAt: timestampSchema,
+        updatedByActorId: z.string().trim().min(1),
+      })
+      .strict()
+      .nullable(),
     editCount: z.number().int(),
     correctionCount: z.number().int(),
     latestCorrectionId: z.string().nullable(),
     canDirectEdit: z.boolean(),
+    canMarkExcused: z.boolean(),
+    canUnmarkExcused: z.boolean(),
     requiresCorrection: z.boolean(),
     disabledReason: z.string().nullable(),
   })
@@ -548,6 +601,19 @@ const correctionMutationResponseSchema = z
 const correctionListResponseSchema = z.object({ data: z.array(correctionSchema) }).strict();
 const progressResponseSchema = z.object({ data: progressSchema }).strict();
 const managedMemberListResponseSchema = z.object({ data: z.array(managedMemberSchema) }).strict();
+const markActualExcusePayloadSchema = z
+  .object({
+    allocationId: z.string().trim().min(1),
+    metricCode: metricCodeSchema,
+    actualDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/),
+    status: actualExcuseStatusSchema,
+    reasonCode: actualExcuseReasonCodeSchema,
+    reasonText: z.string().trim().min(1),
+  })
+  .strict();
 
 export const getCurrentHcmMonthForKpiCreate = (now = Date.now()): string => {
   const local = new Date(now + 7 * 60 * 60 * 1000);
@@ -916,6 +982,39 @@ export const createKpiActual = async (payload: {
   return actualEntryResponseSchema.parse(response).data;
 };
 
+export const markKpiActualExcuse = async (
+  payload: MarkKpiActualExcusePayload,
+): Promise<KpiPlanDetail> => {
+  const data = markActualExcusePayloadSchema.parse({
+    allocationId: payload.allocationId,
+    metricCode: payload.metricCode,
+    actualDate: payload.actualDate,
+    status: payload.status,
+    reasonCode: payload.reasonCode,
+    reasonText: payload.reasonText,
+  });
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/kpi/plans/${encodeURIComponent(payload.kpiPlanId)}/actual-excuses`,
+    data,
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
+export const unmarkKpiActualExcuse = async ({
+  kpiPlanId,
+  excuseId,
+}: UnmarkKpiActualExcusePayload): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown, Record<string, never>>({
+    method: 'DELETE',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/actual-excuses/${encodeURIComponent(
+      excuseId,
+    )}`,
+    data: {},
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
 export const updateKpiActual = async (payload: {
   kpiPlanId: string;
   actualEntryId: string;
@@ -976,6 +1075,9 @@ export const parseKpiActualWorkspacePlanDetailResponseForTest = (response: unkno
 
 export const parseKpiActualWorkspacePlanListResponseForTest = (response: unknown) =>
   actualWorkspaceListResponseSchema.parse(response);
+
+export const parseKpiActualDailyGridResponseForTest = (response: unknown) =>
+  actualGridResponseSchema.parse(response).data;
 
 export const parseKpiAllocationDraftPayloadForTest = (
   payload: unknown,

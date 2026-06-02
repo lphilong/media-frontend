@@ -9,6 +9,24 @@ type KpiMetricCode =
   | 'EVENT_COMPLETION_COUNT'
   | 'ONBOARDED_TALENT_COUNT';
 type KpiUnit = 'VND' | 'COUNT' | 'HOUR';
+type KpiDailyActualStatus =
+  | 'NOT_DUE'
+  | 'DUE_OPEN'
+  | 'OVERDUE'
+  | 'ENTERED'
+  | 'ENTERED_ZERO'
+  | 'EXCUSED'
+  | 'NOT_REQUIRED'
+  | 'BLOCKED_BY_PLAN_STATUS'
+  | 'BLOCKED_BY_ALLOCATION_STATUS';
+type KpiActualExcuseStatus = 'EXCUSED' | 'NOT_REQUIRED';
+type KpiActualExcuseReasonCode =
+  | 'MEMBER_LEAVE'
+  | 'SCHEDULED_OFF'
+  | 'HOLIDAY_OR_CLOSURE'
+  | 'NO_OPERATION_REQUIRED'
+  | 'DATA_SOURCE_UNAVAILABLE'
+  | 'OTHER';
 
 type ReferenceSummary = {
   id: string;
@@ -166,6 +184,23 @@ type ActualCorrection = {
   createdAt: number;
 };
 
+type ActualExcuse = {
+  id: string;
+  kpiPlanId: string;
+  allocationId: string;
+  metricCode: KpiMetricCode;
+  actualDate: string;
+  status: KpiActualExcuseStatus;
+  reasonCode: KpiActualExcuseReasonCode;
+  reasonText: string;
+  createdAt: number;
+  createdByActorId: string;
+  updatedAt: number;
+  updatedByActorId: string;
+  deletedAt: number | null;
+  deletedByActorId: string | null;
+};
+
 const now = Date.parse('2026-05-16T09:30:00.000Z');
 const allocationContractDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 const may2026PeriodStartAt = Date.UTC(2026, 4, 1, -7, 0, 0, 0);
@@ -196,6 +231,15 @@ const allocationStatuses: KpiAllocation['allocationStatus'][] = [
   'ACTIVE',
   'CLOSED',
   'CANCELLED',
+];
+const actualExcuseStatuses: KpiActualExcuseStatus[] = ['EXCUSED', 'NOT_REQUIRED'];
+const actualExcuseReasonCodes: KpiActualExcuseReasonCode[] = [
+  'MEMBER_LEAVE',
+  'SCHEDULED_OFF',
+  'HOLIDAY_OR_CLOSURE',
+  'NO_OPERATION_REQUIRED',
+  'DATA_SOURCE_UNAVAILABLE',
+  'OTHER',
 ];
 const allowedListQueryKeys = [
   'subjectType',
@@ -450,16 +494,19 @@ initialAllocations['kpi-plan-rejected'] = (initialAllocations['kpi-plan-rejected
 let planSeed = 100;
 let actualSeed = 100;
 let correctionSeed = 100;
+let excuseSeed = 100;
 let plans: KpiPlan[] = [];
 let targets: Record<string, KpiTargetMetric[]> = {};
 let allocations: Record<string, KpiAllocation[]> = {};
 let actualEntries: ActualEntry[] = [];
 let corrections: ActualCorrection[] = [];
+let actualExcuses: ActualExcuse[] = [];
 
 export const resetKpiMockData = (): void => {
   planSeed = 100;
   actualSeed = 100;
   correctionSeed = 100;
+  excuseSeed = 100;
   plans = initialPlans.map((plan) => ({
     ...plan,
     subjectRef: plan.subjectRef ? { ...plan.subjectRef } : null,
@@ -533,6 +580,7 @@ export const resetKpiMockData = (): void => {
       createdAt: now,
     },
   ];
+  actualExcuses = [];
 };
 
 resetKpiMockData();
@@ -1175,6 +1223,96 @@ const readEntry = (
       entry.actualDate === actualDate,
   );
 
+const readActiveExcuse = (
+  kpiPlanId: string,
+  allocationId: string,
+  metricCode: KpiMetricCode,
+  actualDate: string,
+) =>
+  actualExcuses.find(
+    (excuse) =>
+      excuse.kpiPlanId === kpiPlanId &&
+      excuse.allocationId === allocationId &&
+      excuse.metricCode === metricCode &&
+      excuse.actualDate === actualDate &&
+      excuse.deletedAt === null,
+  );
+
+const exposeExcuse = (excuse: ActualExcuse) => ({
+  id: excuse.id,
+  status: excuse.status,
+  reasonCode: excuse.reasonCode,
+  reasonText: excuse.reasonText,
+  createdAt: excuse.createdAt,
+  createdByActorId: excuse.createdByActorId,
+  updatedAt: excuse.updatedAt,
+  updatedByActorId: excuse.updatedByActorId,
+});
+
+const getDailyActualStatus = ({
+  plan,
+  allocation,
+  entry,
+  excuse,
+  actualDate,
+  currentTime = Date.now(),
+}: {
+  plan: KpiPlan;
+  allocation: KpiAllocation;
+  entry?: ActualEntry;
+  excuse?: ActualExcuse;
+  actualDate: string;
+  currentTime?: number;
+}): KpiDailyActualStatus => {
+  if (plan.status !== 'PUBLISHED') return 'BLOCKED_BY_PLAN_STATUS';
+  if (allocation.allocationStatus !== 'PUBLISHED') return 'BLOCKED_BY_ALLOCATION_STATUS';
+  if (excuse) return excuse.status;
+  if (entry) return entry.effectiveValue === 0 ? 'ENTERED_ZERO' : 'ENTERED';
+  if (hcmLocalDateTimeToUtcMs(actualDate, '00:00') > currentTime) return 'NOT_DUE';
+  return currentTime <= hcmLocalDateTimeToUtcMs(actualDate, '10:00', 1)
+    ? 'DUE_OPEN'
+    : 'OVERDUE';
+};
+
+const emptyActualEntryStatusSummary = () => ({
+  expectedEntryCount: 0,
+  enteredEntryCount: 0,
+  enteredZeroCount: 0,
+  pendingEntryCount: 0,
+  overdueEntryCount: 0,
+  excusedEntryCount: 0,
+  notRequiredEntryCount: 0,
+  notDueEntryCount: 0,
+});
+
+const statusSummaryForAllocations = (plan: KpiPlan, planAllocations: KpiAllocation[]) => {
+  const summary = emptyActualEntryStatusSummary();
+  const statusDate = plan.periodMonth === '2026-05' ? '16-05-2026' : '16-04-2026';
+  const planTargets = targets[plan.id] ?? [];
+  for (const allocation of planAllocations) {
+    for (const metric of planTargets) {
+      summary.expectedEntryCount += 1;
+      const entry = readEntry(plan.id, allocation.id, metric.metricCode, statusDate);
+      const excuse = readActiveExcuse(plan.id, allocation.id, metric.metricCode, statusDate);
+      const status = getDailyActualStatus({
+        plan,
+        allocation,
+        entry,
+        excuse,
+        actualDate: statusDate,
+      });
+      if (status === 'ENTERED') summary.enteredEntryCount += 1;
+      if (status === 'ENTERED_ZERO') summary.enteredZeroCount += 1;
+      if (status === 'DUE_OPEN') summary.pendingEntryCount += 1;
+      if (status === 'OVERDUE') summary.overdueEntryCount += 1;
+      if (status === 'EXCUSED') summary.excusedEntryCount += 1;
+      if (status === 'NOT_REQUIRED') summary.notRequiredEntryCount += 1;
+      if (status === 'NOT_DUE') summary.notDueEntryCount += 1;
+    }
+  }
+  return summary;
+};
+
 const toActualGrid = (plan: KpiPlan, actualDate: string) => {
   const isPublished = plan.status === 'PUBLISHED';
   const isFinalized = plan.status === 'FINALIZED';
@@ -1220,7 +1358,17 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => {
       allocationStatus: allocation.allocationStatus,
       metrics: (targets[plan.id] ?? []).map((metric) => {
         const entry = readEntry(plan.id, allocation.id, metric.metricCode, actualDate);
+        const excuse = readActiveExcuse(plan.id, allocation.id, metric.metricCode, actualDate);
         const locked = entry ? entry.editCount >= 3 || !isGridDirectEditOpen : false;
+        const dailyActualStatus = getDailyActualStatus({
+          plan,
+          allocation,
+          entry,
+          excuse,
+          actualDate,
+        });
+        const canMarkExcused = isPublished && allocation.allocationStatus === 'PUBLISHED' && !entry && !excuse;
+        const canUnmarkExcused = isPublished && Boolean(excuse);
         return {
           metricCode: metric.metricCode,
           targetValue: metric.targetValue,
@@ -1228,10 +1376,14 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => {
           actualValue: entry?.actualValue ?? null,
           effectiveValue: entry?.effectiveValue ?? 0,
           hasEntry: Boolean(entry),
+          dailyActualStatus,
+          actualExcuse: excuse ? exposeExcuse(excuse) : null,
           editCount: entry?.editCount ?? 0,
           correctionCount: entry?.correctionCount ?? 0,
           latestCorrectionId: entry?.latestCorrectionId ?? null,
           canDirectEdit: Boolean(entry) && !locked,
+          canMarkExcused,
+          canUnmarkExcused,
           requiresCorrection: Boolean(entry) && locked,
           disabledReason: locked ? (gridDisabledReason ?? 'DIRECT_EDIT_LIMIT_EXCEEDED') : null,
         };
@@ -1286,6 +1438,10 @@ const toActualWorkspaceMember = (allocation: KpiAllocation) => {
       count: actuals.missing,
       semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' as const,
     },
+    actualEntryStatusSummary: statusSummaryForAllocations(
+      readPlan(allocation.kpiPlanId) ?? basePlan({ id: allocation.kpiPlanId }),
+      [allocation],
+    ),
     actionHints: {
       canReadActualGrid: true,
       canEnterActual: true,
@@ -1348,6 +1504,7 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
       count: members.reduce((sum, member) => sum + member.missingSignal.count, 0),
       semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' as const,
     },
+    actualEntryStatusSummary: statusSummaryForAllocations(plan, publishedAllocations),
     closing: {
       periodState: plan.status === 'FINALIZED' ? ('CLOSED' as const) : ('CURRENT' as const),
     },
@@ -2066,6 +2223,118 @@ export const kpiHandlers = [
     Object.assign(plan, body, { updatedAt: now });
     return HttpResponse.json({ data: toDetail(plan) });
   }),
+  http.post('*/admin/kpi/plans/:kpiPlanId/actual-excuses', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, [
+      'allocationId',
+      'metricCode',
+      'actualDate',
+      'status',
+      'reasonCode',
+      'reasonText',
+    ]);
+    if (unsupported) return unsupported;
+    if (!actualExcuseStatuses.includes(body.status as KpiActualExcuseStatus)) {
+      return validationError(
+        `KPI actual excuse status is unsupported: ${String(body.status)}`,
+        422,
+      );
+    }
+    if (!actualExcuseReasonCodes.includes(body.reasonCode as KpiActualExcuseReasonCode)) {
+      return validationError(
+        `KPI actual excuse reasonCode is unsupported: ${String(body.reasonCode)}`,
+        422,
+      );
+    }
+    if (!String(body.reasonText ?? '').trim()) {
+      return validationError('KPI actual excuse reasonText is required', 422);
+    }
+    if (
+      !parseActualDate(body.actualDate) ||
+      !actualDateInPlanPeriod(plan, String(body.actualDate))
+    ) {
+      return validationError('Invalid actualDate');
+    }
+    if (plan.status !== 'PUBLISHED') {
+      return HttpResponse.json(
+        { message: 'KPI actual excuse requires a published plan' },
+        { status: 409 },
+      );
+    }
+    const metricCode = body.metricCode as KpiMetricCode;
+    if (!metricCodes.includes(metricCode)) {
+      return validationError(`KPI metricCode is unsupported: ${String(body.metricCode)}`);
+    }
+    const allocation = (allocations[plan.id] ?? []).find(
+      (item) => item.id === String(body.allocationId),
+    );
+    if (!allocation || allocation.allocationStatus !== 'PUBLISHED') {
+      return HttpResponse.json(
+        { message: 'KPI actual excuse requires a published allocation' },
+        { status: 409 },
+      );
+    }
+    if (!allocation.targetMetrics.some((metric) => metric.metricCode === metricCode)) {
+      return validationError(
+        `KPI allocation metricCode ${metricCode} is not in allocation targets`,
+      );
+    }
+    if (readEntry(plan.id, allocation.id, metricCode, String(body.actualDate))) {
+      return HttpResponse.json(
+        { message: 'KPI actual entry already exists for this slot' },
+        { status: 409 },
+      );
+    }
+    const existing = readActiveExcuse(plan.id, allocation.id, metricCode, String(body.actualDate));
+    if (existing) {
+      return HttpResponse.json({ data: toDetail(plan) });
+    }
+    excuseSeed += 1;
+    actualExcuses.push({
+      id: `actual-excuse-${excuseSeed}`,
+      kpiPlanId: plan.id,
+      allocationId: allocation.id,
+      metricCode,
+      actualDate: String(body.actualDate),
+      status: body.status as KpiActualExcuseStatus,
+      reasonCode: body.reasonCode as KpiActualExcuseReasonCode,
+      reasonText: String(body.reasonText).trim(),
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      deletedAt: null,
+      deletedByActorId: null,
+    });
+    return HttpResponse.json({ data: toDetail(plan) });
+  }),
+  http.delete('*/admin/kpi/plans/:kpiPlanId/actual-excuses/:excuseId', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, []);
+    if (unsupported) return unsupported;
+    const excuse = actualExcuses.find(
+      (item) =>
+        item.kpiPlanId === plan.id &&
+        item.id === String(params.excuseId) &&
+        item.deletedAt === null,
+    );
+    if (!excuse) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.status !== 'PUBLISHED') {
+      return HttpResponse.json(
+        { message: 'KPI actual excuse requires a published plan' },
+        { status: 409 },
+      );
+    }
+    excuse.deletedAt = now;
+    excuse.deletedByActorId = 'user-admin';
+    excuse.updatedAt = now;
+    excuse.updatedByActorId = 'user-admin';
+    return HttpResponse.json({ data: toDetail(plan) });
+  }),
   http.post('*/admin/kpi/plans/:kpiPlanId/:action', async ({ params, request }) => {
     const action = String(params.action);
     if (action === 'actuals') return;
@@ -2140,6 +2409,19 @@ export const kpiHandlers = [
         `KPI allocation metricCode ${metricCode} is not in allocation targets`,
       );
     }
+    if (
+      readActiveExcuse(
+        String(params.kpiPlanId),
+        String(body.allocationId),
+        metricCode,
+        String(body.actualDate),
+      )
+    ) {
+      return HttpResponse.json(
+        { message: 'KPI actual slot has an active excuse; unmark it before entering actuals' },
+        { status: 409 },
+      );
+    }
     const existing = readEntry(
       String(params.kpiPlanId),
       String(body.allocationId),
@@ -2188,6 +2470,12 @@ export const kpiHandlers = [
     if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     if (plan.status !== 'PUBLISHED') {
       return HttpResponse.json({ message: 'KPI actual requires a published plan' }, { status: 409 });
+    }
+    if (readActiveExcuse(plan.id, entry.allocationId, entry.metricCode, entry.actualDate)) {
+      return HttpResponse.json(
+        { message: 'KPI actual slot has an active excuse; unmark it before entering actuals' },
+        { status: 409 },
+      );
     }
     if (!isDirectEditWindowOpen(entry.actualDate)) {
       return directEditWindowClosed();

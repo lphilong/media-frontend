@@ -20,9 +20,14 @@ import {
   useKpiActualWorkspacePlans,
   useKpiCorrectionHistory,
   useKpiPlans,
+  useMarkKpiActualExcuseMutation,
+  useUnmarkKpiActualExcuseMutation,
   useUpdateKpiActualMutation,
 } from '@modules/kpi/hooks/use-kpi';
 import type {
+  KpiActualEntryStatusSummary,
+  KpiActualExcuseReasonCode,
+  KpiActualExcuseStatus,
   KpiActualGridMetricCell,
   KpiActualGridRow,
   KpiActualWorkspaceMetricSummary,
@@ -34,7 +39,12 @@ import type {
   KpiMetricCode,
   KpiPlanQuery,
 } from '@modules/kpi/types/kpi.types';
-import { kpiMetricCodes, kpiPlanStatuses, kpiSubjectTypes } from '@modules/kpi/types/kpi.types';
+import {
+  kpiActualExcuseReasonCodes,
+  kpiMetricCodes,
+  kpiPlanStatuses,
+  kpiSubjectTypes,
+} from '@modules/kpi/types/kpi.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
   ErrorState,
@@ -63,6 +73,15 @@ type CorrectionTarget = {
   row: KpiActualGridRow;
   cell: KpiActualGridMetricCell;
   proposedValue?: string;
+};
+
+type ExcuseDraft = {
+  cellKey: string;
+  allocationId: string;
+  metricCode: KpiMetricCode;
+  status: KpiActualExcuseStatus;
+  reasonCode: KpiActualExcuseReasonCode | '';
+  reasonText: string;
 };
 
 type AllocationWorkflowSummary = {
@@ -243,6 +262,7 @@ export const KpiListPage = (): JSX.Element => {
   const [cellDrafts, setCellDrafts] = useState<Record<string, string>>({});
   const [actualError, setActualError] = useState<string | null>(null);
   const [correctionTarget, setCorrectionTarget] = useState<CorrectionTarget | null>(null);
+  const [excuseDraft, setExcuseDraft] = useState<ExcuseDraft | null>(null);
 
   const actualGridQuery = useKpiActualDailyGrid(
     loadedActualGrid?.kpiPlanId,
@@ -250,6 +270,8 @@ export const KpiListPage = (): JSX.Element => {
   );
   const createActualMutation = useCreateKpiActualMutation();
   const updateActualMutation = useUpdateKpiActualMutation();
+  const markActualExcuseMutation = useMarkKpiActualExcuseMutation();
+  const unmarkActualExcuseMutation = useUnmarkKpiActualExcuseMutation();
   const capabilityCopy = useMemo(
     () => ({
       loading: t('common:capabilities.checkingPermissions'),
@@ -422,6 +444,7 @@ export const KpiListPage = (): JSX.Element => {
     setCellDrafts({});
     setActualError(null);
     setCorrectionTarget(null);
+    setExcuseDraft(null);
   }, [actualWorkspaceQueryShape]);
 
   useEffect(() => {
@@ -514,6 +537,79 @@ export const KpiListPage = (): JSX.Element => {
   const cellKey = (row: KpiActualGridRow, cell: KpiActualGridMetricCell): string =>
     `${row.allocationId}:${cell.metricCode}`;
 
+  const openExcuseDraft = (
+    row: KpiActualGridRow,
+    cell: KpiActualGridMetricCell,
+    status: KpiActualExcuseStatus,
+  ): void => {
+    setActualError(null);
+    setExcuseDraft({
+      cellKey: cellKey(row, cell),
+      allocationId: row.allocationId,
+      metricCode: cell.metricCode,
+      status,
+      reasonCode: '',
+      reasonText: '',
+    });
+  };
+
+  const submitExcuseDraft = async (): Promise<void> => {
+    setActualError(null);
+    if (!loadedActualGrid?.kpiPlanId || !excuseDraft) {
+      return;
+    }
+    if (!excuseDraft.reasonCode || !excuseDraft.reasonText.trim()) {
+      setActualError(t('kpi:validation.excuseReasonRequired'));
+      return;
+    }
+    try {
+      await markActualExcuseMutation.mutateAsync({
+        kpiPlanId: loadedActualGrid.kpiPlanId,
+        allocationId: excuseDraft.allocationId,
+        metricCode: excuseDraft.metricCode,
+        actualDate: loadedActualGrid.actualDate,
+        status: excuseDraft.status,
+        reasonCode: excuseDraft.reasonCode,
+        reasonText: excuseDraft.reasonText,
+      });
+      setExcuseDraft(null);
+      setCellDrafts({});
+      notifySuccess('kpi:feedback.actualExcuseMarked');
+    } catch (error) {
+      setActualError(
+        readErrorMessage(
+          t,
+          error as NormalizedApiError,
+          'kpi:states.actualExcuseMutationErrorMessage',
+        ),
+      );
+    }
+  };
+
+  const unmarkExcuse = async (cell: KpiActualGridMetricCell): Promise<void> => {
+    setActualError(null);
+    if (!loadedActualGrid?.kpiPlanId || !cell.actualExcuse) {
+      return;
+    }
+    try {
+      await unmarkActualExcuseMutation.mutateAsync({
+        kpiPlanId: loadedActualGrid.kpiPlanId,
+        excuseId: cell.actualExcuse.id,
+      });
+      setExcuseDraft(null);
+      setCellDrafts({});
+      notifySuccess('kpi:feedback.actualExcuseUnmarked');
+    } catch (error) {
+      setActualError(
+        readErrorMessage(
+          t,
+          error as NormalizedApiError,
+          'kpi:states.actualExcuseMutationErrorMessage',
+        ),
+      );
+    }
+  };
+
   const saveActuals = async (): Promise<void> => {
     setActualError(null);
     if (enterActualHint.disabled) {
@@ -565,7 +661,13 @@ export const KpiListPage = (): JSX.Element => {
           }
         } catch (error) {
           if (isConflict(error)) {
-            setActualError(t('kpi:validation.duplicateConflict'));
+            setActualError(
+              readErrorMessage(
+                t,
+                error as NormalizedApiError,
+                'kpi:validation.duplicateConflict',
+              ),
+            );
           } else {
             notifyError(error as NormalizedApiError);
           }
@@ -595,6 +697,7 @@ export const KpiListPage = (): JSX.Element => {
       return;
     }
     setCellDrafts({});
+    setExcuseDraft(null);
     setLoadedActualGrid(next);
   };
 
@@ -654,6 +757,43 @@ export const KpiListPage = (): JSX.Element => {
 
   const renderMissingSignal = (missingSignal: KpiActualWorkspaceMissingSignal): string =>
     `${missingSignal.count} - ${t('kpi:actualWorkspace.limitedMissingSignal')}`;
+
+  const renderActualEntryStatusSummary = (summary: KpiActualEntryStatusSummary) => {
+    const entries: Array<[string, number]> = [
+      ['dueOpen', summary.pendingEntryCount],
+      ['overdue', summary.overdueEntryCount],
+      ['entered', summary.enteredEntryCount],
+      ['enteredZero', summary.enteredZeroCount],
+      ['excused', summary.excusedEntryCount],
+      ['notRequired', summary.notRequiredEntryCount],
+      ['notDue', summary.notDueEntryCount],
+    ];
+    return (
+      <div className="flex flex-wrap gap-1" aria-label={t('kpi:actualWorkspace.statusSummary')}>
+        {entries
+          .filter(([, count]) => count > 0)
+          .map(([key, count]) => (
+            <span key={key} className="rounded border border-border px-2 py-0.5 text-xs">
+              {t(`kpi:actualStatusSummary.${key}`)}: {count}
+            </span>
+          ))}
+        {summary.expectedEntryCount === 0 ? (
+          <span className="text-xs text-muted">{t('kpi:actualStatusSummary.none')}</span>
+        ) : null}
+      </div>
+    );
+  };
+
+  const actualStatusClassName = (status: KpiActualGridMetricCell['dailyActualStatus']): string => {
+    if (status === 'OVERDUE') return 'border-danger bg-red-50 text-danger';
+    if (status === 'ENTERED') return 'border-emerald-600 bg-emerald-50 text-emerald-700';
+    if (status === 'ENTERED_ZERO') return 'border-amber-600 bg-amber-50 text-amber-700';
+    if (status === 'EXCUSED' || status === 'NOT_REQUIRED') {
+      return 'border-sky-600 bg-sky-50 text-sky-700';
+    }
+    if (status === 'DUE_OPEN') return 'border-accent bg-accent/10 text-accent';
+    return 'border-border bg-slate-50 text-muted';
+  };
 
   const renderSupportingMetrics = (metrics: KpiActualWorkspaceMetricSummary[]) =>
     metrics.length === 0
@@ -1295,6 +1435,7 @@ export const KpiListPage = (): JSX.Element => {
                     <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.achievement')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.allocationCoverage')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.missingSignal')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.statusSummary')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.supportingMetrics')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:table.actions')}</th>
                   </tr>
@@ -1321,6 +1462,9 @@ export const KpiListPage = (): JSX.Element => {
                       </td>
                       <td className="px-3 py-2">{renderMissingSignal(plan.missingSignal)}</td>
                       <td className="px-3 py-2">
+                        {renderActualEntryStatusSummary(plan.actualEntryStatusSummary)}
+                      </td>
+                      <td className="px-3 py-2">
                         {renderSupportingMetrics(plan.supportingMetrics)}
                       </td>
                       <td className="px-3 py-2">
@@ -1331,6 +1475,7 @@ export const KpiListPage = (): JSX.Element => {
                             setSelectedWorkspacePlanId(plan.planId);
                             setLoadedActualGrid(undefined);
                             setCellDrafts({});
+                            setExcuseDraft(null);
                           }}
                         >
                           {t('kpi:actualWorkspace.viewDetail')}
@@ -1430,6 +1575,16 @@ export const KpiListPage = (): JSX.Element => {
                 </div>
                 <div className="rounded border border-border p-3 text-sm">
                   <div className="text-xs uppercase text-muted">
+                    {t('kpi:actualWorkspace.statusSummary')}
+                  </div>
+                  <div>
+                    {renderActualEntryStatusSummary(
+                      actualWorkspaceDetailQuery.data.actualEntryStatusSummary,
+                    )}
+                  </div>
+                </div>
+                <div className="rounded border border-border p-3 text-sm">
+                  <div className="text-xs uppercase text-muted">
                     {t('kpi:actualWorkspace.closingState')}
                   </div>
                   <div>
@@ -1450,6 +1605,7 @@ export const KpiListPage = (): JSX.Element => {
                       <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.achievement')}</th>
                       <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.supportingMetrics')}</th>
                       <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.missingSignal')}</th>
+                      <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.statusSummary')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1472,6 +1628,9 @@ export const KpiListPage = (): JSX.Element => {
                           {renderSupportingMetrics(member.supportingMetrics)}
                         </td>
                         <td className="px-3 py-2">{renderMissingSignal(member.missingSignal)}</td>
+                        <td className="px-3 py-2">
+                          {renderActualEntryStatusSummary(member.actualEntryStatusSummary)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1487,6 +1646,7 @@ export const KpiListPage = (): JSX.Element => {
                       setActualDate(event.target.value);
                       setLoadedActualGrid(undefined);
                       setCellDrafts({});
+                      setExcuseDraft(null);
                     }}
                   />
                 </label>
@@ -1547,6 +1707,23 @@ export const KpiListPage = (): JSX.Element => {
                           </td>
                           {row.metrics.map((cell) => (
                             <td key={cell.metricCode} className="space-y-1 px-3 py-2">
+                              <span
+                                className={`inline-flex rounded border px-2 py-0.5 text-xs font-medium ${actualStatusClassName(
+                                  cell.dailyActualStatus,
+                                )}`}
+                              >
+                                {t(`kpi:dailyActualStatuses.${cell.dailyActualStatus}`)}
+                              </span>
+                              {cell.actualExcuse ? (
+                                <div className="text-xs text-muted">
+                                  {t(`kpi:actualExcuseStatuses.${cell.actualExcuse.status}`)} -{' '}
+                                  {t(
+                                    `kpi:actualExcuseReasonCodes.${cell.actualExcuse.reasonCode}`,
+                                  )}
+                                  {': '}
+                                  {cell.actualExcuse.reasonText}
+                                </div>
+                              ) : null}
                               <input
                                 aria-label={`${row.memberDisplayName ?? t('kpi:actualWorkspace.unnamedMember')} ${t(`kpi:metricCodes.${cell.metricCode}`)} actual`}
                                 value={
@@ -1585,6 +1762,99 @@ export const KpiListPage = (): JSX.Element => {
                                 >
                                   {t('kpi:actions.correction')}
                                 </button>
+                              ) : null}
+                              {cell.canMarkExcused ? (
+                                <div className="flex flex-wrap gap-1">
+                                  <button
+                                    type="button"
+                                    className="rounded border border-border px-2 py-1 text-xs"
+                                    onClick={() => openExcuseDraft(row, cell, 'EXCUSED')}
+                                  >
+                                    {t('kpi:actions.markExcused')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="rounded border border-border px-2 py-1 text-xs"
+                                    onClick={() => openExcuseDraft(row, cell, 'NOT_REQUIRED')}
+                                  >
+                                    {t('kpi:actions.markNotRequired')}
+                                  </button>
+                                </div>
+                              ) : null}
+                              {cell.canUnmarkExcused && cell.actualExcuse ? (
+                                <button
+                                  type="button"
+                                  disabled={unmarkActualExcuseMutation.isPending}
+                                  className="rounded border border-border px-2 py-1 text-xs disabled:opacity-50"
+                                  onClick={() => void unmarkExcuse(cell)}
+                                >
+                                  {t('kpi:actions.unmarkExcuse')}
+                                </button>
+                              ) : null}
+                              {excuseDraft?.cellKey === cellKey(row, cell) ? (
+                                <div className="space-y-2 rounded border border-border p-2">
+                                  <div className="text-xs font-medium">
+                                    {t(`kpi:actualExcuseStatuses.${excuseDraft.status}`)}
+                                  </div>
+                                  <label className="flex flex-col gap-1 text-xs">
+                                    <span>{t('kpi:actualExcuse.reasonCode')}</span>
+                                    <select
+                                      value={excuseDraft.reasonCode}
+                                      className="rounded border border-border bg-panel px-2 py-1"
+                                      onChange={(event) =>
+                                        setExcuseDraft((current) =>
+                                          current
+                                            ? {
+                                                ...current,
+                                                reasonCode: event.target
+                                                  .value as KpiActualExcuseReasonCode | '',
+                                              }
+                                            : current,
+                                        )
+                                      }
+                                    >
+                                      <option value="">
+                                        {t('kpi:actualExcuse.selectReasonCode')}
+                                      </option>
+                                      {kpiActualExcuseReasonCodes.map((reasonCode) => (
+                                        <option key={reasonCode} value={reasonCode}>
+                                          {t(`kpi:actualExcuseReasonCodes.${reasonCode}`)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                  <label className="flex flex-col gap-1 text-xs">
+                                    <span>{t('kpi:actualExcuse.reasonText')}</span>
+                                    <textarea
+                                      value={excuseDraft.reasonText}
+                                      className="rounded border border-border bg-panel px-2 py-1"
+                                      onChange={(event) =>
+                                        setExcuseDraft((current) =>
+                                          current
+                                            ? { ...current, reasonText: event.target.value }
+                                            : current,
+                                        )
+                                      }
+                                    />
+                                  </label>
+                                  <div className="flex flex-wrap gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={markActualExcuseMutation.isPending}
+                                      className="rounded border border-accent bg-accent px-2 py-1 text-xs text-white disabled:opacity-50"
+                                      onClick={() => void submitExcuseDraft()}
+                                    >
+                                      {t('kpi:actions.submitExcuse')}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="rounded border border-border px-2 py-1 text-xs"
+                                      onClick={() => setExcuseDraft(null)}
+                                    >
+                                      {t('common:actions.cancel')}
+                                    </button>
+                                  </div>
+                                </div>
                               ) : null}
                             </td>
                           ))}

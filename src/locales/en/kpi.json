@@ -145,6 +145,44 @@
     "directEdit": "Direct edit",
     "requiresCorrection": "Correction required"
   },
+  "dailyActualStatuses": {
+    "NOT_DUE": "Not due",
+    "DUE_OPEN": "Due open",
+    "OVERDUE": "Overdue",
+    "ENTERED": "Entered",
+    "ENTERED_ZERO": "Entered zero",
+    "EXCUSED": "Excused",
+    "NOT_REQUIRED": "Not required",
+    "BLOCKED_BY_PLAN_STATUS": "Plan blocked",
+    "BLOCKED_BY_ALLOCATION_STATUS": "Allocation blocked"
+  },
+  "actualExcuseStatuses": {
+    "EXCUSED": "Excused",
+    "NOT_REQUIRED": "Not required"
+  },
+  "actualExcuseReasonCodes": {
+    "MEMBER_LEAVE": "Member leave",
+    "SCHEDULED_OFF": "Scheduled off",
+    "HOLIDAY_OR_CLOSURE": "Holiday or closure",
+    "NO_OPERATION_REQUIRED": "No operation required",
+    "DATA_SOURCE_UNAVAILABLE": "Data source unavailable",
+    "OTHER": "Other"
+  },
+  "actualStatusSummary": {
+    "dueOpen": "Due open",
+    "overdue": "Overdue",
+    "entered": "Entered",
+    "enteredZero": "Entered zero",
+    "excused": "Excused",
+    "notRequired": "Not required",
+    "notDue": "Not due",
+    "none": "No expected entries"
+  },
+  "actualExcuse": {
+    "reasonCode": "Reason code",
+    "reasonText": "Reason text",
+    "selectReasonCode": "Select reason"
+  },
   "actualWorkspace": {
     "title": "Actual Workspace",
     "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
@@ -173,6 +211,7 @@
     "loadingMore": "Loading more...",
     "missingSignal": "Limited missing signal",
     "limitedMissingSignal": "limited calendar-day signal",
+    "statusSummary": "Actual status summary",
     "supportingMetrics": "Supporting metrics",
     "closingState": "Closing state",
     "selectedPlan": "Selected group plan",
@@ -214,6 +253,10 @@
     "saveChangedCells": "Save changed cells",
     "correction": "Correction",
     "submitCorrection": "Submit correction",
+    "markExcused": "Mark excused",
+    "markNotRequired": "Mark not required",
+    "submitExcuse": "Submit excuse",
+    "unmarkExcuse": "Unmark excuse",
     "updateDraft": "Update draft",
     "replaceMetrics": "Replace metrics",
     "replaceAllocations": "Replace allocations",
@@ -242,6 +285,7 @@
     "invalidActualDate": "Use DD-MM-YYYY. Do not use YYYY-MM-DD or slash dates.",
     "duplicateConflict": "An actual already exists with a different value. Use edit or correction flow.",
     "reasonRequired": "Correction reason is required.",
+    "excuseReasonRequired": "Excuse reason code and reason text are required.",
     "missingActualEntry": "Correction requires an existing actual entry."
   },
   "disabled": {
@@ -270,7 +314,9 @@
     "allocationSubmitted": "Allocation submitted for approval.",
     "allocationApproved": "Allocation approved.",
     "allocationRejected": "Allocation rejected.",
-    "allocationPublished": "Allocation published."
+    "allocationPublished": "Allocation published.",
+    "actualExcuseMarked": "Actual excuse marked.",
+    "actualExcuseUnmarked": "Actual excuse removed."
   },
   "states": {
     "loadErrorTitle": "Unable to load KPI",
@@ -288,6 +334,7 @@
     "actualWorkspaceDetailLoadErrorTitle": "Unable to load group plan detail",
     "actualWorkspaceDetailLoadErrorMessage": "Unable to load the selected group plan detail.",
     "actualGridLoadErrorTitle": "Unable to load actual grid",
-    "actualGridLoadErrorMessage": "Unable to load the actual grid for the selected date."
+    "actualGridLoadErrorMessage": "Unable to load the actual grid for the selected date.",
+    "actualExcuseMutationErrorMessage": "Unable to update the actual excuse."
   }
 }

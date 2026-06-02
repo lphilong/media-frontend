@@ -34,6 +34,54 @@ export type KpiAllocationStatus =
   | 'CLOSED'
   | 'CANCELLED';
 
+export const kpiDailyActualStatuses = [
+  'NOT_DUE',
+  'DUE_OPEN',
+  'OVERDUE',
+  'ENTERED',
+  'ENTERED_ZERO',
+  'EXCUSED',
+  'NOT_REQUIRED',
+  'BLOCKED_BY_PLAN_STATUS',
+  'BLOCKED_BY_ALLOCATION_STATUS',
+] as const;
+export type KpiDailyActualStatus = (typeof kpiDailyActualStatuses)[number];
+
+export const kpiActualExcuseStatuses = ['EXCUSED', 'NOT_REQUIRED'] as const;
+export type KpiActualExcuseStatus = (typeof kpiActualExcuseStatuses)[number];
+
+export const kpiActualExcuseReasonCodes = [
+  'MEMBER_LEAVE',
+  'SCHEDULED_OFF',
+  'HOLIDAY_OR_CLOSURE',
+  'NO_OPERATION_REQUIRED',
+  'DATA_SOURCE_UNAVAILABLE',
+  'OTHER',
+] as const;
+export type KpiActualExcuseReasonCode = (typeof kpiActualExcuseReasonCodes)[number];
+
+export type KpiActualExcuse = {
+  id: string;
+  status: KpiActualExcuseStatus;
+  reasonCode: KpiActualExcuseReasonCode;
+  reasonText: string;
+  createdAt: number | string;
+  createdByActorId: string;
+  updatedAt: number | string;
+  updatedByActorId: string;
+};
+
+export type KpiActualEntryStatusSummary = {
+  expectedEntryCount: number;
+  enteredEntryCount: number;
+  enteredZeroCount: number;
+  pendingEntryCount: number;
+  overdueEntryCount: number;
+  excusedEntryCount: number;
+  notRequiredEntryCount: number;
+  notDueEntryCount: number;
+};
+
 export type KpiTargetMetricInput = {
   metricCode: KpiMetricCode;
   targetValue: number;
@@ -207,10 +255,14 @@ export type KpiActualGridMetricCell = {
   actualValue: number | null;
   effectiveValue: number;
   hasEntry: boolean;
+  dailyActualStatus: KpiDailyActualStatus;
+  actualExcuse: KpiActualExcuse | null;
   editCount: number;
   correctionCount: number;
   latestCorrectionId: string | null;
   canDirectEdit: boolean;
+  canMarkExcused: boolean;
+  canUnmarkExcused: boolean;
   requiresCorrection: boolean;
   disabledReason: string | null;
 };
@@ -366,6 +418,7 @@ export type KpiActualWorkspacePlanSummary = {
   allocationCoverage: KpiActualWorkspaceAllocationCoverage;
   supportingMetrics: KpiActualWorkspaceMetricSummary[];
   missingSignal: KpiActualWorkspaceMissingSignal;
+  actualEntryStatusSummary: KpiActualEntryStatusSummary;
   closing: KpiActualWorkspaceClosing;
   actionHints: KpiActualWorkspaceActionHints;
 };
@@ -389,9 +442,25 @@ export type KpiActualWorkspaceMemberSummary = {
   };
   supportingMetrics: KpiActualWorkspaceMetricSummary[];
   missingSignal: KpiActualWorkspaceMissingSignal;
+  actualEntryStatusSummary: KpiActualEntryStatusSummary;
   actionHints: KpiActualWorkspaceActionHints;
 };
 
 export type KpiActualWorkspacePlanDetail = KpiActualWorkspacePlanSummary & {
   members: KpiActualWorkspaceMemberSummary[];
+};
+
+export type MarkKpiActualExcusePayload = {
+  kpiPlanId: string;
+  allocationId: string;
+  metricCode: KpiMetricCode;
+  actualDate: string;
+  status: KpiActualExcuseStatus;
+  reasonCode: KpiActualExcuseReasonCode;
+  reasonText: string;
+};
+
+export type UnmarkKpiActualExcusePayload = {
+  kpiPlanId: string;
+  excuseId: string;
 };

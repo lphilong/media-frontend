@@ -145,6 +145,44 @@
     "directEdit": "Sửa trực tiếp",
     "requiresCorrection": "Cần điều chỉnh"
   },
+  "dailyActualStatuses": {
+    "NOT_DUE": "Chua den han",
+    "DUE_OPEN": "Dang den han",
+    "OVERDUE": "Qua han",
+    "ENTERED": "Da nhap",
+    "ENTERED_ZERO": "Da nhap 0",
+    "EXCUSED": "Duoc mien",
+    "NOT_REQUIRED": "Khong bat buoc",
+    "BLOCKED_BY_PLAN_STATUS": "Ke hoach bi chan",
+    "BLOCKED_BY_ALLOCATION_STATUS": "Phan bo bi chan"
+  },
+  "actualExcuseStatuses": {
+    "EXCUSED": "Duoc mien",
+    "NOT_REQUIRED": "Khong bat buoc"
+  },
+  "actualExcuseReasonCodes": {
+    "MEMBER_LEAVE": "Thanh vien nghi",
+    "SCHEDULED_OFF": "Lich nghi",
+    "HOLIDAY_OR_CLOSURE": "Ngay le hoac dong cua",
+    "NO_OPERATION_REQUIRED": "Khong can van hanh",
+    "DATA_SOURCE_UNAVAILABLE": "Nguon du lieu khong san sang",
+    "OTHER": "Khac"
+  },
+  "actualStatusSummary": {
+    "dueOpen": "Dang den han",
+    "overdue": "Qua han",
+    "entered": "Da nhap",
+    "enteredZero": "Da nhap 0",
+    "excused": "Duoc mien",
+    "notRequired": "Khong bat buoc",
+    "notDue": "Chua den han",
+    "none": "Khong co muc du kien"
+  },
+  "actualExcuse": {
+    "reasonCode": "Ma ly do",
+    "reasonText": "Noi dung ly do",
+    "selectReasonCode": "Chon ly do"
+  },
   "actualWorkspace": {
     "title": "Khong gian nhap actual",
     "policy": "Co the nhap truc tiep tu D 00:00 den D+1 10:00 Asia/Ho_Chi_Minh, tinh ca hai moc. Moi muc duoc sua truc tiep toi da 3 lan.",
@@ -173,6 +211,7 @@
     "loadingMore": "Dang tai them...",
     "missingSignal": "Tin hieu thieu han che",
     "limitedMissingSignal": "tin hieu theo ngay co gioi han",
+    "statusSummary": "Tom tat trang thai actual",
     "supportingMetrics": "Chi so ho tro",
     "closingState": "Trang thai dong ky",
     "selectedPlan": "Ke hoach nhom da chon",
@@ -214,6 +253,10 @@
     "saveChangedCells": "Lưu ô đã đổi",
     "correction": "Điều chỉnh",
     "submitCorrection": "Gửi điều chỉnh",
+    "markExcused": "Danh dau mien",
+    "markNotRequired": "Danh dau khong bat buoc",
+    "submitExcuse": "Gui mien tru",
+    "unmarkExcuse": "Bo mien tru",
     "updateDraft": "Cập nhật nháp",
     "replaceMetrics": "Thay chỉ số",
     "replaceAllocations": "Thay phân bổ",
@@ -242,6 +285,7 @@
     "invalidActualDate": "Dùng DD-MM-YYYY.",
     "duplicateConflict": "Số thực đạt đã tồn tại với giá trị khác. Hãy sửa hoặc điều chỉnh.",
     "reasonRequired": "Bắt buộc nhập lý do điều chỉnh.",
+    "excuseReasonRequired": "Bat buoc chon ma ly do va nhap noi dung ly do.",
     "missingActualEntry": "Điều chỉnh cần một số thực đạt đã tồn tại."
   },
   "disabled": {
@@ -270,7 +314,9 @@
     "allocationSubmitted": "Da gui phan bo phe duyet.",
     "allocationApproved": "Da phe duyet phan bo.",
     "allocationRejected": "Da tu choi phan bo.",
-    "allocationPublished": "Da publish phan bo."
+    "allocationPublished": "Da publish phan bo.",
+    "actualExcuseMarked": "Da danh dau mien tru actual.",
+    "actualExcuseUnmarked": "Da bo mien tru actual."
   },
   "states": {
     "emptyActualWorkspace": "Khong co ke hoach nhom de nhap actual.",
@@ -280,6 +326,7 @@
     "actualWorkspaceDetailLoadErrorMessage": "Khong tai duoc chi tiet ke hoach nhom da chon.",
     "actualGridLoadErrorTitle": "Khong tai duoc bang actual",
     "actualGridLoadErrorMessage": "Khong tai duoc bang actual cho ngay da chon.",
+    "actualExcuseMutationErrorMessage": "Khong cap nhat duoc mien tru actual.",
     "loadErrorTitle": "Không tải được KPI",
     "loadErrorMessage": "Không tải được dữ liệu KPI.",
     "capabilityUnavailable": "Khong xac minh duoc quyen KPI. Thu lai.",
