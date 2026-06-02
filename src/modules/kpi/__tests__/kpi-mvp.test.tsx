@@ -106,8 +106,7 @@ const mswJson = (
     body: data === undefined ? undefined : JSON.stringify(data),
   });
 
-const readMswJson = async <T,>(response: Response): Promise<T> =>
-  response.json() as Promise<T>;
+const readMswJson = async <T,>(response: Response): Promise<T> => response.json() as Promise<T>;
 
 type KpiCapabilityMockParams = {
   permissions?: string[];
@@ -343,8 +342,9 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByRole('option', { name: /operational target/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /missing/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /coverage sort/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/D 00:00 through D\+1 10:00 Asia\/Ho_Chi_Minh, inclusive/i))
-      .toBeInTheDocument();
+    expect(
+      screen.getByText(/D 00:00 through D\+1 10:00 Asia\/Ho_Chi_Minh, inclusive/i),
+    ).toBeInTheDocument();
 
     await userEvent.click(within(row!).getByRole('button', { name: 'View detail' }));
     expect(await screen.findByText('Luna Park')).toBeInTheDocument();
@@ -422,9 +422,7 @@ describe('KPI MVP UX', () => {
     await openProgressActualsTab();
 
     expect(await screen.findByText('KPI-202605-000002')).toBeInTheDocument();
-    await waitFor(() =>
-      expect(captured.at(-1)?.searchParams.get('allocationCoverage')).toBeNull(),
-    );
+    await waitFor(() => expect(captured.at(-1)?.searchParams.get('allocationCoverage')).toBeNull());
 
     await userEvent.selectOptions(
       screen.getByRole('combobox', {
@@ -471,6 +469,100 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
   });
 
+  it('maps Actual Workspace status filters to backend booleans and omits All values', async () => {
+    const captured: URL[] = [];
+    server.use(
+      http.get('*/admin/kpi/actual-workspace/plans', ({ request }) => {
+        captured.push(new URL(request.url));
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+
+    const overdue = screen.getByRole('combobox', { name: 'Overdue actuals' });
+    const dueOpen = screen.getByRole('combobox', { name: 'Due-open actuals' });
+    expect(overdue).toBeInTheDocument();
+    expect(dueOpen).toBeInTheDocument();
+    await waitFor(() => expect(captured.at(-1)?.searchParams.get('hasOverdueActuals')).toBeNull());
+
+    await userEvent.selectOptions(overdue, 'true');
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('hasOverdueActuals')).toBe('true'),
+    );
+    await userEvent.selectOptions(overdue, 'false');
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('hasOverdueActuals')).toBe('false'),
+    );
+    await userEvent.selectOptions(overdue, '');
+    expect(overdue).toHaveValue('');
+
+    await userEvent.selectOptions(dueOpen, 'true');
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('hasPendingActuals')).toBe('true'),
+    );
+    await userEvent.selectOptions(dueOpen, 'false');
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('hasPendingActuals')).toBe('false'),
+    );
+    await userEvent.selectOptions(dueOpen, '');
+    expect(dueOpen).toHaveValue('');
+  });
+
+  it('resets Actual Workspace pages, detail, grid, and drafts when a status filter changes', async () => {
+    const captured: URL[] = [];
+    installActualWorkspacePagedUiHandler(captured);
+
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+    await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('KPI-202605-000004')).toBeInTheDocument();
+
+    const workspaceRow = (await screen.findByText('KPI-202605-000002')).closest('tr');
+    expect(workspaceRow).not.toBeNull();
+    await userEvent.click(within(workspaceRow!).getByRole('button', { name: 'View detail' }));
+    expect(await screen.findByText('kpi-plan-published-alloc-1')).toBeInTheDocument();
+    const actualDate = screen.getByLabelText('Actual date');
+    await userEvent.clear(actualDate);
+    await userEvent.type(actualDate, '16-05-2026');
+    await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
+    const draft = await screen.findByLabelText('Luna Park Content output count actual');
+    await userEvent.clear(draft);
+    await userEvent.type(draft, '3');
+
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Due-open actuals' }),
+      'true',
+    );
+
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('hasPendingActuals')).toBe('true'),
+    );
+    expect(captured.at(-1)?.searchParams.get('cursor')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('KPI-202605-000004')).not.toBeInTheDocument());
+    expect(screen.queryByText('kpi-plan-published-alloc-1')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Luna Park Content output count actual'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps Load more opaque cursor passthrough with Actual Workspace status filters', async () => {
+    const captured: URL[] = [];
+    installActualWorkspacePagedUiHandler(captured);
+
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Due-open actuals' }),
+      'true',
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+
+    await waitFor(() => expect(captured.at(-1)?.searchParams.get('cursor')).toBe('cursor-1'));
+    expect(captured.at(-1)?.searchParams.get('hasPendingActuals')).toBe('true');
+  });
+
   it('maps Actual Workspace derived sort controls, resets state, and keeps Load more', async () => {
     const captured: URL[] = [];
     installActualWorkspacePagedUiHandler(captured);
@@ -491,7 +583,10 @@ describe('KPI MVP UX', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
     await screen.findByLabelText('Luna Park Revenue VND actual');
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sort by' }), 'revenueActual');
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Sort by' }),
+      'revenueActual',
+    );
     await waitFor(() => {
       const latest = captured.at(-1);
       expect(latest?.searchParams.get('sortBy')).toBe('revenueActual');
@@ -509,26 +604,18 @@ describe('KPI MVP UX', () => {
       expect(captured.at(-1)?.searchParams.get('sortBy')).toBe('achievementPercent'),
     );
 
-    await userEvent.selectOptions(
-      screen.getByRole('combobox', { name: 'Sort direction' }),
-      'ASC',
-    );
-    await waitFor(() =>
-      expect(captured.at(-1)?.searchParams.get('sortDirection')).toBe('ASC'),
-    );
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sort direction' }), 'ASC');
+    await waitFor(() => expect(captured.at(-1)?.searchParams.get('sortDirection')).toBe('ASC'));
 
     await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
-    await waitFor(() =>
-      expect(captured.at(-1)?.searchParams.get('cursor')).toBeTruthy(),
-    );
+    await waitFor(() => expect(captured.at(-1)?.searchParams.get('cursor')).toBeTruthy());
     expect(screen.getAllByText('KPI-202605-000002')).toHaveLength(1);
   });
 
   it('uses the backend Actual Workspace list endpoint and validates supported sort input', async () => {
     expect((await fetchKpiActualWorkspacePlans({ limit: 10 })).data[0].planCode).toBeDefined();
     expect(
-      (await fetchKpiActualWorkspacePlans({ sortBy: 'revenueActual', limit: 10 })).data[0]
-        .planCode,
+      (await fetchKpiActualWorkspacePlans({ sortBy: 'revenueActual', limit: 10 })).data[0].planCode,
     ).toBeDefined();
     expect(
       (await fetchKpiActualWorkspacePlans({ sortBy: 'achievementPercent', limit: 10 })).data[0]
@@ -540,12 +627,47 @@ describe('KPI MVP UX', () => {
     await expect(
       fetchKpiActualWorkspacePlans({ sortBy: 'operationalTarget' as never }),
     ).rejects.toThrow();
+    await expect(fetchKpiActualWorkspacePlans({ revenueActualMin: 1 } as never)).rejects.toThrow();
+    await expect(fetchKpiActualWorkspacePlans({ achievementMax: 100 } as never)).rejects.toThrow();
     await expect(
-      fetchKpiActualWorkspacePlans({ revenueActualMin: 1 } as never),
+      fetchKpiActualWorkspacePlans({ actualEntryStatus: 'OVERDUE' } as never),
     ).rejects.toThrow();
+    await expect(fetchKpiActualWorkspacePlans({ overdueCountMin: 1 } as never)).rejects.toThrow();
+    await expect(fetchKpiActualWorkspacePlans({ pendingCountMin: 1 } as never)).rejects.toThrow();
     await expect(
-      fetchKpiActualWorkspacePlans({ achievementMax: 100 } as never),
+      fetchKpiActualWorkspacePlans({ sortBy: 'actualEntryStatus' as never }),
     ).rejects.toThrow();
+  });
+
+  it('serializes Actual Workspace status booleans and omits undefined values', async () => {
+    const captured: URL[] = [];
+    server.use(
+      http.get('*/admin/kpi/actual-workspace/plans', ({ request }) => {
+        captured.push(new URL(request.url));
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await fetchKpiActualWorkspacePlans({
+      hasOverdueActuals: true,
+      hasPendingActuals: false,
+    });
+    expect(captured.at(-1)?.searchParams.get('hasOverdueActuals')).toBe('true');
+    expect(captured.at(-1)?.searchParams.get('hasPendingActuals')).toBe('false');
+
+    await fetchKpiActualWorkspacePlans({
+      hasOverdueActuals: false,
+      hasPendingActuals: true,
+    });
+    expect(captured.at(-1)?.searchParams.get('hasOverdueActuals')).toBe('false');
+    expect(captured.at(-1)?.searchParams.get('hasPendingActuals')).toBe('true');
+
+    await fetchKpiActualWorkspacePlans({
+      hasOverdueActuals: undefined,
+      hasPendingActuals: undefined,
+    });
+    expect(captured.at(-1)?.searchParams.get('hasOverdueActuals')).toBeNull();
+    expect(captured.at(-1)?.searchParams.get('hasPendingActuals')).toBeNull();
   });
 
   it('accepts Actual Workspace meta.nextCursor and cursor query fields', async () => {
@@ -601,9 +723,8 @@ describe('KPI MVP UX', () => {
       '/admin/kpi/actual-workspace/plans?limit=2&sortBy=periodMonth&sortDirection=DESC',
     );
     expect(firstResponse.status).toBe(200);
-    const first = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      firstResponse,
-    );
+    const first =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(firstResponse);
     expect(first.meta?.nextCursor).toBeDefined();
 
     const nextResponse = await mswJson(
@@ -613,9 +734,8 @@ describe('KPI MVP UX', () => {
       )}`,
     );
     expect(nextResponse.status).toBe(200);
-    const next = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      nextResponse,
-    );
+    const next =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(nextResponse);
     const firstPlanIds = new Set(first.data.map((plan) => plan.planId));
     expect(next.data.some((plan) => firstPlanIds.has(plan.planId))).toBe(false);
   });
@@ -626,9 +746,8 @@ describe('KPI MVP UX', () => {
       '/admin/kpi/actual-workspace/plans?limit=2&sortBy=planCode&sortDirection=ASC',
     );
     expect(firstResponse.status).toBe(200);
-    const first = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      firstResponse,
-    );
+    const first =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(firstResponse);
     expect(first.meta?.nextCursor).toBeDefined();
 
     const nextResponse = await mswJson(
@@ -638,9 +757,8 @@ describe('KPI MVP UX', () => {
       )}`,
     );
     expect(nextResponse.status).toBe(200);
-    const next = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      nextResponse,
-    );
+    const next =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(nextResponse);
     expect(next.data[0].planCode).not.toBe(first.data[0].planCode);
 
     const malformedResponse = await mswJson(
@@ -664,9 +782,8 @@ describe('KPI MVP UX', () => {
       '/admin/kpi/actual-workspace/plans?sortBy=revenueActual&sortDirection=ASC&limit=10',
     );
     expect(ascResponse.status).toBe(200);
-    const asc = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      ascResponse,
-    );
+    const asc =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(ascResponse);
     expect(asc.data.map((plan) => plan.revenue.actualValue)).toEqual(
       [...asc.data.map((plan) => plan.revenue.actualValue)].sort((left, right) => left - right),
     );
@@ -676,9 +793,8 @@ describe('KPI MVP UX', () => {
       '/admin/kpi/actual-workspace/plans?sortBy=revenueActual&sortDirection=DESC&limit=10',
     );
     expect(descResponse.status).toBe(200);
-    const desc = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      descResponse,
-    );
+    const desc =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(descResponse);
     expect(desc.data.map((plan) => plan.revenue.actualValue)).toEqual(
       [...desc.data.map((plan) => plan.revenue.actualValue)].sort((left, right) => right - left),
     );
@@ -688,9 +804,8 @@ describe('KPI MVP UX', () => {
       '/admin/kpi/actual-workspace/plans?sortBy=revenueActual&sortDirection=DESC&limit=2',
     );
     expect(firstResponse.status).toBe(200);
-    const first = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      firstResponse,
-    );
+    const first =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(firstResponse);
     expect(first.meta?.nextCursor).toBeDefined();
     const nextResponse = await mswJson(
       'GET',
@@ -699,9 +814,8 @@ describe('KPI MVP UX', () => {
       )}`,
     );
     expect(nextResponse.status).toBe(200);
-    const next = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      nextResponse,
-    );
+    const next =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(nextResponse);
     const firstPlanIds = new Set(first.data.map((plan) => plan.planId));
     expect(next.data.some((plan) => firstPlanIds.has(plan.planId))).toBe(false);
   });
@@ -712,9 +826,8 @@ describe('KPI MVP UX', () => {
       '/admin/kpi/actual-workspace/plans?sortBy=achievementPercent&sortDirection=ASC&limit=10',
     );
     expect(ascResponse.status).toBe(200);
-    const asc = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      ascResponse,
-    );
+    const asc =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(ascResponse);
     const ascValues = asc.data.map((plan) => plan.revenue.achievementPercent);
     const ascNonNull = ascValues.filter((value): value is number => value !== null);
     expect(ascNonNull).toEqual([...ascNonNull].sort((left, right) => left - right));
@@ -731,9 +844,8 @@ describe('KPI MVP UX', () => {
       '/admin/kpi/actual-workspace/plans?sortBy=achievementPercent&sortDirection=DESC&limit=10',
     );
     expect(descResponse.status).toBe(200);
-    const desc = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      descResponse,
-    );
+    const desc =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(descResponse);
     const descValues = desc.data.map((plan) => plan.revenue.achievementPercent);
     const descNonNull = descValues.filter((value): value is number => value !== null);
     expect(descNonNull).toEqual([...descNonNull].sort((left, right) => right - left));
@@ -746,9 +858,8 @@ describe('KPI MVP UX', () => {
       '/admin/kpi/actual-workspace/plans?sortBy=achievementPercent&sortDirection=ASC&limit=2',
     );
     expect(firstResponse.status).toBe(200);
-    const first = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      firstResponse,
-    );
+    const first =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(firstResponse);
     expect(first.meta?.nextCursor).toBeDefined();
     const nextResponse = await mswJson(
       'GET',
@@ -757,9 +868,8 @@ describe('KPI MVP UX', () => {
       )}`,
     );
     expect(nextResponse.status).toBe(200);
-    const next = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-      nextResponse,
-    );
+    const next =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(nextResponse);
     const firstPlanIds = new Set(first.data.map((plan) => plan.planId));
     expect(next.data.some((plan) => firstPlanIds.has(plan.planId))).toBe(false);
 
@@ -827,9 +937,7 @@ describe('KPI MVP UX', () => {
     );
     expect(planCodeResponse.status).toBe(200);
     const planCode =
-      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-        planCodeResponse,
-      );
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(planCodeResponse);
     expect(planCode.data).toHaveLength(1);
     expect(planCode.data[0].planCode).toBe('KPI-202604-000003');
 
@@ -852,9 +960,7 @@ describe('KPI MVP UX', () => {
     );
     expect(completeResponse.status).toBe(200);
     const complete =
-      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
-        completeResponse,
-      );
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(completeResponse);
     expect(complete.data).toHaveLength(1);
     expect(complete.data[0].allocationCoverage.totalAllocationCount).toBeGreaterThan(0);
     expect(complete.data[0].allocationCoverage.publishedAllocationCount).toBe(
@@ -877,6 +983,110 @@ describe('KPI MVP UX', () => {
           incomplete.data[0].allocationCoverage.totalAllocationCount,
     ).toBe(true);
     expect(incomplete.meta?.nextCursor).toBeDefined();
+  });
+
+  it('MSW filters Actual Workspace status booleans before pagination with AND semantics', async () => {
+    const both = await fetchKpiActualWorkspacePlans({
+      search: 'Status fixture',
+      hasOverdueActuals: true,
+      hasPendingActuals: true,
+      limit: 100,
+    });
+    expect(both.data.map((plan) => plan.planId)).toEqual(['kpi-plan-status-both']);
+
+    const neither = await fetchKpiActualWorkspacePlans({
+      search: 'Status fixture',
+      hasOverdueActuals: false,
+      hasPendingActuals: false,
+      limit: 100,
+    });
+    expect(neither.data.map((plan) => plan.planId).sort()).toEqual([
+      'kpi-plan-status-entered-zero',
+      'kpi-plan-status-excused-not-required',
+      'kpi-plan-status-neither',
+      'kpi-plan-status-not-due',
+    ]);
+
+    const first = await fetchKpiActualWorkspacePlans({
+      search: 'Status fixture',
+      hasPendingActuals: true,
+      limit: 1,
+      sortBy: 'planCode',
+      sortDirection: 'ASC',
+    });
+    expect(first.data).toHaveLength(1);
+    expect(first.data[0].actualEntryStatusSummary.pendingEntryCount).toBeGreaterThan(0);
+    expect(first.meta?.nextCursor).toBeDefined();
+    const next = await fetchKpiActualWorkspacePlans({
+      search: 'Status fixture',
+      hasPendingActuals: true,
+      limit: 1,
+      sortBy: 'planCode',
+      sortDirection: 'ASC',
+      cursor: first.meta?.nextCursor,
+    });
+    expect(next.data).toHaveLength(1);
+    expect(next.data[0].actualEntryStatusSummary.pendingEntryCount).toBeGreaterThan(0);
+    expect(next.data[0].planId).not.toBe(first.data[0].planId);
+  });
+
+  it('MSW combines Actual Workspace status filters with search, coverage, and derived sorts', async () => {
+    for (const sortBy of ['revenueActual', 'achievementPercent'] as const) {
+      const result = await fetchKpiActualWorkspacePlans({
+        search: 'Status fixture',
+        allocationCoverage: 'complete',
+        hasPendingActuals: true,
+        sortBy,
+        sortDirection: 'ASC',
+        limit: 100,
+      });
+      expect(result.data.map((plan) => plan.planId).sort()).toEqual([
+        'kpi-plan-status-both',
+        'kpi-plan-status-due-open-only',
+      ]);
+      expect(
+        result.data.every(
+          (plan) =>
+            plan.actualEntryStatusSummary.pendingEntryCount > 0 &&
+            plan.allocationCoverage.isAllExistingAllocationsPublished,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it('MSW rejects invalid Actual Workspace status booleans, deferred fields, and cursor mismatch', async () => {
+    for (const value of ['', '1', 'yes']) {
+      expect(
+        (
+          await mswJson(
+            'GET',
+            `/admin/kpi/actual-workspace/plans?hasOverdueActuals=${encodeURIComponent(value)}`,
+          )
+        ).status,
+      ).toBe(400);
+    }
+    for (const field of ['actualEntryStatus', 'overdueCountMin', 'pendingCountMin']) {
+      expect((await mswJson('GET', `/admin/kpi/actual-workspace/plans?${field}=1`)).status).toBe(
+        422,
+      );
+    }
+    expect(
+      (await mswJson('GET', '/admin/kpi/actual-workspace/plans?sortBy=actualEntryStatus')).status,
+    ).toBe(400);
+
+    const first = await fetchKpiActualWorkspacePlans({
+      search: 'Status fixture',
+      hasPendingActuals: true,
+      limit: 1,
+    });
+    expect(first.meta?.nextCursor).toBeDefined();
+    const mismatch = await mswJson(
+      'GET',
+      `/admin/kpi/actual-workspace/plans?search=Status%20fixture&hasPendingActuals=false&limit=1&cursor=${encodeURIComponent(
+        first.meta?.nextCursor ?? '',
+      )}`,
+    );
+    expect(mismatch.status).toBe(400);
   });
 
   it('approval queue defaults to actionable status-filtered rows and exposes history views', async () => {
@@ -1700,7 +1910,9 @@ describe('KPI MVP UX', () => {
 
     await userEvent.click((await screen.findAllByRole('button', { name: 'Mark excused' }))[0]);
     await userEvent.click(await waitForEnabledButton('Submit excuse'));
-    expect(await screen.findByText(/reason code and reason text are required/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/reason code and reason text are required/i),
+    ).toBeInTheDocument();
 
     await userEvent.selectOptions(screen.getByLabelText('Reason code'), 'MEMBER_LEAVE');
     await userEvent.type(screen.getByLabelText('Reason text'), 'Approved leave');
@@ -1714,7 +1926,9 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText(/active excuse/i)).toBeInTheDocument();
 
     await userEvent.click(await screen.findByRole('button', { name: 'Unmark excuse' }));
-    await waitFor(() => expect(screen.queryByText(/Member leave: Approved leave/i)).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText(/Member leave: Approved leave/i)).not.toBeInTheDocument(),
+    );
     expect(await screen.findAllByText('Due open')).not.toHaveLength(0);
   });
 
@@ -1779,20 +1993,25 @@ describe('KPI MVP UX', () => {
     };
 
     vi.setSystemTime(new Date('2026-05-15T23:59:59+07:00'));
-    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability)
-      .toMatchObject({ isDirectEditOpen: false, disabledReason: 'DIRECT_EDIT_WINDOW_CLOSED' });
-    expect((await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).status)
-      .toBe(409);
+    expect(
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability,
+    ).toMatchObject({ isDirectEditOpen: false, disabledReason: 'DIRECT_EDIT_WINDOW_CLOSED' });
+    expect(
+      (await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).status,
+    ).toBe(409);
 
     vi.setSystemTime(new Date('2026-05-16T00:00:00+07:00'));
-    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability)
-      .toMatchObject({ isDirectEditOpen: true, disabledReason: null });
-    expect((await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).ok)
-      .toBe(true);
+    expect(
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability,
+    ).toMatchObject({ isDirectEditOpen: true, disabledReason: null });
+    expect(
+      (await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).ok,
+    ).toBe(true);
 
     vi.setSystemTime(new Date('2026-05-17T10:00:00+07:00'));
-    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability)
-      .toMatchObject({ isDirectEditOpen: true, disabledReason: null });
+    expect(
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability,
+    ).toMatchObject({ isDirectEditOpen: true, disabledReason: null });
     expect(
       (
         await mswJson('PATCH', '/admin/kpi/plans/kpi-plan-published/actuals/actual-editable', {
@@ -1802,8 +2021,9 @@ describe('KPI MVP UX', () => {
     ).toBe(true);
 
     vi.setSystemTime(new Date('2026-05-17T10:00:01+07:00'));
-    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability)
-      .toMatchObject({ isDirectEditOpen: false, disabledReason: 'DIRECT_EDIT_WINDOW_CLOSED' });
+    expect(
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability,
+    ).toMatchObject({ isDirectEditOpen: false, disabledReason: 'DIRECT_EDIT_WINDOW_CLOSED' });
     expect(
       (
         await mswJson('PATCH', '/admin/kpi/plans/kpi-plan-published/actuals/actual-editable', {
@@ -1811,12 +2031,14 @@ describe('KPI MVP UX', () => {
         })
       ).status,
     ).toBe(409);
-    expect((await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).status)
-      .toBe(409);
+    expect(
+      (await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).status,
+    ).toBe(409);
 
     vi.setSystemTime(new Date('2026-06-01T10:00:00+07:00'));
-    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '31-05-2026')).editability)
-      .toMatchObject({ isDirectEditOpen: true, disabledReason: null });
+    expect(
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '31-05-2026')).editability,
+    ).toMatchObject({ isDirectEditOpen: true, disabledReason: null });
   });
 
   it('MSW mirrors actual excuse validation, conflicts, and unmark restore', async () => {
@@ -2528,11 +2750,12 @@ describe('KPI MVP UX', () => {
 
   it('strict Actual Workspace detail schema rejects raw member identifiers', () => {
     const detail = makeActualWorkspaceDetail();
-    expect(parseKpiActualWorkspacePlanDetailResponseForTest({ data: detail }).members[0])
-      .toMatchObject({
-        allocationId: 'kpi-plan-published-alloc-1',
-        memberDisplayName: 'Luna Park',
-      });
+    expect(
+      parseKpiActualWorkspacePlanDetailResponseForTest({ data: detail }).members[0],
+    ).toMatchObject({
+      allocationId: 'kpi-plan-published-alloc-1',
+      memberDisplayName: 'Luna Park',
+    });
     expect(() =>
       parseKpiActualWorkspacePlanDetailResponseForTest({
         data: {
@@ -2553,8 +2776,8 @@ describe('KPI MVP UX', () => {
 
   it('strict API schema accepts actual status and excuse DTOs and rejects invalid status values', () => {
     const grid = makeActualStatusGrid();
-    expect(parseKpiActualDailyGridResponseForTest({ data: grid }).rows[1].metrics[0])
-      .toMatchObject({
+    expect(parseKpiActualDailyGridResponseForTest({ data: grid }).rows[1].metrics[0]).toMatchObject(
+      {
         dailyActualStatus: 'EXCUSED',
         actualExcuse: {
           id: 'excuse-ui',
@@ -2562,7 +2785,8 @@ describe('KPI MVP UX', () => {
           reasonText: 'Approved leave',
         },
         canUnmarkExcused: true,
-      });
+      },
+    );
     expect(
       parseKpiActualWorkspacePlanListResponseForTest({
         data: [makeActualWorkspaceSummary()],
@@ -3037,16 +3261,24 @@ const installActualWorkspacePagedUiHandler = (captured?: URL[]): void => {
       captured?.push(url);
       const search = url.searchParams.get('search')?.toLowerCase();
       const coverage = url.searchParams.get('allocationCoverage');
+      const hasOverdueActuals = url.searchParams.get('hasOverdueActuals');
+      const hasPendingActuals = url.searchParams.get('hasPendingActuals');
       const filtered = rows.filter((row) => {
+        if (coverage === 'complete' && !row.allocationCoverage.isAllExistingAllocationsPublished) {
+          return false;
+        }
+        if (coverage === 'incomplete' && row.allocationCoverage.isAllExistingAllocationsPublished) {
+          return false;
+        }
         if (
-          coverage === 'complete' &&
-          !row.allocationCoverage.isAllExistingAllocationsPublished
+          hasOverdueActuals !== null &&
+          row.actualEntryStatusSummary.overdueEntryCount > 0 !== (hasOverdueActuals === 'true')
         ) {
           return false;
         }
         if (
-          coverage === 'incomplete' &&
-          row.allocationCoverage.isAllExistingAllocationsPublished
+          hasPendingActuals !== null &&
+          row.actualEntryStatusSummary.pendingEntryCount > 0 !== (hasPendingActuals === 'true')
         ) {
           return false;
         }
@@ -3062,8 +3294,7 @@ const installActualWorkspacePagedUiHandler = (captured?: URL[]): void => {
       const cursor = url.searchParams.get('cursor');
       const pageIndex = cursor === 'cursor-2' ? 2 : cursor === 'cursor-1' ? 1 : 0;
       const pageRows = filtered.slice(pageIndex, pageIndex + 1);
-      const nextCursor =
-        pageIndex + 1 < filtered.length ? `cursor-${pageIndex + 1}` : undefined;
+      const nextCursor = pageIndex + 1 < filtered.length ? `cursor-${pageIndex + 1}` : undefined;
       return HttpResponse.json({
         data: pageRows,
         ...(nextCursor ? { meta: { nextCursor } } : {}),

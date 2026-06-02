@@ -41,11 +41,12 @@ import type {
 
 const KPI_QUERY_ROOT = ['kpi'] as const;
 
-const stableQueryToken = (query: Record<string, string | number | undefined>): string => new URLSearchParams(
-  Object.entries(query)
-    .filter(([, value]) => value !== undefined && value !== '')
-    .map(([key, value]) => [key, String(value)]),
-).toString();
+const stableQueryToken = (query: Record<string, string | number | boolean | undefined>): string =>
+  new URLSearchParams(
+    Object.entries(query)
+      .filter(([, value]) => value !== undefined && value !== '')
+      .map(([key, value]) => [key, String(value)]),
+  ).toString();
 
 export const kpiQueryKeys = {
   all: () => KPI_QUERY_ROOT,
@@ -54,7 +55,8 @@ export const kpiQueryKeys = {
     ['kpi', 'actual-workspace', 'plans', stableQueryToken(query)] as const,
   actualWorkspacePlanDetail: (kpiPlanId: string) =>
     ['kpi', 'actual-workspace', 'plan', kpiPlanId] as const,
-  allocations: (query: KpiAllocationQuery) => ['kpi', 'allocations', stableQueryToken(query)] as const,
+  allocations: (query: KpiAllocationQuery) =>
+    ['kpi', 'allocations', stableQueryToken(query)] as const,
   detail: (kpiPlanId: string) => ['kpi', 'plan', kpiPlanId] as const,
   progress: (kpiPlanId: string) => ['kpi', 'progress', kpiPlanId] as const,
   myProgress: (kpiPlanId: string) => ['kpi', 'my-progress', kpiPlanId] as const,
@@ -114,7 +116,8 @@ export const useKpiProgress = (kpiPlanId?: string, options?: { self?: boolean })
         ? kpiQueryKeys.myProgress(kpiPlanId)
         : kpiQueryKeys.progress(kpiPlanId)
       : ['kpi', 'progress'],
-    queryFn: () => (options?.self ? fetchMyKpiProgress(kpiPlanId ?? '') : fetchKpiProgress(kpiPlanId ?? '')),
+    queryFn: () =>
+      options?.self ? fetchMyKpiProgress(kpiPlanId ?? '') : fetchKpiProgress(kpiPlanId ?? ''),
     enabled: Boolean(kpiPlanId),
   });
 
@@ -178,8 +181,13 @@ export const useReplaceKpiTargetMetricsMutation = () => {
 export const useReplaceKpiAllocationsMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ kpiPlanId, allocations }: { kpiPlanId: string; allocations: KpiAllocationInput[] }) =>
-      replaceKpiAllocations(kpiPlanId, allocations),
+    mutationFn: ({
+      kpiPlanId,
+      allocations,
+    }: {
+      kpiPlanId: string;
+      allocations: KpiAllocationInput[];
+    }) => replaceKpiAllocations(kpiPlanId, allocations),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };
@@ -209,8 +217,13 @@ export const useSubmitKpiAllocationDraftMutation = () => {
 export const useApproveKpiAllocationMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ kpiPlanId, approvalNote }: { kpiPlanId: string; approvalNote?: string | null }) =>
-      approveKpiAllocation(kpiPlanId, approvalNote),
+    mutationFn: ({
+      kpiPlanId,
+      approvalNote,
+    }: {
+      kpiPlanId: string;
+      approvalNote?: string | null;
+    }) => approveKpiAllocation(kpiPlanId, approvalNote),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };

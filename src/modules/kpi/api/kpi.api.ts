@@ -688,12 +688,15 @@ const actualWorkspacePlanQuerySchema = z
     sortDirection: z.enum(['ASC', 'DESC']).optional(),
     cursor: z.string().trim().min(1).optional(),
     allocationCoverage: z.enum(['complete', 'incomplete']).optional(),
+    hasOverdueActuals: z.boolean().optional(),
+    hasPendingActuals: z.boolean().optional(),
   })
   .strict();
 
 const sanitizeActualWorkspacePlanQuery = (
   query: KpiActualWorkspacePlanQuery,
-): Record<string, string | number | undefined> => actualWorkspacePlanQuerySchema.parse(query);
+): Record<string, string | number | boolean | undefined> =>
+  actualWorkspacePlanQuerySchema.parse(query);
 
 export const sanitizeKpiCreatePlanPayload = (payload: KpiCreatePlanPayload): KpiCreatePlanPayload =>
   createPayloadSchema.parse(payload);

@@ -207,6 +207,15 @@
       "complete": "Complete",
       "incomplete": "Incomplete"
     },
+    "overdueActuals": "Overdue actuals",
+    "dueOpenActuals": "Due-open actuals",
+    "statusFilters": {
+      "all": "All",
+      "hasOverdue": "Has overdue",
+      "noOverdue": "No overdue",
+      "hasDueOpen": "Has due open",
+      "noDueOpen": "No due open"
+    },
     "loadMore": "Load more",
     "loadingMore": "Loading more...",
     "missingSignal": "Limited missing signal",

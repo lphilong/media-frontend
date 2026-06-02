@@ -207,6 +207,15 @@
       "complete": "Hoan tat",
       "incomplete": "Chua hoan tat"
     },
+    "overdueActuals": "Actual qua han",
+    "dueOpenActuals": "Actual dang den han",
+    "statusFilters": {
+      "all": "Tat ca",
+      "hasOverdue": "Co qua han",
+      "noOverdue": "Khong qua han",
+      "hasDueOpen": "Co dang den han",
+      "noDueOpen": "Khong dang den han"
+    },
     "loadMore": "Tai them",
     "loadingMore": "Dang tai them...",
     "missingSignal": "Tin hieu thieu han che",

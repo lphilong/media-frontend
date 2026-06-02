@@ -157,6 +157,14 @@ const readActualWorkspaceAllocationCoverage = (
   return value === 'complete' || value === 'incomplete' ? value : undefined;
 };
 
+const readActualWorkspaceBooleanFilter = (
+  searchParams: URLSearchParams,
+  key: 'hasOverdueActuals' | 'hasPendingActuals',
+): boolean | undefined => {
+  const value = searchParams.get(key);
+  return value === 'true' ? true : value === 'false' ? false : undefined;
+};
+
 const defaultTargets: TargetDraft[] = [
   { metricCode: 'REVENUE_VND', value: '1.000.000' },
   { metricCode: 'CONTENT_OUTPUT_COUNT', value: '10' },
@@ -256,9 +264,9 @@ export const KpiListPage = (): JSX.Element => {
   }>();
   const [actualWorkspaceCursor, setActualWorkspaceCursor] = useState<string>();
   const [actualWorkspaceNextCursor, setActualWorkspaceNextCursor] = useState<string>();
-  const [actualWorkspacePages, setActualWorkspacePages] = useState<
-    KpiActualWorkspacePlanSummary[]
-  >([]);
+  const [actualWorkspacePages, setActualWorkspacePages] = useState<KpiActualWorkspacePlanSummary[]>(
+    [],
+  );
   const [cellDrafts, setCellDrafts] = useState<Record<string, string>>({});
   const [actualError, setActualError] = useState<string | null>(null);
   const [correctionTarget, setCorrectionTarget] = useState<CorrectionTarget | null>(null);
@@ -376,6 +384,14 @@ export const KpiListPage = (): JSX.Element => {
     () => readActualWorkspaceSortDirection(searchParams),
     [searchParams],
   );
+  const actualWorkspaceHasOverdueActuals = useMemo(
+    () => readActualWorkspaceBooleanFilter(searchParams, 'hasOverdueActuals'),
+    [searchParams],
+  );
+  const actualWorkspaceHasPendingActuals = useMemo(
+    () => readActualWorkspaceBooleanFilter(searchParams, 'hasPendingActuals'),
+    [searchParams],
+  );
   const actualWorkspaceBaseQuery = useMemo<KpiActualWorkspacePlanQuery>(
     () => ({
       search: query.search,
@@ -383,12 +399,16 @@ export const KpiListPage = (): JSX.Element => {
       subjectId: query.subjectType === 'TALENT_GROUP' ? query.subjectId : undefined,
       groupId: query.groupId,
       allocationCoverage: actualWorkspaceAllocationCoverage,
+      hasOverdueActuals: actualWorkspaceHasOverdueActuals,
+      hasPendingActuals: actualWorkspaceHasPendingActuals,
       limit: actualWorkspacePageLimit,
       sortBy: actualWorkspaceSortBy,
       sortDirection: actualWorkspaceSortDirection,
     }),
     [
       actualWorkspaceAllocationCoverage,
+      actualWorkspaceHasOverdueActuals,
+      actualWorkspaceHasPendingActuals,
       actualWorkspaceSortBy,
       actualWorkspaceSortDirection,
       query.groupId,
@@ -662,11 +682,7 @@ export const KpiListPage = (): JSX.Element => {
         } catch (error) {
           if (isConflict(error)) {
             setActualError(
-              readErrorMessage(
-                t,
-                error as NormalizedApiError,
-                'kpi:validation.duplicateConflict',
-              ),
+              readErrorMessage(t, error as NormalizedApiError, 'kpi:validation.duplicateConflict'),
             );
           } else {
             notifyError(error as NormalizedApiError);
@@ -681,7 +697,10 @@ export const KpiListPage = (): JSX.Element => {
 
   const loadActualGrid = (): void => {
     setActualError(null);
-    if (!selectedWorkspacePlanId || !actualWorkspaceDetailQuery.data?.actionHints.canReadActualGrid) {
+    if (
+      !selectedWorkspacePlanId ||
+      !actualWorkspaceDetailQuery.data?.actionHints.canReadActualGrid
+    ) {
       return;
     }
     if (!isStrictKpiDate(actualDate)) {
@@ -741,8 +760,7 @@ export const KpiListPage = (): JSX.Element => {
     );
   };
 
-  const formatAchievement = (value: number | null): string =>
-    value === null ? '-' : `${value}%`;
+  const formatAchievement = (value: number | null): string => (value === null ? '-' : `${value}%`);
 
   const renderAllocationCoverage = ({
     publishedAllocationCount,
@@ -1355,6 +1373,46 @@ export const KpiListPage = (): JSX.Element => {
                 </option>
               </select>
             </label>
+            <label className="flex min-w-[180px] flex-col gap-1 text-sm">
+              <span className="text-xs font-medium uppercase text-muted">
+                {t('kpi:actualWorkspace.overdueActuals')}
+              </span>
+              <select
+                value={
+                  actualWorkspaceHasOverdueActuals === undefined
+                    ? ''
+                    : String(actualWorkspaceHasOverdueActuals)
+                }
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                onChange={(event) =>
+                  patchQuery({ hasOverdueActuals: event.target.value || undefined })
+                }
+              >
+                <option value="">{t('kpi:actualWorkspace.statusFilters.all')}</option>
+                <option value="true">{t('kpi:actualWorkspace.statusFilters.hasOverdue')}</option>
+                <option value="false">{t('kpi:actualWorkspace.statusFilters.noOverdue')}</option>
+              </select>
+            </label>
+            <label className="flex min-w-[180px] flex-col gap-1 text-sm">
+              <span className="text-xs font-medium uppercase text-muted">
+                {t('kpi:actualWorkspace.dueOpenActuals')}
+              </span>
+              <select
+                value={
+                  actualWorkspaceHasPendingActuals === undefined
+                    ? ''
+                    : String(actualWorkspaceHasPendingActuals)
+                }
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                onChange={(event) =>
+                  patchQuery({ hasPendingActuals: event.target.value || undefined })
+                }
+              >
+                <option value="">{t('kpi:actualWorkspace.statusFilters.all')}</option>
+                <option value="true">{t('kpi:actualWorkspace.statusFilters.hasDueOpen')}</option>
+                <option value="false">{t('kpi:actualWorkspace.statusFilters.noDueOpen')}</option>
+              </select>
+            </label>
             <label className="flex min-w-[190px] flex-col gap-1 text-sm">
               <span className="text-xs font-medium uppercase text-muted">
                 {t('kpi:actualWorkspace.sortBy')}
@@ -1430,13 +1488,25 @@ export const KpiListPage = (): JSX.Element => {
                     <th className="px-3 py-2 text-left">{t('kpi:fields.planCode')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.group')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.periodMonth')}</th>
-                    <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.revenueTarget')}</th>
-                    <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.revenueActual')}</th>
+                    <th className="px-3 py-2 text-left">
+                      {t('kpi:actualWorkspace.revenueTarget')}
+                    </th>
+                    <th className="px-3 py-2 text-left">
+                      {t('kpi:actualWorkspace.revenueActual')}
+                    </th>
                     <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.achievement')}</th>
-                    <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.allocationCoverage')}</th>
-                    <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.missingSignal')}</th>
-                    <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.statusSummary')}</th>
-                    <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.supportingMetrics')}</th>
+                    <th className="px-3 py-2 text-left">
+                      {t('kpi:actualWorkspace.allocationCoverage')}
+                    </th>
+                    <th className="px-3 py-2 text-left">
+                      {t('kpi:actualWorkspace.missingSignal')}
+                    </th>
+                    <th className="px-3 py-2 text-left">
+                      {t('kpi:actualWorkspace.statusSummary')}
+                    </th>
+                    <th className="px-3 py-2 text-left">
+                      {t('kpi:actualWorkspace.supportingMetrics')}
+                    </th>
                     <th className="px-3 py-2 text-left">{t('kpi:table.actions')}</th>
                   </tr>
                 </thead>
@@ -1552,9 +1622,7 @@ export const KpiListPage = (): JSX.Element => {
                     {t('kpi:actualWorkspace.achievement')}
                   </div>
                   <div>
-                    {formatAchievement(
-                      actualWorkspaceDetailQuery.data.revenue.achievementPercent,
-                    )}
+                    {formatAchievement(actualWorkspaceDetailQuery.data.revenue.achievementPercent)}
                   </div>
                 </div>
                 <div className="rounded border border-border p-3 text-sm">
@@ -1562,9 +1630,7 @@ export const KpiListPage = (): JSX.Element => {
                     {t('kpi:actualWorkspace.allocationCoverage')}
                   </div>
                   <div>
-                    {renderAllocationCoverage(
-                      actualWorkspaceDetailQuery.data.allocationCoverage,
-                    )}
+                    {renderAllocationCoverage(actualWorkspaceDetailQuery.data.allocationCoverage)}
                   </div>
                 </div>
                 <div className="rounded border border-border p-3 text-sm">
@@ -1600,12 +1666,24 @@ export const KpiListPage = (): JSX.Element => {
                     <tr>
                       <th className="px-3 py-2 text-left">{t('kpi:fields.member')}</th>
                       <th className="px-3 py-2 text-left">{t('kpi:fields.allocationId')}</th>
-                      <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.revenueTarget')}</th>
-                      <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.revenueActual')}</th>
-                      <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.achievement')}</th>
-                      <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.supportingMetrics')}</th>
-                      <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.missingSignal')}</th>
-                      <th className="px-3 py-2 text-left">{t('kpi:actualWorkspace.statusSummary')}</th>
+                      <th className="px-3 py-2 text-left">
+                        {t('kpi:actualWorkspace.revenueTarget')}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {t('kpi:actualWorkspace.revenueActual')}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {t('kpi:actualWorkspace.achievement')}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {t('kpi:actualWorkspace.supportingMetrics')}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {t('kpi:actualWorkspace.missingSignal')}
+                      </th>
+                      <th className="px-3 py-2 text-left">
+                        {t('kpi:actualWorkspace.statusSummary')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1717,9 +1795,7 @@ export const KpiListPage = (): JSX.Element => {
                               {cell.actualExcuse ? (
                                 <div className="text-xs text-muted">
                                   {t(`kpi:actualExcuseStatuses.${cell.actualExcuse.status}`)} -{' '}
-                                  {t(
-                                    `kpi:actualExcuseReasonCodes.${cell.actualExcuse.reasonCode}`,
-                                  )}
+                                  {t(`kpi:actualExcuseReasonCodes.${cell.actualExcuse.reasonCode}`)}
                                   {': '}
                                   {cell.actualExcuse.reasonText}
                                 </div>
@@ -1806,8 +1882,9 @@ export const KpiListPage = (): JSX.Element => {
                                           current
                                             ? {
                                                 ...current,
-                                                reasonCode: event.target
-                                                  .value as KpiActualExcuseReasonCode | '',
+                                                reasonCode: event.target.value as
+                                                  | KpiActualExcuseReasonCode
+                                                  | '',
                                               }
                                             : current,
                                         )

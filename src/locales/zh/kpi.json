@@ -207,6 +207,15 @@
       "complete": "完整",
       "incomplete": "不完整"
     },
+    "overdueActuals": "Overdue actuals",
+    "dueOpenActuals": "Due-open actuals",
+    "statusFilters": {
+      "all": "全部",
+      "hasOverdue": "Has overdue",
+      "noOverdue": "No overdue",
+      "hasDueOpen": "Has due open",
+      "noDueOpen": "No due open"
+    },
     "loadMore": "加载更多",
     "loadingMore": "正在加载...",
     "missingSignal": "Limited missing signal",

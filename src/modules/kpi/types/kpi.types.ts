@@ -171,6 +171,8 @@ export type KpiActualWorkspacePlanQuery = {
   sortDirection?: 'ASC' | 'DESC';
   cursor?: string;
   allocationCoverage?: 'complete' | 'incomplete';
+  hasOverdueActuals?: boolean;
+  hasPendingActuals?: boolean;
 };
 
 export type KpiTargetMetric = {

@@ -263,6 +263,8 @@ const allowedActualWorkspaceListQueryKeys = [
   'sortDirection',
   'cursor',
   'allocationCoverage',
+  'hasOverdueActuals',
+  'hasPendingActuals',
 ] as const;
 const allowedAllocationListQueryKeys = ['status', 'kpiPlanId', 'groupId', 'limit'] as const;
 const allowedManagedMemberQueryKeys = ['search', 'limit'] as const;
@@ -353,6 +355,48 @@ const initialPlans = [
     status: 'PUBLISHED',
     publishedAt: now - 65_000,
     publishedByActorId: 'user-admin',
+  }),
+  basePlan({
+    id: 'kpi-plan-status-overdue-only',
+    planCode: 'KPI-202605-STATUS-OVERDUE',
+    title: 'Status fixture overdue only',
+    status: 'PUBLISHED',
+  }),
+  basePlan({
+    id: 'kpi-plan-status-due-open-only',
+    planCode: 'KPI-202605-STATUS-DUE-OPEN',
+    title: 'Status fixture due open only',
+    status: 'PUBLISHED',
+  }),
+  basePlan({
+    id: 'kpi-plan-status-both',
+    planCode: 'KPI-202605-STATUS-BOTH',
+    title: 'Status fixture both',
+    status: 'PUBLISHED',
+  }),
+  basePlan({
+    id: 'kpi-plan-status-neither',
+    planCode: 'KPI-202605-STATUS-NEITHER',
+    title: 'Status fixture neither',
+    status: 'PUBLISHED',
+  }),
+  basePlan({
+    id: 'kpi-plan-status-entered-zero',
+    planCode: 'KPI-202605-STATUS-ENTERED-ZERO',
+    title: 'Status fixture entered zero only',
+    status: 'PUBLISHED',
+  }),
+  basePlan({
+    id: 'kpi-plan-status-excused-not-required',
+    planCode: 'KPI-202605-STATUS-EXCUSED',
+    title: 'Status fixture excused and not required',
+    status: 'PUBLISHED',
+  }),
+  basePlan({
+    id: 'kpi-plan-status-not-due',
+    planCode: 'KPI-202605-STATUS-NOT-DUE',
+    title: 'Status fixture not due only',
+    status: 'PUBLISHED',
   }),
 ];
 
@@ -687,6 +731,11 @@ const validateActualWorkspaceListQuery = (searchParams: URLSearchParams) => {
     return validationError(
       `KPI actual workspace allocationCoverage is unsupported: ${allocationCoverage}`,
     );
+  }
+  for (const key of ['hasOverdueActuals', 'hasPendingActuals'] as const) {
+    if (searchParams.has(key) && !['true', 'false'].includes(searchParams.get(key) ?? '')) {
+      return validationError(`KPI actual workspace ${key} must be true or false`);
+    }
   }
   return undefined;
 };
@@ -1269,9 +1318,7 @@ const getDailyActualStatus = ({
   if (excuse) return excuse.status;
   if (entry) return entry.effectiveValue === 0 ? 'ENTERED_ZERO' : 'ENTERED';
   if (hcmLocalDateTimeToUtcMs(actualDate, '00:00') > currentTime) return 'NOT_DUE';
-  return currentTime <= hcmLocalDateTimeToUtcMs(actualDate, '10:00', 1)
-    ? 'DUE_OPEN'
-    : 'OVERDUE';
+  return currentTime <= hcmLocalDateTimeToUtcMs(actualDate, '10:00', 1) ? 'DUE_OPEN' : 'OVERDUE';
 };
 
 const emptyActualEntryStatusSummary = () => ({
@@ -1285,7 +1332,50 @@ const emptyActualEntryStatusSummary = () => ({
   notDueEntryCount: 0,
 });
 
+const actualWorkspaceStatusSummaryFixtures: Record<
+  string,
+  ReturnType<typeof emptyActualEntryStatusSummary>
+> = {
+  'kpi-plan-status-overdue-only': {
+    ...emptyActualEntryStatusSummary(),
+    expectedEntryCount: 1,
+    overdueEntryCount: 1,
+  },
+  'kpi-plan-status-due-open-only': {
+    ...emptyActualEntryStatusSummary(),
+    expectedEntryCount: 1,
+    pendingEntryCount: 1,
+  },
+  'kpi-plan-status-both': {
+    ...emptyActualEntryStatusSummary(),
+    expectedEntryCount: 2,
+    pendingEntryCount: 1,
+    overdueEntryCount: 1,
+  },
+  'kpi-plan-status-neither': emptyActualEntryStatusSummary(),
+  'kpi-plan-status-entered-zero': {
+    ...emptyActualEntryStatusSummary(),
+    expectedEntryCount: 1,
+    enteredZeroCount: 1,
+  },
+  'kpi-plan-status-excused-not-required': {
+    ...emptyActualEntryStatusSummary(),
+    expectedEntryCount: 2,
+    excusedEntryCount: 1,
+    notRequiredEntryCount: 1,
+  },
+  'kpi-plan-status-not-due': {
+    ...emptyActualEntryStatusSummary(),
+    expectedEntryCount: 1,
+    notDueEntryCount: 1,
+  },
+};
+
 const statusSummaryForAllocations = (plan: KpiPlan, planAllocations: KpiAllocation[]) => {
+  const fixture = actualWorkspaceStatusSummaryFixtures[plan.id];
+  if (fixture) {
+    return { ...fixture };
+  }
   const summary = emptyActualEntryStatusSummary();
   const statusDate = plan.periodMonth === '2026-05' ? '16-05-2026' : '16-04-2026';
   const planTargets = targets[plan.id] ?? [];
@@ -1326,69 +1416,70 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => {
         ? null
         : 'DIRECT_EDIT_WINDOW_CLOSED';
   return {
-  kpiPlanId: plan.id,
-  planCode: plan.planCode,
-  status: plan.status,
-  subjectType: plan.subjectType,
-  subjectId: plan.subjectId,
-  actualDate,
-  policy: {
-    timezone: 'Asia/Ho_Chi_Minh',
-    entryOpenLocalTime: '00:00',
-    entryLockLocalTime: '10:00',
-    maxDirectEditsPerEntry: 3,
-    correctionAllowedUntil: 'PLAN_FINALIZED',
-  },
-  editability: {
-    isDirectEditOpen: isGridDirectEditOpen,
-    isPlanFinalized: isFinalized,
-    disabledReason: gridDisabledReason,
-  },
-  targetMetrics: (targets[plan.id] ?? []).map((metric) => ({
-    metricCode: metric.metricCode,
-    targetValue: metric.targetValue,
-    unit: metric.unit,
-  })),
-  rows: (allocations[plan.id] ?? [])
-    .filter((allocation) => allocation.allocationStatus === 'PUBLISHED')
-    .map((allocation) => ({
-      allocationId: allocation.id,
-      memberTalentId: allocation.memberTalentId,
-      memberDisplayName: allocation.snapshotMemberDisplayName,
-      allocationStatus: allocation.allocationStatus,
-      metrics: (targets[plan.id] ?? []).map((metric) => {
-        const entry = readEntry(plan.id, allocation.id, metric.metricCode, actualDate);
-        const excuse = readActiveExcuse(plan.id, allocation.id, metric.metricCode, actualDate);
-        const locked = entry ? entry.editCount >= 3 || !isGridDirectEditOpen : false;
-        const dailyActualStatus = getDailyActualStatus({
-          plan,
-          allocation,
-          entry,
-          excuse,
-          actualDate,
-        });
-        const canMarkExcused = isPublished && allocation.allocationStatus === 'PUBLISHED' && !entry && !excuse;
-        const canUnmarkExcused = isPublished && Boolean(excuse);
-        return {
-          metricCode: metric.metricCode,
-          targetValue: metric.targetValue,
-          actualEntryId: entry?.id ?? null,
-          actualValue: entry?.actualValue ?? null,
-          effectiveValue: entry?.effectiveValue ?? 0,
-          hasEntry: Boolean(entry),
-          dailyActualStatus,
-          actualExcuse: excuse ? exposeExcuse(excuse) : null,
-          editCount: entry?.editCount ?? 0,
-          correctionCount: entry?.correctionCount ?? 0,
-          latestCorrectionId: entry?.latestCorrectionId ?? null,
-          canDirectEdit: Boolean(entry) && !locked,
-          canMarkExcused,
-          canUnmarkExcused,
-          requiresCorrection: Boolean(entry) && locked,
-          disabledReason: locked ? (gridDisabledReason ?? 'DIRECT_EDIT_LIMIT_EXCEEDED') : null,
-        };
-      }),
+    kpiPlanId: plan.id,
+    planCode: plan.planCode,
+    status: plan.status,
+    subjectType: plan.subjectType,
+    subjectId: plan.subjectId,
+    actualDate,
+    policy: {
+      timezone: 'Asia/Ho_Chi_Minh',
+      entryOpenLocalTime: '00:00',
+      entryLockLocalTime: '10:00',
+      maxDirectEditsPerEntry: 3,
+      correctionAllowedUntil: 'PLAN_FINALIZED',
+    },
+    editability: {
+      isDirectEditOpen: isGridDirectEditOpen,
+      isPlanFinalized: isFinalized,
+      disabledReason: gridDisabledReason,
+    },
+    targetMetrics: (targets[plan.id] ?? []).map((metric) => ({
+      metricCode: metric.metricCode,
+      targetValue: metric.targetValue,
+      unit: metric.unit,
     })),
+    rows: (allocations[plan.id] ?? [])
+      .filter((allocation) => allocation.allocationStatus === 'PUBLISHED')
+      .map((allocation) => ({
+        allocationId: allocation.id,
+        memberTalentId: allocation.memberTalentId,
+        memberDisplayName: allocation.snapshotMemberDisplayName,
+        allocationStatus: allocation.allocationStatus,
+        metrics: (targets[plan.id] ?? []).map((metric) => {
+          const entry = readEntry(plan.id, allocation.id, metric.metricCode, actualDate);
+          const excuse = readActiveExcuse(plan.id, allocation.id, metric.metricCode, actualDate);
+          const locked = entry ? entry.editCount >= 3 || !isGridDirectEditOpen : false;
+          const dailyActualStatus = getDailyActualStatus({
+            plan,
+            allocation,
+            entry,
+            excuse,
+            actualDate,
+          });
+          const canMarkExcused =
+            isPublished && allocation.allocationStatus === 'PUBLISHED' && !entry && !excuse;
+          const canUnmarkExcused = isPublished && Boolean(excuse);
+          return {
+            metricCode: metric.metricCode,
+            targetValue: metric.targetValue,
+            actualEntryId: entry?.id ?? null,
+            actualValue: entry?.actualValue ?? null,
+            effectiveValue: entry?.effectiveValue ?? 0,
+            hasEntry: Boolean(entry),
+            dailyActualStatus,
+            actualExcuse: excuse ? exposeExcuse(excuse) : null,
+            editCount: entry?.editCount ?? 0,
+            correctionCount: entry?.correctionCount ?? 0,
+            latestCorrectionId: entry?.latestCorrectionId ?? null,
+            canDirectEdit: Boolean(entry) && !locked,
+            canMarkExcused,
+            canUnmarkExcused,
+            requiresCorrection: Boolean(entry) && locked,
+            disabledReason: locked ? (gridDisabledReason ?? 'DIRECT_EDIT_LIMIT_EXCEEDED') : null,
+          };
+        }),
+      })),
   };
 };
 
@@ -1412,7 +1503,8 @@ const toActualWorkspaceMember = (allocation: KpiAllocation) => {
     missing: 0,
   };
   const revenueTarget =
-    allocation.targetMetrics.find((metric) => metric.metricCode === 'REVENUE_VND')?.targetValue ?? 0;
+    allocation.targetMetrics.find((metric) => metric.metricCode === 'REVENUE_VND')?.targetValue ??
+    0;
   const contentTarget =
     allocation.targetMetrics.find((metric) => metric.metricCode === 'CONTENT_OUTPUT_COUNT')
       ?.targetValue ?? 0;
@@ -1455,7 +1547,10 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
     (allocation) => allocation.allocationStatus === 'PUBLISHED',
   );
   const members = publishedAllocations.map(toActualWorkspaceMember);
-  const operationalTargetValue = members.reduce((sum, member) => sum + member.revenue.targetValue, 0);
+  const operationalTargetValue = members.reduce(
+    (sum, member) => sum + member.revenue.targetValue,
+    0,
+  );
   const actualValue = members.reduce((sum, member) => sum + member.revenue.actualValue, 0);
   const contentTarget = members.reduce(
     (sum, member) => sum + member.supportingMetrics[0].targetValue,
@@ -1515,12 +1610,12 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
   };
 };
 
-type ActualWorkspaceSortBy =
-  | 'periodMonth'
-  | 'planCode'
-  | 'revenueActual'
-  | 'achievementPercent';
+type ActualWorkspaceSortBy = 'periodMonth' | 'planCode' | 'revenueActual' | 'achievementPercent';
 type ActualWorkspaceSortDirection = 'ASC' | 'DESC';
+type ActualWorkspaceStatusFilters = {
+  hasOverdueActuals: boolean | null;
+  hasPendingActuals: boolean | null;
+};
 type ActualWorkspaceSummary = ReturnType<typeof toActualWorkspaceSummary>;
 type ActualWorkspacePlanSortRow = {
   plan: KpiPlan;
@@ -1537,6 +1632,8 @@ type ActualWorkspaceCursorEnvelope = {
     sortBy: ActualWorkspaceSortBy;
     sortDirection: ActualWorkspaceSortDirection;
     allocationCoverage: 'complete' | 'incomplete' | null;
+    hasOverdueActuals: boolean | null;
+    hasPendingActuals: boolean | null;
   };
   sortBy: ActualWorkspaceSortBy;
   sortDirection: ActualWorkspaceSortDirection;
@@ -1568,6 +1665,21 @@ const readActualWorkspaceCoverageFilter = (
   return value === 'complete' || value === 'incomplete' ? value : null;
 };
 
+const readActualWorkspaceBooleanFilter = (
+  searchParams: URLSearchParams,
+  key: 'hasOverdueActuals' | 'hasPendingActuals',
+): boolean | null => {
+  const value = searchParams.get(key);
+  return value === 'true' ? true : value === 'false' ? false : null;
+};
+
+const readActualWorkspaceStatusFilters = (
+  searchParams: URLSearchParams,
+): ActualWorkspaceStatusFilters => ({
+  hasOverdueActuals: readActualWorkspaceBooleanFilter(searchParams, 'hasOverdueActuals'),
+  hasPendingActuals: readActualWorkspaceBooleanFilter(searchParams, 'hasPendingActuals'),
+});
+
 const buildActualWorkspaceQueryKey = (
   searchParams: URLSearchParams,
 ): ActualWorkspaceCursorEnvelope['queryKey'] => ({
@@ -1578,11 +1690,10 @@ const buildActualWorkspaceQueryKey = (
   sortBy: readActualWorkspaceSortBy(searchParams),
   sortDirection: readActualWorkspaceSortDirection(searchParams),
   allocationCoverage: readActualWorkspaceCoverageFilter(searchParams),
+  ...readActualWorkspaceStatusFilters(searchParams),
 });
 
-const encodeActualWorkspaceCursor = (
-  cursor: ActualWorkspaceCursorEnvelope,
-): string =>
+const encodeActualWorkspaceCursor = (cursor: ActualWorkspaceCursorEnvelope): string =>
   btoa(JSON.stringify(cursor)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 const decodeActualWorkspaceCursor = (
@@ -1633,6 +1744,15 @@ const matchesActualWorkspaceCoverage = (
   return allocationCoverage === 'complete' ? isComplete : !isComplete;
 };
 
+const matchesActualWorkspaceStatusFilters = (
+  summary: ActualWorkspaceSummary,
+  filters: ActualWorkspaceStatusFilters,
+): boolean =>
+  (filters.hasOverdueActuals === null ||
+    summary.actualEntryStatusSummary.overdueEntryCount > 0 === filters.hasOverdueActuals) &&
+  (filters.hasPendingActuals === null ||
+    summary.actualEntryStatusSummary.pendingEntryCount > 0 === filters.hasPendingActuals);
+
 const compareActualWorkspacePlans = (
   left: ActualWorkspacePlanSortRow,
   right: ActualWorkspacePlanSortRow,
@@ -1642,8 +1762,7 @@ const compareActualWorkspacePlans = (
   const direction = sortDirection === 'ASC' ? 1 : -1;
   if (sortBy === 'revenueActual') {
     return (
-      direction *
-        (left.summary.revenue.actualValue - right.summary.revenue.actualValue) ||
+      direction * (left.summary.revenue.actualValue - right.summary.revenue.actualValue) ||
       left.plan.id.localeCompare(right.plan.id)
     );
   }
@@ -1659,7 +1778,10 @@ const compareActualWorkspacePlans = (
   }
   const leftValue = sortBy === 'planCode' ? left.plan.planCode : left.plan.periodMonth;
   const rightValue = sortBy === 'planCode' ? right.plan.planCode : right.plan.periodMonth;
-  return direction * leftValue.localeCompare(rightValue) || direction * left.plan.id.localeCompare(right.plan.id);
+  return (
+    direction * leftValue.localeCompare(rightValue) ||
+    direction * left.plan.id.localeCompare(right.plan.id)
+  );
 };
 
 const actualWorkspaceCursorValue = (
@@ -1681,6 +1803,7 @@ const listActualWorkspacePlans = (request: Request) => {
   const sortBy = readActualWorkspaceSortBy(url.searchParams);
   const sortDirection = readActualWorkspaceSortDirection(url.searchParams);
   const allocationCoverage = readActualWorkspaceCoverageFilter(url.searchParams);
+  const statusFilters = readActualWorkspaceStatusFilters(url.searchParams);
   return plans
     .filter((plan) => plan.subjectType === 'TALENT_GROUP')
     .filter((plan) => (!groupId ? true : plan.subjectId === groupId))
@@ -1705,6 +1828,7 @@ const listActualWorkspacePlans = (request: Request) => {
     })
     .filter((plan) => matchesActualWorkspaceCoverage(plan, allocationCoverage))
     .map((plan) => ({ plan, summary: toActualWorkspaceSummary(plan) }))
+    .filter((row) => matchesActualWorkspaceStatusFilters(row.summary, statusFilters))
     .sort((left, right) => compareActualWorkspacePlans(left, right, sortBy, sortDirection));
 };
 
@@ -2310,31 +2434,35 @@ export const kpiHandlers = [
     });
     return HttpResponse.json({ data: toDetail(plan) });
   }),
-  http.delete('*/admin/kpi/plans/:kpiPlanId/actual-excuses/:excuseId', async ({ params, request }) => {
-    const plan = readPlan(String(params.kpiPlanId));
-    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    const body = await parseJsonBody(request);
-    const unsupported = rejectUnsupportedBody(body, []);
-    if (unsupported) return unsupported;
-    const excuse = actualExcuses.find(
-      (item) =>
-        item.kpiPlanId === plan.id &&
-        item.id === String(params.excuseId) &&
-        item.deletedAt === null,
-    );
-    if (!excuse) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    if (plan.status !== 'PUBLISHED') {
-      return HttpResponse.json(
-        { message: 'KPI actual excuse requires a published plan' },
-        { status: 409 },
+  http.delete(
+    '*/admin/kpi/plans/:kpiPlanId/actual-excuses/:excuseId',
+    async ({ params, request }) => {
+      const plan = readPlan(String(params.kpiPlanId));
+      if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, []);
+      if (unsupported) return unsupported;
+      const excuse = actualExcuses.find(
+        (item) =>
+          item.kpiPlanId === plan.id &&
+          item.id === String(params.excuseId) &&
+          item.deletedAt === null,
       );
-    }
-    excuse.deletedAt = now;
-    excuse.deletedByActorId = 'user-admin';
-    excuse.updatedAt = now;
-    excuse.updatedByActorId = 'user-admin';
-    return HttpResponse.json({ data: toDetail(plan) });
-  }),
+      if (!excuse)
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (plan.status !== 'PUBLISHED') {
+        return HttpResponse.json(
+          { message: 'KPI actual excuse requires a published plan' },
+          { status: 409 },
+        );
+      }
+      excuse.deletedAt = now;
+      excuse.deletedByActorId = 'user-admin';
+      excuse.updatedAt = now;
+      excuse.updatedByActorId = 'user-admin';
+      return HttpResponse.json({ data: toDetail(plan) });
+    },
+  ),
   http.post('*/admin/kpi/plans/:kpiPlanId/:action', async ({ params, request }) => {
     const action = String(params.action);
     if (action === 'actuals') return;
@@ -2375,7 +2503,10 @@ export const kpiHandlers = [
       return validationError('Invalid actualDate');
     }
     if (plan.status !== 'PUBLISHED') {
-      return HttpResponse.json({ message: 'KPI actual requires a published plan' }, { status: 409 });
+      return HttpResponse.json(
+        { message: 'KPI actual requires a published plan' },
+        { status: 409 },
+      );
     }
     if (!isDirectEditWindowOpen(String(body.actualDate))) {
       return directEditWindowClosed();
@@ -2469,7 +2600,10 @@ export const kpiHandlers = [
     const entry = actualEntries.find((item) => item.id === String(params.actualEntryId));
     if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     if (plan.status !== 'PUBLISHED') {
-      return HttpResponse.json({ message: 'KPI actual requires a published plan' }, { status: 409 });
+      return HttpResponse.json(
+        { message: 'KPI actual requires a published plan' },
+        { status: 409 },
+      );
     }
     if (readActiveExcuse(plan.id, entry.allocationId, entry.metricCode, entry.actualDate)) {
       return HttpResponse.json(
