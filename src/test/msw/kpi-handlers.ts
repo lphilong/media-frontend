@@ -620,7 +620,10 @@ const validateActualWorkspaceListQuery = (searchParams: URLSearchParams) => {
     return validationError(`KPI limit must be an integer between 1 and ${maxListLimit}`);
   }
   const sortBy = searchParams.get('sortBy');
-  if (sortBy && !['periodMonth', 'planCode'].includes(sortBy)) {
+  if (
+    sortBy &&
+    !['periodMonth', 'planCode', 'revenueActual', 'achievementPercent'].includes(sortBy)
+  ) {
     return validationError(`KPI actual workspace sortBy is unsupported: ${sortBy}`);
   }
   const sortDirection = searchParams.get('sortDirection');
@@ -1355,8 +1358,17 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
   };
 };
 
-type ActualWorkspaceSortBy = 'periodMonth' | 'planCode';
+type ActualWorkspaceSortBy =
+  | 'periodMonth'
+  | 'planCode'
+  | 'revenueActual'
+  | 'achievementPercent';
 type ActualWorkspaceSortDirection = 'ASC' | 'DESC';
+type ActualWorkspaceSummary = ReturnType<typeof toActualWorkspaceSummary>;
+type ActualWorkspacePlanSortRow = {
+  plan: KpiPlan;
+  summary: ActualWorkspaceSummary;
+};
 
 type ActualWorkspaceCursorEnvelope = {
   v: 1;
@@ -1371,14 +1383,21 @@ type ActualWorkspaceCursorEnvelope = {
   };
   sortBy: ActualWorkspaceSortBy;
   sortDirection: ActualWorkspaceSortDirection;
-  lastValue: string;
+  lastValue: string | number | null;
   lastPlanId: string;
 };
 
 const actualWorkspaceCursorErrorMessage = 'KPI actual workspace cursor is invalid';
 
-const readActualWorkspaceSortBy = (searchParams: URLSearchParams): ActualWorkspaceSortBy =>
-  searchParams.get('sortBy') === 'planCode' ? 'planCode' : 'periodMonth';
+const readActualWorkspaceSortBy = (searchParams: URLSearchParams): ActualWorkspaceSortBy => {
+  const value = searchParams.get('sortBy');
+  return value === 'periodMonth' ||
+    value === 'planCode' ||
+    value === 'revenueActual' ||
+    value === 'achievementPercent'
+    ? value
+    : 'periodMonth';
+};
 
 const readActualWorkspaceSortDirection = (
   searchParams: URLSearchParams,
@@ -1419,9 +1438,16 @@ const decodeActualWorkspaceCursor = (
     const parsed = JSON.parse(atob(padded)) as Partial<ActualWorkspaceCursorEnvelope>;
     if (
       parsed.v !== 1 ||
-      (parsed.sortBy !== 'periodMonth' && parsed.sortBy !== 'planCode') ||
+      (parsed.sortBy !== 'periodMonth' &&
+        parsed.sortBy !== 'planCode' &&
+        parsed.sortBy !== 'revenueActual' &&
+        parsed.sortBy !== 'achievementPercent') ||
       (parsed.sortDirection !== 'ASC' && parsed.sortDirection !== 'DESC') ||
-      typeof parsed.lastValue !== 'string' ||
+      !(
+        typeof parsed.lastValue === 'string' ||
+        typeof parsed.lastValue === 'number' ||
+        parsed.lastValue === null
+      ) ||
       typeof parsed.lastPlanId !== 'string' ||
       JSON.stringify(parsed.queryKey) !== JSON.stringify(expectedQueryKey) ||
       parsed.sortBy !== expectedQueryKey.sortBy ||
@@ -1451,18 +1477,42 @@ const matchesActualWorkspaceCoverage = (
 };
 
 const compareActualWorkspacePlans = (
-  left: KpiPlan,
-  right: KpiPlan,
+  left: ActualWorkspacePlanSortRow,
+  right: ActualWorkspacePlanSortRow,
   sortBy: ActualWorkspaceSortBy,
   sortDirection: ActualWorkspaceSortDirection,
 ): number => {
   const direction = sortDirection === 'ASC' ? 1 : -1;
-  const leftValue = sortBy === 'planCode' ? left.planCode : left.periodMonth;
-  const rightValue = sortBy === 'planCode' ? right.planCode : right.periodMonth;
-  return (
-    direction * leftValue.localeCompare(rightValue) ||
-    direction * left.id.localeCompare(right.id)
-  );
+  if (sortBy === 'revenueActual') {
+    return (
+      direction *
+        (left.summary.revenue.actualValue - right.summary.revenue.actualValue) ||
+      left.plan.id.localeCompare(right.plan.id)
+    );
+  }
+  if (sortBy === 'achievementPercent') {
+    const leftValue = left.summary.revenue.achievementPercent;
+    const rightValue = right.summary.revenue.achievementPercent;
+    if (leftValue === null && rightValue !== null) return 1;
+    if (leftValue !== null && rightValue === null) return -1;
+    if (leftValue !== null && rightValue !== null && leftValue !== rightValue) {
+      return direction * (leftValue - rightValue);
+    }
+    return left.plan.id.localeCompare(right.plan.id);
+  }
+  const leftValue = sortBy === 'planCode' ? left.plan.planCode : left.plan.periodMonth;
+  const rightValue = sortBy === 'planCode' ? right.plan.planCode : right.plan.periodMonth;
+  return direction * leftValue.localeCompare(rightValue) || direction * left.plan.id.localeCompare(right.plan.id);
+};
+
+const actualWorkspaceCursorValue = (
+  row: ActualWorkspacePlanSortRow,
+  sortBy: ActualWorkspaceSortBy,
+): string | number | null => {
+  if (sortBy === 'planCode') return row.plan.planCode;
+  if (sortBy === 'revenueActual') return row.summary.revenue.actualValue;
+  if (sortBy === 'achievementPercent') return row.summary.revenue.achievementPercent;
+  return row.plan.periodMonth;
 };
 
 const listActualWorkspacePlans = (request: Request) => {
@@ -1497,13 +1547,14 @@ const listActualWorkspacePlans = (request: Request) => {
         .includes(search);
     })
     .filter((plan) => matchesActualWorkspaceCoverage(plan, allocationCoverage))
+    .map((plan) => ({ plan, summary: toActualWorkspaceSummary(plan) }))
     .sort((left, right) => compareActualWorkspacePlans(left, right, sortBy, sortDirection));
 };
 
 const paginateActualWorkspacePlans = (
-  rows: KpiPlan[],
+  rows: ActualWorkspacePlanSortRow[],
   searchParams: URLSearchParams,
-): { rows: KpiPlan[]; nextCursor?: string } => {
+): { rows: ActualWorkspacePlanSortRow[]; nextCursor?: string } => {
   const limit = parseLimitQuery(searchParams.get('limit')) ?? 50;
   const sortBy = readActualWorkspaceSortBy(searchParams);
   const sortDirection = readActualWorkspaceSortDirection(searchParams);
@@ -1515,8 +1566,8 @@ const paginateActualWorkspacePlans = (
       : (() => {
           const cursor = decodeActualWorkspaceCursor(cursorValue, queryKey);
           const index = rows.findIndex((plan) => {
-            const value = sortBy === 'planCode' ? plan.planCode : plan.periodMonth;
-            return value === cursor.lastValue && plan.id === cursor.lastPlanId;
+            const value = actualWorkspaceCursorValue(plan, sortBy);
+            return value === cursor.lastValue && plan.plan.id === cursor.lastPlanId;
           });
           if (index < 0) {
             throw new Error(actualWorkspaceCursorErrorMessage);
@@ -1534,8 +1585,8 @@ const paginateActualWorkspacePlans = (
             queryKey,
             sortBy,
             sortDirection,
-            lastValue: sortBy === 'planCode' ? lastRow.planCode : lastRow.periodMonth,
-            lastPlanId: lastRow.id,
+            lastValue: actualWorkspaceCursorValue(lastRow, sortBy),
+            lastPlanId: lastRow.plan.id,
           })
         : undefined,
   };
@@ -1558,7 +1609,7 @@ export const kpiHandlers = [
       return validationError(actualWorkspaceCursorErrorMessage);
     }
     return HttpResponse.json({
-      data: page.rows.map(toActualWorkspaceSummary),
+      data: page.rows.map((row) => row.summary),
       ...(page.nextCursor ? { meta: { nextCursor: page.nextCursor } } : {}),
     });
   }),

@@ -618,7 +618,7 @@ const actualWorkspacePlanQuerySchema = z
     subjectId: z.string().trim().min(1).optional(),
     search: z.string().trim().min(1).optional(),
     limit: z.number().int().positive().max(100).optional(),
-    sortBy: z.enum(['periodMonth', 'planCode']).optional(),
+    sortBy: z.enum(['periodMonth', 'planCode', 'revenueActual', 'achievementPercent']).optional(),
     sortDirection: z.enum(['ASC', 'DESC']).optional(),
     cursor: z.string().trim().min(1).optional(),
     allocationCoverage: z.enum(['complete', 'incomplete']).optional(),

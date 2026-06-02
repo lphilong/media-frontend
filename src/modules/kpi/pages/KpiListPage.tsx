@@ -112,6 +112,25 @@ const allocationQueueViews: AllocationQueueView[] = [
 ];
 const actualWorkspacePageLimit = 50;
 
+const readActualWorkspaceSortBy = (
+  searchParams: URLSearchParams,
+): KpiActualWorkspacePlanQuery['sortBy'] => {
+  const value = searchParams.get('sortBy');
+  return value === 'periodMonth' ||
+    value === 'planCode' ||
+    value === 'revenueActual' ||
+    value === 'achievementPercent'
+    ? value
+    : 'periodMonth';
+};
+
+const readActualWorkspaceSortDirection = (
+  searchParams: URLSearchParams,
+): KpiActualWorkspacePlanQuery['sortDirection'] => {
+  const value = searchParams.get('sortDirection')?.toUpperCase();
+  return value === 'ASC' || value === 'DESC' ? value : 'DESC';
+};
+
 const readActualWorkspaceAllocationCoverage = (
   searchParams: URLSearchParams,
 ): KpiActualWorkspacePlanQuery['allocationCoverage'] => {
@@ -327,6 +346,14 @@ export const KpiListPage = (): JSX.Element => {
     () => readActualWorkspaceAllocationCoverage(searchParams),
     [searchParams],
   );
+  const actualWorkspaceSortBy = useMemo(
+    () => readActualWorkspaceSortBy(searchParams),
+    [searchParams],
+  );
+  const actualWorkspaceSortDirection = useMemo(
+    () => readActualWorkspaceSortDirection(searchParams),
+    [searchParams],
+  );
   const actualWorkspaceBaseQuery = useMemo<KpiActualWorkspacePlanQuery>(
     () => ({
       search: query.search,
@@ -335,11 +362,13 @@ export const KpiListPage = (): JSX.Element => {
       groupId: query.groupId,
       allocationCoverage: actualWorkspaceAllocationCoverage,
       limit: actualWorkspacePageLimit,
-      sortBy: 'periodMonth',
-      sortDirection: 'DESC',
+      sortBy: actualWorkspaceSortBy,
+      sortDirection: actualWorkspaceSortDirection,
     }),
     [
       actualWorkspaceAllocationCoverage,
+      actualWorkspaceSortBy,
+      actualWorkspaceSortDirection,
       query.groupId,
       query.periodMonth,
       query.search,
@@ -391,6 +420,8 @@ export const KpiListPage = (): JSX.Element => {
     setSelectedWorkspacePlanId(undefined);
     setLoadedActualGrid(undefined);
     setCellDrafts({});
+    setActualError(null);
+    setCorrectionTarget(null);
   }, [actualWorkspaceQueryShape]);
 
   useEffect(() => {
@@ -1182,6 +1213,52 @@ export const KpiListPage = (): JSX.Element => {
                 <option value="incomplete">
                   {t('kpi:actualWorkspace.coverageFilters.incomplete')}
                 </option>
+              </select>
+            </label>
+            <label className="flex min-w-[190px] flex-col gap-1 text-sm">
+              <span className="text-xs font-medium uppercase text-muted">
+                {t('kpi:actualWorkspace.sortBy')}
+              </span>
+              <select
+                value={actualWorkspaceSortBy}
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                onChange={(event) =>
+                  patchQuery({
+                    sortBy: event.target.value as NonNullable<
+                      KpiActualWorkspacePlanQuery['sortBy']
+                    >,
+                  })
+                }
+              >
+                <option value="periodMonth">
+                  {t('kpi:actualWorkspace.sortFields.periodMonth')}
+                </option>
+                <option value="planCode">{t('kpi:actualWorkspace.sortFields.planCode')}</option>
+                <option value="revenueActual">
+                  {t('kpi:actualWorkspace.sortFields.revenueActual')}
+                </option>
+                <option value="achievementPercent">
+                  {t('kpi:actualWorkspace.sortFields.achievementPercent')}
+                </option>
+              </select>
+            </label>
+            <label className="flex min-w-[170px] flex-col gap-1 text-sm">
+              <span className="text-xs font-medium uppercase text-muted">
+                {t('kpi:actualWorkspace.sortDirection')}
+              </span>
+              <select
+                value={actualWorkspaceSortDirection}
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                onChange={(event) =>
+                  patchQuery({
+                    sortDirection: event.target.value as NonNullable<
+                      KpiActualWorkspacePlanQuery['sortDirection']
+                    >,
+                  })
+                }
+              >
+                <option value="ASC">{t('kpi:actualWorkspace.sortDirections.ASC')}</option>
+                <option value="DESC">{t('kpi:actualWorkspace.sortDirections.DESC')}</option>
               </select>
             </label>
           </div>

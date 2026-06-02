@@ -152,6 +152,18 @@
     "revenueActual": "Revenue actual",
     "achievement": "Achievement %",
     "allocationCoverage": "Allocation workflow coverage",
+    "sortBy": "Sort by",
+    "sortDirection": "Sort direction",
+    "sortFields": {
+      "periodMonth": "Period month",
+      "planCode": "Plan code",
+      "revenueActual": "Revenue actual",
+      "achievementPercent": "Achievement %"
+    },
+    "sortDirections": {
+      "ASC": "Ascending",
+      "DESC": "Descending"
+    },
     "coverageFilters": {
       "all": "All",
       "complete": "Complete",

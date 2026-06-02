@@ -327,8 +327,13 @@ describe('KPI MVP UX', () => {
     expect(within(row!).getByText(/limited calendar-day signal/i)).toBeInTheDocument();
     expect(within(row!).getByText(/Content output count: 8\/10 \(80%\)/)).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: /revenue actual/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: /achievement/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Sort by' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Revenue actual' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Achievement %' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Sort direction' })).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: /revenue/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: /achievement/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /operational target/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /missing/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /coverage sort/i })).not.toBeInTheDocument();
     expect(screen.getByText(/D 00:00 through D\+1 10:00 Asia\/Ho_Chi_Minh, inclusive/i))
@@ -459,13 +464,80 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
   });
 
-  it('uses the backend Actual Workspace list endpoint and rejects derived sort input', async () => {
+  it('maps Actual Workspace derived sort controls, resets state, and keeps Load more', async () => {
+    const captured: URL[] = [];
+    installActualWorkspacePagedUiHandler(captured);
+
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('KPI-202605-000004')).toBeInTheDocument();
+
+    const workspaceRow = (await screen.findByText('KPI-202605-000002')).closest('tr');
+    expect(workspaceRow).not.toBeNull();
+    await userEvent.click(within(workspaceRow!).getByRole('button', { name: 'View detail' }));
+    expect(await screen.findByText('kpi-plan-published-alloc-1')).toBeInTheDocument();
+    const actualDate = screen.getByLabelText('Actual date');
+    await userEvent.clear(actualDate);
+    await userEvent.type(actualDate, '16-05-2026');
+    await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
+    await screen.findByLabelText('Luna Park Revenue VND actual');
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sort by' }), 'revenueActual');
+    await waitFor(() => {
+      const latest = captured.at(-1);
+      expect(latest?.searchParams.get('sortBy')).toBe('revenueActual');
+      expect(latest?.searchParams.get('cursor')).toBeNull();
+    });
+    await waitFor(() => expect(screen.queryByText('KPI-202605-000004')).not.toBeInTheDocument());
+    expect(screen.queryByText('kpi-plan-published-alloc-1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Luna Park Revenue VND actual')).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Sort by' }),
+      'achievementPercent',
+    );
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('sortBy')).toBe('achievementPercent'),
+    );
+
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Sort direction' }),
+      'ASC',
+    );
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('sortDirection')).toBe('ASC'),
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('cursor')).toBeTruthy(),
+    );
+    expect(screen.getAllByText('KPI-202605-000002')).toHaveLength(1);
+  });
+
+  it('uses the backend Actual Workspace list endpoint and validates supported sort input', async () => {
     expect((await fetchKpiActualWorkspacePlans({ limit: 10 })).data[0].planCode).toBeDefined();
+    expect(
+      (await fetchKpiActualWorkspacePlans({ sortBy: 'revenueActual', limit: 10 })).data[0]
+        .planCode,
+    ).toBeDefined();
+    expect(
+      (await fetchKpiActualWorkspacePlans({ sortBy: 'achievementPercent', limit: 10 })).data[0]
+        .planCode,
+    ).toBeDefined();
     await expect(
       fetchKpiActualWorkspacePlans({ sortBy: 'achievement' as never }),
     ).rejects.toThrow();
     await expect(
+      fetchKpiActualWorkspacePlans({ sortBy: 'operationalTarget' as never }),
+    ).rejects.toThrow();
+    await expect(
       fetchKpiActualWorkspacePlans({ revenueActualMin: 1 } as never),
+    ).rejects.toThrow();
+    await expect(
+      fetchKpiActualWorkspacePlans({ achievementMax: 100 } as never),
     ).rejects.toThrow();
   });
 
@@ -577,6 +649,146 @@ describe('KPI MVP UX', () => {
       )}`,
     );
     expect(mismatchedResponse.status).toBe(400);
+  });
+
+  it('MSW sorts Actual Workspace revenueActual before cursor pagination', async () => {
+    const ascResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?sortBy=revenueActual&sortDirection=ASC&limit=10',
+    );
+    expect(ascResponse.status).toBe(200);
+    const asc = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      ascResponse,
+    );
+    expect(asc.data.map((plan) => plan.revenue.actualValue)).toEqual(
+      [...asc.data.map((plan) => plan.revenue.actualValue)].sort((left, right) => left - right),
+    );
+
+    const descResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?sortBy=revenueActual&sortDirection=DESC&limit=10',
+    );
+    expect(descResponse.status).toBe(200);
+    const desc = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      descResponse,
+    );
+    expect(desc.data.map((plan) => plan.revenue.actualValue)).toEqual(
+      [...desc.data.map((plan) => plan.revenue.actualValue)].sort((left, right) => right - left),
+    );
+
+    const firstResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?sortBy=revenueActual&sortDirection=DESC&limit=2',
+    );
+    expect(firstResponse.status).toBe(200);
+    const first = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      firstResponse,
+    );
+    expect(first.meta?.nextCursor).toBeDefined();
+    const nextResponse = await mswJson(
+      'GET',
+      `/admin/kpi/actual-workspace/plans?sortBy=revenueActual&sortDirection=DESC&limit=2&cursor=${encodeURIComponent(
+        first.meta?.nextCursor ?? '',
+      )}`,
+    );
+    expect(nextResponse.status).toBe(200);
+    const next = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      nextResponse,
+    );
+    const firstPlanIds = new Set(first.data.map((plan) => plan.planId));
+    expect(next.data.some((plan) => firstPlanIds.has(plan.planId))).toBe(false);
+  });
+
+  it('MSW sorts Actual Workspace achievementPercent with nulls last before cursor pagination', async () => {
+    const ascResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?sortBy=achievementPercent&sortDirection=ASC&limit=10',
+    );
+    expect(ascResponse.status).toBe(200);
+    const asc = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      ascResponse,
+    );
+    const ascValues = asc.data.map((plan) => plan.revenue.achievementPercent);
+    const ascNonNull = ascValues.filter((value): value is number => value !== null);
+    expect(ascNonNull).toEqual([...ascNonNull].sort((left, right) => left - right));
+    expect(ascValues.slice(ascNonNull.length)).toEqual(
+      Array(ascValues.length - ascNonNull.length).fill(null),
+    );
+    const ascNullPlanIds = asc.data
+      .filter((plan) => plan.revenue.achievementPercent === null)
+      .map((plan) => plan.planId);
+    expect(ascNullPlanIds).toEqual([...ascNullPlanIds].sort());
+
+    const descResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?sortBy=achievementPercent&sortDirection=DESC&limit=10',
+    );
+    expect(descResponse.status).toBe(200);
+    const desc = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      descResponse,
+    );
+    const descValues = desc.data.map((plan) => plan.revenue.achievementPercent);
+    const descNonNull = descValues.filter((value): value is number => value !== null);
+    expect(descNonNull).toEqual([...descNonNull].sort((left, right) => right - left));
+    expect(descValues.slice(descNonNull.length)).toEqual(
+      Array(descValues.length - descNonNull.length).fill(null),
+    );
+
+    const firstResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?sortBy=achievementPercent&sortDirection=ASC&limit=2',
+    );
+    expect(firstResponse.status).toBe(200);
+    const first = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      firstResponse,
+    );
+    expect(first.meta?.nextCursor).toBeDefined();
+    const nextResponse = await mswJson(
+      'GET',
+      `/admin/kpi/actual-workspace/plans?sortBy=achievementPercent&sortDirection=ASC&limit=2&cursor=${encodeURIComponent(
+        first.meta?.nextCursor ?? '',
+      )}`,
+    );
+    expect(nextResponse.status).toBe(200);
+    const next = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      nextResponse,
+    );
+    const firstPlanIds = new Set(first.data.map((plan) => plan.planId));
+    expect(next.data.some((plan) => firstPlanIds.has(plan.planId))).toBe(false);
+
+    const mismatchedResponse = await mswJson(
+      'GET',
+      `/admin/kpi/actual-workspace/plans?sortBy=revenueActual&sortDirection=ASC&limit=2&cursor=${encodeURIComponent(
+        first.meta?.nextCursor ?? '',
+      )}`,
+    );
+    expect(mismatchedResponse.status).toBe(400);
+  });
+
+  it('MSW rejects unsupported Actual Workspace derived query fields', async () => {
+    const operationalTargetSort = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?sortBy=operationalTarget',
+    );
+    expect(operationalTargetSort.status).toBe(400);
+
+    const revenueRange = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?revenueActualMin=1',
+    );
+    expect(revenueRange.status).toBe(422);
+
+    const achievementRange = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?achievementMax=100',
+    );
+    expect(achievementRange.status).toBe(422);
+
+    const targetMismatch = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?targetMismatch=true',
+    );
+    expect(targetMismatch.status).toBe(422);
   });
 
   it('MSW applies Actual Workspace group and plan search before pagination', async () => {
@@ -2567,7 +2779,7 @@ const makeActualWorkspaceSummary = (
   };
 };
 
-const installActualWorkspacePagedUiHandler = (): void => {
+const installActualWorkspacePagedUiHandler = (captured?: URL[]): void => {
   const rows = [
     makeActualWorkspaceSummary(),
     makeActualWorkspaceSummary({
@@ -2596,6 +2808,7 @@ const installActualWorkspacePagedUiHandler = (): void => {
   server.use(
     http.get('*/admin/kpi/actual-workspace/plans', ({ request }) => {
       const url = new URL(request.url);
+      captured?.push(url);
       const search = url.searchParams.get('search')?.toLowerCase();
       const coverage = url.searchParams.get('allocationCoverage');
       const filtered = rows.filter((row) => {

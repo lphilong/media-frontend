@@ -152,6 +152,18 @@
     "revenueActual": "Doanh thu thuc dat",
     "achievement": "Thanh tich %",
     "allocationCoverage": "Do bao phu quy trinh phan bo",
+    "sortBy": "Sap xep theo",
+    "sortDirection": "Huong sap xep",
+    "sortFields": {
+      "periodMonth": "Thang KPI",
+      "planCode": "Ma ke hoach",
+      "revenueActual": "Doanh thu thuc dat",
+      "achievementPercent": "Thanh tich %"
+    },
+    "sortDirections": {
+      "ASC": "Tang dan",
+      "DESC": "Giam dan"
+    },
     "coverageFilters": {
       "all": "Tat ca",
       "complete": "Hoan tat",

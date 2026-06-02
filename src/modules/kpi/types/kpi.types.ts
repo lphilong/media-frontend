@@ -119,7 +119,7 @@ export type KpiActualWorkspacePlanQuery = {
   subjectId?: string;
   search?: string;
   limit?: number;
-  sortBy?: 'periodMonth' | 'planCode';
+  sortBy?: 'periodMonth' | 'planCode' | 'revenueActual' | 'achievementPercent';
   sortDirection?: 'ASC' | 'DESC';
   cursor?: string;
   allocationCoverage?: 'complete' | 'incomplete';
