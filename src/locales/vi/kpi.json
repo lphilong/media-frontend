@@ -152,6 +152,13 @@
     "revenueActual": "Doanh thu thuc dat",
     "achievement": "Thanh tich %",
     "allocationCoverage": "Do bao phu quy trinh phan bo",
+    "coverageFilters": {
+      "all": "Tat ca",
+      "complete": "Hoan tat",
+      "incomplete": "Chua hoan tat"
+    },
+    "loadMore": "Tai them",
+    "loadingMore": "Dang tai them...",
     "missingSignal": "Tin hieu thieu han che",
     "limitedMissingSignal": "tin hieu theo ngay co gioi han",
     "supportingMetrics": "Chi so ho tro",

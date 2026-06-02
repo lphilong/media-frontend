@@ -327,6 +327,10 @@ describe('KPI MVP UX', () => {
     expect(within(row!).getByText(/limited calendar-day signal/i)).toBeInTheDocument();
     expect(within(row!).getByText(/Content output count: 8\/10 \(80%\)/)).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /revenue actual/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /achievement/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /missing/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /coverage sort/i })).not.toBeInTheDocument();
     expect(screen.getByText(/D 00:00 through D\+1 10:00 Asia\/Ho_Chi_Minh, inclusive/i))
       .toBeInTheDocument();
 
@@ -335,6 +339,124 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText('kpi-plan-published-alloc-1')).toBeInTheDocument();
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('employment-profile-001')).not.toBeInTheDocument();
+  });
+
+  it('shows Load more, appends Actual Workspace cursor pages, and hides it after the last page', async () => {
+    installActualWorkspacePagedUiHandler();
+
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+
+    expect(await screen.findByRole('button', { name: 'Load more' })).toBeInTheDocument();
+    expect(screen.queryByText('KPI-202605-000004')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('KPI-202605-000004')).toBeInTheDocument();
+    expect(screen.getAllByText('KPI-202605-000002')).toHaveLength(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('KPI-202604-000003')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument(),
+    );
+    expect(screen.getAllByText('KPI-202605-000002')).toHaveLength(1);
+  });
+
+  it('resets Actual Workspace loaded pages when search changes', async () => {
+    installActualWorkspacePagedUiHandler();
+
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('KPI-202605-000004')).toBeInTheDocument();
+
+    const search = screen.getByRole('textbox', { name: 'Search' });
+    await userEvent.clear(search);
+    await userEvent.type(search, 'Finalized');
+
+    expect(await screen.findByText('KPI-202604-000003')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('KPI-202605-000004')).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+  });
+
+  it('maps Actual Workspace allocation coverage filter to backend query values', async () => {
+    const captured: URL[] = [];
+    const { members, ...completeRow } = makeActualWorkspaceDetail();
+    void members;
+    const incompleteRow = {
+      ...completeRow,
+      planId: 'kpi-plan-incomplete-ui',
+      planCode: 'KPI-202605-000006',
+      title: 'Incomplete allocation coverage KPI',
+      allocationCoverage: {
+        publishedAllocationCount: 1,
+        totalAllocationCount: 2,
+        isAllExistingAllocationsPublished: false,
+      },
+    };
+    server.use(
+      http.get('*/admin/kpi/actual-workspace/plans', ({ request }) => {
+        const url = new URL(request.url);
+        captured.push(url);
+        const coverage = url.searchParams.get('allocationCoverage');
+        return HttpResponse.json({
+          data: coverage === 'incomplete' ? [incompleteRow] : [completeRow],
+        });
+      }),
+    );
+
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+
+    expect(await screen.findByText('KPI-202605-000002')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('allocationCoverage')).toBeNull(),
+    );
+
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', {
+        name: 'Allocation workflow coverage',
+      }),
+      'complete',
+    );
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('allocationCoverage')).toBe('complete'),
+    );
+    expect(await screen.findByText('KPI-202605-000002')).toBeInTheDocument();
+    expect(screen.getByText('2/2')).toBeInTheDocument();
+
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', {
+        name: 'Allocation workflow coverage',
+      }),
+      'incomplete',
+    );
+    await waitFor(() =>
+      expect(captured.at(-1)?.searchParams.get('allocationCoverage')).toBe('incomplete'),
+    );
+    expect(await screen.findByText('KPI-202605-000006')).toBeInTheDocument();
+    expect(screen.getByText('1/2')).toBeInTheDocument();
+    expect(screen.queryByText('KPI-202605-000002')).not.toBeInTheDocument();
+  });
+
+  it('resets Actual Workspace loaded pages when allocation coverage changes', async () => {
+    installActualWorkspacePagedUiHandler();
+
+    renderRoute('/kpi');
+    await openProgressActualsTab();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('KPI-202605-000004')).toBeInTheDocument();
+
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Allocation workflow coverage' }),
+      'complete',
+    );
+
+    expect(await screen.findByText('KPI-202605-000002')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('KPI-202605-000004')).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
   });
 
   it('uses the backend Actual Workspace list endpoint and rejects derived sort input', async () => {
@@ -2422,6 +2544,94 @@ const makeActualWorkspaceDetail = () => ({
     },
   ],
 });
+
+type ActualWorkspaceDetailFixture = ReturnType<typeof makeActualWorkspaceDetail>;
+type ActualWorkspaceSummaryFixture = Omit<ActualWorkspaceDetailFixture, 'members'>;
+
+const makeActualWorkspaceSummary = (
+  overrides: Partial<ActualWorkspaceSummaryFixture> = {},
+): ActualWorkspaceSummaryFixture => {
+  const { members, ...summary } = makeActualWorkspaceDetail();
+  void members;
+  return {
+    ...summary,
+    ...overrides,
+    revenue: {
+      ...summary.revenue,
+      ...overrides.revenue,
+    },
+    allocationCoverage: {
+      ...summary.allocationCoverage,
+      ...overrides.allocationCoverage,
+    },
+  };
+};
+
+const installActualWorkspacePagedUiHandler = (): void => {
+  const rows = [
+    makeActualWorkspaceSummary(),
+    makeActualWorkspaceSummary({
+      planId: 'kpi-plan-legacy-active',
+      planCode: 'KPI-202605-000004',
+      title: 'Legacy workflow KPI',
+      allocationCoverage: {
+        publishedAllocationCount: 1,
+        totalAllocationCount: 2,
+        isAllExistingAllocationsPublished: false,
+      },
+    }),
+    makeActualWorkspaceSummary({
+      planId: 'kpi-plan-finalized',
+      planCode: 'KPI-202604-000003',
+      title: 'Finalized team KPI',
+      periodMonth: '2026-04',
+      allocationCoverage: {
+        publishedAllocationCount: 0,
+        totalAllocationCount: 2,
+        isAllExistingAllocationsPublished: false,
+      },
+    }),
+  ];
+
+  server.use(
+    http.get('*/admin/kpi/actual-workspace/plans', ({ request }) => {
+      const url = new URL(request.url);
+      const search = url.searchParams.get('search')?.toLowerCase();
+      const coverage = url.searchParams.get('allocationCoverage');
+      const filtered = rows.filter((row) => {
+        if (
+          coverage === 'complete' &&
+          !row.allocationCoverage.isAllExistingAllocationsPublished
+        ) {
+          return false;
+        }
+        if (
+          coverage === 'incomplete' &&
+          row.allocationCoverage.isAllExistingAllocationsPublished
+        ) {
+          return false;
+        }
+        if (!search) {
+          return true;
+        }
+        return [row.planCode, row.title, row.subjectRef?.code, row.subjectRef?.name]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(search);
+      });
+      const cursor = url.searchParams.get('cursor');
+      const pageIndex = cursor === 'cursor-2' ? 2 : cursor === 'cursor-1' ? 1 : 0;
+      const pageRows = filtered.slice(pageIndex, pageIndex + 1);
+      const nextCursor =
+        pageIndex + 1 < filtered.length ? `cursor-${pageIndex + 1}` : undefined;
+      return HttpResponse.json({
+        data: pageRows,
+        ...(nextCursor ? { meta: { nextCursor } } : {}),
+      });
+    }),
+  );
+};
 
 const makeActualEntry = (id: string, metricCode: string, value: number) => ({
   id,

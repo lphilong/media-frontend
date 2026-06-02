@@ -27,6 +27,8 @@ import type {
   KpiActualGridRow,
   KpiActualWorkspaceMetricSummary,
   KpiActualWorkspaceMissingSignal,
+  KpiActualWorkspacePlanQuery,
+  KpiActualWorkspacePlanSummary,
   KpiAllocation,
   KpiCreatePlanPayload,
   KpiMetricCode,
@@ -108,6 +110,14 @@ const allocationQueueViews: AllocationQueueView[] = [
   'published',
   'rejected',
 ];
+const actualWorkspacePageLimit = 50;
+
+const readActualWorkspaceAllocationCoverage = (
+  searchParams: URLSearchParams,
+): KpiActualWorkspacePlanQuery['allocationCoverage'] => {
+  const value = searchParams.get('allocationCoverage');
+  return value === 'complete' || value === 'incomplete' ? value : undefined;
+};
 
 const defaultTargets: TargetDraft[] = [
   { metricCode: 'REVENUE_VND', value: '1.000.000' },
@@ -206,6 +216,11 @@ export const KpiListPage = (): JSX.Element => {
     kpiPlanId: string;
     actualDate: string;
   }>();
+  const [actualWorkspaceCursor, setActualWorkspaceCursor] = useState<string>();
+  const [actualWorkspaceNextCursor, setActualWorkspaceNextCursor] = useState<string>();
+  const [actualWorkspacePages, setActualWorkspacePages] = useState<
+    KpiActualWorkspacePlanSummary[]
+  >([]);
   const [cellDrafts, setCellDrafts] = useState<Record<string, string>>({});
   const [actualError, setActualError] = useState<string | null>(null);
   const [correctionTarget, setCorrectionTarget] = useState<CorrectionTarget | null>(null);
@@ -308,8 +323,41 @@ export const KpiListPage = (): JSX.Element => {
     [isManagedGroupKpiView, query],
   );
   const plansQuery = useKpiPlans(effectiveQuery, { enabled: visibleTabs.length > 0 });
+  const actualWorkspaceAllocationCoverage = useMemo(
+    () => readActualWorkspaceAllocationCoverage(searchParams),
+    [searchParams],
+  );
+  const actualWorkspaceBaseQuery = useMemo<KpiActualWorkspacePlanQuery>(
+    () => ({
+      search: query.search,
+      periodMonth: query.periodMonth,
+      subjectId: query.subjectType === 'TALENT_GROUP' ? query.subjectId : undefined,
+      groupId: query.groupId,
+      allocationCoverage: actualWorkspaceAllocationCoverage,
+      limit: actualWorkspacePageLimit,
+      sortBy: 'periodMonth',
+      sortDirection: 'DESC',
+    }),
+    [
+      actualWorkspaceAllocationCoverage,
+      query.groupId,
+      query.periodMonth,
+      query.search,
+      query.subjectId,
+      query.subjectType,
+    ],
+  );
+  const actualWorkspaceQueryShape = useMemo(
+    () =>
+      new URLSearchParams(
+        Object.entries(actualWorkspaceBaseQuery)
+          .filter(([, value]) => value !== undefined && value !== '')
+          .map(([key, value]) => [key, String(value)]),
+      ).toString(),
+    [actualWorkspaceBaseQuery],
+  );
   const actualWorkspacePlansQuery = useKpiActualWorkspacePlans(
-    { limit: 50, sortBy: 'periodMonth', sortDirection: 'DESC' },
+    { ...actualWorkspaceBaseQuery, cursor: actualWorkspaceCursor },
     {
       enabled:
         selectedTab === 'management' &&
@@ -318,7 +366,7 @@ export const KpiListPage = (): JSX.Element => {
     },
   );
   const actualWorkspaceDetailQuery = useKpiActualWorkspacePlanDetail(selectedWorkspacePlanId);
-  const actualWorkspacePlans = actualWorkspacePlansQuery.data?.data;
+  const actualWorkspacePlans = actualWorkspacePages;
 
   useEffect(() => {
     if (visibleTabs.length > 0 && !visibleTabs.includes(activeTab as 'management' | 'group')) {
@@ -335,6 +383,30 @@ export const KpiListPage = (): JSX.Element => {
       setAdminWorkspaceTab(visibleAdminWorkspaceTabs[0]);
     }
   }, [adminWorkspaceTab, selectedTab, visibleAdminWorkspaceTabs]);
+
+  useEffect(() => {
+    setActualWorkspaceCursor(undefined);
+    setActualWorkspaceNextCursor(undefined);
+    setActualWorkspacePages([]);
+    setSelectedWorkspacePlanId(undefined);
+    setLoadedActualGrid(undefined);
+    setCellDrafts({});
+  }, [actualWorkspaceQueryShape]);
+
+  useEffect(() => {
+    const page = actualWorkspacePlansQuery.data;
+    if (!page) {
+      return;
+    }
+    setActualWorkspaceNextCursor(page.meta?.nextCursor);
+    setActualWorkspacePages((current) => {
+      if (!actualWorkspaceCursor) {
+        return page.data;
+      }
+      const seen = new Set(current.map((plan) => plan.planId));
+      return [...current, ...page.data.filter((plan) => !seen.has(plan.planId))];
+    });
+  }, [actualWorkspaceCursor, actualWorkspacePlansQuery.data]);
 
   const patchQuery = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -1068,7 +1140,54 @@ export const KpiListPage = (): JSX.Element => {
         <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
           <h2 className="text-base font-semibold">{t('kpi:actualWorkspace.title')}</h2>
           <p className="text-sm text-muted">{t('kpi:actualWorkspace.policy')}</p>
-          {actualWorkspacePlansQuery.isPending ? <LoadingState lines={4} /> : null}
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex min-w-[220px] flex-col gap-1 text-sm">
+              <span className="text-xs font-medium uppercase text-muted">
+                {t('kpi:filters.search')}
+              </span>
+              <input
+                value={query.search ?? ''}
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                placeholder={t('kpi:filters.searchPlaceholder')}
+                onChange={(event) => patchQuery({ search: event.target.value || undefined })}
+              />
+            </label>
+            <label className="flex min-w-[150px] flex-col gap-1 text-sm">
+              <span className="text-xs font-medium uppercase text-muted">
+                {t('kpi:fields.periodMonth')}
+              </span>
+              <input
+                type="month"
+                value={query.periodMonth ?? ''}
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                placeholder="2026-05"
+                onChange={(event) => patchQuery({ periodMonth: event.target.value || undefined })}
+              />
+            </label>
+            <label className="flex min-w-[220px] flex-col gap-1 text-sm">
+              <span className="text-xs font-medium uppercase text-muted">
+                {t('kpi:actualWorkspace.allocationCoverage')}
+              </span>
+              <select
+                value={actualWorkspaceAllocationCoverage ?? ''}
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                onChange={(event) =>
+                  patchQuery({ allocationCoverage: event.target.value || undefined })
+                }
+              >
+                <option value="">{t('kpi:actualWorkspace.coverageFilters.all')}</option>
+                <option value="complete">
+                  {t('kpi:actualWorkspace.coverageFilters.complete')}
+                </option>
+                <option value="incomplete">
+                  {t('kpi:actualWorkspace.coverageFilters.incomplete')}
+                </option>
+              </select>
+            </label>
+          </div>
+          {actualWorkspacePlansQuery.isPending && actualWorkspacePlans.length === 0 ? (
+            <LoadingState lines={4} />
+          ) : null}
           {actualWorkspacePlansQuery.isError ? (
             <ErrorState
               title={t('kpi:states.actualWorkspaceLoadErrorTitle')}
@@ -1081,12 +1200,12 @@ export const KpiListPage = (): JSX.Element => {
               onRetry={() => void actualWorkspacePlansQuery.refetch()}
             />
           ) : null}
-          {actualWorkspacePlans?.length === 0 ? (
+          {actualWorkspacePlans.length === 0 && !actualWorkspacePlansQuery.isPending ? (
             <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
               {t('kpi:states.emptyActualWorkspace')}
             </div>
           ) : null}
-          {actualWorkspacePlans && actualWorkspacePlans.length > 0 ? (
+          {actualWorkspacePlans.length > 0 ? (
             <div className="overflow-x-auto rounded border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-100">
@@ -1145,6 +1264,18 @@ export const KpiListPage = (): JSX.Element => {
                 </tbody>
               </table>
             </div>
+          ) : null}
+          {actualWorkspaceNextCursor ? (
+            <button
+              type="button"
+              disabled={actualWorkspacePlansQuery.isFetching}
+              className="rounded border border-border px-3 py-2 text-sm font-medium disabled:opacity-50"
+              onClick={() => setActualWorkspaceCursor(actualWorkspaceNextCursor)}
+            >
+              {actualWorkspacePlansQuery.isFetching
+                ? t('kpi:actualWorkspace.loadingMore')
+                : t('kpi:actualWorkspace.loadMore')}
+            </button>
           ) : null}
 
           {actualWorkspaceDetailQuery.isPending ? <LoadingState lines={3} /> : null}

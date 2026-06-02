@@ -152,6 +152,13 @@
     "revenueActual": "Revenue actual",
     "achievement": "Achievement %",
     "allocationCoverage": "Allocation workflow coverage",
+    "coverageFilters": {
+      "all": "全部",
+      "complete": "完整",
+      "incomplete": "不完整"
+    },
+    "loadMore": "加载更多",
+    "loadingMore": "正在加载...",
     "missingSignal": "Limited missing signal",
     "limitedMissingSignal": "limited calendar-day signal",
     "supportingMetrics": "Supporting metrics",

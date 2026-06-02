@@ -152,6 +152,13 @@
     "revenueActual": "Revenue actual",
     "achievement": "Achievement %",
     "allocationCoverage": "Allocation workflow coverage",
+    "coverageFilters": {
+      "all": "All",
+      "complete": "Complete",
+      "incomplete": "Incomplete"
+    },
+    "loadMore": "Load more",
+    "loadingMore": "Loading more...",
     "missingSignal": "Limited missing signal",
     "limitedMissingSignal": "limited calendar-day signal",
     "supportingMetrics": "Supporting metrics",
