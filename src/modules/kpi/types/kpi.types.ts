@@ -121,6 +121,8 @@ export type KpiActualWorkspacePlanQuery = {
   limit?: number;
   sortBy?: 'periodMonth' | 'planCode';
   sortDirection?: 'ASC' | 'DESC';
+  cursor?: string;
+  allocationCoverage?: 'complete' | 'incomplete';
 };
 
 export type KpiTargetMetric = {
@@ -366,6 +368,13 @@ export type KpiActualWorkspacePlanSummary = {
   missingSignal: KpiActualWorkspaceMissingSignal;
   closing: KpiActualWorkspaceClosing;
   actionHints: KpiActualWorkspaceActionHints;
+};
+
+export type KpiActualWorkspacePlanListResult = {
+  data: KpiActualWorkspacePlanSummary[];
+  meta?: {
+    nextCursor?: string;
+  };
 };
 
 export type KpiActualWorkspaceMemberSummary = {

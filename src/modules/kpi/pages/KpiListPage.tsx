@@ -318,6 +318,7 @@ export const KpiListPage = (): JSX.Element => {
     },
   );
   const actualWorkspaceDetailQuery = useKpiActualWorkspacePlanDetail(selectedWorkspacePlanId);
+  const actualWorkspacePlans = actualWorkspacePlansQuery.data?.data;
 
   useEffect(() => {
     if (visibleTabs.length > 0 && !visibleTabs.includes(activeTab as 'management' | 'group')) {
@@ -1080,12 +1081,12 @@ export const KpiListPage = (): JSX.Element => {
               onRetry={() => void actualWorkspacePlansQuery.refetch()}
             />
           ) : null}
-          {actualWorkspacePlansQuery.data?.length === 0 ? (
+          {actualWorkspacePlans?.length === 0 ? (
             <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
               {t('kpi:states.emptyActualWorkspace')}
             </div>
           ) : null}
-          {actualWorkspacePlansQuery.data && actualWorkspacePlansQuery.data.length > 0 ? (
+          {actualWorkspacePlans && actualWorkspacePlans.length > 0 ? (
             <div className="overflow-x-auto rounded border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-100">
@@ -1103,7 +1104,7 @@ export const KpiListPage = (): JSX.Element => {
                   </tr>
                 </thead>
                 <tbody>
-                  {actualWorkspacePlansQuery.data.map((plan) => (
+                  {actualWorkspacePlans.map((plan) => (
                     <tr key={plan.planId} className="border-t border-border">
                       <td className="px-3 py-2">{plan.planCode}</td>
                       <td className="px-3 py-2">

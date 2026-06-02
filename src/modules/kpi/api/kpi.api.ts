@@ -4,9 +4,9 @@ import type {
   KpiActualCorrection,
   KpiActualDailyGrid,
   KpiActualEntry,
+  KpiActualWorkspacePlanListResult,
   KpiActualWorkspacePlanDetail,
   KpiActualWorkspacePlanQuery,
-  KpiActualWorkspacePlanSummary,
   KpiAllocation,
   KpiAllocationDraftMemberInput,
   KpiAllocationInput,
@@ -519,7 +519,15 @@ const managedMemberSchema = z
 const listResponseSchema = z.object({ data: z.array(planListItemSchema) }).strict();
 const detailResponseSchema = z.object({ data: planDetailSchema }).strict();
 const actualWorkspaceListResponseSchema = z
-  .object({ data: z.array(actualWorkspacePlanSummarySchema) })
+  .object({
+    data: z.array(actualWorkspacePlanSummarySchema),
+    meta: z
+      .object({
+        nextCursor: z.string().trim().min(1).optional(),
+      })
+      .strict()
+      .optional(),
+  })
   .strict();
 const actualWorkspaceDetailResponseSchema = z
   .object({ data: actualWorkspacePlanDetailSchema })
@@ -612,6 +620,8 @@ const actualWorkspacePlanQuerySchema = z
     limit: z.number().int().positive().max(100).optional(),
     sortBy: z.enum(['periodMonth', 'planCode']).optional(),
     sortDirection: z.enum(['ASC', 'DESC']).optional(),
+    cursor: z.string().trim().min(1).optional(),
+    allocationCoverage: z.enum(['complete', 'incomplete']).optional(),
   })
   .strict();
 
@@ -636,13 +646,13 @@ export const fetchKpiPlans = async (query: KpiPlanQuery) => {
 
 export const fetchKpiActualWorkspacePlans = async (
   query: KpiActualWorkspacePlanQuery = {},
-): Promise<KpiActualWorkspacePlanSummary[]> => {
+): Promise<KpiActualWorkspacePlanListResult> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/admin/kpi/actual-workspace/plans',
     params: sanitizeActualWorkspacePlanQuery(query),
   });
-  return actualWorkspaceListResponseSchema.parse(response).data;
+  return actualWorkspaceListResponseSchema.parse(response);
 };
 
 export const fetchKpiActualWorkspacePlanDetail = async (
@@ -963,6 +973,9 @@ export const parseKpiPlanListResponseForTest = (response: unknown) =>
 
 export const parseKpiActualWorkspacePlanDetailResponseForTest = (response: unknown) =>
   actualWorkspaceDetailResponseSchema.parse(response).data;
+
+export const parseKpiActualWorkspacePlanListResponseForTest = (response: unknown) =>
+  actualWorkspaceListResponseSchema.parse(response);
 
 export const parseKpiAllocationDraftPayloadForTest = (
   payload: unknown,

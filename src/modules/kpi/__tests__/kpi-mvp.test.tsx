@@ -22,6 +22,7 @@ import {
   fetchMyKpiProgress,
   parseKpiAllocationDraftPayloadForTest,
   parseKpiAllocationListResponseForTest,
+  parseKpiActualWorkspacePlanListResponseForTest,
   parseKpiActualWorkspacePlanDetailResponseForTest,
   parseKpiPlanListResponseForTest,
   performKpiLifecycleAction,
@@ -97,6 +98,9 @@ const mswJson = (method: 'GET' | 'POST' | 'PUT' | 'PATCH', path: string, data?: 
     headers: data === undefined ? undefined : { 'content-type': 'application/json' },
     body: data === undefined ? undefined : JSON.stringify(data),
   });
+
+const readMswJson = async <T,>(response: Response): Promise<T> =>
+  response.json() as Promise<T>;
 
 type KpiCapabilityMockParams = {
   permissions?: string[];
@@ -334,10 +338,204 @@ describe('KPI MVP UX', () => {
   });
 
   it('uses the backend Actual Workspace list endpoint and rejects derived sort input', async () => {
-    expect((await fetchKpiActualWorkspacePlans({ limit: 10 }))[0].planCode).toBeDefined();
+    expect((await fetchKpiActualWorkspacePlans({ limit: 10 })).data[0].planCode).toBeDefined();
     await expect(
       fetchKpiActualWorkspacePlans({ sortBy: 'achievement' as never }),
     ).rejects.toThrow();
+    await expect(
+      fetchKpiActualWorkspacePlans({ revenueActualMin: 1 } as never),
+    ).rejects.toThrow();
+  });
+
+  it('accepts Actual Workspace meta.nextCursor and cursor query fields', async () => {
+    const { members, ...summary } = makeActualWorkspaceDetail();
+    void members;
+    expect(
+      parseKpiActualWorkspacePlanListResponseForTest({
+        data: [summary],
+        meta: { nextCursor: 'opaque-cursor' },
+      }).meta?.nextCursor,
+    ).toBe('opaque-cursor');
+
+    const first = await fetchKpiActualWorkspacePlans({ limit: 1 });
+    expect(first.meta?.nextCursor).toBeDefined();
+    const next = await fetchKpiActualWorkspacePlans({
+      limit: 1,
+      cursor: first.meta?.nextCursor,
+    });
+    expect(next.data[0].planId).not.toBe(first.data[0].planId);
+  });
+
+  it('accepts complete and incomplete allocation-row coverage filters and rejects unsupported coverage', async () => {
+    const complete = await fetchKpiActualWorkspacePlans({ allocationCoverage: 'complete' });
+    expect(complete.data.length).toBeGreaterThan(0);
+    expect(
+      complete.data.every(
+        (plan) =>
+          plan.allocationCoverage.totalAllocationCount > 0 &&
+          plan.allocationCoverage.publishedAllocationCount ===
+            plan.allocationCoverage.totalAllocationCount,
+      ),
+    ).toBe(true);
+
+    const incomplete = await fetchKpiActualWorkspacePlans({ allocationCoverage: 'incomplete' });
+    expect(incomplete.data.length).toBeGreaterThan(0);
+    expect(
+      incomplete.data.every(
+        (plan) =>
+          plan.allocationCoverage.totalAllocationCount === 0 ||
+          plan.allocationCoverage.publishedAllocationCount <
+            plan.allocationCoverage.totalAllocationCount,
+      ),
+    ).toBe(true);
+
+    await expect(
+      fetchKpiActualWorkspacePlans({ allocationCoverage: 'activeMemberComplete' as never }),
+    ).rejects.toThrow();
+  });
+
+  it('MSW paginates Actual Workspace by periodMonth cursor without duplicate rows', async () => {
+    const firstResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?limit=2&sortBy=periodMonth&sortDirection=DESC',
+    );
+    expect(firstResponse.status).toBe(200);
+    const first = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      firstResponse,
+    );
+    expect(first.meta?.nextCursor).toBeDefined();
+
+    const nextResponse = await mswJson(
+      'GET',
+      `/admin/kpi/actual-workspace/plans?limit=2&sortBy=periodMonth&sortDirection=DESC&cursor=${encodeURIComponent(
+        first.meta?.nextCursor ?? '',
+      )}`,
+    );
+    expect(nextResponse.status).toBe(200);
+    const next = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      nextResponse,
+    );
+    const firstPlanIds = new Set(first.data.map((plan) => plan.planId));
+    expect(next.data.some((plan) => firstPlanIds.has(plan.planId))).toBe(false);
+  });
+
+  it('MSW paginates Actual Workspace by planCode cursor and rejects invalid cursor shape', async () => {
+    const firstResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?limit=2&sortBy=planCode&sortDirection=ASC',
+    );
+    expect(firstResponse.status).toBe(200);
+    const first = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      firstResponse,
+    );
+    expect(first.meta?.nextCursor).toBeDefined();
+
+    const nextResponse = await mswJson(
+      'GET',
+      `/admin/kpi/actual-workspace/plans?limit=2&sortBy=planCode&sortDirection=ASC&cursor=${encodeURIComponent(
+        first.meta?.nextCursor ?? '',
+      )}`,
+    );
+    expect(nextResponse.status).toBe(200);
+    const next = await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+      nextResponse,
+    );
+    expect(next.data[0].planCode).not.toBe(first.data[0].planCode);
+
+    const malformedResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?cursor=not-a-valid-cursor',
+    );
+    expect(malformedResponse.status).toBe(400);
+
+    const mismatchedResponse = await mswJson(
+      'GET',
+      `/admin/kpi/actual-workspace/plans?limit=2&sortBy=planCode&sortDirection=DESC&cursor=${encodeURIComponent(
+        first.meta?.nextCursor ?? '',
+      )}`,
+    );
+    expect(mismatchedResponse.status).toBe(400);
+  });
+
+  it('MSW applies Actual Workspace group and plan search before pagination', async () => {
+    const groupCodeResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?search=TG-001&limit=1',
+    );
+    expect(groupCodeResponse.status).toBe(200);
+    const groupCode =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+        groupCodeResponse,
+      );
+    expect(groupCode.data[0].subjectRef?.code).toBe('TG-001');
+
+    const groupNameResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?search=Creator%20Team&limit=1',
+    );
+    expect(groupNameResponse.status).toBe(200);
+    const groupName =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+        groupNameResponse,
+      );
+    expect(groupName.data[0].subjectRef?.name).toBe('Creator Team');
+
+    const planCodeResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?search=KPI-202604-000003&limit=1',
+    );
+    expect(planCodeResponse.status).toBe(200);
+    const planCode =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+        planCodeResponse,
+      );
+    expect(planCode.data).toHaveLength(1);
+    expect(planCode.data[0].planCode).toBe('KPI-202604-000003');
+
+    const planTitleResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?search=Finalized%20team&limit=1',
+    );
+    expect(planTitleResponse.status).toBe(200);
+    const planTitle =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+        planTitleResponse,
+      );
+    expect(planTitle.data[0].title).toBe('Finalized team KPI');
+  });
+
+  it('MSW filters Actual Workspace allocationCoverage before pagination', async () => {
+    const completeResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?allocationCoverage=complete&limit=1',
+    );
+    expect(completeResponse.status).toBe(200);
+    const complete =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+        completeResponse,
+      );
+    expect(complete.data).toHaveLength(1);
+    expect(complete.data[0].allocationCoverage.totalAllocationCount).toBeGreaterThan(0);
+    expect(complete.data[0].allocationCoverage.publishedAllocationCount).toBe(
+      complete.data[0].allocationCoverage.totalAllocationCount,
+    );
+
+    const incompleteResponse = await mswJson(
+      'GET',
+      '/admin/kpi/actual-workspace/plans?allocationCoverage=incomplete&limit=1',
+    );
+    expect(incompleteResponse.status).toBe(200);
+    const incomplete =
+      await readMswJson<Awaited<ReturnType<typeof fetchKpiActualWorkspacePlans>>>(
+        incompleteResponse,
+      );
+    expect(incomplete.data).toHaveLength(1);
+    expect(
+      incomplete.data[0].allocationCoverage.totalAllocationCount === 0 ||
+        incomplete.data[0].allocationCoverage.publishedAllocationCount <
+          incomplete.data[0].allocationCoverage.totalAllocationCount,
+    ).toBe(true);
+    expect(incomplete.meta?.nextCursor).toBeDefined();
   });
 
   it('approval queue defaults to actionable status-filtered rows and exposes history views', async () => {

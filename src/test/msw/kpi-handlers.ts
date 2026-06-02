@@ -217,6 +217,8 @@ const allowedActualWorkspaceListQueryKeys = [
   'limit',
   'sortBy',
   'sortDirection',
+  'cursor',
+  'allocationCoverage',
 ] as const;
 const allowedAllocationListQueryKeys = ['status', 'kpiPlanId', 'groupId', 'limit'] as const;
 const allowedManagedMemberQueryKeys = ['search', 'limit'] as const;
@@ -624,6 +626,16 @@ const validateActualWorkspaceListQuery = (searchParams: URLSearchParams) => {
   const sortDirection = searchParams.get('sortDirection');
   if (sortDirection && !allowedSortDirections.includes(sortDirection.toUpperCase())) {
     return validationError(`KPI sortDirection is unsupported: ${sortDirection}`);
+  }
+  const allocationCoverage = searchParams.get('allocationCoverage');
+  if (
+    allocationCoverage &&
+    allocationCoverage !== 'complete' &&
+    allocationCoverage !== 'incomplete'
+  ) {
+    return validationError(
+      `KPI actual workspace allocationCoverage is unsupported: ${allocationCoverage}`,
+    );
   }
   return undefined;
 };
@@ -1343,27 +1355,190 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
   };
 };
 
+type ActualWorkspaceSortBy = 'periodMonth' | 'planCode';
+type ActualWorkspaceSortDirection = 'ASC' | 'DESC';
+
+type ActualWorkspaceCursorEnvelope = {
+  v: 1;
+  queryKey: {
+    periodMonth: string | null;
+    groupId: string | null;
+    subjectId: string | null;
+    search: string | null;
+    sortBy: ActualWorkspaceSortBy;
+    sortDirection: ActualWorkspaceSortDirection;
+    allocationCoverage: 'complete' | 'incomplete' | null;
+  };
+  sortBy: ActualWorkspaceSortBy;
+  sortDirection: ActualWorkspaceSortDirection;
+  lastValue: string;
+  lastPlanId: string;
+};
+
+const actualWorkspaceCursorErrorMessage = 'KPI actual workspace cursor is invalid';
+
+const readActualWorkspaceSortBy = (searchParams: URLSearchParams): ActualWorkspaceSortBy =>
+  searchParams.get('sortBy') === 'planCode' ? 'planCode' : 'periodMonth';
+
+const readActualWorkspaceSortDirection = (
+  searchParams: URLSearchParams,
+): ActualWorkspaceSortDirection =>
+  searchParams.get('sortDirection')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+const readActualWorkspaceCoverageFilter = (
+  searchParams: URLSearchParams,
+): 'complete' | 'incomplete' | null => {
+  const value = searchParams.get('allocationCoverage');
+  return value === 'complete' || value === 'incomplete' ? value : null;
+};
+
+const buildActualWorkspaceQueryKey = (
+  searchParams: URLSearchParams,
+): ActualWorkspaceCursorEnvelope['queryKey'] => ({
+  periodMonth: searchParams.get('periodMonth') || null,
+  groupId: searchParams.get('groupId') || null,
+  subjectId: searchParams.get('subjectId') || null,
+  search: searchParams.get('search') || null,
+  sortBy: readActualWorkspaceSortBy(searchParams),
+  sortDirection: readActualWorkspaceSortDirection(searchParams),
+  allocationCoverage: readActualWorkspaceCoverageFilter(searchParams),
+});
+
+const encodeActualWorkspaceCursor = (
+  cursor: ActualWorkspaceCursorEnvelope,
+): string =>
+  btoa(JSON.stringify(cursor)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+const decodeActualWorkspaceCursor = (
+  value: string,
+  expectedQueryKey: ActualWorkspaceCursorEnvelope['queryKey'],
+): ActualWorkspaceCursorEnvelope => {
+  try {
+    const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = `${base64}${'='.repeat((4 - (base64.length % 4)) % 4)}`;
+    const parsed = JSON.parse(atob(padded)) as Partial<ActualWorkspaceCursorEnvelope>;
+    if (
+      parsed.v !== 1 ||
+      (parsed.sortBy !== 'periodMonth' && parsed.sortBy !== 'planCode') ||
+      (parsed.sortDirection !== 'ASC' && parsed.sortDirection !== 'DESC') ||
+      typeof parsed.lastValue !== 'string' ||
+      typeof parsed.lastPlanId !== 'string' ||
+      JSON.stringify(parsed.queryKey) !== JSON.stringify(expectedQueryKey) ||
+      parsed.sortBy !== expectedQueryKey.sortBy ||
+      parsed.sortDirection !== expectedQueryKey.sortDirection
+    ) {
+      throw new Error(actualWorkspaceCursorErrorMessage);
+    }
+    return parsed as ActualWorkspaceCursorEnvelope;
+  } catch {
+    throw new Error(actualWorkspaceCursorErrorMessage);
+  }
+};
+
+const matchesActualWorkspaceCoverage = (
+  plan: KpiPlan,
+  allocationCoverage: 'complete' | 'incomplete' | null,
+): boolean => {
+  if (!allocationCoverage) {
+    return true;
+  }
+  const planAllocations = allocations[plan.id] ?? [];
+  const publishedCount = planAllocations.filter(
+    (allocation) => allocation.allocationStatus === 'PUBLISHED',
+  ).length;
+  const isComplete = planAllocations.length > 0 && publishedCount === planAllocations.length;
+  return allocationCoverage === 'complete' ? isComplete : !isComplete;
+};
+
+const compareActualWorkspacePlans = (
+  left: KpiPlan,
+  right: KpiPlan,
+  sortBy: ActualWorkspaceSortBy,
+  sortDirection: ActualWorkspaceSortDirection,
+): number => {
+  const direction = sortDirection === 'ASC' ? 1 : -1;
+  const leftValue = sortBy === 'planCode' ? left.planCode : left.periodMonth;
+  const rightValue = sortBy === 'planCode' ? right.planCode : right.periodMonth;
+  return (
+    direction * leftValue.localeCompare(rightValue) ||
+    direction * left.id.localeCompare(right.id)
+  );
+};
+
 const listActualWorkspacePlans = (request: Request) => {
   const url = new URL(request.url);
   const groupId = url.searchParams.get('groupId');
   const subjectId = url.searchParams.get('subjectId');
   const periodMonth = url.searchParams.get('periodMonth');
   const search = url.searchParams.get('search')?.toLowerCase();
-  const sortBy = url.searchParams.get('sortBy') ?? 'periodMonth';
-  const direction = url.searchParams.get('sortDirection') === 'ASC' ? 1 : -1;
+  const sortBy = readActualWorkspaceSortBy(url.searchParams);
+  const sortDirection = readActualWorkspaceSortDirection(url.searchParams);
+  const allocationCoverage = readActualWorkspaceCoverageFilter(url.searchParams);
   return plans
     .filter((plan) => plan.subjectType === 'TALENT_GROUP')
     .filter((plan) => (!groupId ? true : plan.subjectId === groupId))
     .filter((plan) => (!subjectId ? true : plan.subjectId === subjectId))
     .filter((plan) => (!periodMonth ? true : plan.periodMonth === periodMonth))
-    .filter((plan) =>
-      search ? `${plan.planCode} ${plan.title}`.toLowerCase().includes(search) : true,
-    )
-    .sort((left, right) =>
-      sortBy === 'planCode'
-        ? direction * left.planCode.localeCompare(right.planCode)
-        : direction * left.periodMonth.localeCompare(right.periodMonth),
-    );
+    .filter((plan) => {
+      if (!search) {
+        return true;
+      }
+      const subjectRef = plan.subjectRef;
+      return [
+        plan.planCode,
+        plan.title,
+        subjectRef?.code,
+        subjectRef?.name,
+        subjectRef?.displayName,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(search);
+    })
+    .filter((plan) => matchesActualWorkspaceCoverage(plan, allocationCoverage))
+    .sort((left, right) => compareActualWorkspacePlans(left, right, sortBy, sortDirection));
+};
+
+const paginateActualWorkspacePlans = (
+  rows: KpiPlan[],
+  searchParams: URLSearchParams,
+): { rows: KpiPlan[]; nextCursor?: string } => {
+  const limit = parseLimitQuery(searchParams.get('limit')) ?? 50;
+  const sortBy = readActualWorkspaceSortBy(searchParams);
+  const sortDirection = readActualWorkspaceSortDirection(searchParams);
+  const queryKey = buildActualWorkspaceQueryKey(searchParams);
+  const cursorValue = searchParams.get('cursor');
+  const startIndex =
+    cursorValue === null
+      ? 0
+      : (() => {
+          const cursor = decodeActualWorkspaceCursor(cursorValue, queryKey);
+          const index = rows.findIndex((plan) => {
+            const value = sortBy === 'planCode' ? plan.planCode : plan.periodMonth;
+            return value === cursor.lastValue && plan.id === cursor.lastPlanId;
+          });
+          if (index < 0) {
+            throw new Error(actualWorkspaceCursorErrorMessage);
+          }
+          return index + 1;
+        })();
+  const pageRows = rows.slice(startIndex, startIndex + limit);
+  const lastRow = pageRows[pageRows.length - 1];
+  return {
+    rows: pageRows,
+    nextCursor:
+      lastRow && startIndex + pageRows.length < rows.length
+        ? encodeActualWorkspaceCursor({
+            v: 1,
+            queryKey,
+            sortBy,
+            sortDirection,
+            lastValue: sortBy === 'planCode' ? lastRow.planCode : lastRow.periodMonth,
+            lastPlanId: lastRow.id,
+          })
+        : undefined,
+  };
 };
 
 export const kpiHandlers = [
@@ -1376,9 +1551,15 @@ export const kpiHandlers = [
     if (unsupported) return unsupported;
     const invalid = validateActualWorkspaceListQuery(url.searchParams);
     if (invalid) return invalid;
-    const limit = parseLimitQuery(url.searchParams.get('limit')) ?? 50;
+    let page: ReturnType<typeof paginateActualWorkspacePlans>;
+    try {
+      page = paginateActualWorkspacePlans(listActualWorkspacePlans(request), url.searchParams);
+    } catch {
+      return validationError(actualWorkspaceCursorErrorMessage);
+    }
     return HttpResponse.json({
-      data: listActualWorkspacePlans(request).slice(0, limit).map(toActualWorkspaceSummary),
+      data: page.rows.map(toActualWorkspaceSummary),
+      ...(page.nextCursor ? { meta: { nextCursor: page.nextCursor } } : {}),
     });
   }),
   http.get('*/admin/kpi/actual-workspace/plans/:kpiPlanId', ({ params }) => {
