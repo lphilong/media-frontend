@@ -93,7 +93,8 @@
     "CONTENT_OUTPUT_COUNT": "内容产出数",
     "LIVE_HOURS": "直播小时",
     "EVENT_COMPLETION_COUNT": "完成活动数",
-    "ONBOARDED_TALENT_COUNT": "已入职 Talent 数"
+    "ONBOARDED_TALENT_COUNT": "已入职 Talent 数",
+    "TIKTOK_DIAMOND": "TikTok Diamond"
   },
   "statuses": {
     "DRAFT": "草稿",

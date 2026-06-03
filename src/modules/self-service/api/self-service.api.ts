@@ -147,6 +147,7 @@ const selfServiceKpiMetricSchema = z
       'LIVE_HOURS',
       'EVENT_COMPLETION_COUNT',
       'ONBOARDED_TALENT_COUNT',
+      'TIKTOK_DIAMOND',
     ]),
     unit: z.enum(['VND', 'COUNT', 'HOUR']),
     targetValue: z.number(),

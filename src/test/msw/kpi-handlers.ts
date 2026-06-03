@@ -7,7 +7,8 @@ type KpiMetricCode =
   | 'CONTENT_OUTPUT_COUNT'
   | 'LIVE_HOURS'
   | 'EVENT_COMPLETION_COUNT'
-  | 'ONBOARDED_TALENT_COUNT';
+  | 'ONBOARDED_TALENT_COUNT'
+  | 'TIKTOK_DIAMOND';
 type KpiUnit = 'VND' | 'COUNT' | 'HOUR';
 type KpiDailyActualStatus =
   | 'NOT_DUE'
@@ -276,6 +277,7 @@ const metricUnits: Record<KpiMetricCode, KpiUnit> = {
   LIVE_HOURS: 'HOUR',
   EVENT_COMPLETION_COUNT: 'COUNT',
   ONBOARDED_TALENT_COUNT: 'COUNT',
+  TIKTOK_DIAMOND: 'COUNT',
 };
 const metricCodes = Object.keys(metricUnits) as KpiMetricCode[];
 const integerTargetMetricCodes = new Set<KpiMetricCode>([
@@ -283,6 +285,7 @@ const integerTargetMetricCodes = new Set<KpiMetricCode>([
   'CONTENT_OUTPUT_COUNT',
   'EVENT_COMPLETION_COUNT',
   'ONBOARDED_TALENT_COUNT',
+  'TIKTOK_DIAMOND',
 ]);
 const subjectTypes: KpiSubjectType[] = ['TALENT', 'TALENT_GROUP', 'EMPLOYMENT_PROFILE', 'ORG_UNIT'];
 const createSubjectTypes: KpiSubjectType[] = ['TALENT_GROUP'];
@@ -443,6 +446,12 @@ const initialPlans = [
           actualValue: 8,
           achievementPercent: 80,
         },
+        {
+          metricCode: 'TIKTOK_DIAMOND',
+          targetValue: 1000,
+          actualValue: 840,
+          achievementPercent: 84,
+        },
       ],
       members: [
         {
@@ -461,6 +470,12 @@ const initialPlans = [
               targetValue: 6,
               actualValue: 5,
               achievementPercent: 83.33,
+            },
+            {
+              metricCode: 'TIKTOK_DIAMOND',
+              targetValue: 600,
+              actualValue: 540,
+              achievementPercent: 90,
             },
           ],
           actualEntryStatusSummary: {
@@ -489,6 +504,12 @@ const initialPlans = [
               metricCode: 'CONTENT_OUTPUT_COUNT',
               targetValue: 4,
               actualValue: 3,
+              achievementPercent: 75,
+            },
+            {
+              metricCode: 'TIKTOK_DIAMOND',
+              targetValue: 400,
+              actualValue: 300,
               achievementPercent: 75,
             },
           ],
@@ -1778,49 +1799,58 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => {
   };
 };
 
-const workspaceMemberActuals: Record<
-  string,
-  Record<string, { revenue: number; content: number; missing: number }>
-> = {
+type WorkspaceMemberActual = {
+  values: Partial<Record<KpiMetricCode, number>>;
+  missing: number;
+};
+
+const workspaceMemberActuals: Record<string, Record<string, WorkspaceMemberActual>> = {
   'kpi-plan-published': {
-    'kpi-plan-published-alloc-1': { revenue: 500000, content: 5, missing: 0 },
-    'kpi-plan-published-alloc-2': { revenue: 250000, content: 3, missing: 1 },
+    'kpi-plan-published-alloc-1': {
+      values: { REVENUE_VND: 500000, CONTENT_OUTPUT_COUNT: 5 },
+      missing: 0,
+    },
+    'kpi-plan-published-alloc-2': {
+      values: { REVENUE_VND: 250000, CONTENT_OUTPUT_COUNT: 3 },
+      missing: 1,
+    },
   },
 };
 
 const achievementPercent = (actualValue: number, targetValue: number): number | null =>
   targetValue === 0 ? null : Number(((actualValue / targetValue) * 100).toFixed(2));
 
+const readWorkspaceActualValue = (
+  actuals: WorkspaceMemberActual,
+  metricCode: KpiMetricCode,
+): number => actuals.values[metricCode] ?? 0;
+
 const toActualWorkspaceMember = (allocation: KpiAllocation) => {
   const actuals = workspaceMemberActuals[allocation.kpiPlanId]?.[allocation.id] ?? {
-    revenue: 0,
-    content: 0,
+    values: {},
     missing: 0,
   };
-  const revenueTarget =
-    allocation.targetMetrics.find((metric) => metric.metricCode === 'REVENUE_VND')?.targetValue ??
-    0;
-  const contentTarget =
-    allocation.targetMetrics.find((metric) => metric.metricCode === 'CONTENT_OUTPUT_COUNT')
-      ?.targetValue ?? 0;
+  const metricSummaries = allocation.targetMetrics.map((metric) => {
+    const actualValue = readWorkspaceActualValue(actuals, metric.metricCode);
+    return {
+      metricCode: metric.metricCode,
+      targetValue: metric.targetValue,
+      actualValue,
+      achievementPercent: achievementPercent(actualValue, metric.targetValue),
+    };
+  });
+  const revenue = metricSummaries.find((metric) => metric.metricCode === 'REVENUE_VND');
   return {
     allocationId: allocation.id,
     allocationStatus: 'PUBLISHED' as const,
     memberDisplayName: allocation.snapshotMemberDisplayName,
     revenue: {
       metricCode: 'REVENUE_VND' as const,
-      targetValue: revenueTarget,
-      actualValue: actuals.revenue,
-      achievementPercent: achievementPercent(actuals.revenue, revenueTarget),
+      targetValue: revenue?.targetValue ?? 0,
+      actualValue: revenue?.actualValue ?? 0,
+      achievementPercent: revenue?.achievementPercent ?? null,
     },
-    supportingMetrics: [
-      {
-        metricCode: 'CONTENT_OUTPUT_COUNT' as const,
-        targetValue: contentTarget,
-        actualValue: actuals.content,
-        achievementPercent: achievementPercent(actuals.content, contentTarget),
-      },
-    ],
+    supportingMetrics: metricSummaries.filter((metric) => metric.metricCode !== 'REVENUE_VND'),
     missingSignal: {
       count: actuals.missing,
       semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' as const,
@@ -1847,14 +1877,33 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
     0,
   );
   const actualValue = members.reduce((sum, member) => sum + member.revenue.actualValue, 0);
-  const contentTarget = members.reduce(
-    (sum, member) => sum + member.supportingMetrics[0].targetValue,
-    0,
+  const supportingMetricCodes = Array.from(
+    new Set(
+      members.flatMap((member) => member.supportingMetrics.map((metric) => metric.metricCode)),
+    ),
   );
-  const contentActual = members.reduce(
-    (sum, member) => sum + member.supportingMetrics[0].actualValue,
-    0,
-  );
+  const supportingMetrics = supportingMetricCodes.map((metricCode) => {
+    const targetValue = members.reduce(
+      (sum, member) =>
+        sum +
+        (member.supportingMetrics.find((metric) => metric.metricCode === metricCode)
+          ?.targetValue ?? 0),
+      0,
+    );
+    const supportingActualValue = members.reduce(
+      (sum, member) =>
+        sum +
+        (member.supportingMetrics.find((metric) => metric.metricCode === metricCode)
+          ?.actualValue ?? 0),
+      0,
+    );
+    return {
+      metricCode,
+      targetValue,
+      actualValue: supportingActualValue,
+      achievementPercent: achievementPercent(supportingActualValue, targetValue),
+    };
+  });
   const planTargetValue =
     (targets[plan.id] ?? []).find((metric) => metric.metricCode === 'REVENUE_VND')?.targetValue ??
     null;
@@ -1882,14 +1931,7 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
       isAllExistingAllocationsPublished:
         planAllocations.length > 0 && publishedAllocations.length === planAllocations.length,
     },
-    supportingMetrics: [
-      {
-        metricCode: 'CONTENT_OUTPUT_COUNT' as const,
-        targetValue: contentTarget,
-        actualValue: contentActual,
-        achievementPercent: achievementPercent(contentActual, contentTarget),
-      },
-    ],
+    supportingMetrics,
     missingSignal: {
       count: members.reduce((sum, member) => sum + member.missingSignal.count, 0),
       semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' as const,

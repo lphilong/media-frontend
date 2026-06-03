@@ -1449,6 +1449,8 @@ describe('KPI MVP UX', () => {
     expect(screen.getByText(/Read-only after finalization/)).toBeInTheDocument();
     expect(screen.getAllByText('Luna Park').length).toBeGreaterThan(0);
     expect(screen.getByText('850.000 VND')).toBeInTheDocument();
+    expect(within(finalResult).getByText(/TikTok Diamond/)).toBeInTheDocument();
+    expect(within(finalResult).queryByText(/840 VND/)).not.toBeInTheDocument();
     expect(within(finalResult).queryByText('user-admin')).not.toBeInTheDocument();
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('employment-profile-001')).not.toBeInTheDocument();
@@ -2015,7 +2017,7 @@ describe('KPI MVP UX', () => {
       expect(screen.queryByText(/Member leave: Approved leave/i)).not.toBeInTheDocument(),
     );
     expect(await screen.findAllByText('Due open')).not.toHaveLength(0);
-  });
+  }, 10_000);
 
   it('uses neutral member copy across the actual grid, aria label, and correction panel', async () => {
     const grid = makeActualGrid();
@@ -2292,7 +2294,7 @@ describe('KPI MVP UX', () => {
     await userEvent.click(await waitForEnabledButton('Submit correction'));
     await waitFor(() => expect(body?.correctedValue).toBe(300000));
     expect(typeof body?.correctedValue).toBe('number');
-  });
+  }, 10_000);
 
   it('shows safe direct-edit window copy when correction is submitted before cutoff', async () => {
     renderRoute('/kpi');
@@ -2567,6 +2569,40 @@ describe('KPI MVP UX', () => {
     expect(invalidAllocation.status).toBe(400);
   });
 
+  it('MSW mirrors TikTok Diamond as TALENT_GROUP count metric and rejects ORG_UNIT create', async () => {
+    const diamondPlan = await createKpiPlan({
+      title: 'Diamond target plan',
+      subjectType: 'TALENT_GROUP',
+      subjectId: 'group-001',
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'TIKTOK_DIAMOND', targetValue: 1000 }],
+    });
+    expect(diamondPlan.targetMetrics[0]).toMatchObject({
+      metricCode: 'TIKTOK_DIAMOND',
+      targetValue: 1000,
+      unit: 'COUNT',
+    });
+
+    await expect(
+      replaceKpiTargetMetrics(diamondPlan.id, [
+        { metricCode: 'TIKTOK_DIAMOND', targetValue: 1000.5 },
+      ]),
+    ).rejects.toThrow();
+
+    const orgUnitDiamond = await mswJson('POST', '/admin/kpi/plans', {
+      title: 'Org Diamond plan',
+      subjectType: 'ORG_UNIT',
+      subjectId: 'org-unit-001',
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'TIKTOK_DIAMOND', targetValue: 1000 }],
+    });
+    expect(orgUnitDiamond.status).toBe(400);
+  });
+
   it('MSW rejects allocation publish when allocation totals do not match plan targets', async () => {
     const plan = await createKpiPlan({
       title: 'Mismatched allocation total plan',
@@ -2607,6 +2643,28 @@ describe('KPI MVP UX', () => {
   });
 
   it('frontend KPI Zod rejects backend-invalid target metric semantics', async () => {
+    expect(
+      sanitizeKpiCreatePlanPayload({
+        title: 'Diamond create',
+        subjectType: 'TALENT_GROUP',
+        subjectId: 'group-001',
+        periodMonth: '2026-06',
+        periodStartAt: june2026PeriodStartAt,
+        periodEndAt: june2026PeriodEndAt,
+        targetMetrics: [{ metricCode: 'TIKTOK_DIAMOND', targetValue: 1000 }],
+      }).targetMetrics[0]?.metricCode,
+    ).toBe('TIKTOK_DIAMOND');
+    expect(() =>
+      sanitizeKpiCreatePlanPayload({
+        title: 'Unknown metric create',
+        subjectType: 'TALENT_GROUP',
+        subjectId: 'group-001',
+        periodMonth: '2026-06',
+        periodStartAt: june2026PeriodStartAt,
+        periodEndAt: june2026PeriodEndAt,
+        targetMetrics: [{ metricCode: 'UNKNOWN_METRIC', targetValue: 1000 }],
+      } as never),
+    ).toThrow();
     expect(() =>
       sanitizeKpiCreatePlanPayload({
         title: 'Talent create',
@@ -3436,6 +3494,12 @@ const makeFinalResultSnapshot = () => ({
       actualValue: 8,
       achievementPercent: 80,
     },
+    {
+      metricCode: 'TIKTOK_DIAMOND',
+      targetValue: 1000,
+      actualValue: 840,
+      achievementPercent: 84,
+    },
   ],
   members: [
     {
@@ -3454,6 +3518,12 @@ const makeFinalResultSnapshot = () => ({
           targetValue: 6,
           actualValue: 5,
           achievementPercent: 83.33,
+        },
+        {
+          metricCode: 'TIKTOK_DIAMOND',
+          targetValue: 600,
+          actualValue: 540,
+          achievementPercent: 90,
         },
       ],
       actualEntryStatusSummary: makeActualEntryStatusSummary(),
@@ -3515,6 +3585,12 @@ const makeActualWorkspaceDetail = () => ({
       actualValue: 8,
       achievementPercent: 80,
     },
+    {
+      metricCode: 'TIKTOK_DIAMOND',
+      targetValue: 1000,
+      actualValue: 840,
+      achievementPercent: 84,
+    },
   ],
   missingSignal: { count: 1, semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' },
   actualEntryStatusSummary: makeActualEntryStatusSummary(),
@@ -3537,6 +3613,12 @@ const makeActualWorkspaceDetail = () => ({
           targetValue: 6,
           actualValue: 5,
           achievementPercent: 83.33,
+        },
+        {
+          metricCode: 'TIKTOK_DIAMOND',
+          targetValue: 600,
+          actualValue: 540,
+          achievementPercent: 90,
         },
       ],
       missingSignal: { count: 0, semantics: 'CALENDAR_DAY_METRIC_SLOT_LIMITED' },

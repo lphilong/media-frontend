@@ -97,7 +97,8 @@ const makeSelfServiceKpiItem = (
         | 'CONTENT_OUTPUT_COUNT'
         | 'LIVE_HOURS'
         | 'EVENT_COMPLETION_COUNT'
-        | 'ONBOARDED_TALENT_COUNT';
+        | 'ONBOARDED_TALENT_COUNT'
+        | 'TIKTOK_DIAMOND';
       unit: 'VND' | 'COUNT' | 'HOUR';
       targetValue: number;
       actualValue: number;
@@ -541,6 +542,13 @@ describe('/self-service route', () => {
                     actualValue: 4500000,
                     progressPercent: 45,
                   },
+                  {
+                    metricCode: 'TIKTOK_DIAMOND',
+                    unit: 'COUNT',
+                    targetValue: 1000,
+                    actualValue: 840,
+                    progressPercent: 84,
+                  },
                 ],
               },
             ],
@@ -559,9 +567,11 @@ describe('/self-service route', () => {
     expect(await screen.findByText('May creator KPI')).toBeInTheDocument();
     expect(await screen.findByText('Official published')).toBeInTheDocument();
     expect(await screen.findByText('Revenue')).toBeInTheDocument();
+    expect(await screen.findByText('TikTok Diamond')).toBeInTheDocument();
+    expect(screen.queryByText('840 VND')).not.toBeInTheDocument();
     expect(await screen.findByText('45%')).toBeInTheDocument();
     expect(screen.getAllByTestId('self-service-kpi-item')).toHaveLength(1);
-    expect(screen.getAllByTestId('self-service-kpi-metric-row')).toHaveLength(1);
+    expect(screen.getAllByTestId('self-service-kpi-metric-row')).toHaveLength(2);
 
     await waitFor(() => {
       expect(selfServiceKpiCalls).toBe(1);

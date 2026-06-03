@@ -93,7 +93,8 @@
     "CONTENT_OUTPUT_COUNT": "Số lượng nội dung",
     "LIVE_HOURS": "Giờ live",
     "EVENT_COMPLETION_COUNT": "Số sự kiện hoàn thành",
-    "ONBOARDED_TALENT_COUNT": "Talent đã onboarding"
+    "ONBOARDED_TALENT_COUNT": "Talent đã onboarding",
+    "TIKTOK_DIAMOND": "TikTok Diamond"
   },
   "statuses": {
     "DRAFT": "Nháp",

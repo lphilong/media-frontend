@@ -36,12 +36,14 @@ const metricCodeSchema = z.enum([
   'LIVE_HOURS',
   'EVENT_COMPLETION_COUNT',
   'ONBOARDED_TALENT_COUNT',
+  'TIKTOK_DIAMOND',
 ]);
 const integerTargetMetricCodes = new Set<z.infer<typeof metricCodeSchema>>([
   'REVENUE_VND',
   'CONTENT_OUTPUT_COUNT',
   'EVENT_COMPLETION_COUNT',
   'ONBOARDED_TALENT_COUNT',
+  'TIKTOK_DIAMOND',
 ]);
 const unitSchema = z.enum(['VND', 'COUNT', 'HOUR']);
 const allocationStatusSchema = z.enum([

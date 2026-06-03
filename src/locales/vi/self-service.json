@@ -115,7 +115,8 @@
     "CONTENT_OUTPUT_COUNT": "Content output",
     "LIVE_HOURS": "Live hours",
     "EVENT_COMPLETION_COUNT": "Event completion",
-    "ONBOARDED_TALENT_COUNT": "Onboarded talent"
+    "ONBOARDED_TALENT_COUNT": "Onboarded talent",
+    "TIKTOK_DIAMOND": "TikTok Diamond"
   },
   "kpiUnit": {
     "VND": "VND",

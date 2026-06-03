@@ -56,7 +56,8 @@ type SelfServiceKpiItem = {
       | 'CONTENT_OUTPUT_COUNT'
       | 'LIVE_HOURS'
       | 'EVENT_COMPLETION_COUNT'
-      | 'ONBOARDED_TALENT_COUNT';
+      | 'ONBOARDED_TALENT_COUNT'
+      | 'TIKTOK_DIAMOND';
     unit: 'VND' | 'COUNT' | 'HOUR';
     targetValue: number;
     actualValue: number;
@@ -236,6 +237,13 @@ const selfServiceKpiFixtureSource = {
           targetValue: 40,
           actualValue: 12.5,
           progressPercent: 31.25,
+        },
+        {
+          metricCode: 'TIKTOK_DIAMOND',
+          unit: 'COUNT',
+          targetValue: 1000,
+          actualValue: 840,
+          progressPercent: 84,
         },
       ],
       actualEntryStatusSummary: {
