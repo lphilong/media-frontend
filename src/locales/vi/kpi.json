@@ -11,28 +11,28 @@
   "tabs": {
     "label": "Chế độ xem KPI",
     "management": "Quản lý KPI",
-    "group": "KPI nhóm của tôi",
-    "my": "KPI của tôi",
+    "group": "KPI nhóm ",
+    "my": "KPI ",
     "myClosed": "KPI cá nhân."
   },
   "adminWorkspace": {
     "label": "Không gian quản trị KPI",
     "plans": "Kế hoạch",
     "approvalQueue": "Hàng đợi duyệt",
-    "progressActuals": "Tiến độ và actual"
+    "progressActuals": "Tiến độ và thực đạt"
   },
   "list": {
     "title": "KPI"
   },
   "allocationQueue": {
-    "title": "Hang doi phe duyet phan bo KPI",
-    "empty": "Khong co phan bo dang cho duyet.",
+    "title": "Hàng đợi phê duyệt phân bổ KPI",
+    "empty": "Không có phân bổ đang chờ duyệt",
     "viewsLabel": "Các chế độ xem hàng đợi phân bổ",
     "views": {
       "actionNeeded": "Cần xử lý",
       "pendingApproval": "Chờ phê duyệt",
-      "readyToPublish": "Sẵn sàng publish",
-      "published": "Đã publish",
+      "readyToPublish": "Sẵn sàng công bố",
+      "published": "Đã công bố",
       "rejected": "Đã từ chối"
     }
   },
@@ -41,8 +41,8 @@
     "submit": "Tạo KPI nháp"
   },
   "fields": {
-    "group": "Nhom",
-    "allocationId": "ID phan bo",
+    "group": "Nhóm",
+    "allocationId": "ID phân bổ",
     "planId": "ID kế hoạch",
     "planCode": "Mã kế hoạch",
     "title": "Tiêu đề",
@@ -56,19 +56,19 @@
     "talentId": "Talent",
     "member": "Thành viên",
     "managedMember": "Thành viên quản lý",
-    "employmentProfileId": "ID ho so nhan su",
-    "note": "Ghi chu",
-    "approvalNote": "Ghi chu phe duyet",
-    "rejectionReason": "Ly do tu choi",
+    "employmentProfileId": "ID hồ sơ nhân sự",
+    "note": "Ghi chú",
+    "approvalNote": "Ghi chú phê duyệt",
+    "rejectionReason": "Lý do từ chối",
     "status": "Trạng thái",
     "planStatus": "Trạng thái kế hoạch",
     "allocationStatus": "Trạng thái phân bổ",
     "periodMonth": "Tháng KPI",
     "metricCode": "Chỉ số",
     "targetValue": "Mục tiêu",
-    "publishedAt": "Đã publish lúc",
+    "publishedAt": "Đã công bố lúc",
     "finalizedAt": "Đã chốt lúc",
-    "planPublishedAt": "Thời điểm publish kế hoạch",
+    "planPublishedAt": "Thời điểm công bố kế hoạch",
     "planFinalizedAt": "Thời điểm chốt kế hoạch",
     "archivedAt": "Đã lưu trữ lúc",
     "actualDate": "Ngày thực đạt"
@@ -97,7 +97,7 @@
   },
   "statuses": {
     "DRAFT": "Nháp",
-    "PUBLISHED": "Đã publish",
+    "PUBLISHED": "Đã công bố",
     "FINALIZED": "Đã chốt",
     "ARCHIVED": "Đã lưu trữ"
   },
@@ -111,9 +111,9 @@
     "targetTotal": "Tổng mục tiêu",
     "allocatedTotal": "Tổng phân bổ",
     "difference": "Chênh lệch",
-    "workflowStatus": "Trang thai phan bo",
-    "official": "Phan bo da publish la chinh thuc.",
-    "notOfficialUntilPublished": "Phan bo chua anh huong tien do chinh thuc cho den khi publish"
+    "workflowStatus": "Trạng thái phân bổ",
+    "official": "Phân bổ đã được công bố chính thức",
+    "notOfficialUntilPublished": "Phân bổ chưa ảnh hưởng tiến độ chính thức tới khi được công bố."
   },
   "allocationWorkflow": {
     "title": "Luồng phân bổ",
@@ -121,24 +121,24 @@
     "draft": "Nháp",
     "pendingApproval": "Chờ duyệt",
     "approved": "Đã duyệt",
-    "published": "Đã publish",
+    "published": "Đã công bố",
     "rejected": "Đã từ chối",
     "legacyActive": "Active cũ",
     "closed": "Đã đóng",
     "cancelled": "Đã hủy",
-    "officialPublished": "Đã publish chính thức"
+    "officialPublished": "Đã công bố chính thức"
   },
   "allocationStatuses": {
-    "NONE": "Chua co phan bo",
-    "MIXED": "Hon hop",
-    "DRAFT": "Phan bo nhap",
-    "PENDING_APPROVAL": "Cho phe duyet",
-    "APPROVED": "Da phe duyet",
-    "PUBLISHED": "Phan bo da publish",
-    "REJECTED": "Bi tu choi",
-    "ACTIVE": "Phan bo ACTIVE legacy",
-    "CLOSED": "Da dong",
-    "CANCELLED": "Da huy"
+    "NONE": "Chưa có phân bổ",
+    "MIXED": "Mix",
+    "DRAFT": "Phân bổ nháp",
+    "PENDING_APPROVAL": "Chờ phê duyệt",
+    "APPROVED": "Đã phê duyệt",
+    "PUBLISHED": "Đã công bố",
+    "REJECTED": "Bị từ chối",
+    "ACTIVE": "ACTIVE cũ",
+    "CLOSED": "Đã đóng",
+    "CANCELLED": "Đã hủy"
   },
   "actualEntry": {
     "title": "Nhập thực đạt",
@@ -146,15 +146,15 @@
     "requiresCorrection": "Cần điều chỉnh"
   },
   "dailyActualStatuses": {
-    "NOT_DUE": "Chua den han",
-    "DUE_OPEN": "Dang den han",
-    "OVERDUE": "Qua han",
-    "ENTERED": "Da nhap",
-    "ENTERED_ZERO": "Da nhap 0",
-    "EXCUSED": "Duoc mien",
-    "NOT_REQUIRED": "Khong bat buoc",
-    "BLOCKED_BY_PLAN_STATUS": "Ke hoach bi chan",
-    "BLOCKED_BY_ALLOCATION_STATUS": "Phan bo bi chan"
+    "NOT_DUE": "Chưa đến hạn",
+    "DUE_OPEN": "Đang đến hạn",
+    "OVERDUE": "Quá hạn",
+    "ENTERED": "Đã nhập",
+    "ENTERED_ZERO": "Đã nhập 0",
+    "EXCUSED": "Được miễn",
+    "NOT_REQUIRED": "Không bắt buộc",
+    "BLOCKED_BY_PLAN_STATUS": "Kế hoạch bị chặn",
+    "BLOCKED_BY_ALLOCATION_STATUS": "Phân bổ bị chặn"
   },
   "actualExcuseStatuses": {
     "EXCUSED": "Duoc mien",
@@ -363,6 +363,6 @@
     "notFinalizedYet": "Chưa chốt",
     "noManagedMembers": "Không có thành viên quản lý phù hợp cho kế hoạch này.",
     "progressUnavailable": "Không có dữ liệu tiến độ cho kế hoạch hoặc người dùng này.",
-    "memberProgressEmpty": "Chưa có tiến độ thành viên đã publish."
+    "memberProgressEmpty": "Chưa có tiến độ thành viên đã công bố."
   }
 }

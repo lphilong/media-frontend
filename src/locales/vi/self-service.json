@@ -9,23 +9,23 @@
   },
   "sections": {
     "profile": {
-      "title": "Hồ sơ của tôi",
+      "title": "Hồ sơ ",
       "summary": "Tóm tắt hồ sơ nhân sự ở chế độ chỉ đọc."
     },
     "workShifts": {
-      "title": "Ca làm của tôi",
+      "title": "Ca làm ",
       "summary": "Xem chính thức các ca làm của bạn ở chế độ chỉ đọc."
     },
     "kpi": {
-      "title": "KPI của tôi",
+      "title": "KPI ",
       "summary": "Chỗ giữ KPI, không hiển thị dữ liệu phân bổ nháp hoặc cũ."
     },
     "events": {
-      "title": "Sự kiện của tôi",
+      "title": "Sự kiện ",
       "summary": "Xem các sự kiện được phân công trực tiếp cho bạn ở chế độ chỉ đọc."
     },
     "talentGroups": {
-      "title": "Nhóm Talent của tôi",
+      "title": "Nhóm Talent ",
       "summary": "Xem các nhóm Talent đang hoạt động của bạn ở chế độ chỉ đọc."
     },
     "account": {
@@ -102,9 +102,9 @@
   },
   "tables": {
     "kpi": "KPI",
-    "workShifts": "Ca làm của tôi",
-    "events": "Sự kiện của tôi",
-    "talentGroups": "Nhóm Talent của tôi"
+    "workShifts": "Ca làm ",
+    "events": "Sự kiện ",
+    "talentGroups": "Nhóm Talent "
   },
   "kpiStatus": {
     "OFFICIAL_PUBLISHED": "Official published",
