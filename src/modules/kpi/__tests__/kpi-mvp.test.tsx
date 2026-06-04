@@ -1974,6 +1974,226 @@ describe('KPI MVP UX', () => {
     expect((await fetchKpiPlanDetail(plan.id)).status).toBe('PUBLISHED');
   });
 
+  it('renders ORG_UNIT manager operations with EmploymentProfile members and no raw member IDs', async () => {
+    let finalResultReads = 0;
+    server.use(
+      http.get('*/admin/kpi/plans/:kpiPlanId/org-unit-final-result', () => {
+        finalResultReads += 1;
+        return HttpResponse.json(
+          { message: 'Non-finalized ORG_UNIT detail must not call finalResult' },
+          { status: 500 },
+        );
+      }),
+    );
+
+    renderRoute('/kpi/plans/kpi-plan-org-unit');
+
+    expect(await screen.findByRole('heading', { name: 'Operations unit KPI' })).toBeInTheDocument();
+    const operations = await screen.findByTestId('org-unit-operations');
+    expect(screen.getByText('Org Unit operations')).toBeInTheDocument();
+    expect(within(operations).getByText('Operations Unit')).toBeInTheDocument();
+    expect(within(operations).getAllByText('An Nguyen').length).toBeGreaterThan(0);
+    expect(within(operations).getAllByText('Bao Le').length).toBeGreaterThan(0);
+    expect(within(operations).getByText('EP-OPS-001')).toBeInTheDocument();
+    expect(within(operations).getByText('EP-OPS-002')).toBeInTheDocument();
+    expect(within(operations).getByText('Managed write actions available')).toBeInTheDocument();
+    expect(screen.queryByText('employment-profile-ops-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('employment-profile-ops-002')).not.toBeInTheDocument();
+    expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('org-unit-001')).not.toBeInTheDocument();
+    expect(within(operations).getByText('Not finalized yet')).toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('heading', { name: 'Finalized result' }),
+    ).not.toBeInTheDocument();
+    expect(finalResultReads).toBe(0);
+
+    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+    expect(
+      await within(operations).findByLabelText('An Nguyen Revenue VND actual'),
+    ).toBeInTheDocument();
+    expect(within(operations).getAllByText('Due open').length).toBeGreaterThan(0);
+    expect(finalResultReads).toBe(0);
+  });
+
+  it('saves ORG_UNIT allocation draft through scoped managed members without showing raw IDs', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+    const plan = await createKpiPlan({
+      title: 'Org Unit allocation draft KPI',
+      subjectType: 'ORG_UNIT',
+      subjectId: 'org-unit-001',
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+    });
+    await performKpiLifecycleAction(plan.id, 'publish');
+
+    renderRoute(`/kpi/plans/${plan.id}`);
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    expect(
+      await within(operations).findByText('No Org Unit allocations are published for this plan.'),
+    ).toBeInTheDocument();
+    await userEvent.selectOptions(
+      await within(operations).findByRole('combobox', { name: 'Managed member 1' }),
+      'employment-profile-ops-001',
+    );
+    const targetInput = await within(operations).findByLabelText('An Nguyen Revenue VND');
+    await userEvent.clear(targetInput);
+    await userEvent.type(targetInput, '2.000.000');
+    await userEvent.click(
+      within(operations).getByRole('button', { name: 'Save Allocation Draft' }),
+    );
+
+    expect(await screen.findByText('Allocation draft saved.')).toBeInTheDocument();
+    const allocations = await fetchKpiOrgUnitAllocations(plan.id);
+    expect(allocations[0]).toMatchObject({
+      memberEmploymentProfileId: 'employment-profile-ops-001',
+      memberTalentId: null,
+      groupId: null,
+      allocationStatus: 'DRAFT',
+    });
+    expect(allocations[0]?.targetMetrics[0]?.targetValue).toBe(2000000);
+    expect(within(operations).getAllByText(/An Nguyen/).length).toBeGreaterThan(0);
+    expect(screen.queryByText('employment-profile-ops-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('org-unit-001')).not.toBeInTheDocument();
+  });
+
+  it('enters zero and updates ORG_UNIT actual through the manager grid', async () => {
+    renderRoute('/kpi/plans/kpi-plan-org-unit');
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+
+    const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
+    await userEvent.clear(anActual);
+    await userEvent.type(anActual, '0');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
+    expect(await screen.findByText('Actual cells saved.')).toBeInTheDocument();
+
+    const updatedAnActual = await within(operations).findByLabelText(
+      'An Nguyen Revenue VND actual',
+    );
+    await userEvent.clear(updatedAnActual);
+    await userEvent.type(updatedAnActual, '100.000');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
+    await waitFor(() =>
+      expect(screen.getAllByText('Actual cells saved.').length).toBeGreaterThanOrEqual(2),
+    );
+  });
+
+  it('marks and unmarks ORG_UNIT exceptions while blocking actual and correction actions', async () => {
+    renderRoute('/kpi/plans/kpi-plan-org-unit');
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+
+    const baoActual = await within(operations).findByLabelText('Bao Le Revenue VND actual');
+    const baoRow = baoActual.closest('tr');
+    expect(baoRow).not.toBeNull();
+    await userEvent.click(within(baoRow!).getByRole('button', { name: 'Mark excused' }));
+    await userEvent.selectOptions(within(baoRow!).getByRole('combobox'), 'MEMBER_LEAVE');
+    await userEvent.type(within(baoRow!).getByLabelText('Reason text'), 'Approved leave');
+    await userEvent.click(within(baoRow!).getByRole('button', { name: 'Submit excuse' }));
+    expect(await screen.findByText('Exception marked.')).toBeInTheDocument();
+    expect(await within(operations).findByText('Excused')).toBeInTheDocument();
+    expect(within(baoRow!).getByLabelText('Bao Le Revenue VND actual')).toBeDisabled();
+    expect(within(baoRow!).queryByRole('button', { name: 'Correction' })).not.toBeInTheDocument();
+
+    await userEvent.click(within(baoRow!).getByRole('button', { name: 'Unmark excuse' }));
+    expect(await screen.findByText('Exception removed.')).toBeInTheDocument();
+  });
+
+  it('creates ORG_UNIT correction history without exposing raw correction IDs', async () => {
+    await createKpiOrgUnitActual({
+      kpiPlanId: 'kpi-plan-org-unit',
+      allocationId: 'kpi-plan-org-unit-alloc-1',
+      metricCode: 'REVENUE_VND',
+      actualDate: '15-06-2026',
+      actualValue: 100000,
+    });
+
+    renderRoute('/kpi/plans/kpi-plan-org-unit');
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+
+    const correctedAnActual = await within(operations).findByLabelText(
+      'An Nguyen Revenue VND actual',
+    );
+    const anRow = correctedAnActual.closest('tr');
+    expect(anRow).not.toBeNull();
+    await userEvent.click(within(anRow!).getByRole('button', { name: 'Correction' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Edit actual' });
+    await userEvent.clear(within(dialog).getByLabelText('Corrected value'));
+    await userEvent.type(within(dialog).getByLabelText('Corrected value'), '120.000');
+    await userEvent.type(
+      within(dialog).getByLabelText('Correction reason'),
+      'Operational correction',
+    );
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Submit correction' }));
+    expect(await screen.findByText('Correction submitted.')).toBeInTheDocument();
+    expect(await within(dialog).findByText(/Operational correction/)).toBeInTheDocument();
+    expect(screen.queryByText('org-unit-correction')).not.toBeInTheDocument();
+  });
+
+  it('keeps ORG_UNIT write actions hidden for read-only managed actors', async () => {
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.readProgress'],
+      scopeGrants: { kpi: ['managedGroup'] },
+    });
+
+    renderRoute('/kpi/plans/kpi-plan-org-unit');
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    expect(
+      within(operations).getByText('Read-only for this actor or plan state'),
+    ).toBeInTheDocument();
+    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+    expect(await within(operations).findByLabelText('An Nguyen Revenue VND actual')).toBeDisabled();
+    expect(
+      within(operations).queryByRole('button', { name: 'Save changed cells' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Save Allocation Draft' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Submit Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Approve Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Publish Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Mark excused' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Mark not required' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders ORG_UNIT operational finalResult from the route without Diamond or payout copy', async () => {
+    renderRoute('/kpi/plans/kpi-plan-org-unit-finalized');
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    expect(within(operations).getByText('Operational final result')).toBeInTheDocument();
+    expect(
+      await within(operations).findByRole('heading', { name: 'Finalized result' }),
+    ).toBeInTheDocument();
+    expect(within(operations).getAllByText('An Nguyen').length).toBeGreaterThan(0);
+    expect(within(operations).getAllByText('2.000.000 VND').length).toBeGreaterThan(0);
+    expect(screen.queryByText('employment-profile-ops-001')).not.toBeInTheDocument();
+    expect(within(operations).queryByText('TIKTOK_DIAMOND')).not.toBeInTheDocument();
+    expect(within(operations).queryByText(/payroll/i)).not.toBeInTheDocument();
+    expect(within(operations).queryByText(/commission/i)).not.toBeInTheDocument();
+    expect(within(operations).queryByText(/payout/i)).not.toBeInTheDocument();
+  });
+
   it('shows finalize confirmation and calls finalize API', async () => {
     renderRoute('/kpi/plans/kpi-plan-published');
     await waitForPublishedKpiDetail();
@@ -2771,9 +2991,75 @@ describe('KPI MVP UX', () => {
       excuseId: excuseId ?? '',
     });
 
-    const finalResult = await fetchKpiOrgUnitFinalResult('kpi-plan-org-unit');
+    await expect(fetchKpiOrgUnitFinalResult('kpi-plan-org-unit')).rejects.toThrow(/FINALIZED/);
+    await expect(fetchKpiOrgUnitFinalResult('kpi-plan-published')).rejects.toThrow(/ORG_UNIT/);
+
+    const finalResult = await fetchKpiOrgUnitFinalResult('kpi-plan-org-unit-finalized');
     expect(finalResult.subjectType).toBe('ORG_UNIT');
+    expect(finalResult.status).toBe('FINALIZED');
+    expect(finalResult.finalResult?.members[0]?.memberDisplayName).toBe('An Nguyen');
     expect(finalResult.allocations).toHaveLength(0);
+  });
+
+  it('MSW supports ORG_UNIT allocation draft lifecycle without leaking into legacy allocations', async () => {
+    const plan = await createKpiPlan({
+      title: 'Org Unit allocation lifecycle plan',
+      subjectType: 'ORG_UNIT',
+      subjectId: 'org-unit-001',
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+    });
+    await performKpiLifecycleAction(plan.id, 'publish');
+    await upsertKpiAllocationDraft(plan.id, [
+      {
+        employmentProfileId: 'employment-profile-ops-001',
+        allocationStartDate: '2026-06-01',
+        allocationEndDate: null,
+        targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+        note: 'Scoped Org Unit allocation',
+      },
+    ]);
+    expect((await fetchKpiOrgUnitAllocations(plan.id))[0]).toMatchObject({
+      allocationStatus: 'DRAFT',
+      memberEmploymentProfileId: 'employment-profile-ops-001',
+      memberTalentId: null,
+      groupId: null,
+    });
+
+    await submitKpiAllocationDraft(plan.id);
+    expect((await fetchKpiOrgUnitAllocations(plan.id))[0]?.allocationStatus).toBe(
+      'PENDING_APPROVAL',
+    );
+    await approveKpiAllocation(plan.id, 'Approved');
+    expect((await fetchKpiOrgUnitAllocations(plan.id))[0]?.allocationStatus).toBe('APPROVED');
+    await publishKpiAllocation(plan.id);
+    expect((await fetchKpiOrgUnitAllocations(plan.id))[0]?.allocationStatus).toBe('PUBLISHED');
+
+    const legacyAllocations = await parseKpiAllocationListResponseForTest(
+      await readMswJson(await mswJson('GET', `/admin/kpi/allocations?kpiPlanId=${plan.id}`)),
+    );
+    expect(legacyAllocations).toHaveLength(0);
+    const invalidPlan = await createKpiPlan({
+      title: 'Org Unit invalid allocation plan',
+      subjectType: 'ORG_UNIT',
+      subjectId: 'org-unit-001',
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+    });
+    await performKpiLifecycleAction(invalidPlan.id, 'publish');
+    await expect(
+      upsertKpiAllocationDraft(invalidPlan.id, [
+        {
+          employmentProfileId: 'employment-profile-001',
+          allocationStartDate: '2026-06-01',
+          targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+        },
+      ]),
+    ).rejects.toThrow(/active managed member/);
   });
 
   it('MSW rejects allocation publish when allocation totals do not match plan targets', async () => {

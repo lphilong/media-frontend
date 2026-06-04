@@ -640,6 +640,19 @@ const initialPlans = [
     publishedAt: now - 30_000,
     publishedByActorId: 'user-admin',
   }),
+  basePlan({
+    id: 'kpi-plan-org-unit-finalized',
+    planCode: 'KPI-202606-ORG-002',
+    title: 'Finalized operations unit KPI',
+    subjectType: 'ORG_UNIT',
+    subjectId: 'org-unit-001',
+    periodMonth: '2026-06',
+    status: 'FINALIZED',
+    publishedAt: now - 35_000,
+    publishedByActorId: 'user-admin',
+    finalizedAt: now - 20_000,
+    finalizedByActorId: 'user-admin',
+  }),
 ];
 
 const initialTargets: Record<string, KpiTargetMetric[]> = Object.fromEntries(
@@ -675,6 +688,19 @@ initialTargets['kpi-plan-org-unit'] = [
   {
     id: 'kpi-plan-org-unit-metric-revenue',
     kpiPlanId: 'kpi-plan-org-unit',
+    metricCode: 'REVENUE_VND',
+    targetValue: 2000000,
+    unit: 'VND',
+    rollupMethod: 'SUM',
+    actualSource: 'MANUAL',
+    createdAt: now,
+    updatedAt: now,
+  },
+];
+initialTargets['kpi-plan-org-unit-finalized'] = [
+  {
+    id: 'kpi-plan-org-unit-finalized-metric-revenue',
+    kpiPlanId: 'kpi-plan-org-unit-finalized',
     metricCode: 'REVENUE_VND',
     targetValue: 2000000,
     unit: 'VND',
@@ -769,7 +795,7 @@ initialAllocations['kpi-plan-org-unit'] = [
     allocationStatus: 'PUBLISHED',
     allocationStartDate: '2026-06-01',
     allocationEndDate: null,
-    targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+    targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
     snapshotMemberDisplayName: 'An Nguyen',
     note: null,
     createdAt: now,
@@ -785,6 +811,66 @@ initialAllocations['kpi-plan-org-unit'] = [
     rejectedByActorId: null,
     rejectionReason: null,
     publishedAt: now - 30_000,
+    publishedByActorId: 'user-admin',
+    closedAt: null,
+  },
+  {
+    id: 'kpi-plan-org-unit-alloc-2',
+    kpiPlanId: 'kpi-plan-org-unit',
+    groupId: null,
+    memberEmploymentProfileId: 'employment-profile-ops-002',
+    memberTalentId: null,
+    membershipId: null,
+    allocationStatus: 'PUBLISHED',
+    allocationStartDate: '2026-06-01',
+    allocationEndDate: null,
+    targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000000 }],
+    snapshotMemberDisplayName: 'Bao Le',
+    note: null,
+    createdAt: now,
+    createdByActorId: 'user-admin',
+    updatedAt: now,
+    updatedByActorId: 'user-admin',
+    submittedAt: now - 45_000,
+    submittedByActorId: 'manager-user',
+    approvedAt: now - 40_000,
+    approvedByActorId: 'user-admin',
+    approvalNote: null,
+    rejectedAt: null,
+    rejectedByActorId: null,
+    rejectionReason: null,
+    publishedAt: now - 30_000,
+    publishedByActorId: 'user-admin',
+    closedAt: null,
+  },
+];
+initialAllocations['kpi-plan-org-unit-finalized'] = [
+  {
+    id: 'kpi-plan-org-unit-finalized-alloc-1',
+    kpiPlanId: 'kpi-plan-org-unit-finalized',
+    groupId: null,
+    memberEmploymentProfileId: 'employment-profile-ops-001',
+    memberTalentId: null,
+    membershipId: null,
+    allocationStatus: 'PUBLISHED',
+    allocationStartDate: '2026-06-01',
+    allocationEndDate: null,
+    targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+    snapshotMemberDisplayName: 'An Nguyen',
+    note: null,
+    createdAt: now,
+    createdByActorId: 'user-admin',
+    updatedAt: now,
+    updatedByActorId: 'user-admin',
+    submittedAt: now - 45_000,
+    submittedByActorId: 'manager-user',
+    approvedAt: now - 40_000,
+    approvedByActorId: 'user-admin',
+    approvalNote: null,
+    rejectedAt: null,
+    rejectedByActorId: null,
+    rejectionReason: null,
+    publishedAt: now - 35_000,
     publishedByActorId: 'user-admin',
     closedAt: null,
   },
@@ -1163,15 +1249,23 @@ const validatePublishAllocationPreconditions = (plan: KpiPlan) => {
   const totals = new Map<KpiMetricCode, number>();
   targetRows.forEach((metric) => totals.set(metric.metricCode, 0));
   for (const allocation of rows) {
-    if (
-      !managedMembers.some(
-        (member) =>
-          member.groupId === plan.subjectId && member.talentId === allocation.memberTalentId,
-      )
-    ) {
+    const memberIsActive =
+      plan.subjectType === 'ORG_UNIT'
+        ? orgUnitManagedMembers.some(
+            (member) =>
+              member.orgUnitId === plan.subjectId &&
+              member.employmentProfileId === allocation.memberEmploymentProfileId,
+          )
+        : managedMembers.some(
+            (member) =>
+              member.groupId === plan.subjectId && member.talentId === allocation.memberTalentId,
+          );
+    if (!memberIsActive) {
       return HttpResponse.json(
         {
-          message: `KPI allocation memberTalentId must still be an active member at publish: ${allocation.memberTalentId}`,
+          message: `KPI allocation member must still be active at publish: ${
+            allocation.memberEmploymentProfileId ?? allocation.memberTalentId
+          }`,
         },
         { status: 409 },
       );
@@ -1592,12 +1686,19 @@ const validateDraftAllocationPayload = (
       };
     }
     seenProfiles.add(employmentProfileId);
-    if (
-      !managedMembers.some(
-        (member) =>
-          member.groupId === plan.subjectId && member.employmentProfileId === employmentProfileId,
-      )
-    ) {
+    const isActiveManagedMember =
+      plan.subjectType === 'ORG_UNIT'
+        ? orgUnitManagedMembers.some(
+            (member) =>
+              member.orgUnitId === plan.subjectId &&
+              member.employmentProfileId === employmentProfileId,
+          )
+        : managedMembers.some(
+            (member) =>
+              member.groupId === plan.subjectId &&
+              member.employmentProfileId === employmentProfileId,
+          );
+    if (!isActiveManagedMember) {
       return {
         ok: false,
         message: `KPI allocation employmentProfileId is not an active managed member: ${employmentProfileId}`,
@@ -2704,6 +2805,26 @@ export const kpiHandlers = [
       );
     }
     const planAllocations = allocations[plan.id] ?? [];
+    const actualDate = plan.periodMonth === '2026-06' ? '15-06-2026' : '16-05-2026';
+    const memberProgress = planAllocations.map((allocation) => {
+      const targetValue = allocation.targetMetrics[0]?.targetValue ?? 0;
+      const entry = readEntry(plan.id, allocation.id, 'REVENUE_VND', actualDate);
+      const actualValue = entry?.effectiveValue ?? 0;
+      return {
+        allocationId: allocation.id,
+        memberEmploymentProfileId:
+          allocation.memberEmploymentProfileId ?? 'employment-profile-unknown',
+        memberTalentId: allocation.memberTalentId,
+        metricCode: 'REVENUE_VND' as const,
+        targetValue,
+        actualValue,
+        progressPercent: achievementPercent(actualValue, targetValue),
+        actualEntryCount: entry ? 1 : 0,
+        missingEntryCount: entry ? 0 : 1,
+      };
+    });
+    const totalTargetValue = memberProgress.reduce((sum, item) => sum + item.targetValue, 0);
+    const totalActualValue = memberProgress.reduce((sum, item) => sum + item.actualValue, 0);
     return HttpResponse.json({
       data: {
         plan: toProgressPlan(plan),
@@ -2712,23 +2833,12 @@ export const kpiHandlers = [
         groupTotals: [
           {
             metricCode: 'REVENUE_VND',
-            targetValue: 2000000,
-            actualValue: 500000,
-            progressPercent: 25,
+            targetValue: totalTargetValue,
+            actualValue: totalActualValue,
+            progressPercent: achievementPercent(totalActualValue, totalTargetValue),
           },
         ],
-        memberProgress: planAllocations.map((allocation) => ({
-          allocationId: allocation.id,
-          memberEmploymentProfileId:
-            allocation.memberEmploymentProfileId ?? 'employment-profile-unknown',
-          memberTalentId: allocation.memberTalentId,
-          metricCode: 'REVENUE_VND',
-          targetValue: allocation.targetMetrics[0]?.targetValue ?? 0,
-          actualValue: 500000,
-          progressPercent: 25,
-          actualEntryCount: 1,
-          missingEntryCount: 0,
-        })),
+        memberProgress,
       },
     });
   }),
@@ -2760,6 +2870,12 @@ export const kpiHandlers = [
         { status: 409 },
       );
     }
+    if (plan.status !== 'FINALIZED') {
+      return HttpResponse.json(
+        { message: 'ORG_UNIT final result requires a FINALIZED KPI plan' },
+        { status: 409 },
+      );
+    }
     if (plan.status === 'FINALIZED' && !plan.finalResult) {
       plan.finalResult = toFinalResultSnapshot(plan, now);
     }
@@ -2783,7 +2899,7 @@ export const kpiHandlers = [
     if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     if (plan.status !== 'PUBLISHED') {
       return HttpResponse.json(
-        { message: 'KPI allocation draft requires a PUBLISHED group KPI plan' },
+        { message: 'KPI allocation draft requires a PUBLISHED KPI plan' },
         { status: 409 },
       );
     }
@@ -2807,19 +2923,33 @@ export const kpiHandlers = [
     }
     allocations[plan.id] = draftValidation.value.map((allocation, index) => {
       const employmentProfileId = allocation.employmentProfileId;
+      const talentGroupMember = managedMembers.find(
+        (member) =>
+          member.groupId === plan.subjectId && member.employmentProfileId === employmentProfileId,
+      );
+      const orgUnitMember = orgUnitManagedMembers.find(
+        (member) =>
+          member.orgUnitId === plan.subjectId && member.employmentProfileId === employmentProfileId,
+      );
       return {
         id: `${plan.id}-alloc-${index + 1}`,
         kpiPlanId: plan.id,
-        groupId: plan.subjectId,
+        groupId: plan.subjectType === 'ORG_UNIT' ? null : plan.subjectId,
         memberEmploymentProfileId: employmentProfileId,
-        memberTalentId: employmentProfileId.replace('employment-profile', 'talent'),
+        memberTalentId:
+          plan.subjectType === 'ORG_UNIT'
+            ? null
+            : (talentGroupMember?.talentId ??
+              employmentProfileId.replace('employment-profile', 'talent')),
         membershipId: null,
         allocationStatus: 'DRAFT',
         allocationStartDate: allocation.allocationStartDate,
         allocationEndDate: allocation.allocationEndDate,
         targetMetrics: allocation.targetMetrics,
         snapshotMemberDisplayName:
-          employmentProfileId === 'employment-profile-001' ? 'Luna Park' : 'Minh Tran',
+          plan.subjectType === 'ORG_UNIT'
+            ? (orgUnitMember?.displayName ?? null)
+            : (talentGroupMember?.displayName ?? null),
         note: allocation.note,
         createdAt: now,
         createdByActorId: 'manager-user',
@@ -2845,7 +2975,7 @@ export const kpiHandlers = [
     if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     if (plan.status !== 'PUBLISHED') {
       return HttpResponse.json(
-        { message: 'KPI allocation draft requires a PUBLISHED group KPI plan' },
+        { message: 'KPI allocation draft requires a PUBLISHED KPI plan' },
         { status: 409 },
       );
     }

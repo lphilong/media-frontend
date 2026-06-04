@@ -57,6 +57,7 @@
     "talent": "Talent",
     "talentId": "Talent",
     "member": "成员",
+    "employeeCode": "员工编码",
     "managedMember": "管理成员",
     "employmentProfileId": "Employment profile ID",
     "note": "Note",
@@ -238,6 +239,21 @@
       "CLOSED": "Closed"
     }
   },
+  "orgUnitOperations": {
+    "title": "Org Unit 操作",
+    "context": "已分配 Org Unit",
+    "writePosture": "操作状态",
+    "writeAvailable": "管理写入操作可用",
+    "readOnly": "当前用户或计划状态为只读",
+    "allocations": "Org Unit 分配",
+    "allocationReadOnly": "分配行使用 Org Unit 契约。草稿编辑仅限受管理的 EmploymentProfile 成员。",
+    "noAllocations": "此计划暂无已发布 Org Unit 分配。",
+    "managedMemberPicker": "管理成员选择器",
+    "progressActuals": "进度与 actual",
+    "draftReadOnly": "Org Unit KPI 发布后才可操作。",
+    "noActualChanges": "没有已变更的 actual 单元格可保存。",
+    "finalResult": "运营最终结果"
+  },
   "finalResult": {
     "title": "Finalized result",
     "captured": "Captured when the KPI was finalized.",
@@ -256,7 +272,8 @@
     "previousValue": "原值",
     "correctedValue": "修正值",
     "reason": "修正原因",
-    "history": "修正历史"
+    "history": "修正历史",
+    "emptyHistory": "暂无修正。"
   },
   "progress": {
     "target": "目标",
@@ -348,7 +365,9 @@
     "allocationRejected": "Allocation rejected.",
     "allocationPublished": "Allocation published.",
     "actualExcuseMarked": "Actual excuse marked.",
-    "actualExcuseUnmarked": "Actual excuse removed."
+    "actualExcuseUnmarked": "Actual excuse removed.",
+    "excuseMarked": "例外已标记。",
+    "excuseUnmarked": "例外已移除。"
   },
   "states": {
     "emptyActualWorkspace": "No group plans are available for actual entry.",
@@ -360,6 +379,8 @@
     "actualGridLoadErrorMessage": "Unable to load the actual grid for the selected date.",
     "actualExcuseMutationErrorMessage": "Unable to update the actual excuse.",
     "correctionMutationErrorMessage": "Unable to submit the correction.",
+    "loading": "加载中...",
+    "allocationUnavailable": "无法加载分配行。",
     "loadErrorTitle": "无法加载 KPI",
     "loadErrorMessage": "无法加载 KPI 数据。",
     "capabilityUnavailable": "KPI permissions could not be verified. Try again.",

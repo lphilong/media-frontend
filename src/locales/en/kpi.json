@@ -56,6 +56,7 @@
     "talent": "Talent",
     "talentId": "Talent",
     "member": "Member",
+    "employeeCode": "Employee code",
     "managedMember": "Managed member",
     "employmentProfileId": "Employment profile ID",
     "note": "Note",
@@ -238,6 +239,21 @@
       "CLOSED": "Closed"
     }
   },
+  "orgUnitOperations": {
+    "title": "Org Unit operations",
+    "context": "Assigned Org Unit",
+    "writePosture": "Action posture",
+    "writeAvailable": "Managed write actions available",
+    "readOnly": "Read-only for this actor or plan state",
+    "allocations": "Org Unit allocations",
+    "allocationReadOnly": "Allocation rows use the Org Unit contract. Draft edits stay scoped to managed EmploymentProfile members.",
+    "noAllocations": "No Org Unit allocations are published for this plan.",
+    "managedMemberPicker": "Managed member picker",
+    "progressActuals": "Progress and actuals",
+    "draftReadOnly": "Operations are available after the Org Unit KPI plan is published.",
+    "noActualChanges": "No changed actual cells to save.",
+    "finalResult": "Operational final result"
+  },
   "finalResult": {
     "title": "Finalized result",
     "captured": "Captured when the KPI was finalized.",
@@ -256,7 +272,8 @@
     "previousValue": "Previous value",
     "correctedValue": "Corrected value",
     "reason": "Correction reason",
-    "history": "Correction history"
+    "history": "Correction history",
+    "emptyHistory": "No corrections yet."
   },
   "progress": {
     "target": "Target",
@@ -348,12 +365,16 @@
     "allocationRejected": "Allocation rejected.",
     "allocationPublished": "Allocation published.",
     "actualExcuseMarked": "Actual excuse marked.",
-    "actualExcuseUnmarked": "Actual excuse removed."
+    "actualExcuseUnmarked": "Actual excuse removed.",
+    "excuseMarked": "Exception marked.",
+    "excuseUnmarked": "Exception removed."
   },
   "states": {
     "loadErrorTitle": "Unable to load KPI",
     "loadErrorMessage": "Unable to load KPI data.",
     "capabilityUnavailable": "KPI permissions could not be verified. Try again.",
+    "loading": "Loading...",
+    "allocationUnavailable": "Unable to load allocation rows.",
     "emptyPlans": "No KPI plans yet.",
     "emptyManagedGroups": "No KPI plans for your managed groups yet.",
     "notFinalizedYet": "Not finalized yet",

@@ -57,6 +57,7 @@
     "talent": "Talent",
     "talentId": "Talent",
     "member": "Thành viên",
+    "employeeCode": "Mã nhân viên",
     "managedMember": "Thành viên quản lý",
     "employmentProfileId": "ID hồ sơ nhân sự",
     "note": "Ghi chú",
@@ -238,6 +239,21 @@
       "CLOSED": "Da dong"
     }
   },
+  "orgUnitOperations": {
+    "title": "Vận hành Org Unit",
+    "context": "Org Unit được gán",
+    "writePosture": "Trạng thái thao tác",
+    "writeAvailable": "Có thể thao tác ghi theo quyền quản lý",
+    "readOnly": "Chỉ đọc với người dùng hoặc trạng thái kế hoạch này",
+    "allocations": "Phân bổ Org Unit",
+    "allocationReadOnly": "Dòng phân bổ dùng hợp đồng Org Unit. Chỉnh sửa nháp chỉ giới hạn trong thành viên EmploymentProfile được quản lý.",
+    "noAllocations": "Chưa có phân bổ Org Unit đã publish cho kế hoạch này.",
+    "managedMemberPicker": "Danh sách thành viên quản lý",
+    "progressActuals": "Tiến độ và actual",
+    "draftReadOnly": "Chỉ thao tác sau khi KPI Org Unit đã publish.",
+    "noActualChanges": "Không có ô actual nào thay đổi để lưu.",
+    "finalResult": "Kết quả vận hành cuối cùng"
+  },
   "finalResult": {
     "title": "Ket qua da chot",
     "captured": "Duoc ghi nhan khi KPI duoc chot.",
@@ -256,7 +272,8 @@
     "previousValue": "Giá trị trước",
     "correctedValue": "Giá trị điều chỉnh",
     "reason": "Lý do điều chỉnh",
-    "history": "Lịch sử điều chỉnh"
+    "history": "Lịch sử điều chỉnh",
+    "emptyHistory": "Chưa có điều chỉnh."
   },
   "progress": {
     "target": "Mục tiêu",
@@ -348,7 +365,9 @@
     "allocationRejected": "Da tu choi phan bo.",
     "allocationPublished": "Da publish phan bo.",
     "actualExcuseMarked": "Da danh dau mien tru actual.",
-    "actualExcuseUnmarked": "Da bo mien tru actual."
+    "actualExcuseUnmarked": "Da bo mien tru actual.",
+    "excuseMarked": "Đã đánh dấu ngoại lệ.",
+    "excuseUnmarked": "Đã bỏ ngoại lệ."
   },
   "states": {
     "emptyActualWorkspace": "Khong co ke hoach nhom de nhap actual.",
@@ -360,6 +379,8 @@
     "actualGridLoadErrorMessage": "Khong tai duoc bang actual cho ngay da chon.",
     "actualExcuseMutationErrorMessage": "Khong cap nhat duoc mien tru actual.",
     "correctionMutationErrorMessage": "Khong gui duoc dieu chinh.",
+    "loading": "Đang tải...",
+    "allocationUnavailable": "Không tải được dòng phân bổ.",
     "loadErrorTitle": "Không tải được KPI",
     "loadErrorMessage": "Không tải được dữ liệu KPI.",
     "capabilityUnavailable": "Khong xac minh duoc quyen KPI. Thu lai.",
