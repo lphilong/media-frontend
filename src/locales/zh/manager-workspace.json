@@ -1,0 +1,80 @@
+{
+  "title": "Manager Workspace",
+  "subtitle": "Assignment-scoped operations for managers.",
+  "nav": {
+    "label": "Manager workspace navigation",
+    "overview": "Overview",
+    "kpi": "My Managed KPI"
+  },
+  "actions": {
+    "open": "Open"
+  },
+  "status": {
+    "readOnlyShell": "Manager scope"
+  },
+  "values": {
+    "notAvailable": "Not available"
+  },
+  "readiness": {
+    "NO_LINKED_EMPLOYMENT_PROFILE": "No linked Employment Profile",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Employment Profile is not active",
+    "NO_MANAGED_SCOPE_ASSIGNED": "No managed scope assigned",
+    "MISSING_KPI_MANAGER_CAPABILITY": "KPI manager capability is missing"
+  },
+  "overview": {
+    "profileTitle": "Manager Profile",
+    "scopeTitle": "Managed Scope"
+  },
+  "fields": {
+    "displayName": "Display name",
+    "employeeCode": "Employee code",
+    "status": "Status"
+  },
+  "employmentStatus": {
+    "ACTIVE": "Active",
+    "ON_LEAVE": "On leave",
+    "SUSPENDED": "Suspended",
+    "TERMINATED": "Terminated",
+    "ARCHIVED": "Archived"
+  },
+  "orgUnitRole": {
+    "DEPARTMENT_OWNER": "Department owner",
+    "UNIT_MANAGER": "Unit manager",
+    "UNIT_OPERATOR": "Unit operator"
+  },
+  "kpi": {
+    "title": "My Managed KPI",
+    "summary": "Published KPI plans visible through your effective manager assignments.",
+    "tableLabel": "Managed KPI plans",
+    "tabs": {
+      "unit": "Unit KPI",
+      "talentGroup": "Talent Group KPI"
+    },
+    "subject": {
+      "unit": "Org Unit",
+      "talentGroup": "Talent Group"
+    },
+    "fields": {
+      "plan": "Plan",
+      "period": "Period",
+      "status": "Status",
+      "actions": "Actions"
+    }
+  },
+  "empty": {
+    "noProfileTitle": "No linked profile",
+    "noProfileMessage": "Your account is authenticated, but no manager-ready Employment Profile is linked.",
+    "noAssignmentsTitle": "No managed assignments",
+    "noAssignmentsMessage": "No active Org Unit or Talent Group manager assignments are effective for your profile.",
+    "kpiTitle": "No managed KPI",
+    "kpiMessage": "Unit KPI and Talent Group KPI are hidden until an effective assignment is available.",
+    "kpiListTitle": "No published KPI plans",
+    "kpiListMessage": "No published KPI plans are visible for this managed scope yet."
+  },
+  "errors": {
+    "contextTitle": "Manager Workspace unavailable",
+    "contextMessage": "Your manager workspace context could not be loaded.",
+    "kpiTitle": "Managed KPI unavailable",
+    "kpiMessage": "Managed KPI plans could not be loaded."
+  }
+}

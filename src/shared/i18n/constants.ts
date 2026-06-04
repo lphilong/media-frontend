@@ -25,6 +25,7 @@ export const I18N_NAMESPACES = [
   'contract-registry',
   'talent-kpi',
   'kpi',
+  'manager-workspace',
   'revenue-ledger',
   'commission',
   'self-service',

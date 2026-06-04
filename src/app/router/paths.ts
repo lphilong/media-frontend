@@ -5,6 +5,8 @@ export const APP_PATHS = {
   root: '/',
   dashboard: '/dashboard',
   selfService: '/self-service',
+  manager: '/manager',
+  managerKpi: '/manager/kpi',
 
   users: '/users',
   userDetailPattern: '/users/:userId',

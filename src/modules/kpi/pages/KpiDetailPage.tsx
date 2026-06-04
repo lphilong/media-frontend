@@ -680,6 +680,10 @@ const KpiOrgUnitOperationsSection = ({ plan }: { plan: KpiPlanDetail }): JSX.Ele
       setActualError(correctActualHint.disabledReason ?? t('kpi:states.capabilityUnavailable'));
       return;
     }
+    if (!correctionTarget.cell.requiresCorrection) {
+      setActualError(correctionTarget.cell.disabledReason ?? t('kpi:actualEntry.directEdit'));
+      return;
+    }
     const parsed = parseKpiMetricInput(correctionTarget.cell.metricCode, correctedValue);
     if (parsed === undefined) {
       setActualError(t('kpi:validation.invalidMetricValue'));
@@ -1248,6 +1252,7 @@ const KpiOrgUnitOperationsSection = ({ plan }: { plan: KpiPlanDetail }): JSX.Ele
                             </div>
                             {canAttemptCorrection &&
                             cell.actualEntryId &&
+                            cell.requiresCorrection &&
                             !blockedByException &&
                             !actualGridQuery.data.editability.isPlanFinalized ? (
                               <button

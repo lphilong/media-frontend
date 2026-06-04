@@ -1,0 +1,80 @@
+{
+  "title": "Khong gian quan ly",
+  "subtitle": "Tac vu theo phan cong danh cho quan ly.",
+  "nav": {
+    "label": "Dieu huong khong gian quan ly",
+    "overview": "Tong quan",
+    "kpi": "KPI toi quan ly"
+  },
+  "actions": {
+    "open": "Mo"
+  },
+  "status": {
+    "readOnlyShell": "Pham vi quan ly"
+  },
+  "values": {
+    "notAvailable": "Khong co du lieu"
+  },
+  "readiness": {
+    "NO_LINKED_EMPLOYMENT_PROFILE": "Chua lien ket ho so nhan su",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Ho so nhan su khong o trang thai hop le",
+    "NO_MANAGED_SCOPE_ASSIGNED": "Chua co pham vi quan ly",
+    "MISSING_KPI_MANAGER_CAPABILITY": "Thieu quyen KPI quan ly"
+  },
+  "overview": {
+    "profileTitle": "Ho so quan ly",
+    "scopeTitle": "Pham vi quan ly"
+  },
+  "fields": {
+    "displayName": "Ten hien thi",
+    "employeeCode": "Ma nhan vien",
+    "status": "Trang thai"
+  },
+  "employmentStatus": {
+    "ACTIVE": "Dang hoat dong",
+    "ON_LEAVE": "Dang nghi phep",
+    "SUSPENDED": "Tam ngung",
+    "TERMINATED": "Da nghi viec",
+    "ARCHIVED": "Da luu tru"
+  },
+  "orgUnitRole": {
+    "DEPARTMENT_OWNER": "Chu quan phong ban",
+    "UNIT_MANAGER": "Quan ly don vi",
+    "UNIT_OPERATOR": "Van hanh don vi"
+  },
+  "kpi": {
+    "title": "KPI toi quan ly",
+    "summary": "Cac ke hoach KPI da cong bo theo phan cong quan ly hieu luc.",
+    "tableLabel": "Danh sach KPI quan ly",
+    "tabs": {
+      "unit": "KPI don vi",
+      "talentGroup": "KPI nhom talent"
+    },
+    "subject": {
+      "unit": "Don vi",
+      "talentGroup": "Nhom talent"
+    },
+    "fields": {
+      "plan": "Ke hoach",
+      "period": "Ky",
+      "status": "Trang thai",
+      "actions": "Thao tac"
+    }
+  },
+  "empty": {
+    "noProfileTitle": "Chua lien ket ho so",
+    "noProfileMessage": "Tai khoan da dang nhap nhung chua lien ket voi Employment Profile san sang cho quan ly.",
+    "noAssignmentsTitle": "Chua co phan cong quan ly",
+    "noAssignmentsMessage": "Chua co phan cong Org Unit hoac Talent Group dang hieu luc cho ho so cua ban.",
+    "kpiTitle": "Chua co KPI quan ly",
+    "kpiMessage": "KPI don vi va KPI nhom talent chi hien thi khi co phan cong hieu luc.",
+    "kpiListTitle": "Chua co KPI da cong bo",
+    "kpiListMessage": "Chua co ke hoach KPI da cong bo trong pham vi quan ly nay."
+  },
+  "errors": {
+    "contextTitle": "Khong tai duoc khong gian quan ly",
+    "contextMessage": "Khong tai duoc ngu canh khong gian quan ly cua ban.",
+    "kpiTitle": "Khong tai duoc KPI quan ly",
+    "kpiMessage": "Khong tai duoc cac ke hoach KPI quan ly."
+  }
+}

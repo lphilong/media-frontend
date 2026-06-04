@@ -10,11 +10,16 @@ import {
   type ModuleRouteHandle,
 } from '@app/router/module-route-composition';
 import { moduleRouteDefinitions, type ModuleRouteDefinition } from '@app/router/module-definitions';
-import type { ModuleAccessModuleId } from '@app/router/module-access';
+import { canAccessModule, type ModuleAccessModuleId } from '@app/router/module-access';
 import { APP_PATHS } from '@app/router/paths';
 import { AuthCallbackPage, ForbiddenPage, LoginPage, NotFoundPage } from '@app/router/system-pages';
 import type { NormalizedApiError } from '@shared/api';
-import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
+import {
+  hasAnyPermission,
+  hasScopeGrant,
+  PERMISSIONS,
+  useCurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
 import { LoadingState, ModulePlaceholderPage, PageContainer } from '@shared/components/primitives';
 
 type LazyModuleRoute = ComponentType<Record<string, never>>;
@@ -197,6 +202,12 @@ const SelfServicePage = lazy(() =>
   })),
 );
 
+const ManagerWorkspacePage = lazy(() =>
+  import('@modules/manager-workspace/pages/ManagerWorkspacePage').then((module) => ({
+    default: module.ManagerWorkspacePage,
+  })),
+);
+
 const WorkPatternListPage = lazy(() =>
   import('@modules/work-schedule/pages/WorkPatternListPage').then((module) => ({
     default: module.WorkPatternListPage,
@@ -247,19 +258,31 @@ const isForbiddenCapabilitiesError = (error: unknown): boolean =>
 
 function RootLandingRedirect(): JSX.Element {
   const capabilitiesQuery = useCurrentActorCapabilities();
+  const capabilities = capabilitiesQuery.data;
 
   if (capabilitiesQuery.isLoading && !capabilitiesQuery.data) {
     return <RouteLoadingFallback />;
   }
 
   if (
-    capabilitiesQuery.data?.type === 'staff' ||
+    capabilities?.type === 'staff' ||
     (capabilitiesQuery.isError && isForbiddenCapabilitiesError(capabilitiesQuery.error))
   ) {
     return <Navigate to={APP_PATHS.selfService} replace />;
   }
 
-  return <Navigate to={APP_PATHS.dashboard} replace />;
+  if (canAccessModule(capabilities, 'dashboard')) {
+    return <Navigate to={APP_PATHS.dashboard} replace />;
+  }
+
+  if (
+    hasScopeGrant(capabilities, 'kpi', 'managedGroup') &&
+    hasAnyPermission(capabilities, [PERMISSIONS.KPI_READ, PERMISSIONS.KPI_READ_PROGRESS])
+  ) {
+    return <Navigate to={APP_PATHS.manager} replace />;
+  }
+
+  return <Navigate to={APP_PATHS.forbidden} replace />;
 }
 
 const withModuleAccess = (moduleId: ModuleAccessModuleId, element: JSX.Element): JSX.Element => (
@@ -308,6 +331,14 @@ function LazySelfServiceElement(): JSX.Element {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <SelfServicePage />
+    </Suspense>
+  );
+}
+
+function LazyManagerWorkspaceElement(): JSX.Element {
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <ManagerWorkspacePage />
     </Suspense>
   );
 }
@@ -416,6 +447,22 @@ export const appRoutes: RouteObject[] = [
     element: (
       <RequireAuth>
         <LazySelfServiceElement />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: APP_PATHS.manager,
+    element: (
+      <RequireAuth>
+        <LazyManagerWorkspaceElement />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: APP_PATHS.managerKpi,
+    element: (
+      <RequireAuth>
+        <LazyManagerWorkspaceElement />
       </RequireAuth>
     ),
   },

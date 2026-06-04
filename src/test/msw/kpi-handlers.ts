@@ -3354,8 +3354,63 @@ export const kpiHandlers = [
       const body = await parseJsonBody(request);
       const unsupported = rejectUnsupportedBody(body, ['correctedValue', 'reason']);
       if (unsupported) return unsupported;
+      if (!String(body.reason ?? '').trim()) {
+        return HttpResponse.json({ message: 'Reason required' }, { status: 422 });
+      }
+      const plan = readPlan(String(params.kpiPlanId));
+      if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (plan.subjectType !== 'ORG_UNIT') {
+        return HttpResponse.json(
+          { message: 'ORG_UNIT correction requires an ORG_UNIT KPI plan' },
+          { status: 409 },
+        );
+      }
       const entry = actualEntries.find((item) => item.id === String(params.actualEntryId));
       if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      if (entry.kpiPlanId !== plan.id) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (plan.status === 'FINALIZED') {
+        return finalizedKpiReadOnly();
+      }
+      if (plan.status !== 'PUBLISHED') {
+        return HttpResponse.json(
+          { message: 'KPI actual correction requires a published plan' },
+          { status: 409 },
+        );
+      }
+      const allocation = (allocations[plan.id] ?? []).find(
+        (item) => item.id === entry.allocationId,
+      );
+      if (!allocation || allocation.allocationStatus !== 'PUBLISHED') {
+        return HttpResponse.json(
+          { message: 'KPI actual correction requires a published allocation' },
+          { status: 409 },
+        );
+      }
+      if (isDirectEditWindowOpen(entry.actualDate)) {
+        return correctionDuringDirectEditWindow();
+      }
+      if (readActiveExcuse(plan.id, entry.allocationId, entry.metricCode, entry.actualDate)) {
+        return HttpResponse.json(
+          {
+            message:
+              'KPI actual slot has an active excuse or not-required mark; unmark it before correction',
+          },
+          { status: 409 },
+        );
+      }
+      if (!isNumber(body.correctedValue) || body.correctedValue < 0) {
+        return validationError(
+          `KPI ${entry.metricCode} requires a finite non-negative numeric corrected value`,
+        );
+      }
+      if (
+        integerTargetMetricCodes.has(entry.metricCode) &&
+        !Number.isInteger(body.correctedValue)
+      ) {
+        return validationError(`${entry.metricCode} requires an integer corrected value`);
+      }
       correctionSeed += 1;
       const correction: ActualCorrection = {
         id: `org-unit-correction-${correctionSeed}`,

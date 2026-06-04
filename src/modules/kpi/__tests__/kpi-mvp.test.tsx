@@ -2107,7 +2107,7 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText('Exception removed.')).toBeInTheDocument();
   });
 
-  it('creates ORG_UNIT correction history without exposing raw correction IDs', async () => {
+  it('hides ORG_UNIT correction while direct edit is still eligible', async () => {
     await createKpiOrgUnitActual({
       kpiPlanId: 'kpi-plan-org-unit',
       allocationId: 'kpi-plan-org-unit-alloc-1',
@@ -2119,6 +2119,29 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi/plans/kpi-plan-org-unit');
 
     const operations = await screen.findByTestId('org-unit-operations');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+
+    const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
+    expect(anActual).not.toBeDisabled();
+    expect(within(anActual.closest('tr')!).queryByRole('button', { name: 'Correction' })).toBeNull();
+  });
+
+  it('creates ORG_UNIT correction history without exposing raw correction IDs', async () => {
+    await createKpiOrgUnitActual({
+      kpiPlanId: 'kpi-plan-org-unit',
+      allocationId: 'kpi-plan-org-unit-alloc-1',
+      metricCode: 'REVENUE_VND',
+      actualDate: '15-06-2026',
+      actualValue: 100000,
+    });
+    vi.setSystemTime(new Date('2026-06-16T10:00:01+07:00'));
+
+    renderRoute('/kpi/plans/kpi-plan-org-unit');
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    const actualDate = within(operations).getByLabelText('Actual date');
+    await userEvent.clear(actualDate);
+    await userEvent.type(actualDate, '15-06-2026');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
 
     const correctedAnActual = await within(operations).findByLabelText(
