@@ -11,6 +11,7 @@ import {
   EmploymentProfileOrgAssignmentSurface,
   EmploymentProfileUserLinkSurface,
 } from '@modules/employment-profile/forms/employment-profile-mutation-forms';
+import { loadUnlinkedUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import {
   getMockCurrentActorCapabilities,
@@ -36,6 +37,14 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
     },
   ]),
   loadUserReferenceOptions: vi.fn(async () => [
+    {
+      id: 'user-admin',
+      label: 'Admin User - admin@example.com',
+      description: 'ACTIVE',
+      href: '/users/user-admin',
+    },
+  ]),
+  loadUnlinkedUserReferenceOptions: vi.fn(async () => [
     {
       id: 'user-admin',
       label: 'Admin User - admin@example.com',
@@ -476,6 +485,7 @@ describe('employment profile wave 3 surfaces', () => {
       '2026-05-14',
     );
     await selectPickerOption(user, 'employment-profile-linked-user', /Admin User/);
+    expect(loadUnlinkedUserReferenceOptions).toHaveBeenCalled();
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('employment-profile:mutations.create.submit'),
@@ -544,6 +554,7 @@ describe('employment profile wave 3 surfaces', () => {
       </MemoryRouter>,
     );
     await selectPickerOption(user, 'employment-profile-link-user', /Admin User/);
+    expect(loadUnlinkedUserReferenceOptions).toHaveBeenCalled();
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('employment-profile:mutations.linkUser.submit'),

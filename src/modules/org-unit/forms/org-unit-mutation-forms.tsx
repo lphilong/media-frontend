@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   FormProvider,
   useForm,
@@ -19,7 +19,7 @@ import type {
   OrgUnitUpdatePayload,
 } from '@modules/org-unit/types/org-unit.types';
 import {
-  loadEmploymentProfileReferenceOptions,
+  loadContextualEmploymentProfileReferenceOptions,
   loadOrgUnitReferenceOptions,
 } from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
@@ -58,6 +58,7 @@ type OrgUnitMoveSurfaceProps = BaseMutationSurfaceProps & {
 };
 
 type OrgUnitAssignResponsibilitySurfaceProps = BaseMutationSurfaceProps & {
+  currentOrgUnitId: string;
   onSubmit: (payload: OrgUnitResponsibilityPayload) => Promise<void> | void;
 };
 
@@ -479,6 +480,7 @@ type OrgUnitResponsibilityFormValues = {
 };
 
 export const OrgUnitAssignResponsibilitySurface = ({
+  currentOrgUnitId,
   onSubmit,
   onCancel,
   isPending = false,
@@ -502,6 +504,14 @@ export const OrgUnitAssignResponsibilitySurface = ({
         t('org-unit:validation.invalidReferenceToken'),
       ),
     [t],
+  );
+  const loadManagerOptions = useCallback(
+    (search: string) =>
+      loadContextualEmploymentProfileReferenceOptions(search, {
+        orgUnitId: currentOrgUnitId,
+        employmentStatuses: ['ACTIVE', 'ON_LEAVE'],
+      }),
+    [currentOrgUnitId],
   );
 
   const handleSubmit = form.handleSubmit(async (values) => {
@@ -539,7 +549,7 @@ export const OrgUnitAssignResponsibilitySurface = ({
             name="managerEmploymentProfileId"
             label={t('org-unit:responsibilities.managerEmploymentProfile')}
             pickerId="org-unit-responsibility-manager"
-            loadOptions={loadEmploymentProfileReferenceOptions}
+            loadOptions={loadManagerOptions}
             helperText={t('org-unit:responsibilities.managerHelp')}
             placeholder={t('org-unit:responsibilities.managerSearch')}
           />

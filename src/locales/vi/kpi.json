@@ -324,6 +324,7 @@
     "invalidPeriodMonth": "Tháng KPI phải có dạng YYYY-MM.",
     "pastPeriodMonth": "Chọn tháng hiện tại hoặc tháng tương lai.",
     "invalidMetricValue": "Nhập giá trị chỉ số hợp lệ.",
+    "duplicateMetric": "Moi chi so KPI chi duoc chon mot lan.",
     "allocationMismatch": "Tổng phân bổ phải bằng mục tiêu kế hoạch trước khi publish.",
     "employmentProfileRequired": "Bat buoc co ID ho so nhan su.",
     "invalidActualDate": "Dùng DD-MM-YYYY.",

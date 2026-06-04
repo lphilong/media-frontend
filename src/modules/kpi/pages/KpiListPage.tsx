@@ -170,6 +170,40 @@ const readActualWorkspaceBooleanFilter = (
 
 const defaultTargets: TargetDraft[] = [{ metricCode: 'REVENUE_VND', value: '1.000.000' }];
 
+const normalizeTargetDrafts = (
+  current: TargetDraft[],
+  allowedMetricCodes: readonly KpiMetricCode[],
+): TargetDraft[] => {
+  const allowed = new Set<KpiMetricCode>(allowedMetricCodes);
+  const seen = new Set<KpiMetricCode>();
+  const kept = current.filter((target) => {
+    if (!allowed.has(target.metricCode) || seen.has(target.metricCode)) {
+      return false;
+    }
+    seen.add(target.metricCode);
+    return true;
+  });
+
+  return kept.length > 0
+    ? kept
+    : [{ metricCode: allowedMetricCodes[0] ?? 'REVENUE_VND', value: '0' }];
+};
+
+const metricOptionsForRow = (
+  targets: TargetDraft[],
+  rowIndex: number,
+  allowedMetricCodes: readonly KpiMetricCode[],
+): KpiMetricCode[] => {
+  const selectedByOtherRows = new Set(
+    targets.filter((_, index) => index !== rowIndex).map((target) => target.metricCode),
+  );
+
+  return allowedMetricCodes.filter(
+    (metricCode) =>
+      metricCode === targets[rowIndex]?.metricCode || !selectedByOtherRows.has(metricCode),
+  );
+};
+
 const readPlanQuery = (searchParams: URLSearchParams): KpiPlanQuery => {
   const subjectType = searchParams.get('subjectType');
   const status = searchParams.get('status');
@@ -467,6 +501,7 @@ export const KpiListPage = (): JSX.Element => {
     () => [...kpiMetricsBySubjectType[createSubjectType]],
     [createSubjectType],
   );
+  const canAddMetric = targets.length < availableCreateMetricCodes.length;
 
   useEffect(() => {
     if (visibleTabs.length > 0 && !visibleTabs.includes(activeTab as 'management' | 'group')) {
@@ -513,9 +548,7 @@ export const KpiListPage = (): JSX.Element => {
 
   useEffect(() => {
     setTargets((current) => {
-      const allowed = new Set<KpiMetricCode>(availableCreateMetricCodes);
-      const kept = current.filter((target) => allowed.has(target.metricCode));
-      return kept.length > 0 ? kept : defaultTargets;
+      return normalizeTargetDrafts(current, availableCreateMetricCodes);
     });
   }, [availableCreateMetricCodes]);
 
@@ -565,6 +598,10 @@ export const KpiListPage = (): JSX.Element => {
     }
     if (!parsedTargets) {
       setFormError(t('kpi:validation.invalidMetricValue'));
+      return;
+    }
+    if (new Set(parsedTargets.map((target) => target.metricCode)).size !== parsedTargets.length) {
+      setFormError(t('kpi:validation.duplicateMetric'));
       return;
     }
 
@@ -1206,11 +1243,13 @@ export const KpiListPage = (): JSX.Element => {
                     )
                   }
                 >
-                  {availableCreateMetricCodes.map((metricCode) => (
-                    <option key={metricCode} value={metricCode}>
-                      {t(`kpi:metricCodes.${metricCode}`)}
-                    </option>
-                  ))}
+                  {metricOptionsForRow(targets, index, availableCreateMetricCodes).map(
+                    (metricCode) => (
+                      <option key={metricCode} value={metricCode}>
+                        {t(`kpi:metricCodes.${metricCode}`)}
+                      </option>
+                    ),
+                  )}
                 </select>
                 <input
                   aria-label={`${t(`kpi:metricCodes.${target.metricCode}`)} ${t('kpi:fields.targetValue')}`}
@@ -1237,13 +1276,14 @@ export const KpiListPage = (): JSX.Element => {
             ))}
             <button
               type="button"
+              disabled={!canAddMetric}
               className="rounded border border-border px-3 py-2 text-sm"
               onClick={() =>
                 setTargets((current) => {
                   const used = new Set(current.map((target) => target.metricCode));
-                  const nextMetric =
-                    availableCreateMetricCodes.find((metricCode) => !used.has(metricCode)) ??
-                    availableCreateMetricCodes[0];
+                  const nextMetric = availableCreateMetricCodes.find(
+                    (metricCode) => !used.has(metricCode),
+                  );
                   return nextMetric
                     ? [...current, { metricCode: nextMetric, value: '0' }]
                     : current;

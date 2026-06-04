@@ -324,6 +324,7 @@
     "invalidPeriodMonth": "Use period month as YYYY-MM.",
     "pastPeriodMonth": "Choose the current month or a future month.",
     "invalidMetricValue": "Enter a valid numeric metric value.",
+    "duplicateMetric": "Each KPI metric can be selected only once.",
     "allocationMismatch": "Allocation total must equal plan target before publish.",
     "employmentProfileRequired": "Employment profile ID is required.",
     "invalidActualDate": "Use DD-MM-YYYY. Do not use YYYY-MM-DD or slash dates.",

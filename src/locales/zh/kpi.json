@@ -324,6 +324,7 @@
     "invalidPeriodMonth": "KPI 月份必须为 YYYY-MM。",
     "pastPeriodMonth": "请选择当前月份或未来月份。",
     "invalidMetricValue": "请输入有效的指标数值。",
+    "duplicateMetric": "每个 KPI 指标只能选择一次。",
     "allocationMismatch": "发布前分配合计必须等于计划目标。",
     "employmentProfileRequired": "Employment profile ID is required.",
     "invalidActualDate": "使用 DD-MM-YYYY。不要使用 YYYY-MM-DD 或斜杠日期。",

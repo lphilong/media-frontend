@@ -1387,6 +1387,18 @@ describe('KPI MVP UX', () => {
     expect(
       within(metricSelect).getByRole('option', { name: 'TikTok Diamond' }),
     ).toBeInTheDocument();
+    await userEvent.click(within(createSection!).getByRole('button', { name: 'Add metric' }));
+    const talentGroupMetricSelects = within(createSection!).getAllByRole('combobox', {
+      name: 'Metric',
+    });
+    expect(talentGroupMetricSelects).toHaveLength(2);
+    expect(
+      within(talentGroupMetricSelects[0]).queryByRole('option', { name: 'TikTok Diamond' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(talentGroupMetricSelects[1]).queryByRole('option', { name: 'Revenue VND' }),
+    ).not.toBeInTheDocument();
+    expect(within(createSection!).getByRole('button', { name: 'Add metric' })).toBeDisabled();
 
     await userEvent.selectOptions(
       within(createSection!).getByRole('combobox', { name: 'Subject type' }),
@@ -1399,6 +1411,7 @@ describe('KPI MVP UX', () => {
     expect(
       within(metricSelect).queryByRole('option', { name: 'TikTok Diamond' }),
     ).not.toBeInTheDocument();
+    expect(within(createSection!).getByRole('button', { name: 'Add metric' })).toBeDisabled();
 
     await userEvent.click(
       await within(createSection!).findByRole('button', { name: /Head Office - OU-000001/ }),
@@ -2123,7 +2136,9 @@ describe('KPI MVP UX', () => {
 
     const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
     expect(anActual).not.toBeDisabled();
-    expect(within(anActual.closest('tr')!).queryByRole('button', { name: 'Correction' })).toBeNull();
+    expect(
+      within(anActual.closest('tr')!).queryByRole('button', { name: 'Correction' }),
+    ).toBeNull();
   });
 
   it('creates ORG_UNIT correction history without exposing raw correction IDs', async () => {

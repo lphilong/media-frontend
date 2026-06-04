@@ -22,7 +22,7 @@ import type {
 import {
   loadEmploymentProfileReferenceOptions,
   loadOrgUnitReferenceOptions,
-  loadUserReferenceOptions,
+  loadUnlinkedUserReferenceOptions,
 } from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
 import {
@@ -446,7 +446,7 @@ export const EmploymentProfileCreateSurface = ({
             name="linkedUserId"
             label={t('employment-profile:fields.linkedUserId')}
             pickerId="employment-profile-linked-user"
-            loadOptions={loadUserReferenceOptions}
+            loadOptions={loadUnlinkedUserReferenceOptions}
             helperText={t('employment-profile:referenceHelp.linkedUserId')}
             placeholder={t('employment-profile:placeholders.userSearch')}
             clearable
@@ -875,7 +875,7 @@ export const EmploymentProfileUserLinkSurface = ({
           name="linkedUserId"
           label={t('employment-profile:fields.linkedUserId')}
           pickerId="employment-profile-link-user"
-          loadOptions={loadUserReferenceOptions}
+          loadOptions={loadUnlinkedUserReferenceOptions}
           helperText={t('employment-profile:referenceHelp.linkedUserId')}
           placeholder={t('employment-profile:placeholders.userSearch')}
         />

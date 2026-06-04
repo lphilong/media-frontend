@@ -11,6 +11,7 @@ import {
   OrgUnitEditSurface,
   OrgUnitMoveSurface,
 } from '@modules/org-unit/forms/org-unit-mutation-forms';
+import { loadContextualEmploymentProfileReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import { server } from '@test/msw/server';
@@ -28,6 +29,14 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
       label: 'Bao - EP-000002',
       description: 'Specialist',
       href: '/employment-profiles/ep-002',
+    },
+  ]),
+  loadContextualEmploymentProfileReferenceOptions: vi.fn(async () => [
+    {
+      id: 'ep-001',
+      label: 'Alice - EP-000001',
+      description: 'Director - ACTIVE',
+      href: '/employment-profiles/ep-001',
     },
   ]),
   loadOrgUnitReferenceOptions: vi.fn(async () => [
@@ -258,7 +267,9 @@ describe('org unit wave 3 surfaces', () => {
       within(section).getByText(i18n.t('org-unit:responsibilities.helper')),
     ).toBeInTheDocument();
     expect(
-      within(section).getByText(textPattern(i18n.t('org-unit:responsibilityRoles.DEPARTMENT_OWNER'))),
+      within(section).getByText(
+        textPattern(i18n.t('org-unit:responsibilityRoles.DEPARTMENT_OWNER')),
+      ),
     ).toBeInTheDocument();
     expect(
       within(section).getByText(textPattern(i18n.t('org-unit:responsibilityRoles.UNIT_MANAGER'))),
@@ -293,13 +304,17 @@ describe('org unit wave 3 surfaces', () => {
       within(assignSurface).getByLabelText(i18n.t('org-unit:responsibilities.role')),
     ).toBeInTheDocument();
     expect(
-      within(assignSurface).getByLabelText(
-        i18n.t('org-unit:responsibilities.includeDescendants'),
-      ),
+      within(assignSurface).getByLabelText(i18n.t('org-unit:responsibilities.includeDescendants')),
     ).toBeInTheDocument();
     expect(
       within(assignSurface).getByLabelText(i18n.t('org-unit:responsibilities.isPrimary')),
     ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(loadContextualEmploymentProfileReferenceOptions).toHaveBeenCalledWith('', {
+        orgUnitId: 'ou-root',
+        employmentStatuses: ['ACTIVE', 'ON_LEAVE'],
+      });
+    });
 
     await selectPickerOption(user, 'org-unit-responsibility-manager', /EP-000001/);
     await user.selectOptions(
@@ -534,9 +549,7 @@ describe('org unit wave 3 surfaces', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      within(refreshedSection).getByText(
-        textPattern(i18n.t('org-unit:responsibilities.primary')),
-      ),
+      within(refreshedSection).getByText(textPattern(i18n.t('org-unit:responsibilities.primary'))),
     ).toBeInTheDocument();
     expect(
       within(refreshedSection).getByText(

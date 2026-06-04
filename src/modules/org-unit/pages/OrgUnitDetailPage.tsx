@@ -556,6 +556,7 @@ export const OrgUnitDetailPage = (): JSX.Element => {
             ) : null}
             {activeSurface === 'assign-responsibility' ? (
               <OrgUnitAssignResponsibilitySurface
+                currentOrgUnitId={record.id}
                 isPending={assignResponsibilityMutation.isPending}
                 onCancel={() => setActiveSurface(null)}
                 onSubmit={onAssignResponsibilitySubmit}
