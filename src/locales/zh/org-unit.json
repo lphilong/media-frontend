@@ -150,12 +150,54 @@
     "created": "组织单元已创建。",
     "updated": "组织单元已更新。",
     "moved": "组织单元已移动。",
-    "lifecycleUpdated": "组织单元生命周期已更新。"
+    "lifecycleUpdated": "组织单元生命周期已更新。",
+    "responsibilityAssigned": "职责已分配。",
+    "responsibilityUpdated": "职责已更新。",
+    "responsibilityRevoked": "职责已撤销。"
   },
   "confirm": {
     "activate": "启用此组织单元？",
     "deactivate": "停用此组织单元？",
-    "archive": "归档此组织单元？"
+    "archive": "归档此组织单元？",
+    "revokeResponsibility": "撤销职责会移除此组织单元的运营权限。此操作不会更改员工档案中的直属主管，也不会更改角色模板。"
+  },
+  "responsibilityRoles": {
+    "DEPARTMENT_OWNER": "部门负责人",
+    "UNIT_MANAGER": "单元经理",
+    "UNIT_OPERATOR": "单元操作员"
+  },
+  "responsibilityStatuses": {
+    "ACTIVE": "启用",
+    "INACTIVE": "停用",
+    "REMOVED": "已移除"
+  },
+  "responsibilities": {
+    "title": "职责 / 经理",
+    "helper": "职责用于定义谁可以查看或运营此组织单元。此设置不会更改员工档案中的直属主管。",
+    "assign": "分配职责",
+    "assigning": "分配中...",
+    "assignTitle": "分配职责",
+    "assignSubtitle": "将组织单元运营权限分配给一个员工档案。",
+    "editTitle": "编辑职责",
+    "editSubtitle": "更新安全元数据，不更改经理身份。",
+    "save": "保存职责",
+    "saving": "保存中...",
+    "managerEmploymentProfile": "经理员工档案",
+    "managerHelp": "选择承担此运营职责的内部员工档案。",
+    "managerSearch": "搜索员工档案",
+    "role": "职责角色",
+    "rolePlaceholder": "选择职责",
+    "effectiveFrom": "生效开始",
+    "effectiveTo": "生效结束",
+    "includeDescendants": "包含下级",
+    "isPrimary": "主要职责",
+    "primary": "主要",
+    "descendantsIncluded": "包含下级",
+    "effectiveRange": "{{from}} 至 {{to}}",
+    "openEnded": "长期有效",
+    "revoke": "撤销",
+    "emptyTitle": "尚未为此单元分配职责。",
+    "emptyMessage": "尚未为此单元分配职责。"
   },
   "actionRail": {
     "title": "组织单元操作"

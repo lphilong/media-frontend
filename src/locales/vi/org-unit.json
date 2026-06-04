@@ -150,12 +150,54 @@
     "created": "Đã tạo đơn vị tổ chức.",
     "updated": "Đã cập nhật đơn vị tổ chức.",
     "moved": "Đã di chuyển đơn vị tổ chức.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời đơn vị tổ chức."
+    "lifecycleUpdated": "Đã cập nhật vòng đời đơn vị tổ chức.",
+    "responsibilityAssigned": "Đã gán trách nhiệm.",
+    "responsibilityUpdated": "Đã cập nhật trách nhiệm.",
+    "responsibilityRevoked": "Đã thu hồi trách nhiệm."
   },
   "confirm": {
     "activate": "Kích hoạt đơn vị tổ chức này?",
     "deactivate": "Vô hiệu hóa đơn vị tổ chức này?",
-    "archive": "Lưu trữ đơn vị tổ chức này?"
+    "archive": "Lưu trữ đơn vị tổ chức này?",
+    "revokeResponsibility": "Thu hồi trách nhiệm sẽ xóa quyền vận hành cho đơn vị này. Thao tác này không thay đổi quản lý trực tiếp trên hồ sơ nhân sự hoặc mẫu vai trò."
+  },
+  "responsibilityRoles": {
+    "DEPARTMENT_OWNER": "Chủ quản phòng ban",
+    "UNIT_MANAGER": "Quản lý đơn vị",
+    "UNIT_OPERATOR": "Điều phối đơn vị"
+  },
+  "responsibilityStatuses": {
+    "ACTIVE": "Hoạt động",
+    "INACTIVE": "Không hoạt động",
+    "REMOVED": "Đã xóa"
+  },
+  "responsibilities": {
+    "title": "Trách nhiệm / Quản lý",
+    "helper": "Trách nhiệm đơn vị xác định ai được xem hoặc vận hành đơn vị này. Thiết lập này không thay đổi quản lý trực tiếp trên hồ sơ nhân sự.",
+    "assign": "Gán trách nhiệm",
+    "assigning": "Đang gán...",
+    "assignTitle": "Gán trách nhiệm",
+    "assignSubtitle": "Gán quyền vận hành đơn vị cho một hồ sơ nhân sự.",
+    "editTitle": "Chỉnh sửa trách nhiệm",
+    "editSubtitle": "Cập nhật metadata an toàn mà không đổi danh tính người quản lý.",
+    "save": "Lưu trách nhiệm",
+    "saving": "Đang lưu...",
+    "managerEmploymentProfile": "Hồ sơ nhân sự quản lý",
+    "managerHelp": "Chọn hồ sơ nhân sự nội bộ giữ trách nhiệm vận hành này.",
+    "managerSearch": "Tìm hồ sơ nhân sự",
+    "role": "Vai trò trách nhiệm",
+    "rolePlaceholder": "Chọn trách nhiệm",
+    "effectiveFrom": "Hiệu lực từ",
+    "effectiveTo": "Hiệu lực đến",
+    "includeDescendants": "Bao gồm đơn vị con",
+    "isPrimary": "Trách nhiệm chính",
+    "primary": "Chính",
+    "descendantsIncluded": "Bao gồm đơn vị con",
+    "effectiveRange": "{{from}} đến {{to}}",
+    "openEnded": "Không giới hạn",
+    "revoke": "Thu hồi",
+    "emptyTitle": "Chưa gán trách nhiệm cho đơn vị này.",
+    "emptyMessage": "Chưa gán trách nhiệm cho đơn vị này."
   },
   "actionRail": {
     "title": "Hành động đơn vị tổ chức"

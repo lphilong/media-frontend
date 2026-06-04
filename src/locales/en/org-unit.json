@@ -150,12 +150,54 @@
     "created": "Org unit created successfully.",
     "updated": "Org unit updated successfully.",
     "moved": "Org unit moved successfully.",
-    "lifecycleUpdated": "Org unit lifecycle updated successfully."
+    "lifecycleUpdated": "Org unit lifecycle updated successfully.",
+    "responsibilityAssigned": "Responsibility assigned successfully.",
+    "responsibilityUpdated": "Responsibility updated successfully.",
+    "responsibilityRevoked": "Responsibility revoked successfully."
   },
   "confirm": {
     "activate": "Activate this org unit?",
     "deactivate": "Deactivate this org unit?",
-    "archive": "Archive this org unit?"
+    "archive": "Archive this org unit?",
+    "revokeResponsibility": "Revoking responsibility removes operational authority for this Org Unit. It does not change the person's EmploymentProfile reporting manager or role template."
+  },
+  "responsibilityRoles": {
+    "DEPARTMENT_OWNER": "Department Owner",
+    "UNIT_MANAGER": "Unit Manager",
+    "UNIT_OPERATOR": "Unit Operator"
+  },
+  "responsibilityStatuses": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "REMOVED": "Removed"
+  },
+  "responsibilities": {
+    "title": "Responsibilities / Managers",
+    "helper": "Responsibilities define who can view or operate this Org Unit. They do not change reporting manager on employee profiles.",
+    "assign": "Assign responsibility",
+    "assigning": "Assigning...",
+    "assignTitle": "Assign responsibility",
+    "assignSubtitle": "Assign Org Unit operational authority to an EmploymentProfile.",
+    "editTitle": "Edit responsibility",
+    "editSubtitle": "Update safe responsibility metadata without changing the manager identity.",
+    "save": "Save responsibility",
+    "saving": "Saving...",
+    "managerEmploymentProfile": "Manager EmploymentProfile",
+    "managerHelp": "Choose the internal EmploymentProfile that holds this operational responsibility.",
+    "managerSearch": "Search employment profiles",
+    "role": "Responsibility role",
+    "rolePlaceholder": "Select responsibility",
+    "effectiveFrom": "Effective from",
+    "effectiveTo": "Effective to",
+    "includeDescendants": "Include descendants",
+    "isPrimary": "Primary responsibility",
+    "primary": "Primary",
+    "descendantsIncluded": "Includes descendants",
+    "effectiveRange": "{{from}} to {{to}}",
+    "openEnded": "Open ended",
+    "revoke": "Revoke",
+    "emptyTitle": "No responsibilities assigned yet.",
+    "emptyMessage": "No responsibilities assigned yet."
   },
   "actionRail": {
     "title": "Org Unit Actions"

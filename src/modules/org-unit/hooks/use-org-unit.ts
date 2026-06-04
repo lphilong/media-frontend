@@ -1,12 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  assignOrgUnitResponsibility,
   createOrgUnit,
   fetchOrgUnitChildren,
   fetchOrgUnitDetail,
+  fetchOrgUnitResponsibilities,
   fetchOrgUnits,
   moveOrgUnit,
   performOrgUnitLifecycleAction,
+  revokeOrgUnitResponsibility,
+  updateOrgUnitResponsibility,
   updateOrgUnit,
 } from '@modules/org-unit/api/org-unit.api';
 import type {
@@ -14,6 +18,8 @@ import type {
   OrgUnitLifecycleAction,
   OrgUnitListQuery,
   OrgUnitMovePayload,
+  OrgUnitResponsibilityPayload,
+  OrgUnitResponsibilityUpdatePayload,
   OrgUnitUpdatePayload,
 } from '@modules/org-unit/types/org-unit.types';
 import { orgUnitFlatListQueryConfig, serializeScreenQueryParams } from '@shared/query';
@@ -31,6 +37,7 @@ export const orgUnitQueryKeys = {
   detail: (orgUnitId: string) => ['org-unit', 'detail', orgUnitId] as const,
   children: (orgUnitId: string, cursor?: string) =>
     ['org-unit', 'children', orgUnitId, cursor ?? 'root'] as const,
+  responsibilities: (orgUnitId: string) => ['org-unit', 'responsibilities', orgUnitId] as const,
 };
 
 export const useOrgUnitList = (query: OrgUnitListQuery) => {
@@ -57,6 +64,16 @@ export const useOrgUnitChildren = (
       ? orgUnitQueryKeys.children(orgUnitId, query.cursor)
       : [...ORG_UNIT_QUERY_ROOT, 'children'],
     queryFn: () => fetchOrgUnitChildren(orgUnitId ?? '', query),
+    enabled: Boolean(orgUnitId),
+  });
+};
+
+export const useOrgUnitResponsibilities = (orgUnitId: string | undefined) => {
+  return useQuery({
+    queryKey: orgUnitId
+      ? orgUnitQueryKeys.responsibilities(orgUnitId)
+      : [...ORG_UNIT_QUERY_ROOT, 'responsibilities'],
+    queryFn: () => fetchOrgUnitResponsibilities(orgUnitId ?? ''),
     enabled: Boolean(orgUnitId),
   });
 };
@@ -107,6 +124,54 @@ export const useOrgUnitLifecycleMutation = () => {
   return useMutation({
     mutationFn: ({ orgUnitId, action }: { orgUnitId: string; action: OrgUnitLifecycleAction }) =>
       performOrgUnitLifecycleAction(orgUnitId, action),
+    onSuccess: async () => {
+      await invalidateOrgUnitModuleQueries(queryClient);
+    },
+  });
+};
+
+export const useAssignOrgUnitResponsibilityMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orgUnitId,
+      payload,
+    }: {
+      orgUnitId: string;
+      payload: OrgUnitResponsibilityPayload;
+    }) => assignOrgUnitResponsibility(orgUnitId, payload),
+    onSuccess: async () => {
+      await invalidateOrgUnitModuleQueries(queryClient);
+    },
+  });
+};
+
+export const useUpdateOrgUnitResponsibilityMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orgUnitId,
+      assignmentId,
+      payload,
+    }: {
+      orgUnitId: string;
+      assignmentId: string;
+      payload: OrgUnitResponsibilityUpdatePayload;
+    }) => updateOrgUnitResponsibility(orgUnitId, assignmentId, payload),
+    onSuccess: async () => {
+      await invalidateOrgUnitModuleQueries(queryClient);
+    },
+  });
+};
+
+export const useRevokeOrgUnitResponsibilityMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orgUnitId, assignmentId }: { orgUnitId: string; assignmentId: string }) =>
+      revokeOrgUnitResponsibility(orgUnitId, assignmentId),
     onSuccess: async () => {
       await invalidateOrgUnitModuleQueries(queryClient);
     },

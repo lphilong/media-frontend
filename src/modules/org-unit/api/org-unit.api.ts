@@ -10,10 +10,15 @@ import type {
   OrgUnitListQuery,
   OrgUnitMovePayload,
   OrgUnitRecord,
+  OrgUnitResponsibilityPayload,
+  OrgUnitResponsibilityRecord,
+  OrgUnitResponsibilityUpdatePayload,
   OrgUnitUpdatePayload,
 } from '@modules/org-unit/types/org-unit.types';
 
 const orgUnitStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']);
+const responsibilityRoleSchema = z.enum(['DEPARTMENT_OWNER', 'UNIT_MANAGER', 'UNIT_OPERATOR']);
+const responsibilityStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'REMOVED']);
 const referenceSummarySchema = z
   .object({
     id: z.string().trim().min(1),
@@ -82,6 +87,24 @@ const childrenOrgUnitSchema = z
   })
   .strict();
 
+const responsibilitySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    orgUnitId: z.string().trim().min(1),
+    managerEmploymentProfileId: z.string().trim().min(1),
+    role: responsibilityRoleSchema,
+    status: responsibilityStatusSchema,
+    includeDescendants: z.boolean(),
+    effectiveFrom: z.union([z.number(), z.string()]),
+    effectiveTo: z.union([z.number(), z.string()]).nullable().optional(),
+    isPrimary: z.boolean(),
+    createdAt: z.union([z.number(), z.string()]),
+    updatedAt: z.union([z.number(), z.string()]),
+    orgUnitRef: referenceSummarySchema,
+    managerRef: referenceSummarySchema,
+  })
+  .strict();
+
 const cursorMetaSchema = z
   .object({
     nextCursor: z.string().trim().min(1).optional(),
@@ -106,6 +129,18 @@ const childrenResponseSchema = z
   .object({
     data: z.array(childrenOrgUnitSchema),
     meta: cursorMetaSchema,
+  })
+  .strict();
+
+const responsibilitiesResponseSchema = z
+  .object({
+    data: z.array(responsibilitySchema),
+  })
+  .strict();
+
+const responsibilityMutationResponseSchema = z
+  .object({
+    data: responsibilitySchema,
   })
   .strict();
 
@@ -162,6 +197,17 @@ export const fetchOrgUnitChildren = async (
   return childrenResponseSchema.parse(response);
 };
 
+export const fetchOrgUnitResponsibilities = async (
+  orgUnitId: string,
+): Promise<OrgUnitResponsibilityRecord[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/org-units/${encodeURIComponent(orgUnitId)}/responsibilities`,
+  });
+
+  return responsibilitiesResponseSchema.parse(response).data;
+};
+
 export const createOrgUnit = async (payload: OrgUnitCreatePayload): Promise<OrgUnitRecord> => {
   const response = await apiRequest<unknown, OrgUnitCreatePayload>({
     method: 'POST',
@@ -196,6 +242,50 @@ export const moveOrgUnit = async (
   });
 
   return detailResponseSchema.parse(response).data;
+};
+
+export const assignOrgUnitResponsibility = async (
+  orgUnitId: string,
+  payload: OrgUnitResponsibilityPayload,
+): Promise<OrgUnitResponsibilityRecord> => {
+  const response = await apiRequest<unknown, OrgUnitResponsibilityPayload>({
+    method: 'POST',
+    url: `/admin/org-units/${encodeURIComponent(orgUnitId)}/responsibilities`,
+    data: payload,
+  });
+
+  return responsibilityMutationResponseSchema.parse(response).data;
+};
+
+export const updateOrgUnitResponsibility = async (
+  orgUnitId: string,
+  assignmentId: string,
+  payload: OrgUnitResponsibilityUpdatePayload,
+): Promise<OrgUnitResponsibilityRecord> => {
+  const response = await apiRequest<unknown, OrgUnitResponsibilityUpdatePayload>({
+    method: 'PATCH',
+    url: `/admin/org-units/${encodeURIComponent(orgUnitId)}/responsibilities/${encodeURIComponent(
+      assignmentId,
+    )}`,
+    data: payload,
+  });
+
+  return responsibilityMutationResponseSchema.parse(response).data;
+};
+
+export const revokeOrgUnitResponsibility = async (
+  orgUnitId: string,
+  assignmentId: string,
+): Promise<OrgUnitResponsibilityRecord> => {
+  const response = await apiRequest<unknown>({
+    method: 'DELETE',
+    url: `/admin/org-units/${encodeURIComponent(orgUnitId)}/responsibilities/${encodeURIComponent(
+      assignmentId,
+    )}`,
+    data: {},
+  });
+
+  return responsibilityMutationResponseSchema.parse(response).data;
 };
 
 export const performOrgUnitLifecycleAction = async (

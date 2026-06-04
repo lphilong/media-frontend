@@ -12,11 +12,19 @@ import { z } from 'zod';
 import type {
   OrgUnitCreatePayload,
   OrgUnitMovePayload,
+  OrgUnitResponsibilityPayload,
+  OrgUnitResponsibilityRecord,
+  OrgUnitResponsibilityRole,
+  OrgUnitResponsibilityUpdatePayload,
   OrgUnitUpdatePayload,
 } from '@modules/org-unit/types/org-unit.types';
-import { loadOrgUnitReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import {
+  loadEmploymentProfileReferenceOptions,
+  loadOrgUnitReferenceOptions,
+} from '@shared/components/reference/admin-reference-options';
 import { ModuleMutationSurface } from '@shared/modules';
 import {
+  CheckboxField,
   FormGrid,
   GeneratedCodeNotice,
   ReferencePickerField,
@@ -49,6 +57,15 @@ type OrgUnitMoveSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: OrgUnitMovePayload) => Promise<void> | void;
 };
 
+type OrgUnitAssignResponsibilitySurfaceProps = BaseMutationSurfaceProps & {
+  onSubmit: (payload: OrgUnitResponsibilityPayload) => Promise<void> | void;
+};
+
+type OrgUnitEditResponsibilitySurfaceProps = BaseMutationSurfaceProps & {
+  assignment: OrgUnitResponsibilityRecord;
+  onSubmit: (payload: OrgUnitResponsibilityUpdatePayload) => Promise<void> | void;
+};
+
 const toNullableText = (value?: string): string | null => {
   const trimmed = value?.trim();
   return trimmed && trimmed.length > 0 ? trimmed : null;
@@ -60,6 +77,11 @@ const toOptionalText = (value?: string): string | undefined => {
 };
 
 const orgUnitTypeValues = ['DEPARTMENT', 'TEAM', 'BUSINESS_UNIT', 'SUPPORT_UNIT'] as const;
+const responsibilityRoleValues = [
+  'DEPARTMENT_OWNER',
+  'UNIT_MANAGER',
+  'UNIT_OPERATOR',
+] as const satisfies readonly OrgUnitResponsibilityRole[];
 
 const applySchemaErrors = <TValues extends FieldValues>(
   setError: UseFormSetError<TValues>,
@@ -119,6 +141,67 @@ const createOrgUnitMoveFormSchema = (
         });
       }
     });
+};
+
+const createResponsibilityFormSchema = (requiredMessage: string, tokenMessage: string) => {
+  return z
+    .object({
+      managerEmploymentProfileId: z
+        .string()
+        .trim()
+        .min(1, requiredMessage)
+        .regex(/^[A-Za-z0-9_-]+$/, tokenMessage),
+      role: z.enum(responsibilityRoleValues, { required_error: requiredMessage }),
+      includeDescendants: z.boolean(),
+      effectiveFrom: z.string().trim().optional(),
+      effectiveTo: z.string().trim().optional(),
+      isPrimary: z.boolean(),
+    })
+    .superRefine((value, context) => {
+      if (value.effectiveFrom && value.effectiveTo && value.effectiveTo < value.effectiveFrom) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: requiredMessage,
+          path: ['effectiveTo'],
+        });
+      }
+    });
+};
+
+const createResponsibilityEditFormSchema = (requiredMessage: string) => {
+  return z
+    .object({
+      role: z.enum(responsibilityRoleValues, { required_error: requiredMessage }),
+      includeDescendants: z.boolean(),
+      effectiveFrom: z.string().trim().optional(),
+      effectiveTo: z.string().trim().optional(),
+      isPrimary: z.boolean(),
+    })
+    .superRefine((value, context) => {
+      if (value.effectiveFrom && value.effectiveTo && value.effectiveTo < value.effectiveFrom) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: requiredMessage,
+          path: ['effectiveTo'],
+        });
+      }
+    });
+};
+
+const toOptionalDateText = (value?: string): string | undefined => {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
+};
+
+const toDateInputValue = (value?: number | string | null): string => {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toISOString().slice(0, 10);
 };
 
 type OrgUnitCreateFormValues = {
@@ -381,6 +464,199 @@ export const OrgUnitMoveSurface = ({
           clearable
           clearLabel={t('org-unit:actions.clearParent')}
         />
+      </ModuleMutationSurface>
+    </FormProvider>
+  );
+};
+
+type OrgUnitResponsibilityFormValues = {
+  managerEmploymentProfileId: string;
+  role: OrgUnitResponsibilityRole | '';
+  includeDescendants: boolean;
+  effectiveFrom: string;
+  effectiveTo: string;
+  isPrimary: boolean;
+};
+
+export const OrgUnitAssignResponsibilitySurface = ({
+  onSubmit,
+  onCancel,
+  isPending = false,
+}: OrgUnitAssignResponsibilitySurfaceProps): JSX.Element => {
+  const { t } = useTranslation(['org-unit', 'common']);
+  const form = useForm<OrgUnitResponsibilityFormValues>({
+    defaultValues: {
+      managerEmploymentProfileId: '',
+      role: '',
+      includeDescendants: false,
+      effectiveFrom: '',
+      effectiveTo: '',
+      isPrimary: false,
+    },
+  });
+
+  const schema = useMemo(
+    () =>
+      createResponsibilityFormSchema(
+        t('org-unit:validation.required'),
+        t('org-unit:validation.invalidReferenceToken'),
+      ),
+    [t],
+  );
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      applySchemaErrors(form.setError, parsed.error, 'managerEmploymentProfileId');
+      return;
+    }
+
+    await onSubmit({
+      managerEmploymentProfileId: parsed.data.managerEmploymentProfileId,
+      role: parsed.data.role,
+      includeDescendants: parsed.data.includeDescendants,
+      effectiveFrom: toOptionalDateText(parsed.data.effectiveFrom),
+      effectiveTo: toOptionalDateText(parsed.data.effectiveTo) ?? null,
+      isPrimary: parsed.data.isPrimary,
+    });
+  });
+
+  return (
+    <FormProvider {...form}>
+      <ModuleMutationSurface
+        title={t('org-unit:responsibilities.assignTitle')}
+        subtitle={t('org-unit:responsibilities.assignSubtitle')}
+        kind="action"
+        submitLabel={t('org-unit:responsibilities.assign')}
+        pendingLabel={t('org-unit:responsibilities.assigning')}
+        cancelLabel={t('common:actions.cancel')}
+        onSubmit={(event) => void handleSubmit(event)}
+        onCancel={onCancel}
+        isPending={isPending}
+      >
+        <FormGrid columns={2}>
+          <ReferencePickerField
+            name="managerEmploymentProfileId"
+            label={t('org-unit:responsibilities.managerEmploymentProfile')}
+            pickerId="org-unit-responsibility-manager"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            helperText={t('org-unit:responsibilities.managerHelp')}
+            placeholder={t('org-unit:responsibilities.managerSearch')}
+          />
+          <SelectField
+            name="role"
+            label={t('org-unit:responsibilities.role')}
+            placeholder={t('org-unit:responsibilities.rolePlaceholder')}
+            options={responsibilityRoleValues.map((value) => ({
+              value,
+              label: t(`org-unit:responsibilityRoles.${value}`),
+            }))}
+          />
+          <TextInputField
+            name="effectiveFrom"
+            type="date"
+            label={t('org-unit:responsibilities.effectiveFrom')}
+          />
+          <TextInputField
+            name="effectiveTo"
+            type="date"
+            label={t('org-unit:responsibilities.effectiveTo')}
+          />
+          <CheckboxField
+            name="includeDescendants"
+            label={t('org-unit:responsibilities.includeDescendants')}
+          />
+          <CheckboxField name="isPrimary" label={t('org-unit:responsibilities.isPrimary')} />
+        </FormGrid>
+      </ModuleMutationSurface>
+    </FormProvider>
+  );
+};
+
+type OrgUnitResponsibilityEditFormValues = {
+  role: OrgUnitResponsibilityRole;
+  includeDescendants: boolean;
+  effectiveFrom: string;
+  effectiveTo: string;
+  isPrimary: boolean;
+};
+
+export const OrgUnitEditResponsibilitySurface = ({
+  assignment,
+  onSubmit,
+  onCancel,
+  isPending = false,
+}: OrgUnitEditResponsibilitySurfaceProps): JSX.Element => {
+  const { t } = useTranslation(['org-unit', 'common']);
+  const form = useForm<OrgUnitResponsibilityEditFormValues>({
+    defaultValues: {
+      role: assignment.role,
+      includeDescendants: assignment.includeDescendants,
+      effectiveFrom: toDateInputValue(assignment.effectiveFrom),
+      effectiveTo: toDateInputValue(assignment.effectiveTo),
+      isPrimary: assignment.isPrimary,
+    },
+  });
+
+  const schema = useMemo(
+    () => createResponsibilityEditFormSchema(t('org-unit:validation.required')),
+    [t],
+  );
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      applySchemaErrors(form.setError, parsed.error, 'role');
+      return;
+    }
+
+    await onSubmit({
+      role: parsed.data.role,
+      includeDescendants: parsed.data.includeDescendants,
+      effectiveFrom: toOptionalDateText(parsed.data.effectiveFrom),
+      effectiveTo: toOptionalDateText(parsed.data.effectiveTo) ?? null,
+      isPrimary: parsed.data.isPrimary,
+    });
+  });
+
+  return (
+    <FormProvider {...form}>
+      <ModuleMutationSurface
+        title={t('org-unit:responsibilities.editTitle')}
+        subtitle={t('org-unit:responsibilities.editSubtitle')}
+        kind="edit"
+        submitLabel={t('org-unit:responsibilities.save')}
+        pendingLabel={t('org-unit:responsibilities.saving')}
+        cancelLabel={t('common:actions.cancel')}
+        onSubmit={(event) => void handleSubmit(event)}
+        onCancel={onCancel}
+        isPending={isPending}
+      >
+        <FormGrid columns={2}>
+          <SelectField
+            name="role"
+            label={t('org-unit:responsibilities.role')}
+            options={responsibilityRoleValues.map((value) => ({
+              value,
+              label: t(`org-unit:responsibilityRoles.${value}`),
+            }))}
+          />
+          <TextInputField
+            name="effectiveFrom"
+            type="date"
+            label={t('org-unit:responsibilities.effectiveFrom')}
+          />
+          <TextInputField
+            name="effectiveTo"
+            type="date"
+            label={t('org-unit:responsibilities.effectiveTo')}
+          />
+          <CheckboxField
+            name="includeDescendants"
+            label={t('org-unit:responsibilities.includeDescendants')}
+          />
+          <CheckboxField name="isPrimary" label={t('org-unit:responsibilities.isPrimary')} />
+        </FormGrid>
       </ModuleMutationSurface>
     </FormProvider>
   );

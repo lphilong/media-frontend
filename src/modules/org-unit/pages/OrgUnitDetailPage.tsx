@@ -9,18 +9,27 @@ import {
 } from '@app/router/reference-links';
 import { createOrgUnitActionRailItems } from '@modules/org-unit/actions/org-unit-action-rail';
 import {
+  OrgUnitAssignResponsibilitySurface,
   OrgUnitEditSurface,
+  OrgUnitEditResponsibilitySurface,
   OrgUnitMoveSurface,
 } from '@modules/org-unit/forms/org-unit-mutation-forms';
 import {
+  useAssignOrgUnitResponsibilityMutation,
   useMoveOrgUnitMutation,
   useOrgUnitChildren,
   useOrgUnitDetail,
   useOrgUnitLifecycleMutation,
+  useOrgUnitResponsibilities,
+  useRevokeOrgUnitResponsibilityMutation,
+  useUpdateOrgUnitResponsibilityMutation,
   useUpdateOrgUnitMutation,
 } from '@modules/org-unit/hooks/use-org-unit';
 import { createOrgUnitChildrenColumns } from '@modules/org-unit/tables/org-unit-columns';
-import type { OrgUnitLifecycleAction } from '@modules/org-unit/types/org-unit.types';
+import type {
+  OrgUnitLifecycleAction,
+  OrgUnitResponsibilityRecord,
+} from '@modules/org-unit/types/org-unit.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
   ActionRail,
@@ -39,6 +48,7 @@ import {
 import { useDestructiveConfirm, useMutationFeedback } from '@shared/components/primitives';
 import {
   applyActionCapabilityHints,
+  canShowAction,
   createActionCapabilityHint,
   PERMISSIONS,
   useCurrentActorCapabilities,
@@ -52,7 +62,12 @@ import {
 import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
-type ActiveMutationSurface = 'edit' | 'move' | null;
+type ActiveMutationSurface =
+  | 'edit'
+  | 'move'
+  | 'assign-responsibility'
+  | 'edit-responsibility'
+  | null;
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -89,6 +104,15 @@ const statusToneMap = {
   ARCHIVED: 'muted',
 } as const;
 
+const responsibilityStatusToneMap = {
+  ACTIVE: 'success',
+  INACTIVE: 'warning',
+  REMOVED: 'muted',
+} as const;
+
+const readResponsibilityManagerLabel = (assignment: OrgUnitResponsibilityRecord): string =>
+  readReferenceDisplay(assignment.managerRef, assignment.managerEmploymentProfileId);
+
 export const OrgUnitDetailPage = (): JSX.Element => {
   const { orgUnitId } = useParams<{ orgUnitId: string }>();
   const { t } = useTranslation(['org-unit', 'common', 'errors']);
@@ -99,21 +123,28 @@ export const OrgUnitDetailPage = (): JSX.Element => {
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [activeSurface, setActiveSurface] = useState<ActiveMutationSurface>(null);
+  const [selectedResponsibility, setSelectedResponsibility] =
+    useState<OrgUnitResponsibilityRecord | null>(null);
   const [childrenCursor, setChildrenCursor] = useState<string | undefined>(undefined);
   const [, setChildrenCursorStack] = useState(createCursorStack);
 
   useEffect(() => {
     setActiveSurface(null);
+    setSelectedResponsibility(null);
     setChildrenCursor(undefined);
     setChildrenCursorStack(createCursorStack());
   }, [orgUnitId]);
 
   const detailQuery = useOrgUnitDetail(orgUnitId);
   const childrenQuery = useOrgUnitChildren(orgUnitId, { cursor: childrenCursor, limit: 20 });
+  const responsibilitiesQuery = useOrgUnitResponsibilities(orgUnitId);
 
   const updateMutation = useUpdateOrgUnitMutation();
   const moveMutation = useMoveOrgUnitMutation();
   const lifecycleMutation = useOrgUnitLifecycleMutation();
+  const assignResponsibilityMutation = useAssignOrgUnitResponsibilityMutation();
+  const updateResponsibilityMutation = useUpdateOrgUnitResponsibilityMutation();
+  const revokeResponsibilityMutation = useRevokeOrgUnitResponsibilityMutation();
 
   const detailError = detailQuery.error as NormalizedApiError | null;
   const detailState = useMemo(() => {
@@ -208,6 +239,80 @@ export const OrgUnitDetailPage = (): JSX.Element => {
       notifyError(error as NormalizedApiError);
     }
   };
+
+  const onAssignResponsibilitySubmit = async (
+    payload: Parameters<typeof assignResponsibilityMutation.mutateAsync>[0]['payload'],
+  ) => {
+    if (!record) {
+      return;
+    }
+
+    try {
+      await assignResponsibilityMutation.mutateAsync({
+        orgUnitId: record.id,
+        payload,
+      });
+      notifySuccess('org-unit:feedback.responsibilityAssigned');
+      setActiveSurface(null);
+    } catch (error) {
+      notifyError(error as NormalizedApiError);
+    }
+  };
+
+  const onEditResponsibilitySubmit = async (
+    payload: Parameters<typeof updateResponsibilityMutation.mutateAsync>[0]['payload'],
+  ) => {
+    if (!record || !selectedResponsibility) {
+      return;
+    }
+
+    try {
+      await updateResponsibilityMutation.mutateAsync({
+        orgUnitId: record.id,
+        assignmentId: selectedResponsibility.id,
+        payload,
+      });
+      notifySuccess('org-unit:feedback.responsibilityUpdated');
+      setActiveSurface(null);
+      setSelectedResponsibility(null);
+    } catch (error) {
+      notifyError(error as NormalizedApiError);
+    }
+  };
+
+  const onRevokeResponsibility = useCallback(
+    async (assignment: OrgUnitResponsibilityRecord) => {
+      if (!record) {
+        return;
+      }
+
+      const confirmed = await requestDestructiveConfirm({
+        description: t('org-unit:confirm.revokeResponsibility'),
+      });
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await revokeResponsibilityMutation.mutateAsync({
+          orgUnitId: record.id,
+          assignmentId: assignment.id,
+        });
+        notifySuccess('org-unit:feedback.responsibilityRevoked');
+      } catch (error) {
+        notifyError(error as NormalizedApiError);
+      }
+    },
+    [
+      notifyError,
+      notifySuccess,
+      record,
+      requestDestructiveConfirm,
+      revokeResponsibilityMutation,
+      t,
+    ],
+  );
 
   const onLifecycleAction = useCallback(
     async (action: OrgUnitLifecycleAction) => {
@@ -315,6 +420,9 @@ export const OrgUnitDetailPage = (): JSX.Element => {
   ]);
 
   const childrenColumns = useMemo(() => createOrgUnitChildrenColumns(t), [t]);
+  const canManageResponsibilities = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.ORG_UNIT_UPDATE,
+  });
 
   return (
     <ModuleDetailScreenShell
@@ -446,12 +554,133 @@ export const OrgUnitDetailPage = (): JSX.Element => {
                 onSubmit={onMoveSubmit}
               />
             ) : null}
+            {activeSurface === 'assign-responsibility' ? (
+              <OrgUnitAssignResponsibilitySurface
+                isPending={assignResponsibilityMutation.isPending}
+                onCancel={() => setActiveSurface(null)}
+                onSubmit={onAssignResponsibilitySubmit}
+              />
+            ) : null}
+            {activeSurface === 'edit-responsibility' && selectedResponsibility ? (
+              <OrgUnitEditResponsibilitySurface
+                assignment={selectedResponsibility}
+                isPending={updateResponsibilityMutation.isPending}
+                onCancel={() => {
+                  setActiveSurface(null);
+                  setSelectedResponsibility(null);
+                }}
+                onSubmit={onEditResponsibilitySubmit}
+              />
+            ) : null}
           </div>
         ) : undefined
       }
       relatedSection={
         record ? (
           <div className="space-y-4">
+            <RelatedSectionShell title={t('org-unit:responsibilities.title')}>
+              <div className="space-y-3">
+                <p className="text-sm text-muted">{t('org-unit:responsibilities.helper')}</p>
+                <div className="flex justify-end">
+                  {canManageResponsibilities && record.status === 'ACTIVE' ? (
+                    <button
+                      type="button"
+                      className="rounded border border-border px-3 py-2 text-sm font-medium text-fg hover:bg-bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={() => setActiveSurface('assign-responsibility')}
+                      disabled={assignResponsibilityMutation.isPending}
+                    >
+                      {t('org-unit:responsibilities.assign')}
+                    </button>
+                  ) : null}
+                </div>
+                {responsibilitiesQuery.isPending ? (
+                  <LoadingState lines={3} />
+                ) : responsibilitiesQuery.data && responsibilitiesQuery.data.length > 0 ? (
+                  <div className="divide-y divide-border rounded border border-border">
+                    {responsibilitiesQuery.data.map((assignment) => (
+                      <div
+                        key={assignment.id}
+                        className="flex flex-col gap-3 px-3 py-3 md:flex-row md:items-center md:justify-between"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-medium text-fg">
+                              {readResponsibilityManagerLabel(assignment)}
+                            </p>
+                            <StatusBadge
+                              status={assignment.status}
+                              toneByStatus={responsibilityStatusToneMap}
+                              label={t(`org-unit:responsibilityStatuses.${assignment.status}`)}
+                            />
+                          </div>
+                          <p className="text-xs text-muted">
+                            {assignment.managerRef.code ?? assignment.managerEmploymentProfileId}
+                            {assignment.managerRef.title ? ` - ${assignment.managerRef.title}` : ''}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {t(`org-unit:responsibilityRoles.${assignment.role}`)}
+                            {assignment.isPrimary
+                              ? ` - ${t('org-unit:responsibilities.primary')}`
+                              : ''}
+                            {assignment.includeDescendants
+                              ? ` - ${t('org-unit:responsibilities.descendantsIncluded')}`
+                              : ''}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {t('org-unit:responsibilities.effectiveRange', {
+                              from: formatBusinessTimestamp(assignment.effectiveFrom),
+                              to: assignment.effectiveTo
+                                ? formatBusinessTimestamp(assignment.effectiveTo)
+                                : t('org-unit:responsibilities.openEnded'),
+                            })}
+                          </p>
+                        </div>
+                        {canManageResponsibilities && assignment.status === 'ACTIVE' ? (
+                          <div className="flex flex-wrap gap-2 self-start md:self-center">
+                            <button
+                              type="button"
+                              className="rounded border border-border px-3 py-2 text-sm font-medium text-fg hover:bg-bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={
+                                updateResponsibilityMutation.isPending &&
+                                updateResponsibilityMutation.variables?.assignmentId ===
+                                  assignment.id
+                              }
+                              onClick={() => {
+                                setSelectedResponsibility(assignment);
+                                setActiveSurface('edit-responsibility');
+                              }}
+                            >
+                              {t('common:actions.edit')}
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded border border-danger px-3 py-2 text-sm font-medium text-danger hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={
+                                revokeResponsibilityMutation.isPending &&
+                                revokeResponsibilityMutation.variables?.assignmentId ===
+                                  assignment.id
+                              }
+                              onClick={() => void onRevokeResponsibility(assignment)}
+                            >
+                              {t('org-unit:responsibilities.revoke')}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded border border-border px-3 py-4">
+                    <p className="text-sm font-medium text-fg">
+                      {t('org-unit:responsibilities.emptyTitle')}
+                    </p>
+                    <p className="mt-1 text-sm text-muted">
+                      {t('org-unit:responsibilities.emptyMessage')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </RelatedSectionShell>
             <RelatedSectionShell title={t('org-unit:related.navigationTitle')}>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="rounded border border-border bg-bg px-3 py-2">

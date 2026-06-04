@@ -23,6 +23,7 @@ type ReferenceSummary = {
   id: string;
   code?: string;
   name?: string;
+  title?: string;
   displayName?: string;
   status?: string;
 };
@@ -41,6 +42,38 @@ type OrgUnitRecord = {
   createdAt: number;
   updatedAt: number;
 };
+
+type OrgUnitResponsibilityRole = 'DEPARTMENT_OWNER' | 'UNIT_MANAGER' | 'UNIT_OPERATOR';
+type OrgUnitResponsibilityStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
+
+type OrgUnitResponsibilityRecord = {
+  id: string;
+  orgUnitId: string;
+  managerEmploymentProfileId: string;
+  role: OrgUnitResponsibilityRole;
+  status: OrgUnitResponsibilityStatus;
+  includeDescendants: boolean;
+  actionMask: string[];
+  effectiveFrom: number;
+  effectiveTo: number | null;
+  isPrimary: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+const orgUnitResponsibilityRoles = [
+  'DEPARTMENT_OWNER',
+  'UNIT_MANAGER',
+  'UNIT_OPERATOR',
+] as const;
+
+const orgUnitResponsibilityUpdateFields = [
+  'role',
+  'includeDescendants',
+  'effectiveFrom',
+  'effectiveTo',
+  'isPrimary',
+] as const;
 
 type EmploymentStatus = 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED' | 'ARCHIVED';
 type ContractStatus = 'NONE' | 'PENDING_SIGNATURE' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED';
@@ -181,6 +214,44 @@ const parseCanonicalDateToUtcMidnight = <TFallback extends number | null>(
     date.getUTCDate() === day
     ? utcMidnight
     : fallback;
+};
+
+const parseRequiredResponsibilityDate = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utcMidnight = Date.UTC(year, month - 1, day);
+  const date = new Date(utcMidnight);
+
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? utcMidnight
+    : null;
+};
+
+const responsibilityRangesOverlap = (
+  leftFrom: number,
+  leftTo: number | null,
+  rightFrom: number,
+  rightTo: number | null,
+): boolean => {
+  const normalizedLeftTo = leftTo ?? Number.MAX_SAFE_INTEGER;
+  const normalizedRightTo = rightTo ?? Number.MAX_SAFE_INTEGER;
+  return leftFrom <= normalizedRightTo && rightFrom <= normalizedLeftTo;
 };
 
 const initialOrgUnits: OrgUnitRecord[] = [
@@ -346,13 +417,65 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
   },
 ];
 
+const initialOrgUnitResponsibilities: OrgUnitResponsibilityRecord[] = [
+  {
+    id: 'ou-responsibility-owner',
+    orgUnitId: 'ou-root',
+    managerEmploymentProfileId: 'ep-001',
+    role: 'DEPARTMENT_OWNER',
+    status: 'ACTIVE',
+    includeDescendants: true,
+    actionMask: [],
+    effectiveFrom: Date.UTC(2026, 0, 1),
+    effectiveTo: null,
+    isPrimary: true,
+    createdAt: now - 2_000,
+    updatedAt: now - 2_000,
+  },
+  {
+    id: 'ou-responsibility-manager',
+    orgUnitId: 'ou-root',
+    managerEmploymentProfileId: 'ep-002',
+    role: 'UNIT_MANAGER',
+    status: 'ACTIVE',
+    includeDescendants: false,
+    actionMask: [],
+    effectiveFrom: Date.UTC(2026, 0, 1),
+    effectiveTo: null,
+    isPrimary: false,
+    createdAt: now - 1_900,
+    updatedAt: now - 1_900,
+  },
+  {
+    id: 'ou-responsibility-operator',
+    orgUnitId: 'ou-root',
+    managerEmploymentProfileId: 'ep-003',
+    role: 'UNIT_OPERATOR',
+    status: 'INACTIVE',
+    includeDescendants: false,
+    actionMask: [],
+    effectiveFrom: Date.UTC(2026, 0, 1),
+    effectiveTo: Date.UTC(2026, 1, 1),
+    isPrimary: false,
+    createdAt: now - 1_800,
+    updatedAt: now - 1_700,
+  },
+];
+
 const cloneOrgUnits = (): OrgUnitRecord[] => initialOrgUnits.map((record) => ({ ...record }));
 
 const cloneEmploymentProfiles = (): EmploymentProfileRecord[] =>
   initialEmploymentProfiles.map((record) => ({ ...record }));
 
+const cloneOrgUnitResponsibilities = (): OrgUnitResponsibilityRecord[] =>
+  initialOrgUnitResponsibilities.map((record) => ({
+    ...record,
+    actionMask: [...record.actionMask],
+  }));
+
 let orgUnits: OrgUnitRecord[] = cloneOrgUnits();
 let employmentProfiles: EmploymentProfileRecord[] = cloneEmploymentProfiles();
+let orgUnitResponsibilities: OrgUnitResponsibilityRecord[] = cloneOrgUnitResponsibilities();
 
 const userRefs = new Map<string, ReferenceSummary>([
   [
@@ -370,6 +493,7 @@ export const resetMockData = (): void => {
   employmentSeed = initialEmploymentSeed;
   orgUnits = cloneOrgUnits();
   employmentProfiles = cloneEmploymentProfiles();
+  orgUnitResponsibilities = cloneOrgUnitResponsibilities();
   resetWave4MockData();
   resetWave5MockData();
   resetWave6MockData();
@@ -402,6 +526,7 @@ const toEmploymentProfileRef = (employmentProfileId?: string | null): ReferenceS
         code: record.employeeCode,
         displayName: record.displayName,
         name: record.legalName,
+        title: record.jobTitle,
         status: record.employmentStatus,
       }
     : null;
@@ -467,6 +592,24 @@ const toOrgUnitDetail = (record: OrgUnitRecord) => {
       depth: record.depth,
       ancestorChain,
     },
+  };
+};
+
+const toOrgUnitResponsibilityDetail = (record: OrgUnitResponsibilityRecord) => {
+  return {
+    id: record.id,
+    orgUnitId: record.orgUnitId,
+    managerEmploymentProfileId: record.managerEmploymentProfileId,
+    role: record.role,
+    status: record.status,
+    includeDescendants: record.includeDescendants,
+    effectiveFrom: record.effectiveFrom,
+    effectiveTo: record.effectiveTo,
+    isPrimary: record.isPrimary,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    orgUnitRef: toOrgUnitRef(record.orgUnitId),
+    managerRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
   };
 };
 
@@ -945,6 +1088,200 @@ export const handlers = [
     const paged = paginate(rows.map(toOrgUnitChildItem), url.searchParams);
 
     return HttpResponse.json(paged);
+  }),
+  http.get('*/admin/org-units/:orgUnitId/responsibilities', ({ params }) => {
+    const orgUnitId = String(params.orgUnitId);
+    const orgUnit = readOrgUnit(orgUnitId);
+    if (!orgUnit) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    return HttpResponse.json({
+      data: orgUnitResponsibilities
+        .filter((item) => item.orgUnitId === orgUnitId)
+        .map(toOrgUnitResponsibilityDetail),
+    });
+  }),
+  http.post('*/admin/org-units/:orgUnitId/responsibilities', async ({ params, request }) => {
+    const orgUnitId = String(params.orgUnitId);
+    const orgUnit = readOrgUnit(orgUnitId);
+    if (!orgUnit) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (orgUnit.status !== 'ACTIVE') {
+      return HttpResponse.json({ message: 'org-unit:validation.inactiveOrgUnit' }, { status: 409 });
+    }
+
+    const body = await parseJsonBody(request);
+    const managerEmploymentProfileId =
+      typeof body.managerEmploymentProfileId === 'string'
+        ? body.managerEmploymentProfileId.trim()
+        : '';
+    const manager = readEmploymentProfile(managerEmploymentProfileId);
+    if (!manager || !['ACTIVE', 'ON_LEAVE'].includes(manager.employmentStatus)) {
+      return HttpResponse.json(
+        { message: 'org-unit:validation.managerEmploymentProfileInvalid' },
+        { status: 422 },
+      );
+    }
+
+    const role = String(body.role ?? '') as OrgUnitResponsibilityRole;
+    if (!orgUnitResponsibilityRoles.includes(role)) {
+      return HttpResponse.json({ message: 'org-unit:validation.invalidRole' }, { status: 422 });
+    }
+
+    const effectiveFrom = parseCanonicalDateToUtcMidnight(body.effectiveFrom, Date.now());
+    const effectiveTo = parseCanonicalDateToUtcMidnight(body.effectiveTo, null);
+    if (effectiveTo !== null && effectiveTo < effectiveFrom) {
+      return HttpResponse.json(
+        { message: 'org-unit:validation.invalidEffectiveRange' },
+        { status: 422 },
+      );
+    }
+
+    const duplicate = orgUnitResponsibilities.some(
+      (item) =>
+        item.orgUnitId === orgUnitId &&
+        item.managerEmploymentProfileId === managerEmploymentProfileId &&
+        item.role === role &&
+        item.status === 'ACTIVE',
+    );
+    if (duplicate) {
+      return HttpResponse.json(
+        { message: 'org-unit:validation.duplicateResponsibility' },
+        { status: 409 },
+      );
+    }
+
+    const nextRecord: OrgUnitResponsibilityRecord = {
+      id: `ou-responsibility-${orgUnitResponsibilities.length + 1}`,
+      orgUnitId,
+      managerEmploymentProfileId,
+      role,
+      status: 'ACTIVE',
+      includeDescendants: Boolean(body.includeDescendants),
+      actionMask: [],
+      effectiveFrom,
+      effectiveTo,
+      isPrimary: Boolean(body.isPrimary),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    orgUnitResponsibilities.push(nextRecord);
+
+    return HttpResponse.json({ data: toOrgUnitResponsibilityDetail(nextRecord) });
+  }),
+  http.patch(
+    '*/admin/org-units/:orgUnitId/responsibilities/:assignmentId',
+    async ({ params, request }) => {
+      const orgUnitId = String(params.orgUnitId);
+      const assignment = orgUnitResponsibilities.find(
+        (item) => item.id === String(params.assignmentId) && item.orgUnitId === orgUnitId,
+      );
+      if (!assignment) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (assignment.status !== 'ACTIVE') {
+        return HttpResponse.json(
+          { message: 'org-unit:validation.inactiveResponsibility' },
+          { status: 409 },
+        );
+      }
+
+      const body = await parseJsonBody(request);
+      const unexpectedFields = Object.keys(body).filter(
+        (field) =>
+          !orgUnitResponsibilityUpdateFields.includes(
+            field as (typeof orgUnitResponsibilityUpdateFields)[number],
+          ),
+      );
+      if (unexpectedFields.length > 0) {
+        return HttpResponse.json(
+          { message: 'org-unit:validation.unsupportedResponsibilityField' },
+          { status: 422 },
+        );
+      }
+
+      const role = body.role ? (String(body.role) as OrgUnitResponsibilityRole) : assignment.role;
+      if (!orgUnitResponsibilityRoles.includes(role)) {
+        return HttpResponse.json({ message: 'org-unit:validation.invalidRole' }, { status: 422 });
+      }
+
+      const effectiveFrom =
+        body.effectiveFrom === undefined
+          ? assignment.effectiveFrom
+          : parseRequiredResponsibilityDate(body.effectiveFrom);
+      const effectiveTo =
+        body.effectiveTo === undefined
+          ? assignment.effectiveTo
+          : body.effectiveTo === null
+            ? null
+            : parseRequiredResponsibilityDate(body.effectiveTo);
+      if (
+        effectiveFrom === null ||
+        (body.effectiveTo !== undefined && body.effectiveTo !== null && effectiveTo === null)
+      ) {
+        return HttpResponse.json(
+          { message: 'org-unit:validation.invalidEffectiveRange' },
+          { status: 422 },
+        );
+      }
+      if (effectiveTo !== null && effectiveTo < effectiveFrom) {
+        return HttpResponse.json(
+          { message: 'org-unit:validation.invalidEffectiveRange' },
+          { status: 422 },
+        );
+      }
+
+      const duplicate = orgUnitResponsibilities.some(
+        (item) =>
+          item.id !== assignment.id &&
+          item.orgUnitId === orgUnitId &&
+          item.managerEmploymentProfileId === assignment.managerEmploymentProfileId &&
+          item.role === role &&
+          item.status === 'ACTIVE' &&
+          responsibilityRangesOverlap(
+            item.effectiveFrom,
+            item.effectiveTo,
+            effectiveFrom,
+            effectiveTo,
+          ),
+      );
+      if (duplicate) {
+        return HttpResponse.json(
+          { message: 'org-unit:validation.duplicateResponsibility' },
+          { status: 409 },
+        );
+      }
+
+      assignment.role = role;
+      assignment.effectiveFrom = effectiveFrom;
+      assignment.effectiveTo = effectiveTo;
+      if (typeof body.includeDescendants === 'boolean') {
+        assignment.includeDescendants = body.includeDescendants;
+      }
+      if (typeof body.isPrimary === 'boolean') {
+        assignment.isPrimary = body.isPrimary;
+      }
+      assignment.updatedAt = Date.now();
+
+      return HttpResponse.json({ data: toOrgUnitResponsibilityDetail(assignment) });
+    },
+  ),
+  http.delete('*/admin/org-units/:orgUnitId/responsibilities/:assignmentId', ({ params }) => {
+    const orgUnitId = String(params.orgUnitId);
+    const assignment = orgUnitResponsibilities.find(
+      (item) => item.id === String(params.assignmentId) && item.orgUnitId === orgUnitId,
+    );
+    if (!assignment) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    assignment.status = 'INACTIVE';
+    assignment.effectiveTo = Date.now();
+    assignment.updatedAt = Date.now();
+
+    return HttpResponse.json({ data: toOrgUnitResponsibilityDetail(assignment) });
   }),
   http.get('*/admin/org-units/:orgUnitId', ({ params }) => {
     const orgUnit = readOrgUnit(String(params.orgUnitId));
