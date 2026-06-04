@@ -7,7 +7,8 @@
     "kpi": "KPI toi quan ly"
   },
   "actions": {
-    "open": "Mo"
+    "open": "Mo",
+    "backToKpi": "Quay lai KPI quan ly"
   },
   "status": {
     "readOnlyShell": "Pham vi quan ly"
@@ -59,6 +60,23 @@
       "period": "Ky",
       "status": "Trang thai",
       "actions": "Thao tac"
+    },
+    "detail": {
+      "subject": "Doi tuong",
+      "timezone": "Mui gio",
+      "allocationCount": "Phan bo",
+      "description": "Mo ta",
+      "metricsTableLabel": "Chi tieu KPI quan ly",
+      "metric": "Chi tieu",
+      "target": "Muc tieu",
+      "unit": "Don vi",
+      "allocationSummary": "Tom tat phan bo",
+      "noAllocations": "Chua co dong phan bo hien thi cho ke hoach nay.",
+      "units": {
+        "VND": "VND",
+        "COUNT": "So luong",
+        "HOUR": "Gio"
+      }
     }
   },
   "empty": {
@@ -69,12 +87,16 @@
     "kpiTitle": "Chua co KPI quan ly",
     "kpiMessage": "KPI don vi va KPI nhom talent chi hien thi khi co phan cong hieu luc.",
     "kpiListTitle": "Chua co KPI da cong bo",
-    "kpiListMessage": "Chua co ke hoach KPI da cong bo trong pham vi quan ly nay."
+    "kpiListMessage": "Chua co ke hoach KPI da cong bo trong pham vi quan ly nay.",
+    "kpiDetailUnavailableTitle": "Khong xem duoc ke hoach KPI",
+    "kpiDetailUnavailableMessage": "Ke hoach KPI nay khong nam trong phan cong quan ly hien tai cua ban."
   },
   "errors": {
     "contextTitle": "Khong tai duoc khong gian quan ly",
     "contextMessage": "Khong tai duoc ngu canh khong gian quan ly cua ban.",
     "kpiTitle": "Khong tai duoc KPI quan ly",
-    "kpiMessage": "Khong tai duoc cac ke hoach KPI quan ly."
+    "kpiMessage": "Khong tai duoc cac ke hoach KPI quan ly.",
+    "kpiDetailTitle": "Khong tai duoc chi tiet KPI quan ly",
+    "kpiDetailMessage": "Khong tai duoc ke hoach KPI da chon."
   }
 }

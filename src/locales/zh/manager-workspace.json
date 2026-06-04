@@ -1,80 +1,102 @@
 {
-  "title": "Manager Workspace",
-  "subtitle": "Assignment-scoped operations for managers.",
+  "title": "管理工作台",
+  "subtitle": "面向管理者的分配范围内操作。",
   "nav": {
-    "label": "Manager workspace navigation",
-    "overview": "Overview",
-    "kpi": "My Managed KPI"
+    "label": "管理工作台导航",
+    "overview": "概览",
+    "kpi": "我管理的 KPI"
   },
   "actions": {
-    "open": "Open"
+    "open": "打开",
+    "backToKpi": "返回管理 KPI"
   },
   "status": {
-    "readOnlyShell": "Manager scope"
+    "readOnlyShell": "管理范围"
   },
   "values": {
-    "notAvailable": "Not available"
+    "notAvailable": "暂无数据"
   },
   "readiness": {
-    "NO_LINKED_EMPLOYMENT_PROFILE": "No linked Employment Profile",
-    "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Employment Profile is not active",
-    "NO_MANAGED_SCOPE_ASSIGNED": "No managed scope assigned",
-    "MISSING_KPI_MANAGER_CAPABILITY": "KPI manager capability is missing"
+    "NO_LINKED_EMPLOYMENT_PROFILE": "未关联雇佣档案",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "雇佣档案未处于有效状态",
+    "NO_MANAGED_SCOPE_ASSIGNED": "未分配管理范围",
+    "MISSING_KPI_MANAGER_CAPABILITY": "缺少 KPI 管理能力"
   },
   "overview": {
-    "profileTitle": "Manager Profile",
-    "scopeTitle": "Managed Scope"
+    "profileTitle": "管理者档案",
+    "scopeTitle": "管理范围"
   },
   "fields": {
-    "displayName": "Display name",
-    "employeeCode": "Employee code",
-    "status": "Status"
+    "displayName": "显示名称",
+    "employeeCode": "员工编号",
+    "status": "状态"
   },
   "employmentStatus": {
-    "ACTIVE": "Active",
-    "ON_LEAVE": "On leave",
-    "SUSPENDED": "Suspended",
-    "TERMINATED": "Terminated",
-    "ARCHIVED": "Archived"
+    "ACTIVE": "在职",
+    "ON_LEAVE": "休假中",
+    "SUSPENDED": "已暂停",
+    "TERMINATED": "已离职",
+    "ARCHIVED": "已归档"
   },
   "orgUnitRole": {
-    "DEPARTMENT_OWNER": "Department owner",
-    "UNIT_MANAGER": "Unit manager",
-    "UNIT_OPERATOR": "Unit operator"
+    "DEPARTMENT_OWNER": "部门负责人",
+    "UNIT_MANAGER": "单元管理者",
+    "UNIT_OPERATOR": "单元操作员"
   },
   "kpi": {
-    "title": "My Managed KPI",
-    "summary": "Published KPI plans visible through your effective manager assignments.",
-    "tableLabel": "Managed KPI plans",
+    "title": "我管理的 KPI",
+    "summary": "通过当前有效管理分配可见的已发布 KPI 计划。",
+    "tableLabel": "管理范围内 KPI 计划",
     "tabs": {
-      "unit": "Unit KPI",
-      "talentGroup": "Talent Group KPI"
+      "unit": "单元 KPI",
+      "talentGroup": "艺人组 KPI"
     },
     "subject": {
-      "unit": "Org Unit",
-      "talentGroup": "Talent Group"
+      "unit": "组织单元",
+      "talentGroup": "艺人组"
     },
     "fields": {
-      "plan": "Plan",
-      "period": "Period",
-      "status": "Status",
-      "actions": "Actions"
+      "plan": "计划",
+      "period": "周期",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "detail": {
+      "subject": "对象",
+      "timezone": "时区",
+      "allocationCount": "分配数",
+      "description": "描述",
+      "metricsTableLabel": "管理范围内 KPI 目标指标",
+      "metric": "指标",
+      "target": "目标",
+      "unit": "单位",
+      "allocationSummary": "分配摘要",
+      "noAllocations": "此计划暂无可见分配行。",
+      "units": {
+        "VND": "VND",
+        "COUNT": "数量",
+        "HOUR": "小时"
+      }
     }
   },
   "empty": {
-    "noProfileTitle": "No linked profile",
-    "noProfileMessage": "Your account is authenticated, but no manager-ready Employment Profile is linked.",
-    "noAssignmentsTitle": "No managed assignments",
-    "noAssignmentsMessage": "No active Org Unit or Talent Group manager assignments are effective for your profile.",
-    "kpiTitle": "No managed KPI",
-    "kpiMessage": "Unit KPI and Talent Group KPI are hidden until an effective assignment is available.",
-    "kpiListTitle": "No published KPI plans",
-    "kpiListMessage": "No published KPI plans are visible for this managed scope yet."
+    "noProfileTitle": "未关联档案",
+    "noProfileMessage": "账号已认证，但尚未关联可用于管理工作台的雇佣档案。",
+    "noAssignmentsTitle": "无管理分配",
+    "noAssignmentsMessage": "当前档案没有生效的组织单元或艺人组管理分配。",
+    "kpiTitle": "无管理 KPI",
+    "kpiMessage": "只有存在有效分配时才显示单元 KPI 和艺人组 KPI。",
+    "kpiListTitle": "无已发布 KPI 计划",
+    "kpiListMessage": "此管理范围内暂无可见的已发布 KPI 计划。",
+    "kpiDetailUnavailableTitle": "无法查看 KPI 计划",
+    "kpiDetailUnavailableMessage": "此 KPI 计划不在你当前的管理分配范围内。"
   },
   "errors": {
-    "contextTitle": "Manager Workspace unavailable",
-    "contextMessage": "Your manager workspace context could not be loaded.",
-    "kpiTitle": "Managed KPI unavailable",
-    "kpiMessage": "Managed KPI plans could not be loaded."
+    "contextTitle": "管理工作台不可用",
+    "contextMessage": "无法加载你的管理工作台上下文。",
+    "kpiTitle": "管理 KPI 不可用",
+    "kpiMessage": "无法加载管理范围内 KPI 计划。",
+    "kpiDetailTitle": "管理 KPI 详情不可用",
+    "kpiDetailMessage": "无法加载所选 KPI 计划。"
   }
 }

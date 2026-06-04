@@ -7,7 +7,8 @@
     "kpi": "My Managed KPI"
   },
   "actions": {
-    "open": "Open"
+    "open": "Open",
+    "backToKpi": "Back to managed KPI"
   },
   "status": {
     "readOnlyShell": "Manager scope"
@@ -59,6 +60,23 @@
       "period": "Period",
       "status": "Status",
       "actions": "Actions"
+    },
+    "detail": {
+      "subject": "Subject",
+      "timezone": "Timezone",
+      "allocationCount": "Allocations",
+      "description": "Description",
+      "metricsTableLabel": "Managed KPI target metrics",
+      "metric": "Metric",
+      "target": "Target",
+      "unit": "Unit",
+      "allocationSummary": "Allocation summary",
+      "noAllocations": "No allocation rows are visible for this plan.",
+      "units": {
+        "VND": "VND",
+        "COUNT": "Count",
+        "HOUR": "Hour"
+      }
     }
   },
   "empty": {
@@ -69,12 +87,16 @@
     "kpiTitle": "No managed KPI",
     "kpiMessage": "Unit KPI and Talent Group KPI are hidden until an effective assignment is available.",
     "kpiListTitle": "No published KPI plans",
-    "kpiListMessage": "No published KPI plans are visible for this managed scope yet."
+    "kpiListMessage": "No published KPI plans are visible for this managed scope yet.",
+    "kpiDetailUnavailableTitle": "KPI plan unavailable",
+    "kpiDetailUnavailableMessage": "This KPI plan is not visible through your current manager assignments."
   },
   "errors": {
     "contextTitle": "Manager Workspace unavailable",
     "contextMessage": "Your manager workspace context could not be loaded.",
     "kpiTitle": "Managed KPI unavailable",
-    "kpiMessage": "Managed KPI plans could not be loaded."
+    "kpiMessage": "Managed KPI plans could not be loaded.",
+    "kpiDetailTitle": "Managed KPI detail unavailable",
+    "kpiDetailMessage": "The selected KPI plan could not be loaded."
   }
 }

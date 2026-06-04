@@ -7,6 +7,8 @@ export const APP_PATHS = {
   selfService: '/self-service',
   manager: '/manager',
   managerKpi: '/manager/kpi',
+  managerKpiPlanDetailPattern: '/manager/kpi/plans/:kpiPlanId',
+  managerKpiPlanDetail: (kpiPlanId: string) => joinDetailPath('/manager/kpi/plans', kpiPlanId),
 
   users: '/users',
   userDetailPattern: '/users/:userId',

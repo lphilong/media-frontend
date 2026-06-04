@@ -1,11 +1,12 @@
 import { BarChart3, Building2, LayoutDashboard, UsersRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { APP_PATHS } from '@app/router/paths';
-import { useKpiPlans } from '@modules/kpi/hooks/use-kpi';
-import type { KpiPlanListItem, KpiSubjectType } from '@modules/kpi/types/kpi.types';
+import { formatKpiNumber } from '@modules/kpi/formatting/kpi-formatting';
+import { useKpiPlanDetail, useKpiPlans } from '@modules/kpi/hooks/use-kpi';
+import type { KpiPlanDetail, KpiPlanListItem, KpiSubjectType } from '@modules/kpi/types/kpi.types';
 import {
   useManagerWorkspaceContext,
   type ManagerWorkspaceContext,
@@ -17,6 +18,7 @@ import {
   PageContainer,
   StatusBadge,
 } from '@shared/components/primitives';
+import { LocaleSwitcher, SessionArea } from '@shared/components/shell';
 
 type KpiTabId = 'unit' | 'talentGroup';
 
@@ -49,7 +51,10 @@ const getSubjectName = (plan: KpiPlanListItem, fallback: string): string =>
   plan.subjectRef?.name ?? plan.subjectRef?.displayName ?? plan.subjectRef?.code ?? fallback;
 
 const getActiveView = (pathname: string): ManagerWorkspaceView =>
-  pathname === APP_PATHS.managerKpi ? 'kpi' : 'overview';
+  pathname.startsWith(APP_PATHS.managerKpi) ? 'kpi' : 'overview';
+
+const isManagerKpiDetailPath = (pathname: string): boolean =>
+  pathname.startsWith(`${APP_PATHS.managerKpi}/plans/`);
 
 const getEnabledKpiTabs = (context: ManagerWorkspaceContext): KpiTabId[] => {
   const tabs: KpiTabId[] = [];
@@ -107,7 +112,7 @@ const KpiPlanTable = ({
               <td className="px-3 py-3">
                 <Link
                   className="inline-flex rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-panel"
-                  to={APP_PATHS.kpiPlanDetail(plan.id)}
+                  to={APP_PATHS.managerKpiPlanDetail(plan.id)}
                 >
                   {t('manager-workspace:actions.open')}
                 </Link>
@@ -117,6 +122,203 @@ const KpiPlanTable = ({
         </tbody>
       </table>
     </div>
+  );
+};
+
+const canViewPlanForManagerContext = (
+  context: ManagerWorkspaceContext,
+  plan: KpiPlanDetail,
+): boolean => {
+  if (plan.subjectType === 'ORG_UNIT') {
+    return (
+      context.modules.kpi.unitKpiVisible &&
+      context.scopes.orgUnits.some((scope) => scope.orgUnitId === plan.subjectId)
+    );
+  }
+
+  if (plan.subjectType === 'TALENT_GROUP') {
+    return (
+      context.modules.kpi.talentGroupKpiVisible &&
+      context.scopes.talentGroups.some((scope) => scope.talentGroupId === plan.subjectId)
+    );
+  }
+
+  return false;
+};
+
+const ManagerKpiDetail = ({ context }: { context: ManagerWorkspaceContext }): JSX.Element => {
+  const { t } = useTranslation(['manager-workspace', 'kpi']);
+  const { kpiPlanId } = useParams<{ kpiPlanId: string }>();
+  const detailQuery = useKpiPlanDetail(context.modules.kpi.visible ? kpiPlanId : undefined);
+  const plan = detailQuery.data;
+  const subjectName = plan ? getSubjectName(plan, t('manager-workspace:values.notAvailable')) : '';
+  const allocationStatusCounts = useMemo(() => {
+    if (!plan) {
+      return [];
+    }
+
+    const counts = new Map<string, number>();
+    plan.allocations.forEach((allocation) => {
+      counts.set(allocation.allocationStatus, (counts.get(allocation.allocationStatus) ?? 0) + 1);
+    });
+
+    return [...counts.entries()].sort(([left], [right]) => left.localeCompare(right));
+  }, [plan]);
+
+  if (!context.modules.kpi.visible) {
+    return (
+      <EmptyState
+        title={t('manager-workspace:empty.kpiTitle')}
+        message={t('manager-workspace:empty.kpiMessage')}
+      />
+    );
+  }
+
+  if (detailQuery.isLoading) {
+    return <LoadingState lines={5} />;
+  }
+
+  if (detailQuery.isError) {
+    return (
+      <ErrorState
+        title={t('manager-workspace:errors.kpiDetailTitle')}
+        message={t('manager-workspace:errors.kpiDetailMessage')}
+      />
+    );
+  }
+
+  if (!plan || !canViewPlanForManagerContext(context, plan)) {
+    return (
+      <EmptyState
+        title={t('manager-workspace:empty.kpiDetailUnavailableTitle')}
+        message={t('manager-workspace:empty.kpiDetailUnavailableMessage')}
+      />
+    );
+  }
+
+  return (
+    <section
+      className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm"
+      data-testid="manager-kpi-detail"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <Link
+            to={APP_PATHS.managerKpi}
+            className="text-sm font-medium text-accent hover:underline"
+          >
+            {t('manager-workspace:actions.backToKpi')}
+          </Link>
+          <h2 className="mt-2 text-lg font-semibold text-text">{plan.title}</h2>
+          <p className="font-mono text-xs text-muted">{plan.planCode}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge
+            label={t(`kpi:subjectTypes.${plan.subjectType}`)}
+            tone={plan.subjectType === 'ORG_UNIT' ? 'info' : 'success'}
+            uppercase={false}
+          />
+          <StatusBadge
+            label={t(`kpi:statuses.${plan.status}`)}
+            status={plan.status}
+            toneByStatus={statusTone}
+          />
+        </div>
+      </div>
+
+      <dl className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded border border-border bg-bg px-3 py-2">
+          <dt className="text-xs font-medium uppercase text-muted">
+            {t('manager-workspace:kpi.detail.subject')}
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-text">{subjectName}</dd>
+        </div>
+        <div className="rounded border border-border bg-bg px-3 py-2">
+          <dt className="text-xs font-medium uppercase text-muted">
+            {t('manager-workspace:kpi.fields.period')}
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-text">{plan.periodMonth}</dd>
+        </div>
+        <div className="rounded border border-border bg-bg px-3 py-2">
+          <dt className="text-xs font-medium uppercase text-muted">
+            {t('manager-workspace:kpi.detail.timezone')}
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-text">{plan.timezone}</dd>
+        </div>
+        <div className="rounded border border-border bg-bg px-3 py-2">
+          <dt className="text-xs font-medium uppercase text-muted">
+            {t('manager-workspace:kpi.detail.allocationCount')}
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-text">{plan.allocations.length}</dd>
+        </div>
+      </dl>
+
+      {plan.description ? (
+        <div className="rounded border border-border bg-bg px-3 py-2 text-sm text-text">
+          <div className="text-xs font-medium uppercase text-muted">
+            {t('manager-workspace:kpi.detail.description')}
+          </div>
+          <p className="mt-1">{plan.description}</p>
+        </div>
+      ) : null}
+
+      <div className="overflow-x-auto rounded border border-border">
+        <table
+          className="min-w-full text-left text-sm"
+          aria-label={t('manager-workspace:kpi.detail.metricsTableLabel')}
+        >
+          <thead className="border-b border-border text-xs uppercase text-muted">
+            <tr>
+              <th className="px-3 py-2 font-medium">
+                {t('manager-workspace:kpi.detail.metric')}
+              </th>
+              <th className="px-3 py-2 font-medium">
+                {t('manager-workspace:kpi.detail.target')}
+              </th>
+              <th className="px-3 py-2 font-medium">{t('manager-workspace:kpi.detail.unit')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {plan.targetMetrics.map((metric) => (
+              <tr key={metric.id} data-testid="manager-kpi-detail-metric-row">
+                <td className="px-3 py-3 font-medium text-text">
+                  {t(`kpi:metricCodes.${metric.metricCode}`)}
+                </td>
+                <td className="px-3 py-3">
+                  {formatKpiNumber(metric.metricCode, metric.targetValue)}
+                </td>
+                <td className="px-3 py-3">
+                  {t(`manager-workspace:kpi.detail.units.${metric.unit}`)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rounded border border-border bg-bg px-3 py-2">
+        <h3 className="text-sm font-semibold text-text">
+          {t('manager-workspace:kpi.detail.allocationSummary')}
+        </h3>
+        {allocationStatusCounts.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {allocationStatusCounts.map(([status, count]) => (
+              <StatusBadge
+                key={status}
+                label={`${t(`kpi:allocationStatuses.${status}`)}: ${count}`}
+                status={status}
+                toneByStatus={statusTone}
+                uppercase={false}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-muted">
+            {t('manager-workspace:kpi.detail.noAllocations')}
+          </p>
+        )}
+      </div>
+    </section>
   );
 };
 
@@ -346,6 +548,7 @@ export const ManagerWorkspacePage = (): JSX.Element => {
   const { t } = useTranslation(['manager-workspace']);
   const location = useLocation();
   const activeView = getActiveView(location.pathname);
+  const isKpiDetail = isManagerKpiDetailPath(location.pathname);
   const contextQuery = useManagerWorkspaceContext();
   const context = contextQuery.data;
 
@@ -358,31 +561,37 @@ export const ManagerWorkspacePage = (): JSX.Element => {
               <h1 className="text-2xl font-semibold text-text">{t('manager-workspace:title')}</h1>
               <p className="text-sm text-muted">{t('manager-workspace:subtitle')}</p>
             </div>
-            <nav className="flex flex-wrap gap-2" aria-label={t('manager-workspace:nav.label')}>
-              {managerWorkspaceNavItems.map((item) => {
-                const Icon = item.icon;
-                const active = activeView === item.id;
-                const disabled =
-                  item.id === 'kpi' && context ? !context.modules.kpi.visible : false;
+            <div className="flex flex-col gap-3 md:items-end">
+              <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+                <LocaleSwitcher />
+                <SessionArea />
+              </div>
+              <nav className="flex flex-wrap gap-2" aria-label={t('manager-workspace:nav.label')}>
+                {managerWorkspaceNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = activeView === item.id;
+                  const disabled =
+                    item.id === 'kpi' && context ? !context.modules.kpi.visible : false;
 
-                return (
-                  <Link
-                    key={item.id}
-                    to={disabled ? APP_PATHS.manager : item.path}
-                    aria-disabled={disabled}
-                    className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm font-medium ${
-                      active
-                        ? 'border-text bg-text text-bg'
-                        : 'border-border bg-bg text-text hover:bg-bg'
-                    } ${disabled ? 'pointer-events-none opacity-60' : ''}`}
-                    data-testid={`manager-nav-${item.id}`}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    {t(`manager-workspace:nav.${item.id}`)}
-                  </Link>
-                );
-              })}
-            </nav>
+                  return (
+                    <Link
+                      key={item.id}
+                      to={disabled ? APP_PATHS.manager : item.path}
+                      aria-disabled={disabled}
+                      className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm font-medium ${
+                        active
+                          ? 'border-text bg-text text-bg'
+                          : 'border-border bg-bg text-text hover:bg-bg'
+                      } ${disabled ? 'pointer-events-none opacity-60' : ''}`}
+                      data-testid={`manager-nav-${item.id}`}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                      {t(`manager-workspace:nav.${item.id}`)}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
           </div>
         </PageContainer>
       </div>
@@ -409,7 +618,10 @@ export const ManagerWorkspacePage = (): JSX.Element => {
         {context && activeView === 'overview' ? (
           <ManagerWorkspaceOverview context={context} />
         ) : null}
-        {context && activeView === 'kpi' ? <ManagerKpiSlice context={context} /> : null}
+        {context && activeView === 'kpi' && !isKpiDetail ? (
+          <ManagerKpiSlice context={context} />
+        ) : null}
+        {context && isKpiDetail ? <ManagerKpiDetail context={context} /> : null}
       </PageContainer>
     </main>
   );

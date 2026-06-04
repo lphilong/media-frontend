@@ -73,7 +73,7 @@ export const managerWorkspaceOrgUnitOnlyContext = (): ManagerWorkspaceContext =>
   scopes: {
     orgUnits: [
       {
-        orgUnitId: 'ou-production',
+        orgUnitId: 'org-unit-001',
         code: 'OU-PROD',
         name: 'Production Unit',
         role: 'UNIT_MANAGER',
@@ -106,7 +106,7 @@ export const managerWorkspaceTalentGroupOnlyContext = (): ManagerWorkspaceContex
     orgUnits: [],
     talentGroups: [
       {
-        talentGroupId: 'tg-live',
+        talentGroupId: 'group-001',
         code: 'TG-LIVE',
         name: 'Live Talent',
         capabilities: {

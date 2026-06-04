@@ -1,4 +1,4 @@
-import { act, cleanup, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
@@ -83,6 +83,7 @@ const renderRoute = async (path: string, setup?: () => void): Promise<void> => {
   await setLocale('en');
   resetKpiMockData();
   resetManagerWorkspaceMockData();
+  mockAuthAdapter.logoutRedirect.mockClear();
   setMockCurrentActorCapabilities(managerCapabilities());
   setup?.();
 
@@ -103,6 +104,21 @@ describe('/manager workspace route', () => {
     expect(await screen.findByRole('heading', { name: 'Manager Workspace' })).toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
+  });
+
+  it('renders Manager Workspace locale and logout controls through existing shell seams', async () => {
+    const user = userEvent.setup();
+    await renderRoute('/manager');
+
+    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Locale' })).toBeInTheDocument();
+
+    const logoutButton = screen.getByRole('button', { name: 'Logout' });
+    expect(logoutButton).toBeInTheDocument();
+
+    await user.click(logoutButton);
+
+    expect(mockAuthAdapter.logoutRedirect).toHaveBeenCalledWith('/');
   });
 
   it('does not replace Self-Service root routing for staff actors', async () => {
@@ -170,6 +186,28 @@ describe('/manager workspace route', () => {
     });
   });
 
+  it('links Unit KPI Open to the Manager route and renders detail outside Admin shell', async () => {
+    const user = userEvent.setup();
+    await renderRoute('/manager/kpi', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
+    });
+
+    const row = (await screen.findByText('Operations unit KPI')).closest('tr');
+    expect(row).not.toBeNull();
+
+    const openLink = within(row as HTMLTableRowElement).getByRole('link', { name: 'Open' });
+    expect(openLink).toHaveAttribute('href', '/manager/kpi/plans/kpi-plan-org-unit');
+    expect(openLink).not.toHaveAttribute('href', '/kpi/plans/kpi-plan-org-unit');
+
+    await user.click(openLink);
+
+    expect(await screen.findByTestId('manager-kpi-detail')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Operations unit KPI' })).toBeInTheDocument();
+    expect(screen.getByText('Org Unit')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
+  });
+
   it('renders Talent Group KPI only for TalentGroup-only manager context and queries Talent Group plans', async () => {
     const subjectTypes: Array<string | null> = [];
     server.use(
@@ -188,6 +226,28 @@ describe('/manager workspace route', () => {
     await waitFor(() => {
       expect(subjectTypes).toEqual(['TALENT_GROUP']);
     });
+  });
+
+  it('registers direct Manager Talent Group KPI detail outside Admin shell', async () => {
+    await renderRoute('/manager/kpi/plans/kpi-plan-published', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceTalentGroupOnlyContext());
+    });
+
+    expect(await screen.findByTestId('manager-kpi-detail')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Published team KPI' })).toBeInTheDocument();
+    expect(screen.getByText('Talent Group')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
+  });
+
+  it('does not expose fake KPI detail access without manager assignments', async () => {
+    await renderRoute('/manager/kpi/plans/kpi-plan-org-unit', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceNoAssignmentsContext());
+    });
+
+    expect(await screen.findByText('No managed KPI')).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-kpi-detail')).not.toBeInTheDocument();
+    expect(screen.queryByText('Operations unit KPI')).not.toBeInTheDocument();
   });
 
   it('renders both KPI tabs for dual manager context without forcing Unit KPI to Talent Group', async () => {
