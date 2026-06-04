@@ -18,7 +18,7 @@
     },
     "kpi": {
       "title": "我的 KPI",
-      "summary": "KPI 占位，不显示草稿或旧分配数据。"
+      "summary": "Read-only official KPI for your staff profile or operational assignment."
     },
     "events": {
       "title": "我的活动",
@@ -71,12 +71,12 @@
     "lastUpdatedAt": "Updated",
     "metric": "Metric",
     "target": "Official target",
-    "actual": "Own actual",
+    "actual": "Actual / effective actual",
     "progress": "Progress"
   },
   "kpiSections": {
     "current": "Current KPI",
-    "latestPrevious": "Previous period context",
+    "latestPrevious": "Latest previous KPI",
     "history": "Previous KPI history"
   },
   "kpiPeriod": {
@@ -111,12 +111,12 @@
     "OFFICIAL_FINALIZED": "Official finalized"
   },
   "kpiMetric": {
-    "REVENUE_VND": "Revenue",
+    "REVENUE_VND": "Operational revenue",
     "CONTENT_OUTPUT_COUNT": "Content output",
     "LIVE_HOURS": "Live hours",
     "EVENT_COMPLETION_COUNT": "Event completion",
     "ONBOARDED_TALENT_COUNT": "Onboarded talent",
-    "TIKTOK_DIAMOND": "TikTok Diamond"
+    "TIKTOK_DIAMOND": "TikTok Diamond count"
   },
   "kpiUnit": {
     "VND": "VND",
@@ -167,9 +167,9 @@
     "notAvailable": "不可用"
   },
   "empty": {
-    "kpiCurrentTitle": "No current-period KPI has been published yet.",
-    "kpiCurrentMessage": "Previous KPI history is not available yet.",
-    "kpiCurrentWithPreviousMessage": "Previous KPI history is shown below if available.",
+    "kpiCurrentTitle": "No official KPI is published for the current period.",
+    "kpiCurrentMessage": "If you believe a KPI allocation is missing, contact your manager or admin.",
+    "kpiCurrentWithPreviousMessage": "Your latest previous KPI is shown below for read-only context. If you believe a current KPI allocation is missing, contact your manager or admin.",
     "kpiHistoryTitle": "No previous KPI history",
     "kpiHistoryMessage": "Previous KPI history is not available yet.",
     "workShiftsTitle": "暂无班次",

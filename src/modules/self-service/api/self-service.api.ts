@@ -367,6 +367,17 @@ export const fetchSelfServiceKpi = async (): Promise<SelfServiceKpiEnvelope> => 
   };
 };
 
+export const parseSelfServiceKpiResponseForTest = (response: unknown): SelfServiceKpiEnvelope => {
+  const parsed = selfServiceKpiResponseSchema.parse(response);
+  return {
+    items: parsed.data.items,
+    current: parsed.data.current,
+    latestPrevious: parsed.data.latestPrevious,
+    history: parsed.data.history,
+    meta: parsed.data.meta,
+  };
+};
+
 export const useSelfServiceKpi = (enabled = true) =>
   useQuery({
     queryKey: SELF_SERVICE_KPI_QUERY_KEY,

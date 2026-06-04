@@ -18,7 +18,7 @@
     },
     "kpi": {
       "title": "KPI ",
-      "summary": "Chỗ giữ KPI, không hiển thị dữ liệu phân bổ nháp hoặc cũ."
+      "summary": "KPI chinh thuc chi doc cho ho so nhan su hoac don vi van hanh cua ban."
     },
     "events": {
       "title": "Sự kiện ",
@@ -67,16 +67,16 @@
     "assignmentStatus": "Trạng thái phân công"
   },
   "kpiFields": {
-    "period": "Period",
-    "lastUpdatedAt": "Updated",
-    "metric": "Metric",
-    "target": "Official target",
-    "actual": "Own actual",
-    "progress": "Progress"
+    "period": "Ky",
+    "lastUpdatedAt": "Cap nhat",
+    "metric": "Chi so",
+    "target": "Muc tieu chinh thuc",
+    "actual": "Actual / actual hieu luc",
+    "progress": "Tien do"
   },
   "kpiSections": {
-    "current": "KPI ky hien tai",
-    "latestPrevious": "Ngu canh ky truoc",
+    "current": "KPI hien tai",
+    "latestPrevious": "KPI truoc gan nhat",
     "history": "Lich su KPI truoc"
   },
   "kpiPeriod": {
@@ -111,12 +111,12 @@
     "OFFICIAL_FINALIZED": "Official finalized"
   },
   "kpiMetric": {
-    "REVENUE_VND": "Revenue",
+    "REVENUE_VND": "Doanh thu van hanh",
     "CONTENT_OUTPUT_COUNT": "Content output",
     "LIVE_HOURS": "Live hours",
     "EVENT_COMPLETION_COUNT": "Event completion",
     "ONBOARDED_TALENT_COUNT": "Onboarded talent",
-    "TIKTOK_DIAMOND": "TikTok Diamond"
+    "TIKTOK_DIAMOND": "So luong TikTok Diamond"
   },
   "kpiUnit": {
     "VND": "VND",
@@ -167,9 +167,9 @@
     "notAvailable": "Chưa có"
   },
   "empty": {
-    "kpiCurrentTitle": "Chua co KPI ky hien tai duoc publish.",
-    "kpiCurrentMessage": "Chua co lich su KPI truoc.",
-    "kpiCurrentWithPreviousMessage": "Lich su KPI truoc duoc hien thi ben duoi neu co.",
+    "kpiCurrentTitle": "Chua co KPI chinh thuc duoc publish cho ky hien tai.",
+    "kpiCurrentMessage": "Neu ban cho rang minh thieu phan bo KPI, hay lien he quan ly hoac admin.",
+    "kpiCurrentWithPreviousMessage": "KPI truoc gan nhat duoc hien thi ben duoi de tham khao chi doc. Neu ban cho rang minh thieu phan bo KPI hien tai, hay lien he quan ly hoac admin.",
     "kpiHistoryTitle": "Chua co lich su KPI truoc",
     "kpiHistoryMessage": "Chua co lich su KPI truoc.",
     "workShiftsTitle": "Chưa có ca làm",
