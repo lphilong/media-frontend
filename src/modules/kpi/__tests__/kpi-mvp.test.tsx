@@ -15,10 +15,18 @@ import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import {
   approveKpiAllocation,
   createKpiCorrection,
+  createKpiOrgUnitActual,
+  createKpiOrgUnitCorrection,
   createKpiPlan,
   fetchKpiActualDailyGrid,
   fetchKpiActualWorkspacePlans,
   fetchKpiCorrectionHistory,
+  fetchKpiOrgUnitActualGrid,
+  fetchKpiOrgUnitAllocations,
+  fetchKpiOrgUnitCorrectionHistory,
+  fetchKpiOrgUnitFinalResult,
+  fetchKpiOrgUnitManagedMembers,
+  fetchKpiOrgUnitProgress,
   fetchKpiPlanDetail,
   fetchKpiPlans,
   fetchKpiManagedMembers,
@@ -30,9 +38,14 @@ import {
   parseKpiActualWorkspacePlanDetailResponseForTest,
   parseKpiCorrectionListResponseForTest,
   parseKpiCorrectionMutationResponseForTest,
+  parseKpiOrgUnitActualGridResponseForTest,
+  parseKpiOrgUnitAllocationListResponseForTest,
+  parseKpiOrgUnitManagedMemberListResponseForTest,
+  parseKpiOrgUnitProgressResponseForTest,
   parseKpiPlanListResponseForTest,
   parseKpiPlanDetailResponseForTest,
   markKpiActualExcuse,
+  markKpiOrgUnitActualExcuse,
   performKpiLifecycleAction,
   publishKpiAllocation,
   rejectKpiAllocation,
@@ -41,6 +54,7 @@ import {
   sanitizeKpiCreatePlanPayload,
   submitKpiAllocationDraft,
   unmarkKpiActualExcuse,
+  unmarkKpiOrgUnitActualExcuse,
   upsertKpiAllocationDraft,
 } from '@modules/kpi/api/kpi.api';
 import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
@@ -1339,11 +1353,16 @@ describe('KPI MVP UX', () => {
       .getByRole('heading', { name: 'Create draft KPI plan' })
       .closest('section');
     expect(createSection).not.toBeNull();
-    expect(within(createSection!).getByText('Talent group')).toBeInTheDocument();
+    expect(within(createSection!).getByRole('combobox', { name: 'Subject type' })).toHaveValue(
+      'TALENT_GROUP',
+    );
     expect(
       within(createSection!).queryByRole('option', { name: 'Talent' }),
     ).not.toBeInTheDocument();
     expect(within(createSection!).queryByText('Allocations')).not.toBeInTheDocument();
+    await userEvent.click(
+      await within(createSection!).findByRole('button', { name: /Creators A - TG-000001/ }),
+    );
     await userEvent.click(await waitForEnabledButton('Create draft plan'));
     await waitFor(() => expect(body).toBeDefined());
     expect(body?.subjectType).toBe('TALENT_GROUP');
@@ -1352,6 +1371,43 @@ describe('KPI MVP UX', () => {
     expect(typeof (body?.targetMetrics as Array<{ targetValue: number }>)[0].targetValue).toBe(
       'number',
     );
+  });
+
+  it('Admin create filters metrics by subject type and creates an ORG_UNIT plan without raw IDs', async () => {
+    renderRoute('/kpi');
+    await waitForKpiList();
+    await userEvent.click(await waitForEnabledButton('Create KPI plan'));
+    const createSection = screen
+      .getByRole('heading', { name: 'Create draft KPI plan' })
+      .closest('section');
+    expect(createSection).not.toBeNull();
+
+    const metricSelect = within(createSection!).getByRole('combobox', { name: 'Metric' });
+    expect(within(metricSelect).getByRole('option', { name: 'Revenue VND' })).toBeInTheDocument();
+    expect(
+      within(metricSelect).getByRole('option', { name: 'TikTok Diamond' }),
+    ).toBeInTheDocument();
+
+    await userEvent.selectOptions(
+      within(createSection!).getByRole('combobox', { name: 'Subject type' }),
+      'ORG_UNIT',
+    );
+    expect(within(createSection!).getAllByText('Company operational unit').length).toBeGreaterThan(
+      0,
+    );
+    expect(within(metricSelect).getAllByRole('option')).toHaveLength(1);
+    expect(
+      within(metricSelect).queryByRole('option', { name: 'TikTok Diamond' }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(
+      await within(createSection!).findByRole('button', { name: /Head Office - OU-000001/ }),
+    );
+    await userEvent.click(await waitForEnabledButton('Create draft plan'));
+    expect(await screen.findByText('KPI plan created.')).toBeInTheDocument();
+    expect((await screen.findAllByText('Operations Unit')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('Org Unit')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('org-unit-001')).not.toBeInTheDocument();
   });
 
   it('rejects malformed money before calling create API', async () => {
@@ -1444,7 +1500,9 @@ describe('KPI MVP UX', () => {
       await screen.findByRole('heading', { name: 'Finalized team KPI' }, lazyRouteContentWait),
     ).toBeInTheDocument();
     const finalResult = screen.getByLabelText('Finalized result');
-    expect(within(finalResult).getByRole('heading', { name: 'Finalized result' })).toBeInTheDocument();
+    expect(
+      within(finalResult).getByRole('heading', { name: 'Finalized result' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Captured when the KPI was finalized.')).toBeInTheDocument();
     expect(screen.getByText(/Read-only after finalization/)).toBeInTheDocument();
     expect(screen.getAllByText('Luna Park').length).toBeGreaterThan(0);
@@ -1892,6 +1950,30 @@ describe('KPI MVP UX', () => {
     await waitFor(() => expect(called).toBe(true));
   });
 
+  it('publishes an ORG_UNIT plan from Admin detail and displays subject type without raw IDs', async () => {
+    const plan = await createKpiPlan({
+      title: 'Operations launch KPI',
+      subjectType: 'ORG_UNIT',
+      subjectId: 'org-unit-001',
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+    });
+
+    renderRoute(`/kpi/plans/${plan.id}`);
+    expect(
+      await screen.findByRole('heading', { name: 'Operations launch KPI' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Org Unit - Operations Unit - 2026-06/)).toBeInTheDocument();
+    expect(screen.queryByText('org-unit-001')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await userEvent.click(await screen.findByTestId('confirm-dialog-confirm'));
+    expect(await screen.findByText('KPI lifecycle updated.')).toBeInTheDocument();
+    expect((await fetchKpiPlanDetail(plan.id)).status).toBe('PUBLISHED');
+  });
+
   it('shows finalize confirmation and calls finalize API', async () => {
     renderRoute('/kpi/plans/kpi-plan-published');
     await waitForPublishedKpiDetail();
@@ -2308,9 +2390,7 @@ describe('KPI MVP UX', () => {
     await userEvent.type(corrected, '300.000');
     await userEvent.click(await waitForEnabledButton('Submit correction'));
 
-    expect(
-      await screen.findByText(/Use direct edit before the daily cutoff/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/Use direct edit before the daily cutoff/i)).toBeInTheDocument();
   });
 
   it('MSW rejects correction at exact D+1 10:00 HCM and allows post-cutoff correction', async () => {
@@ -2457,11 +2537,7 @@ describe('KPI MVP UX', () => {
       periodMonth: '2026-06',
       periodStartAt: june2026PeriodStartAt,
       periodEndAt: june2026PeriodEndAt,
-      targetMetrics: [
-        { metricCode: 'REVENUE_VND', targetValue: 1000 },
-        { metricCode: 'CONTENT_OUTPUT_COUNT', targetValue: 10 },
-        { metricCode: 'LIVE_HOURS', targetValue: 1.25 },
-      ],
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
     });
     await performKpiLifecycleAction(plan.id, 'publish');
 
@@ -2569,7 +2645,7 @@ describe('KPI MVP UX', () => {
     expect(invalidAllocation.status).toBe(400);
   });
 
-  it('MSW mirrors TikTok Diamond as TALENT_GROUP count metric and rejects ORG_UNIT create', async () => {
+  it('MSW mirrors TikTok Diamond as TALENT_GROUP count metric and rejects ORG_UNIT Diamond', async () => {
     const diamondPlan = await createKpiPlan({
       title: 'Diamond target plan',
       subjectType: 'TALENT_GROUP',
@@ -2601,6 +2677,103 @@ describe('KPI MVP UX', () => {
       targetMetrics: [{ metricCode: 'TIKTOK_DIAMOND', targetValue: 1000 }],
     });
     expect(orgUnitDiamond.status).toBe(400);
+
+    const orgUnitRevenue = await createKpiPlan({
+      title: 'Org Unit revenue plan',
+      subjectType: 'ORG_UNIT',
+      subjectId: 'org-unit-001',
+      periodMonth: '2026-06',
+      periodStartAt: june2026PeriodStartAt,
+      periodEndAt: june2026PeriodEndAt,
+      targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+    });
+    expect(orgUnitRevenue.subjectType).toBe('ORG_UNIT');
+    expect(orgUnitRevenue.targetMetrics).toHaveLength(1);
+    expect(orgUnitRevenue.targetMetrics[0]).toMatchObject({
+      metricCode: 'REVENUE_VND',
+      unit: 'VND',
+    });
+    await performKpiLifecycleAction(orgUnitRevenue.id, 'publish');
+    expect((await fetchKpiPlanDetail(orgUnitRevenue.id)).status).toBe('PUBLISHED');
+  });
+
+  it('MSW returns ORG_UNIT contract-safe route shapes and keeps legacy allocations TalentGroup-only', async () => {
+    const orgAllocations = await fetchKpiOrgUnitAllocations('kpi-plan-org-unit');
+    expect(orgAllocations[0]).toMatchObject({
+      memberEmploymentProfileId: 'employment-profile-ops-001',
+      memberTalentId: null,
+      groupId: null,
+    });
+    expect(JSON.stringify(orgAllocations)).not.toContain('membershipId');
+
+    const legacyAllocations = await parseKpiAllocationListResponseForTest(
+      await readMswJson(await mswJson('GET', '/admin/kpi/allocations')),
+    );
+    expect(
+      legacyAllocations.every((allocation) => allocation.groupId && allocation.memberTalentId),
+    ).toBe(true);
+    expect(
+      legacyAllocations.some((allocation) => allocation.kpiPlanId === 'kpi-plan-org-unit'),
+    ).toBe(false);
+
+    const members = await fetchKpiOrgUnitManagedMembers('kpi-plan-org-unit');
+    expect(members[0]).toMatchObject({
+      employmentProfileId: 'employment-profile-ops-001',
+      displayName: 'An Nguyen',
+      orgUnitId: 'org-unit-001',
+    });
+    expect(JSON.stringify(members)).not.toContain('talentId');
+
+    const progress = await fetchKpiOrgUnitProgress('kpi-plan-org-unit');
+    expect(progress.memberProgress[0]).toMatchObject({
+      memberEmploymentProfileId: 'employment-profile-ops-001',
+      memberTalentId: null,
+    });
+
+    const grid = await fetchKpiOrgUnitActualGrid('kpi-plan-org-unit', '01-06-2026');
+    expect(grid.subjectType).toBe('ORG_UNIT');
+    expect(grid.rows[0]).toMatchObject({
+      memberEmploymentProfileId: 'employment-profile-ops-001',
+      memberTalentId: null,
+    });
+
+    const actual = await createKpiOrgUnitActual({
+      kpiPlanId: 'kpi-plan-org-unit',
+      allocationId: 'kpi-plan-org-unit-alloc-1',
+      metricCode: 'REVENUE_VND',
+      actualDate: '01-06-2026',
+      actualValue: 500000,
+    });
+    expect(actual.memberEmploymentProfileId).toBe('employment-profile-ops-001');
+    const correction = await createKpiOrgUnitCorrection({
+      kpiPlanId: 'kpi-plan-org-unit',
+      actualEntryId: actual.id,
+      correctedValue: 550000,
+      reason: 'Ops correction',
+    });
+    expect(correction.actualEntry.memberEmploymentProfileId).toBe('employment-profile-ops-001');
+    expect(await fetchKpiOrgUnitCorrectionHistory('kpi-plan-org-unit', actual.id)).toHaveLength(1);
+
+    await markKpiOrgUnitActualExcuse({
+      kpiPlanId: 'kpi-plan-org-unit',
+      allocationId: 'kpi-plan-org-unit-alloc-1',
+      metricCode: 'REVENUE_VND',
+      actualDate: '02-06-2026',
+      status: 'EXCUSED',
+      reasonCode: 'OTHER',
+      reasonText: 'Contract test',
+    });
+    const excusedGrid = await fetchKpiOrgUnitActualGrid('kpi-plan-org-unit', '02-06-2026');
+    const excuseId = excusedGrid.rows[0]?.metrics[0]?.actualExcuse?.id;
+    expect(excuseId).toBeTruthy();
+    await unmarkKpiOrgUnitActualExcuse({
+      kpiPlanId: 'kpi-plan-org-unit',
+      excuseId: excuseId ?? '',
+    });
+
+    const finalResult = await fetchKpiOrgUnitFinalResult('kpi-plan-org-unit');
+    expect(finalResult.subjectType).toBe('ORG_UNIT');
+    expect(finalResult.allocations).toHaveLength(0);
   });
 
   it('MSW rejects allocation publish when allocation totals do not match plan targets', async () => {
@@ -2654,6 +2827,28 @@ describe('KPI MVP UX', () => {
         targetMetrics: [{ metricCode: 'TIKTOK_DIAMOND', targetValue: 1000 }],
       }).targetMetrics[0]?.metricCode,
     ).toBe('TIKTOK_DIAMOND');
+    expect(
+      sanitizeKpiCreatePlanPayload({
+        title: 'Org revenue create',
+        subjectType: 'ORG_UNIT',
+        subjectId: 'org-unit-001',
+        periodMonth: '2026-06',
+        periodStartAt: june2026PeriodStartAt,
+        periodEndAt: june2026PeriodEndAt,
+        targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1000 }],
+      }).subjectType,
+    ).toBe('ORG_UNIT');
+    expect(() =>
+      sanitizeKpiCreatePlanPayload({
+        title: 'Org Diamond create',
+        subjectType: 'ORG_UNIT',
+        subjectId: 'org-unit-001',
+        periodMonth: '2026-06',
+        periodStartAt: june2026PeriodStartAt,
+        periodEndAt: june2026PeriodEndAt,
+        targetMetrics: [{ metricCode: 'TIKTOK_DIAMOND', targetValue: 1000 }],
+      }),
+    ).toThrow();
     expect(() =>
       sanitizeKpiCreatePlanPayload({
         title: 'Unknown metric create',
@@ -3237,6 +3432,86 @@ describe('KPI MVP UX', () => {
         data: [{ ...makeAllocation('kpi-plan-approved', 'APPROVED'), scopeGrants: {} }],
       }),
     ).toThrow();
+  });
+
+  it('strict ORG_UNIT schemas parse EmploymentProfile identity without Talent identity', () => {
+    const { membershipId: _membershipId, ...baseOrgAllocation } = makeAllocation(
+      'kpi-plan-org-unit-schema',
+      'PUBLISHED',
+    );
+    void _membershipId;
+    const orgAllocation = {
+      ...baseOrgAllocation,
+      groupId: null,
+      memberEmploymentProfileId: 'employment-profile-ops-001',
+      memberTalentId: null,
+    };
+    const parsedAllocation = parseKpiOrgUnitAllocationListResponseForTest({
+      data: [orgAllocation],
+    })[0];
+    expect(parsedAllocation.memberEmploymentProfileId).toBe('employment-profile-ops-001');
+    expect(parsedAllocation.memberTalentId).toBeNull();
+    expect(() =>
+      parseKpiAllocationListResponseForTest({
+        data: [orgAllocation],
+      }),
+    ).toThrow();
+
+    expect(
+      parseKpiOrgUnitManagedMemberListResponseForTest({
+        data: [
+          {
+            employmentProfileId: 'employment-profile-ops-001',
+            employeeCode: 'EP-OPS-001',
+            displayName: 'An Nguyen',
+            orgUnitId: 'org-unit-001',
+          },
+        ],
+      })[0],
+    ).not.toHaveProperty('talentId');
+
+    expect(
+      parseKpiOrgUnitProgressResponseForTest({
+        data: {
+          ...makeProgress('kpi-plan-org-unit-schema', []),
+          plan: {
+            ...makeProgress('kpi-plan-org-unit-schema', []).plan,
+            subjectType: 'ORG_UNIT',
+            subjectId: 'org-unit-001',
+          },
+          memberProgress: [
+            {
+              allocationId: 'org-allocation-1',
+              memberEmploymentProfileId: 'employment-profile-ops-001',
+              memberTalentId: null,
+              metricCode: 'REVENUE_VND',
+              targetValue: 1000,
+              actualValue: 100,
+              progressPercent: 10,
+              actualEntryCount: 1,
+              missingEntryCount: 0,
+            },
+          ],
+        },
+      }).memberProgress[0].memberEmploymentProfileId,
+    ).toBe('employment-profile-ops-001');
+
+    expect(
+      parseKpiOrgUnitActualGridResponseForTest({
+        data: {
+          ...makeActualGrid(),
+          subjectType: 'ORG_UNIT',
+          subjectId: 'org-unit-001',
+          rows: [
+            {
+              ...makeActualGrid().rows[0],
+              memberEmploymentProfileId: 'employment-profile-ops-001',
+              memberTalentId: null,
+            },
+          ],
+        },
+      }).rows[0].memberEmploymentProfileId,
+    ).toBe('employment-profile-ops-001');
   });
 
   it('money parser never returns formatted strings', () => {

@@ -51,6 +51,8 @@
     "groupId": "Talent group",
     "group": "Group",
     "targetGroup": "Target group",
+    "targetOrgUnit": "Company operational unit",
+    "subjectUnavailable": "Subject unavailable",
     "talent": "Talent",
     "talentId": "Talent",
     "member": "Member",
@@ -80,13 +82,15 @@
     "allSubjectTypes": "All subject types",
     "allMetrics": "All metrics",
     "subjectPlaceholder": "Search by name or code",
+    "talentGroupSubjectPlaceholder": "Search media/talent groups",
+    "orgUnitSubjectPlaceholder": "Search company operational units",
     "managedMemberPlaceholder": "Search managed members"
   },
   "subjectTypes": {
     "TALENT": "Talent",
-    "TALENT_GROUP": "Talent group",
+    "TALENT_GROUP": "Talent Group",
     "EMPLOYMENT_PROFILE": "Employment profile",
-    "ORG_UNIT": "Org unit"
+    "ORG_UNIT": "Org Unit"
   },
   "metricCodes": {
     "REVENUE_VND": "Revenue VND",

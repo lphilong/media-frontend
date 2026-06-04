@@ -41,7 +41,9 @@ import type {
 } from '@modules/kpi/types/kpi.types';
 import {
   kpiActualExcuseReasonCodes,
+  kpiCreateSubjectTypes,
   kpiMetricCodes,
+  kpiMetricsBySubjectType,
   kpiPlanStatuses,
   kpiSubjectTypes,
 } from '@modules/kpi/types/kpi.types';
@@ -60,6 +62,7 @@ import {
 } from '@shared/auth/current-actor-capabilities';
 import { ReferenceFilterField } from '@shared/components/reference';
 import {
+  loadOrgUnitReferenceOptions,
   loadTalentGroupReferenceOptions,
   loadTalentReferenceOptions,
 } from '@shared/components/reference/admin-reference-options';
@@ -165,10 +168,7 @@ const readActualWorkspaceBooleanFilter = (
   return value === 'true' ? true : value === 'false' ? false : undefined;
 };
 
-const defaultTargets: TargetDraft[] = [
-  { metricCode: 'REVENUE_VND', value: '1.000.000' },
-  { metricCode: 'CONTENT_OUTPUT_COUNT', value: '10' },
-];
+const defaultTargets: TargetDraft[] = [{ metricCode: 'REVENUE_VND', value: '1.000.000' }];
 
 const readPlanQuery = (searchParams: URLSearchParams): KpiPlanQuery => {
   const subjectType = searchParams.get('subjectType');
@@ -271,7 +271,10 @@ export const KpiListPage = (): JSX.Element => {
   const [allocationQueueView, setAllocationQueueView] =
     useState<AllocationQueueView>('actionNeeded');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [subjectId, setSubjectId] = useState('group-001');
+  const [createSubjectType, setCreateSubjectType] = useState<'TALENT_GROUP' | 'ORG_UNIT'>(
+    'TALENT_GROUP',
+  );
+  const [subjectId, setSubjectId] = useState('');
   const [title, setTitle] = useState('May KPI plan');
   const [periodMonth, setPeriodMonth] = useState(() => currentHcmMonth());
   const [description, setDescription] = useState('');
@@ -460,6 +463,10 @@ export const KpiListPage = (): JSX.Element => {
   );
   const actualWorkspaceDetailQuery = useKpiActualWorkspacePlanDetail(selectedWorkspacePlanId);
   const actualWorkspacePlans = actualWorkspacePages;
+  const availableCreateMetricCodes = useMemo(
+    () => [...kpiMetricsBySubjectType[createSubjectType]],
+    [createSubjectType],
+  );
 
   useEffect(() => {
     if (visibleTabs.length > 0 && !visibleTabs.includes(activeTab as 'management' | 'group')) {
@@ -503,6 +510,14 @@ export const KpiListPage = (): JSX.Element => {
       return [...current, ...page.data.filter((plan) => !seen.has(plan.planId))];
     });
   }, [actualWorkspaceCursor, actualWorkspacePlansQuery.data]);
+
+  useEffect(() => {
+    setTargets((current) => {
+      const allowed = new Set<KpiMetricCode>(availableCreateMetricCodes);
+      const kept = current.filter((target) => allowed.has(target.metricCode));
+      return kept.length > 0 ? kept : defaultTargets;
+    });
+  }, [availableCreateMetricCodes]);
 
   const patchQuery = useCallback(
     (patch: Record<string, string | undefined>) => {
@@ -556,7 +571,7 @@ export const KpiListPage = (): JSX.Element => {
     const payload: KpiCreatePlanPayload = {
       title,
       description: description.trim() || null,
-      subjectType: 'TALENT_GROUP',
+      subjectType: createSubjectType,
       subjectId,
       currencyCode: 'VND',
       periodMonth,
@@ -1034,22 +1049,34 @@ export const KpiListPage = (): JSX.Element => {
                 </select>
               </label>
               {!isManagedGroupKpiView &&
-              (query.subjectType === 'TALENT' || query.subjectType === 'TALENT_GROUP') ? (
+              (query.subjectType === 'TALENT' ||
+                query.subjectType === 'TALENT_GROUP' ||
+                query.subjectType === 'ORG_UNIT') ? (
                 <ReferenceFilterField
                   label={
                     query.subjectType === 'TALENT_GROUP'
                       ? t('kpi:fields.targetGroup')
-                      : t('kpi:fields.talent')
+                      : query.subjectType === 'ORG_UNIT'
+                        ? t('kpi:fields.targetOrgUnit')
+                        : t('kpi:fields.talent')
                   }
                   pickerId="kpi-filter-subject"
                   value={query.subjectId}
                   loadOptions={
                     query.subjectType === 'TALENT'
                       ? loadTalentReferenceOptions
-                      : loadTalentGroupReferenceOptions
+                      : query.subjectType === 'ORG_UNIT'
+                        ? loadOrgUnitReferenceOptions
+                        : loadTalentGroupReferenceOptions
                   }
                   onChange={(nextId) => patchQuery({ subjectId: nextId })}
-                  placeholder={t('kpi:filters.subjectPlaceholder')}
+                  placeholder={
+                    query.subjectType === 'ORG_UNIT'
+                      ? t('kpi:filters.orgUnitSubjectPlaceholder')
+                      : query.subjectType === 'TALENT_GROUP'
+                        ? t('kpi:filters.talentGroupSubjectPlaceholder')
+                        : t('kpi:filters.subjectPlaceholder')
+                  }
                   clearLabel={t('common:actions.clear')}
                   className="min-w-[260px]"
                 />
@@ -1086,21 +1113,49 @@ export const KpiListPage = (): JSX.Element => {
             </p>
           ) : null}
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="flex flex-col gap-1 text-sm">
-              <span>{t('kpi:fields.subjectType')}</span>
-              <span className="rounded border border-border bg-slate-50 px-2 py-1.5">
-                {t('kpi:subjectTypes.TALENT_GROUP')}
-              </span>
-            </div>
             <label className="flex flex-col gap-1 text-sm">
-              <span>{t('kpi:fields.targetGroup')}</span>
+              <span>{t('kpi:fields.subjectType')}</span>
+              <select
+                value={createSubjectType}
+                className="rounded border border-border bg-panel px-2 py-1.5"
+                onChange={(event) => {
+                  const nextSubjectType = event.target.value as 'TALENT_GROUP' | 'ORG_UNIT';
+                  setCreateSubjectType(nextSubjectType);
+                  setSubjectId('');
+                }}
+              >
+                {kpiCreateSubjectTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {t(`kpi:subjectTypes.${type}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span>
+                {createSubjectType === 'ORG_UNIT'
+                  ? t('kpi:fields.targetOrgUnit')
+                  : t('kpi:fields.targetGroup')}
+              </span>
               <ReferenceFilterField
-                label={t('kpi:fields.targetGroup')}
-                pickerId="kpi-create-subject"
+                label={
+                  createSubjectType === 'ORG_UNIT'
+                    ? t('kpi:fields.targetOrgUnit')
+                    : t('kpi:fields.targetGroup')
+                }
+                pickerId={`kpi-create-subject-${createSubjectType}`}
                 value={subjectId}
-                loadOptions={loadTalentGroupReferenceOptions}
+                loadOptions={
+                  createSubjectType === 'ORG_UNIT'
+                    ? loadOrgUnitReferenceOptions
+                    : loadTalentGroupReferenceOptions
+                }
                 onChange={(nextId) => setSubjectId(nextId ?? '')}
-                placeholder={t('kpi:filters.subjectPlaceholder')}
+                placeholder={
+                  createSubjectType === 'ORG_UNIT'
+                    ? t('kpi:filters.orgUnitSubjectPlaceholder')
+                    : t('kpi:filters.talentGroupSubjectPlaceholder')
+                }
                 clearLabel={t('common:actions.clear')}
                 className=""
               />
@@ -1151,7 +1206,7 @@ export const KpiListPage = (): JSX.Element => {
                     )
                   }
                 >
-                  {kpiMetricCodes.map((metricCode) => (
+                  {availableCreateMetricCodes.map((metricCode) => (
                     <option key={metricCode} value={metricCode}>
                       {t(`kpi:metricCodes.${metricCode}`)}
                     </option>
@@ -1184,7 +1239,15 @@ export const KpiListPage = (): JSX.Element => {
               type="button"
               className="rounded border border-border px-3 py-2 text-sm"
               onClick={() =>
-                setTargets((current) => [...current, { metricCode: 'LIVE_HOURS', value: '1,5' }])
+                setTargets((current) => {
+                  const used = new Set(current.map((target) => target.metricCode));
+                  const nextMetric =
+                    availableCreateMetricCodes.find((metricCode) => !used.has(metricCode)) ??
+                    availableCreateMetricCodes[0];
+                  return nextMetric
+                    ? [...current, { metricCode: nextMetric, value: '0' }]
+                    : current;
+                })
               }
             >
               {t('kpi:actions.addMetric')}
@@ -1305,6 +1368,7 @@ export const KpiListPage = (): JSX.Element => {
                   <tr>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.planCode')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.title')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.subjectType')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.subject')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.planStatus')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:allocationWorkflow.title')}</th>
@@ -1319,8 +1383,11 @@ export const KpiListPage = (): JSX.Element => {
                     <tr key={plan.id} className="border-t border-border">
                       <td className="px-3 py-2">{plan.planCode}</td>
                       <td className="px-3 py-2">{plan.title}</td>
+                      <td className="px-3 py-2">{t(`kpi:subjectTypes.${plan.subjectType}`)}</td>
                       <td className="px-3 py-2">
-                        {plan.subjectRef?.displayName ?? plan.subjectRef?.name ?? plan.subjectId}
+                        {plan.subjectRef?.displayName ??
+                          plan.subjectRef?.name ??
+                          t('kpi:fields.subjectUnavailable')}
                       </td>
                       <td className="px-3 py-2">{t(`kpi:statuses.${plan.status}`)}</td>
                       <td className="px-3 py-2">
@@ -1537,7 +1604,9 @@ export const KpiListPage = (): JSX.Element => {
                     <tr key={plan.planId} className="border-t border-border">
                       <td className="px-3 py-2">{plan.planCode}</td>
                       <td className="px-3 py-2">
-                        {plan.subjectRef?.displayName ?? plan.subjectRef?.name ?? plan.subjectId}
+                        {plan.subjectRef?.displayName ??
+                          plan.subjectRef?.name ??
+                          t('kpi:fields.subjectUnavailable')}
                       </td>
                       <td className="px-3 py-2">{formatPeriodMonth(plan.periodMonth)}</td>
                       <td className="px-3 py-2">
@@ -1612,7 +1681,7 @@ export const KpiListPage = (): JSX.Element => {
                 <p className="text-sm text-muted">
                   {actualWorkspaceDetailQuery.data.subjectRef?.displayName ??
                     actualWorkspaceDetailQuery.data.subjectRef?.name ??
-                    actualWorkspaceDetailQuery.data.subjectId}{' '}
+                    t('kpi:fields.subjectUnavailable')}{' '}
                   - {formatPeriodMonth(actualWorkspaceDetailQuery.data.periodMonth)}
                 </p>
               </div>
@@ -1638,7 +1707,8 @@ export const KpiListPage = (): JSX.Element => {
                         </span>
                         {formatKpiNumber(
                           'REVENUE_VND',
-                          actualWorkspaceDetailQuery.data.finalResult.revenue.operationalTargetValue,
+                          actualWorkspaceDetailQuery.data.finalResult.revenue
+                            .operationalTargetValue,
                         )}
                       </div>
                       <div>

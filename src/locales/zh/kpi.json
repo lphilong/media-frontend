@@ -52,6 +52,8 @@
     "subjectId": "对象 ID",
     "groupId": "Talent 组",
     "targetGroup": "目标小组",
+    "targetOrgUnit": "公司运营单元",
+    "subjectUnavailable": "对象不可用",
     "talent": "Talent",
     "talentId": "Talent",
     "member": "成员",
@@ -80,13 +82,15 @@
     "allSubjectTypes": "全部对象类型",
     "allMetrics": "全部指标",
     "subjectPlaceholder": "按名称或代码搜索",
+    "talentGroupSubjectPlaceholder": "搜索媒体/Talent 组",
+    "orgUnitSubjectPlaceholder": "搜索公司运营单元",
     "managedMemberPlaceholder": "搜索管理成员"
   },
   "subjectTypes": {
     "TALENT": "Talent",
-    "TALENT_GROUP": "Talent 组",
+    "TALENT_GROUP": "Talent Group",
     "EMPLOYMENT_PROFILE": "雇佣档案",
-    "ORG_UNIT": "组织单元"
+    "ORG_UNIT": "Org Unit"
   },
   "metricCodes": {
     "REVENUE_VND": "VND 收入",

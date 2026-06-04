@@ -52,6 +52,8 @@
     "subjectId": "ID đối tượng",
     "groupId": "Nhóm Talent",
     "targetGroup": "Nhóm mục tiêu",
+    "targetOrgUnit": "Đơn vị vận hành công ty",
+    "subjectUnavailable": "Chưa có thông tin đối tượng",
     "talent": "Talent",
     "talentId": "Talent",
     "member": "Thành viên",
@@ -80,13 +82,15 @@
     "allSubjectTypes": "Tất cả loại đối tượng",
     "allMetrics": "Tất cả chỉ số",
     "subjectPlaceholder": "Tìm theo tên hoặc mã",
+    "talentGroupSubjectPlaceholder": "Tìm nhóm media/talent",
+    "orgUnitSubjectPlaceholder": "Tìm đơn vị vận hành công ty",
     "managedMemberPlaceholder": "Tìm thành viên quản lý"
   },
   "subjectTypes": {
     "TALENT": "Talent",
-    "TALENT_GROUP": "Nhóm Talent",
+    "TALENT_GROUP": "Talent Group",
     "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
-    "ORG_UNIT": "Đơn vị tổ chức"
+    "ORG_UNIT": "Org Unit"
   },
   "metricCodes": {
     "REVENUE_VND": "Doanh thu VND",

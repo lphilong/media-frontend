@@ -438,6 +438,8 @@ export const KpiDetailPage = (): JSX.Element => {
     allocationWorkflowStatus !== 'APPROVED'
       ? t('kpi:disabled.allocationPublishApprovedOnly')
       : undefined;
+  const subjectDisplay =
+    plan.subjectRef?.displayName ?? plan.subjectRef?.name ?? t('kpi:fields.subjectUnavailable');
 
   const saveAllocationDraft = async (): Promise<void> => {
     setAllocationError(null);
@@ -637,8 +639,7 @@ export const KpiDetailPage = (): JSX.Element => {
               <p className="text-sm text-muted">{plan.planCode}</p>
               <h1 className="text-xl font-semibold">{plan.title}</h1>
               <p className="text-sm text-muted">
-                {plan.subjectRef?.displayName ?? plan.subjectRef?.name ?? plan.subjectId} -{' '}
-                {plan.periodMonth}
+                {t(`kpi:subjectTypes.${plan.subjectType}`)} - {subjectDisplay} - {plan.periodMonth}
               </p>
             </div>
             <StatusBadge label={t(`kpi:statuses.${plan.status}`)} />
@@ -655,7 +656,12 @@ export const KpiDetailPage = (): JSX.Element => {
                   label: t('kpi:fields.planStatus'),
                   value: t(`kpi:statuses.${plan.status}`),
                 },
-                { key: 'subject', label: t('kpi:fields.subject'), value: plan.subjectId },
+                {
+                  key: 'subjectType',
+                  label: t('kpi:fields.subjectType'),
+                  value: t(`kpi:subjectTypes.${plan.subjectType}`),
+                },
+                { key: 'subject', label: t('kpi:fields.subject'), value: subjectDisplay },
                 { key: 'period', label: t('kpi:fields.periodMonth'), value: plan.periodMonth },
                 {
                   key: 'publishedAt',

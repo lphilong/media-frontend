@@ -15,6 +15,11 @@ import type {
   KpiDraftCorePayload,
   MarkKpiActualExcusePayload,
   KpiManagedMemberPickerItem,
+  KpiOrgUnitActualDailyGrid,
+  KpiOrgUnitActualEntry,
+  KpiOrgUnitAllocation,
+  KpiOrgUnitManagedMemberPickerItem,
+  KpiOrgUnitProgressView,
   KpiPlanDetail,
   KpiPlanQuery,
   KpiProgressView,
@@ -38,6 +43,11 @@ const metricCodeSchema = z.enum([
   'ONBOARDED_TALENT_COUNT',
   'TIKTOK_DIAMOND',
 ]);
+const createSubjectTypeSchema = z.enum(['TALENT_GROUP', 'ORG_UNIT']);
+const createMetricCodesBySubjectType = {
+  TALENT_GROUP: new Set<z.infer<typeof metricCodeSchema>>(['REVENUE_VND', 'TIKTOK_DIAMOND']),
+  ORG_UNIT: new Set<z.infer<typeof metricCodeSchema>>(['REVENUE_VND']),
+} as const;
 const integerTargetMetricCodes = new Set<z.infer<typeof metricCodeSchema>>([
   'REVENUE_VND',
   'CONTENT_OUTPUT_COUNT',
@@ -215,6 +225,37 @@ const allocationSchema = z
     memberEmploymentProfileId: z.string().nullable(),
     memberTalentId: z.string().trim().min(1),
     membershipId: z.string().nullable(),
+    allocationStatus: allocationStatusSchema,
+    allocationStartDate: z.string().trim().min(1),
+    allocationEndDate: z.string().nullable(),
+    targetMetrics: z.array(targetMetricInputSchema),
+    snapshotMemberDisplayName: z.string().nullable(),
+    note: z.string().nullable(),
+    createdAt: timestampSchema,
+    createdByActorId: z.string().nullable(),
+    updatedAt: timestampSchema,
+    updatedByActorId: z.string().nullable(),
+    submittedAt: timestampSchema.nullable(),
+    submittedByActorId: z.string().nullable(),
+    approvedAt: timestampSchema.nullable(),
+    approvedByActorId: z.string().nullable(),
+    approvalNote: z.string().nullable(),
+    rejectedAt: timestampSchema.nullable(),
+    rejectedByActorId: z.string().nullable(),
+    rejectionReason: z.string().nullable(),
+    publishedAt: timestampSchema.nullable(),
+    publishedByActorId: z.string().nullable(),
+    closedAt: timestampSchema.nullable(),
+  })
+  .strict();
+
+const orgUnitAllocationSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    kpiPlanId: z.string().trim().min(1),
+    memberEmploymentProfileId: z.string().trim().min(1),
+    memberTalentId: z.string().trim().min(1).nullable().optional(),
+    groupId: z.string().trim().min(1).nullable().optional(),
     allocationStatus: allocationStatusSchema,
     allocationStartDate: z.string().trim().min(1),
     allocationEndDate: z.string().nullable(),
@@ -520,6 +561,25 @@ const actualGridSchema = z
   })
   .strict();
 
+const orgUnitActualGridSchema = actualGridSchema
+  .omit({ rows: true })
+  .extend({
+    subjectType: z.literal('ORG_UNIT'),
+    rows: z.array(
+      z
+        .object({
+          allocationId: z.string().trim().min(1),
+          memberEmploymentProfileId: z.string().trim().min(1),
+          memberTalentId: z.string().trim().min(1).nullable().optional(),
+          memberDisplayName: z.string().nullable(),
+          allocationStatus: allocationStatusSchema,
+          metrics: z.array(actualCellSchema),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
 const actualEntrySchema = z
   .object({
     id: z.string().trim().min(1),
@@ -542,6 +602,14 @@ const actualEntrySchema = z
     updatedByActorId: z.string().trim().min(1),
     lastEditedAt: timestampSchema.nullable(),
     lastEditedByActorId: z.string().nullable(),
+  })
+  .strict();
+
+const orgUnitActualEntrySchema = actualEntrySchema
+  .omit({ memberTalentId: true })
+  .extend({
+    memberEmploymentProfileId: z.string().trim().min(1),
+    memberTalentId: z.string().trim().min(1).nullable().optional(),
   })
   .strict();
 
@@ -606,6 +674,27 @@ const progressSchema = z
   })
   .strict();
 
+const orgUnitProgressSchema = progressSchema
+  .omit({ memberProgress: true })
+  .extend({
+    memberProgress: z.array(
+      z
+        .object({
+          allocationId: z.string().trim().min(1),
+          memberEmploymentProfileId: z.string().trim().min(1),
+          memberTalentId: z.string().trim().min(1).nullable().optional(),
+          metricCode: metricCodeSchema,
+          targetValue: z.number(),
+          actualValue: z.number(),
+          progressPercent: z.number().nullable(),
+          actualEntryCount: z.number().int(),
+          missingEntryCount: z.number().int(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
 const managedMemberSchema = z
   .object({
     employmentProfileId: z.string().trim().min(1),
@@ -614,6 +703,15 @@ const managedMemberSchema = z
     talentId: z.string().trim().min(1),
     talentCode: z.string().trim().min(1).nullable(),
     groupId: z.string().trim().min(1),
+  })
+  .strict();
+
+const orgUnitManagedMemberSchema = z
+  .object({
+    employmentProfileId: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1).nullable(),
+    displayName: z.string().trim().min(1),
+    orgUnitId: z.string().trim().min(1),
   })
   .strict();
 
@@ -634,8 +732,13 @@ const actualWorkspaceDetailResponseSchema = z
   .object({ data: actualWorkspacePlanDetailSchema })
   .strict();
 const allocationListResponseSchema = z.object({ data: z.array(allocationSchema) }).strict();
+const orgUnitAllocationListResponseSchema = z
+  .object({ data: z.array(orgUnitAllocationSchema) })
+  .strict();
 const actualGridResponseSchema = z.object({ data: actualGridSchema }).strict();
+const orgUnitActualGridResponseSchema = z.object({ data: orgUnitActualGridSchema }).strict();
 const actualEntryResponseSchema = z.object({ data: actualEntrySchema }).strict();
+const orgUnitActualEntryResponseSchema = z.object({ data: orgUnitActualEntrySchema }).strict();
 const correctionMutationResponseSchema = z
   .object({
     data: z
@@ -646,9 +749,23 @@ const correctionMutationResponseSchema = z
       .strict(),
   })
   .strict();
+const orgUnitCorrectionMutationResponseSchema = z
+  .object({
+    data: z
+      .object({
+        actualEntry: orgUnitActualEntrySchema,
+        correction: correctionSchema,
+      })
+      .strict(),
+  })
+  .strict();
 const correctionListResponseSchema = z.object({ data: z.array(correctionSchema) }).strict();
 const progressResponseSchema = z.object({ data: progressSchema }).strict();
+const orgUnitProgressResponseSchema = z.object({ data: orgUnitProgressSchema }).strict();
 const managedMemberListResponseSchema = z.object({ data: z.array(managedMemberSchema) }).strict();
+const orgUnitManagedMemberListResponseSchema = z
+  .object({ data: z.array(orgUnitManagedMemberSchema) })
+  .strict();
 const markActualExcusePayloadSchema = z
   .object({
     allocationId: z.string().trim().min(1),
@@ -675,7 +792,7 @@ const createPayloadSchema = z
   .object({
     title: z.string().trim().min(1),
     description: z.string().nullable().optional(),
-    subjectType: z.literal('TALENT_GROUP'),
+    subjectType: createSubjectTypeSchema,
     subjectId: z.string().trim().min(1),
     currencyCode: z.literal('VND').optional(),
     periodMonth: periodMonthSchema.refine((value) => !isPastKpiCreatePeriodMonth(value), {
@@ -687,7 +804,19 @@ const createPayloadSchema = z
     targetMetrics: requiredTargetMetricInputArraySchema,
     externalRef: z.string().nullable().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((payload, context) => {
+    const allowed = createMetricCodesBySubjectType[payload.subjectType];
+    payload.targetMetrics.forEach((metric, index) => {
+      if (!allowed.has(metric.metricCode)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['targetMetrics', index, 'metricCode'],
+          message: `${metric.metricCode} is not allowed for ${payload.subjectType} KPI plans.`,
+        });
+      }
+    });
+  });
 
 const draftCorePayloadSchema = z
   .object({
@@ -865,6 +994,21 @@ export const fetchKpiAllocations = async (
   return allocationListResponseSchema.parse(response).data;
 };
 
+export const fetchKpiOrgUnitAllocations = async (
+  kpiPlanId: string,
+  query: { status?: KpiAllocation['allocationStatus']; limit?: number } = {},
+): Promise<KpiOrgUnitAllocation[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/org-unit-allocations`,
+    params: {
+      status: query.status,
+      limit: query.limit,
+    },
+  });
+  return orgUnitAllocationListResponseSchema.parse(response).data;
+};
+
 export const upsertKpiAllocationDraft = async (
   kpiPlanId: string,
   allocations: KpiAllocationDraftMemberInput[],
@@ -965,6 +1109,16 @@ export const fetchKpiProgress = async (kpiPlanId: string): Promise<KpiProgressVi
   return progressResponseSchema.parse(response).data;
 };
 
+export const fetchKpiOrgUnitProgress = async (
+  kpiPlanId: string,
+): Promise<KpiOrgUnitProgressView> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/org-unit-progress`,
+  });
+  return orgUnitProgressResponseSchema.parse(response).data;
+};
+
 export const fetchKpiManagedMembers = async (
   kpiPlanId: string,
   query: { search?: string; limit?: number } = {},
@@ -978,6 +1132,21 @@ export const fetchKpiManagedMembers = async (
     },
   });
   return managedMemberListResponseSchema.parse(response).data;
+};
+
+export const fetchKpiOrgUnitManagedMembers = async (
+  kpiPlanId: string,
+  query: { search?: string; limit?: number } = {},
+): Promise<KpiOrgUnitManagedMemberPickerItem[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/org-unit-managed-members`,
+    params: {
+      search: query.search || undefined,
+      limit: query.limit,
+    },
+  });
+  return orgUnitManagedMemberListResponseSchema.parse(response).data;
 };
 
 export const fetchMyKpiProgress = async (planId: string): Promise<KpiProgressView> => {
@@ -999,6 +1168,18 @@ export const fetchKpiActualDailyGrid = async (
     params: { actualDate },
   });
   return actualGridResponseSchema.parse(response).data;
+};
+
+export const fetchKpiOrgUnitActualGrid = async (
+  kpiPlanId: string,
+  actualDate: string,
+): Promise<KpiOrgUnitActualDailyGrid> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/org-unit-actuals`,
+    params: { actualDate },
+  });
+  return orgUnitActualGridResponseSchema.parse(response).data;
 };
 
 export const createKpiActual = async (payload: {
@@ -1033,6 +1214,38 @@ export const createKpiActual = async (payload: {
   return actualEntryResponseSchema.parse(response).data;
 };
 
+const actualMutationPayloadSchema = z
+  .object({
+    allocationId: z.string().trim().min(1),
+    metricCode: metricCodeSchema,
+    actualDate: z
+      .string()
+      .trim()
+      .regex(/^\d{2}-\d{2}-\d{4}$/),
+    actualValue: z.number(),
+  })
+  .strict();
+
+export const createKpiOrgUnitActual = async (payload: {
+  kpiPlanId: string;
+  allocationId: string;
+  metricCode: KpiTargetMetricInput['metricCode'];
+  actualDate: string;
+  actualValue: number;
+}): Promise<KpiOrgUnitActualEntry> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/kpi/plans/${encodeURIComponent(payload.kpiPlanId)}/org-unit-actuals`,
+    data: actualMutationPayloadSchema.parse({
+      allocationId: payload.allocationId,
+      metricCode: payload.metricCode,
+      actualDate: payload.actualDate,
+      actualValue: payload.actualValue,
+    }),
+  });
+  return orgUnitActualEntryResponseSchema.parse(response).data;
+};
+
 export const markKpiActualExcuse = async (
   payload: MarkKpiActualExcusePayload,
 ): Promise<KpiPlanDetail> => {
@@ -1052,6 +1265,25 @@ export const markKpiActualExcuse = async (
   return detailResponseSchema.parse(response).data;
 };
 
+export const markKpiOrgUnitActualExcuse = async (
+  payload: MarkKpiActualExcusePayload,
+): Promise<KpiPlanDetail> => {
+  const data = markActualExcusePayloadSchema.parse({
+    allocationId: payload.allocationId,
+    metricCode: payload.metricCode,
+    actualDate: payload.actualDate,
+    status: payload.status,
+    reasonCode: payload.reasonCode,
+    reasonText: payload.reasonText,
+  });
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/kpi/plans/${encodeURIComponent(payload.kpiPlanId)}/org-unit-actual-excuses`,
+    data,
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
 export const unmarkKpiActualExcuse = async ({
   kpiPlanId,
   excuseId,
@@ -1061,6 +1293,20 @@ export const unmarkKpiActualExcuse = async ({
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/actual-excuses/${encodeURIComponent(
       excuseId,
     )}`,
+    data: {},
+  });
+  return detailResponseSchema.parse(response).data;
+};
+
+export const unmarkKpiOrgUnitActualExcuse = async ({
+  kpiPlanId,
+  excuseId,
+}: UnmarkKpiActualExcusePayload): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown, Record<string, never>>({
+    method: 'DELETE',
+    url: `/admin/kpi/plans/${encodeURIComponent(
+      kpiPlanId,
+    )}/org-unit-actual-excuses/${encodeURIComponent(excuseId)}`,
     data: {},
   });
   return detailResponseSchema.parse(response).data;
@@ -1081,6 +1327,23 @@ export const updateKpiActual = async (payload: {
     }),
   });
   return actualEntryResponseSchema.parse(response).data;
+};
+
+export const updateKpiOrgUnitActual = async (payload: {
+  kpiPlanId: string;
+  actualEntryId: string;
+  actualValue: number;
+}): Promise<KpiOrgUnitActualEntry> => {
+  const response = await apiRequest<unknown>({
+    method: 'PATCH',
+    url: `/admin/kpi/plans/${encodeURIComponent(
+      payload.kpiPlanId,
+    )}/org-unit-actuals/${encodeURIComponent(payload.actualEntryId)}`,
+    data: z.object({ actualValue: z.number() }).strict().parse({
+      actualValue: payload.actualValue,
+    }),
+  });
+  return orgUnitActualEntryResponseSchema.parse(response).data;
 };
 
 export const createKpiCorrection = async (payload: {
@@ -1105,6 +1368,28 @@ export const createKpiCorrection = async (payload: {
   return correctionMutationResponseSchema.parse(response).data;
 };
 
+export const createKpiOrgUnitCorrection = async (payload: {
+  kpiPlanId: string;
+  actualEntryId: string;
+  correctedValue: number;
+  reason: string;
+}): Promise<{ actualEntry: KpiOrgUnitActualEntry; correction: KpiActualCorrection }> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/kpi/plans/${encodeURIComponent(
+      payload.kpiPlanId,
+    )}/org-unit-actuals/${encodeURIComponent(payload.actualEntryId)}/corrections`,
+    data: z
+      .object({
+        correctedValue: z.number(),
+        reason: z.string().trim().min(1),
+      })
+      .strict()
+      .parse({ correctedValue: payload.correctedValue, reason: payload.reason }),
+  });
+  return orgUnitCorrectionMutationResponseSchema.parse(response).data;
+};
+
 export const fetchKpiCorrectionHistory = async (
   kpiPlanId: string,
   actualEntryId: string,
@@ -1116,6 +1401,27 @@ export const fetchKpiCorrectionHistory = async (
     )}/corrections`,
   });
   return correctionListResponseSchema.parse(response).data;
+};
+
+export const fetchKpiOrgUnitCorrectionHistory = async (
+  kpiPlanId: string,
+  actualEntryId: string,
+): Promise<KpiActualCorrection[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/kpi/plans/${encodeURIComponent(
+      kpiPlanId,
+    )}/org-unit-actuals/${encodeURIComponent(actualEntryId)}/corrections`,
+  });
+  return correctionListResponseSchema.parse(response).data;
+};
+
+export const fetchKpiOrgUnitFinalResult = async (kpiPlanId: string): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/org-unit-final-result`,
+  });
+  return detailResponseSchema.parse(response).data;
 };
 
 export const parseKpiPlanListResponseForTest = (response: unknown) =>
@@ -1132,6 +1438,9 @@ export const parseKpiActualWorkspacePlanListResponseForTest = (response: unknown
 
 export const parseKpiActualDailyGridResponseForTest = (response: unknown) =>
   actualGridResponseSchema.parse(response).data;
+
+export const parseKpiOrgUnitActualGridResponseForTest = (response: unknown) =>
+  orgUnitActualGridResponseSchema.parse(response).data;
 
 export const parseKpiCorrectionMutationResponseForTest = (response: unknown) =>
   correctionMutationResponseSchema.parse(response).data;
@@ -1166,3 +1475,15 @@ export const parseKpiAllocationDraftPayloadForTest = (
 
 export const parseKpiAllocationListResponseForTest = (response: unknown): KpiAllocation[] =>
   allocationListResponseSchema.parse(response).data;
+
+export const parseKpiOrgUnitAllocationListResponseForTest = (
+  response: unknown,
+): KpiOrgUnitAllocation[] => orgUnitAllocationListResponseSchema.parse(response).data;
+
+export const parseKpiOrgUnitManagedMemberListResponseForTest = (
+  response: unknown,
+): KpiOrgUnitManagedMemberPickerItem[] =>
+  orgUnitManagedMemberListResponseSchema.parse(response).data;
+
+export const parseKpiOrgUnitProgressResponseForTest = (response: unknown): KpiOrgUnitProgressView =>
+  orgUnitProgressResponseSchema.parse(response).data;

@@ -4,17 +4,26 @@ import {
   approveKpiAllocation,
   createKpiActual,
   createKpiCorrection,
+  createKpiOrgUnitActual,
+  createKpiOrgUnitCorrection,
   createKpiPlan,
   fetchKpiAllocations,
   fetchKpiActualDailyGrid,
   fetchKpiActualWorkspacePlanDetail,
   fetchKpiActualWorkspacePlans,
   fetchKpiCorrectionHistory,
+  fetchKpiOrgUnitActualGrid,
+  fetchKpiOrgUnitAllocations,
+  fetchKpiOrgUnitCorrectionHistory,
+  fetchKpiOrgUnitFinalResult,
+  fetchKpiOrgUnitManagedMembers,
+  fetchKpiOrgUnitProgress,
   fetchKpiPlanDetail,
   fetchKpiPlans,
   fetchKpiProgress,
   fetchMyKpiProgress,
   markKpiActualExcuse,
+  markKpiOrgUnitActualExcuse,
   performKpiLifecycleAction,
   publishKpiAllocation,
   rejectKpiAllocation,
@@ -22,7 +31,9 @@ import {
   replaceKpiTargetMetrics,
   submitKpiAllocationDraft,
   unmarkKpiActualExcuse,
+  unmarkKpiOrgUnitActualExcuse,
   updateKpiActual,
+  updateKpiOrgUnitActual,
   updateKpiDraftCore,
   upsertKpiAllocationDraft,
 } from '@modules/kpi/api/kpi.api';
@@ -34,6 +45,7 @@ import type {
   KpiCreatePlanPayload,
   KpiDraftCorePayload,
   MarkKpiActualExcusePayload,
+  KpiOrgUnitAllocationQuery,
   KpiPlanQuery,
   KpiTargetMetricInput,
   UnmarkKpiActualExcusePayload,
@@ -57,13 +69,23 @@ export const kpiQueryKeys = {
     ['kpi', 'actual-workspace', 'plan', kpiPlanId] as const,
   allocations: (query: KpiAllocationQuery) =>
     ['kpi', 'allocations', stableQueryToken(query)] as const,
+  orgUnitAllocations: (kpiPlanId: string, query: KpiOrgUnitAllocationQuery) =>
+    ['kpi', 'org-unit-allocations', kpiPlanId, stableQueryToken(query)] as const,
   detail: (kpiPlanId: string) => ['kpi', 'plan', kpiPlanId] as const,
   progress: (kpiPlanId: string) => ['kpi', 'progress', kpiPlanId] as const,
+  orgUnitProgress: (kpiPlanId: string) => ['kpi', 'org-unit-progress', kpiPlanId] as const,
+  orgUnitManagedMembers: (kpiPlanId: string, query: { search?: string; limit?: number }) =>
+    ['kpi', 'org-unit-managed-members', kpiPlanId, stableQueryToken(query)] as const,
+  orgUnitFinalResult: (kpiPlanId: string) => ['kpi', 'org-unit-final-result', kpiPlanId] as const,
   myProgress: (kpiPlanId: string) => ['kpi', 'my-progress', kpiPlanId] as const,
   actualGrid: (kpiPlanId: string, actualDate: string) =>
     ['kpi', 'actual-grid', kpiPlanId, actualDate] as const,
+  orgUnitActualGrid: (kpiPlanId: string, actualDate: string) =>
+    ['kpi', 'org-unit-actual-grid', kpiPlanId, actualDate] as const,
   corrections: (kpiPlanId: string, actualEntryId: string) =>
     ['kpi', 'corrections', kpiPlanId, actualEntryId] as const,
+  orgUnitCorrections: (kpiPlanId: string, actualEntryId: string) =>
+    ['kpi', 'org-unit-corrections', kpiPlanId, actualEntryId] as const,
 };
 
 const invalidateKpi = async (queryClient: ReturnType<typeof useQueryClient>) => {
@@ -102,6 +124,18 @@ export const useKpiAllocations = (query: KpiAllocationQuery) =>
     queryFn: () => fetchKpiAllocations(query),
   });
 
+export const useKpiOrgUnitAllocations = (
+  kpiPlanId: string | undefined,
+  query: KpiOrgUnitAllocationQuery = {},
+) =>
+  useQuery({
+    queryKey: kpiPlanId
+      ? kpiQueryKeys.orgUnitAllocations(kpiPlanId, query)
+      : ['kpi', 'org-unit-allocations'],
+    queryFn: () => fetchKpiOrgUnitAllocations(kpiPlanId ?? '', query),
+    enabled: Boolean(kpiPlanId),
+  });
+
 export const useKpiPlanDetail = (kpiPlanId?: string) =>
   useQuery({
     queryKey: kpiPlanId ? kpiQueryKeys.detail(kpiPlanId) : ['kpi', 'plan'],
@@ -121,6 +155,25 @@ export const useKpiProgress = (kpiPlanId?: string, options?: { self?: boolean })
     enabled: Boolean(kpiPlanId),
   });
 
+export const useKpiOrgUnitProgress = (kpiPlanId?: string) =>
+  useQuery({
+    queryKey: kpiPlanId ? kpiQueryKeys.orgUnitProgress(kpiPlanId) : ['kpi', 'org-unit-progress'],
+    queryFn: () => fetchKpiOrgUnitProgress(kpiPlanId ?? ''),
+    enabled: Boolean(kpiPlanId),
+  });
+
+export const useKpiOrgUnitManagedMembers = (
+  kpiPlanId: string | undefined,
+  query: { search?: string; limit?: number } = {},
+) =>
+  useQuery({
+    queryKey: kpiPlanId
+      ? kpiQueryKeys.orgUnitManagedMembers(kpiPlanId, query)
+      : ['kpi', 'org-unit-managed-members'],
+    queryFn: () => fetchKpiOrgUnitManagedMembers(kpiPlanId ?? '', query),
+    enabled: Boolean(kpiPlanId),
+  });
+
 export const useKpiActualDailyGrid = (
   kpiPlanId: string | undefined,
   actualDate: string | undefined,
@@ -131,6 +184,19 @@ export const useKpiActualDailyGrid = (
         ? kpiQueryKeys.actualGrid(kpiPlanId, actualDate)
         : ['kpi', 'actual-grid'],
     queryFn: () => fetchKpiActualDailyGrid(kpiPlanId ?? '', actualDate ?? ''),
+    enabled: Boolean(kpiPlanId && actualDate),
+  });
+
+export const useKpiOrgUnitActualGrid = (
+  kpiPlanId: string | undefined,
+  actualDate: string | undefined,
+) =>
+  useQuery({
+    queryKey:
+      kpiPlanId && actualDate
+        ? kpiQueryKeys.orgUnitActualGrid(kpiPlanId, actualDate)
+        : ['kpi', 'org-unit-actual-grid'],
+    queryFn: () => fetchKpiOrgUnitActualGrid(kpiPlanId ?? '', actualDate ?? ''),
     enabled: Boolean(kpiPlanId && actualDate),
   });
 
@@ -145,6 +211,28 @@ export const useKpiCorrectionHistory = (
         : ['kpi', 'corrections'],
     queryFn: () => fetchKpiCorrectionHistory(kpiPlanId ?? '', actualEntryId ?? ''),
     enabled: Boolean(kpiPlanId && actualEntryId),
+  });
+
+export const useKpiOrgUnitCorrectionHistory = (
+  kpiPlanId: string | undefined,
+  actualEntryId: string | undefined,
+) =>
+  useQuery({
+    queryKey:
+      kpiPlanId && actualEntryId
+        ? kpiQueryKeys.orgUnitCorrections(kpiPlanId, actualEntryId)
+        : ['kpi', 'org-unit-corrections'],
+    queryFn: () => fetchKpiOrgUnitCorrectionHistory(kpiPlanId ?? '', actualEntryId ?? ''),
+    enabled: Boolean(kpiPlanId && actualEntryId),
+  });
+
+export const useKpiOrgUnitFinalResult = (kpiPlanId?: string) =>
+  useQuery({
+    queryKey: kpiPlanId
+      ? kpiQueryKeys.orgUnitFinalResult(kpiPlanId)
+      : ['kpi', 'org-unit-final-result'],
+    queryFn: () => fetchKpiOrgUnitFinalResult(kpiPlanId ?? ''),
+    enabled: Boolean(kpiPlanId),
   });
 
 export const useCreateKpiPlanMutation = () => {
@@ -267,10 +355,26 @@ export const useCreateKpiActualMutation = () => {
   });
 };
 
+export const useCreateKpiOrgUnitActualMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createKpiOrgUnitActual,
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
 export const useUpdateKpiActualMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateKpiActual,
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const useUpdateKpiOrgUnitActualMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateKpiOrgUnitActual,
     onSuccess: () => invalidateKpi(queryClient),
   });
 };
@@ -283,6 +387,14 @@ export const useMarkKpiActualExcuseMutation = () => {
   });
 };
 
+export const useMarkKpiOrgUnitActualExcuseMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: MarkKpiActualExcusePayload) => markKpiOrgUnitActualExcuse(payload),
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
 export const useUnmarkKpiActualExcuseMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -291,10 +403,26 @@ export const useUnmarkKpiActualExcuseMutation = () => {
   });
 };
 
+export const useUnmarkKpiOrgUnitActualExcuseMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UnmarkKpiActualExcusePayload) => unmarkKpiOrgUnitActualExcuse(payload),
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
 export const useCreateKpiCorrectionMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createKpiCorrection,
+    onSuccess: () => invalidateKpi(queryClient),
+  });
+};
+
+export const useCreateKpiOrgUnitCorrectionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createKpiOrgUnitCorrection,
     onSuccess: () => invalidateKpi(queryClient),
   });
 };

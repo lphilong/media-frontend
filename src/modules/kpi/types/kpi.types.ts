@@ -8,8 +8,11 @@ export const kpiSubjectTypes = [
 ] as const;
 export type KpiSubjectType = (typeof kpiSubjectTypes)[number];
 
-export const kpiExecutableSubjectTypes = ['TALENT', 'TALENT_GROUP'] as const;
+export const kpiExecutableSubjectTypes = ['TALENT_GROUP', 'ORG_UNIT'] as const;
 export type KpiExecutableSubjectType = (typeof kpiExecutableSubjectTypes)[number];
+
+export const kpiCreateSubjectTypes = ['TALENT_GROUP', 'ORG_UNIT'] as const;
+export type KpiCreateSubjectType = (typeof kpiCreateSubjectTypes)[number];
 
 export const kpiMetricCodes = [
   'REVENUE_VND',
@@ -20,6 +23,11 @@ export const kpiMetricCodes = [
   'TIKTOK_DIAMOND',
 ] as const;
 export type KpiMetricCode = (typeof kpiMetricCodes)[number];
+
+export const kpiMetricsBySubjectType = {
+  TALENT_GROUP: ['REVENUE_VND', 'TIKTOK_DIAMOND'],
+  ORG_UNIT: ['REVENUE_VND'],
+} as const satisfies Record<KpiCreateSubjectType, readonly KpiMetricCode[]>;
 
 export const kpiPlanStatuses = ['DRAFT', 'PUBLISHED', 'FINALIZED', 'ARCHIVED'] as const;
 export type KpiPlanStatus = (typeof kpiPlanStatuses)[number];
@@ -114,6 +122,13 @@ export type KpiManagedMemberPickerItem = {
   groupId: string;
 };
 
+export type KpiOrgUnitManagedMemberPickerItem = {
+  employmentProfileId: string;
+  employeeCode: string | null;
+  displayName: string;
+  orgUnitId: string;
+};
+
 export type KpiAllocationQuery = {
   status?: KpiAllocationStatus;
   kpiPlanId?: string;
@@ -121,10 +136,15 @@ export type KpiAllocationQuery = {
   limit?: number;
 };
 
+export type KpiOrgUnitAllocationQuery = {
+  status?: KpiAllocationStatus;
+  limit?: number;
+};
+
 export type KpiCreatePlanPayload = {
   title: string;
   description?: string | null;
-  subjectType: 'TALENT_GROUP';
+  subjectType: KpiCreateSubjectType;
   subjectId: string;
   currencyCode?: 'VND';
   periodMonth: string;
@@ -218,6 +238,15 @@ export type KpiAllocation = {
   closedAt: number | string | null;
 };
 
+export type KpiOrgUnitAllocation = Omit<
+  KpiAllocation,
+  'groupId' | 'memberEmploymentProfileId' | 'memberTalentId' | 'membershipId'
+> & {
+  groupId?: string | null;
+  memberEmploymentProfileId: string;
+  memberTalentId?: string | null;
+};
+
 export type KpiPlanListItem = {
   id: string;
   planCode: string;
@@ -279,6 +308,11 @@ export type KpiActualGridRow = {
   metrics: KpiActualGridMetricCell[];
 };
 
+export type KpiOrgUnitActualGridRow = Omit<KpiActualGridRow, 'memberTalentId'> & {
+  memberEmploymentProfileId: string;
+  memberTalentId?: string | null;
+};
+
 export type KpiActualDailyGrid = {
   kpiPlanId: string;
   planCode: string;
@@ -302,6 +336,11 @@ export type KpiActualDailyGrid = {
   rows: KpiActualGridRow[];
 };
 
+export type KpiOrgUnitActualDailyGrid = Omit<KpiActualDailyGrid, 'rows'> & {
+  subjectType: 'ORG_UNIT';
+  rows: KpiOrgUnitActualGridRow[];
+};
+
 export type KpiActualEntry = {
   id: string;
   kpiPlanId: string;
@@ -320,6 +359,11 @@ export type KpiActualEntry = {
   updatedByActorId: string;
   lastEditedAt: number | string | null;
   lastEditedByActorId: string | null;
+};
+
+export type KpiOrgUnitActualEntry = Omit<KpiActualEntry, 'memberTalentId'> & {
+  memberEmploymentProfileId: string;
+  memberTalentId?: string | null;
 };
 
 export type KpiActualCorrection = {
@@ -360,6 +404,20 @@ export type KpiProgressView = {
   memberProgress: Array<{
     allocationId: string;
     memberTalentId: string;
+    metricCode: KpiMetricCode;
+    targetValue: number;
+    actualValue: number;
+    progressPercent: number | null;
+    actualEntryCount: number;
+    missingEntryCount: number;
+  }>;
+};
+
+export type KpiOrgUnitProgressView = Omit<KpiProgressView, 'memberProgress'> & {
+  memberProgress: Array<{
+    allocationId: string;
+    memberEmploymentProfileId: string;
+    memberTalentId?: string | null;
     metricCode: KpiMetricCode;
     targetValue: number;
     actualValue: number;

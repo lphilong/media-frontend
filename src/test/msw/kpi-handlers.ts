@@ -52,9 +52,9 @@ type KpiTargetMetric = {
 type KpiAllocation = {
   id: string;
   kpiPlanId: string;
-  groupId: string;
+  groupId: string | null;
   memberEmploymentProfileId: string | null;
-  memberTalentId: string;
+  memberTalentId: string | null;
   membershipId: string | null;
   allocationStatus:
     | 'DRAFT'
@@ -288,7 +288,13 @@ const integerTargetMetricCodes = new Set<KpiMetricCode>([
   'TIKTOK_DIAMOND',
 ]);
 const subjectTypes: KpiSubjectType[] = ['TALENT', 'TALENT_GROUP', 'EMPLOYMENT_PROFILE', 'ORG_UNIT'];
-const createSubjectTypes: KpiSubjectType[] = ['TALENT_GROUP'];
+const createSubjectTypes: KpiSubjectType[] = ['TALENT_GROUP', 'ORG_UNIT'];
+const createMetricCodesBySubjectType: Record<KpiSubjectType, ReadonlySet<KpiMetricCode>> = {
+  TALENT: new Set(),
+  EMPLOYMENT_PROFILE: new Set(),
+  TALENT_GROUP: new Set(['REVENUE_VND', 'TIKTOK_DIAMOND']),
+  ORG_UNIT: new Set(['REVENUE_VND']),
+};
 const planStatuses: KpiStatus[] = ['DRAFT', 'PUBLISHED', 'FINALIZED', 'ARCHIVED'];
 const allocationStatuses: KpiAllocation['allocationStatus'][] = [
   'DRAFT',
@@ -358,6 +364,30 @@ const managedMembers: ManagedMember[] = [
     groupId: 'group-001',
   },
 ];
+const orgUnitManagedMembers = [
+  {
+    employmentProfileId: 'employment-profile-ops-001',
+    employeeCode: 'EP-OPS-001',
+    displayName: 'An Nguyen',
+    orgUnitId: 'org-unit-001',
+  },
+  {
+    employmentProfileId: 'employment-profile-ops-002',
+    employeeCode: 'EP-OPS-002',
+    displayName: 'Bao Le',
+    orgUnitId: 'org-unit-001',
+  },
+];
+
+const subjectRefFor = (subjectType: KpiSubjectType, subjectId: string): ReferenceSummary | null => {
+  if (subjectType === 'ORG_UNIT') {
+    return { id: subjectId, code: 'OU-001', name: 'Operations Unit', status: 'ACTIVE' };
+  }
+  if (subjectType === 'TALENT_GROUP') {
+    return { id: subjectId, code: 'TG-001', name: 'Creator Team', status: 'ACTIVE' };
+  }
+  return null;
+};
 
 const basePlan = (overrides: Partial<KpiPlan>): KpiPlan => ({
   id: 'kpi-plan-draft',
@@ -366,7 +396,10 @@ const basePlan = (overrides: Partial<KpiPlan>): KpiPlan => ({
   description: null,
   subjectType: 'TALENT_GROUP',
   subjectId: 'group-001',
-  subjectRef: { id: 'group-001', code: 'TG-001', name: 'Creator Team', status: 'ACTIVE' },
+  subjectRef: subjectRefFor(
+    overrides.subjectType ?? 'TALENT_GROUP',
+    overrides.subjectId ?? 'group-001',
+  ),
   status: 'DRAFT',
   currencyCode: 'VND',
   periodMonth: '2026-05',
@@ -596,6 +629,17 @@ const initialPlans = [
     title: 'Status fixture not due only',
     status: 'PUBLISHED',
   }),
+  basePlan({
+    id: 'kpi-plan-org-unit',
+    planCode: 'KPI-202606-ORG-001',
+    title: 'Operations unit KPI',
+    subjectType: 'ORG_UNIT',
+    subjectId: 'org-unit-001',
+    periodMonth: '2026-06',
+    status: 'PUBLISHED',
+    publishedAt: now - 30_000,
+    publishedByActorId: 'user-admin',
+  }),
 ];
 
 const initialTargets: Record<string, KpiTargetMetric[]> = Object.fromEntries(
@@ -627,6 +671,19 @@ const initialTargets: Record<string, KpiTargetMetric[]> = Object.fromEntries(
     ],
   ]),
 );
+initialTargets['kpi-plan-org-unit'] = [
+  {
+    id: 'kpi-plan-org-unit-metric-revenue',
+    kpiPlanId: 'kpi-plan-org-unit',
+    metricCode: 'REVENUE_VND',
+    targetValue: 2000000,
+    unit: 'VND',
+    rollupMethod: 'SUM',
+    actualSource: 'MANUAL',
+    createdAt: now,
+    updatedAt: now,
+  },
+];
 
 const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
   initialPlans.map((plan) => [
@@ -701,6 +758,37 @@ const initialAllocations: Record<string, KpiAllocation[]> = Object.fromEntries(
 );
 
 initialAllocations['kpi-plan-draft'] = [];
+initialAllocations['kpi-plan-org-unit'] = [
+  {
+    id: 'kpi-plan-org-unit-alloc-1',
+    kpiPlanId: 'kpi-plan-org-unit',
+    groupId: null,
+    memberEmploymentProfileId: 'employment-profile-ops-001',
+    memberTalentId: null,
+    membershipId: null,
+    allocationStatus: 'PUBLISHED',
+    allocationStartDate: '2026-06-01',
+    allocationEndDate: null,
+    targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 2000000 }],
+    snapshotMemberDisplayName: 'An Nguyen',
+    note: null,
+    createdAt: now,
+    createdByActorId: 'user-admin',
+    updatedAt: now,
+    updatedByActorId: 'user-admin',
+    submittedAt: now - 45_000,
+    submittedByActorId: 'manager-user',
+    approvedAt: now - 40_000,
+    approvedByActorId: 'user-admin',
+    approvalNote: null,
+    rejectedAt: null,
+    rejectedByActorId: null,
+    rejectionReason: null,
+    publishedAt: now - 30_000,
+    publishedByActorId: 'user-admin',
+    closedAt: null,
+  },
+];
 initialAllocations['kpi-plan-finalized'] = (initialAllocations['kpi-plan-finalized'] ?? []).map(
   (allocation, index) => ({
     ...allocation,
@@ -1116,7 +1204,13 @@ const validatePublishAllocationPreconditions = (plan: KpiPlan) => {
 const toDetail = (plan: KpiPlan) => ({
   ...plan,
   targetMetrics: targets[plan.id] ?? [],
-  allocations: allocations[plan.id] ?? [],
+  allocations:
+    plan.subjectType === 'TALENT_GROUP'
+      ? (allocations[plan.id] ?? []).filter(
+          (allocation) =>
+            typeof allocation.groupId === 'string' && typeof allocation.memberTalentId === 'string',
+        )
+      : [],
 });
 
 const toAllocationWorkflowSummary = (rows: KpiAllocation[]): KpiAllocationWorkflowSummary => {
@@ -1799,6 +1893,69 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => {
   };
 };
 
+const toOrgUnitAllocation = (allocation: KpiAllocation) => ({
+  id: allocation.id,
+  kpiPlanId: allocation.kpiPlanId,
+  memberEmploymentProfileId: allocation.memberEmploymentProfileId ?? 'employment-profile-unknown',
+  memberTalentId: allocation.memberTalentId,
+  groupId: allocation.groupId,
+  allocationStatus: allocation.allocationStatus,
+  allocationStartDate: allocation.allocationStartDate,
+  allocationEndDate: allocation.allocationEndDate,
+  targetMetrics: allocation.targetMetrics.map((metric) => ({ ...metric })),
+  snapshotMemberDisplayName: allocation.snapshotMemberDisplayName,
+  note: allocation.note,
+  createdAt: allocation.createdAt,
+  createdByActorId: allocation.createdByActorId,
+  updatedAt: allocation.updatedAt,
+  updatedByActorId: allocation.updatedByActorId,
+  submittedAt: allocation.submittedAt,
+  submittedByActorId: allocation.submittedByActorId,
+  approvedAt: allocation.approvedAt,
+  approvedByActorId: allocation.approvedByActorId,
+  approvalNote: allocation.approvalNote,
+  rejectedAt: allocation.rejectedAt,
+  rejectedByActorId: allocation.rejectedByActorId,
+  rejectionReason: allocation.rejectionReason,
+  publishedAt: allocation.publishedAt,
+  publishedByActorId: allocation.publishedByActorId,
+  closedAt: allocation.closedAt,
+});
+
+const toOrgUnitActualGrid = (plan: KpiPlan, actualDate: string) => {
+  const grid = toActualGrid(plan, actualDate);
+  return {
+    ...grid,
+    subjectType: 'ORG_UNIT' as const,
+    rows: (allocations[plan.id] ?? [])
+      .filter((allocation) => allocation.allocationStatus === 'PUBLISHED')
+      .map((allocation) => {
+        const row = grid.rows.find((item) => item.allocationId === allocation.id);
+        return {
+          allocationId: allocation.id,
+          memberEmploymentProfileId:
+            allocation.memberEmploymentProfileId ?? 'employment-profile-unknown',
+          memberTalentId: allocation.memberTalentId,
+          memberDisplayName: allocation.snapshotMemberDisplayName,
+          allocationStatus: allocation.allocationStatus,
+          metrics: row?.metrics ?? [],
+        };
+      }),
+  };
+};
+
+const exposeOrgUnitActualEntry = (entry: ActualEntry) => {
+  const allocation = (allocations[entry.kpiPlanId] ?? []).find(
+    (item) => item.id === entry.allocationId,
+  );
+  return {
+    ...entry,
+    memberEmploymentProfileId:
+      allocation?.memberEmploymentProfileId ?? 'employment-profile-unknown',
+    memberTalentId: allocation?.memberTalentId ?? null,
+  };
+};
+
 type WorkspaceMemberActual = {
   values: Partial<Record<KpiMetricCode, number>>;
   missing: number;
@@ -1886,15 +2043,15 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
     const targetValue = members.reduce(
       (sum, member) =>
         sum +
-        (member.supportingMetrics.find((metric) => metric.metricCode === metricCode)
-          ?.targetValue ?? 0),
+        (member.supportingMetrics.find((metric) => metric.metricCode === metricCode)?.targetValue ??
+          0),
       0,
     );
     const supportingActualValue = members.reduce(
       (sum, member) =>
         sum +
-        (member.supportingMetrics.find((metric) => metric.metricCode === metricCode)
-          ?.actualValue ?? 0),
+        (member.supportingMetrics.find((metric) => metric.metricCode === metricCode)?.actualValue ??
+          0),
       0,
     );
     return {
@@ -2296,7 +2453,14 @@ export const kpiHandlers = [
     if (unsupported) return unsupported;
     const invalid = validateAllocationListQuery(url.searchParams);
     if (invalid) return invalid;
-    let rows = Object.values(allocations).flat();
+    let rows = Object.values(allocations)
+      .flat()
+      .filter(
+        (allocation) =>
+          typeof allocation.groupId === 'string' &&
+          typeof allocation.memberTalentId === 'string' &&
+          readPlan(allocation.kpiPlanId)?.subjectType === 'TALENT_GROUP',
+      );
     if (url.searchParams.get('status')) {
       rows = rows.filter(
         (allocation) => allocation.allocationStatus === url.searchParams.get('status'),
@@ -2355,7 +2519,10 @@ export const kpiHandlers = [
     if (!isNumber(body.periodStartAt) || !isNumber(body.periodEndAt)) {
       return validationError('KPI periodStartAt/periodEndAt must be numeric timestamps');
     }
-    const targetValidation = validateMetricPayload(body.targetMetrics);
+    const subjectType = body.subjectType as KpiSubjectType;
+    const targetValidation = validateMetricPayload(body.targetMetrics, {
+      allowedMetricCodes: createMetricCodesBySubjectType[subjectType],
+    });
     if (!targetValidation.ok) {
       return validationError(targetValidation.message, targetValidation.status);
     }
@@ -2366,8 +2533,9 @@ export const kpiHandlers = [
       planCode: `KPI-202605-${String(planSeed).padStart(6, '0')}`,
       title: String(body.title),
       description: (body.description as string | null | undefined) ?? null,
-      subjectType: body.subjectType as KpiSubjectType,
+      subjectType,
       subjectId: String(body.subjectId),
+      subjectRef: subjectRefFor(subjectType, String(body.subjectId)),
       periodMonth: String(body.periodMonth),
       periodStartAt: Number(body.periodStartAt),
       periodEndAt: Number(body.periodEndAt),
@@ -2478,6 +2646,124 @@ export const kpiHandlers = [
       )
       .slice(0, limit);
     return HttpResponse.json({ data: rows });
+  }),
+  http.get('*/admin/kpi/plans/:kpiPlanId/org-unit-allocations', ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.subjectType !== 'ORG_UNIT') {
+      return HttpResponse.json(
+        { message: 'ORG_UNIT allocations require an ORG_UNIT KPI plan' },
+        { status: 409 },
+      );
+    }
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, ['status', 'limit']);
+    if (unsupported) return unsupported;
+    const limit = parseLimitQuery(url.searchParams.get('limit')) ?? 50;
+    let rows = allocations[plan.id] ?? [];
+    if (url.searchParams.get('status')) {
+      rows = rows.filter(
+        (allocation) => allocation.allocationStatus === url.searchParams.get('status'),
+      );
+    }
+    return HttpResponse.json({ data: rows.slice(0, limit).map(toOrgUnitAllocation) });
+  }),
+  http.get('*/admin/kpi/plans/:kpiPlanId/org-unit-managed-members', ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.subjectType !== 'ORG_UNIT') {
+      return HttpResponse.json(
+        { message: 'ORG_UNIT managed members require an ORG_UNIT KPI plan' },
+        { status: 409 },
+      );
+    }
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, allowedManagedMemberQueryKeys);
+    if (unsupported) return unsupported;
+    const invalid = validateManagedMemberQuery(url.searchParams);
+    if (invalid) return invalid;
+    const search = url.searchParams.get('search')?.toLowerCase();
+    const limit = parseLimitQuery(url.searchParams.get('limit')) ?? 20;
+    const rows = orgUnitManagedMembers
+      .filter((item) => item.orgUnitId === plan.subjectId)
+      .filter((item) =>
+        search
+          ? `${item.displayName} ${item.employeeCode ?? ''}`.toLowerCase().includes(search)
+          : true,
+      )
+      .slice(0, limit);
+    return HttpResponse.json({ data: rows });
+  }),
+  http.get('*/admin/kpi/plans/:kpiPlanId/org-unit-progress', ({ params }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.subjectType !== 'ORG_UNIT') {
+      return HttpResponse.json(
+        { message: 'ORG_UNIT progress requires an ORG_UNIT KPI plan' },
+        { status: 409 },
+      );
+    }
+    const planAllocations = allocations[plan.id] ?? [];
+    return HttpResponse.json({
+      data: {
+        plan: toProgressPlan(plan),
+        periodElapsedPercent: 10,
+        targetMetrics: targets[plan.id] ?? [],
+        groupTotals: [
+          {
+            metricCode: 'REVENUE_VND',
+            targetValue: 2000000,
+            actualValue: 500000,
+            progressPercent: 25,
+          },
+        ],
+        memberProgress: planAllocations.map((allocation) => ({
+          allocationId: allocation.id,
+          memberEmploymentProfileId:
+            allocation.memberEmploymentProfileId ?? 'employment-profile-unknown',
+          memberTalentId: allocation.memberTalentId,
+          metricCode: 'REVENUE_VND',
+          targetValue: allocation.targetMetrics[0]?.targetValue ?? 0,
+          actualValue: 500000,
+          progressPercent: 25,
+          actualEntryCount: 1,
+          missingEntryCount: 0,
+        })),
+      },
+    });
+  }),
+  http.get('*/admin/kpi/plans/:kpiPlanId/org-unit-actuals', ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.subjectType !== 'ORG_UNIT') {
+      return HttpResponse.json(
+        { message: 'ORG_UNIT actual grid requires an ORG_UNIT KPI plan' },
+        { status: 409 },
+      );
+    }
+    const actualDate = new URL(request.url).searchParams.get('actualDate');
+    if (
+      typeof actualDate !== 'string' ||
+      !parseActualDate(actualDate) ||
+      !actualDateInPlanPeriod(plan, actualDate)
+    ) {
+      return validationError('Invalid actualDate');
+    }
+    return HttpResponse.json({ data: toOrgUnitActualGrid(plan, actualDate) });
+  }),
+  http.get('*/admin/kpi/plans/:kpiPlanId/org-unit-final-result', ({ params }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.subjectType !== 'ORG_UNIT') {
+      return HttpResponse.json(
+        { message: 'ORG_UNIT final result requires an ORG_UNIT KPI plan' },
+        { status: 409 },
+      );
+    }
+    if (plan.status === 'FINALIZED' && !plan.finalResult) {
+      plan.finalResult = toFinalResultSnapshot(plan, now);
+    }
+    return HttpResponse.json({ data: toDetail(plan) });
   }),
   http.get('*/admin/kpi/plans/:kpiPlanId/actuals', ({ params, request }) => {
     const plan = readPlan(String(params.kpiPlanId));
@@ -2701,7 +2987,9 @@ export const kpiHandlers = [
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, ['targetMetrics']);
     if (unsupported) return unsupported;
-    const targetValidation = validateMetricPayload(body.targetMetrics);
+    const targetValidation = validateMetricPayload(body.targetMetrics, {
+      allowedMetricCodes: createMetricCodesBySubjectType[plan.subjectType],
+    });
     if (!targetValidation.ok) {
       return validationError(targetValidation.message, targetValidation.status);
     }
@@ -2842,6 +3130,182 @@ export const kpiHandlers = [
       return HttpResponse.json({ data: toDetail(plan) });
     },
   ),
+  http.post('*/admin/kpi/plans/:kpiPlanId/org-unit-actuals', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.subjectType !== 'ORG_UNIT') {
+      return HttpResponse.json(
+        { message: 'ORG_UNIT actual requires an ORG_UNIT KPI plan' },
+        { status: 409 },
+      );
+    }
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, [
+      'allocationId',
+      'metricCode',
+      'actualDate',
+      'actualValue',
+    ]);
+    if (unsupported) return unsupported;
+    if (
+      !parseActualDate(body.actualDate) ||
+      !actualDateInPlanPeriod(plan, String(body.actualDate))
+    ) {
+      return validationError('Invalid actualDate');
+    }
+    const allocation = (allocations[plan.id] ?? []).find(
+      (item) => item.id === String(body.allocationId),
+    );
+    if (!allocation || allocation.allocationStatus !== 'PUBLISHED') {
+      return HttpResponse.json(
+        { message: 'KPI actual requires a published allocation' },
+        { status: 409 },
+      );
+    }
+    const metricCode = body.metricCode as KpiMetricCode;
+    if (metricCode !== 'REVENUE_VND') {
+      return validationError(`KPI metricCode is unsupported for ORG_UNIT: ${String(metricCode)}`);
+    }
+    actualSeed += 1;
+    const entry: ActualEntry = {
+      id: `org-unit-actual-${actualSeed}`,
+      kpiPlanId: plan.id,
+      allocationId: allocation.id,
+      memberTalentId: allocation.memberTalentId ?? 'talent-unknown',
+      metricCode,
+      actualDate: String(body.actualDate),
+      actualValue: Number(body.actualValue),
+      effectiveValue: Number(body.actualValue),
+      editCount: 0,
+      correctionCount: 0,
+      latestCorrectionId: null,
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      lastEditedAt: null,
+      lastEditedByActorId: null,
+    };
+    actualEntries.push(entry);
+    return HttpResponse.json({ data: exposeOrgUnitActualEntry(entry) });
+  }),
+  http.patch(
+    '*/admin/kpi/plans/:kpiPlanId/org-unit-actuals/:actualEntryId',
+    async ({ params, request }) => {
+      const plan = readPlan(String(params.kpiPlanId));
+      if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, ['actualValue']);
+      if (unsupported) return unsupported;
+      const entry = actualEntries.find((item) => item.id === String(params.actualEntryId));
+      if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      entry.actualValue = Number(body.actualValue);
+      entry.effectiveValue = Number(body.actualValue);
+      entry.editCount += 1;
+      return HttpResponse.json({ data: exposeOrgUnitActualEntry(entry) });
+    },
+  ),
+  http.get(
+    '*/admin/kpi/plans/:kpiPlanId/org-unit-actuals/:actualEntryId/corrections',
+    ({ params }) =>
+      HttpResponse.json({
+        data: corrections
+          .filter(
+            (item) =>
+              item.kpiPlanId === String(params.kpiPlanId) &&
+              item.actualEntryId === String(params.actualEntryId),
+          )
+          .map(exposeCorrection),
+      }),
+  ),
+  http.post(
+    '*/admin/kpi/plans/:kpiPlanId/org-unit-actuals/:actualEntryId/corrections',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, ['correctedValue', 'reason']);
+      if (unsupported) return unsupported;
+      const entry = actualEntries.find((item) => item.id === String(params.actualEntryId));
+      if (!entry) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      correctionSeed += 1;
+      const correction: ActualCorrection = {
+        id: `org-unit-correction-${correctionSeed}`,
+        actualEntryId: entry.id,
+        kpiPlanId: String(params.kpiPlanId),
+        allocationId: entry.allocationId,
+        metricCode: entry.metricCode,
+        actualDate: entry.actualDate,
+        previousValue: entry.effectiveValue,
+        correctedValue: Number(body.correctedValue),
+        reason: String(body.reason).trim(),
+        correctedAt: now,
+        createdAt: now,
+      };
+      corrections.push(correction);
+      entry.effectiveValue = correction.correctedValue;
+      entry.correctionCount += 1;
+      entry.latestCorrectionId = correction.id;
+      return HttpResponse.json({
+        data: {
+          actualEntry: exposeOrgUnitActualEntry(entry),
+          correction: exposeCorrection(correction),
+        },
+      });
+    },
+  ),
+  http.post('*/admin/kpi/plans/:kpiPlanId/org-unit-actual-excuses', async ({ params, request }) => {
+    const plan = readPlan(String(params.kpiPlanId));
+    if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    if (plan.subjectType !== 'ORG_UNIT') {
+      return HttpResponse.json(
+        { message: 'ORG_UNIT actual excuse requires an ORG_UNIT KPI plan' },
+        { status: 409 },
+      );
+    }
+    const body = await parseJsonBody(request);
+    const unsupported = rejectUnsupportedBody(body, [
+      'allocationId',
+      'metricCode',
+      'actualDate',
+      'status',
+      'reasonCode',
+      'reasonText',
+    ]);
+    if (unsupported) return unsupported;
+    excuseSeed += 1;
+    actualExcuses.push({
+      id: `org-unit-excuse-${excuseSeed}`,
+      kpiPlanId: plan.id,
+      allocationId: String(body.allocationId),
+      metricCode: body.metricCode as KpiMetricCode,
+      actualDate: String(body.actualDate),
+      status: body.status as KpiActualExcuseStatus,
+      reasonCode: body.reasonCode as KpiActualExcuseReasonCode,
+      reasonText: String(body.reasonText).trim(),
+      createdAt: now,
+      createdByActorId: 'user-admin',
+      updatedAt: now,
+      updatedByActorId: 'user-admin',
+      deletedAt: null,
+      deletedByActorId: null,
+    });
+    return HttpResponse.json({ data: toDetail(plan) });
+  }),
+  http.delete(
+    '*/admin/kpi/plans/:kpiPlanId/org-unit-actual-excuses/:excuseId',
+    async ({ params, request }) => {
+      const plan = readPlan(String(params.kpiPlanId));
+      if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, []);
+      if (unsupported) return unsupported;
+      const excuse = actualExcuses.find((item) => item.id === String(params.excuseId));
+      if (!excuse)
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      excuse.deletedAt = now;
+      excuse.deletedByActorId = 'user-admin';
+      return HttpResponse.json({ data: toDetail(plan) });
+    },
+  ),
   http.post('*/admin/kpi/plans/:kpiPlanId/:action', async ({ params, request }) => {
     const action = String(params.action);
     if (action === 'actuals') return;
@@ -2851,6 +3315,15 @@ export const kpiHandlers = [
     const plan = readPlan(String(params.kpiPlanId));
     if (!plan) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     if (action === 'publish') {
+      const allowedMetrics = createMetricCodesBySubjectType[plan.subjectType];
+      const disallowedMetric = (targets[plan.id] ?? []).find(
+        (metric) => !allowedMetrics.has(metric.metricCode),
+      );
+      if (disallowedMetric) {
+        return validationError(
+          `KPI metricCode ${disallowedMetric.metricCode} is unsupported for ${plan.subjectType}`,
+        );
+      }
       plan.status = 'PUBLISHED';
       plan.publishedAt = now;
     } else if (action === 'finalize') {
@@ -3007,11 +3480,13 @@ export const kpiHandlers = [
   }),
   http.get('*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId/corrections', ({ params }) => {
     return HttpResponse.json({
-      data: corrections.filter(
-        (item) =>
-          item.kpiPlanId === String(params.kpiPlanId) &&
-          item.actualEntryId === String(params.actualEntryId),
-      ).map(exposeCorrection),
+      data: corrections
+        .filter(
+          (item) =>
+            item.kpiPlanId === String(params.kpiPlanId) &&
+            item.actualEntryId === String(params.actualEntryId),
+        )
+        .map(exposeCorrection),
     });
   }),
   http.post(
@@ -3065,7 +3540,10 @@ export const kpiHandlers = [
           `KPI ${entry.metricCode} requires a finite non-negative numeric corrected value`,
         );
       }
-      if (integerTargetMetricCodes.has(entry.metricCode) && !Number.isInteger(body.correctedValue)) {
+      if (
+        integerTargetMetricCodes.has(entry.metricCode) &&
+        !Number.isInteger(body.correctedValue)
+      ) {
         return validationError(`${entry.metricCode} requires an integer corrected value`);
       }
       if (entry.metricCode === 'LIVE_HOURS' && !hasAtMostDecimalPlaces(body.correctedValue, 2)) {
@@ -3089,7 +3567,9 @@ export const kpiHandlers = [
       entry.effectiveValue = correction.correctedValue;
       entry.correctionCount += 1;
       entry.latestCorrectionId = correction.id;
-      return HttpResponse.json({ data: { actualEntry: entry, correction: exposeCorrection(correction) } });
+      return HttpResponse.json({
+        data: { actualEntry: entry, correction: exposeCorrection(correction) },
+      });
     },
   ),
 ];
