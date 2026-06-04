@@ -2,7 +2,7 @@ import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
-import { vi } from 'vitest';
+import { afterAll, beforeAll, vi } from 'vitest';
 
 import { appRoutes } from '@app/router/router';
 import { parseManagerWorkspaceContextForTest } from '@modules/manager-workspace/api/manager-workspace.api';
@@ -12,6 +12,9 @@ import {
   managerWorkspaceDualContext,
   managerWorkspaceNoAssignmentsContext,
   managerWorkspaceNoProfileContext,
+  managerWorkspaceOrgUnitDepartmentOwnerContext,
+  managerWorkspaceOrgUnitNoKpiCapabilityContext,
+  managerWorkspaceOrgUnitOperatorContext,
   managerWorkspaceOrgUnitOnlyContext,
   managerWorkspaceTalentGroupOnlyContext,
   resetManagerWorkspaceMockData,
@@ -78,8 +81,18 @@ const staffCapabilities = (): MockCapabilities => ({
   generatedAt: '2026-06-04T00:00:00.000Z',
 });
 
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-06-15T00:00:00+07:00'));
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
+
 const renderRoute = async (path: string, setup?: () => void): Promise<void> => {
   cleanup();
+  vi.setSystemTime(new Date('2026-06-15T00:00:00+07:00'));
   await setLocale('en');
   resetKpiMockData();
   resetManagerWorkspaceMockData();
@@ -208,6 +221,93 @@ describe('/manager workspace route', () => {
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
   });
 
+  it('renders ORG_UNIT allocation, progress, actual operations, and hides global actions under Manager shell', async () => {
+    await renderRoute('/manager/kpi/plans/kpi-plan-org-unit', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
+      setMockCurrentActorCapabilities(
+        managerCapabilities({
+          permissions: [
+            'kpi.read',
+            'kpi.readProgress',
+            'kpi.enterActual',
+            'kpi.correctActual',
+            'kpi.manageAllocation',
+            'kpi.publish',
+            'kpi.finalize',
+          ],
+          scopeGrants: {
+            kpi: ['managedGroup', 'global'],
+          },
+        }),
+      );
+    });
+
+    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    expect(within(operations).getByText('Org Unit allocations')).toBeInTheDocument();
+    expect(within(operations).getByText('Progress and actuals')).toBeInTheDocument();
+    expect(within(operations).getByText('Operational final result')).toBeInTheDocument();
+    expect(await within(operations).findByText('Managed write actions available')).toBeInTheDocument();
+    expect(await within(operations).findAllByText('Published Allocation')).not.toHaveLength(0);
+
+    expect(
+      within(operations).queryByRole('button', { name: 'Approve Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Reject Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Publish Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finalize' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Archive' })).not.toBeInTheDocument();
+
+    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+    const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
+    await userEvent.clear(anActual);
+    await userEvent.type(anActual, '0');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
+    expect(await screen.findByText('Actual cells saved.')).toBeInTheDocument();
+
+    const updatedAnActual = await within(operations).findByLabelText(
+      'An Nguyen Revenue VND actual',
+    );
+    await userEvent.clear(updatedAnActual);
+    await userEvent.type(updatedAnActual, '100.000');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
+    await waitFor(() =>
+      expect(screen.getAllByText('Actual cells saved.').length).toBeGreaterThanOrEqual(2),
+    );
+  });
+
+  it('allows UNIT_MANAGER allocation draft and submit where the ORG_UNIT fixture is draftable', async () => {
+    await renderRoute('/manager/kpi/plans/kpi-plan-org-unit-draft-allocation', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
+    });
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    expect(
+      await within(operations).findByRole('button', { name: 'Save Allocation Draft' }),
+    ).toBeEnabled();
+    expect(
+      await within(operations).findByRole('button', { name: 'Submit Allocation' }),
+    ).toBeEnabled();
+
+    const targetInput = await within(operations).findByLabelText('An Nguyen Revenue VND');
+    await userEvent.clear(targetInput);
+    await userEvent.type(targetInput, '1.000.000');
+    await userEvent.click(
+      within(operations).getByRole('button', { name: 'Save Allocation Draft' }),
+    );
+    expect(await screen.findByText('Allocation draft saved.')).toBeInTheDocument();
+
+    await userEvent.click(within(operations).getByRole('button', { name: 'Submit Allocation' }));
+    expect(await screen.findByText('Allocation submitted for approval.')).toBeInTheDocument();
+    expect(await within(operations).findAllByText('Pending Approval')).not.toHaveLength(0);
+  });
+
   it('renders Talent Group KPI only for TalentGroup-only manager context and queries Talent Group plans', async () => {
     const subjectTypes: Array<string | null> = [];
     server.use(
@@ -236,6 +336,8 @@ describe('/manager workspace route', () => {
     expect(await screen.findByTestId('manager-kpi-detail')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Published team KPI' })).toBeInTheDocument();
     expect(screen.getByText('Talent Group')).toBeInTheDocument();
+    expect(screen.getByText('Talent Group KPI is read-only here')).toBeInTheDocument();
+    expect(screen.queryByTestId('org-unit-operations')).not.toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
   });
@@ -248,6 +350,91 @@ describe('/manager workspace route', () => {
     expect(await screen.findByText('No managed KPI')).toBeInTheDocument();
     expect(screen.queryByTestId('manager-kpi-detail')).not.toBeInTheDocument();
     expect(screen.queryByText('Operations unit KPI')).not.toBeInTheDocument();
+  });
+
+  it('fails closed for direct unmanaged ORG_UNIT KPI detail route', async () => {
+    await renderRoute('/manager/kpi/plans/kpi-plan-org-unit', () => {
+      const context = managerWorkspaceOrgUnitOnlyContext();
+      setMockManagerWorkspaceContext({
+        ...context,
+        scopes: {
+          ...context.scopes,
+          orgUnits: context.scopes.orgUnits.map((scope) => ({
+            ...scope,
+            orgUnitId: 'org-unit-unmanaged',
+          })),
+        },
+      });
+    });
+
+    expect(await screen.findByText('KPI plan unavailable')).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-kpi-detail')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('org-unit-operations')).not.toBeInTheDocument();
+  });
+
+  it('does not show KPI operations for no-capability manager context', async () => {
+    await renderRoute('/manager/kpi/plans/kpi-plan-org-unit', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitNoKpiCapabilityContext());
+    });
+
+    expect(await screen.findByText('No managed KPI')).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-kpi-detail')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('org-unit-operations')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['DEPARTMENT_OWNER', managerWorkspaceOrgUnitDepartmentOwnerContext],
+    ['UNIT_OPERATOR', managerWorkspaceOrgUnitOperatorContext],
+  ])('%s remains read-only for current ORG_UNIT KPI behavior', async (_role, contextFactory) => {
+    await renderRoute('/manager/kpi/plans/kpi-plan-org-unit', () => {
+      setMockManagerWorkspaceContext(contextFactory());
+    });
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    expect(
+      within(operations).getByText('Read-only for this actor or plan state'),
+    ).toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Save Allocation Draft' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Submit Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Save changed cells' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Mark excused' }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+    expect(await within(operations).findByLabelText('An Nguyen Revenue VND actual')).toBeDisabled();
+  });
+
+  it('renders finalized ORG_UNIT finalResult and keeps manager mutation UI absent', async () => {
+    await renderRoute('/manager/kpi/plans/kpi-plan-org-unit-finalized', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
+    });
+
+    const operations = await screen.findByTestId('org-unit-operations');
+    const finalResult = await within(operations).findByLabelText('Finalized result');
+    expect(
+      within(finalResult).getByRole('heading', { name: 'Finalized result' }),
+    ).toBeInTheDocument();
+    expect(within(finalResult).getAllByText(/Revenue actual/).length).toBeGreaterThan(0);
+    expect(
+      within(operations).queryByRole('button', { name: 'Save Allocation Draft' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Submit Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Save changed cells' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: 'Mark excused' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finalize' })).not.toBeInTheDocument();
   });
 
   it('renders both KPI tabs for dual manager context without forcing Unit KPI to Talent Group', async () => {

@@ -101,6 +101,34 @@ type OrgUnitExcuseDraft = {
   reasonText: string;
 };
 
+export type KpiOrgUnitOperationsActionPolicy = {
+  canDraftAllocation?: boolean;
+  canSubmitAllocation?: boolean;
+  canEnterActual?: boolean;
+  canCorrectActual?: boolean;
+  canReviewAllocation?: boolean;
+  disabledReason?: string;
+};
+
+type KpiOrgUnitActionHint = ReturnType<typeof createKpiActionCapabilityHint>;
+
+const applyOrgUnitActionPolicy = (
+  hint: KpiOrgUnitActionHint,
+  allowedByPolicy: boolean | undefined,
+  disabledReason: string,
+): KpiOrgUnitActionHint => {
+  if (allowedByPolicy !== false) {
+    return hint;
+  }
+
+  return {
+    allowed: false,
+    disabled: true,
+    disabledReason,
+    hidden: true,
+  };
+};
+
 const toContractDate = (periodMonth: KpiPlanDetail['periodMonth']): string =>
   /^\d{4}-\d{2}$/.test(periodMonth) ? `${periodMonth}-01` : '';
 
@@ -347,7 +375,13 @@ const toOrgUnitDraftRows = (
         },
       ];
 
-const KpiOrgUnitOperationsSection = ({ plan }: { plan: KpiPlanDetail }): JSX.Element => {
+export const KpiOrgUnitOperationsSection = ({
+  plan,
+  actionPolicy,
+}: {
+  plan: KpiPlanDetail;
+  actionPolicy?: KpiOrgUnitOperationsActionPolicy;
+}): JSX.Element => {
   const { t } = useTranslation(['kpi', 'common']);
   const { notifyError, notifySuccess } = useMutationFeedback();
   const [actualDate, setActualDate] = useState(() => currentHcmDate());
@@ -399,40 +433,42 @@ const KpiOrgUnitOperationsSection = ({ plan }: { plan: KpiPlanDetail }): JSX.Ele
     isLoading: capabilitiesQuery.isLoading,
     isError: capabilitiesQuery.isError,
   };
-  const enterActualHint = createKpiActionCapabilityHint(
-    capabilityState,
-    'enterActual',
-    capabilityCopy,
+  const policyDisabledReason =
+    actionPolicy?.disabledReason ?? t('kpi:orgUnitOperations.readOnly');
+  const enterActualHint = applyOrgUnitActionPolicy(
+    createKpiActionCapabilityHint(capabilityState, 'enterActual', capabilityCopy),
+    actionPolicy?.canEnterActual,
+    policyDisabledReason,
   );
-  const correctActualHint = createKpiActionCapabilityHint(
-    capabilityState,
-    'correctActual',
-    capabilityCopy,
+  const correctActualHint = applyOrgUnitActionPolicy(
+    createKpiActionCapabilityHint(capabilityState, 'correctActual', capabilityCopy),
+    actionPolicy?.canCorrectActual,
+    policyDisabledReason,
   );
-  const managerAllocationDraftHint = createKpiActionCapabilityHint(
-    capabilityState,
-    'draftAllocation',
-    capabilityCopy,
+  const managerAllocationDraftHint = applyOrgUnitActionPolicy(
+    createKpiActionCapabilityHint(capabilityState, 'draftAllocation', capabilityCopy),
+    actionPolicy?.canDraftAllocation,
+    policyDisabledReason,
   );
-  const managerAllocationSubmitHint = createKpiActionCapabilityHint(
-    capabilityState,
-    'submitAllocation',
-    capabilityCopy,
+  const managerAllocationSubmitHint = applyOrgUnitActionPolicy(
+    createKpiActionCapabilityHint(capabilityState, 'submitAllocation', capabilityCopy),
+    actionPolicy?.canSubmitAllocation,
+    policyDisabledReason,
   );
-  const allocationApproveHint = createKpiActionCapabilityHint(
-    capabilityState,
-    'approveAllocation',
-    capabilityCopy,
+  const allocationApproveHint = applyOrgUnitActionPolicy(
+    createKpiActionCapabilityHint(capabilityState, 'approveAllocation', capabilityCopy),
+    actionPolicy?.canReviewAllocation,
+    policyDisabledReason,
   );
-  const allocationRejectHint = createKpiActionCapabilityHint(
-    capabilityState,
-    'rejectAllocation',
-    capabilityCopy,
+  const allocationRejectHint = applyOrgUnitActionPolicy(
+    createKpiActionCapabilityHint(capabilityState, 'rejectAllocation', capabilityCopy),
+    actionPolicy?.canReviewAllocation,
+    policyDisabledReason,
   );
-  const allocationPublishHint = createKpiActionCapabilityHint(
-    capabilityState,
-    'publishAllocation',
-    capabilityCopy,
+  const allocationPublishHint = applyOrgUnitActionPolicy(
+    createKpiActionCapabilityHint(capabilityState, 'publishAllocation', capabilityCopy),
+    actionPolicy?.canReviewAllocation,
+    policyDisabledReason,
   );
 
   const allocations = useMemo(() => allocationsQuery.data ?? [], [allocationsQuery.data]);

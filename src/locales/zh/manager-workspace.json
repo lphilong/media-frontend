@@ -72,6 +72,9 @@
       "unit": "单位",
       "allocationSummary": "分配摘要",
       "noAllocations": "此计划暂无可见分配行。",
+      "readOnlyPosture": "你当前的管理分配可以读取此 KPI，但不能执行 Unit Manager KPI 写入操作。",
+      "talentGroupReadOnlyTitle": "Talent Group KPI 在此仅可读",
+      "talentGroupReadOnlyMessage": "本批次尚未在 Manager Workspace 启用 Talent Group KPI 操作。",
       "units": {
         "VND": "VND",
         "COUNT": "数量",

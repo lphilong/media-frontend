@@ -72,6 +72,9 @@
       "unit": "Don vi",
       "allocationSummary": "Tom tat phan bo",
       "noAllocations": "Chua co dong phan bo hien thi cho ke hoach nay.",
+      "readOnlyPosture": "Phan cong quan ly hien tai cho phep doc KPI nay, nhung khong cho phep thao tac ghi KPI cua Unit Manager.",
+      "talentGroupReadOnlyTitle": "KPI nhom talent chi doc tai day",
+      "talentGroupReadOnlyMessage": "Tac vu KPI nhom talent chua duoc bat trong Manager Workspace o batch nay.",
       "units": {
         "VND": "VND",
         "COUNT": "So luong",

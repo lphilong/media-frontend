@@ -6,10 +6,15 @@ import { useTranslation } from 'react-i18next';
 import { APP_PATHS } from '@app/router/paths';
 import { formatKpiNumber } from '@modules/kpi/formatting/kpi-formatting';
 import { useKpiPlanDetail, useKpiPlans } from '@modules/kpi/hooks/use-kpi';
+import {
+  KpiOrgUnitOperationsSection,
+  type KpiOrgUnitOperationsActionPolicy,
+} from '@modules/kpi/pages/KpiDetailPage';
 import type { KpiPlanDetail, KpiPlanListItem, KpiSubjectType } from '@modules/kpi/types/kpi.types';
 import {
   useManagerWorkspaceContext,
   type ManagerWorkspaceContext,
+  type ManagerWorkspaceOrgUnitScope,
 } from '@modules/manager-workspace/api/manager-workspace.api';
 import {
   EmptyState,
@@ -146,6 +151,39 @@ const canViewPlanForManagerContext = (
   return false;
 };
 
+const findOrgUnitScopeForPlan = (
+  context: ManagerWorkspaceContext,
+  plan: KpiPlanDetail,
+): ManagerWorkspaceOrgUnitScope | undefined => {
+  if (plan.subjectType !== 'ORG_UNIT') {
+    return undefined;
+  }
+
+  return context.scopes.orgUnits.find((scope) => scope.orgUnitId === plan.subjectId);
+};
+
+const createOrgUnitOperationsPolicy = (
+  scope: ManagerWorkspaceOrgUnitScope | undefined,
+  plan: KpiPlanDetail,
+  disabledReason: string,
+): KpiOrgUnitOperationsActionPolicy => {
+  const canWriteDirectUnit =
+    plan.status === 'PUBLISHED' &&
+    Boolean(scope) &&
+    scope?.role === 'UNIT_MANAGER' &&
+    scope.includeDescendants === false;
+  const kpiCapabilities = scope?.capabilities.kpi;
+
+  return {
+    canDraftAllocation: canWriteDirectUnit && Boolean(kpiCapabilities?.manageAllocation),
+    canSubmitAllocation: canWriteDirectUnit && Boolean(kpiCapabilities?.manageAllocation),
+    canEnterActual: canWriteDirectUnit && Boolean(kpiCapabilities?.enterActual),
+    canCorrectActual: canWriteDirectUnit && Boolean(kpiCapabilities?.correctActual),
+    canReviewAllocation: false,
+    disabledReason,
+  };
+};
+
 const ManagerKpiDetail = ({ context }: { context: ManagerWorkspaceContext }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace', 'kpi']);
   const { kpiPlanId } = useParams<{ kpiPlanId: string }>();
@@ -196,129 +234,150 @@ const ManagerKpiDetail = ({ context }: { context: ManagerWorkspaceContext }): JS
     );
   }
 
+  const orgUnitScope = findOrgUnitScopeForPlan(context, plan);
+  const orgUnitOperationsPolicy = createOrgUnitOperationsPolicy(
+    orgUnitScope,
+    plan,
+    t('manager-workspace:kpi.detail.readOnlyPosture'),
+  );
+
   return (
-    <section
-      className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm"
-      data-testid="manager-kpi-detail"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link
-            to={APP_PATHS.managerKpi}
-            className="text-sm font-medium text-accent hover:underline"
+    <div className="space-y-4" data-testid="manager-kpi-detail">
+      <section className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <Link
+              to={APP_PATHS.managerKpi}
+              className="text-sm font-medium text-accent hover:underline"
+            >
+              {t('manager-workspace:actions.backToKpi')}
+            </Link>
+            <h2 className="mt-2 text-lg font-semibold text-text">{plan.title}</h2>
+            <p className="font-mono text-xs text-muted">{plan.planCode}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge
+              label={t(`kpi:subjectTypes.${plan.subjectType}`)}
+              tone={plan.subjectType === 'ORG_UNIT' ? 'info' : 'success'}
+              uppercase={false}
+            />
+            <StatusBadge
+              label={t(`kpi:statuses.${plan.status}`)}
+              status={plan.status}
+              toneByStatus={statusTone}
+            />
+          </div>
+        </div>
+
+        <dl className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded border border-border bg-bg px-3 py-2">
+            <dt className="text-xs font-medium uppercase text-muted">
+              {t('manager-workspace:kpi.detail.subject')}
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-text">{subjectName}</dd>
+          </div>
+          <div className="rounded border border-border bg-bg px-3 py-2">
+            <dt className="text-xs font-medium uppercase text-muted">
+              {t('manager-workspace:kpi.fields.period')}
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-text">{plan.periodMonth}</dd>
+          </div>
+          <div className="rounded border border-border bg-bg px-3 py-2">
+            <dt className="text-xs font-medium uppercase text-muted">
+              {t('manager-workspace:kpi.detail.timezone')}
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-text">{plan.timezone}</dd>
+          </div>
+          <div className="rounded border border-border bg-bg px-3 py-2">
+            <dt className="text-xs font-medium uppercase text-muted">
+              {t('manager-workspace:kpi.detail.allocationCount')}
+            </dt>
+            <dd className="mt-1 text-sm font-medium text-text">{plan.allocations.length}</dd>
+          </div>
+        </dl>
+
+        {plan.description ? (
+          <div className="rounded border border-border bg-bg px-3 py-2 text-sm text-text">
+            <div className="text-xs font-medium uppercase text-muted">
+              {t('manager-workspace:kpi.detail.description')}
+            </div>
+            <p className="mt-1">{plan.description}</p>
+          </div>
+        ) : null}
+
+        <div className="overflow-x-auto rounded border border-border">
+          <table
+            className="min-w-full text-left text-sm"
+            aria-label={t('manager-workspace:kpi.detail.metricsTableLabel')}
           >
-            {t('manager-workspace:actions.backToKpi')}
-          </Link>
-          <h2 className="mt-2 text-lg font-semibold text-text">{plan.title}</h2>
-          <p className="font-mono text-xs text-muted">{plan.planCode}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <StatusBadge
-            label={t(`kpi:subjectTypes.${plan.subjectType}`)}
-            tone={plan.subjectType === 'ORG_UNIT' ? 'info' : 'success'}
-            uppercase={false}
-          />
-          <StatusBadge
-            label={t(`kpi:statuses.${plan.status}`)}
-            status={plan.status}
-            toneByStatus={statusTone}
-          />
-        </div>
-      </div>
-
-      <dl className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded border border-border bg-bg px-3 py-2">
-          <dt className="text-xs font-medium uppercase text-muted">
-            {t('manager-workspace:kpi.detail.subject')}
-          </dt>
-          <dd className="mt-1 text-sm font-medium text-text">{subjectName}</dd>
-        </div>
-        <div className="rounded border border-border bg-bg px-3 py-2">
-          <dt className="text-xs font-medium uppercase text-muted">
-            {t('manager-workspace:kpi.fields.period')}
-          </dt>
-          <dd className="mt-1 text-sm font-medium text-text">{plan.periodMonth}</dd>
-        </div>
-        <div className="rounded border border-border bg-bg px-3 py-2">
-          <dt className="text-xs font-medium uppercase text-muted">
-            {t('manager-workspace:kpi.detail.timezone')}
-          </dt>
-          <dd className="mt-1 text-sm font-medium text-text">{plan.timezone}</dd>
-        </div>
-        <div className="rounded border border-border bg-bg px-3 py-2">
-          <dt className="text-xs font-medium uppercase text-muted">
-            {t('manager-workspace:kpi.detail.allocationCount')}
-          </dt>
-          <dd className="mt-1 text-sm font-medium text-text">{plan.allocations.length}</dd>
-        </div>
-      </dl>
-
-      {plan.description ? (
-        <div className="rounded border border-border bg-bg px-3 py-2 text-sm text-text">
-          <div className="text-xs font-medium uppercase text-muted">
-            {t('manager-workspace:kpi.detail.description')}
-          </div>
-          <p className="mt-1">{plan.description}</p>
-        </div>
-      ) : null}
-
-      <div className="overflow-x-auto rounded border border-border">
-        <table
-          className="min-w-full text-left text-sm"
-          aria-label={t('manager-workspace:kpi.detail.metricsTableLabel')}
-        >
-          <thead className="border-b border-border text-xs uppercase text-muted">
-            <tr>
-              <th className="px-3 py-2 font-medium">
-                {t('manager-workspace:kpi.detail.metric')}
-              </th>
-              <th className="px-3 py-2 font-medium">
-                {t('manager-workspace:kpi.detail.target')}
-              </th>
-              <th className="px-3 py-2 font-medium">{t('manager-workspace:kpi.detail.unit')}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {plan.targetMetrics.map((metric) => (
-              <tr key={metric.id} data-testid="manager-kpi-detail-metric-row">
-                <td className="px-3 py-3 font-medium text-text">
-                  {t(`kpi:metricCodes.${metric.metricCode}`)}
-                </td>
-                <td className="px-3 py-3">
-                  {formatKpiNumber(metric.metricCode, metric.targetValue)}
-                </td>
-                <td className="px-3 py-3">
-                  {t(`manager-workspace:kpi.detail.units.${metric.unit}`)}
-                </td>
+            <thead className="border-b border-border text-xs uppercase text-muted">
+              <tr>
+                <th className="px-3 py-2 font-medium">
+                  {t('manager-workspace:kpi.detail.metric')}
+                </th>
+                <th className="px-3 py-2 font-medium">
+                  {t('manager-workspace:kpi.detail.target')}
+                </th>
+                <th className="px-3 py-2 font-medium">
+                  {t('manager-workspace:kpi.detail.unit')}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {plan.targetMetrics.map((metric) => (
+                <tr key={metric.id} data-testid="manager-kpi-detail-metric-row">
+                  <td className="px-3 py-3 font-medium text-text">
+                    {t(`kpi:metricCodes.${metric.metricCode}`)}
+                  </td>
+                  <td className="px-3 py-3">
+                    {formatKpiNumber(metric.metricCode, metric.targetValue)}
+                  </td>
+                  <td className="px-3 py-3">
+                    {t(`manager-workspace:kpi.detail.units.${metric.unit}`)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <div className="rounded border border-border bg-bg px-3 py-2">
-        <h3 className="text-sm font-semibold text-text">
-          {t('manager-workspace:kpi.detail.allocationSummary')}
-        </h3>
-        {allocationStatusCounts.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {allocationStatusCounts.map(([status, count]) => (
-              <StatusBadge
-                key={status}
-                label={`${t(`kpi:allocationStatuses.${status}`)}: ${count}`}
-                status={status}
-                toneByStatus={statusTone}
-                uppercase={false}
-              />
-            ))}
-          </div>
-        ) : (
+        <div className="rounded border border-border bg-bg px-3 py-2">
+          <h3 className="text-sm font-semibold text-text">
+            {t('manager-workspace:kpi.detail.allocationSummary')}
+          </h3>
+          {allocationStatusCounts.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {allocationStatusCounts.map(([status, count]) => (
+                <StatusBadge
+                  key={status}
+                  label={`${t(`kpi:allocationStatuses.${status}`)}: ${count}`}
+                  status={status}
+                  toneByStatus={statusTone}
+                  uppercase={false}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-muted">
+              {t('manager-workspace:kpi.detail.noAllocations')}
+            </p>
+          )}
+        </div>
+      </section>
+
+      {plan.subjectType === 'ORG_UNIT' ? (
+        <KpiOrgUnitOperationsSection plan={plan} actionPolicy={orgUnitOperationsPolicy} />
+      ) : (
+        <section className="rounded border border-border bg-panel p-4 shadow-sm">
+          <h3 className="text-sm font-semibold text-text">
+            {t('manager-workspace:kpi.detail.talentGroupReadOnlyTitle')}
+          </h3>
           <p className="mt-1 text-sm text-muted">
-            {t('manager-workspace:kpi.detail.noAllocations')}
+            {t('manager-workspace:kpi.detail.talentGroupReadOnlyMessage')}
           </p>
-        )}
-      </div>
-    </section>
+        </section>
+      )}
+    </div>
   );
 };
 

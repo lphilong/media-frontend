@@ -72,6 +72,9 @@
       "unit": "Unit",
       "allocationSummary": "Allocation summary",
       "noAllocations": "No allocation rows are visible for this plan.",
+      "readOnlyPosture": "Your current manager assignment can read this KPI, but cannot perform Unit Manager KPI write actions.",
+      "talentGroupReadOnlyTitle": "Talent Group KPI is read-only here",
+      "talentGroupReadOnlyMessage": "Talent Group operations are not enabled in Manager Workspace in this batch.",
       "units": {
         "VND": "VND",
         "COUNT": "Count",

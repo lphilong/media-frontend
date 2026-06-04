@@ -100,6 +100,69 @@ export const managerWorkspaceOrgUnitOnlyContext = (): ManagerWorkspaceContext =>
   },
 });
 
+export const managerWorkspaceOrgUnitDepartmentOwnerContext = (): ManagerWorkspaceContext => ({
+  ...managerWorkspaceOrgUnitOnlyContext(),
+  scopes: {
+    orgUnits: managerWorkspaceOrgUnitOnlyContext().scopes.orgUnits.map((scope) => ({
+      ...scope,
+      role: 'DEPARTMENT_OWNER',
+      capabilities: {
+        kpi: {
+          ...scope.capabilities.kpi,
+          manageAllocation: false,
+          enterActual: false,
+          correctActual: false,
+        },
+      },
+    })),
+    talentGroups: [],
+  },
+});
+
+export const managerWorkspaceOrgUnitOperatorContext = (): ManagerWorkspaceContext => ({
+  ...managerWorkspaceOrgUnitOnlyContext(),
+  scopes: {
+    orgUnits: managerWorkspaceOrgUnitOnlyContext().scopes.orgUnits.map((scope) => ({
+      ...scope,
+      role: 'UNIT_OPERATOR',
+      capabilities: {
+        kpi: {
+          ...scope.capabilities.kpi,
+          manageAllocation: false,
+          enterActual: false,
+          correctActual: false,
+        },
+      },
+    })),
+    talentGroups: [],
+  },
+});
+
+export const managerWorkspaceOrgUnitNoKpiCapabilityContext = (): ManagerWorkspaceContext => ({
+  ...managerWorkspaceOrgUnitOnlyContext(),
+  scopes: {
+    orgUnits: managerWorkspaceOrgUnitOnlyContext().scopes.orgUnits.map((scope) => ({
+      ...scope,
+      capabilities: {
+        kpi: kpiCapabilities,
+      },
+    })),
+    talentGroups: [],
+  },
+  modules: {
+    ...baseContext().modules,
+    kpi: {
+      visible: false,
+      unitKpiVisible: false,
+      talentGroupKpiVisible: false,
+    },
+  },
+  readiness: {
+    canUseManagerWorkspace: true,
+    reasons: ['MISSING_KPI_MANAGER_CAPABILITY'],
+  },
+});
+
 export const managerWorkspaceTalentGroupOnlyContext = (): ManagerWorkspaceContext => ({
   ...baseContext(),
   scopes: {
