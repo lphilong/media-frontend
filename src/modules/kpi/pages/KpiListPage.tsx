@@ -5,6 +5,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { APP_PATHS } from '@app/router/paths';
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import {
+  formatKpiDate,
+  formatKpiDateTime,
   formatKpiMetricInput,
   formatKpiNumber,
   isStrictKpiDate,
@@ -55,7 +57,6 @@ import {
   PermissionDeniedState,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { formatKpiDateTime } from '@modules/kpi/formatting/kpi-formatting';
 import {
   hasScopeGrant,
   useCurrentActorCapabilities,
@@ -245,7 +246,7 @@ const currentHcmMonth = (now = Date.now()): string => {
 
 const currentHcmDate = (now = Date.now()): string => {
   const local = new Date(now + 7 * 60 * 60 * 1000);
-  return `${String(local.getUTCDate()).padStart(2, '0')}-${String(local.getUTCMonth() + 1).padStart(2, '0')}-${local.getUTCFullYear()}`;
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, '0')}-${String(local.getUTCDate()).padStart(2, '0')}`;
 };
 
 const formatPeriodMonth = (value: string | null | undefined): string => {
@@ -2275,7 +2276,7 @@ const CorrectionPanel = ({
           <h2 className="text-base font-semibold">{t('kpi:correction.title')}</h2>
           <p className="text-sm text-muted">
             {target.row.memberDisplayName ?? t('kpi:actualWorkspace.unnamedMember')} -{' '}
-            {t(`kpi:metricCodes.${target.cell.metricCode}`)} - {actualDate}
+            {t(`kpi:metricCodes.${target.cell.metricCode}`)} - {formatKpiDate(actualDate)}
           </p>
         </div>
         <button

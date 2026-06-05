@@ -1,7 +1,7 @@
 import type { KpiMetricCode } from '@modules/kpi/types/kpi.types';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
-const strictKpiDatePattern = /^(\d{2})-(\d{2})-(\d{4})$/;
+const strictKpiDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const strictDateInputPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const moneyPattern = /^(0|[1-9]\d{0,2}(?:\.\d{3})*|[1-9]\d*)$/;
 const countPattern = /^(0|[1-9]\d*)$/;
@@ -13,10 +13,10 @@ export const isStrictKpiDate = (value: string): boolean => {
     return false;
   }
 
-  const [, dayText, monthText, yearText] = match;
-  const day = Number(dayText);
-  const month = Number(monthText);
+  const [, yearText, monthText, dayText] = match;
   const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
   const date = new Date(Date.UTC(year, month - 1, day));
   return (
     date.getUTCFullYear() === year &&
@@ -28,38 +28,20 @@ export const isStrictKpiDate = (value: string): boolean => {
 export const parseKpiDate = (value: string): string | undefined =>
   isStrictKpiDate(value) ? value.trim() : undefined;
 
-export const formatKpiDate = (value: string): string => (isStrictKpiDate(value) ? value : '-');
-
-export const toKpiDateInputValue = (value: string): string => {
+export const formatKpiDate = (value: string): string => {
   const match = strictKpiDatePattern.exec(value.trim());
   if (!match || !isStrictKpiDate(value)) {
-    return '';
+    return '-';
   }
-
-  const [, dayText, monthText, yearText] = match;
-  return `${yearText}-${monthText}-${dayText}`;
+  return `${match[3]}-${match[2]}-${match[1]}`;
 };
 
+export const toKpiDateInputValue = (value: string): string =>
+  isStrictKpiDate(value) ? value.trim() : '';
+
 export const fromKpiDateInputValue = (value: string): string => {
-  const match = strictDateInputPattern.exec(value.trim());
-  if (!match) {
-    return value;
-  }
-
-  const [, yearText, monthText, dayText] = match;
-  const year = Number(yearText);
-  const month = Number(monthText);
-  const day = Number(dayText);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() + 1 !== month ||
-    date.getUTCDate() !== day
-  ) {
-    return value;
-  }
-
-  return `${dayText}-${monthText}-${yearText}`;
+  const trimmed = value.trim();
+  return strictDateInputPattern.test(trimmed) ? trimmed : value;
 };
 
 export const formatKpiDateTime = (value: number | string | Date | null | undefined): string =>

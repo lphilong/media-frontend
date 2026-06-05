@@ -521,7 +521,7 @@ const actualGridSchema = z
     actualDate: z
       .string()
       .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/),
+      .regex(/^\d{4}-\d{2}-\d{2}$/),
     policy: z
       .object({
         timezone: z.literal('Asia/Ho_Chi_Minh'),
@@ -590,7 +590,7 @@ const actualEntrySchema = z
     actualDate: z
       .string()
       .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/),
+      .regex(/^\d{4}-\d{2}-\d{2}$/),
     actualValue: z.number(),
     effectiveValue: z.number(),
     editCount: z.number().int(),
@@ -623,7 +623,7 @@ const correctionSchema = z
     actualDate: z
       .string()
       .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/),
+      .regex(/^\d{4}-\d{2}-\d{2}$/),
     previousValue: z.number(),
     correctedValue: z.number(),
     reason: z.string().trim().min(1),
@@ -773,7 +773,7 @@ const markActualExcusePayloadSchema = z
     actualDate: z
       .string()
       .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/),
+      .regex(/^\d{4}-\d{2}-\d{2}$/),
     status: actualExcuseStatusSchema,
     reasonCode: actualExcuseReasonCodeSchema,
     reasonText: z.string().trim().min(1),
@@ -1205,7 +1205,7 @@ export const createKpiActual = async (payload: {
         actualDate: z
           .string()
           .trim()
-          .regex(/^\d{2}-\d{2}-\d{4}$/),
+          .regex(/^\d{4}-\d{2}-\d{2}$/),
         actualValue: z.number(),
       })
       .strict()
@@ -1221,7 +1221,7 @@ const actualMutationPayloadSchema = z
     actualDate: z
       .string()
       .trim()
-      .regex(/^\d{2}-\d{2}-\d{4}$/),
+      .regex(/^\d{4}-\d{2}-\d{2}$/),
     actualValue: z.number(),
   })
   .strict();

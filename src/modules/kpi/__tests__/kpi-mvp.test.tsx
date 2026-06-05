@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 
 import { appRoutes } from '@app/router/router';
 import {
+  formatKpiDate,
   fromKpiDateInputValue,
   parseKpiDate,
   parseKpiHoursInput,
@@ -116,7 +117,7 @@ const openPublishedActualGrid = async (): Promise<void> => {
   await openPublishedWorkspacePlan();
   const actualDate = screen.getByLabelText('Actual date');
   await userEvent.clear(actualDate);
-  await userEvent.type(actualDate, '16-05-2026');
+  await userEvent.type(actualDate, '2026-05-16');
   await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
   await screen.findByLabelText('Luna Park Revenue VND actual');
 };
@@ -510,7 +511,7 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText('kpi-plan-published-alloc-1')).toBeInTheDocument();
     const actualDate = screen.getByLabelText('Actual date');
     await userEvent.clear(actualDate);
-    await userEvent.type(actualDate, '16-05-2026');
+    await userEvent.type(actualDate, '2026-05-16');
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
     const draft = await screen.findByLabelText('Luna Park Content output count actual');
     await userEvent.clear(draft);
@@ -564,7 +565,7 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText('kpi-plan-published-alloc-1')).toBeInTheDocument();
     const actualDate = screen.getByLabelText('Actual date');
     await userEvent.clear(actualDate);
-    await userEvent.type(actualDate, '16-05-2026');
+    await userEvent.type(actualDate, '2026-05-16');
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
     await screen.findByLabelText('Luna Park Revenue VND actual');
 
@@ -1388,22 +1389,18 @@ describe('KPI MVP UX', () => {
     expect(called).toBe(false);
   });
 
-  it('accepts DD-MM-YYYY and rejects YYYY-MM-DD dates', () => {
-    expect(parseKpiDate('16-05-2026')).toBe('16-05-2026');
-    expect(parseKpiDate('2026-05-16')).toBeUndefined();
+  it('accepts YYYY-MM-DD API dates and displays DD-MM-YYYY dates', () => {
+    expect(parseKpiDate('2026-05-16')).toBe('2026-05-16');
+    expect(parseKpiDate('16-05-2026')).toBeUndefined();
     expect(parseKpiDate('16/05/2026')).toBeUndefined();
     expect(parseKpiDate('6-5-2026')).toBeUndefined();
-    expect(toKpiDateInputValue('16-05-2026')).toBe('2026-05-16');
-    expect(fromKpiDateInputValue('2026-05-16')).toBe('16-05-2026');
+    expect(toKpiDateInputValue('2026-05-16')).toBe('2026-05-16');
+    expect(fromKpiDateInputValue('2026-05-16')).toBe('2026-05-16');
+    expect(formatKpiDate('2026-05-16')).toBe('16-05-2026');
   });
 
-  it('actual entry UI rejects YYYY-MM-DD before saving', async () => {
-    renderRoute('/kpi');
-    await openPublishedWorkspacePlan();
-    const actualDate = screen.getByLabelText('Actual date');
-    await userEvent.clear(actualDate);
-    await userEvent.type(actualDate, '2026-05-16');
-    expect(await screen.findByText(/Do not use YYYY-MM-DD/i)).toBeInTheDocument();
+  it('actual API rejects legacy DD-MM-YYYY before saving', async () => {
+    await expect(fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).rejects.toThrow();
   });
 
   it('enforces count integer and LIVE_HOURS max two decimals', () => {
@@ -1975,7 +1972,7 @@ describe('KPI MVP UX', () => {
     expect(actualDate).toHaveAttribute('type', 'date');
     expect(actualDate).toHaveValue('2026-06-15');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
-    expect(readLastKpiOrgUnitActualGridDate()).toBe('15-06-2026');
+    expect(readLastKpiOrgUnitActualGridDate()).toBe('2026-06-15');
     expect(
       await within(operations).findByLabelText('An Nguyen Revenue VND actual'),
     ).toBeInTheDocument();
@@ -2039,7 +2036,7 @@ describe('KPI MVP UX', () => {
     expect(actualDate).toHaveAttribute('type', 'date');
     expect(actualDate).toHaveValue('2026-06-15');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
-    expect(readLastKpiOrgUnitActualGridDate()).toBe('15-06-2026');
+    expect(readLastKpiOrgUnitActualGridDate()).toBe('2026-06-15');
 
     const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
     await userEvent.clear(anActual);
@@ -2047,7 +2044,7 @@ describe('KPI MVP UX', () => {
     await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
     expect(await screen.findByText('Actual cells saved.')).toBeInTheDocument();
     expect(readLastKpiOrgUnitActualPayload()).toMatchObject({
-      actualDate: '15-06-2026',
+      actualDate: '2026-06-15',
       actualValue: 0,
     });
 
@@ -2089,7 +2086,7 @@ describe('KPI MVP UX', () => {
       kpiPlanId: 'kpi-plan-org-unit',
       allocationId: 'kpi-plan-org-unit-alloc-1',
       metricCode: 'REVENUE_VND',
-      actualDate: '15-06-2026',
+      actualDate: '2026-06-15',
       actualValue: 100000,
     });
 
@@ -2110,7 +2107,7 @@ describe('KPI MVP UX', () => {
       kpiPlanId: 'kpi-plan-org-unit',
       allocationId: 'kpi-plan-org-unit-alloc-1',
       metricCode: 'REVENUE_VND',
-      actualDate: '15-06-2026',
+      actualDate: '2026-06-15',
       actualValue: 100000,
     });
     vi.setSystemTime(new Date('2026-06-16T10:00:01+07:00'));
@@ -2243,7 +2240,7 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText('KPI lifecycle updated.')).toBeInTheDocument();
   });
 
-  it('loads actual grid endpoint and sends actualDate as DD-MM-YYYY', async () => {
+  it('loads actual grid endpoint and sends actualDate as YYYY-MM-DD', async () => {
     const captured: URL[] = [];
     server.use(
       http.get('*/admin/kpi/plans/:kpiPlanId/actuals', ({ request }) => {
@@ -2260,12 +2257,12 @@ describe('KPI MVP UX', () => {
     await userEvent.click(within(workspaceRow!).getByRole('button', { name: 'View detail' }));
     await screen.findByText('kpi-plan-published-alloc-1');
     expect(captured).toHaveLength(0);
-    expect(screen.getByLabelText('Actual date')).not.toHaveValue('16-05-2026');
+    expect(screen.getByLabelText('Actual date')).not.toHaveValue('2026-05-16');
     await userEvent.clear(screen.getByLabelText('Actual date'));
-    await userEvent.type(screen.getByLabelText('Actual date'), '16-05-2026');
+    await userEvent.type(screen.getByLabelText('Actual date'), '2026-05-16');
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
     await waitFor(() => expect(captured).toHaveLength(1));
-    expect(captured[0].searchParams.get('actualDate')).toBe('16-05-2026');
+    expect(captured[0].searchParams.get('actualDate')).toBe('2026-05-16');
   });
 
   it('displays backend daily actual statuses, safe excuse reasons, and gated excuse actions', async () => {
@@ -2359,7 +2356,7 @@ describe('KPI MVP UX', () => {
     await openPublishedWorkspacePlan();
     const actualDate = screen.getByLabelText('Actual date');
     await userEvent.clear(actualDate);
-    await userEvent.type(actualDate, '16-05-2026');
+    await userEvent.type(actualDate, '2026-05-16');
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
     expect(await screen.findByLabelText('Unnamed member Revenue VND actual')).toBeInTheDocument();
     expect(screen.getByText('Unnamed member')).toBeInTheDocument();
@@ -2379,13 +2376,13 @@ describe('KPI MVP UX', () => {
     const createPayload = {
       allocationId: 'kpi-plan-published-alloc-1',
       metricCode: 'CONTENT_OUTPUT_COUNT',
-      actualDate: '16-05-2026',
+      actualDate: '2026-05-16',
       actualValue: 3,
     };
 
     vi.setSystemTime(new Date('2026-05-15T23:59:59+07:00'));
     expect(
-      (await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability,
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '2026-05-16')).editability,
     ).toMatchObject({ isDirectEditOpen: false, disabledReason: 'DIRECT_EDIT_WINDOW_CLOSED' });
     expect(
       (await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).status,
@@ -2393,7 +2390,7 @@ describe('KPI MVP UX', () => {
 
     vi.setSystemTime(new Date('2026-05-16T00:00:00+07:00'));
     expect(
-      (await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability,
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '2026-05-16')).editability,
     ).toMatchObject({ isDirectEditOpen: true, disabledReason: null });
     expect(
       (await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', createPayload)).ok,
@@ -2401,7 +2398,7 @@ describe('KPI MVP UX', () => {
 
     vi.setSystemTime(new Date('2026-05-17T10:00:00+07:00'));
     expect(
-      (await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability,
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '2026-05-16')).editability,
     ).toMatchObject({ isDirectEditOpen: true, disabledReason: null });
     expect(
       (
@@ -2413,7 +2410,7 @@ describe('KPI MVP UX', () => {
 
     vi.setSystemTime(new Date('2026-05-17T10:00:01+07:00'));
     expect(
-      (await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).editability,
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '2026-05-16')).editability,
     ).toMatchObject({ isDirectEditOpen: false, disabledReason: 'DIRECT_EDIT_WINDOW_CLOSED' });
     expect(
       (
@@ -2428,7 +2425,7 @@ describe('KPI MVP UX', () => {
 
     vi.setSystemTime(new Date('2026-06-01T10:00:00+07:00'));
     expect(
-      (await fetchKpiActualDailyGrid('kpi-plan-published', '31-05-2026')).editability,
+      (await fetchKpiActualDailyGrid('kpi-plan-published', '2026-05-31')).editability,
     ).toMatchObject({ isDirectEditOpen: true, disabledReason: null });
   });
 
@@ -2437,7 +2434,7 @@ describe('KPI MVP UX', () => {
     const basePayload = {
       allocationId: 'kpi-plan-published-alloc-1',
       metricCode: 'CONTENT_OUTPUT_COUNT' as const,
-      actualDate: '16-05-2026',
+      actualDate: '2026-05-16',
       status: 'EXCUSED' as const,
       reasonCode: 'MEMBER_LEAVE' as const,
       reasonText: 'Approved leave',
@@ -2476,7 +2473,7 @@ describe('KPI MVP UX', () => {
     ).rejects.toThrow(/actual entry already exists/i);
 
     await markKpiActualExcuse({ ...basePayload, kpiPlanId: 'kpi-plan-published' });
-    const excusedGrid = await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026');
+    const excusedGrid = await fetchKpiActualDailyGrid('kpi-plan-published', '2026-05-16');
     const excusedCell = excusedGrid.rows[0].metrics.find(
       (metric) => metric.metricCode === 'CONTENT_OUTPUT_COUNT',
     );
@@ -2490,7 +2487,7 @@ describe('KPI MVP UX', () => {
         await mswJson('POST', '/admin/kpi/plans/kpi-plan-published/actuals', {
           allocationId: 'kpi-plan-published-alloc-1',
           metricCode: 'CONTENT_OUTPUT_COUNT',
-          actualDate: '16-05-2026',
+          actualDate: '2026-05-16',
           actualValue: 3,
         })
       ).status,
@@ -2500,7 +2497,7 @@ describe('KPI MVP UX', () => {
       kpiPlanId: 'kpi-plan-published',
       excuseId: excusedCell?.actualExcuse?.id ?? '',
     });
-    const restoredGrid = await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026');
+    const restoredGrid = await fetchKpiActualDailyGrid('kpi-plan-published', '2026-05-16');
     expect(
       restoredGrid.rows[0].metrics.find((metric) => metric.metricCode === 'CONTENT_OUTPUT_COUNT'),
     ).toMatchObject({
@@ -2952,7 +2949,7 @@ describe('KPI MVP UX', () => {
       memberTalentId: null,
     });
 
-    const grid = await fetchKpiOrgUnitActualGrid('kpi-plan-org-unit', '01-06-2026');
+    const grid = await fetchKpiOrgUnitActualGrid('kpi-plan-org-unit', '2026-06-01');
     expect(grid.subjectType).toBe('ORG_UNIT');
     expect(grid.rows[0]).toMatchObject({
       memberEmploymentProfileId: 'employment-profile-ops-001',
@@ -2963,7 +2960,7 @@ describe('KPI MVP UX', () => {
       kpiPlanId: 'kpi-plan-org-unit',
       allocationId: 'kpi-plan-org-unit-alloc-1',
       metricCode: 'REVENUE_VND',
-      actualDate: '01-06-2026',
+      actualDate: '2026-06-01',
       actualValue: 500000,
     });
     expect(actual.memberEmploymentProfileId).toBe('employment-profile-ops-001');
@@ -2980,12 +2977,12 @@ describe('KPI MVP UX', () => {
       kpiPlanId: 'kpi-plan-org-unit',
       allocationId: 'kpi-plan-org-unit-alloc-1',
       metricCode: 'REVENUE_VND',
-      actualDate: '02-06-2026',
+      actualDate: '2026-06-02',
       status: 'EXCUSED',
       reasonCode: 'OTHER',
       reasonText: 'Contract test',
     });
-    const excusedGrid = await fetchKpiOrgUnitActualGrid('kpi-plan-org-unit', '02-06-2026');
+    const excusedGrid = await fetchKpiOrgUnitActualGrid('kpi-plan-org-unit', '2026-06-02');
     const excuseId = excusedGrid.rows[0]?.metrics[0]?.actualExcuse?.id;
     expect(excuseId).toBeTruthy();
     await unmarkKpiOrgUnitActualExcuse({
@@ -3092,9 +3089,9 @@ describe('KPI MVP UX', () => {
     await expect(fetchKpiPlans({ status: 'BROKEN' } as never)).rejects.toThrow();
     await expect(fetchKpiPlans({ periodMonth: '2026-13' } as never)).rejects.toThrow();
     await expect(fetchKpiPlans({ limit: 101 })).rejects.toThrow();
-    await expect(fetchKpiActualDailyGrid('kpi-plan-published', '31-02-2026')).rejects.toThrow();
-    await expect(fetchKpiActualDailyGrid('kpi-plan-published', '01-06-2026')).rejects.toThrow();
-    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '16-05-2026')).policy).toEqual({
+    await expect(fetchKpiActualDailyGrid('kpi-plan-published', '2026-02-31')).rejects.toThrow();
+    await expect(fetchKpiActualDailyGrid('kpi-plan-published', '2026-06-01')).rejects.toThrow();
+    expect((await fetchKpiActualDailyGrid('kpi-plan-published', '2026-05-16')).policy).toEqual({
       timezone: 'Asia/Ho_Chi_Minh',
       entryOpenLocalTime: '00:00',
       entryLockLocalTime: '10:00',
@@ -4298,7 +4295,7 @@ const makeActualEntry = (id: string, metricCode: string, value: number) => ({
   allocationId: 'kpi-plan-published-alloc-1',
   memberTalentId: 'talent-001',
   metricCode,
-  actualDate: '16-05-2026',
+  actualDate: '2026-05-16',
   actualValue: value,
   effectiveValue: value,
   editCount: 1,
@@ -4318,7 +4315,7 @@ const makeCorrection = (value: number) => ({
   kpiPlanId: 'kpi-plan-published',
   allocationId: 'kpi-plan-published-alloc-2',
   metricCode: 'REVENUE_VND',
-  actualDate: '16-05-2026',
+  actualDate: '2026-05-16',
   previousValue: 250000,
   correctedValue: value,
   reason: 'Operational correction',
@@ -4332,7 +4329,7 @@ const makeActualGrid = () => ({
   status: 'PUBLISHED',
   subjectType: 'TALENT_GROUP',
   subjectId: 'group-001',
-  actualDate: '16-05-2026',
+  actualDate: '2026-05-16',
   policy: {
     timezone: 'Asia/Ho_Chi_Minh',
     entryOpenLocalTime: '00:00',

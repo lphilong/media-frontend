@@ -327,14 +327,14 @@ describe('/manager workspace route', () => {
     expect(actualDate).toHaveAttribute('type', 'date');
     expect(actualDate).toHaveValue('2026-06-15');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
-    expect(readLastKpiOrgUnitActualGridDate()).toBe('15-06-2026');
+    expect(readLastKpiOrgUnitActualGridDate()).toBe('2026-06-15');
     const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
     await userEvent.clear(anActual);
     await userEvent.type(anActual, '0');
     await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
     expect(await screen.findByText('Actual cells saved.')).toBeInTheDocument();
     expect(readLastKpiOrgUnitActualPayload()).toMatchObject({
-      actualDate: '15-06-2026',
+      actualDate: '2026-06-15',
       actualValue: 0,
     });
 

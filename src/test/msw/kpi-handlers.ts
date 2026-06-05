@@ -1022,7 +1022,7 @@ export const resetKpiMockData = (): void => {
       allocationId: 'kpi-plan-published-alloc-1',
       memberTalentId: 'talent-001',
       metricCode: 'REVENUE_VND',
-      actualDate: '16-05-2026',
+      actualDate: '2026-05-16',
       actualValue: 500000,
       effectiveValue: 500000,
       editCount: 0,
@@ -1041,7 +1041,7 @@ export const resetKpiMockData = (): void => {
       allocationId: 'kpi-plan-published-alloc-2',
       memberTalentId: 'talent-002',
       metricCode: 'REVENUE_VND',
-      actualDate: '16-05-2026',
+      actualDate: '2026-05-16',
       actualValue: 200000,
       effectiveValue: 250000,
       editCount: 3,
@@ -1060,7 +1060,7 @@ export const resetKpiMockData = (): void => {
       allocationId: 'kpi-plan-published-alloc-1',
       memberTalentId: 'talent-001',
       metricCode: 'CONTENT_OUTPUT_COUNT',
-      actualDate: '15-05-2026',
+      actualDate: '2026-05-15',
       actualValue: 5,
       effectiveValue: 5,
       editCount: 1,
@@ -1079,7 +1079,7 @@ export const resetKpiMockData = (): void => {
       allocationId: 'kpi-plan-published-alloc-1',
       memberTalentId: 'talent-001',
       metricCode: 'CONTENT_OUTPUT_COUNT',
-      actualDate: '14-05-2026',
+      actualDate: '2026-05-14',
       actualValue: 4,
       effectiveValue: 4,
       editCount: 1,
@@ -1098,7 +1098,7 @@ export const resetKpiMockData = (): void => {
       allocationId: 'kpi-plan-finalized-alloc-1',
       memberTalentId: 'talent-001',
       metricCode: 'REVENUE_VND',
-      actualDate: '16-04-2026',
+      actualDate: '2026-04-16',
       actualValue: 100000,
       effectiveValue: 100000,
       editCount: 1,
@@ -1119,7 +1119,7 @@ export const resetKpiMockData = (): void => {
       kpiPlanId: 'kpi-plan-published',
       allocationId: 'kpi-plan-published-alloc-2',
       metricCode: 'REVENUE_VND',
-      actualDate: '16-05-2026',
+      actualDate: '2026-05-16',
       previousValue: 200000,
       correctedValue: 250000,
       reason: 'Backend approved adjustment',
@@ -1133,7 +1133,7 @@ export const resetKpiMockData = (): void => {
       kpiPlanId: 'kpi-plan-published',
       allocationId: 'kpi-plan-published-alloc-1',
       metricCode: 'CONTENT_OUTPUT_COUNT',
-      actualDate: '15-05-2026',
+      actualDate: '2026-05-15',
       status: 'EXCUSED',
       reasonCode: 'MEMBER_LEAVE',
       reasonText: 'Approved leave',
@@ -1149,7 +1149,7 @@ export const resetKpiMockData = (): void => {
       kpiPlanId: 'kpi-plan-published',
       allocationId: 'kpi-plan-published-alloc-1',
       metricCode: 'CONTENT_OUTPUT_COUNT',
-      actualDate: '14-05-2026',
+      actualDate: '2026-05-14',
       status: 'NOT_REQUIRED',
       reasonCode: 'NO_OPERATION_REQUIRED',
       reasonText: 'No operation required',
@@ -1532,11 +1532,11 @@ const parseActualDate = (
   value: unknown,
 ): { day: number; month: number; year: number; text: string } | null => {
   if (typeof value !== 'string') return null;
-  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return null;
-  const day = Number(match[1]);
+  const year = Number(match[1]);
   const month = Number(match[2]);
-  const year = Number(match[3]);
+  const day = Number(match[3]);
   const date = new Date(Date.UTC(year, month - 1, day));
   if (
     date.getUTCFullYear() !== year ||
@@ -1971,7 +1971,7 @@ const statusSummaryForAllocations = (plan: KpiPlan, planAllocations: KpiAllocati
     return { ...fixture };
   }
   const summary = emptyActualEntryStatusSummary();
-  const statusDate = plan.periodMonth === '2026-05' ? '16-05-2026' : '16-04-2026';
+  const statusDate = plan.periodMonth === '2026-05' ? '2026-05-16' : '2026-04-16';
   const planTargets = targets[plan.id] ?? [];
   for (const allocation of planAllocations) {
     for (const metric of planTargets) {
@@ -2890,7 +2890,7 @@ export const kpiHandlers = [
     const planAllocations = (allocations[plan.id] ?? []).filter(
       (allocation) => allocation.allocationStatus === 'PUBLISHED',
     );
-    const actualDate = plan.periodMonth === '2026-06' ? '15-06-2026' : '16-05-2026';
+    const actualDate = plan.periodMonth === '2026-06' ? '2026-06-15' : '2026-05-16';
     const memberProgress = planAllocations.map((allocation) => {
       const targetValue = allocation.targetMetrics[0]?.targetValue ?? 0;
       const entry = readEntry(plan.id, allocation.id, 'REVENUE_VND', actualDate);

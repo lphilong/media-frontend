@@ -144,10 +144,9 @@ const formatFinalAchievement = (value: number | null): string =>
 
 const currentHcmDate = (now = Date.now()): string => {
   const local = new Date(now + 7 * 60 * 60 * 1000);
-  return `${String(local.getUTCDate()).padStart(2, '0')}-${String(local.getUTCMonth() + 1).padStart(
-    2,
-    '0',
-  )}-${local.getUTCFullYear()}`;
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, '0')}-${String(
+    local.getUTCDate(),
+  ).padStart(2, '0')}`;
 };
 
 const dateInputBoundsForPeriod = (
