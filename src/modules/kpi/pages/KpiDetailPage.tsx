@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 
+import { APP_PATHS } from '@app/router/paths';
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import { fetchKpiManagedMembers } from '@modules/kpi/api/kpi.api';
 import {
@@ -15,8 +16,10 @@ import {
   formatKpiDateTime,
   formatKpiMetricInput,
   formatKpiNumber,
+  fromKpiDateInputValue,
   isStrictKpiDate,
   parseKpiMetricInput,
+  toKpiDateInputValue,
 } from '@modules/kpi/formatting/kpi-formatting';
 import {
   useApproveKpiAllocationMutation,
@@ -56,6 +59,7 @@ import { kpiActualExcuseReasonCodes } from '@modules/kpi/types/kpi.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
   ActionRail,
+  DetailBackLink,
   DetailPageShell,
   ErrorState,
   LoadingState,
@@ -144,6 +148,23 @@ const currentHcmDate = (now = Date.now()): string => {
     2,
     '0',
   )}-${local.getUTCFullYear()}`;
+};
+
+const dateInputBoundsForPeriod = (
+  periodMonth: KpiPlanDetail['periodMonth'],
+): { min: string; max: string } | undefined => {
+  const match = /^(\d{4})-(\d{2})$/.exec(periodMonth);
+  if (!match) {
+    return undefined;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return {
+    min: `${periodMonth}-01`,
+    max: `${periodMonth}-${String(lastDay).padStart(2, '0')}`,
+  };
 };
 
 const orgUnitCellKey = (row: KpiOrgUnitActualGridRow, cell: KpiActualGridMetricCell): string =>
@@ -500,6 +521,7 @@ export const KpiOrgUnitOperationsSection = ({
     allocationWorkflowStatus !== 'NONE' &&
     allocationWorkflowStatus !== 'MIXED' &&
     officialAllocationStatuses.has(allocationWorkflowStatus);
+  const actualDateInputBounds = dateInputBoundsForPeriod(plan.periodMonth);
   const allocationPlanStateDisabledReason =
     plan.status === 'FINALIZED'
       ? t('kpi:errors.finalizedReadOnly')
@@ -1233,6 +1255,13 @@ export const KpiOrgUnitOperationsSection = ({
                   </tbody>
                 </table>
               </div>
+              {progressQuery.data.memberProgress.length === 0 ? (
+                <div className="rounded border border-dashed border-border p-4 text-sm text-muted">
+                  {allocationIsOfficial
+                    ? t('kpi:states.orgUnitProgressEmpty')
+                    : t('kpi:states.orgUnitProgressNeedsPublishedAllocation')}
+                </div>
+              ) : null}
             </div>
           ) : progressQuery.isError ? (
             <p className="text-sm text-danger">{t('kpi:states.progressUnavailable')}</p>
@@ -1244,10 +1273,13 @@ export const KpiOrgUnitOperationsSection = ({
             <label className="flex flex-col gap-1 text-sm">
               <span>{t('kpi:fields.actualDate')}</span>
               <input
-                value={actualDate}
+                type="date"
+                value={toKpiDateInputValue(actualDate)}
+                min={actualDateInputBounds?.min}
+                max={actualDateInputBounds?.max}
                 className="rounded border border-border bg-panel px-2 py-1.5"
                 onChange={(event) => {
-                  setActualDate(event.target.value);
+                  setActualDate(fromKpiDateInputValue(event.target.value));
                   setLoadedActualDate(undefined);
                   setCorrectionTarget(null);
                   setExcuseDraft(null);
@@ -1273,6 +1305,13 @@ export const KpiOrgUnitOperationsSection = ({
             <div className="overflow-x-auto rounded border border-border">
               {actualGridQuery.data.editability.isPlanFinalized ? (
                 <p className="p-3 text-sm text-danger">{t('kpi:errors.finalizedReadOnly')}</p>
+              ) : null}
+              {actualGridQuery.data.rows.length === 0 ? (
+                <div className="p-4 text-sm text-muted">
+                  {allocationIsOfficial
+                    ? t('kpi:states.orgUnitActualGridEmpty')
+                    : t('kpi:states.orgUnitProgressNeedsPublishedAllocation')}
+                </div>
               ) : null}
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-100">
@@ -1987,7 +2026,8 @@ export const KpiDetailPage = (): JSX.Element => {
       banner={
         <section className="rounded-lg border border-border bg-panel p-4 shadow-shell">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+            <div className="space-y-2">
+              <DetailBackLink to={APP_PATHS.kpi} label={t('kpi:actions.backToKpi')} />
               <p className="text-sm text-muted">{plan.planCode}</p>
               <h1 className="text-xl font-semibold">{plan.title}</h1>
               <p className="text-sm text-muted">

@@ -313,7 +313,8 @@
     "publishAllocation": "Publish Allocation",
     "publish": "Publish",
     "archive": "Archive",
-    "finalize": "Finalize"
+    "finalize": "Finalize",
+    "backToKpi": "Back to KPI"
   },
   "actionRail": {
     "title": "KPI actions"
@@ -384,6 +385,9 @@
     "noManagedMembers": "No managed members are available for this plan.",
     "progressUnavailable": "Progress is unavailable for this plan or actor.",
     "memberProgressEmpty": "No published member progress is available yet.",
+    "orgUnitProgressEmpty": "No official Org Unit progress rows are available yet.",
+    "orgUnitProgressNeedsPublishedAllocation": "Progress and actual rows are available only after allocation rows are published.",
+    "orgUnitActualGridEmpty": "No official Org Unit actual rows are available for the selected date.",
     "emptyActualWorkspace": "No group plans are available for actual entry.",
     "actualWorkspaceLoadErrorTitle": "Unable to load Actual Workspace",
     "actualWorkspaceLoadErrorMessage": "Unable to load Actual Workspace plans.",

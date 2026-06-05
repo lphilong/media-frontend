@@ -313,7 +313,8 @@
     "publishAllocation": "Publish Allocation",
     "publish": "发布",
     "archive": "归档",
-    "finalize": "终结"
+    "finalize": "终结",
+    "backToKpi": "返回 KPI"
   },
   "actionRail": {
     "title": "KPI 操作"
@@ -392,6 +393,9 @@
     "notFinalizedYet": "尚未终结",
     "noManagedMembers": "此计划没有可选的管理成员。",
     "progressUnavailable": "此计划或当前用户无法查看进度。",
-    "memberProgressEmpty": "暂无已发布成员进度。"
+    "memberProgressEmpty": "暂无已发布成员进度。",
+    "orgUnitProgressEmpty": "暂无正式 Org Unit 进度行。",
+    "orgUnitProgressNeedsPublishedAllocation": "仅在分配行发布后显示进度与 actual 行。",
+    "orgUnitActualGridEmpty": "所选日期暂无正式 Org Unit actual 行。"
   }
 }

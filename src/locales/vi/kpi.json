@@ -313,7 +313,8 @@
     "publishAllocation": "Publish phan bo",
     "publish": "Publish",
     "archive": "Lưu trữ",
-    "finalize": "Chốt"
+    "finalize": "Chốt",
+    "backToKpi": "Quay lại KPI"
   },
   "actionRail": {
     "title": "Hành động KPI"
@@ -392,6 +393,9 @@
     "notFinalizedYet": "Chưa chốt",
     "noManagedMembers": "Không có thành viên quản lý phù hợp cho kế hoạch này.",
     "progressUnavailable": "Không có dữ liệu tiến độ cho kế hoạch hoặc người dùng này.",
-    "memberProgressEmpty": "Chưa có tiến độ thành viên đã công bố."
+    "memberProgressEmpty": "Chưa có tiến độ thành viên đã công bố.",
+    "orgUnitProgressEmpty": "Chưa có dòng tiến độ Org Unit chính thức.",
+    "orgUnitProgressNeedsPublishedAllocation": "Tiến độ và dòng actual chỉ có sau khi phân bổ được publish.",
+    "orgUnitActualGridEmpty": "Không có dòng actual Org Unit chính thức cho ngày đã chọn."
   }
 }

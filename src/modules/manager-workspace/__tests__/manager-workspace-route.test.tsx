@@ -21,7 +21,12 @@ import {
   resetManagerWorkspaceMockData,
   setMockManagerWorkspaceContext,
 } from '@test/msw/manager-workspace-handlers';
-import { readLastKpiAllocationDraftPayload, resetKpiMockData } from '@test/msw/kpi-handlers';
+import {
+  readLastKpiAllocationDraftPayload,
+  readLastKpiOrgUnitActualGridDate,
+  readLastKpiOrgUnitActualPayload,
+  resetKpiMockData,
+} from '@test/msw/kpi-handlers';
 import { server } from '@test/msw/server';
 import { renderAppWithProviders } from '@test/render-app-route';
 
@@ -300,6 +305,11 @@ describe('/manager workspace route', () => {
       await within(operations).findByText('Managed write actions available'),
     ).toBeInTheDocument();
     expect(await within(operations).findAllByText('Published Allocation')).not.toHaveLength(0);
+    expect(
+      within(operations).queryByText(
+        'Progress and actual rows are available only after allocation rows are published.',
+      ),
+    ).not.toBeInTheDocument();
 
     expect(
       within(operations).queryByRole('button', { name: 'Approve Allocation' }),
@@ -313,12 +323,20 @@ describe('/manager workspace route', () => {
     expect(screen.queryByRole('button', { name: 'Finalize' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Archive' })).not.toBeInTheDocument();
 
+    const actualDate = within(operations).getByLabelText('Actual date');
+    expect(actualDate).toHaveAttribute('type', 'date');
+    expect(actualDate).toHaveValue('2026-06-15');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+    expect(readLastKpiOrgUnitActualGridDate()).toBe('15-06-2026');
     const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
     await userEvent.clear(anActual);
     await userEvent.type(anActual, '0');
     await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
     expect(await screen.findByText('Actual cells saved.')).toBeInTheDocument();
+    expect(readLastKpiOrgUnitActualPayload()).toMatchObject({
+      actualDate: '15-06-2026',
+      actualValue: 0,
+    });
 
     const updatedAnActual = await within(operations).findByLabelText(
       'An Nguyen Revenue VND actual',
@@ -340,6 +358,11 @@ describe('/manager workspace route', () => {
     const backLink = screen.getByRole('link', { name: 'Back to managed KPI' });
     expect(backLink.querySelector('svg')).toBeInTheDocument();
     expect(backLink).toHaveAttribute('href', '/manager/kpi');
+    expect(
+      await within(operations).findByText(
+        'Progress and actual rows are available only after allocation rows are published.',
+      ),
+    ).toBeInTheDocument();
     expect(
       await within(operations).findByRole('button', { name: 'Save Allocation Draft' }),
     ).toBeEnabled();

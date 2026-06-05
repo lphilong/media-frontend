@@ -979,9 +979,17 @@ let actualEntries: ActualEntry[] = [];
 let corrections: ActualCorrection[] = [];
 let actualExcuses: ActualExcuse[] = [];
 let lastAllocationDraftPayload: Record<string, unknown> | undefined;
+let lastOrgUnitActualGridDate: string | undefined;
+let lastOrgUnitActualPayload: Record<string, unknown> | undefined;
 
 export const readLastKpiAllocationDraftPayload = (): Record<string, unknown> | undefined =>
   lastAllocationDraftPayload;
+
+export const readLastKpiOrgUnitActualGridDate = (): string | undefined =>
+  lastOrgUnitActualGridDate;
+
+export const readLastKpiOrgUnitActualPayload = (): Record<string, unknown> | undefined =>
+  lastOrgUnitActualPayload;
 
 export const resetKpiMockData = (): void => {
   planSeed = 100;
@@ -989,6 +997,8 @@ export const resetKpiMockData = (): void => {
   correctionSeed = 100;
   excuseSeed = 100;
   lastAllocationDraftPayload = undefined;
+  lastOrgUnitActualGridDate = undefined;
+  lastOrgUnitActualPayload = undefined;
   plans = initialPlans.map((plan) => ({
     ...plan,
     subjectRef: plan.subjectRef ? { ...plan.subjectRef } : null,
@@ -2877,7 +2887,9 @@ export const kpiHandlers = [
         { status: 409 },
       );
     }
-    const planAllocations = allocations[plan.id] ?? [];
+    const planAllocations = (allocations[plan.id] ?? []).filter(
+      (allocation) => allocation.allocationStatus === 'PUBLISHED',
+    );
     const actualDate = plan.periodMonth === '2026-06' ? '15-06-2026' : '16-05-2026';
     const memberProgress = planAllocations.map((allocation) => {
       const targetValue = allocation.targetMetrics[0]?.targetValue ?? 0;
@@ -2925,6 +2937,7 @@ export const kpiHandlers = [
       );
     }
     const actualDate = new URL(request.url).searchParams.get('actualDate');
+    lastOrgUnitActualGridDate = actualDate ?? undefined;
     if (
       typeof actualDate !== 'string' ||
       !parseActualDate(actualDate) ||
@@ -3355,6 +3368,7 @@ export const kpiHandlers = [
       );
     }
     const body = await parseJsonBody(request);
+    lastOrgUnitActualPayload = body;
     const unsupported = rejectUnsupportedBody(body, [
       'allocationId',
       'metricCode',

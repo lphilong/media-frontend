@@ -6,10 +6,12 @@ import userEvent from '@testing-library/user-event';
 
 import { appRoutes } from '@app/router/router';
 import {
+  fromKpiDateInputValue,
   parseKpiDate,
   parseKpiHoursInput,
   parseKpiMetricInput,
   parseKpiMoneyInput,
+  toKpiDateInputValue,
 } from '@modules/kpi/formatting/kpi-formatting';
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import {
@@ -60,6 +62,10 @@ import {
 import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
+import {
+  readLastKpiOrgUnitActualGridDate,
+  readLastKpiOrgUnitActualPayload,
+} from '@test/msw/kpi-handlers';
 import { server } from '@test/msw/server';
 
 const may2026PeriodStartAt = Date.UTC(2026, 4, 1, -7, 0, 0, 0);
@@ -1387,6 +1393,8 @@ describe('KPI MVP UX', () => {
     expect(parseKpiDate('2026-05-16')).toBeUndefined();
     expect(parseKpiDate('16/05/2026')).toBeUndefined();
     expect(parseKpiDate('6-5-2026')).toBeUndefined();
+    expect(toKpiDateInputValue('16-05-2026')).toBe('2026-05-16');
+    expect(fromKpiDateInputValue('2026-05-16')).toBe('16-05-2026');
   });
 
   it('actual entry UI rejects YYYY-MM-DD before saving', async () => {
@@ -1942,6 +1950,9 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi/plans/kpi-plan-org-unit');
 
     expect(await screen.findByRole('heading', { name: 'Operations unit KPI' })).toBeInTheDocument();
+    const backLink = screen.getByRole('link', { name: 'Back to KPI' });
+    expect(backLink.querySelector('svg')).toBeInTheDocument();
+    expect(backLink).toHaveAttribute('href', '/kpi');
     const operations = await screen.findByTestId('org-unit-operations');
     expect(screen.getByText('Org Unit operations')).toBeInTheDocument();
     expect(within(operations).getByText('Operations Unit')).toBeInTheDocument();
@@ -1960,10 +1971,15 @@ describe('KPI MVP UX', () => {
     ).not.toBeInTheDocument();
     expect(finalResultReads).toBe(0);
 
+    const actualDate = within(operations).getByLabelText('Actual date');
+    expect(actualDate).toHaveAttribute('type', 'date');
+    expect(actualDate).toHaveValue('2026-06-15');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+    expect(readLastKpiOrgUnitActualGridDate()).toBe('15-06-2026');
     expect(
       await within(operations).findByLabelText('An Nguyen Revenue VND actual'),
     ).toBeInTheDocument();
+    expect(within(operations).getAllByText('An Nguyen').length).toBeGreaterThan(0);
     expect(within(operations).getAllByText('Due open').length).toBeGreaterThan(0);
     expect(finalResultReads).toBe(0);
   });
@@ -2019,13 +2035,21 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi/plans/kpi-plan-org-unit');
 
     const operations = await screen.findByTestId('org-unit-operations');
+    const actualDate = within(operations).getByLabelText('Actual date');
+    expect(actualDate).toHaveAttribute('type', 'date');
+    expect(actualDate).toHaveValue('2026-06-15');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+    expect(readLastKpiOrgUnitActualGridDate()).toBe('15-06-2026');
 
     const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
     await userEvent.clear(anActual);
     await userEvent.type(anActual, '0');
     await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
     expect(await screen.findByText('Actual cells saved.')).toBeInTheDocument();
+    expect(readLastKpiOrgUnitActualPayload()).toMatchObject({
+      actualDate: '15-06-2026',
+      actualValue: 0,
+    });
 
     const updatedAnActual = await within(operations).findByLabelText(
       'An Nguyen Revenue VND actual',
@@ -2096,7 +2120,7 @@ describe('KPI MVP UX', () => {
     const operations = await screen.findByTestId('org-unit-operations');
     const actualDate = within(operations).getByLabelText('Actual date');
     await userEvent.clear(actualDate);
-    await userEvent.type(actualDate, '15-06-2026');
+    await userEvent.type(actualDate, '2026-06-15');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
 
     const correctedAnActual = await within(operations).findByLabelText(
