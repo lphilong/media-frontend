@@ -25,6 +25,7 @@
     "updatedAt": "更新时间",
     "requestScope": "请求 scope",
     "subject": "对象",
+    "employmentProfile": "员工 / 雇佣档案",
     "studioResources": "演播室资源"
   },
   "statuses": {
@@ -143,7 +144,8 @@
   "mutations": {
     "create": {
       "title": "创建工作班次",
-      "subtitle": "创建一个带有单一对象身份的排班班次。",
+      "subtitle": "创建一个个人手动正式工作班次例外。",
+      "exceptionCopy": "手动创建仅用于单个员工档案的例外班次。Org Unit 或 Talent Group 月度排班请使用 Monthly Rosters。",
       "submit": "创建",
       "pending": "创建中"
     },
@@ -174,12 +176,12 @@
   },
   "task": {
     "title": "安排工作班次",
-    "description": "日常排班请使用此引导表单。",
+    "description": "创建一个个人手动正式工作班次例外。Org Unit 或 Talent Group 月度排班请使用 Monthly Rosters。",
     "steps": {
       "details": "第 1/2 步：班次信息",
       "review": "第 2/2 步：保存前检查"
     },
-    "authorityNote": "时间按越南时间显示（{{timezone}}，{{offset}}）。保存时，系统会检查操作权限、被排班的人员/团队、演播室资源以及是否有排班冲突。个人、团队、部门等范围只用于员工档案排班。",
+    "authorityNote": "时间按越南时间显示（{{timezone}}，{{offset}}）。保存时，系统会检查 Admin/Ops 全局权限、单个员工档案、演播室资源以及是否有排班冲突。Monthly Rosters 负责 Org Unit 或 Talent Group 月度排班。",
     "generatedShiftCode": "保存后将由系统生成班次代码。",
     "generatedShiftCodeLabel": "班次代码",
     "generatedShiftCodeValue": "保存后由系统生成",
@@ -193,18 +195,19 @@
     "endVietnamLocal": "结束时间（越南本地时间）",
     "datetimeHelp": "请按越南时间选择日期和时间。保存前请在确认步骤再次检查时间。",
     "scopeLabel": "排班范围",
-    "employmentScopeHelp": "员工档案可按全局、本人、团队或部门范围排班。系统会在保存时做最终检查。",
+    "individualExceptionCopy": "此流程只创建单个员工档案班次。不要在这里为 Org Unit 或 Talent Group 做批量排班。",
+    "employmentScopeHelp": "手动正式工作班次例外仅支持员工档案。系统会在保存时做最终检查。",
     "globalScopeHelp": "Talent 和 Talent Group 在此流程中按全局范围排班。",
     "noResourcesSelected": "未选择演播室资源。",
     "removeResource": "移除",
     "additionalInformation": "补充信息",
     "externalRefLabel": "相关备注或外部引用",
-    "externalRefHelp": "仅当班次需要关联工单、表格、文档或其他系统代码时填写。可以留空。",
+    "externalRefHelp": "描述或相关引用至少填写一项，用于说明此手动例外。",
     "reviewAction": "检查信息",
     "submitAction": "提交工作班次",
     "submitPending": "正在提交工作班次",
     "backendRejectedTitle": "无法保存请求",
-    "backendAuthorityWarning": "保存时，系统会检查访问权限、被排班的人员/团队、演播室资源、班次状态以及排班冲突。此流程只会发送上方显示的排班信息。",
+    "backendAuthorityWarning": "保存时，系统会检查 Admin/Ops 全局权限、单个员工档案、演播室资源、班次状态以及排班冲突。此流程只会发送上方显示的个人手动例外信息。",
     "none": "无",
     "localReviewValue": "{{value}} {{timezone}} ({{offset}})",
     "utcReviewValue": "{{timestamp}} UTC ({{value}})",
@@ -237,7 +240,8 @@
     "invalidReferenceToken": "请输入逗号分隔的有效标识符。",
     "invalidWindow": "结束时间必须晚于开始时间。",
     "invalidScope": "请使用受支持的 Work Schedule 范围。",
-    "nonGlobalEmploymentProfileOnly": "非全局 Work Schedule 范围仅对员工档案对象有效。"
+    "nonGlobalEmploymentProfileOnly": "非全局 Work Schedule 范围仅对员工档案对象有效。",
+    "manualCreateReasonRequired": "手动正式工作班次创建需要描述或外部引用来说明例外原因。"
   },
   "feedback": {
     "created": "工作班次已创建。",

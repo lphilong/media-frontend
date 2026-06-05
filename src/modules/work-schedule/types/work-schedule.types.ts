@@ -162,10 +162,8 @@ export type WorkShiftByResourceQuery = Pick<
 export type WorkShiftCreatePayload = {
   shiftCode?: string | null;
   title: string;
-  subjectKind: WorkShiftSubjectKind;
+  subjectKind: 'EMPLOYMENT_PROFILE';
   subjectEmploymentProfileId?: string | null;
-  subjectTalentId?: string | null;
-  subjectTalentGroupId?: string | null;
   shiftStartAt: number;
   shiftEndAt: number;
   studioResourceIds?: string[];

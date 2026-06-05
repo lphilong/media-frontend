@@ -682,17 +682,9 @@ const scopeParams = (
   return scope ? { scope } : undefined;
 };
 
-const subjectIdPayload = (payload: WorkShiftCreatePayload) => {
-  if (payload.subjectKind === 'EMPLOYMENT_PROFILE') {
-    return { subjectEmploymentProfileId: payload.subjectEmploymentProfileId };
-  }
-
-  if (payload.subjectKind === 'TALENT') {
-    return { subjectTalentId: payload.subjectTalentId };
-  }
-
-  return { subjectTalentGroupId: payload.subjectTalentGroupId };
-};
+const subjectIdPayload = (payload: WorkShiftCreatePayload) => ({
+  subjectEmploymentProfileId: payload.subjectEmploymentProfileId,
+});
 
 const reassignSubjectIdPayload = (payload: WorkShiftReassignSubjectPayload) => {
   if (payload.newSubjectKind === 'EMPLOYMENT_PROFILE') {
@@ -709,7 +701,7 @@ const reassignSubjectIdPayload = (payload: WorkShiftReassignSubjectPayload) => {
 const sanitizeCreatePayload = (payload: WorkShiftCreatePayload): WorkShiftCreatePayload => ({
   ...(payload.shiftCode?.trim() ? { shiftCode: payload.shiftCode.trim() } : {}),
   title: payload.title,
-  subjectKind: payload.subjectKind,
+  subjectKind: 'EMPLOYMENT_PROFILE',
   ...subjectIdPayload(payload),
   shiftStartAt: payload.shiftStartAt,
   shiftEndAt: payload.shiftEndAt,

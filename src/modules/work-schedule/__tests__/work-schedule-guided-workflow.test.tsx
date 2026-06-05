@@ -60,7 +60,7 @@ describe('work schedule guided shift workflow', () => {
 
   it('renders the guided entry point without exposing the technical admin create path', async () => {
     const user = userEvent.setup();
-    renderRoute('/work-shifts');
+    renderRoute('/work-schedule/global-ops');
 
     const guidedAction = await screen.findByRole('button', {
       name: i18n.t('work-schedule:actions.scheduleWorkShift'),
@@ -182,12 +182,12 @@ describe('work schedule guided shift workflow', () => {
     );
   }, 20_000);
 
-  it('keeps the related note optional in the guided payload', async () => {
+  it('requires description or external reference for manual create', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     renderWorkflow({ onSubmit });
 
-    await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Optional ref');
+    await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Missing reason');
     const subjectPicker = await findPicker('work-shift-subject-EMPLOYMENT_PROFILE');
     await user.click(await within(subjectPicker).findByText(/EP-000001/));
     await user.type(
@@ -201,60 +201,26 @@ describe('work schedule guided shift workflow', () => {
     await user.click(
       screen.getByRole('button', { name: i18n.t('work-schedule:task.reviewAction') }),
     );
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('work-schedule:task.submitAction') }),
-    );
 
-    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ externalRef: null }), 'global');
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(i18n.t('work-schedule:validation.manualCreateReasonRequired')),
+    ).toBeInTheDocument();
   }, 20_000);
 
-  it.each([
-    ['TALENT', 'TAL-000001', 'talent-001', 'subjectTalentId'],
-    ['TALENT_GROUP', 'TG-000001', 'group-001', 'subjectTalentGroupId'],
-  ] as const)(
-    'forces global scope for %s subject selection',
-    async (subjectKind, optionText, expectedId, payloadField) => {
-      const user = userEvent.setup();
-      const onSubmit = vi.fn();
-      renderWorkflow({ onSubmit });
+  it('only exposes Employment Profile create and points group scheduling to Monthly Rosters', async () => {
+    renderWorkflow();
 
-      await user.selectOptions(
-        screen.getByLabelText(i18n.t('work-schedule:fields.subjectKind')),
-        subjectKind,
-      );
-      const scopeSelect = screen.getByLabelText(i18n.t('work-schedule:task.scopeLabel'));
-      expect(within(scopeSelect).getAllByRole('option')).toHaveLength(1);
-      expect(scopeSelect).toHaveValue('global');
-
-      await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Global shift');
-
-      const subjectPicker = await findPicker(`work-shift-subject-${subjectKind}`);
-      await user.click(await within(subjectPicker).findByText(new RegExp(optionText)));
-      await user.type(
-        screen.getByLabelText(i18n.t('work-schedule:task.startVietnamLocal')),
-        '2026-05-03T08:30',
-      );
-      await user.type(
-        screen.getByLabelText(i18n.t('work-schedule:task.endVietnamLocal')),
-        '2026-05-03T10:00',
-      );
-      await user.click(
-        screen.getByRole('button', { name: i18n.t('work-schedule:task.reviewAction') }),
-      );
-      await user.click(
-        screen.getByRole('button', { name: i18n.t('work-schedule:task.submitAction') }),
-      );
-
-      expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          subjectKind,
-          [payloadField]: expectedId,
-        }),
-        'global',
-      );
-    },
-    20_000,
-  );
+    expect(screen.queryByRole('combobox', { name: i18n.t('work-schedule:fields.subjectKind') }))
+      .not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t('work-schedule:task.individualExceptionCopy'))).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue(i18n.t('work-schedule:subjectKinds.EMPLOYMENT_PROFILE')),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT'))).not.toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT_GROUP'))).not.toBeInTheDocument();
+    await expect(findPicker('work-shift-subject-EMPLOYMENT_PROFILE')).resolves.toBeInTheDocument();
+  });
 
   it('shows normalized backend rejection details honestly', async () => {
     renderWorkflow({

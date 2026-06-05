@@ -319,7 +319,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
         shiftStartAt: 1000,
         shiftEndAt: 2000,
         studioResourceIds: ['studio-001'],
-        description: null,
+        description: 'Manual exception',
         externalRef: null,
         scope: 'team',
         scopeGrants: ['forbidden'],
@@ -339,7 +339,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
           shiftStartAt: 1000,
           shiftEndAt: 2000,
           studioResourceIds: ['studio-001'],
-          description: null,
+          description: 'Manual exception',
           externalRef: null,
         },
       }),
@@ -388,7 +388,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
       shiftStartAt: 1000,
       shiftEndAt: 2000,
       studioResourceIds: [],
-      description: null,
+      description: 'Manual exception',
       externalRef: null,
     });
 
@@ -399,7 +399,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
       shiftStartAt: 1000,
       shiftEndAt: 2000,
       studioResourceIds: [],
-      description: null,
+      description: 'Manual exception',
       externalRef: null,
     });
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('shiftCode');
@@ -522,7 +522,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
   });
 
   it.each(['self', 'team', 'department'] as const)(
-    'allows Employment Profile create under %s scope and blocks Talent/Talent Group create',
+    'allows only Employment Profile create under %s scope',
     async (currentScope) => {
       const user = userEvent.setup();
       mockReferencePickerRequests();
@@ -535,6 +535,18 @@ describe('work schedule wave 6 query and payload shaping', () => {
           onSubmit={onCreate}
         />,
       );
+      expect(
+        screen.getByText(i18n.t('work-schedule:mutations.create.exceptionCopy')),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('combobox', { name: i18n.t('work-schedule:fields.subjectKind') }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT')),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT_GROUP')),
+      ).not.toBeInTheDocument();
       await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Scoped shift');
       await selectPickerOption(user, 'work-shift-admin-subject', /EP-000001/);
       await user.type(
@@ -544,6 +556,10 @@ describe('work schedule wave 6 query and payload shaping', () => {
       await user.type(
         screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')),
         businessEndInput,
+      );
+      await user.type(
+        screen.getByLabelText(i18n.t('work-schedule:fields.description')),
+        'Manual exception',
       );
       await user.click(
         screen.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
@@ -555,43 +571,6 @@ describe('work schedule wave 6 query and payload shaping', () => {
         }),
       );
       createRender.unmount();
-
-      for (const subjectKind of ['TALENT', 'TALENT_GROUP'] as const) {
-        const blockedSubmit = vi.fn();
-        const blockedRender = renderWithRouter(
-          <WorkShiftCreateSurface
-            currentScope={currentScope}
-            onCancel={() => undefined}
-            onSubmit={blockedSubmit}
-          />,
-        );
-        await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Bad shift');
-        await user.selectOptions(
-          screen.getByLabelText(i18n.t('work-schedule:fields.subjectKind')),
-          subjectKind,
-        );
-        await selectPickerOption(
-          user,
-          'work-shift-admin-subject',
-          subjectKind === 'TALENT' ? /TAL-000001/ : /TG-000001/,
-        );
-        await user.type(
-          screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')),
-          businessStartInput,
-        );
-        await user.type(
-          screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')),
-          businessEndInput,
-        );
-        await user.click(
-          screen.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
-        );
-        expect(blockedSubmit).not.toHaveBeenCalled();
-        expect(
-          screen.getByText(i18n.t('work-schedule:validation.nonGlobalEmploymentProfileOnly')),
-        ).toBeInTheDocument();
-        blockedRender.unmount();
-      }
     },
     20_000,
   );
@@ -657,7 +636,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
   );
 
   it.each([undefined, 'global'] as const)(
-    'allows Talent and Talent Group create/reassign when scope is %s',
+    'hides Talent and Talent Group create while preserving global reassign when scope is %s',
     async (currentScope) => {
       const user = userEvent.setup();
       mockReferencePickerRequests();
@@ -669,26 +648,19 @@ describe('work schedule wave 6 query and payload shaping', () => {
           onSubmit={onCreate}
         />,
       );
-      await user.type(screen.getByLabelText(i18n.t('work-schedule:fields.title')), 'Global shift');
-      await user.selectOptions(
-        screen.getByLabelText(i18n.t('work-schedule:fields.subjectKind')),
-        'TALENT',
-      );
-      await selectPickerOption(user, 'work-shift-admin-subject', /TAL-000001/);
-      await user.type(
-        screen.getByLabelText(i18n.t('work-schedule:fields.shiftStartAt')),
-        businessStartInput,
-      );
-      await user.type(
-        screen.getByLabelText(i18n.t('work-schedule:fields.shiftEndAt')),
-        businessEndInput,
-      );
-      await user.click(
-        screen.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
-      );
-      expect(onCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ subjectKind: 'TALENT', subjectTalentId: 'talent-001' }),
-      );
+      expect(
+        screen.queryByRole('combobox', { name: i18n.t('work-schedule:fields.subjectKind') }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT')),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT_GROUP')),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByText(i18n.t('work-schedule:mutations.create.exceptionCopy')),
+      ).toBeInTheDocument();
+      expect(onCreate).not.toHaveBeenCalled();
       createRender.unmount();
 
       const onReassign = vi.fn();
@@ -738,6 +710,10 @@ describe('work schedule wave 6 query and payload shaping', () => {
     );
     await selectPickerOption(user, 'work-shift-admin-studio-resources', /SR-000001/);
     await selectPickerOption(user, 'work-shift-admin-studio-resources', /SR-000002/);
+    await user.type(
+      screen.getByLabelText(i18n.t('work-schedule:fields.description')),
+      'Manual exception',
+    );
     await user.click(
       screen.getByRole('button', { name: i18n.t('work-schedule:mutations.create.submit') }),
     );
@@ -748,7 +724,7 @@ describe('work schedule wave 6 query and payload shaping', () => {
       shiftStartAt: businessStartUtcMs,
       shiftEndAt: businessEndUtcMs,
       studioResourceIds: ['studio-001', 'studio-002'],
-      description: null,
+      description: 'Manual exception',
       externalRef: null,
     });
     createRender.unmount();

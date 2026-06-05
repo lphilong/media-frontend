@@ -86,22 +86,10 @@ const toNullableText = (value?: string): string | null => {
 };
 
 const subjectKindToIdPayload = (
-  subjectKind: WorkShiftSubjectKind,
   subjectId: string,
-): Pick<
-  WorkShiftCreatePayload,
-  'subjectEmploymentProfileId' | 'subjectTalentId' | 'subjectTalentGroupId'
-> => {
-  if (subjectKind === 'EMPLOYMENT_PROFILE') {
-    return { subjectEmploymentProfileId: subjectId };
-  }
-
-  if (subjectKind === 'TALENT') {
-    return { subjectTalentId: subjectId };
-  }
-
-  return { subjectTalentGroupId: subjectId };
-};
+): Pick<WorkShiftCreatePayload, 'subjectEmploymentProfileId'> => ({
+  subjectEmploymentProfileId: subjectId,
+});
 
 const subjectKindToReassignPayload = (
   subjectKind: WorkShiftSubjectKind,
@@ -174,6 +162,7 @@ const createCreateSchema = (
   tokenMessage: string,
   rangeMessage: string,
   invalidScopedSubjectMessage: string,
+  manualReasonMessage: string,
   currentScope?: WorkScheduleScope,
 ) =>
   z
@@ -184,7 +173,7 @@ const createCreateSchema = (
         .optional()
         .refine((value) => !value || upperTokenRegex.test(value), tokenMessage),
       title: z.string().trim().min(1, requiredMessage),
-      subjectKind: createSubjectKindSchema(requiredMessage),
+      subjectKind: z.literal('EMPLOYMENT_PROFILE'),
       subjectId: z.string().trim().min(1, requiredMessage).regex(tokenRegex, tokenMessage),
       shiftStartAt: timestampField(requiredMessage),
       shiftEndAt: timestampField(requiredMessage),
@@ -205,6 +194,13 @@ const createCreateSchema = (
           code: z.ZodIssueCode.custom,
           path: ['subjectKind'],
           message: invalidScopedSubjectMessage,
+        });
+      }
+      if (!value.description?.trim() && !value.externalRef?.trim()) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['description'],
+          message: manualReasonMessage,
         });
       }
     });
@@ -404,7 +400,6 @@ export const WorkShiftCreateSurface = ({
   isPending = false,
 }: WorkShiftCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['work-schedule', 'common']);
-  const subjectKindOptions = useSubjectKindOptions();
   const form = useForm<WorkShiftCreateFormValues>({
     defaultValues: {
       shiftCode: '',
@@ -426,6 +421,7 @@ export const WorkShiftCreateSurface = ({
         t('work-schedule:validation.invalidToken'),
         t('work-schedule:validation.invalidWindow'),
         t('work-schedule:validation.nonGlobalEmploymentProfileOnly'),
+        t('work-schedule:validation.manualCreateReasonRequired'),
         currentScope,
       ),
     [currentScope, t],
@@ -442,7 +438,7 @@ export const WorkShiftCreateSurface = ({
       ...(parsed.data.shiftCode ? { shiftCode: parsed.data.shiftCode } : {}),
       title: parsed.data.title,
       subjectKind: parsed.data.subjectKind,
-      ...subjectKindToIdPayload(parsed.data.subjectKind, parsed.data.subjectId),
+      ...subjectKindToIdPayload(parsed.data.subjectId),
       shiftStartAt: parsed.data.shiftStartAt,
       shiftEndAt: parsed.data.shiftEndAt,
       studioResourceIds: parsed.data.studioResourceIds ?? [],
@@ -464,6 +460,9 @@ export const WorkShiftCreateSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
+        <p className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+          {t('work-schedule:mutations.create.exceptionCopy')}
+        </p>
         <details className="rounded border border-border bg-bg px-3 py-2">
           <summary className="cursor-pointer text-sm font-medium text-text">
             {t('work-schedule:advanced.customCodeTitle')}
@@ -479,11 +478,6 @@ export const WorkShiftCreateSurface = ({
         </details>
         <FormGrid columns={2}>
           <TextInputField name="title" label={t('work-schedule:fields.title')} />
-          <SelectField
-            name="subjectKind"
-            label={t('work-schedule:fields.subjectKind')}
-            options={subjectKindOptions}
-          />
           <TextInputField
             name="shiftStartAt"
             label={t('work-schedule:fields.shiftStartAt')}
@@ -504,7 +498,7 @@ export const WorkShiftCreateSurface = ({
           pickerId="work-shift-admin-subject"
           subjectKindField="subjectKind"
           subjectIdField="subjectId"
-          label={t('work-schedule:fields.subject')}
+          label={t('work-schedule:fields.employmentProfile')}
           placeholder={t('work-schedule:pickers.subjectSearch')}
         />
         <ResourcePickerField<WorkShiftCreateFormValues>

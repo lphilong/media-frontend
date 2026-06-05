@@ -38,12 +38,13 @@ type WorkShiftGuidedWorkflowProps = {
 };
 
 type WorkflowValidationErrors = Partial<
-  Record<'title' | 'subjectId' | 'shiftStartAt' | 'shiftEndAt' | 'window' | 'scope', string>
+  Record<
+    'title' | 'subjectId' | 'shiftStartAt' | 'shiftEndAt' | 'window' | 'scope' | 'manualReason',
+    string
+  >
 >;
 
-const subjectKinds: WorkShiftSubjectKind[] = ['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP'];
 const employmentProfileScopes: WorkScheduleScope[] = ['global', 'self', 'team', 'department'];
-const globalScopes: WorkScheduleScope[] = ['global'];
 
 const tokenPattern = /^[A-Za-z0-9_-]+$/u;
 
@@ -53,22 +54,10 @@ const toNullableText = (value: string): string | null => {
 };
 
 const subjectIdPayload = (
-  subjectKind: WorkShiftSubjectKind,
   subjectId: string,
-): Pick<
-  WorkShiftCreatePayload,
-  'subjectEmploymentProfileId' | 'subjectTalentId' | 'subjectTalentGroupId'
-> => {
-  if (subjectKind === 'EMPLOYMENT_PROFILE') {
-    return { subjectEmploymentProfileId: subjectId };
-  }
-
-  if (subjectKind === 'TALENT') {
-    return { subjectTalentId: subjectId };
-  }
-
-  return { subjectTalentGroupId: subjectId };
-};
+): Pick<WorkShiftCreatePayload, 'subjectEmploymentProfileId'> => ({
+  subjectEmploymentProfileId: subjectId,
+});
 
 const readableErrorMessage = (
   error: NormalizedApiError | null | undefined,
@@ -109,7 +98,7 @@ export const WorkShiftGuidedWorkflow = ({
   const { t } = useTranslation(['work-schedule', 'common', 'errors']);
   const [step, setStep] = useState<WorkflowStep>('details');
   const [title, setTitle] = useState('');
-  const [subjectKind, setSubjectKind] = useState<WorkShiftSubjectKind>('EMPLOYMENT_PROFILE');
+  const subjectKind: WorkShiftSubjectKind = 'EMPLOYMENT_PROFILE';
   const [subjectId, setSubjectId] = useState<string | undefined>();
   const [subjectOption, setSubjectOption] = useState<ReferenceOption | undefined>();
   const [subjectOptions, setSubjectOptions] = useState<ReferenceOption[]>([]);
@@ -122,9 +111,7 @@ export const WorkShiftGuidedWorkflow = ({
   const [externalRef, setExternalRef] = useState('');
   const [errors, setErrors] = useState<WorkflowValidationErrors>({});
 
-  const availableScopes =
-    allowedScopes ??
-    (subjectKind === 'EMPLOYMENT_PROFILE' ? employmentProfileScopes : globalScopes);
+  const availableScopes = allowedScopes ?? employmentProfileScopes;
   const startTimestamp = parseVietnamLocalDateTimeToUtcTimestamp(startLocal);
   const endTimestamp = parseVietnamLocalDateTimeToUtcTimestamp(endLocal);
 
@@ -138,17 +125,6 @@ export const WorkShiftGuidedWorkflow = ({
       );
     });
   }, [studioResourceIds, studioResourceOptions]);
-
-  const chooseSubjectKind = (nextKind: WorkShiftSubjectKind): void => {
-    setSubjectKind(nextKind);
-    setSubjectId(undefined);
-    setSubjectOption(undefined);
-    setSubjectOptions([]);
-
-    if (nextKind !== 'EMPLOYMENT_PROFILE') {
-      setScope('global');
-    }
-  };
 
   const validate = useCallback((): WorkflowValidationErrors => {
     const nextErrors: WorkflowValidationErrors = {};
@@ -175,12 +151,12 @@ export const WorkShiftGuidedWorkflow = ({
       nextErrors.window = t('work-schedule:validation.invalidWindow');
     }
 
-    if (subjectKind !== 'EMPLOYMENT_PROFILE' && scope !== 'global') {
-      nextErrors.scope = t('work-schedule:validation.nonGlobalEmploymentProfileOnly');
+    if (!description.trim() && !externalRef.trim()) {
+      nextErrors.manualReason = t('work-schedule:validation.manualCreateReasonRequired');
     }
 
     return nextErrors;
-  }, [endTimestamp, scope, startTimestamp, subjectId, subjectKind, t, title]);
+  }, [description, endTimestamp, externalRef, startTimestamp, subjectId, t, title]);
 
   const payload = useMemo<WorkShiftCreatePayload | null>(() => {
     if (!subjectId || startTimestamp === null || endTimestamp === null) {
@@ -190,7 +166,7 @@ export const WorkShiftGuidedWorkflow = ({
     return {
       title: title.trim(),
       subjectKind,
-      ...subjectIdPayload(subjectKind, subjectId.trim()),
+      ...subjectIdPayload(subjectId.trim()),
       shiftStartAt: startTimestamp,
       shiftEndAt: endTimestamp,
       studioResourceIds,
@@ -326,19 +302,14 @@ export const WorkShiftGuidedWorkflow = ({
                 <span className="text-xs font-medium uppercase text-muted">
                   {t('work-schedule:fields.subjectKind')}
                 </span>
-                <select
-                  value={subjectKind}
-                  onChange={(event) =>
-                    chooseSubjectKind(event.target.value as WorkShiftSubjectKind)
-                  }
+                <input
+                  value={t('work-schedule:subjectKinds.EMPLOYMENT_PROFILE')}
+                  readOnly
                   className="rounded border border-border bg-panel px-3 py-2 text-sm"
-                >
-                  {subjectKinds.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {t(`work-schedule:subjectKinds.${kind}`)}
-                    </option>
-                  ))}
-                </select>
+                />
+                <span className="text-xs text-muted">
+                  {t('work-schedule:task.individualExceptionCopy')}
+                </span>
               </label>
               <div className="space-y-1">
                 <span className="text-xs font-medium uppercase text-muted">
@@ -422,9 +393,7 @@ export const WorkShiftGuidedWorkflow = ({
                 ))}
               </select>
               <span className="text-xs text-muted">
-                {subjectKind === 'EMPLOYMENT_PROFILE'
-                  ? t('work-schedule:task.employmentScopeHelp')
-                  : t('work-schedule:task.globalScopeHelp')}
+                  {t('work-schedule:task.employmentScopeHelp')}
               </span>
               {errors.scope ? (
                 <span className="text-xs font-medium text-danger">{errors.scope}</span>
@@ -508,6 +477,11 @@ export const WorkShiftGuidedWorkflow = ({
                     {t('work-schedule:task.externalRefHelp')}
                   </span>
                 </label>
+                {errors.manualReason ? (
+                  <p className="text-xs font-medium text-danger md:col-span-2">
+                    {errors.manualReason}
+                  </p>
+                ) : null}
               </div>
             </div>
 

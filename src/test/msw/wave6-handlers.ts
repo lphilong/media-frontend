@@ -3716,6 +3716,21 @@ export const wave6Handlers = [
     if (scopeSubjectFailure) {
       return scopeSubjectFailure;
     }
+    if (subject.subjectKind !== 'EMPLOYMENT_PROFILE') {
+      return HttpResponse.json(
+        {
+          message:
+            'Manual Official WorkShift create supports individual EmploymentProfile shifts only. Use Monthly Rosters for OrgUnit/TalentGroup bulk scheduling.',
+        },
+        { status: 422 },
+      );
+    }
+    if (!toNullableText(body.description) && !toNullableText(body.externalRef)) {
+      return HttpResponse.json(
+        { message: 'work-schedule:validation.manualCreateReasonRequired' },
+        { status: 422 },
+      );
+    }
 
     workShiftSeed += 1;
     const shiftCode =

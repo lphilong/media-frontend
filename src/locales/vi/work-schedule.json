@@ -25,6 +25,7 @@
     "updatedAt": "Thời điểm cập nhật",
     "requestScope": "Phạm vi yêu cầu",
     "subject": "Chủ thể",
+    "employmentProfile": "Nhân sự / Hồ sơ nhân sự",
     "studioResources": "Tài nguyên studio"
   },
   "statuses": {
@@ -143,7 +144,8 @@
   "mutations": {
     "create": {
       "title": "Tạo ca làm",
-      "subtitle": "Tạo một ca làm với một định danh chủ thể.",
+      "subtitle": "Tạo một ca làm chính thức thủ công cho một ngoại lệ cá nhân.",
+      "exceptionCopy": "Tạo thủ công chỉ dành cho ca ngoại lệ của từng nhân sự. Dùng Monthly Rosters để xếp lịch tháng cho Org Unit hoặc Talent Group.",
       "submit": "Tạo",
       "pending": "Đang tạo"
     },
@@ -174,17 +176,18 @@
   },
   "task": {
     "title": "Xếp lịch ca làm",
-    "description": "Dùng biểu mẫu hướng dẫn này để xếp lịch hằng ngày.",
+    "description": "Tạo một ca làm chính thức thủ công cho ngoại lệ cá nhân. Dùng Monthly Rosters để xếp lịch tháng cho Org Unit hoặc Talent Group.",
     "steps": {
       "details": "Bước 1/2: Thông tin ca",
       "review": "Bước 2/2: Kiểm tra trước khi lưu"
     },
-    "authorityNote": "Thời gian hiển thị theo giờ Việt Nam ({{timezone}}, {{offset}}). Khi lưu, hệ thống sẽ kiểm tra quyền thao tác, người/nhóm được xếp lịch, tài nguyên studio và lịch bị trùng. Các phạm vi như cá nhân, nhóm, phòng ban chỉ dùng khi xếp lịch cho Hồ sơ nhân sự.",
+    "authorityNote": "Thời gian hiển thị theo giờ Việt Nam ({{timezone}}, {{offset}}). Khi lưu, hệ thống sẽ kiểm tra quyền thao tác, nhân sự được chọn, tài nguyên studio và lịch bị trùng.",
     "generatedShiftCode": "Mã ca sẽ được hệ thống tự tạo sau khi lưu.",
     "generatedShiftCodeLabel": "Mã ca",
     "generatedShiftCodeValue": "Sẽ được hệ thống tự tạo sau khi lưu",
     "generatedShiftCodeHelp": "Bạn không cần nhập mã này.",
     "subjectPicker": "Bộ chọn chủ thể",
+    "individualExceptionCopy": "Tạo Official WorkShift thủ công chỉ hỗ trợ một Hồ sơ nhân sự.",
     "resourcesPicker": "Bộ chọn tài nguyên studio",
     "searchPlaceholder": "Tìm bản ghi hiện có",
     "searchResourcesPlaceholder": "Tìm tài nguyên studio",
@@ -193,18 +196,17 @@
     "endVietnamLocal": "Kết thúc theo giờ Việt Nam",
     "datetimeHelp": "Chọn ngày và giờ theo giờ Việt Nam. Hãy kiểm tra lại giờ ở bước xem lại trước khi lưu.",
     "scopeLabel": "Phạm vi xếp lịch",
-    "employmentScopeHelp": "Hồ sơ nhân sự có thể xếp lịch cho toàn bộ, cá nhân, nhóm hoặc phòng ban. Hệ thống sẽ kiểm tra quyền cuối cùng khi lưu.",
-    "globalScopeHelp": "Talent và Nhóm Talent được xếp lịch ở phạm vi toàn cục trong quy trình này.",
+    "employmentScopeHelp": "Hệ thống sẽ kiểm tra quyền cuối cùng khi lưu.",
     "noResourcesSelected": "Chưa chọn tài nguyên studio.",
     "removeResource": "Gỡ",
     "additionalInformation": "Thông tin bổ sung",
     "externalRefLabel": "Mã/Ghi chú liên quan",
-    "externalRefHelp": "Chỉ dùng khi ca cần liên kết với phiếu việc, bảng tính, tài liệu hoặc mã từ hệ thống khác. Có thể để trống.",
+    "externalRefHelp": "Dùng khi ca cần liên kết với phiếu việc, bảng tính, tài liệu hoặc mã từ hệ thống khác. Bắt buộc có mô tả hoặc ghi chú liên quan.",
     "reviewAction": "Kiểm tra thông tin",
     "submitAction": "Gửi ca làm",
     "submitPending": "Đang gửi ca làm",
     "backendRejectedTitle": "Không thể lưu yêu cầu",
-    "backendAuthorityWarning": "Khi lưu, hệ thống sẽ kiểm tra quyền truy cập, người/nhóm được xếp lịch, tài nguyên studio, trạng thái ca và lịch bị trùng. Quy trình này chỉ gửi các thông tin xếp lịch hiển thị ở trên.",
+    "backendAuthorityWarning": "Khi lưu, hệ thống sẽ kiểm tra quyền truy cập, nhân sự được chọn, tài nguyên studio, trạng thái ca và lịch bị trùng. Quy trình này chỉ gửi các thông tin xếp lịch hiển thị ở trên.",
     "none": "Không có",
     "localReviewValue": "{{value}} {{timezone}} ({{offset}})",
     "utcReviewValue": "{{timestamp}} UTC ({{value}})",
@@ -237,7 +239,8 @@
     "invalidReferenceToken": "Dùng các token định danh hợp lệ, cách nhau bằng dấu phẩy.",
     "invalidWindow": "Thời điểm kết thúc phải sau thời điểm bắt đầu.",
     "invalidScope": "Dùng phạm vi Work Schedule được hỗ trợ.",
-    "nonGlobalEmploymentProfileOnly": "Phạm vi Work Schedule không toàn cục chỉ hợp lệ với chủ thể Hồ sơ nhân sự."
+    "nonGlobalEmploymentProfileOnly": "Phạm vi Work Schedule không toàn cục chỉ hợp lệ với chủ thể Hồ sơ nhân sự.",
+    "manualCreateReasonRequired": "Nhập mô tả hoặc ghi chú liên quan cho ngoại lệ thủ công."
   },
   "feedback": {
     "created": "Đã tạo ca làm.",

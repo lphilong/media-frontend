@@ -38,17 +38,18 @@ describe('work schedule wave 6 surfaces', () => {
     await setLocale(DEFAULT_LOCALE);
   });
 
-  it('renders Work Shift list rows, filters archived by default, and keeps scope local', async () => {
-    renderRoute('/work-shifts?subjectKind=TALENT&scope=self');
+  it('renders legacy Talent Work Shift list rows and filters archived by default', async () => {
+    renderRoute('/work-schedule/global-ops?subjectKind=TALENT');
 
     expect(
-      await screen.findByRole('heading', { name: i18n.t('work-schedule:page.title') }),
+      await screen.findByRole('heading', {
+        name: i18n.t('work-schedule:surfaces.globalOps.title'),
+      }),
     ).toBeInTheDocument();
     expect(await screen.findByText('SHIFT002', {}, { timeout: 8000 })).toBeInTheDocument();
     expect((await screen.findAllByText('Binh Tran')).length).toBeGreaterThan(0);
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('Archived work shift')).not.toBeInTheDocument();
-    expect(screen.queryByText(i18n.t('work-schedule:scopes.self'))).not.toBeInTheDocument();
     expect(
       screen.queryByText(/recurrence|attendance|bulk|delete|unarchive/i),
     ).not.toBeInTheDocument();
@@ -177,6 +178,31 @@ describe('work schedule wave 6 surfaces', () => {
     ).not.toBeInTheDocument();
   });
 
+  it.each([
+    ['TALENT', { subjectTalentId: 'talent-001' }],
+    ['TALENT_GROUP', { subjectTalentGroupId: 'group-001' }],
+  ] as const)('MSW rejects %s manual Work Shift create', async (subjectKind, subjectIdPayload) => {
+    const response = await fetch('http://localhost/admin/work-shifts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Unsafe group create',
+        subjectKind,
+        ...subjectIdPayload,
+        shiftStartAt: Date.UTC(2026, 4, 3, 1, 30),
+        shiftEndAt: Date.UTC(2026, 4, 3, 3, 0),
+        studioResourceIds: [],
+        description: 'Manual exception coverage',
+        externalRef: null,
+      }),
+    });
+    const body = (await response.json()) as { message?: string };
+
+    expect(response.status).toBe(422);
+    expect(body.message).toContain('individual EmploymentProfile');
+    expect(body.message).toContain('Monthly Rosters');
+  });
+
   it('supports create and a conservative lifecycle action from the list', async () => {
     const user = userEvent.setup();
     renderRoute('/work-shifts');
@@ -219,6 +245,10 @@ describe('work schedule wave 6 surfaces', () => {
     );
     await user.click(
       await within(await findPicker('work-shift-studio-resources')).findByText(/SR-000001/),
+    );
+    await user.type(
+      scope.getByLabelText(i18n.t('work-schedule:fields.description')),
+      'Manual exception coverage',
     );
     await user.click(
       scope.getByRole('button', { name: i18n.t('work-schedule:task.reviewAction') }),
