@@ -157,6 +157,16 @@ const formatMetricValue = (metric: SelfServiceKpiMetric, value: number): string 
   return formatDecimal(value, 'vi-VN', metric.unit === 'HOUR' ? 2 : 0);
 };
 
+const formatKpiPeriodMonth = (periodMonth: string): string => {
+  const match = /^(\d{4})-(\d{2})$/.exec(periodMonth);
+
+  if (!match) {
+    return periodMonth;
+  }
+
+  return `${match[2]}-${match[1]}`;
+};
+
 const kpiSummaryFields: Array<{
   key: keyof SelfServiceKpiActualEntryStatusSummary;
   labelKey: string;
@@ -508,6 +518,9 @@ export const SelfServicePage = (): JSX.Element => {
   const [workShiftCursor, setWorkShiftCursor] = useState<string | undefined>(undefined);
   const [workShiftPages, setWorkShiftPages] = useState<SelfServiceWorkShift[]>([]);
   const [workShiftNextCursor, setWorkShiftNextCursor] = useState<string | undefined>(undefined);
+  const [selectedKpiHistoryPeriod, setSelectedKpiHistoryPeriod] = useState<string | undefined>(
+    undefined,
+  );
   const workShiftsQuery = useSelfServiceWorkShifts(currentPersonQuery.isSuccess, workShiftCursor);
   const workShifts = workShiftPages;
   const isLoadingMoreWorkShifts = workShiftCursor !== undefined && workShiftsQuery.isFetching;
@@ -517,7 +530,45 @@ export const SelfServicePage = (): JSX.Element => {
     kpiData !== undefined && Object.prototype.hasOwnProperty.call(kpiData, 'current');
   const currentKpi = hasCurrentKpiField ? (kpiData.current ?? null) : (kpiData?.items[0] ?? null);
   const latestPreviousKpi = kpiData?.latestPrevious ?? null;
-  const kpiHistory = kpiData?.history ?? [];
+  const currentKpiPeriods = useMemo(() => {
+    const periods = new Set<string>();
+
+    if (currentKpi?.periodMonth) {
+      periods.add(currentKpi.periodMonth);
+    }
+
+    for (const item of kpiData?.items ?? []) {
+      if (item.isCurrentPeriod !== false) {
+        periods.add(item.periodMonth);
+      }
+    }
+
+    return periods;
+  }, [currentKpi, kpiData?.items]);
+  const kpiHistory = useMemo(
+    () =>
+      (kpiData?.history ?? []).filter(
+        (item) =>
+          !item.isCurrentPeriod &&
+          item.isPreviousPeriod !== false &&
+          !currentKpiPeriods.has(item.periodMonth),
+      ),
+    [currentKpiPeriods, kpiData?.history],
+  );
+  const kpiHistoryPeriodOptions = useMemo(
+    () =>
+      Array.from(new Set(kpiHistory.map((item) => item.periodMonth))).sort((left, right) =>
+        right.localeCompare(left),
+      ),
+    [kpiHistory],
+  );
+  const selectedKpiHistoryItems = useMemo(
+    () =>
+      selectedKpiHistoryPeriod
+        ? kpiHistory.filter((item) => item.periodMonth === selectedKpiHistoryPeriod)
+        : [],
+    [kpiHistory, selectedKpiHistoryPeriod],
+  );
   const eventsQuery = useSelfServiceEvents(currentPersonQuery.isSuccess);
   const events = eventsQuery.data?.items ?? [];
   const eventsMeta = eventsQuery.data?.meta;
@@ -562,6 +613,20 @@ export const SelfServicePage = (): JSX.Element => {
     });
     setWorkShiftNextCursor(page.meta?.nextCursor);
   }, [workShiftCursor, workShiftsQuery.data]);
+
+  useEffect(() => {
+    setSelectedKpiHistoryPeriod((current) => {
+      if (kpiHistoryPeriodOptions.length === 0) {
+        return undefined;
+      }
+
+      if (current && kpiHistoryPeriodOptions.includes(current)) {
+        return current;
+      }
+
+      return kpiHistoryPeriodOptions[0];
+    });
+  }, [kpiHistoryPeriodOptions]);
 
   return (
     <main className="min-h-screen bg-bg text-text" data-testid="self-service-shell">
@@ -632,16 +697,12 @@ export const SelfServicePage = (): JSX.Element => {
                     aria-hidden="true"
                   />
                   <StatusBadge
-                    label={t(
-                      active ? 'self-service:status.selectedModule' : card.statusKey,
-                    )}
+                    label={t(active ? 'self-service:status.selectedModule' : card.statusKey)}
                     tone={active ? 'success' : 'neutral'}
                     uppercase={false}
                   />
                 </div>
-                <p className="mt-3 text-sm font-semibold">
-                  {t(card.titleKey)}
-                </p>
+                <p className="mt-3 text-sm font-semibold">{t(card.titleKey)}</p>
                 <p className={`mt-1 min-h-10 text-xs ${active ? 'text-bg/80' : 'text-muted'}`}>
                   {t(card.summaryKey)}
                 </p>
@@ -796,15 +857,54 @@ export const SelfServicePage = (): JSX.Element => {
 
                 <div className="grid gap-2" data-testid="self-service-kpi-history">
                   <h3 className="text-sm font-semibold">{t('self-service:kpiSections.history')}</h3>
-                  {kpiHistory.length > 0 ? (
-                    kpiHistory.map((item) => (
-                      <SelfServiceKpiCard
-                        key={item.kpiPlanId}
-                        item={item}
-                        periodKind="previous"
-                        notAvailable={notAvailable}
-                      />
-                    ))
+                  {kpiHistoryPeriodOptions.length > 0 ? (
+                    <>
+                      <div className="rounded border border-border bg-bg p-3">
+                        <label
+                          className="block text-xs font-medium uppercase tracking-wide text-muted"
+                          htmlFor="self-service-kpi-history-period"
+                        >
+                          {t('self-service:kpiFields.periodMonth')}
+                        </label>
+                        <select
+                          id="self-service-kpi-history-period"
+                          value={selectedKpiHistoryPeriod ?? ''}
+                          onChange={(event) => setSelectedKpiHistoryPeriod(event.target.value)}
+                          className="mt-1 w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text sm:max-w-xs"
+                          data-testid="self-service-kpi-history-period-select"
+                        >
+                          {kpiHistoryPeriodOptions.map((periodMonth) => (
+                            <option key={periodMonth} value={periodMonth}>
+                              {formatKpiPeriodMonth(periodMonth)}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-2 text-xs text-muted">
+                          {t('self-service:kpiHistory.selectedPeriodCopy', {
+                            periodMonth: selectedKpiHistoryPeriod
+                              ? formatKpiPeriodMonth(selectedKpiHistoryPeriod)
+                              : notAvailable,
+                            count: selectedKpiHistoryItems.length,
+                          })}
+                        </p>
+                      </div>
+
+                      {selectedKpiHistoryItems.length > 0 ? (
+                        selectedKpiHistoryItems.map((item) => (
+                          <SelfServiceKpiCard
+                            key={item.kpiPlanId}
+                            item={item}
+                            periodKind="previous"
+                            notAvailable={notAvailable}
+                          />
+                        ))
+                      ) : (
+                        <EmptyState
+                          title={t('self-service:empty.kpiSelectedHistoryTitle')}
+                          message={t('self-service:empty.kpiSelectedHistoryMessage')}
+                        />
+                      )}
+                    </>
                   ) : (
                     <EmptyState
                       title={t('self-service:empty.kpiHistoryTitle')}

@@ -82,6 +82,7 @@
   },
   "kpiFields": {
     "period": "Period",
+    "periodMonth": "Period month",
     "lastUpdatedAt": "Updated",
     "metric": "Metric",
     "target": "Official target",
@@ -109,6 +110,9 @@
     "excused": "Excused",
     "notRequired": "Not required",
     "notDue": "Not due"
+  },
+  "kpiHistory": {
+    "selectedPeriodCopy": "Showing {{count}} previous KPI record(s) for {{periodMonth}}."
   },
   "talentGroupFields": {
     "managers": "经理",
@@ -188,6 +192,8 @@
     "kpiCurrentWithPreviousMessage": "Your latest previous KPI is shown below for read-only context. If you believe a current KPI allocation is missing, contact your manager or admin.",
     "kpiHistoryTitle": "No previous KPI history",
     "kpiHistoryMessage": "Previous KPI history is not available yet.",
+    "kpiSelectedHistoryTitle": "No previous KPI for selected period",
+    "kpiSelectedHistoryMessage": "Choose another previous period if available.",
     "workShiftsTitle": "暂无班次",
     "workShiftsMessage": "你的档案暂无可显示的正式班次。",
     "eventsTitle": "暂无活动",

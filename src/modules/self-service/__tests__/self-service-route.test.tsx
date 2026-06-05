@@ -742,7 +742,8 @@ describe('/self-service route', () => {
     }
   });
 
-  it('renders ORG_UNIT current, latestPrevious, history, finalized status, and status summary safely', async () => {
+  it('renders ORG_UNIT current KPI and navigates previous KPI history by period safely', async () => {
+    const user = userEvent.setup();
     let adminKpiCalls = 0;
     let actualExcuseCalls = 0;
     const current = makeSelfServiceKpiItem({
@@ -793,7 +794,7 @@ describe('/self-service route', () => {
         items: [current],
         current,
         latestPrevious,
-        history: [latestPrevious, finalizedPrevious],
+        history: [latestPrevious, finalizedPrevious, current],
       });
       server.use(
         http.get('*/admin/kpi*', () => {
@@ -813,8 +814,6 @@ describe('/self-service route', () => {
     expect(screen.getByText('Current period')).toBeInTheDocument();
     expect(screen.getByText('Previous KPI history')).toBeInTheDocument();
     expect(screen.getByText('May operations KPI')).toBeInTheDocument();
-    expect(screen.getByText('April operations KPI')).toBeInTheDocument();
-    expect(screen.getByText('Official finalized')).toBeInTheDocument();
     expect(
       within(screen.getByTestId('self-service-kpi-current')).getByText('June operations KPI'),
     ).toBeInTheDocument();
@@ -822,11 +821,33 @@ describe('/self-service route', () => {
       within(screen.getByTestId('self-service-kpi-current')).queryByText('May operations KPI'),
     ).toBeNull();
 
-    const historyCards = within(screen.getByTestId('self-service-kpi-history')).getAllByTestId(
-      'self-service-kpi-item',
-    );
+    const historyPanel = within(screen.getByTestId('self-service-kpi-history'));
+    const periodSelect = historyPanel.getByTestId('self-service-kpi-history-period-select');
+    expect(periodSelect).toHaveValue('2026-05');
+    expect(within(periodSelect).getByRole('option', { name: '05-2026' })).toBeInTheDocument();
+    expect(within(periodSelect).getByRole('option', { name: '04-2026' })).toBeInTheDocument();
+    expect(within(periodSelect).queryByRole('option', { name: '06-2026' })).toBeNull();
+    expect(
+      historyPanel.getByText('Showing 1 previous KPI record(s) for 05-2026.'),
+    ).toBeInTheDocument();
+
+    let historyCards = historyPanel.getAllByTestId('self-service-kpi-item');
+    expect(historyCards).toHaveLength(1);
     expect(historyCards[0]).toHaveTextContent('May operations KPI');
-    expect(historyCards[1]).toHaveTextContent('April operations KPI');
+    expect(historyPanel.queryByText('April operations KPI')).toBeNull();
+
+    await user.selectOptions(periodSelect, '2026-04');
+
+    expect(periodSelect).toHaveValue('2026-04');
+    expect(historyPanel.getByText('April operations KPI')).toBeInTheDocument();
+    expect(historyPanel.getByText('Official finalized')).toBeInTheDocument();
+    expect(historyPanel.queryByText('May operations KPI')).toBeNull();
+    expect(
+      historyPanel.getByText('Showing 1 previous KPI record(s) for 04-2026.'),
+    ).toBeInTheDocument();
+    historyCards = historyPanel.getAllByTestId('self-service-kpi-item');
+    expect(historyCards).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /load more/i })).toBeNull();
 
     const currentSummary = within(screen.getAllByTestId('self-service-kpi-status-summary')[0]);
     expect(currentSummary.getByText('Actual status summary')).toBeInTheDocument();

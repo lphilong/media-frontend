@@ -82,6 +82,7 @@
   },
   "kpiFields": {
     "period": "Ky",
+    "periodMonth": "Thang KPI",
     "lastUpdatedAt": "Cap nhat",
     "metric": "Chi so",
     "target": "Muc tieu chinh thuc",
@@ -109,6 +110,9 @@
     "excused": "Mien",
     "notRequired": "Khong bat buoc",
     "notDue": "Chua den han"
+  },
+  "kpiHistory": {
+    "selectedPeriodCopy": "Dang hien thi {{count}} ban ghi KPI truoc cho {{periodMonth}}."
   },
   "talentGroupFields": {
     "managers": "Quản lý",
@@ -188,6 +192,8 @@
     "kpiCurrentWithPreviousMessage": "KPI truoc gan nhat duoc hien thi ben duoi de tham khao chi doc. Neu ban cho rang minh thieu phan bo KPI hien tai, hay lien he quan ly hoac admin.",
     "kpiHistoryTitle": "Chua co lich su KPI truoc",
     "kpiHistoryMessage": "Chua co lich su KPI truoc.",
+    "kpiSelectedHistoryTitle": "Chua co KPI truoc cho ky da chon",
+    "kpiSelectedHistoryMessage": "Hay chon ky truoc khac neu co.",
     "workShiftsTitle": "Chưa có ca làm",
     "workShiftsMessage": "Chưa có ca chính thức nào cho hồ sơ của bạn.",
     "eventsTitle": "Chưa có sự kiện",
