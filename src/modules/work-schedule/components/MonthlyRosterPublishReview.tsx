@@ -35,7 +35,7 @@ type MonthlyRosterPublishReviewProps = {
   onPublished?: (result: MonthlyRosterPublishResult) => void;
 };
 
-type Freshness = 'current' | 'notPreviewed' | 'stale';
+type Freshness = 'generatedReady' | 'staleRefresh';
 
 const formatNullable = (value?: string | number | null): string =>
   value === null || value === undefined || value === '' ? '-' : String(value);
@@ -44,12 +44,26 @@ const formatNullableTimestamp = (value?: string | number | null): string =>
   value ? formatBusinessTimestamp(value) : '-';
 
 const resolveFreshness = (preview: MonthlyRosterPreview): Freshness => {
-  if (!preview.currentPreviewHash) {
-    return 'notPreviewed';
+  if (preview.currentPreviewHash && preview.currentPreviewHash !== preview.computedPreviewHash) {
+    return 'staleRefresh';
   }
 
-  return preview.currentPreviewHash === preview.computedPreviewHash ? 'current' : 'stale';
+  return 'generatedReady';
 };
+
+const truncateFingerprint = (value?: string | null): string => {
+  if (!value) {
+    return '-';
+  }
+
+  return value.length > 20 ? `${value.slice(0, 10)}...${value.slice(-8)}` : value;
+};
+
+const Fingerprint = ({ value }: { value?: string | null }): JSX.Element => (
+  <span className="block max-w-full break-all font-mono" title={value ?? undefined}>
+    {truncateFingerprint(value)}
+  </span>
+);
 
 const countBlockers = (preview?: MonthlyRosterPreview): number =>
   (preview?.rows ?? []).reduce((total, row) => total + row.blockers.length, 0);
@@ -142,12 +156,20 @@ export const MonthlyRosterPublishReview = ({
       return 'unavailable';
     }
 
-    if (!preview.currentPreviewHash || !preview.computedPreviewHash) {
+    if (!preview.computedPreviewHash) {
       return 'hashUnavailable';
     }
 
-    if (freshness !== 'current') {
+    if (freshness === 'staleRefresh') {
       return 'stale';
+    }
+
+    if (preview.summary.totalEligibleProfiles === 0) {
+      return 'noEligibleMembers';
+    }
+
+    if (preview.summary.totalCandidateShiftsAfterExceptions === 0) {
+      return 'noPublishableCandidates';
     }
 
     if (preview.summary.totalConflicts > 0) {
@@ -306,6 +328,7 @@ export const MonthlyRosterPublishReview = ({
       <div className="space-y-4">
         <div className="space-y-2 rounded border border-border bg-bg px-3 py-3 text-sm text-muted">
           <p>{t('work-schedule:monthlyRosters.publish.copy.createShifts')}</p>
+          <p>{t('work-schedule:monthlyRosters.publish.copy.draftPlanningOnly')}</p>
           <p>{t('work-schedule:monthlyRosters.publish.copy.reviewPreview')}</p>
           <p>{t('work-schedule:monthlyRosters.publish.copy.noUndo')}</p>
         </div>
@@ -441,9 +464,8 @@ export const MonthlyRosterPublishReview = ({
                     },
                     {
                       key: 'computed-preview-hash',
-                      label: t('work-schedule:monthlyRosters.fields.currentPreviewHash'),
-                      value: formatNullable(lastPublishResult.computedPreviewHash),
-                      monospace: true,
+                      label: t('work-schedule:monthlyRosters.preview.admin.expectedFingerprint'),
+                      value: <Fingerprint value={lastPublishResult.computedPreviewHash} />,
                     },
                   ]}
                   columns={2}

@@ -179,9 +179,8 @@ describe('monthly roster slice B shell surfaces', () => {
     expect(await screen.findByText('ROSTER_DRAFT', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(baseRosterListItem().targetOrgUnitMode).toBe('EXACT_ONLY');
     expect(
-      screen.getAllByText(
-        new RegExp(i18n.t('work-schedule:monthlyRosters.targetTypes.ORG_UNIT')),
-      ).length,
+      screen.getAllByText(new RegExp(i18n.t('work-schedule:monthlyRosters.targetTypes.ORG_UNIT')))
+        .length,
     ).toBeGreaterThan(0);
     expect(screen.getByText(/Sales/)).toBeInTheDocument();
     expect(capturedKeys).toEqual([
@@ -344,8 +343,9 @@ describe('monthly roster slice B shell surfaces', () => {
       form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.targetType')),
     ).toHaveValue('ORG_UNIT');
     expect(
-      within(form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.targetType')))
-        .queryByText('Company'),
+      within(
+        form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.targetType')),
+      ).queryByText('Company'),
     ).not.toBeInTheDocument();
 
     await user.type(
@@ -677,7 +677,7 @@ describe('monthly roster slice B shell surfaces', () => {
       screen.getByText(i18n.t('work-schedule:monthlyRosters.exceptions.copy.previewDeferred')),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(i18n.t('work-schedule:monthlyRosters.preview.copy.readOnly')),
+      screen.getByText(i18n.t('work-schedule:monthlyRosters.preview.copy.summaryFirst')),
     ).toBeInTheDocument();
     expect(
       screen.getByText(i18n.t('work-schedule:monthlyRosters.publish.copy.reviewPreview')),

@@ -652,10 +652,19 @@
       "title": "Xem trước",
       "copy": {
         "readOnly": "Xem trước không tạo ca làm.",
-        "noPublish": "Dùng phần rà soát công bố sau khi kiểm tra bản xem trước."
+        "noPublish": "Dùng phần rà soát công bố sau khi kiểm tra bản xem trước.",
+        "summaryFirst": "Xem trạng thái theo nhân sự trước. Chi tiết từng ngày chỉ hiển thị khi mở."
+      },
+      "actions": {
+        "generate": "Tạo bản xem trước",
+        "refresh": "Làm mới bản xem trước",
+        "showDetails": "Xem chi tiết ngày",
+        "hideDetails": "Ẩn chi tiết ngày"
       },
       "summary": {
         "eligibleProfiles": "Hồ sơ đủ điều kiện",
+        "includedMembers": "Nhân sự được bao gồm",
+        "excludedMembers": "Nhân sự bị loại",
         "standardCandidates": "Ca chuẩn dự kiến",
         "suppressed": "Ngày nghỉ bị bỏ qua",
         "exceptions": "Ngoại lệ",
@@ -684,6 +693,10 @@
       "filters": {
         "conflictOnly": "Chỉ xung đột hoặc điểm chặn",
         "exceptionOnly": "Chỉ ngoại lệ",
+        "all": "Tất cả nhân sự",
+        "issues": "Chỉ có vấn đề",
+        "exceptions": "Ngoại lệ / ngày nghỉ",
+        "excluded": "Nhân sự bị loại",
         "employeeSearch": "Tìm nhân sự",
         "employeeSearchPlaceholder": "ID Hồ sơ nhân sự",
         "dateStart": "Từ ngày",
@@ -723,6 +736,7 @@
       },
       "detail": {
         "title": "Chi tiết dòng xem trước",
+        "memberCaption": "Chi tiết xem trước theo ngày cho {{member}}",
         "rowId": "ID dòng xem trước",
         "shiftStartAt": "Bắt đầu ca UTC",
         "shiftEndAt": "Kết thúc ca UTC",
@@ -733,24 +747,52 @@
       "admin": {
         "title": "Thông tin quản trị xem trước",
         "freshness": "Trạng thái cập nhật",
-        "computedPreviewHash": "Mã băm xem trước vừa tính"
+        "computedPreviewHash": "Mã băm xem trước vừa tính",
+        "computedFingerprint": "Dấu vân tay xem trước vừa tính",
+        "storedFingerprint": "Dấu vân tay xem trước đã lưu",
+        "expectedFingerprint": "Dấu vân tay dự kiến khi phát hành"
       },
       "freshness": {
         "current": "Bản xem trước đang hiện hành",
         "stale": "Bản xem trước đã lỗi thời",
-        "notPreviewed": "Bản xem trước chưa được lưu"
+        "notPreviewed": "Chưa tạo",
+        "generatedReady": "Đã tạo và sẵn sàng",
+        "staleRefresh": "Đã cũ, cần làm mới"
+      },
+      "memberTable": {
+        "caption": "Tóm tắt nhân sự của bảng lịch tháng",
+        "status": "Trạng thái",
+        "publishable": "Ca có thể phát hành",
+        "workDays": "Ngày làm việc",
+        "changed": "Đổi giờ",
+        "special": "Ca đặc biệt",
+        "offDays": "Lễ / nghỉ",
+        "issues": "Vấn đề",
+        "actions": "Chi tiết"
+      },
+      "memberStatuses": {
+        "ready": "Sẵn sàng",
+        "exceptions": "Sẵn sàng có ngoại lệ",
+        "warnings": "Có cảnh báo",
+        "blocked": "Bị chặn"
+      },
+      "issueSummary": {
+        "title": "Bản xem trước bị chặn bởi vấn đề",
+        "copy": "Cần xem xét {{conflicts}} xung đột và {{blockers}} lỗi chặn."
       },
       "states": {
         "loadErrorTitle": "Không tải được bản xem trước",
         "loadErrorMessage": "Hệ thống đã từ chối hoặc không trả về dữ liệu xem trước.",
         "archivedUnavailable": "Bảng lịch đã lưu trữ không thể xem trước.",
-        "emptyRows": "Không có dòng xem trước phù hợp với bộ lọc hiện tại."
+        "emptyRows": "Không có dòng xem trước phù hợp với bộ lọc hiện tại.",
+        "emptyMembers": "Không có nhân sự phù hợp bộ lọc hiện tại."
       }
     },
     "publish": {
       "title": "Rà soát công bố",
       "copy": {
-        "createShifts": "Hệ thống sẽ tạo ca làm từ bảng phân ca này.",
+        "createShifts": "Phát hành tạo WorkShift chính thức cho EmploymentProfile đủ điều kiện.",
+        "draftPlanningOnly": "Bảng lịch nháp chỉ dùng để lập kế hoạch và không hiển thị cho Quản lý hoặc Nhân viên.",
         "reviewPreview": "Rà soát bản xem trước trước khi công bố.",
         "noUndo": "Không thể hoàn tác công bố từ màn hình này."
       },
@@ -766,6 +808,8 @@
         "error": "Bản xem trước phải tải thành công trước khi công bố.",
         "hashUnavailable": "Mã băm xem trước chưa có. Làm mới bản xem trước trước khi công bố.",
         "stale": "Bản xem trước đã lỗi thời. Làm mới bản xem trước trước khi công bố.",
+        "noEligibleMembers": "Không có EmploymentProfile đủ điều kiện để phát hành.",
+        "noPublishableCandidates": "Không có ca ứng viên có thể phát hành.",
         "conflicts": "Xử lý xung đột trong bản xem trước trước khi công bố.",
         "blockers": "Xử lý các điểm chặn trong bản xem trước trước khi công bố."
       },
@@ -779,7 +823,7 @@
         "issueCount": "{{conflicts}} xung đột, {{blockers}} điểm chặn"
       },
       "actions": {
-        "openConfirmation": "Công bố bảng phân ca",
+        "openConfirmation": "Xem xét & công bố",
         "confirm": "Xác nhận công bố",
         "publishing": "Đang công bố"
       },

@@ -71,6 +71,12 @@ const formatNullable = (value?: string | number | null): string => {
 const formatNullableTimestamp = (value?: string | number | null): string =>
   value ? formatBusinessTimestamp(value) : '-';
 
+const Fingerprint = ({ value }: { value?: string | null }): JSX.Element => (
+  <span className="block max-w-full break-all font-mono" title={value ?? undefined}>
+    {value ? (value.length > 20 ? `${value.slice(0, 10)}...${value.slice(-8)}` : value) : '-'}
+  </span>
+);
+
 const parseScope = (value: string | null): MonthlyRosterScope | undefined =>
   value === 'department' || value === 'global' ? value : undefined;
 
@@ -506,8 +512,8 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
                     },
                     {
                       key: 'preview-hash',
-                      label: t('work-schedule:monthlyRosters.fields.currentPreviewHash'),
-                      value: formatNullable(record.previewHash),
+                      label: t('work-schedule:monthlyRosters.preview.admin.storedFingerprint'),
+                      value: <Fingerprint value={record.previewHash} />,
                     },
                     {
                       key: 'last-previewed-at',

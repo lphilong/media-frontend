@@ -19,7 +19,8 @@ const renderRoute = (path: string) => {
   renderAppWithProviders(<RouterProvider router={router} />);
 };
 
-const pt = (key: string): string => i18n.t(`work-schedule:monthlyRosters.preview.${key}`);
+const pt = (key: string, options?: Record<string, unknown>): string =>
+  i18n.t(`work-schedule:monthlyRosters.preview.${key}`, options);
 
 describe('monthly roster slice D preview', () => {
   beforeEach(async () => {
@@ -44,7 +45,7 @@ describe('monthly roster slice D preview', () => {
     );
   });
 
-  it('renders summary, rows, conflicts, blockers, and collapsed admin metadata without publish behavior', async () => {
+  it('renders member summaries by default, day details on demand, and collapsed fingerprint metadata', async () => {
     const user = userEvent.setup();
     let publishCalls = 0;
     let generatedCalls = 0;
@@ -67,30 +68,35 @@ describe('monthly roster slice D preview', () => {
     renderRoute('/work-schedule/rosters/roster-draft?scope=global');
 
     expect(await screen.findByText('ROSTER_DRAFT', {}, { timeout: 5000 })).toBeInTheDocument();
-    expect(screen.getByText(pt('copy.readOnly'))).toBeInTheDocument();
-    expect(screen.getAllByText(pt('copy.noPublish')).length).toBeGreaterThan(0);
-    expect(await screen.findByText(pt('summary.eligibleProfiles'))).toBeInTheDocument();
-    expect(screen.getAllByText(pt('summary.standardCandidates')).length).toBeGreaterThan(0);
+    expect(screen.getByText(pt('copy.summaryFirst'))).toBeInTheDocument();
+    expect(await screen.findByText(pt('summary.includedMembers'))).toBeInTheDocument();
     expect(screen.getAllByText(pt('summary.suppressed')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(pt('summary.blockers')).length).toBeGreaterThan(0);
+    expect(screen.getByText(pt('issueSummary.title'))).toBeInTheDocument();
 
-    const table = await screen.findByRole('table', { name: pt('table.caption') });
-    expect(within(table).getByText(pt('rowKinds.STANDARD'))).toBeInTheDocument();
-    expect(within(table).getByText(pt('rowKinds.HOLIDAY_SUPPRESSED'))).toBeInTheDocument();
-    expect(within(table).getByText(pt('rowKinds.WORKING_TO_OFF'))).toBeInTheDocument();
-    expect(within(table).getByText(pt('rowKinds.CHANGE_TIME'))).toBeInTheDocument();
-    expect(within(table).getAllByText(pt('rowKinds.ADD_SPECIAL_SHIFT')).length).toBeGreaterThan(0);
-    expect(screen.getByText(pt('conflicts.kinds.SUBJECT_OVERLAP'))).toBeInTheDocument();
-    expect(
-      screen.getAllByText(pt('conflicts.kinds.CANDIDATE_SUBJECT_OVERLAP')).length,
-    ).toBeGreaterThan(0);
-    expect(screen.getAllByText(pt('conflicts.blocker')).length).toBeGreaterThan(0);
+    const summaryTable = await screen.findByRole('table', { name: pt('memberTable.caption') });
+    expect(within(summaryTable).getByText('Alice Nguyen')).toBeInTheDocument();
+    expect(within(summaryTable).getByText('Binh Tran')).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: pt('table.caption') })).not.toBeInTheDocument();
+
+    await user.click(
+      within(summaryTable).getAllByRole('button', { name: pt('actions.showDetails') })[0],
+    );
+    const detailTable = screen.getByRole('table', {
+      name: pt('detail.memberCaption', { member: 'Alice Nguyen' }),
+    });
+    expect(within(detailTable).getByText(pt('rowKinds.STANDARD'))).toBeInTheDocument();
+    expect(within(detailTable).getByText(pt('rowKinds.HOLIDAY_SUPPRESSED'))).toBeInTheDocument();
 
     const computedHash = 'computed-roster-draft-1';
-    expect(screen.getByText(computedHash)).not.toBeVisible();
+    expect(screen.getAllByTitle(computedHash)).toHaveLength(2);
+    for (const fingerprint of screen.getAllByTitle(computedHash)) {
+      expect(fingerprint).not.toBeVisible();
+    }
     await user.click(screen.getByText(pt('admin.title')));
-    expect(screen.getByText(computedHash)).toBeVisible();
-    expect(screen.getAllByText(pt('freshness.notPreviewed')).length).toBeGreaterThan(0);
+    for (const fingerprint of screen.getAllByTitle(computedHash)) {
+      expect(fingerprint).toBeVisible();
+    }
+    expect(screen.getAllByText(pt('freshness.generatedReady')).length).toBeGreaterThan(0);
 
     expect(
       screen.getByRole('button', {
@@ -103,30 +109,25 @@ describe('monthly roster slice D preview', () => {
     expect(approvalCalls).toBe(0);
   });
 
-  it('filters preview rows locally by conflict, exception, employee, and date range', async () => {
+  it('filters member summaries by issues, exceptions, and employee search', async () => {
     const user = userEvent.setup();
     renderRoute('/work-schedule/rosters/roster-draft?scope=global');
 
-    const table = await screen.findByRole('table', { name: pt('table.caption') });
-    expect(within(table).getByText(pt('rows.reason.standard'))).toBeInTheDocument();
+    const table = await screen.findByRole('table', { name: pt('memberTable.caption') });
+    expect(within(table).getByText('Alice Nguyen')).toBeInTheDocument();
+    expect(within(table).getByText('Binh Tran')).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText(pt('filters.conflictOnly')));
-    expect(within(table).queryByText(pt('rows.reason.standard'))).not.toBeInTheDocument();
-    expect(within(table).getAllByText(pt('rowKinds.ADD_SPECIAL_SHIFT')).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('button', { name: pt('filters.issues') }));
+    expect(within(table).getByText('Alice Nguyen')).toBeInTheDocument();
+    expect(within(table).getByText('Binh Tran')).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText(pt('filters.conflictOnly')));
-    await user.click(screen.getByLabelText(pt('filters.exceptionOnly')));
-    expect(within(table).queryByText(pt('rowKinds.STANDARD'))).not.toBeInTheDocument();
-    expect(within(table).getByText(pt('rowKinds.WORKING_TO_OFF'))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: pt('filters.exceptions') }));
+    expect(within(table).getByText('Binh Tran')).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText(pt('filters.exceptionOnly')));
+    await user.click(screen.getByRole('button', { name: pt('filters.all') }));
     await user.type(screen.getByLabelText(pt('filters.employeeSearch')), 'ep-002');
-    expect(within(table).queryByText('ep-001')).not.toBeInTheDocument();
-    expect(within(table).queryByText('ep-002')).not.toBeInTheDocument();
-    expect(within(table).getAllByText('Binh Tran').length).toBeGreaterThan(0);
-
-    await user.type(screen.getByLabelText(pt('filters.dateStart')), '2026-05-21');
-    expect(screen.getByText(pt('states.emptyRows'))).toBeInTheDocument();
+    expect(within(table).queryByText('Alice Nguyen')).not.toBeInTheDocument();
+    expect(within(table).getByText('Binh Tran')).toBeInTheDocument();
   });
 
   it('renders preview denial and validation blocker states cleanly', async () => {
@@ -195,6 +196,10 @@ const baseRosterDetail = (overrides: Partial<MonthlyRosterRecord> = {}): Monthly
   timezone: 'Asia/Ho_Chi_Minh',
   targetSubjectKind: 'EMPLOYMENT_PROFILE',
   targetOrgUnitMode: 'EXACT_ONLY',
+  targetType: 'ORG_UNIT',
+  targetMode: 'EXACT_ONLY',
+  targetOrgUnitId: 'ou-sales',
+  targetTalentGroupId: null,
   departmentOrgUnitId: 'ou-sales',
   workPatternId: 'pattern-active',
   holidayCalendarId: 'holiday-calendar-active',

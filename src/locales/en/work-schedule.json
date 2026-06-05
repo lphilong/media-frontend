@@ -594,7 +594,7 @@
       "externalRef": "External reference",
       "exceptionCount": "Active exceptions",
       "draftVersion": "Draft version",
-      "currentPreviewHash": "Current preview hash",
+      "currentPreviewHash": "Stored preview fingerprint",
       "lastPreviewedAt": "Last previewed at",
       "publishedAt": "Published at",
       "publishedBy": "Published by",
@@ -654,13 +654,20 @@
       "draftSetupSection": "Draft setup lifecycle",
       "adminMetadataTitle": "Admin metadata",
       "readOnlyDraftSetup": "Draft setup is read-only unless the roster is in Draft status.",
-      "structuralLock": "This draft already has exceptions. Remove the exceptions before changing the month, department, pattern, or holiday calendar."
+      "structuralLock": "This draft already has exceptions. Remove the exceptions before changing the month, target, pattern, or holiday calendar."
     },
     "preview": {
       "title": "Preview",
       "copy": {
         "readOnly": "Preview does not create work shifts.",
-        "noPublish": "Use the publish review after checking this preview."
+        "noPublish": "Use the publish review after checking this preview.",
+        "summaryFirst": "Review member readiness first. Day-level candidate rows load only when you open member details."
+      },
+      "actions": {
+        "generate": "Generate preview",
+        "refresh": "Refresh preview",
+        "showDetails": "Show day details",
+        "hideDetails": "Hide day details"
       },
       "summary": {
         "eligibleProfiles": "Eligible profiles",
@@ -709,6 +716,10 @@
       "filters": {
         "conflictOnly": "Conflict or blocker only",
         "exceptionOnly": "Exception only",
+        "all": "All members",
+        "issues": "Issues only",
+        "exceptions": "Exceptions / off days",
+        "excluded": "Excluded members",
         "employeeSearch": "Employee search",
         "employeeSearchPlaceholder": "Employment Profile ID",
         "dateStart": "From date",
@@ -748,6 +759,7 @@
       },
       "detail": {
         "title": "Preview row detail",
+        "memberCaption": "Day-level preview details for {{member}}",
         "rowId": "Preview row ID",
         "shiftStartAt": "Shift start UTC",
         "shiftEndAt": "Shift end UTC",
@@ -758,24 +770,52 @@
       "admin": {
         "title": "Preview admin metadata",
         "freshness": "Preview freshness",
-        "computedPreviewHash": "Computed preview hash"
+        "computedPreviewHash": "Computed preview hash",
+        "computedFingerprint": "Computed preview fingerprint",
+        "storedFingerprint": "Stored preview fingerprint",
+        "expectedFingerprint": "Expected publish fingerprint"
       },
       "freshness": {
         "current": "Preview is current",
         "stale": "Preview is out of date",
-        "notPreviewed": "Preview has not been saved yet"
+        "notPreviewed": "Not generated",
+        "generatedReady": "Generated and ready",
+        "staleRefresh": "Stale, refresh preview"
+      },
+      "memberTable": {
+        "caption": "Monthly roster member summary",
+        "status": "Status",
+        "publishable": "Publishable shifts",
+        "workDays": "Work days",
+        "changed": "Changed",
+        "special": "Special",
+        "offDays": "Holiday / off",
+        "issues": "Issues",
+        "actions": "Details"
+      },
+      "memberStatuses": {
+        "ready": "Ready",
+        "exceptions": "Ready with exceptions",
+        "warnings": "Has warnings",
+        "blocked": "Blocked"
+      },
+      "issueSummary": {
+        "title": "Preview is blocked by issues",
+        "copy": "{{conflicts}} conflict(s) and {{blockers}} blocker(s) require review."
       },
       "states": {
         "loadErrorTitle": "Roster preview could not be loaded",
         "loadErrorMessage": "The system rejected or did not return roster preview data.",
         "archivedUnavailable": "Archived rosters cannot be previewed.",
-        "emptyRows": "No preview rows match the current filters."
+        "emptyRows": "No preview rows match the current filters.",
+        "emptyMembers": "No members match the current filter."
       }
     },
     "publish": {
       "title": "Publish review",
       "copy": {
-        "createShifts": "The system will create work shifts from this roster.",
+        "createShifts": "Publishing creates official WorkShifts for eligible EmploymentProfiles.",
+        "draftPlanningOnly": "Draft rosters are planning-only and are not visible to Manager or Staff.",
         "reviewPreview": "Review the preview before publishing.",
         "noUndo": "Publishing cannot be undone from this screen."
       },
@@ -791,6 +831,8 @@
         "error": "Preview must load successfully before publishing.",
         "hashUnavailable": "Preview hash is unavailable. Refresh preview before publishing.",
         "stale": "Preview is out of date. Refresh preview before publishing.",
+        "noEligibleMembers": "No eligible EmploymentProfiles are available to publish.",
+        "noPublishableCandidates": "No publishable shift candidates are available.",
         "conflicts": "Resolve preview conflicts before publishing.",
         "blockers": "Resolve preview blockers before publishing."
       },
@@ -804,7 +846,7 @@
         "issueCount": "{{conflicts}} conflict(s), {{blockers}} blocker(s)"
       },
       "actions": {
-        "openConfirmation": "Publish roster",
+        "openConfirmation": "Review & publish",
         "confirm": "Confirm publish",
         "publishing": "Publishing"
       },
@@ -830,7 +872,7 @@
         "title": "Publish could not be completed",
         "stalePreview": "Preview is out of date. Refresh preview before publishing.",
         "unauthorized": "Your session is not authorized to publish this roster.",
-        "forbidden": "You do not have permission or department access to publish this roster.",
+        "forbidden": "You do not have permission or global WorkSchedule access to publish this roster.",
         "validation": "The system rejected the publish request. Check the preview and roster status.",
         "conflict": "The roster changed or has conflicts. Refresh preview before publishing.",
         "generic": "The publish request could not be completed."
@@ -879,7 +921,7 @@
         "type": "Exception type",
         "exceptionDate": "Date",
         "subjectEmploymentProfileId": "Affected Employment Profile",
-        "employeeSearch": "Search active employees in this department",
+        "employeeSearch": "Search active EmploymentProfiles in this roster target",
         "title": "Title",
         "startLocalTime": "New start time",
         "endLocalTime": "End time",
@@ -913,7 +955,7 @@
         "addSpecialShift": "Extra shift at {{startLocalTime}} for {{workingMinutes}} working minutes"
       },
       "mutations": {
-        "subtitle": "Backend validates the month, exact department employee, standard candidate, and conflicts.",
+        "subtitle": "Backend validates the month, exact target member, standard candidate, and conflicts.",
         "add": {
           "title": "Add roster exception",
           "submit": "Add exception"
@@ -934,8 +976,8 @@
         "invalidType": "Use a supported exception type.",
         "noStandardCandidate": "No standard roster candidate exists for this exception.",
         "conflict": "This exception conflicts with another roster exception or shift.",
-        "inactiveEmploymentProfile": "Choose an active Employment Profile in the roster department.",
-        "outsideDepartment": "Choose an Employment Profile in the roster department.",
+        "inactiveEmploymentProfile": "Choose an active Employment Profile in the roster target.",
+        "outsideDepartment": "Choose an Employment Profile in the roster target.",
         "duplicate": "This exception duplicates an existing roster exception."
       },
       "feedback": {
@@ -954,7 +996,7 @@
     "mutations": {
       "create": {
         "title": "Create monthly roster draft",
-        "subtitle": "Create one exact-department roster draft for a YYYY-MM month. The system generates the roster code after save.",
+        "subtitle": "Create one exact Org Unit or Talent Group roster draft for a YYYY-MM month. The system generates the roster code after save.",
         "submit": "Create draft",
         "pending": "Creating"
       },
@@ -971,8 +1013,8 @@
       "month": "Use a valid YYYY-MM month.",
       "planningWindow": "Choose the current month or one of the next two months.",
       "invalidScope": "Use Global or Department roster access.",
-      "duplicateDepartmentMonth": "A roster already exists for this department and month.",
-      "activeExceptionsStructuralLock": "Remove active exceptions before changing the month, department, pattern, or holiday calendar."
+      "duplicateDepartmentMonth": "A roster already exists for this target and month.",
+      "activeExceptionsStructuralLock": "Remove active exceptions before changing the month, target, pattern, or holiday calendar."
     },
     "feedback": {
       "created": "Monthly roster draft created.",

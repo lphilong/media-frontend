@@ -653,10 +653,19 @@
       "title": "预览",
       "copy": {
         "readOnly": "预览不会创建工作班次。",
-        "noPublish": "检查预览后使用发布审核。"
+        "noPublish": "检查预览后使用发布审核。",
+        "summaryFirst": "先审核成员就绪状态。仅在打开成员详情时显示每日候选行。"
+      },
+      "actions": {
+        "generate": "生成预览",
+        "refresh": "刷新预览",
+        "showDetails": "显示每日详情",
+        "hideDetails": "隐藏每日详情"
       },
       "summary": {
         "eligibleProfiles": "符合条件的档案",
+        "includedMembers": "包含成员",
+        "excludedMembers": "排除成员",
         "standardCandidates": "标准候选班次",
         "suppressed": "休息日抑制",
         "exceptions": "例外",
@@ -685,6 +694,10 @@
       "filters": {
         "conflictOnly": "仅冲突或阻断项",
         "exceptionOnly": "仅例外",
+        "all": "所有成员",
+        "issues": "仅问题",
+        "exceptions": "例外 / 休息日",
+        "excluded": "排除成员",
         "employeeSearch": "员工搜索",
         "employeeSearchPlaceholder": "雇佣档案 ID",
         "dateStart": "开始日期",
@@ -724,6 +737,7 @@
       },
       "detail": {
         "title": "预览行详情",
+        "memberCaption": "{{member}} 的每日预览详情",
         "rowId": "预览行 ID",
         "shiftStartAt": "班次开始 UTC",
         "shiftEndAt": "班次结束 UTC",
@@ -734,24 +748,52 @@
       "admin": {
         "title": "预览管理信息",
         "freshness": "预览新鲜度",
-        "computedPreviewHash": "计算出的预览哈希"
+        "computedPreviewHash": "计算出的预览哈希",
+        "computedFingerprint": "计算出的预览指纹",
+        "storedFingerprint": "已存储预览指纹",
+        "expectedFingerprint": "预期发布指纹"
       },
       "freshness": {
         "current": "预览是当前版本",
         "stale": "预览已过期",
-        "notPreviewed": "预览尚未保存"
+        "notPreviewed": "尚未生成",
+        "generatedReady": "已生成并就绪",
+        "staleRefresh": "已过期，请刷新"
+      },
+      "memberTable": {
+        "caption": "月度排班成员摘要",
+        "status": "状态",
+        "publishable": "可发布班次",
+        "workDays": "工作日",
+        "changed": "改时",
+        "special": "特殊班次",
+        "offDays": "假期 / 休息",
+        "issues": "问题",
+        "actions": "详情"
+      },
+      "memberStatuses": {
+        "ready": "就绪",
+        "exceptions": "有例外但就绪",
+        "warnings": "有警告",
+        "blocked": "已阻断"
+      },
+      "issueSummary": {
+        "title": "预览因问题而阻断",
+        "copy": "需要审核 {{conflicts}} 个冲突和 {{blockers}} 个阻断项。"
       },
       "states": {
         "loadErrorTitle": "无法加载排班预览",
         "loadErrorMessage": "系统拒绝或未返回排班预览数据。",
         "archivedUnavailable": "已归档排班不能预览。",
-        "emptyRows": "没有符合当前筛选条件的预览行。"
+        "emptyRows": "没有符合当前筛选条件的预览行。",
+        "emptyMembers": "没有符合当前筛选条件的成员。"
       }
     },
     "publish": {
       "title": "发布审核",
       "copy": {
-        "createShifts": "系统将从此排班创建工作班次。",
+        "createShifts": "发布会为符合条件的 EmploymentProfile 创建正式 WorkShift。",
+        "draftPlanningOnly": "草稿排班仅用于规划，Manager 和 Staff 不可见。",
         "reviewPreview": "发布前请先审核预览。",
         "noUndo": "不能从此屏幕撤销发布。"
       },
@@ -767,6 +809,8 @@
         "error": "发布前预览必须成功加载。",
         "hashUnavailable": "预览哈希不可用。发布前请刷新预览。",
         "stale": "预览已过期。发布前请刷新预览。",
+        "noEligibleMembers": "没有可发布的符合条件 EmploymentProfile。",
+        "noPublishableCandidates": "没有可发布的班次候选。",
         "conflicts": "发布前请先解决预览冲突。",
         "blockers": "发布前请先解决预览阻断项。"
       },
@@ -780,7 +824,7 @@
         "issueCount": "{{conflicts}} 个冲突，{{blockers}} 个阻断项"
       },
       "actions": {
-        "openConfirmation": "发布排班",
+        "openConfirmation": "审核并发布",
         "confirm": "确认发布",
         "publishing": "正在发布"
       },

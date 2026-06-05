@@ -78,7 +78,7 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
     await user.click(screen.getByRole('button', { name: pt('actions.openConfirmation') }));
     expect(screen.getByRole('heading', { name: pt('confirmation.title') })).toBeInTheDocument();
     expect(screen.getAllByText('2026-05').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('ou-sales').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/ou-sales/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('pattern-active').length).toBeGreaterThan(0);
     expect(screen.getAllByText('holiday-calendar-active').length).toBeGreaterThan(0);
     expect(screen.getAllByText('2').length).toBeGreaterThan(0);
@@ -86,7 +86,8 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
       screen.getAllByText(pt('confirmation.issueCount', { conflicts: 0, blockers: 0 })).length,
     ).toBeGreaterThan(0);
     expect(
-      screen.getAllByText(i18n.t('work-schedule:monthlyRosters.preview.freshness.current')).length,
+      screen.getAllByText(i18n.t('work-schedule:monthlyRosters.preview.freshness.generatedReady'))
+        .length,
     ).toBeGreaterThan(0);
 
     await user.click(screen.getByRole('button', { name: pt('actions.confirm') }));
@@ -153,11 +154,6 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
       'stale preview hash',
       basePreview({ currentPreviewHash: 'old-hash', computedPreviewHash: 'hash-clean' }),
       'stale',
-    ],
-    [
-      'missing preview hash',
-      basePreview({ currentPreviewHash: null, computedPreviewHash: 'hash-clean' }),
-      'hashUnavailable',
     ],
     [
       'preview conflicts',
@@ -244,6 +240,58 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
       ).toBeGreaterThan(0);
     },
   );
+
+  it('allows first publish from a freshly computed preview when no stored fingerprint exists', async () => {
+    const user = userEvent.setup();
+    let capturedBody: Record<string, unknown> | null = null;
+    server.use(
+      http.get('*/admin/work-schedule/rosters/roster-first-publish', () =>
+        HttpResponse.json({
+          data: baseRosterDetail({
+            monthlyRosterId: 'roster-first-publish',
+            previewHash: null,
+          }),
+        }),
+      ),
+      http.get('*/admin/work-schedule/rosters/roster-first-publish/preview', () =>
+        HttpResponse.json({
+          data: basePreview({
+            monthlyRosterId: 'roster-first-publish',
+            currentPreviewHash: null,
+            computedPreviewHash: 'fresh-computed-hash',
+          }),
+        }),
+      ),
+      http.post(
+        '*/admin/work-schedule/rosters/roster-first-publish/publish',
+        async ({ request }) => {
+          capturedBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({
+            data: basePublishResult({ monthlyRosterId: 'roster-first-publish' }),
+          });
+        },
+      ),
+    );
+
+    renderRoute('/work-schedule/rosters/roster-first-publish?scope=global');
+
+    const reviewButton = await screen.findByRole(
+      'button',
+      { name: pt('actions.openConfirmation') },
+      { timeout: 5000 },
+    );
+    await waitFor(() => expect(reviewButton).toBeEnabled());
+    expect(screen.queryByText(/save preview|preview has not been saved/i)).not.toBeInTheDocument();
+
+    await user.click(reviewButton);
+    await user.click(screen.getByRole('button', { name: pt('actions.confirm') }));
+    await waitFor(() =>
+      expect(capturedBody).toEqual({
+        expectedPreviewHash: 'fresh-computed-hash',
+        scope: 'global',
+      }),
+    );
+  });
 
   it.each([
     ['PUBLISHED', 'alreadyPublished'],
@@ -423,6 +471,10 @@ const baseRosterDetail = (overrides: Partial<MonthlyRosterRecord> = {}): Monthly
   timezone: 'Asia/Ho_Chi_Minh',
   targetSubjectKind: 'EMPLOYMENT_PROFILE',
   targetOrgUnitMode: 'EXACT_ONLY',
+  targetType: 'ORG_UNIT',
+  targetMode: 'EXACT_ONLY',
+  targetOrgUnitId: 'ou-sales',
+  targetTalentGroupId: null,
   departmentOrgUnitId: 'ou-sales',
   workPatternId: 'pattern-active',
   holidayCalendarId: 'holiday-calendar-active',
@@ -463,6 +515,10 @@ const basePreview = (overrides: Partial<MonthlyRosterPreview> = {}): MonthlyRost
   monthlyRosterId: 'roster-clean',
   rosterMonth: '2026-05',
   timezone: 'Asia/Ho_Chi_Minh',
+  targetType: 'ORG_UNIT',
+  targetMode: 'EXACT_ONLY',
+  targetOrgUnitId: 'ou-sales',
+  targetTalentGroupId: null,
   departmentOrgUnitId: 'ou-sales',
   workPatternId: 'pattern-active',
   holidayCalendarId: 'holiday-calendar-active',
@@ -482,11 +538,16 @@ const basePreview = (overrides: Partial<MonthlyRosterPreview> = {}): MonthlyRost
       departmentOrgUnitId: 'ou-sales',
     },
   ],
+  excludedMembers: [],
   rows: [
     {
       previewRowId: 'preview-row-001',
       monthlyRosterId: 'roster-clean',
       rosterMonth: '2026-05',
+      targetType: 'ORG_UNIT',
+      targetMode: 'EXACT_ONLY',
+      targetOrgUnitId: 'ou-sales',
+      targetTalentGroupId: null,
       departmentOrgUnitId: 'ou-sales',
       subjectEmploymentProfileId: 'ep-001',
       localDate: '2026-05-04',
@@ -512,6 +573,10 @@ const basePreview = (overrides: Partial<MonthlyRosterPreview> = {}): MonthlyRost
       previewRowId: 'preview-row-002',
       monthlyRosterId: 'roster-clean',
       rosterMonth: '2026-05',
+      targetType: 'ORG_UNIT',
+      targetMode: 'EXACT_ONLY',
+      targetOrgUnitId: 'ou-sales',
+      targetTalentGroupId: null,
       departmentOrgUnitId: 'ou-sales',
       subjectEmploymentProfileId: 'ep-002',
       localDate: '2026-05-05',
@@ -536,6 +601,8 @@ const basePreview = (overrides: Partial<MonthlyRosterPreview> = {}): MonthlyRost
   ],
   summary: {
     totalEligibleProfiles: 2,
+    includedMemberCount: 2,
+    excludedMemberCount: 0,
     totalStandardCandidateShifts: 2,
     totalHolidaySuppressions: 0,
     totalWorkingToOff: 0,
@@ -544,6 +611,7 @@ const basePreview = (overrides: Partial<MonthlyRosterPreview> = {}): MonthlyRost
     totalCandidateShiftsAfterExceptions: 2,
     totalConflicts: 0,
   },
+  warnings: [],
   ...overrides,
 });
 
