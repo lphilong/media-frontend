@@ -58,6 +58,17 @@ describe('holiday calendar slice B surfaces', () => {
     await waitFor(() => expect(capturedKeys).toEqual(['search', 'status']));
   });
 
+  it('explains that Holiday Calendars drive roster generation rather than leave or attendance', async () => {
+    renderRoute('/work-schedule/holiday-calendars/holiday-calendar-draft');
+
+    expect(
+      await screen.findByText(i18n.t('work-schedule:holidayCalendars.entries.description')),
+    ).toBeInTheDocument();
+    expect(i18n.t('work-schedule:holidayCalendars.detail.pageSubtitle')).toMatch(
+      /not employee leave|không phải chính sách nghỉ phép|不是员工请假/i,
+    );
+  });
+
   it('submits create payload with fixed Global scope and fixed timezone', async () => {
     const user = userEvent.setup();
     let capturedBody: Record<string, unknown> | null = null;

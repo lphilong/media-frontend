@@ -56,8 +56,6 @@ type RoutePatchOptions = {
 };
 
 const statusOptions = ['', 'DRAFT', 'PUBLISHED', 'LOCKED', 'ARCHIVED'] as const;
-const scopeOptions = ['', 'global', 'department'] as const;
-
 const readErrorMessage = (
   t: (key: string) => string,
   error: NormalizedApiError | null | undefined,
@@ -104,7 +102,7 @@ export const MonthlyRosterListPage = (): JSX.Element => {
     [searchParams, setSearchParams],
   );
 
-  const listQueryResult = useMonthlyRosterList(listQuery);
+  const listQueryResult = useMonthlyRosterList({ ...listQuery, scope: 'global' });
   const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateMonthlyRosterDraftMutation();
   const archiveMutation = useArchiveMonthlyRosterMutation();
@@ -115,14 +113,13 @@ export const MonthlyRosterListPage = (): JSX.Element => {
   const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
-  const monthlyRosterScope = listQuery.scope ?? 'global';
   const canCreateMonthlyRoster = canShowAction(capabilitiesQuery.data, {
     permission: PERMISSIONS.WORK_SCHEDULE_CREATE,
-    scope: { module: 'workSchedule', value: monthlyRosterScope },
+    scope: { module: 'workSchedule', value: 'global' },
   });
   const canManageMonthlyRosterLifecycle = canShowAction(capabilitiesQuery.data, {
     permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
-    scope: { module: 'workSchedule', value: monthlyRosterScope },
+    scope: { module: 'workSchedule', value: 'global' },
   });
 
   usePageActions(
@@ -206,7 +203,7 @@ export const MonthlyRosterListPage = (): JSX.Element => {
   const columns = useMemo(
     () =>
       createMonthlyRosterListColumns(t, {
-        scope: listQuery.scope,
+        scope: 'global',
         onOpenDetail: (monthlyRosterId, scope) =>
           navigate(
             APP_PATHS.monthlyRosterDetail(monthlyRosterId) + (scope ? `?scope=${scope}` : ''),
@@ -221,7 +218,6 @@ export const MonthlyRosterListPage = (): JSX.Element => {
       archiveMutation.isPending,
       archiveMutation.variables,
       canManageMonthlyRosterLifecycle,
-      listQuery.scope,
       navigate,
       onArchive,
       t,
@@ -276,7 +272,6 @@ export const MonthlyRosterListPage = (): JSX.Element => {
     listQuery.departmentOrgUnitId,
     listQuery.workPatternId,
     listQuery.holidayCalendarId,
-    listQuery.scope,
   ].filter((value) => value !== undefined && value !== '').length;
   const clearMonthlyRosterFilters = useCallback(() => {
     patchQuery({
@@ -348,15 +343,6 @@ export const MonthlyRosterListPage = (): JSX.Element => {
       });
     }
 
-    if (listQuery.scope) {
-      items.push({
-        id: 'scope',
-        label: t('work-schedule:monthlyRosters.filters.scope'),
-        value: t(`work-schedule:monthlyRosters.scopes.${listQuery.scope}`),
-        onClear: () => patchQuery({ scope: undefined }),
-      });
-    }
-
     return items;
   }, [
     filterOptionLabels.department,
@@ -365,7 +351,6 @@ export const MonthlyRosterListPage = (): JSX.Element => {
     listQuery.departmentOrgUnitId,
     listQuery.holidayCalendarId,
     listQuery.rosterMonth,
-    listQuery.scope,
     listQuery.search,
     listQuery.status,
     listQuery.workPatternId,
@@ -439,24 +424,6 @@ export const MonthlyRosterListPage = (): JSX.Element => {
                 className="min-w-[240px]"
                 onSelectedOptionChange={(option) => rememberFilterOption('holidayCalendar', option)}
               />
-              <label className="flex min-w-[160px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('work-schedule:monthlyRosters.filters.scope')}
-                </span>
-                <select
-                  value={listQuery.scope ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) => patchQuery({ scope: event.target.value || undefined })}
-                >
-                  {scopeOptions.map((scope) => (
-                    <option key={scope || 'default'} value={scope}>
-                      {scope
-                        ? t(`work-schedule:monthlyRosters.scopes.${scope}`)
-                        : t('work-schedule:monthlyRosters.filters.defaultScopes')}
-                    </option>
-                  ))}
-                </select>
-              </label>
             </MoreFiltersPanel>
           }
           appliedFilters={

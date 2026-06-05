@@ -18,6 +18,22 @@ const renderRoute = (path: string) => {
   return router;
 };
 
+const rosterPlanningWindow = (): { current: string; max: string; beyond: string } => {
+  const vietnamNow = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  const current = `${vietnamNow.getUTCFullYear()}-${String(vietnamNow.getUTCMonth() + 1).padStart(
+    2,
+    '0',
+  )}`;
+  const toMonth = (offset: number): string => {
+    const date = new Date(
+      Date.UTC(vietnamNow.getUTCFullYear(), vietnamNow.getUTCMonth() + offset, 1),
+    );
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+  };
+
+  return { current, max: toMonth(2), beyond: toMonth(3) };
+};
+
 const findPicker = async (pickerId: string): Promise<HTMLElement> => {
   await waitFor(() => {
     expect(
@@ -294,6 +310,9 @@ describe('monthly roster slice B shell surfaces', () => {
     expect(surface).not.toBeNull();
     const form = within(surface as HTMLElement);
     expect(form.getByText('Asia/Ho_Chi_Minh')).toBeInTheDocument();
+    expect(
+      form.queryByLabelText(i18n.t('work-schedule:monthlyRosters.fields.scope')),
+    ).not.toBeInTheDocument();
 
     await user.type(
       form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
@@ -330,6 +349,113 @@ describe('monthly roster slice B shell surfaces', () => {
     ]);
     expect([...new Set(capturedReferenceKeys.pattern)].sort()).toEqual(['limit', 'status']);
     expect([...new Set(capturedReferenceKeys.calendar)].sort()).toEqual(['limit', 'status']);
+  });
+
+  it('clears selected roster references without submitting stale IDs', async () => {
+    const user = userEvent.setup();
+    let capturedBody: Record<string, unknown> | null = null;
+    useRosterReferenceHandlers();
+    server.use(
+      http.post('*/admin/work-schedule/rosters', async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ data: baseRosterDetail() });
+      }),
+    );
+
+    renderRoute('/work-schedule/rosters');
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.actions.create'),
+      }),
+    );
+    const surface = screen
+      .getByRole('heading', {
+        name: i18n.t('work-schedule:monthlyRosters.mutations.create.title'),
+      })
+      .closest('section') as HTMLElement;
+    const form = within(surface);
+
+    await user.type(
+      form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
+      rosterPlanningWindow().current,
+    );
+    await selectPickerOption(user, 'monthly-roster-department', /SALES/);
+    await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);
+    await selectPickerOption(user, 'monthly-roster-holiday-calendar', /VN_ACTIVE/);
+
+    for (const fieldKey of ['departmentOrgUnitId', 'workPatternId', 'holidayCalendarId'] as const) {
+      await user.click(
+        form.getByRole('button', {
+          name: `${i18n.t('common:actions.clear')}: ${i18n.t(
+            `work-schedule:monthlyRosters.fields.${fieldKey}`,
+          )}`,
+        }),
+      );
+    }
+    await user.click(
+      form.getByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.mutations.create.submit'),
+      }),
+    );
+
+    expect(capturedBody).toBeNull();
+    expect(
+      form.getAllByText(i18n.t('work-schedule:monthlyRosters.validation.required')).length,
+    ).toBeGreaterThanOrEqual(3);
+  });
+
+  it('mirrors the current plus next-two-month roster planning window', async () => {
+    const user = userEvent.setup();
+    let capturedBody: Record<string, unknown> | null = null;
+    useRosterReferenceHandlers();
+    server.use(
+      http.post('*/admin/work-schedule/rosters', async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ data: baseRosterDetail() });
+      }),
+    );
+
+    renderRoute('/work-schedule/rosters');
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.actions.create'),
+      }),
+    );
+    const surface = screen
+      .getByRole('heading', {
+        name: i18n.t('work-schedule:monthlyRosters.mutations.create.title'),
+      })
+      .closest('section') as HTMLElement;
+    const form = within(surface);
+    const monthInput = form.getByLabelText(
+      i18n.t('work-schedule:monthlyRosters.fields.rosterMonth'),
+    );
+    const planningWindow = rosterPlanningWindow();
+
+    expect(monthInput).toHaveAttribute('min', planningWindow.current);
+    expect(monthInput).toHaveAttribute('max', planningWindow.max);
+
+    await user.type(monthInput, planningWindow.beyond);
+    await selectPickerOption(user, 'monthly-roster-department', /SALES/);
+    await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);
+    await selectPickerOption(user, 'monthly-roster-holiday-calendar', /VN_ACTIVE/);
+    await user.click(
+      form.getByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.mutations.create.submit'),
+      }),
+    );
+    expect(capturedBody).toBeNull();
+    expect(monthInput).toHaveValue(planningWindow.beyond);
+
+    await user.clear(monthInput);
+    await user.type(monthInput, planningWindow.max);
+    await user.click(
+      form.getByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.mutations.create.submit'),
+      }),
+    );
+    await waitFor(() => expect(capturedBody).not.toBeNull());
+    expect(capturedBody).toMatchObject({ rosterMonth: planningWindow.max, scope: 'global' });
   });
 
   it('renders denied state cleanly for monthly roster list authorization failures', async () => {
@@ -387,7 +513,7 @@ describe('monthly roster slice B shell surfaces', () => {
 
     await user.type(
       form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
-      '2026-05',
+      rosterPlanningWindow().current,
     );
     await selectPickerOption(user, 'monthly-roster-department', /SALES/);
     await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);

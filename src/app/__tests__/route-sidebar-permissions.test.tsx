@@ -53,7 +53,7 @@ describe('route and sidebar permission model', () => {
     expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
   });
 
-  it('shows TEAM_MANAGER scoped modules and hides admin-only and finance modules', async () => {
+  it('hides global-owned Admin WorkSchedule and Event modules from TEAM_MANAGER', async () => {
     await renderRoute(
       '/events',
       makeCapabilities({
@@ -74,11 +74,12 @@ describe('route and sidebar permission model', () => {
       }),
     );
 
-    expect(await screen.findByTestId('nav-link-events')).toBeInTheDocument();
-    expect(await screen.findByTestId('nav-link-kpi')).toBeInTheDocument();
     expect(await screen.findByTestId('nav-link-talents')).toBeInTheDocument();
     expect(await screen.findByTestId('nav-link-talent-groups')).toBeInTheDocument();
-    expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-events')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-work-shifts')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-kpi')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-users')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-roles')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-contract-registry')).not.toBeInTheDocument();
@@ -86,7 +87,7 @@ describe('route and sidebar permission model', () => {
     expect(screen.queryByTestId('nav-link-commission-rules')).not.toBeInTheDocument();
   });
 
-  it('shows PRODUCTION_OPS Global Ops Schedule from legacy WorkSchedule nav', async () => {
+  it('shows PRODUCTION_OPS Official Work Shifts from WorkSchedule nav', async () => {
     await renderRoute(
       '/work-shifts',
       makeCapabilities({
@@ -108,11 +109,12 @@ describe('route and sidebar permission model', () => {
     );
 
     expect(await screen.findByTestId('nav-link-work-shifts')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Global Ops Schedule' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Official Work Shifts' })).toBeInTheDocument();
+    expect(screen.queryByText('Global Ops Schedule')).not.toBeInTheDocument();
     expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
   });
 
-  it('lets HR see department schedules without full Studio Resource navigation', async () => {
+  it('fails closed for HR department-only authority on raw Admin WorkSchedule routes', async () => {
     await renderRoute(
       '/work-schedule/department-shifts',
       makeCapabilities({
@@ -131,14 +133,12 @@ describe('route and sidebar permission model', () => {
       }),
     );
 
-    expect(await screen.findByTestId('nav-link-work-shifts')).toBeInTheDocument();
-    expect(
-      await screen.findByRole('heading', { name: 'Department Work Shifts' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-work-shifts')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-studio-resources')).not.toBeInTheDocument();
   });
 
-  it('allows TEAM_MANAGER managedGroup KPI direct route without No Access', async () => {
+  it('canonicalizes TEAM_MANAGER managedGroup KPI direct route to Manager Workspace', async () => {
     await renderRoute(
       '/kpi',
       makeCapabilities({
@@ -150,7 +150,8 @@ describe('route and sidebar permission model', () => {
       }),
     );
 
-    expect(await screen.findByTestId('nav-link-kpi')).toBeInTheDocument();
+    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-kpi')).not.toBeInTheDocument();
     expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
   });
 
@@ -206,7 +207,7 @@ describe('route and sidebar permission model', () => {
     });
   });
 
-  it('does not show unsupported admin modules to self-service-only staff', async () => {
+  it('fails closed on raw Admin WorkSchedule routes for self-service-only staff', async () => {
     await renderRoute(
       '/work-shifts',
       makeCapabilities({
@@ -225,7 +226,8 @@ describe('route and sidebar permission model', () => {
       }),
     );
 
-    expect(await screen.findByTestId('nav-link-work-shifts')).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-work-shifts')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-events')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-employment-profiles')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-talents')).not.toBeInTheDocument();

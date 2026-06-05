@@ -1,6 +1,5 @@
 import { APP_PATHS } from '@app/router/paths';
 import {
-  hasAnyPermission,
   hasScopeGrant,
   PERMISSIONS,
   type CurrentActorCapabilities,
@@ -27,6 +26,7 @@ export type WorkScheduleSurfaceDefinition = {
   path: string;
   scope?: WorkScheduleScope;
   labelKey: string;
+  showInAdminNavigation?: boolean;
 };
 
 export const workScheduleSurfaceDefinitions: readonly WorkScheduleSurfaceDefinition[] = [
@@ -53,24 +53,28 @@ export const workScheduleSurfaceDefinitions: readonly WorkScheduleSurfaceDefinit
     path: APP_PATHS.workScheduleGlobalOps,
     scope: 'global',
     labelKey: 'work-schedule:rosterNav.globalOps',
+    showInAdminNavigation: true,
   },
   {
     id: 'monthly-rosters',
     path: APP_PATHS.monthlyRosters,
-    scope: 'department',
+    scope: 'global',
     labelKey: 'work-schedule:rosterNav.monthlyRosters',
+    showInAdminNavigation: true,
   },
   {
     id: 'work-patterns',
     path: APP_PATHS.workPatterns,
     scope: 'global',
     labelKey: 'work-schedule:rosterNav.workPatterns',
+    showInAdminNavigation: true,
   },
   {
     id: 'holiday-calendars',
     path: APP_PATHS.holidayCalendars,
     scope: 'global',
     labelKey: 'work-schedule:rosterNav.holidayCalendars',
+    showInAdminNavigation: true,
   },
 ] as const;
 
@@ -84,27 +88,15 @@ export const canAccessWorkScheduleSurface = (
 
   switch (surfaceId) {
     case 'my-shifts':
-      return hasScopeGrant(capabilities, 'workSchedule', 'self');
     case 'team-shifts':
-      return hasScopeGrant(capabilities, 'workSchedule', 'team');
     case 'department-shifts':
-      return hasScopeGrant(capabilities, 'workSchedule', 'department');
+      return false;
     case 'global-ops':
       return hasScopeGrant(capabilities, 'workSchedule', 'global');
     case 'monthly-rosters':
-      return (
-        hasScopeGrant(capabilities, 'workSchedule', 'department') ||
-        hasScopeGrant(capabilities, 'workSchedule', 'global')
-      );
+      return hasScopeGrant(capabilities, 'workSchedule', 'global');
     case 'work-patterns':
-      return (
-        hasScopeGrant(capabilities, 'workSchedule', 'global') &&
-        hasAnyPermission(capabilities, [
-          PERMISSIONS.WORK_SCHEDULE_CREATE,
-          PERMISSIONS.WORK_SCHEDULE_UPDATE,
-          PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
-        ])
-      );
+      return hasScopeGrant(capabilities, 'workSchedule', 'global');
     case 'holiday-calendars':
       return hasScopeGrant(capabilities, 'workSchedule', 'global');
     default:
@@ -117,9 +109,8 @@ export const resolveDefaultWorkScheduleSurfacePath = (
 ): string | null => {
   const priority: readonly WorkScheduleSurfaceId[] = [
     'global-ops',
-    'department-shifts',
-    'team-shifts',
-    'my-shifts',
+    'monthly-rosters',
+    'work-patterns',
     'holiday-calendars',
   ];
   const surfaceId = priority.find((candidate) =>

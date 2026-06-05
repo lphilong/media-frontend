@@ -89,8 +89,8 @@
       "subtitle": "Department schedule and roster visibility."
     },
     "globalOps": {
-      "title": "Global Ops Schedule",
-      "subtitle": "Central dispatcher schedule view for cross-department production operations."
+      "title": "Official Work Shifts",
+      "subtitle": "Admin/Ops-owned official work shifts and schedule request approval queue."
     }
   },
   "actions": {
@@ -320,7 +320,7 @@
     "myShifts": "My Work Shifts",
     "teamShifts": "Team Work Shifts",
     "departmentShifts": "Department Work Shifts / Roster",
-    "globalOps": "Global Ops Schedule",
+    "globalOps": "Official Work Shifts",
     "monthlyRosters": "Monthly Rosters",
     "workPatterns": "Work Patterns",
     "holidayCalendars": "Holiday Calendars",
@@ -443,7 +443,7 @@
   "holidayCalendars": {
     "page": {
       "title": "Holiday Calendars",
-      "subtitle": "Global holiday calendars for roster generation."
+      "subtitle": "Global roster-generation calendars that suppress standard generated shifts on active holiday and off-day entries."
     },
     "fields": {
       "calendarCode": "Calendar code",
@@ -501,14 +501,14 @@
     },
     "detail": {
       "pageTitle": "Holiday Calendar Detail",
-      "pageSubtitle": "Backend-authoritative global holiday calendar detail.",
+      "pageSubtitle": "Global roster-generation calendar detail. This is not employee leave, absence, attendance, or payroll policy.",
       "archivedReadOnly": "Archived holiday calendars are read-only.",
       "identityTitle": "Holiday calendar",
       "lifecycleTitle": "Lifecycle"
     },
     "entries": {
       "title": "Entries",
-      "description": "Entries are date-only and use the fixed calendar timezone.",
+      "description": "Active date-only holiday and off-day entries suppress standard generated roster shifts. They do not record employee leave, sickness, absence, attendance, or payroll policy.",
       "addTitle": "Add holiday entry",
       "editTitle": "Edit holiday entry",
       "subtitle": "No time or timezone is collected for calendar entries.",
@@ -529,7 +529,7 @@
     "mutations": {
       "create": {
         "title": "Create holiday calendar",
-        "subtitle": "Create a global calendar. The system generates the calendar code after save.",
+        "subtitle": "Create a global roster-generation calendar. The system generates the calendar code after save.",
         "submit": "Create",
         "pending": "Creating"
       },
@@ -577,7 +577,7 @@
     "fields": {
       "rosterCode": "Roster code",
       "rosterMonth": "Roster month",
-      "departmentOrgUnitId": "Department",
+      "departmentOrgUnitId": "Department Org Unit",
       "workPatternId": "Work Pattern",
       "holidayCalendarId": "Holiday Calendar",
       "status": "Status",
@@ -611,7 +611,7 @@
       "status": "Status",
       "defaultStatuses": "Draft, published, and locked",
       "rosterMonth": "Roster month",
-      "departmentOrgUnitId": "Department",
+      "departmentOrgUnitId": "Department Org Unit",
       "workPatternId": "Work Pattern",
       "holidayCalendarId": "Holiday Calendar",
       "scope": "Scope",
@@ -941,6 +941,7 @@
       "required": "This field is required.",
       "rosterCode": "Use uppercase letters, numbers, and underscores.",
       "month": "Use a valid YYYY-MM month.",
+      "planningWindow": "Choose the current month or one of the next two months.",
       "invalidScope": "Use Global or Department roster access.",
       "duplicateDepartmentMonth": "A roster already exists for this department and month.",
       "activeExceptionsStructuralLock": "Remove active exceptions before changing the month, department, pattern, or holiday calendar."
@@ -963,7 +964,7 @@
       "title": "Monthly roster actions"
     },
     "copy": {
-      "setupInvariants": "Choose one active department only. Child departments are not included. The roster targets active employees, uses a global Holiday Calendar, and keeps timezone Asia/Ho_Chi_Minh."
+      "setupInvariants": "Choose one active Department Org Unit only. Child departments are not included. Global is access authority, not a company-wide roster target. The roster targets active employees, uses a global roster-generation Holiday Calendar, and keeps timezone Asia/Ho_Chi_Minh."
     },
     "pickers": {
       "departmentSearch": "Search active departments by name or code",

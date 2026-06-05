@@ -43,6 +43,7 @@ type MonthlyRosterFormValues = {
 };
 
 const monthRegex = /^\d{4}-\d{2}$/;
+const VIETNAM_UTC_OFFSET_MILLISECONDS = 7 * 60 * 60 * 1000;
 
 const toNullableText = (value?: string): string | null => {
   const trimmed = value?.trim();
@@ -72,6 +73,24 @@ const isRealMonth = (value: string): boolean => {
   return month >= 1 && month <= 12;
 };
 
+const toMonthValue = (date: Date): string =>
+  `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+
+const getRosterPlanningWindow = (): { min: string; max: string } => {
+  const vietnamNow = new Date(Date.now() + VIETNAM_UTC_OFFSET_MILLISECONDS);
+  const min = toMonthValue(vietnamNow);
+  const max = toMonthValue(
+    new Date(Date.UTC(vietnamNow.getUTCFullYear(), vietnamNow.getUTCMonth() + 2, 1)),
+  );
+
+  return { min, max };
+};
+
+const isMonthWithinPlanningWindow = (value: string): boolean => {
+  const { min, max } = getRosterPlanningWindow();
+  return value >= min && value <= max;
+};
+
 const FieldError = <TValues extends FieldValues>({
   name,
 }: {
@@ -91,12 +110,16 @@ const InputField = <TValues extends FieldValues>({
   name,
   placeholder,
   type = 'text',
+  min,
+  max,
 }: {
   disabled?: boolean;
   label: string;
   name: Path<TValues>;
   placeholder?: string;
   type?: 'text' | 'month';
+  min?: string;
+  max?: string;
 }): JSX.Element => {
   const id = useId();
   const { register } = useFormContext<TValues>();
@@ -107,6 +130,8 @@ const InputField = <TValues extends FieldValues>({
       <input
         id={id}
         type={type}
+        min={min}
+        max={max}
         disabled={disabled}
         placeholder={placeholder}
         {...register(name)}
@@ -124,31 +149,15 @@ const ReadOnlyField = ({ label, value }: { label: string; value: string }): JSX.
   </div>
 );
 
-const ScopeField = ({ disabled, label }: { disabled?: boolean; label: string }): JSX.Element => {
-  const { t } = useTranslation(['work-schedule']);
-  const id = useId();
-  const { register } = useFormContext<MonthlyRosterFormValues>();
-
-  return (
-    <label htmlFor={id} className="flex flex-col gap-1">
-      <span className="text-xs font-medium uppercase text-muted">{label}</span>
-      <select
-        id={id}
-        disabled={disabled}
-        {...register('scope')}
-        className="rounded border border-border bg-panel px-3 py-2 text-sm outline-none ring-accent disabled:cursor-not-allowed disabled:opacity-70 focus:ring-2"
-      >
-        <option value="global">{t('work-schedule:monthlyRosters.scopes.global')}</option>
-        <option value="department">{t('work-schedule:monthlyRosters.scopes.department')}</option>
-      </select>
-    </label>
-  );
-};
-
-const createSchema = (required: string, month: string) =>
+const createSchema = (required: string, month: string, planningWindow: string) =>
   z.object({
     rosterCode: z.string().trim().optional(),
-    rosterMonth: z.string().trim().min(1, required).refine(isRealMonth, month),
+    rosterMonth: z
+      .string()
+      .trim()
+      .min(1, required)
+      .refine(isRealMonth, month)
+      .refine(isMonthWithinPlanningWindow, planningWindow),
     departmentOrgUnitId: z.string().trim().min(1, required),
     workPatternId: z.string().trim().min(1, required),
     holidayCalendarId: z.string().trim().min(1, required),
@@ -158,7 +167,15 @@ const createSchema = (required: string, month: string) =>
   });
 
 const updateSchema = (required: string, month: string) =>
-  createSchema(required, month).omit({ rosterCode: true });
+  z.object({
+    rosterMonth: z.string().trim().min(1, required).refine(isRealMonth, month),
+    departmentOrgUnitId: z.string().trim().min(1, required),
+    workPatternId: z.string().trim().min(1, required),
+    holidayCalendarId: z.string().trim().min(1, required),
+    scope: z.enum(['department', 'global']),
+    description: z.string().trim().optional(),
+    externalRef: z.string().trim().optional(),
+  });
 
 const createDefaultValues = (initial?: MonthlyRosterRecord): MonthlyRosterFormValues => ({
   rosterCode: initial?.rosterCode ?? '',
@@ -186,6 +203,7 @@ const ReferencePickerField = ({
   placeholder: string;
   loadOptions: (search: string) => Promise<ReferenceOption[]>;
 }): JSX.Element => {
+  const { t } = useTranslation(['common']);
   const {
     setValue,
     watch,
@@ -212,6 +230,22 @@ const ReferencePickerField = ({
         disabled={disabled}
         placeholder={placeholder}
       />
+      {value && !disabled ? (
+        <button
+          type="button"
+          aria-label={`${t('common:actions.clear')}: ${label}`}
+          onClick={() =>
+            setValue(fieldName, '', {
+              shouldDirty: true,
+              shouldTouch: true,
+              shouldValidate: true,
+            })
+          }
+          className="rounded border border-border bg-panel px-3 py-1.5 text-sm font-medium"
+        >
+          {t('common:actions.clear')}
+        </button>
+      ) : null}
       {fieldError ? <p className="text-xs font-medium text-danger">{fieldError}</p> : null}
     </div>
   );
@@ -225,12 +259,14 @@ export const MonthlyRosterCreateSurface = ({
   onSubmit: (payload: MonthlyRosterCreatePayload) => Promise<void> | void;
 }): JSX.Element => {
   const { t } = useTranslation(['work-schedule', 'common']);
+  const planningWindow = useMemo(getRosterPlanningWindow, []);
   const form = useForm<MonthlyRosterFormValues>({ defaultValues: createDefaultValues() });
   const schema = useMemo(
     () =>
       createSchema(
         t('work-schedule:monthlyRosters.validation.required'),
         t('work-schedule:monthlyRosters.validation.month'),
+        t('work-schedule:monthlyRosters.validation.planningWindow'),
       ),
     [t],
   );
@@ -276,12 +312,13 @@ export const MonthlyRosterCreateSurface = ({
             type="month"
             name="rosterMonth"
             label={t('work-schedule:monthlyRosters.fields.rosterMonth')}
+            min={planningWindow.min}
+            max={planningWindow.max}
           />
           <ReadOnlyField
             label={t('work-schedule:monthlyRosters.fields.timezone')}
             value={MONTHLY_ROSTER_TIMEZONE}
           />
-          <ScopeField label={t('work-schedule:monthlyRosters.fields.scope')} />
           <InputField<MonthlyRosterFormValues>
             name="externalRef"
             label={t('work-schedule:monthlyRosters.fields.externalRef')}
@@ -333,6 +370,7 @@ export const MonthlyRosterEditSurface = ({
   onSubmit: (payload: MonthlyRosterUpdatePayload) => Promise<void> | void;
 }): JSX.Element => {
   const { t } = useTranslation(['work-schedule', 'common']);
+  const planningWindow = useMemo(getRosterPlanningWindow, []);
   const readOnly = initialValues.status !== 'DRAFT';
   const form = useForm<MonthlyRosterFormValues>({
     defaultValues: createDefaultValues(initialValues),
@@ -419,12 +457,13 @@ export const MonthlyRosterEditSurface = ({
             type="month"
             name="rosterMonth"
             label={t('work-schedule:monthlyRosters.fields.rosterMonth')}
+            min={planningWindow.min}
+            max={planningWindow.max}
           />
           <ReadOnlyField
             label={t('work-schedule:monthlyRosters.fields.timezone')}
             value={MONTHLY_ROSTER_TIMEZONE}
           />
-          <ScopeField disabled={readOnly} label={t('work-schedule:monthlyRosters.fields.scope')} />
           <InputField<MonthlyRosterFormValues>
             disabled={readOnly}
             name="externalRef"

@@ -20,8 +20,10 @@ export const WorkScheduleSubnavigation = ({
 }: WorkScheduleSubnavigationProps): JSX.Element => {
   const { t } = useTranslation(['work-schedule']);
   const capabilitiesQuery = useCurrentActorCapabilities();
-  const visibleSurfaces = workScheduleSurfaceDefinitions.filter((surface) =>
-    canAccessWorkScheduleSurface(capabilitiesQuery.data, surface.id),
+  const visibleSurfaces = workScheduleSurfaceDefinitions.filter(
+    (surface) =>
+      surface.showInAdminNavigation &&
+      canAccessWorkScheduleSurface(capabilitiesQuery.data, surface.id),
   );
 
   return (

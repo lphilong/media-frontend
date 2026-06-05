@@ -89,8 +89,8 @@
       "subtitle": "Xem lịch và bảng ca của phòng ban."
     },
     "globalOps": {
-      "title": "Global Ops Schedule",
-      "subtitle": "Bề mặt điều phối lịch trung tâm cho vận hành sản xuất liên phòng ban."
+      "title": "Ca làm việc chính thức",
+      "subtitle": "Ca làm việc chính thức do Admin/Ops quản lý và hàng đợi duyệt yêu cầu lịch."
     }
   },
   "actions": {
@@ -318,7 +318,7 @@
     "myShifts": "My Work Shifts",
     "teamShifts": "Team Work Shifts",
     "departmentShifts": "Department Work Shifts / Roster",
-    "globalOps": "Global Ops Schedule",
+    "globalOps": "Ca làm việc chính thức",
     "label": "Các phần lịch làm việc",
     "workShifts": "Ca làm việc",
     "monthlyRosters": "Bảng lịch tháng",
@@ -443,7 +443,7 @@
   "holidayCalendars": {
     "page": {
       "title": "Lịch nghỉ lễ",
-      "subtitle": "Lịch nghỉ và ngày không làm việc dùng cho tạo bảng lịch."
+      "subtitle": "Lịch toàn cục dùng để tạo bảng lịch và bỏ các ca chuẩn vào ngày lễ/ngày nghỉ đang hoạt động."
     },
     "fields": {
       "calendarCode": "Mã lịch",
@@ -501,14 +501,14 @@
     },
     "detail": {
       "pageTitle": "Chi tiết lịch nghỉ lễ",
-      "pageSubtitle": "Chi tiết lịch nghỉ toàn hệ thống theo dữ liệu hệ thống.",
+      "pageSubtitle": "Lịch toàn cục dùng để tạo bảng lịch; không phải chính sách nghỉ phép, vắng mặt, chấm công hoặc payroll.",
       "archivedReadOnly": "Lịch nghỉ đã lưu trữ chỉ có thể xem.",
       "identityTitle": "Lịch nghỉ lễ",
       "lifecycleTitle": "Vòng đời"
     },
     "entries": {
       "title": "Ngày nghỉ",
-      "description": "Mỗi mục là ngày theo lịch và dùng múi giờ cố định của lịch.",
+      "description": "Ngày lễ/ngày nghỉ đang hoạt động sẽ bỏ các ca chuẩn khi tạo bảng lịch. Không dùng để ghi nhận nghỉ phép, ốm, vắng mặt, chấm công hoặc payroll.",
       "addTitle": "Thêm ngày nghỉ",
       "editTitle": "Sửa ngày nghỉ",
       "subtitle": "Không nhập giờ hoặc múi giờ cho ngày nghỉ.",
@@ -529,7 +529,7 @@
     "mutations": {
       "create": {
         "title": "Tạo lịch nghỉ lễ",
-        "subtitle": "Tạo lịch toàn cục. Hệ thống sẽ sinh mã lịch sau khi lưu.",
+        "subtitle": "Tạo lịch toàn cục dùng để tạo bảng lịch. Hệ thống sẽ sinh mã lịch sau khi lưu.",
         "submit": "Tạo",
         "pending": "Đang tạo"
       },
@@ -577,7 +577,7 @@
     "fields": {
       "rosterCode": "Mã bảng lịch",
       "rosterMonth": "Tháng lập lịch",
-      "departmentOrgUnitId": "Phòng ban",
+      "departmentOrgUnitId": "Org Unit phòng ban",
       "workPatternId": "Mẫu lịch làm",
       "holidayCalendarId": "Lịch nghỉ lễ",
       "status": "Trạng thái",
@@ -611,7 +611,7 @@
       "status": "Trạng thái",
       "defaultStatuses": "Nháp, đã công bố và đã khóa",
       "rosterMonth": "Tháng lập lịch",
-      "departmentOrgUnitId": "Phòng ban",
+      "departmentOrgUnitId": "Org Unit phòng ban",
       "workPatternId": "Mẫu lịch làm",
       "holidayCalendarId": "Lịch nghỉ lễ",
       "scope": "Phạm vi",
@@ -841,6 +841,7 @@
       "required": "Trường này là bắt buộc.",
       "rosterCode": "Dùng chữ in hoa, số và dấu gạch dưới.",
       "month": "Dùng tháng hợp lệ theo dạng YYYY-MM.",
+      "planningWindow": "Chọn tháng hiện tại hoặc một trong hai tháng tiếp theo.",
       "invalidScope": "Dùng phạm vi Toàn hệ thống hoặc Phòng ban.",
       "duplicateDepartmentMonth": "Đã có bảng lịch cho phòng ban và tháng này.",
       "activeExceptionsStructuralLock": "Gỡ ngoại lệ đang dùng trước khi đổi tháng, phòng ban, mẫu lịch hoặc lịch nghỉ lễ."
@@ -963,7 +964,7 @@
       }
     },
     "copy": {
-      "setupInvariants": "Chọn đúng một phòng ban đang hoạt động. Không bao gồm phòng ban con. Bảng lịch áp dụng cho nhân sự đang hoạt động, dùng lịch nghỉ lễ toàn cục và múi giờ Asia/Ho_Chi_Minh."
+      "setupInvariants": "Chọn đúng một Org Unit phòng ban đang hoạt động. Không bao gồm phòng ban con. Global là quyền truy cập, không phải mục tiêu bảng lịch toàn công ty. Bảng lịch áp dụng cho nhân sự đang hoạt động, dùng Holiday Calendar toàn cục để tạo bảng lịch và giữ múi giờ Asia/Ho_Chi_Minh."
     },
     "pickers": {
       "departmentSearch": "Tìm phòng ban đang hoạt động theo tên hoặc mã",

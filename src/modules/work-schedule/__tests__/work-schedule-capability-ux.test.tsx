@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { http, HttpResponse } from 'msw';
-import { cleanup, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -214,6 +214,46 @@ describe('work schedule capability UX hints', () => {
     });
     await waitFor(() => expect(approve).toBeEnabled());
     expect(reject).toBeEnabled();
+  });
+
+  it('shows only Admin/global WorkSchedule surfaces even when global Admin also has scoped grants', async () => {
+    mockCapabilities({
+      permissions: [
+        'workSchedule.read',
+        'workSchedule.create',
+        'workSchedule.update',
+        'workSchedule.manageLifecycle',
+      ],
+      workScheduleScopes: ['self', 'team', 'department', 'global'],
+    });
+
+    renderRoute('/work-schedule/global-ops');
+
+    const navigation = await screen.findByRole('navigation', {
+      name: i18n.t('work-schedule:rosterNav.label'),
+    });
+    expect(
+      within(navigation).getByText(i18n.t('work-schedule:rosterNav.globalOps')),
+    ).toBeInTheDocument();
+    expect(
+      within(navigation).getByText(i18n.t('work-schedule:rosterNav.monthlyRosters')),
+    ).toBeInTheDocument();
+    expect(
+      within(navigation).getByText(i18n.t('work-schedule:rosterNav.workPatterns')),
+    ).toBeInTheDocument();
+    expect(
+      within(navigation).getByText(i18n.t('work-schedule:rosterNav.holidayCalendars')),
+    ).toBeInTheDocument();
+    expect(
+      within(navigation).queryByText(i18n.t('work-schedule:rosterNav.myShifts')),
+    ).not.toBeInTheDocument();
+    expect(
+      within(navigation).queryByText(i18n.t('work-schedule:rosterNav.teamShifts')),
+    ).not.toBeInTheDocument();
+    expect(
+      within(navigation).queryByText(i18n.t('work-schedule:rosterNav.departmentShifts')),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Global Ops Schedule')).not.toBeInTheDocument();
   });
 
   it('denies department-scoped HR from raw Admin Department Work Shifts route', async () => {

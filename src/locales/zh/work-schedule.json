@@ -89,8 +89,8 @@
       "subtitle": "查看部门排班和月度班表。"
     },
     "globalOps": {
-      "title": "Global Ops Schedule",
-      "subtitle": "跨部门制作运营的中央调度视图。"
+      "title": "正式工作班次",
+      "subtitle": "由 Admin/Ops 管理的正式工作班次与排班请求审批队列。"
     }
   },
   "actions": {
@@ -318,7 +318,7 @@
     "myShifts": "My Work Shifts",
     "teamShifts": "Team Work Shifts",
     "departmentShifts": "Department Work Shifts / Roster",
-    "globalOps": "Global Ops Schedule",
+    "globalOps": "正式工作班次",
     "label": "排班模块分区",
     "workShifts": "工作班次",
     "monthlyRosters": "月度排班",
@@ -443,7 +443,7 @@
   "holidayCalendars": {
     "page": {
       "title": "假期日历",
-      "subtitle": "用于月度排班生成的全局假期和休息日历。"
+      "subtitle": "用于生成月度排班的全局日历；有效节假日和休息日会抑制标准生成班次。"
     },
     "fields": {
       "calendarCode": "日历代码",
@@ -501,14 +501,14 @@
     },
     "detail": {
       "pageTitle": "假期日历详情",
-      "pageSubtitle": "系统返回的全局假期日历详情。",
+      "pageSubtitle": "用于生成月度排班的全局日历详情；不是员工请假、缺勤、考勤或薪资政策。",
       "archivedReadOnly": "已归档的假期日历只能查看。",
       "identityTitle": "假期日历",
       "lifecycleTitle": "生命周期"
     },
     "entries": {
       "title": "条目",
-      "description": "条目只记录日期，并使用日历的固定时区。",
+      "description": "有效节假日和休息日条目会抑制标准生成班次；不会记录员工请假、疾病、缺勤、考勤或薪资政策。",
       "addTitle": "添加假期条目",
       "editTitle": "编辑假期条目",
       "subtitle": "日历条目不填写时间或时区。",
@@ -529,7 +529,7 @@
     "mutations": {
       "create": {
         "title": "创建假期日历",
-        "subtitle": "创建全局日历。保存后系统会生成日历代码。",
+        "subtitle": "创建用于生成月度排班的全局日历。保存后系统会生成日历代码。",
         "submit": "创建",
         "pending": "正在创建"
       },
@@ -577,7 +577,7 @@
     "fields": {
       "rosterCode": "排班代码",
       "rosterMonth": "排班月份",
-      "departmentOrgUnitId": "部门",
+      "departmentOrgUnitId": "部门 Org Unit",
       "workPatternId": "工作模式",
       "holidayCalendarId": "节假日日历",
       "status": "状态",
@@ -611,7 +611,7 @@
       "status": "状态",
       "defaultStatuses": "草稿、已发布和已锁定",
       "rosterMonth": "排班月份",
-      "departmentOrgUnitId": "部门",
+      "departmentOrgUnitId": "部门 Org Unit",
       "workPatternId": "工作模式",
       "holidayCalendarId": "节假日日历",
       "scope": "范围",
@@ -841,6 +841,7 @@
       "required": "此字段为必填。",
       "rosterCode": "使用大写字母、数字和下划线。",
       "month": "使用有效的 YYYY-MM 月份。",
+      "planningWindow": "请选择当前月份或之后两个月中的一个。",
       "invalidScope": "使用全局或部门排班访问范围。",
       "duplicateDepartmentMonth": "此部门和月份已存在排班。",
       "activeExceptionsStructuralLock": "请先移除启用例外，再更改月份、部门、工作模式或假期日历。"
@@ -963,7 +964,7 @@
       }
     },
     "copy": {
-      "setupInvariants": "选择一个活动部门；不包含子部门。排班目标为活动雇佣档案，使用全局节假日日历和 Asia/Ho_Chi_Minh 时区。"
+      "setupInvariants": "仅选择一个有效的部门 Org Unit，不包含子部门。Global 表示访问权限，不是全公司排班目标。排班面向有效员工，使用全局排班生成 Holiday Calendar，并保持 Asia/Ho_Chi_Minh 时区。"
     },
     "pickers": {
       "departmentSearch": "按名称或代码搜索活动部门",
