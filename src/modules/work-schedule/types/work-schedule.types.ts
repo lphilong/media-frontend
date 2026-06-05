@@ -13,6 +13,16 @@ export type HolidayCalendarEntryStatus = 'ACTIVE' | 'REMOVED';
 export type HolidayCalendarLifecycleAction = 'activate' | 'archive';
 export type MonthlyRosterStatus = 'DRAFT' | 'PUBLISHED' | 'LOCKED' | 'ARCHIVED';
 export type MonthlyRosterScope = 'department' | 'global';
+export type MonthlyRosterTargetType = 'ORG_UNIT' | 'TALENT_GROUP';
+export type MonthlyRosterTargetMode = 'EXACT_ONLY';
+export type MonthlyRosterMemberExclusionReasonCode =
+  | 'MEMBERSHIP_INACTIVE'
+  | 'TALENT_NOT_FOUND'
+  | 'TALENT_INACTIVE'
+  | 'MISSING_LINKED_EMPLOYMENT_PROFILE'
+  | 'EMPLOYMENT_PROFILE_NOT_FOUND'
+  | 'EMPLOYMENT_PROFILE_INACTIVE'
+  | 'DUPLICATE_EMPLOYMENT_PROFILE';
 export type RosterExceptionType = 'WORKING_TO_OFF' | 'CHANGE_TIME' | 'ADD_SPECIAL_SHIFT';
 export type RosterExceptionStatus = 'ACTIVE' | 'REMOVED';
 export type MonthlyRosterPreviewRowKind =
@@ -76,6 +86,10 @@ export type WorkShiftRecord = {
   sourceRosterMonth?: string | null;
   sourceDepartmentOrgUnitId?: string | null;
   sourceDepartmentOrgUnitRef?: ReferenceSummary | null;
+  sourceRosterTargetType?: MonthlyRosterTargetType | null;
+  sourceRosterTargetId?: string | null;
+  sourceRosterTargetMode?: MonthlyRosterTargetMode | null;
+  sourceMemberIdentityType?: 'EMPLOYMENT_PROFILE' | null;
   sourceRosterLocalDate?: string | null;
   sourceRosterSlotKey?: string | null;
 };
@@ -402,7 +416,14 @@ export type MonthlyRosterListItem = {
   timezone: typeof MONTHLY_ROSTER_TIMEZONE;
   targetSubjectKind: 'EMPLOYMENT_PROFILE';
   targetOrgUnitMode: 'EXACT_ONLY';
-  departmentOrgUnitId: string;
+  targetType?: MonthlyRosterTargetType;
+  targetMode?: MonthlyRosterTargetMode;
+  targetOrgUnitId?: string | null;
+  targetOrgUnitRef?: ReferenceSummary | null;
+  targetTalentGroupId?: string | null;
+  targetTalentGroupRef?: ReferenceSummary | null;
+  targetRef?: ReferenceSummary | null;
+  departmentOrgUnitId: string | null;
   departmentOrgUnitRef?: ReferenceSummary | null;
   workPatternId: string;
   workPatternRef?: ReferenceSummary | null;
@@ -430,6 +451,9 @@ export type MonthlyRosterRecord = MonthlyRosterListItem & {
 export type MonthlyRosterListQuery = {
   status?: MonthlyRosterStatus;
   rosterMonth?: string;
+  targetType?: MonthlyRosterTargetType;
+  targetOrgUnitId?: string;
+  targetTalentGroupId?: string;
   departmentOrgUnitId?: string;
   workPatternId?: string;
   holidayCalendarId?: string;
@@ -443,7 +467,11 @@ export type MonthlyRosterCreatePayload = {
   rosterCode?: string | null;
   rosterMonth: string;
   timezone: typeof MONTHLY_ROSTER_TIMEZONE;
-  departmentOrgUnitId: string;
+  targetType: MonthlyRosterTargetType;
+  targetMode: MonthlyRosterTargetMode;
+  targetOrgUnitId?: string | null;
+  targetTalentGroupId?: string | null;
+  departmentOrgUnitId?: string;
   workPatternId: string;
   holidayCalendarId: string;
   description?: string | null;
@@ -456,6 +484,10 @@ export type MonthlyRosterUpdatePayload = Partial<
     MonthlyRosterCreatePayload,
     | 'rosterMonth'
     | 'timezone'
+    | 'targetType'
+    | 'targetMode'
+    | 'targetOrgUnitId'
+    | 'targetTalentGroupId'
     | 'departmentOrgUnitId'
     | 'workPatternId'
     | 'holidayCalendarId'
@@ -485,8 +517,17 @@ export type MonthlyRosterPreviewEligibleProfile = {
   subjectEmploymentProfileId: string;
   subjectEmploymentProfileRef?: ReferenceSummary | null;
   employmentStatus: 'ACTIVE';
-  departmentOrgUnitId: string;
+  departmentOrgUnitId: string | null;
   departmentOrgUnitRef?: ReferenceSummary | null;
+};
+
+export type MonthlyRosterPreviewExcludedMember = {
+  memberId: string;
+  talentId: string | null;
+  talentRef?: ReferenceSummary | null;
+  linkedEmploymentProfileId: string | null;
+  linkedEmploymentProfileRef?: ReferenceSummary | null;
+  reasonCode: MonthlyRosterMemberExclusionReasonCode;
 };
 
 export type MonthlyRosterPreviewConflict = {
@@ -509,7 +550,14 @@ export type MonthlyRosterPreviewRow = {
   previewRowId: string;
   monthlyRosterId: string;
   rosterMonth: string;
-  departmentOrgUnitId: string;
+  targetType?: MonthlyRosterTargetType;
+  targetMode?: MonthlyRosterTargetMode;
+  targetOrgUnitId?: string | null;
+  targetOrgUnitRef?: ReferenceSummary | null;
+  targetTalentGroupId?: string | null;
+  targetTalentGroupRef?: ReferenceSummary | null;
+  targetRef?: ReferenceSummary | null;
+  departmentOrgUnitId: string | null;
   departmentOrgUnitRef?: ReferenceSummary | null;
   subjectEmploymentProfileId: string;
   subjectEmploymentProfileRef?: ReferenceSummary | null;
@@ -535,6 +583,8 @@ export type MonthlyRosterPreviewRow = {
 
 export type MonthlyRosterPreviewSummary = {
   totalEligibleProfiles: number;
+  includedMemberCount?: number;
+  excludedMemberCount?: number;
   totalStandardCandidateShifts: number;
   totalHolidaySuppressions: number;
   totalWorkingToOff: number;
@@ -548,7 +598,14 @@ export type MonthlyRosterPreview = {
   monthlyRosterId: string;
   rosterMonth: string;
   timezone: typeof MONTHLY_ROSTER_TIMEZONE;
-  departmentOrgUnitId: string;
+  targetType?: MonthlyRosterTargetType;
+  targetMode?: MonthlyRosterTargetMode;
+  targetOrgUnitId?: string | null;
+  targetOrgUnitRef?: ReferenceSummary | null;
+  targetTalentGroupId?: string | null;
+  targetTalentGroupRef?: ReferenceSummary | null;
+  targetRef?: ReferenceSummary | null;
+  departmentOrgUnitId: string | null;
   departmentOrgUnitRef?: ReferenceSummary | null;
   workPatternId: string;
   workPatternRef?: ReferenceSummary | null;
@@ -559,8 +616,10 @@ export type MonthlyRosterPreview = {
   currentPreviewHash: string | null;
   computedPreviewHash: string;
   eligibleProfiles: MonthlyRosterPreviewEligibleProfile[];
+  excludedMembers?: MonthlyRosterPreviewExcludedMember[];
   rows: MonthlyRosterPreviewRow[];
   summary: MonthlyRosterPreviewSummary;
+  warnings?: string[];
 };
 
 export type MonthlyRosterPublishPayload = {

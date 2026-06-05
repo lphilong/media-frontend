@@ -27,7 +27,7 @@ import {
   useCurrentActorCapabilities,
   type CapabilityMissingReason,
 } from '@shared/auth/current-actor-capabilities';
-import { formatBusinessTimestamp } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 
 type MonthlyRosterPublishReviewProps = {
   roster: MonthlyRosterRecord;
@@ -469,10 +469,14 @@ export const MonthlyRosterPublishReview = ({
                   value: roster.rosterMonth,
                 },
                 {
-                  key: 'department',
-                  label: t('work-schedule:monthlyRosters.fields.departmentOrgUnitId'),
-                  value: roster.departmentOrgUnitId,
-                  monospace: true,
+                  key: 'target',
+                  label: t('work-schedule:monthlyRosters.fields.target'),
+                  value: `${t(
+                    `work-schedule:monthlyRosters.targetTypes.${roster.targetType}`,
+                  )}: ${readReferenceDisplay(
+                    roster.targetRef,
+                    roster.targetOrgUnitId ?? roster.targetTalentGroupId,
+                  )}`,
                 },
                 {
                   key: 'pattern',

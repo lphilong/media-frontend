@@ -64,7 +64,7 @@ const useRosterReferenceHandlers = (capturedKeys?: Record<string, string[]>) => 
   server.use(
     http.get('*/admin/org-units', ({ request }) => {
       const url = new URL(request.url);
-      capturedKeys?.department?.push(...Array.from(url.searchParams.keys()));
+      capturedKeys?.orgUnit?.push(...Array.from(url.searchParams.keys()));
       return HttpResponse.json({
         data: [
           {
@@ -77,6 +77,25 @@ const useRosterReferenceHandlers = (capturedKeys?: Record<string, string[]>) => 
             depth: 0,
             displayOrder: 1,
             createdAt: Date.now(),
+          },
+        ],
+        meta: undefined,
+      });
+    }),
+    http.get('*/admin/talent-groups', ({ request }) => {
+      const url = new URL(request.url);
+      capturedKeys?.talentGroup?.push(...Array.from(url.searchParams.keys()));
+      return HttpResponse.json({
+        data: [
+          {
+            id: 'tg-prime',
+            groupCode: 'TG_PRIME',
+            name: 'Prime crew',
+            shortName: 'Prime',
+            status: 'ACTIVE',
+            displayOrder: 1,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
           },
         ],
         meta: undefined,
@@ -154,18 +173,25 @@ describe('monthly roster slice B shell surfaces', () => {
     );
 
     renderRoute(
-      '/work-schedule/rosters?status=DRAFT&rosterMonth=2026-05&departmentOrgUnitId=ou-sales&workPatternId=pattern-active&holidayCalendarId=holiday-calendar-active&search=ROSTER&sortBy=name&scope=global',
+      '/work-schedule/rosters?status=DRAFT&rosterMonth=2026-05&targetType=ORG_UNIT&targetOrgUnitId=ou-sales&workPatternId=pattern-active&holidayCalendarId=holiday-calendar-active&search=ROSTER&sortBy=name&scope=global',
     );
 
     expect(await screen.findByText('ROSTER_DRAFT', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(baseRosterListItem().targetOrgUnitMode).toBe('EXACT_ONLY');
+    expect(
+      screen.getAllByText(
+        new RegExp(i18n.t('work-schedule:monthlyRosters.targetTypes.ORG_UNIT')),
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText(/Sales/)).toBeInTheDocument();
     expect(capturedKeys).toEqual([
-      'departmentOrgUnitId',
       'holidayCalendarId',
       'rosterMonth',
       'scope',
       'search',
       'status',
+      'targetOrgUnitId',
+      'targetType',
       'workPatternId',
     ]);
     expect(
@@ -180,7 +206,7 @@ describe('monthly roster slice B shell surfaces', () => {
       screen.getByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
     ).toBeInTheDocument();
     expect(
-      await within(await findPicker('monthly-roster-filter-department')).findAllByText(/SALES/),
+      await within(await findPicker('monthly-roster-filter-org-unit')).findAllByText(/SALES/),
     ).not.toHaveLength(0);
     expect(
       await within(await findPicker('monthly-roster-filter-work-pattern')).findAllByText(
@@ -213,20 +239,20 @@ describe('monthly roster slice B shell surfaces', () => {
       }),
     );
     expect(
-      await within(await findPicker('monthly-roster-filter-department')).findAllByText(/SALES/),
+      await within(await findPicker('monthly-roster-filter-org-unit')).findAllByText(/SALES/),
     ).not.toHaveLength(0);
 
     await user.click(
       screen.getByRole('button', {
         name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
-          'work-schedule:monthlyRosters.filters.departmentOrgUnitId',
+          'work-schedule:monthlyRosters.fields.targetOrgUnitId',
         )}`,
       }),
     );
     await waitFor(() => {
-      expect(
-        new URLSearchParams(router.state.location.search).get('departmentOrgUnitId'),
-      ).toBeNull();
+      const query = new URLSearchParams(router.state.location.search);
+      expect(query.get('departmentOrgUnitId')).toBeNull();
+      expect(query.get('targetOrgUnitId')).toBeNull();
     });
 
     await selectPickerOption(user, 'monthly-roster-filter-work-pattern', /PATTERN_ACTIVE/);
@@ -278,7 +304,8 @@ describe('monthly roster slice B shell surfaces', () => {
     const user = userEvent.setup();
     let capturedBody: Record<string, unknown> | null = null;
     const capturedReferenceKeys: Record<string, string[]> = {
-      department: [],
+      orgUnit: [],
+      talentGroup: [],
       pattern: [],
       calendar: [],
     };
@@ -313,12 +340,19 @@ describe('monthly roster slice B shell surfaces', () => {
     expect(
       form.queryByLabelText(i18n.t('work-schedule:monthlyRosters.fields.scope')),
     ).not.toBeInTheDocument();
+    expect(
+      form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.targetType')),
+    ).toHaveValue('ORG_UNIT');
+    expect(
+      within(form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.targetType')))
+        .queryByText('Company'),
+    ).not.toBeInTheDocument();
 
     await user.type(
       form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
       '2026-06',
     );
-    await selectPickerOption(user, 'monthly-roster-department', /SALES/);
+    await selectPickerOption(user, 'monthly-roster-org-unit', /SALES/);
     await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);
     await selectPickerOption(user, 'monthly-roster-holiday-calendar', /VN_ACTIVE/);
     await user.click(
@@ -331,7 +365,9 @@ describe('monthly roster slice B shell surfaces', () => {
     expect(capturedBody).toMatchObject({
       rosterMonth: '2026-06',
       timezone: 'Asia/Ho_Chi_Minh',
-      departmentOrgUnitId: 'ou-sales',
+      targetType: 'ORG_UNIT',
+      targetMode: 'EXACT_ONLY',
+      targetOrgUnitId: 'ou-sales',
       workPatternId: 'pattern-active',
       holidayCalendarId: 'holiday-calendar-active',
       description: null,
@@ -340,15 +376,93 @@ describe('monthly roster slice B shell surfaces', () => {
     });
     expect(capturedBody).not.toHaveProperty('rosterCode');
     expect(capturedBody).not.toHaveProperty('scopeGrants');
-    expect([...new Set(capturedReferenceKeys.department)].sort()).toEqual([
+    expect(capturedBody).not.toHaveProperty('targetTalentGroupId');
+    expect([...new Set(capturedReferenceKeys.orgUnit)].sort()).toEqual([
       'limit',
       'sortBy',
       'sortDirection',
       'status',
-      'type',
     ]);
     expect([...new Set(capturedReferenceKeys.pattern)].sort()).toEqual(['limit', 'status']);
     expect([...new Set(capturedReferenceKeys.calendar)].sort()).toEqual(['limit', 'status']);
+  });
+
+  it('switches Monthly Roster target type and submits Talent Group target payload', async () => {
+    const user = userEvent.setup();
+    let capturedBody: Record<string, unknown> | null = null;
+    useRosterReferenceHandlers();
+    server.use(
+      http.post('*/admin/work-schedule/rosters', async ({ request }) => {
+        capturedBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          data: baseRosterDetail({
+            targetType: 'TALENT_GROUP',
+            targetOrgUnitId: null,
+            targetOrgUnitRef: null,
+            targetTalentGroupId: 'tg-prime',
+            targetTalentGroupRef: {
+              id: 'tg-prime',
+              code: 'TG_PRIME',
+              name: 'Prime crew',
+              status: 'ACTIVE',
+            },
+            targetRef: {
+              id: 'tg-prime',
+              code: 'TG_PRIME',
+              name: 'Prime crew',
+              status: 'ACTIVE',
+            },
+            departmentOrgUnitId: null,
+            departmentOrgUnitRef: null,
+          }),
+        });
+      }),
+    );
+
+    renderRoute('/work-schedule/rosters');
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.actions.create'),
+      }),
+    );
+    const surface = screen
+      .getByRole('heading', {
+        name: i18n.t('work-schedule:monthlyRosters.mutations.create.title'),
+      })
+      .closest('section') as HTMLElement;
+    const form = within(surface);
+    const targetType = form.getByLabelText(
+      i18n.t('work-schedule:monthlyRosters.fields.targetType'),
+    );
+
+    await user.type(
+      form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
+      '2026-06',
+    );
+    await selectPickerOption(user, 'monthly-roster-org-unit', /SALES/);
+    await user.selectOptions(targetType, 'TALENT_GROUP');
+    expect(within(surface).queryByText(/SALES - Sales/)).not.toBeInTheDocument();
+    await selectPickerOption(user, 'monthly-roster-talent-group', /TG_PRIME/);
+    await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);
+    await selectPickerOption(user, 'monthly-roster-holiday-calendar', /VN_ACTIVE/);
+    await user.click(
+      form.getByRole('button', {
+        name: i18n.t('work-schedule:monthlyRosters.mutations.create.submit'),
+      }),
+    );
+
+    await waitFor(() => expect(capturedBody).not.toBeNull());
+    expect(capturedBody).toMatchObject({
+      rosterMonth: '2026-06',
+      targetType: 'TALENT_GROUP',
+      targetMode: 'EXACT_ONLY',
+      targetTalentGroupId: 'tg-prime',
+      workPatternId: 'pattern-active',
+      holidayCalendarId: 'holiday-calendar-active',
+      scope: 'global',
+    });
+    expect(capturedBody).not.toHaveProperty('departmentOrgUnitId');
+    expect(capturedBody).not.toHaveProperty('targetOrgUnitId');
   });
 
   it('clears selected roster references without submitting stale IDs', async () => {
@@ -379,11 +493,11 @@ describe('monthly roster slice B shell surfaces', () => {
       form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
       rosterPlanningWindow().current,
     );
-    await selectPickerOption(user, 'monthly-roster-department', /SALES/);
+    await selectPickerOption(user, 'monthly-roster-org-unit', /SALES/);
     await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);
     await selectPickerOption(user, 'monthly-roster-holiday-calendar', /VN_ACTIVE/);
 
-    for (const fieldKey of ['departmentOrgUnitId', 'workPatternId', 'holidayCalendarId'] as const) {
+    for (const fieldKey of ['targetOrgUnitId', 'workPatternId', 'holidayCalendarId'] as const) {
       await user.click(
         form.getByRole('button', {
           name: `${i18n.t('common:actions.clear')}: ${i18n.t(
@@ -436,7 +550,7 @@ describe('monthly roster slice B shell surfaces', () => {
     expect(monthInput).toHaveAttribute('max', planningWindow.max);
 
     await user.type(monthInput, planningWindow.beyond);
-    await selectPickerOption(user, 'monthly-roster-department', /SALES/);
+    await selectPickerOption(user, 'monthly-roster-org-unit', /SALES/);
     await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);
     await selectPickerOption(user, 'monthly-roster-holiday-calendar', /VN_ACTIVE/);
     await user.click(
@@ -482,7 +596,7 @@ describe('monthly roster slice B shell surfaces', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders duplicate department/month conflicts cleanly on create draft', async () => {
+  it('renders duplicate target/month conflicts cleanly on create draft', async () => {
     const user = userEvent.setup();
     let capturedBody: Record<string, unknown> | null = null;
     useRosterReferenceHandlers();
@@ -515,7 +629,7 @@ describe('monthly roster slice B shell surfaces', () => {
       form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
       rosterPlanningWindow().current,
     );
-    await selectPickerOption(user, 'monthly-roster-department', /SALES/);
+    await selectPickerOption(user, 'monthly-roster-org-unit', /SALES/);
     await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);
     await selectPickerOption(user, 'monthly-roster-holiday-calendar', /VN_ACTIVE/);
     await user.click(
@@ -617,11 +731,46 @@ const baseRosterListItem = () => ({
   rosterCode: 'ROSTER_DRAFT',
   rosterMonth: '2026-05',
   timezone: 'Asia/Ho_Chi_Minh',
+  targetType: 'ORG_UNIT',
+  targetMode: 'EXACT_ONLY',
+  targetOrgUnitId: 'ou-sales',
+  targetOrgUnitRef: {
+    id: 'ou-sales',
+    code: 'SALES',
+    name: 'Sales',
+    status: 'ACTIVE',
+  },
+  targetTalentGroupId: null,
+  targetTalentGroupRef: null,
+  targetRef: {
+    id: 'ou-sales',
+    code: 'SALES',
+    name: 'Sales',
+    status: 'ACTIVE',
+  },
   targetSubjectKind: 'EMPLOYMENT_PROFILE',
   targetOrgUnitMode: 'EXACT_ONLY',
   departmentOrgUnitId: 'ou-sales',
+  departmentOrgUnitRef: {
+    id: 'ou-sales',
+    code: 'SALES',
+    name: 'Sales',
+    status: 'ACTIVE',
+  },
   workPatternId: 'pattern-active',
+  workPatternRef: {
+    id: 'pattern-active',
+    code: 'PATTERN_ACTIVE',
+    name: 'Active operations',
+    status: 'ACTIVE',
+  },
   holidayCalendarId: 'holiday-calendar-active',
+  holidayCalendarRef: {
+    id: 'holiday-calendar-active',
+    code: 'VN_ACTIVE',
+    name: 'Vietnam active calendar',
+    status: 'ACTIVE',
+  },
   status: 'DRAFT',
   draftVersion: 1,
   exceptionCount: 1,

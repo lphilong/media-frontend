@@ -59,6 +59,17 @@ const holidayCalendarStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'ARCHIVED']);
 const holidayCalendarEntryTypeSchema = z.enum(['HOLIDAY', 'COMPANY_OFF_DAY', 'CUSTOM_OFF_DAY']);
 const holidayCalendarEntryStatusSchema = z.enum(['ACTIVE', 'REMOVED']);
 const monthlyRosterStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'LOCKED', 'ARCHIVED']);
+const monthlyRosterTargetTypeSchema = z.enum(['ORG_UNIT', 'TALENT_GROUP']);
+const monthlyRosterTargetModeSchema = z.literal('EXACT_ONLY');
+const monthlyRosterMemberExclusionReasonCodeSchema = z.enum([
+  'MEMBERSHIP_INACTIVE',
+  'TALENT_NOT_FOUND',
+  'TALENT_INACTIVE',
+  'MISSING_LINKED_EMPLOYMENT_PROFILE',
+  'EMPLOYMENT_PROFILE_NOT_FOUND',
+  'EMPLOYMENT_PROFILE_INACTIVE',
+  'DUPLICATE_EMPLOYMENT_PROFILE',
+]);
 const rosterExceptionTypeSchema = z.enum(['WORKING_TO_OFF', 'CHANGE_TIME', 'ADD_SPECIAL_SHIFT']);
 const monthlyRosterPreviewRowKindSchema = z.enum([
   'STANDARD',
@@ -97,6 +108,9 @@ const workShiftListSourceShape = {
   sourceType: workShiftSourceTypeSchema.nullable().optional(),
   sourceRosterId: z.string().nullable().optional(),
   sourceRosterMonth: z.string().nullable().optional(),
+  sourceRosterTargetType: monthlyRosterTargetTypeSchema.nullable().optional(),
+  sourceRosterTargetId: z.string().nullable().optional(),
+  sourceRosterTargetMode: monthlyRosterTargetModeSchema.nullable().optional(),
   sourceRosterLocalDate: z.string().nullable().optional(),
   sourceRosterSlotKey: z.string().nullable().optional(),
 };
@@ -156,6 +170,7 @@ const detailSchema = listItemSchema
     sourceGenerationRunId: z.string().nullable().optional(),
     sourceDepartmentOrgUnitId: z.string().nullable().optional(),
     sourceDepartmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
+    sourceMemberIdentityType: z.literal('EMPLOYMENT_PROFILE').nullable().optional(),
   })
   .strict();
 
@@ -357,7 +372,14 @@ const monthlyRosterListItemSchema = z
     timezone: z.literal(MONTHLY_ROSTER_TIMEZONE),
     targetSubjectKind: z.literal('EMPLOYMENT_PROFILE'),
     targetOrgUnitMode: z.literal('EXACT_ONLY'),
-    departmentOrgUnitId: z.string().trim().min(1),
+    targetType: monthlyRosterTargetTypeSchema,
+    targetMode: monthlyRosterTargetModeSchema,
+    targetOrgUnitId: z.string().nullable(),
+    targetOrgUnitRef: referenceSummarySchema.nullable().optional(),
+    targetTalentGroupId: z.string().nullable(),
+    targetTalentGroupRef: referenceSummarySchema.nullable().optional(),
+    targetRef: referenceSummarySchema.nullable().optional(),
+    departmentOrgUnitId: z.string().nullable(),
     departmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
     workPatternId: z.string().trim().min(1),
     workPatternRef: referenceSummarySchema.nullable().optional(),
@@ -421,7 +443,14 @@ const monthlyRosterPreviewRowSchema = z
     previewRowId: z.string().trim().min(1),
     monthlyRosterId: z.string().trim().min(1),
     rosterMonth: z.string().trim().min(1),
-    departmentOrgUnitId: z.string().trim().min(1),
+    targetType: monthlyRosterTargetTypeSchema,
+    targetMode: monthlyRosterTargetModeSchema,
+    targetOrgUnitId: z.string().nullable(),
+    targetOrgUnitRef: referenceSummarySchema.nullable().optional(),
+    targetTalentGroupId: z.string().nullable(),
+    targetTalentGroupRef: referenceSummarySchema.nullable().optional(),
+    targetRef: referenceSummarySchema.nullable().optional(),
+    departmentOrgUnitId: z.string().nullable(),
     departmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
     subjectEmploymentProfileId: z.string().trim().min(1),
     subjectEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
@@ -449,6 +478,8 @@ const monthlyRosterPreviewRowSchema = z
 const monthlyRosterPreviewSummarySchema = z
   .object({
     totalEligibleProfiles: z.number().int().nonnegative(),
+    includedMemberCount: z.number().int().nonnegative(),
+    excludedMemberCount: z.number().int().nonnegative(),
     totalStandardCandidateShifts: z.number().int().nonnegative(),
     totalHolidaySuppressions: z.number().int().nonnegative(),
     totalWorkingToOff: z.number().int().nonnegative(),
@@ -466,7 +497,14 @@ const monthlyRosterPreviewResponseSchema = z
         monthlyRosterId: z.string().trim().min(1),
         rosterMonth: z.string().trim().min(1),
         timezone: z.literal(MONTHLY_ROSTER_TIMEZONE),
-        departmentOrgUnitId: z.string().trim().min(1),
+        targetType: monthlyRosterTargetTypeSchema,
+        targetMode: monthlyRosterTargetModeSchema,
+        targetOrgUnitId: z.string().nullable(),
+        targetOrgUnitRef: referenceSummarySchema.nullable().optional(),
+        targetTalentGroupId: z.string().nullable(),
+        targetTalentGroupRef: referenceSummarySchema.nullable().optional(),
+        targetRef: referenceSummarySchema.nullable().optional(),
+        departmentOrgUnitId: z.string().nullable(),
         departmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
         workPatternId: z.string().trim().min(1),
         workPatternRef: referenceSummarySchema.nullable().optional(),
@@ -482,13 +520,26 @@ const monthlyRosterPreviewResponseSchema = z
               subjectEmploymentProfileId: z.string().trim().min(1),
               subjectEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
               employmentStatus: z.literal('ACTIVE'),
-              departmentOrgUnitId: z.string().trim().min(1),
+              departmentOrgUnitId: z.string().nullable(),
               departmentOrgUnitRef: referenceSummarySchema.nullable().optional(),
+            })
+            .strict(),
+        ),
+        excludedMembers: z.array(
+          z
+            .object({
+              memberId: z.string().trim().min(1),
+              talentId: z.string().nullable(),
+              talentRef: referenceSummarySchema.nullable().optional(),
+              linkedEmploymentProfileId: z.string().nullable(),
+              linkedEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
+              reasonCode: monthlyRosterMemberExclusionReasonCodeSchema,
             })
             .strict(),
         ),
         rows: z.array(monthlyRosterPreviewRowSchema),
         summary: monthlyRosterPreviewSummarySchema,
+        warnings: z.array(z.string()),
       })
       .strict(),
   })
@@ -595,6 +646,9 @@ const sanitizeMonthlyRosterListQuery = (
 ): Record<string, string | number | undefined> => ({
   status: query.status,
   rosterMonth: query.rosterMonth,
+  targetType: query.targetType,
+  targetOrgUnitId: query.targetOrgUnitId,
+  targetTalentGroupId: query.targetTalentGroupId,
   departmentOrgUnitId: query.departmentOrgUnitId,
   workPatternId: query.workPatternId,
   holidayCalendarId: query.holidayCalendarId,
@@ -767,7 +821,15 @@ const sanitizeMonthlyRosterCreatePayload = (
   ...(payload.rosterCode?.trim() ? { rosterCode: payload.rosterCode.trim() } : {}),
   rosterMonth: payload.rosterMonth.trim(),
   timezone: MONTHLY_ROSTER_TIMEZONE,
-  departmentOrgUnitId: payload.departmentOrgUnitId.trim(),
+  targetType: payload.targetType,
+  targetMode: 'EXACT_ONLY',
+  ...(payload.targetOrgUnitId ? { targetOrgUnitId: payload.targetOrgUnitId.trim() } : {}),
+  ...(payload.targetTalentGroupId
+    ? { targetTalentGroupId: payload.targetTalentGroupId.trim() }
+    : {}),
+  ...(payload.departmentOrgUnitId
+    ? { departmentOrgUnitId: payload.departmentOrgUnitId.trim() }
+    : {}),
   workPatternId: payload.workPatternId.trim(),
   holidayCalendarId: payload.holidayCalendarId.trim(),
   description: sanitizeNullableText(payload.description),
@@ -780,8 +842,16 @@ const sanitizeMonthlyRosterUpdatePayload = (
 ): MonthlyRosterUpdatePayload => ({
   ...(payload.rosterMonth !== undefined ? { rosterMonth: payload.rosterMonth.trim() } : {}),
   ...(payload.timezone !== undefined ? { timezone: MONTHLY_ROSTER_TIMEZONE } : {}),
+  ...(payload.targetType !== undefined ? { targetType: payload.targetType } : {}),
+  ...(payload.targetMode !== undefined ? { targetMode: 'EXACT_ONLY' } : {}),
+  ...(payload.targetOrgUnitId !== undefined
+    ? { targetOrgUnitId: payload.targetOrgUnitId?.trim() || null }
+    : {}),
+  ...(payload.targetTalentGroupId !== undefined
+    ? { targetTalentGroupId: payload.targetTalentGroupId?.trim() || null }
+    : {}),
   ...(payload.departmentOrgUnitId !== undefined
-    ? { departmentOrgUnitId: payload.departmentOrgUnitId.trim() }
+    ? { departmentOrgUnitId: payload.departmentOrgUnitId?.trim() }
     : {}),
   ...(payload.workPatternId !== undefined ? { workPatternId: payload.workPatternId.trim() } : {}),
   ...(payload.holidayCalendarId !== undefined

@@ -11,8 +11,9 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
 import {
-  loadMonthlyRosterDepartmentOptions,
   loadMonthlyRosterHolidayCalendarOptions,
+  loadMonthlyRosterOrgUnitOptions,
+  loadMonthlyRosterTalentGroupOptions,
   loadMonthlyRosterWorkPatternOptions,
 } from '@modules/work-schedule/components/work-schedule-reference-options';
 import {
@@ -20,6 +21,7 @@ import {
   type MonthlyRosterCreatePayload,
   type MonthlyRosterRecord,
   type MonthlyRosterScope,
+  type MonthlyRosterTargetType,
   type MonthlyRosterUpdatePayload,
 } from '@modules/work-schedule/types/work-schedule.types';
 import { AsyncReferencePicker, type ReferenceOption } from '@shared/components/reference';
@@ -34,7 +36,9 @@ type BaseSurfaceProps = {
 type MonthlyRosterFormValues = {
   rosterCode: string;
   rosterMonth: string;
-  departmentOrgUnitId: string;
+  targetType: MonthlyRosterTargetType;
+  targetOrgUnitId: string;
+  targetTalentGroupId: string;
   workPatternId: string;
   holidayCalendarId: string;
   scope: MonthlyRosterScope;
@@ -158,29 +162,57 @@ const createSchema = (required: string, month: string, planningWindow: string) =
       .min(1, required)
       .refine(isRealMonth, month)
       .refine(isMonthWithinPlanningWindow, planningWindow),
-    departmentOrgUnitId: z.string().trim().min(1, required),
+    targetType: z.enum(['ORG_UNIT', 'TALENT_GROUP']),
+    targetOrgUnitId: z.string().trim(),
+    targetTalentGroupId: z.string().trim(),
     workPatternId: z.string().trim().min(1, required),
     holidayCalendarId: z.string().trim().min(1, required),
     scope: z.enum(['department', 'global']),
     description: z.string().trim().optional(),
     externalRef: z.string().trim().optional(),
+  }).superRefine((values, ctx) => {
+    if (values.targetType === 'ORG_UNIT' && !values.targetOrgUnitId) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['targetOrgUnitId'], message: required });
+    }
+    if (values.targetType === 'TALENT_GROUP' && !values.targetTalentGroupId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['targetTalentGroupId'],
+        message: required,
+      });
+    }
   });
 
 const updateSchema = (required: string, month: string) =>
   z.object({
     rosterMonth: z.string().trim().min(1, required).refine(isRealMonth, month),
-    departmentOrgUnitId: z.string().trim().min(1, required),
+    targetType: z.enum(['ORG_UNIT', 'TALENT_GROUP']),
+    targetOrgUnitId: z.string().trim(),
+    targetTalentGroupId: z.string().trim(),
     workPatternId: z.string().trim().min(1, required),
     holidayCalendarId: z.string().trim().min(1, required),
     scope: z.enum(['department', 'global']),
     description: z.string().trim().optional(),
     externalRef: z.string().trim().optional(),
+  }).superRefine((values, ctx) => {
+    if (values.targetType === 'ORG_UNIT' && !values.targetOrgUnitId) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['targetOrgUnitId'], message: required });
+    }
+    if (values.targetType === 'TALENT_GROUP' && !values.targetTalentGroupId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['targetTalentGroupId'],
+        message: required,
+      });
+    }
   });
 
 const createDefaultValues = (initial?: MonthlyRosterRecord): MonthlyRosterFormValues => ({
   rosterCode: initial?.rosterCode ?? '',
   rosterMonth: initial?.rosterMonth ?? '',
-  departmentOrgUnitId: initial?.departmentOrgUnitId ?? '',
+  targetType: initial?.targetType ?? 'ORG_UNIT',
+  targetOrgUnitId: initial?.targetOrgUnitId ?? initial?.departmentOrgUnitId ?? '',
+  targetTalentGroupId: initial?.targetTalentGroupId ?? '',
   workPatternId: initial?.workPatternId ?? '',
   holidayCalendarId: initial?.holidayCalendarId ?? '',
   scope: 'global',
@@ -197,7 +229,7 @@ const ReferencePickerField = ({
   loadOptions,
 }: {
   disabled?: boolean;
-  fieldName: 'departmentOrgUnitId' | 'workPatternId' | 'holidayCalendarId';
+  fieldName: 'targetOrgUnitId' | 'targetTalentGroupId' | 'workPatternId' | 'holidayCalendarId';
   label: string;
   pickerId: string;
   placeholder: string;
@@ -251,6 +283,43 @@ const ReferencePickerField = ({
   );
 };
 
+const TargetTypeField = ({ disabled }: { disabled?: boolean }): JSX.Element => {
+  const { t } = useTranslation(['work-schedule']);
+  const { register, setValue, watch } = useFormContext<MonthlyRosterFormValues>();
+  const targetType = watch('targetType');
+
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-xs font-medium uppercase text-muted">
+        {t('work-schedule:monthlyRosters.fields.targetType')}
+      </span>
+      <select
+        {...register('targetType', {
+          onChange: (event) => {
+            const nextType = event.target.value as MonthlyRosterTargetType;
+            if (nextType === 'ORG_UNIT') {
+              setValue('targetTalentGroupId', '', { shouldDirty: true, shouldValidate: true });
+            } else {
+              setValue('targetOrgUnitId', '', { shouldDirty: true, shouldValidate: true });
+            }
+          },
+        })}
+        disabled={disabled}
+        className="rounded border border-border bg-panel px-3 py-2 text-sm outline-none ring-accent disabled:cursor-not-allowed disabled:opacity-70 focus:ring-2"
+      >
+        <option value="ORG_UNIT">
+          {t('work-schedule:monthlyRosters.targetTypes.ORG_UNIT')}
+        </option>
+        <option value="TALENT_GROUP">
+          {t('work-schedule:monthlyRosters.targetTypes.TALENT_GROUP')}
+        </option>
+      </select>
+      <FieldError<MonthlyRosterFormValues> name="targetType" />
+      <input type="hidden" value={targetType} readOnly />
+    </label>
+  );
+};
+
 export const MonthlyRosterCreateSurface = ({
   onCancel,
   onSubmit,
@@ -280,7 +349,12 @@ export const MonthlyRosterCreateSurface = ({
     await onSubmit({
       rosterMonth: parsed.data.rosterMonth,
       timezone: MONTHLY_ROSTER_TIMEZONE,
-      departmentOrgUnitId: parsed.data.departmentOrgUnitId,
+      targetType: parsed.data.targetType,
+      targetMode: 'EXACT_ONLY',
+      targetOrgUnitId:
+        parsed.data.targetType === 'ORG_UNIT' ? parsed.data.targetOrgUnitId : null,
+      targetTalentGroupId:
+        parsed.data.targetType === 'TALENT_GROUP' ? parsed.data.targetTalentGroupId : null,
       workPatternId: parsed.data.workPatternId,
       holidayCalendarId: parsed.data.holidayCalendarId,
       description: toNullableText(parsed.data.description),
@@ -326,12 +400,31 @@ export const MonthlyRosterCreateSurface = ({
           />
         </FormGrid>
         <FormGrid columns={3}>
+          <TargetTypeField />
           <ReferencePickerField
-            fieldName="departmentOrgUnitId"
-            pickerId="monthly-roster-department"
-            label={t('work-schedule:monthlyRosters.fields.departmentOrgUnitId')}
-            placeholder={t('work-schedule:monthlyRosters.pickers.departmentSearch')}
-            loadOptions={loadMonthlyRosterDepartmentOptions}
+            fieldName={
+              form.watch('targetType') === 'ORG_UNIT' ? 'targetOrgUnitId' : 'targetTalentGroupId'
+            }
+            pickerId={
+              form.watch('targetType') === 'ORG_UNIT'
+                ? 'monthly-roster-org-unit'
+                : 'monthly-roster-talent-group'
+            }
+            label={
+              form.watch('targetType') === 'ORG_UNIT'
+                ? t('work-schedule:monthlyRosters.fields.targetOrgUnitId')
+                : t('work-schedule:monthlyRosters.fields.targetTalentGroupId')
+            }
+            placeholder={
+              form.watch('targetType') === 'ORG_UNIT'
+                ? t('work-schedule:monthlyRosters.pickers.orgUnitSearch')
+                : t('work-schedule:monthlyRosters.pickers.talentGroupSearch')
+            }
+            loadOptions={
+              form.watch('targetType') === 'ORG_UNIT'
+                ? loadMonthlyRosterOrgUnitOptions
+                : loadMonthlyRosterTalentGroupOptions
+            }
           />
           <ReferencePickerField
             fieldName="workPatternId"
@@ -407,7 +500,14 @@ export const MonthlyRosterEditSurface = ({
             ...metadataPayload,
             rosterMonth: parsed.data.rosterMonth,
             timezone: MONTHLY_ROSTER_TIMEZONE,
-            departmentOrgUnitId: parsed.data.departmentOrgUnitId,
+            targetType: parsed.data.targetType,
+            targetMode: 'EXACT_ONLY',
+            targetOrgUnitId:
+              parsed.data.targetType === 'ORG_UNIT' ? parsed.data.targetOrgUnitId : null,
+            targetTalentGroupId:
+              parsed.data.targetType === 'TALENT_GROUP'
+                ? parsed.data.targetTalentGroupId
+                : null,
             workPatternId: parsed.data.workPatternId,
             holidayCalendarId: parsed.data.holidayCalendarId,
           },
@@ -472,13 +572,32 @@ export const MonthlyRosterEditSurface = ({
           />
         </FormGrid>
         <FormGrid columns={3}>
+          <TargetTypeField disabled={readOnly || structuralLocked} />
           <ReferencePickerField
             disabled={readOnly || structuralLocked}
-            fieldName="departmentOrgUnitId"
-            pickerId="monthly-roster-department"
-            label={t('work-schedule:monthlyRosters.fields.departmentOrgUnitId')}
-            placeholder={t('work-schedule:monthlyRosters.pickers.departmentSearch')}
-            loadOptions={loadMonthlyRosterDepartmentOptions}
+            fieldName={
+              form.watch('targetType') === 'ORG_UNIT' ? 'targetOrgUnitId' : 'targetTalentGroupId'
+            }
+            pickerId={
+              form.watch('targetType') === 'ORG_UNIT'
+                ? 'monthly-roster-org-unit'
+                : 'monthly-roster-talent-group'
+            }
+            label={
+              form.watch('targetType') === 'ORG_UNIT'
+                ? t('work-schedule:monthlyRosters.fields.targetOrgUnitId')
+                : t('work-schedule:monthlyRosters.fields.targetTalentGroupId')
+            }
+            placeholder={
+              form.watch('targetType') === 'ORG_UNIT'
+                ? t('work-schedule:monthlyRosters.pickers.orgUnitSearch')
+                : t('work-schedule:monthlyRosters.pickers.talentGroupSearch')
+            }
+            loadOptions={
+              form.watch('targetType') === 'ORG_UNIT'
+                ? loadMonthlyRosterOrgUnitOptions
+                : loadMonthlyRosterTalentGroupOptions
+            }
           />
           <ReferencePickerField
             disabled={readOnly || structuralLocked}

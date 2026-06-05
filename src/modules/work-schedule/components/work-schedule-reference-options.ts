@@ -6,7 +6,7 @@ import {
 import type { EmploymentProfileListItem } from '@modules/employment-profile/types/employment-profile.types';
 import { fetchOrgUnitDetail, fetchOrgUnits } from '@modules/org-unit/api/org-unit.api';
 import type { OrgUnitRecord } from '@modules/org-unit/types/org-unit.types';
-import { fetchTalentGroupDetail } from '@modules/talent-group/api/talent-group.api';
+import { fetchTalentGroupDetail, fetchTalentGroups } from '@modules/talent-group/api/talent-group.api';
 import type { TalentGroupRecord } from '@modules/talent-group/types/talent-group.types';
 import { fetchTalentDetail } from '@modules/talent/api/talent.api';
 import type { TalentRecord } from '@modules/talent/types/talent.types';
@@ -213,6 +213,64 @@ export const loadMonthlyRosterDepartmentOptions = async (
 
   return response.data.map(toDepartmentOption);
 };
+
+export const loadMonthlyRosterOrgUnitOptions = async (
+  search: string,
+): Promise<ReferenceOption[]> => {
+  const response = await fetchOrgUnits({
+    search: search || undefined,
+    status: 'ACTIVE',
+    limit: OPTION_LIMIT,
+    sortBy: 'name',
+    sortDirection: 'asc',
+  });
+
+  return response.data.map(toDepartmentOption);
+};
+
+export const loadMonthlyRosterOrgUnitOptionById = async (
+  orgUnitId: string,
+): Promise<ReferenceOption> => toDepartmentOption(await fetchOrgUnitDetail(orgUnitId));
+
+export const loadMonthlyRosterOrgUnitFilterOptions = async (
+  search: string,
+  selectedId?: string,
+): Promise<ReferenceOption[]> =>
+  mergeSelectedOption(
+    await loadMonthlyRosterOrgUnitOptions(search),
+    search,
+    selectedId,
+    loadMonthlyRosterOrgUnitOptionById,
+  );
+
+export const loadMonthlyRosterTalentGroupOptions = async (
+  search: string,
+): Promise<ReferenceOption[]> => {
+  const response = await fetchTalentGroups({
+    search: search || undefined,
+    status: 'ACTIVE',
+    limit: OPTION_LIMIT,
+    sortBy: 'name',
+    sortDirection: 'asc',
+  });
+
+  return response.data.map(toTalentGroupOption);
+};
+
+export const loadMonthlyRosterTalentGroupOptionById = async (
+  talentGroupId: string,
+): Promise<ReferenceOption> => toTalentGroupOption(await fetchTalentGroupDetail(talentGroupId));
+
+export const loadMonthlyRosterTalentGroupFilterOptions = async (
+  search: string,
+  selectedId?: string,
+): Promise<ReferenceOption[]> =>
+  mergeSelectedOption(
+    await loadMonthlyRosterTalentGroupOptions(search),
+    search,
+    selectedId,
+    loadMonthlyRosterTalentGroupOptionById,
+  );
 
 export const loadMonthlyRosterDepartmentOptionById = async (
   departmentOrgUnitId: string,

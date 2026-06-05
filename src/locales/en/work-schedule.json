@@ -572,7 +572,7 @@
   "monthlyRosters": {
     "page": {
       "title": "Monthly Rosters",
-      "subtitle": "Draft roster setup for exact-department monthly schedules."
+      "subtitle": "Draft roster setup for exact Org Unit or Talent Group monthly schedules."
     },
     "fields": {
       "rosterCode": "Roster code",
@@ -582,6 +582,10 @@
       "holidayCalendarId": "Holiday Calendar",
       "status": "Status",
       "timezone": "Timezone",
+      "target": "Target",
+      "targetType": "Target type",
+      "targetOrgUnitId": "Org Unit target",
+      "targetTalentGroupId": "Talent Group target",
       "scope": "Roster access scope",
       "description": "Description",
       "externalRef": "External reference",
@@ -606,6 +610,10 @@
       "global": "Global",
       "department": "Department"
     },
+    "targetTypes": {
+      "ORG_UNIT": "Org Unit",
+      "TALENT_GROUP": "Talent Group"
+    },
     "filters": {
       "searchPlaceholder": "Roster code prefix",
       "status": "Status",
@@ -628,7 +636,7 @@
       "caption": "Monthly roster list",
       "rosterCode": "Roster code",
       "rosterMonth": "Month",
-      "department": "Department",
+      "target": "Target",
       "workPattern": "Work pattern",
       "holidayCalendar": "Holiday calendar",
       "status": "Status",
@@ -653,6 +661,8 @@
       },
       "summary": {
         "eligibleProfiles": "Eligible profiles",
+        "includedMembers": "Included members",
+        "excludedMembers": "Excluded members",
         "standardCandidates": "Standard candidates",
         "suppressed": "Off-day suppressions",
         "exceptions": "Exceptions",
@@ -674,6 +684,21 @@
           "SUBJECT_OVERLAP": "Existing active Work Shift conflict",
           "CANDIDATE_SUBJECT_OVERLAP": "Candidate-to-candidate conflict"
         }
+      },
+      "excludedMembers": {
+        "title": "Excluded members",
+        "member": "Member",
+        "profile": "Linked Employment Profile",
+        "reason": "Reason"
+      },
+      "exclusionReasons": {
+        "MEMBERSHIP_INACTIVE": "Membership is inactive",
+        "TALENT_NOT_FOUND": "Talent record was not found",
+        "TALENT_INACTIVE": "Talent is not active",
+        "MISSING_LINKED_EMPLOYMENT_PROFILE": "Talent is not linked to an Employment Profile",
+        "EMPLOYMENT_PROFILE_NOT_FOUND": "Linked Employment Profile was not found",
+        "EMPLOYMENT_PROFILE_INACTIVE": "Linked Employment Profile is not active",
+        "DUPLICATE_EMPLOYMENT_PROFILE": "Employment Profile already included through another member"
       },
       "blockers": {
         "SUBJECT_OVERLAP": "This row overlaps an existing active Work Shift."
@@ -964,10 +989,12 @@
       "title": "Monthly roster actions"
     },
     "copy": {
-      "setupInvariants": "Choose one active Department Org Unit only. Child departments are not included. Global is access authority, not a company-wide roster target. The roster targets active employees, uses a global roster-generation Holiday Calendar, and keeps timezone Asia/Ho_Chi_Minh."
+      "setupInvariants": "Choose one active Org Unit or Talent Group target. Descendants and nested groups are not included. Global is access authority, not a company-wide roster target. The roster targets active Employment Profiles, uses a global roster-generation Holiday Calendar, and keeps timezone Asia/Ho_Chi_Minh."
     },
     "pickers": {
       "departmentSearch": "Search active departments by name or code",
+      "orgUnitSearch": "Search active Org Units by name or code",
+      "talentGroupSearch": "Search active Talent Groups by name or code",
       "workPatternSearch": "Search active Work Patterns by name or code",
       "holidayCalendarSearch": "Search active Holiday Calendars by name or code"
     }

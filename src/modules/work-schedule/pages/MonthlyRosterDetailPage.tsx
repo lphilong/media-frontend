@@ -378,12 +378,14 @@ export const MonthlyRosterDetailPage = (): JSX.Element => {
             <ReadOnlyFieldGrid
               fields={[
                 {
-                  key: 'department',
-                  label: t('work-schedule:monthlyRosters.fields.departmentOrgUnitId'),
-                  value: readReferenceDisplay(
-                    record.departmentOrgUnitRef,
-                    record.departmentOrgUnitId,
-                  ),
+                  key: 'target',
+                  label: t('work-schedule:monthlyRosters.fields.target'),
+                  value: `${t(
+                    `work-schedule:monthlyRosters.targetTypes.${record.targetType}`,
+                  )}: ${readReferenceDisplay(
+                    record.targetRef,
+                    record.targetOrgUnitId ?? record.targetTalentGroupId,
+                  )}`,
                 },
                 {
                   key: 'pattern',

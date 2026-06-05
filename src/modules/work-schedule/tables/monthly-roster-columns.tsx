@@ -24,6 +24,15 @@ const statusToneMap = {
   ARCHIVED: 'muted',
 } as const;
 
+const readTargetDisplay = (record: MonthlyRosterListItem, t: TFunction): string => {
+  const targetType = t(`work-schedule:monthlyRosters.targetTypes.${record.targetType}`);
+  const targetSummary = readReferenceDisplay(
+    record.targetRef,
+    record.targetOrgUnitId ?? record.targetTalentGroupId,
+  );
+  return `${targetType}: ${targetSummary}`;
+};
+
 export const createMonthlyRosterListColumns = (
   t: TFunction,
   handlers: MonthlyRosterListColumnHandlers,
@@ -38,10 +47,9 @@ export const createMonthlyRosterListColumns = (
     header: t('work-schedule:monthlyRosters.table.rosterMonth'),
   },
   {
-    accessorKey: 'departmentOrgUnitId',
-    header: t('work-schedule:monthlyRosters.table.department'),
-    cell: ({ row }) =>
-      readReferenceDisplay(row.original.departmentOrgUnitRef, row.original.departmentOrgUnitId),
+    accessorKey: 'targetRef',
+    header: t('work-schedule:monthlyRosters.table.target'),
+    cell: ({ row }) => readTargetDisplay(row.original, t),
   },
   {
     accessorKey: 'workPatternId',

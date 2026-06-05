@@ -255,6 +255,19 @@ export const MonthlyRosterPreviewPanel = ({
                   value: String(previewQuery.data.summary.totalEligibleProfiles),
                 },
                 {
+                  key: 'included-members',
+                  label: t('work-schedule:monthlyRosters.preview.summary.includedMembers'),
+                  value: String(
+                    previewQuery.data.summary.includedMemberCount ??
+                      previewQuery.data.summary.totalEligibleProfiles,
+                  ),
+                },
+                {
+                  key: 'excluded-members',
+                  label: t('work-schedule:monthlyRosters.preview.summary.excludedMembers'),
+                  value: String(previewQuery.data.summary.excludedMemberCount ?? 0),
+                },
+                {
                   key: 'standard',
                   label: t('work-schedule:monthlyRosters.preview.summary.standardCandidates'),
                   value: String(previewQuery.data.summary.totalStandardCandidateShifts),
@@ -308,6 +321,49 @@ export const MonthlyRosterPreviewPanel = ({
               ]}
               columns={3}
             />
+
+            {(previewQuery.data.excludedMembers ?? []).length > 0 ? (
+              <div className="rounded border border-border bg-panel p-3">
+                <h3 className="mb-3 text-sm font-semibold text-text">
+                  {t('work-schedule:monthlyRosters.preview.excludedMembers.title')}
+                </h3>
+                <div className="overflow-x-auto rounded border border-border">
+                  <table className="min-w-full divide-y divide-border text-left text-sm">
+                    <thead className="bg-bg text-xs uppercase text-muted">
+                      <tr>
+                        <th className="px-3 py-2">
+                          {t('work-schedule:monthlyRosters.preview.excludedMembers.member')}
+                        </th>
+                        <th className="px-3 py-2">
+                          {t('work-schedule:monthlyRosters.preview.excludedMembers.profile')}
+                        </th>
+                        <th className="px-3 py-2">
+                          {t('work-schedule:monthlyRosters.preview.excludedMembers.reason')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border bg-bg">
+                      {(previewQuery.data.excludedMembers ?? []).map((member) => (
+                        <tr key={member.memberId}>
+                          <td className="px-3 py-2 font-mono">{member.memberId}</td>
+                          <td className="px-3 py-2">
+                            {readReferenceDisplay(
+                              member.linkedEmploymentProfileRef,
+                              member.linkedEmploymentProfileId ?? '-',
+                            )}
+                          </td>
+                          <td className="px-3 py-2">
+                            {t(
+                              `work-schedule:monthlyRosters.preview.exclusionReasons.${member.reasonCode}`,
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
 
             <div className="rounded border border-border bg-panel p-3">
               <div className="mb-3 flex items-center justify-between gap-3">

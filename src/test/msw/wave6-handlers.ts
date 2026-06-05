@@ -67,6 +67,10 @@ type WorkShiftRecord = {
   sourceRosterMonth?: string | null;
   sourceDepartmentOrgUnitId?: string | null;
   sourceDepartmentOrgUnitRef?: ReferenceSummary | null;
+  sourceRosterTargetType?: 'ORG_UNIT' | 'TALENT_GROUP' | null;
+  sourceRosterTargetId?: string | null;
+  sourceRosterTargetMode?: 'EXACT_ONLY' | null;
+  sourceMemberIdentityType?: 'EMPLOYMENT_PROFILE' | null;
   sourceRosterLocalDate?: string | null;
   sourceRosterSlotKey?: string | null;
 };
@@ -195,7 +199,14 @@ type MonthlyRosterPreviewRowRecord = {
   previewRowId: string;
   monthlyRosterId: string;
   rosterMonth: string;
-  departmentOrgUnitId: string;
+  targetType: 'ORG_UNIT' | 'TALENT_GROUP';
+  targetMode: 'EXACT_ONLY';
+  targetOrgUnitId: string | null;
+  targetOrgUnitRef?: ReferenceSummary | null;
+  targetTalentGroupId: string | null;
+  targetTalentGroupRef?: ReferenceSummary | null;
+  targetRef?: ReferenceSummary | null;
+  departmentOrgUnitId: string | null;
   departmentOrgUnitRef?: ReferenceSummary | null;
   subjectEmploymentProfileId: string;
   subjectEmploymentProfileRef?: ReferenceSummary | null;
@@ -226,7 +237,14 @@ type MonthlyRosterRecord = {
   timezone: 'Asia/Ho_Chi_Minh';
   targetSubjectKind: 'EMPLOYMENT_PROFILE';
   targetOrgUnitMode: 'EXACT_ONLY';
-  departmentOrgUnitId: string;
+  targetType: 'ORG_UNIT' | 'TALENT_GROUP';
+  targetMode: 'EXACT_ONLY';
+  targetOrgUnitId: string | null;
+  targetOrgUnitRef?: ReferenceSummary | null;
+  targetTalentGroupId: string | null;
+  targetTalentGroupRef?: ReferenceSummary | null;
+  targetRef?: ReferenceSummary | null;
+  departmentOrgUnitId: string | null;
   departmentOrgUnitRef?: ReferenceSummary | null;
   workPatternId: string;
   workPatternRef?: ReferenceSummary | null;
@@ -526,6 +544,10 @@ const initialMonthlyRosters: MonthlyRosterRecord[] = [
     timezone: 'Asia/Ho_Chi_Minh',
     targetSubjectKind: 'EMPLOYMENT_PROFILE',
     targetOrgUnitMode: 'EXACT_ONLY',
+    targetType: 'ORG_UNIT',
+    targetMode: 'EXACT_ONLY',
+    targetOrgUnitId: 'ou-sales',
+    targetTalentGroupId: null,
     departmentOrgUnitId: 'ou-sales',
     workPatternId: 'pattern-active',
     holidayCalendarId: 'holiday-calendar-active',
@@ -573,6 +595,10 @@ const initialMonthlyRosters: MonthlyRosterRecord[] = [
     timezone: 'Asia/Ho_Chi_Minh',
     targetSubjectKind: 'EMPLOYMENT_PROFILE',
     targetOrgUnitMode: 'EXACT_ONLY',
+    targetType: 'ORG_UNIT',
+    targetMode: 'EXACT_ONLY',
+    targetOrgUnitId: 'ou-sales',
+    targetTalentGroupId: null,
     departmentOrgUnitId: 'ou-sales',
     workPatternId: 'pattern-active',
     holidayCalendarId: 'holiday-calendar-active',
@@ -968,6 +994,67 @@ const toNullableText = (value: unknown): string | null => {
   return text.length > 0 ? text : null;
 };
 
+const isMonthlyRosterTargetType = (value: unknown): value is 'ORG_UNIT' | 'TALENT_GROUP' =>
+  value === 'ORG_UNIT' || value === 'TALENT_GROUP';
+
+const readMonthlyRosterTargetPayload = (
+  body: Record<string, unknown>,
+):
+  | {
+      ok: true;
+      targetType: 'ORG_UNIT' | 'TALENT_GROUP';
+      targetOrgUnitId: string | null;
+      targetTalentGroupId: string | null;
+      departmentOrgUnitId: string | null;
+    }
+  | { ok: false; message: string } => {
+  if (!isMonthlyRosterTargetType(body.targetType)) {
+    return { ok: false, message: 'work-schedule:monthlyRosters.validation.required' };
+  }
+
+  if (body.targetMode !== 'EXACT_ONLY') {
+    return { ok: false, message: 'work-schedule:monthlyRosters.validation.required' };
+  }
+
+  if (body.targetType === 'ORG_UNIT') {
+    const targetOrgUnitId = toNullableText(body.targetOrgUnitId);
+    const departmentOrgUnitId = toNullableText(body.departmentOrgUnitId);
+    const targetTalentGroupId = toNullableText(body.targetTalentGroupId);
+    if (
+      !targetOrgUnitId ||
+      targetTalentGroupId ||
+      (departmentOrgUnitId && departmentOrgUnitId !== targetOrgUnitId)
+    ) {
+      return { ok: false, message: 'work-schedule:monthlyRosters.validation.required' };
+    }
+
+    return {
+      ok: true,
+      targetType: 'ORG_UNIT',
+      targetOrgUnitId,
+      targetTalentGroupId: null,
+      departmentOrgUnitId: targetOrgUnitId,
+    };
+  }
+
+  const targetTalentGroupId = toNullableText(body.targetTalentGroupId);
+  if (
+    !targetTalentGroupId ||
+    toNullableText(body.targetOrgUnitId) ||
+    toNullableText(body.departmentOrgUnitId)
+  ) {
+    return { ok: false, message: 'work-schedule:monthlyRosters.validation.required' };
+  }
+
+  return {
+    ok: true,
+    targetType: 'TALENT_GROUP',
+    targetOrgUnitId: null,
+    targetTalentGroupId,
+    departmentOrgUnitId: null,
+  };
+};
+
 const toStringArray = (value: unknown): string[] | undefined => {
   if (!Array.isArray(value)) {
     return undefined;
@@ -1201,7 +1288,21 @@ const readMonthlyRosterRef = (monthlyRosterId?: string | null): ReferenceSummary
 
 const withMonthlyRosterRefs = <TRecord extends MonthlyRosterRecord>(record: TRecord): TRecord => ({
   ...record,
-  departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
+  targetOrgUnitRef: record.targetOrgUnitId ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null) : null,
+  targetTalentGroupRef: record.targetTalentGroupId
+    ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
+    : null,
+  targetRef:
+    record.targetType === 'TALENT_GROUP'
+      ? record.targetTalentGroupId
+        ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
+        : null
+      : record.targetOrgUnitId
+        ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null)
+        : null,
+  departmentOrgUnitRef: record.departmentOrgUnitId
+    ? (orgUnitRefs.get(record.departmentOrgUnitId) ?? null)
+    : null,
   workPatternRef: workPatternRefs.get(record.workPatternId) ?? null,
   holidayCalendarRef: holidayCalendarRefs.get(record.holidayCalendarId) ?? null,
   exceptions: record.exceptions.map((exception) => ({
@@ -1294,6 +1395,9 @@ const toWorkShiftListItem = (record: WorkShiftRecord) => ({
   sourceRosterId: record.sourceRosterId ?? null,
   sourceRosterRef: readMonthlyRosterRef(record.sourceRosterId),
   sourceRosterMonth: record.sourceRosterMonth ?? null,
+  sourceRosterTargetType: record.sourceRosterTargetType ?? null,
+  sourceRosterTargetId: record.sourceRosterTargetId ?? null,
+  sourceRosterTargetMode: record.sourceRosterTargetMode ?? null,
   sourceRosterLocalDate: record.sourceRosterLocalDate ?? null,
   sourceRosterSlotKey: record.sourceRosterSlotKey ?? null,
 });
@@ -1330,6 +1434,7 @@ const toWorkShiftDetail = (record: WorkShiftRecord) => ({
     : null,
   sourceExceptionId: record.sourceExceptionId ?? null,
   sourceGenerationRunId: record.sourceGenerationRunId ?? null,
+  sourceMemberIdentityType: record.sourceMemberIdentityType ?? null,
   sourceDepartmentOrgUnitId: record.sourceDepartmentOrgUnitId ?? null,
   sourceDepartmentOrgUnitRef: record.sourceDepartmentOrgUnitId
     ? (orgUnitRefs.get(record.sourceDepartmentOrgUnitId) ?? null)
@@ -1600,6 +1705,9 @@ const filterMonthlyRosterRows = (records: MonthlyRosterRecord[], searchParams: U
   }
 
   const rosterMonth = searchParams.get('rosterMonth');
+  const targetType = searchParams.get('targetType');
+  const targetOrgUnitId = searchParams.get('targetOrgUnitId');
+  const targetTalentGroupId = searchParams.get('targetTalentGroupId');
   const departmentOrgUnitId = searchParams.get('departmentOrgUnitId');
   const workPatternId = searchParams.get('workPatternId');
   const holidayCalendarId = searchParams.get('holidayCalendarId');
@@ -1607,6 +1715,15 @@ const filterMonthlyRosterRows = (records: MonthlyRosterRecord[], searchParams: U
 
   if (rosterMonth) {
     rows = rows.filter((item) => item.rosterMonth === rosterMonth);
+  }
+  if (targetType) {
+    rows = rows.filter((item) => item.targetType === targetType);
+  }
+  if (targetOrgUnitId) {
+    rows = rows.filter((item) => item.targetOrgUnitId === targetOrgUnitId);
+  }
+  if (targetTalentGroupId) {
+    rows = rows.filter((item) => item.targetTalentGroupId === targetTalentGroupId);
   }
   if (departmentOrgUnitId) {
     rows = rows.filter((item) => item.departmentOrgUnitId === departmentOrgUnitId);
@@ -1631,8 +1748,28 @@ const toMonthlyRosterListItem = (record: MonthlyRosterRecord) => ({
   timezone: record.timezone,
   targetSubjectKind: record.targetSubjectKind,
   targetOrgUnitMode: record.targetOrgUnitMode,
+  targetType: record.targetType,
+  targetMode: record.targetMode,
+  targetOrgUnitId: record.targetOrgUnitId,
+  targetOrgUnitRef: record.targetOrgUnitId
+    ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null)
+    : null,
+  targetTalentGroupId: record.targetTalentGroupId,
+  targetTalentGroupRef: record.targetTalentGroupId
+    ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
+    : null,
+  targetRef:
+    record.targetType === 'TALENT_GROUP'
+      ? record.targetTalentGroupId
+        ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
+        : null
+      : record.targetOrgUnitId
+        ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null)
+        : null,
   departmentOrgUnitId: record.departmentOrgUnitId,
-  departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
+  departmentOrgUnitRef: record.departmentOrgUnitId
+    ? (orgUnitRefs.get(record.departmentOrgUnitId) ?? null)
+    : null,
   workPatternId: record.workPatternId,
   workPatternRef: workPatternRefs.get(record.workPatternId) ?? null,
   holidayCalendarId: record.holidayCalendarId,
@@ -1661,8 +1798,26 @@ const createPreviewRow = (
 ): MonthlyRosterPreviewRowRecord => ({
   monthlyRosterId: record.monthlyRosterId,
   rosterMonth: record.rosterMonth,
+  targetType: record.targetType,
+  targetMode: record.targetMode,
+  targetOrgUnitId: record.targetOrgUnitId,
+  targetOrgUnitRef: record.targetOrgUnitId ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null) : null,
+  targetTalentGroupId: record.targetTalentGroupId,
+  targetTalentGroupRef: record.targetTalentGroupId
+    ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
+    : null,
+  targetRef:
+    record.targetType === 'TALENT_GROUP'
+      ? record.targetTalentGroupId
+        ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
+        : null
+      : record.targetOrgUnitId
+        ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null)
+        : null,
   departmentOrgUnitId: record.departmentOrgUnitId,
-  departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
+  departmentOrgUnitRef: record.departmentOrgUnitId
+    ? (orgUnitRefs.get(record.departmentOrgUnitId) ?? null)
+    : null,
   subjectEmploymentProfileRef: employmentProfileRefs.get(row.subjectEmploymentProfileId) ?? null,
   sourceExceptionId: null,
   sourceRosterSlotKey: row.rowKind === 'STANDARD' ? 'STANDARD' : null,
@@ -1795,13 +1950,65 @@ const buildMonthlyRosterPreview = (record: MonthlyRosterRecord) => {
   overlappingSpecialRow.blockers = ['SUBJECT_OVERLAP'];
 
   const rows = [standardRow, holidayRow, offRow, changeRow, specialRow, overlappingSpecialRow];
+  const eligibleProfiles = [
+    {
+      subjectEmploymentProfileId: 'ep-001',
+      subjectEmploymentProfileRef: employmentProfileRefs.get('ep-001') ?? null,
+      employmentStatus: 'ACTIVE',
+      departmentOrgUnitId: record.departmentOrgUnitId,
+      departmentOrgUnitRef: record.departmentOrgUnitId
+        ? (orgUnitRefs.get(record.departmentOrgUnitId) ?? null)
+        : null,
+    },
+    {
+      subjectEmploymentProfileId: 'ep-002',
+      subjectEmploymentProfileRef: employmentProfileRefs.get('ep-002') ?? null,
+      employmentStatus: 'ACTIVE',
+      departmentOrgUnitId: record.departmentOrgUnitId,
+      departmentOrgUnitRef: record.departmentOrgUnitId
+        ? (orgUnitRefs.get(record.departmentOrgUnitId) ?? null)
+        : null,
+    },
+  ];
+  const excludedMembers =
+    record.targetType === 'TALENT_GROUP'
+      ? [
+          {
+            talentGroupMemberId: `${record.monthlyRosterId}:member-unlinked`,
+            talentId: 'talent-unlinked',
+            talentRef: null,
+            linkedEmploymentProfileId: null,
+            linkedEmploymentProfileRef: null,
+            reasonCode: 'MISSING_LINKED_EMPLOYMENT_PROFILE',
+            reasonDetail: 'Talent is not linked to an active Employment Profile.',
+          },
+        ]
+      : [];
 
   return {
     monthlyRosterId: record.monthlyRosterId,
     rosterMonth: record.rosterMonth,
     timezone: record.timezone,
+    targetType: record.targetType,
+    targetMode: record.targetMode,
+    targetOrgUnitId: record.targetOrgUnitId,
+    targetOrgUnitRef: record.targetOrgUnitId ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null) : null,
+    targetTalentGroupId: record.targetTalentGroupId,
+    targetTalentGroupRef: record.targetTalentGroupId
+      ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
+      : null,
+    targetRef:
+      record.targetType === 'TALENT_GROUP'
+        ? record.targetTalentGroupId
+          ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
+          : null
+        : record.targetOrgUnitId
+          ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null)
+          : null,
     departmentOrgUnitId: record.departmentOrgUnitId,
-    departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
+    departmentOrgUnitRef: record.departmentOrgUnitId
+      ? (orgUnitRefs.get(record.departmentOrgUnitId) ?? null)
+      : null,
     workPatternId: record.workPatternId,
     workPatternRef: workPatternRefs.get(record.workPatternId) ?? null,
     holidayCalendarId: record.holidayCalendarId,
@@ -1810,25 +2017,13 @@ const buildMonthlyRosterPreview = (record: MonthlyRosterRecord) => {
     draftVersion: record.draftVersion,
     currentPreviewHash: record.previewHash,
     computedPreviewHash: `computed-${record.monthlyRosterId}-${record.draftVersion}`,
-    eligibleProfiles: [
-      {
-        subjectEmploymentProfileId: 'ep-001',
-        subjectEmploymentProfileRef: employmentProfileRefs.get('ep-001') ?? null,
-        employmentStatus: 'ACTIVE',
-        departmentOrgUnitId: record.departmentOrgUnitId,
-        departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
-      },
-      {
-        subjectEmploymentProfileId: 'ep-002',
-        subjectEmploymentProfileRef: employmentProfileRefs.get('ep-002') ?? null,
-        employmentStatus: 'ACTIVE',
-        departmentOrgUnitId: record.departmentOrgUnitId,
-        departmentOrgUnitRef: orgUnitRefs.get(record.departmentOrgUnitId) ?? null,
-      },
-    ],
+    eligibleProfiles,
+    excludedMembers,
     rows,
     summary: {
       totalEligibleProfiles: 2,
+      includedMemberCount: 2,
+      excludedMemberCount: excludedMembers.length,
       totalStandardCandidateShifts: 2,
       totalHolidaySuppressions: rows.filter((row) => row.rowKind === 'HOLIDAY_SUPPRESSED').length,
       totalWorkingToOff: rows.filter((row) => row.rowKind === 'WORKING_TO_OFF').length,
@@ -1837,6 +2032,7 @@ const buildMonthlyRosterPreview = (record: MonthlyRosterRecord) => {
       totalCandidateShiftsAfterExceptions: rows.filter((row) => row.isCandidateShift).length,
       totalConflicts: rows.reduce((total, row) => total + row.conflicts.length, 0),
     },
+    warnings: [],
   };
 };
 
@@ -2510,6 +2706,10 @@ export const wave6Handlers = [
         'rosterCode',
         'rosterMonth',
         'timezone',
+        'targetType',
+        'targetMode',
+        'targetOrgUnitId',
+        'targetTalentGroupId',
         'departmentOrgUnitId',
         'workPatternId',
         'holidayCalendarId',
@@ -2531,12 +2731,14 @@ export const wave6Handlers = [
     }
     const requestedRosterCode = toNullableText(body.rosterCode);
     const rosterMonth = toNullableText(body.rosterMonth);
-    const departmentOrgUnitId = toNullableText(body.departmentOrgUnitId);
+    const target = readMonthlyRosterTargetPayload(body);
+    if (!target.ok) {
+      return HttpResponse.json({ message: target.message }, { status: 422 });
+    }
     const workPatternId = toNullableText(body.workPatternId);
     const holidayCalendarId = toNullableText(body.holidayCalendarId);
     if (
       !rosterMonth ||
-      !departmentOrgUnitId ||
       !workPatternId ||
       !holidayCalendarId ||
       body.timezone !== 'Asia/Ho_Chi_Minh'
@@ -2549,7 +2751,9 @@ export const wave6Handlers = [
     if (
       monthlyRosters.some(
         (item) =>
-          item.departmentOrgUnitId === departmentOrgUnitId &&
+          item.targetType === target.targetType &&
+          item.targetOrgUnitId === target.targetOrgUnitId &&
+          item.targetTalentGroupId === target.targetTalentGroupId &&
           item.rosterMonth === rosterMonth &&
           item.status !== 'ARCHIVED',
       )
@@ -2570,7 +2774,11 @@ export const wave6Handlers = [
       timezone: 'Asia/Ho_Chi_Minh',
       targetSubjectKind: 'EMPLOYMENT_PROFILE',
       targetOrgUnitMode: 'EXACT_ONLY',
-      departmentOrgUnitId,
+      targetType: target.targetType,
+      targetMode: 'EXACT_ONLY',
+      targetOrgUnitId: target.targetOrgUnitId,
+      targetTalentGroupId: target.targetTalentGroupId,
+      departmentOrgUnitId: target.departmentOrgUnitId,
       workPatternId,
       holidayCalendarId,
       status: 'DRAFT',
@@ -2641,6 +2849,10 @@ export const wave6Handlers = [
       !hasOnlyKeys(body, [
         'rosterMonth',
         'timezone',
+        'targetType',
+        'targetMode',
+        'targetOrgUnitId',
+        'targetTalentGroupId',
         'departmentOrgUnitId',
         'workPatternId',
         'holidayCalendarId',
@@ -2662,6 +2874,9 @@ export const wave6Handlers = [
     }
     const structuralChange =
       body.rosterMonth !== undefined ||
+      body.targetType !== undefined ||
+      body.targetOrgUnitId !== undefined ||
+      body.targetTalentGroupId !== undefined ||
       body.departmentOrgUnitId !== undefined ||
       body.workPatternId !== undefined ||
       body.holidayCalendarId !== undefined;
@@ -2671,9 +2886,43 @@ export const wave6Handlers = [
         { status: 409 },
       );
     }
+    if (body.targetMode !== undefined && body.targetMode !== 'EXACT_ONLY') {
+      return HttpResponse.json(
+        { message: 'work-schedule:monthlyRosters.validation.required' },
+        { status: 422 },
+      );
+    }
     record.rosterMonth = toNullableText(body.rosterMonth) ?? record.rosterMonth;
-    record.departmentOrgUnitId =
-      toNullableText(body.departmentOrgUnitId) ?? record.departmentOrgUnitId;
+    if (
+      body.targetType !== undefined ||
+      body.targetMode !== undefined ||
+      body.targetOrgUnitId !== undefined ||
+      body.targetTalentGroupId !== undefined ||
+      body.departmentOrgUnitId !== undefined
+    ) {
+      const target = readMonthlyRosterTargetPayload({
+        targetType: body.targetType ?? record.targetType,
+        targetMode: body.targetMode ?? record.targetMode,
+        targetOrgUnitId:
+          body.targetOrgUnitId !== undefined ? body.targetOrgUnitId : record.targetOrgUnitId,
+        targetTalentGroupId:
+          body.targetTalentGroupId !== undefined
+            ? body.targetTalentGroupId
+            : record.targetTalentGroupId,
+        departmentOrgUnitId:
+          body.departmentOrgUnitId !== undefined
+            ? body.departmentOrgUnitId
+            : record.departmentOrgUnitId,
+      });
+      if (!target.ok) {
+        return HttpResponse.json({ message: target.message }, { status: 422 });
+      }
+      record.targetType = target.targetType;
+      record.targetMode = 'EXACT_ONLY';
+      record.targetOrgUnitId = target.targetOrgUnitId;
+      record.targetTalentGroupId = target.targetTalentGroupId;
+      record.departmentOrgUnitId = target.departmentOrgUnitId;
+    }
     record.workPatternId = toNullableText(body.workPatternId) ?? record.workPatternId;
     record.holidayCalendarId = toNullableText(body.holidayCalendarId) ?? record.holidayCalendarId;
     record.description =
@@ -2839,6 +3088,10 @@ export const wave6Handlers = [
           sourceGenerationRunId,
           sourceRosterMonth: record.rosterMonth,
           sourceDepartmentOrgUnitId: record.departmentOrgUnitId,
+          sourceRosterTargetType: record.targetType,
+          sourceRosterTargetId: record.targetOrgUnitId ?? record.targetTalentGroupId,
+          sourceRosterTargetMode: record.targetMode,
+          sourceMemberIdentityType: 'EMPLOYMENT_PROFILE',
           sourceRosterLocalDate: row.localDate,
           sourceRosterSlotKey: row.sourceRosterSlotKey ?? 'STANDARD',
         };
@@ -3487,6 +3740,10 @@ export const wave6Handlers = [
       sourceGenerationRunId: null,
       sourceRosterMonth: null,
       sourceDepartmentOrgUnitId: null,
+      sourceRosterTargetType: null,
+      sourceRosterTargetId: null,
+      sourceRosterTargetMode: null,
+      sourceMemberIdentityType: null,
       sourceRosterLocalDate: null,
       sourceRosterSlotKey: null,
     };

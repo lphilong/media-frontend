@@ -199,10 +199,14 @@ const EmploymentProfilePickerField = ({
     formState: { errors },
   } = useFormContext<ExceptionFormValues>();
   const value = watch('subjectEmploymentProfileId');
+  const orgUnitFilter =
+    roster.targetType === 'ORG_UNIT'
+      ? (roster.targetOrgUnitId ?? roster.departmentOrgUnitId ?? undefined)
+      : undefined;
   const loadOptions = useCallback(
     (search: string) =>
-      loadMonthlyRosterEmploymentProfileOptions(search, roster.departmentOrgUnitId),
-    [roster.departmentOrgUnitId],
+      loadMonthlyRosterEmploymentProfileOptions(search, orgUnitFilter),
+    [orgUnitFilter],
   );
 
   return (

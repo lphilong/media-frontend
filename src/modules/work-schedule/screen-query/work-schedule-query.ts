@@ -41,6 +41,7 @@ const workShiftStatusSchema = z.enum(['ACTIVE', 'CANCELLED', 'ARCHIVED']).option
 const workPatternStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'ARCHIVED']).optional();
 const holidayCalendarStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'ARCHIVED']).optional();
 const monthlyRosterStatusSchema = z.enum(['DRAFT', 'PUBLISHED', 'LOCKED', 'ARCHIVED']).optional();
+const monthlyRosterTargetTypeSchema = z.enum(['ORG_UNIT', 'TALENT_GROUP']).optional();
 const rosterMonthSchema = z
   .string()
   .trim()
@@ -112,6 +113,9 @@ const holidayCalendarListSchema = z.object({
 const monthlyRosterListSchema = z.object({
   status: monthlyRosterStatusSchema,
   rosterMonth: rosterMonthSchema,
+  targetType: monthlyRosterTargetTypeSchema,
+  targetOrgUnitId: idSchema.optional(),
+  targetTalentGroupId: idSchema.optional(),
   departmentOrgUnitId: idSchema.optional(),
   workPatternId: idSchema.optional(),
   holidayCalendarId: idSchema.optional(),
@@ -519,7 +523,46 @@ export const monthlyRosterListQueryConfig = defineScreenQueryConfig({
   id: 'work-schedule.monthly-rosters.flat-list',
   schema: monthlyRosterListSchema,
   cursorKey: 'cursor',
-  normalize: (query) => ({ ...query }),
+  normalize: (query) => {
+    const normalized = { ...query };
+
+    if (normalized.targetType === 'ORG_UNIT') {
+      normalized.targetTalentGroupId = undefined;
+      normalized.departmentOrgUnitId = undefined;
+      return normalized;
+    }
+
+    if (normalized.targetType === 'TALENT_GROUP') {
+      normalized.targetOrgUnitId = undefined;
+      normalized.departmentOrgUnitId = undefined;
+      return normalized;
+    }
+
+    if (normalized.targetOrgUnitId && !normalized.targetTalentGroupId) {
+      normalized.targetType = 'ORG_UNIT';
+      normalized.departmentOrgUnitId = undefined;
+      return normalized;
+    }
+
+    if (normalized.targetTalentGroupId && !normalized.targetOrgUnitId) {
+      normalized.targetType = 'TALENT_GROUP';
+      normalized.departmentOrgUnitId = undefined;
+      return normalized;
+    }
+
+    if (normalized.departmentOrgUnitId) {
+      normalized.targetType = 'ORG_UNIT';
+      normalized.targetOrgUnitId = normalized.departmentOrgUnitId;
+      normalized.targetTalentGroupId = undefined;
+      normalized.departmentOrgUnitId = undefined;
+      return normalized;
+    }
+
+    normalized.targetOrgUnitId = undefined;
+    normalized.targetTalentGroupId = undefined;
+    normalized.departmentOrgUnitId = undefined;
+    return normalized;
+  },
   capabilities: {
     surface: 'flat-list',
     search: {
@@ -538,6 +581,9 @@ export const monthlyRosterListQueryConfig = defineScreenQueryConfig({
     allowedFilterKeys: [
       'status',
       'rosterMonth',
+      'targetType',
+      'targetOrgUnitId',
+      'targetTalentGroupId',
       'departmentOrgUnitId',
       'workPatternId',
       'holidayCalendarId',

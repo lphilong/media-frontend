@@ -6,8 +6,9 @@ import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import {
-  loadMonthlyRosterDepartmentFilterOptions,
   loadMonthlyRosterHolidayCalendarFilterOptions,
+  loadMonthlyRosterOrgUnitFilterOptions,
+  loadMonthlyRosterTalentGroupFilterOptions,
   loadMonthlyRosterWorkPatternFilterOptions,
 } from '@modules/work-schedule/components/work-schedule-reference-options';
 import { MonthlyRosterCreateSurface } from '@modules/work-schedule/forms/monthly-roster-mutation-forms';
@@ -56,6 +57,7 @@ type RoutePatchOptions = {
 };
 
 const statusOptions = ['', 'DRAFT', 'PUBLISHED', 'LOCKED', 'ARCHIVED'] as const;
+const targetTypeOptions = ['', 'ORG_UNIT', 'TALENT_GROUP'] as const;
 const readErrorMessage = (
   t: (key: string) => string,
   error: NormalizedApiError | null | undefined,
@@ -236,10 +238,14 @@ export const MonthlyRosterListPage = (): JSX.Element => {
 
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
-  const loadDepartmentFilterOptions = useCallback(
+  const loadOrgUnitFilterOptions = useCallback(
+    (search: string) => loadMonthlyRosterOrgUnitFilterOptions(search, listQuery.targetOrgUnitId),
+    [listQuery.targetOrgUnitId],
+  );
+  const loadTalentGroupFilterOptions = useCallback(
     (search: string) =>
-      loadMonthlyRosterDepartmentFilterOptions(search, listQuery.departmentOrgUnitId),
-    [listQuery.departmentOrgUnitId],
+      loadMonthlyRosterTalentGroupFilterOptions(search, listQuery.targetTalentGroupId),
+    [listQuery.targetTalentGroupId],
   );
   const loadWorkPatternFilterOptions = useCallback(
     (search: string) => loadMonthlyRosterWorkPatternFilterOptions(search, listQuery.workPatternId),
@@ -269,7 +275,9 @@ export const MonthlyRosterListPage = (): JSX.Element => {
     [],
   );
   const moreFilterCount = [
-    listQuery.departmentOrgUnitId,
+    listQuery.targetType,
+    listQuery.targetOrgUnitId,
+    listQuery.targetTalentGroupId,
     listQuery.workPatternId,
     listQuery.holidayCalendarId,
   ].filter((value) => value !== undefined && value !== '').length;
@@ -278,6 +286,9 @@ export const MonthlyRosterListPage = (): JSX.Element => {
       search: undefined,
       status: undefined,
       rosterMonth: undefined,
+      targetType: undefined,
+      targetOrgUnitId: undefined,
+      targetTalentGroupId: undefined,
       departmentOrgUnitId: undefined,
       workPatternId: undefined,
       holidayCalendarId: undefined,
@@ -314,12 +325,36 @@ export const MonthlyRosterListPage = (): JSX.Element => {
       });
     }
 
-    if (listQuery.departmentOrgUnitId) {
+    if (listQuery.targetType) {
       items.push({
-        id: 'department',
-        label: t('work-schedule:monthlyRosters.filters.departmentOrgUnitId'),
-        value: filterOptionLabels.department ?? t('work-schedule:filterChips.selectedDepartment'),
-        onClear: () => patchQuery({ departmentOrgUnitId: undefined }),
+        id: 'target-type',
+        label: t('work-schedule:monthlyRosters.fields.targetType'),
+        value: t(`work-schedule:monthlyRosters.targetTypes.${listQuery.targetType}`),
+        onClear: () =>
+          patchQuery({
+            targetType: undefined,
+            targetOrgUnitId: undefined,
+            targetTalentGroupId: undefined,
+            departmentOrgUnitId: undefined,
+          }),
+      });
+    }
+
+    if (listQuery.targetOrgUnitId) {
+      items.push({
+        id: 'target-org-unit',
+        label: t('work-schedule:monthlyRosters.fields.targetOrgUnitId'),
+        value: filterOptionLabels.targetOrgUnit ?? listQuery.targetOrgUnitId,
+        onClear: () => patchQuery({ targetOrgUnitId: undefined, departmentOrgUnitId: undefined }),
+      });
+    }
+
+    if (listQuery.targetTalentGroupId) {
+      items.push({
+        id: 'target-talent-group',
+        label: t('work-schedule:monthlyRosters.fields.targetTalentGroupId'),
+        value: filterOptionLabels.targetTalentGroup ?? listQuery.targetTalentGroupId,
+        onClear: () => patchQuery({ targetTalentGroupId: undefined }),
       });
     }
 
@@ -345,14 +380,17 @@ export const MonthlyRosterListPage = (): JSX.Element => {
 
     return items;
   }, [
-    filterOptionLabels.department,
     filterOptionLabels.holidayCalendar,
+    filterOptionLabels.targetOrgUnit,
+    filterOptionLabels.targetTalentGroup,
     filterOptionLabels.workPattern,
-    listQuery.departmentOrgUnitId,
     listQuery.holidayCalendarId,
     listQuery.rosterMonth,
     listQuery.search,
     listQuery.status,
+    listQuery.targetOrgUnitId,
+    listQuery.targetTalentGroupId,
+    listQuery.targetType,
     listQuery.workPatternId,
     patchQuery,
     t,
@@ -391,17 +429,76 @@ export const MonthlyRosterListPage = (): JSX.Element => {
               isOpen={isMoreFiltersOpen}
               onClose={() => setIsMoreFiltersOpen(false)}
             >
-              <ReferenceFilterField
-                label={t('work-schedule:monthlyRosters.filters.departmentOrgUnitId')}
-                pickerId="monthly-roster-filter-department"
-                value={listQuery.departmentOrgUnitId}
-                loadOptions={loadDepartmentFilterOptions}
-                onChange={(value) => patchQuery({ departmentOrgUnitId: value })}
-                placeholder={t('work-schedule:monthlyRosters.pickers.departmentSearch')}
-                clearLabel={t('common:actions.clear')}
-                className="min-w-[240px]"
-                onSelectedOptionChange={(option) => rememberFilterOption('department', option)}
-              />
+              <label className="flex min-w-[220px] flex-col gap-1">
+                <span className="text-xs font-medium uppercase text-muted">
+                  {t('work-schedule:monthlyRosters.fields.targetType')}
+                </span>
+                <select
+                  value={listQuery.targetType ?? ''}
+                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                  onChange={(event) => {
+                    const targetType = event.target.value || undefined;
+                    patchQuery({
+                      targetType,
+                      targetOrgUnitId: undefined,
+                      targetTalentGroupId: undefined,
+                      departmentOrgUnitId: undefined,
+                    });
+                  }}
+                >
+                  {targetTypeOptions.map((targetType) => (
+                    <option key={targetType || 'default'} value={targetType}>
+                      {targetType
+                        ? t(`work-schedule:monthlyRosters.targetTypes.${targetType}`)
+                        : t('work-schedule:monthlyRosters.fields.target')}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {listQuery.targetType !== 'TALENT_GROUP' ? (
+                <ReferenceFilterField
+                  label={t('work-schedule:monthlyRosters.fields.targetOrgUnitId')}
+                  pickerId="monthly-roster-filter-org-unit"
+                  value={listQuery.targetOrgUnitId}
+                  loadOptions={loadOrgUnitFilterOptions}
+                  onChange={(value) =>
+                    patchQuery({
+                      targetType: value ? 'ORG_UNIT' : listQuery.targetType,
+                      targetOrgUnitId: value,
+                      targetTalentGroupId: undefined,
+                      departmentOrgUnitId: undefined,
+                    })
+                  }
+                  placeholder={t('work-schedule:monthlyRosters.pickers.orgUnitSearch')}
+                  clearLabel={t('common:actions.clear')}
+                  className="min-w-[240px]"
+                  onSelectedOptionChange={(option) =>
+                    rememberFilterOption('targetOrgUnit', option)
+                  }
+                />
+              ) : null}
+              {listQuery.targetType === 'TALENT_GROUP' ? (
+                <ReferenceFilterField
+                  label={t('work-schedule:monthlyRosters.fields.targetTalentGroupId')}
+                  pickerId="monthly-roster-filter-talent-group"
+                  value={listQuery.targetTalentGroupId}
+                  loadOptions={loadTalentGroupFilterOptions}
+                  onChange={(value) =>
+                    patchQuery({
+                      targetType: value ? 'TALENT_GROUP' : listQuery.targetType,
+                      targetOrgUnitId: undefined,
+                      targetTalentGroupId: value,
+                      departmentOrgUnitId: undefined,
+                    })
+                  }
+                  placeholder={t('work-schedule:monthlyRosters.pickers.talentGroupSearch')}
+                  clearLabel={t('common:actions.clear')}
+                  className="min-w-[240px]"
+                  onSelectedOptionChange={(option) =>
+                    rememberFilterOption('targetTalentGroup', option)
+                  }
+                />
+              ) : null}
               <ReferenceFilterField
                 label={t('work-schedule:monthlyRosters.filters.workPatternId')}
                 pickerId="monthly-roster-filter-work-pattern"
