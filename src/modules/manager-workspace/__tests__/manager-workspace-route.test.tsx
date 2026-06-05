@@ -160,6 +160,52 @@ describe('/manager workspace route', () => {
 
     expect(await screen.findByTestId('admin-shell-main')).toBeInTheDocument();
     expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-kpi')).not.toBeInTheDocument();
+  });
+
+  it('redirects manager-only Admin KPI list entry to the Manager KPI workspace', async () => {
+    await renderRoute('/kpi', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
+    });
+
+    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(await screen.findByTestId('manager-kpi-tab-unit')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
+  });
+
+  it('redirects manager-only Admin KPI detail entry to the Manager KPI detail route', async () => {
+    await renderRoute('/kpi/plans/kpi-plan-org-unit', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
+    });
+
+    expect(await screen.findByTestId('manager-kpi-detail')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Operations unit KPI' })).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
+  });
+
+  it('keeps Admin KPI route ownership for actors with global and managed KPI posture', async () => {
+    await renderRoute('/kpi/plans/kpi-plan-org-unit', () => {
+      setMockCurrentActorCapabilities(
+        managerCapabilities({
+          permissions: [
+            'kpi.read',
+            'kpi.readProgress',
+            'kpi.enterActual',
+            'kpi.correctActual',
+            'kpi.manageAllocation',
+          ],
+          scopeGrants: {
+            kpi: ['global', 'managedGroup'],
+          },
+        }),
+      );
+    });
+
+    expect(await screen.findByTestId('admin-shell-main')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Operations unit KPI' })).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
   });
 
   it('renders no-profile and no-assignment readiness without exposing KPI tabs', async () => {

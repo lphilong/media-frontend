@@ -1373,4 +1373,42 @@ describe('/self-service route', () => {
     expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
     expect(screen.queryByText('Event Assignment')).not.toBeInTheDocument();
   });
+
+  it('keeps TALENT_STAFF_SELF denied from the Admin KPI route without self-service redirect', async () => {
+    let adminKpiCalls = 0;
+    server.use(
+      http.get('*/admin/kpi*', () => {
+        adminKpiCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/kpi');
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'My KPI' })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(adminKpiCalls).toBe(0);
+    });
+  });
+
+  it('keeps TALENT_STAFF_SELF denied from raw Admin KPI detail without self-service redirect', async () => {
+    let adminKpiCalls = 0;
+    server.use(
+      http.get('*/admin/kpi*', () => {
+        adminKpiCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/kpi/plans/kpi-plan-self-org-unit-current');
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'My KPI' })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(adminKpiCalls).toBe(0);
+    });
+  });
 });

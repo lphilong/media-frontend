@@ -18,6 +18,7 @@ import {
   hasAnyPermission,
   hasScopeGrant,
   PERMISSIONS,
+  type CurrentActorCapabilities,
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
 import { LoadingState, ModulePlaceholderPage, PageContainer } from '@shared/components/primitives';
@@ -288,6 +289,27 @@ function RootLandingRedirect(): JSX.Element {
 const withModuleAccess = (moduleId: ModuleAccessModuleId, element: JSX.Element): JSX.Element => (
   <ModuleAccessGuard moduleId={moduleId}>{element}</ModuleAccessGuard>
 );
+
+const isManagerOnlyKpiActor = (capabilities: CurrentActorCapabilities | undefined): boolean =>
+  !hasScopeGrant(capabilities, 'kpi', 'global') &&
+  hasScopeGrant(capabilities, 'kpi', 'managedGroup') &&
+  hasAnyPermission(capabilities, [PERMISSIONS.KPI_READ, PERMISSIONS.KPI_READ_PROGRESS]);
+
+function AdminKpiRouteBoundary({ children }: { children: JSX.Element }): JSX.Element {
+  const capabilitiesQuery = useCurrentActorCapabilities();
+  const { kpiPlanId } = useParams<{ kpiPlanId?: string }>();
+
+  if (isManagerOnlyKpiActor(capabilitiesQuery.data)) {
+    return (
+      <Navigate
+        to={kpiPlanId ? APP_PATHS.managerKpiPlanDetail(kpiPlanId) : APP_PATHS.managerKpi}
+        replace
+      />
+    );
+  }
+
+  return children;
+}
 
 function LazyModuleElement({ moduleId }: { moduleId: string }): JSX.Element {
   const LazyPage = modulePageMap[moduleId];
@@ -587,7 +609,11 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.kpiPlans.replace(/^\//, ''),
-        element: withModuleAccess('kpi', <LazyModuleElement moduleId="kpi" />),
+        element: (
+          <AdminKpiRouteBoundary>
+            {withModuleAccess('kpi', <LazyModuleElement moduleId="kpi" />)}
+          </AdminKpiRouteBoundary>
+        ),
         handle: {
           breadcrumbKey: 'nav:items.kpi',
           titleKey: 'kpi:page.title',
@@ -595,16 +621,31 @@ export const appRoutes: RouteObject[] = [
         } satisfies ModuleRouteHandle,
       },
       ...standardModuleDefinitions.map((definition) => {
+        const listElement = withModuleAccess(
+          definition.id as ModuleAccessModuleId,
+          <LazyModuleElement moduleId={definition.id} />,
+        );
+        const detailElement = withModuleAccess(
+          definition.id as ModuleAccessModuleId,
+          <LazyModuleDetailElement moduleId={definition.id} definition={definition} />,
+        );
+        const routeListElement =
+          definition.id === 'kpi' ? (
+            <AdminKpiRouteBoundary>{listElement}</AdminKpiRouteBoundary>
+          ) : (
+            listElement
+          );
+        const routeDetailElement =
+          definition.id === 'kpi' ? (
+            <AdminKpiRouteBoundary>{detailElement}</AdminKpiRouteBoundary>
+          ) : (
+            detailElement
+          );
+
         return createStubModuleBranchRoute({
           definition,
-          listElement: withModuleAccess(
-            definition.id as ModuleAccessModuleId,
-            <LazyModuleElement moduleId={definition.id} />,
-          ),
-          detailElement: withModuleAccess(
-            definition.id as ModuleAccessModuleId,
-            <LazyModuleDetailElement moduleId={definition.id} definition={definition} />,
-          ),
+          listElement: routeListElement,
+          detailElement: routeDetailElement,
           stubRoute: !realModuleIds.has(definition.id),
         });
       }),

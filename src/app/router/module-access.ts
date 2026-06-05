@@ -168,7 +168,7 @@ export const moduleAccessDefinitions: Readonly<
           allPermissions: [PERMISSIONS.KPI_READ],
           anyScope: {
             module: 'kpi',
-            anyOf: ['global', 'managedGroup'],
+            anyOf: ['global'],
           },
         },
       ],

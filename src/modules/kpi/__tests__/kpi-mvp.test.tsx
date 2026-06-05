@@ -186,90 +186,30 @@ describe('KPI MVP UX', () => {
     expect(screen.getByRole('heading', { name: 'KPI plans' })).toBeInTheDocument();
   });
 
-  it('TEAM_MANAGER with managedGroup scope renders KPI without access denied', async () => {
-    mockKpiCapabilities({
-      permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
-      scopeGrants: { kpi: ['managedGroup'] },
-    });
-
-    renderRoute('/kpi');
-    await waitForKpiList();
-
-    expect(screen.queryByText('Access denied')).not.toBeInTheDocument();
-    expect(
-      await screen.findByRole('tab', { name: 'My Group KPI', selected: true }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Approval Queue' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Progress & Actuals' })).not.toBeInTheDocument();
-  });
-
-  it('TEAM_MANAGER empty managed KPI list shows empty state, not access denied', async () => {
-    mockKpiCapabilities({
-      permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
-      scopeGrants: { kpi: ['managedGroup'] },
-    });
-    server.use(http.get('*/admin/kpi/plans', () => HttpResponse.json({ data: [] })));
-
-    renderRoute('/kpi');
-    await waitForKpiList();
-
-    expect(
-      await screen.findByText('No KPI plans for your managed groups yet.'),
-    ).toBeInTheDocument();
-    expect(screen.queryByText('Access denied')).not.toBeInTheDocument();
-  });
-
-  it('TEAM_MANAGER My Group KPI requests published TalentGroup plans and renders no draft or Talent plans', async () => {
-    let captured = new URL('http://example.test');
+  it('manager-only actors entering Admin KPI are redirected before Admin KPI list renders', async () => {
+    let adminListCalls = 0;
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
       scopeGrants: { kpi: ['managedGroup'] },
     });
     server.use(
       http.get('*/admin/kpi/plans', ({ request }) => {
-        captured = new URL(request.url);
-        const rows = [
-          makeListPlan('kpi-plan-managed', 'Managed group KPI', 'group-001', {
-            allocationWorkflowSummary: makeAllocationWorkflowSummary({
-              byStatus: { published: 2 },
-            }),
-          }),
-          makeListPlan('kpi-plan-draft-managed', 'Draft managed group KPI', 'group-001', {
-            status: 'DRAFT',
-          }),
-          makeListPlan('kpi-plan-talent', 'Talent KPI', 'talent-001', {
-            subjectType: 'TALENT',
-          }),
-        ];
-        return HttpResponse.json({
-          data: rows.filter(
-            (plan) =>
-              plan.status === captured.searchParams.get('status') &&
-              plan.subjectType === captured.searchParams.get('subjectType'),
-          ),
-        });
+        const url = new URL(request.url);
+        if (!url.searchParams.has('subjectType')) {
+          adminListCalls += 1;
+        }
+        return HttpResponse.json({ data: [] });
       }),
     );
 
     renderRoute('/kpi?status=DRAFT&subjectType=TALENT&subjectId=talent-001');
-    await waitForKpiList();
+    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(captured.searchParams.get('status')).toBe('PUBLISHED');
-      expect(captured.searchParams.get('subjectType')).toBe('TALENT_GROUP');
+      expect(adminListCalls).toBe(0);
     });
-    expect(captured.searchParams.get('subjectId')).toBeNull();
-    expect(await screen.findByText('Managed group KPI')).toBeInTheDocument();
-    expect(screen.queryByText('Draft managed group KPI')).not.toBeInTheDocument();
-    expect(screen.queryByText('Talent KPI')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Plan status').length).toBeGreaterThan(0);
-    const row = screen.getByText('Managed group KPI').closest('tr');
-    expect(row).not.toBeNull();
-    const workflow = within(row!).getByLabelText('Allocation workflow');
-    expect(workflow).toBeInTheDocument();
-    expect(within(workflow).getByText('Official published')).toBeInTheDocument();
-    expect(within(workflow).queryByText('Published')).not.toBeInTheDocument();
-    expect(within(workflow).getByText('2')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'KPI plans' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'My Group KPI' })).not.toBeInTheDocument();
   });
 
   it('admin global actor still loads the global KPI list endpoint and can see draft plans', async () => {
@@ -1541,12 +1481,12 @@ describe('KPI MVP UX', () => {
     ).toBeInTheDocument();
   });
 
-  it('TEAM_MANAGER sees allocation draft and submit controls disabled until KPI plan is published', async () => {
+  it('global plus managed actor sees allocation draft and submit controls disabled until KPI plan is published', async () => {
     let managedMemberLookupCalled = false;
     let progressLookupCalled = false;
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
-      scopeGrants: { kpi: ['managedGroup'] },
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
     });
     server.use(
       http.get('*/admin/kpi/plans/kpi-plan-draft/managed-members', () => {
@@ -1594,11 +1534,11 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByRole('button', { name: 'Publish Allocation' })).not.toBeInTheDocument();
   });
 
-  it('TEAM_MANAGER saves allocation draft with employment profile targets only on a published KPI plan', async () => {
+  it('global plus managed actor saves allocation draft with employment profile targets only on a published KPI plan', async () => {
     let body: Record<string, unknown> | undefined;
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.enterActual'],
-      scopeGrants: { kpi: ['managedGroup'] },
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
     });
     server.use(
       http.get('*/admin/kpi/plans/kpi-plan-published-draft-allocation', () =>
@@ -1647,12 +1587,12 @@ describe('KPI MVP UX', () => {
     expect(parsed.allocations[0]?.allocationStartDate).not.toBe('');
   });
 
-  it('TEAM_MANAGER default allocation draft date uses periodMonth for local period timestamps', async () => {
+  it('global plus managed actor default allocation draft date uses periodMonth for local period timestamps', async () => {
     let body: Record<string, unknown> | undefined;
     const planId = 'kpi-plan-local-period-empty-allocation';
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.enterActual'],
-      scopeGrants: { kpi: ['managedGroup'] },
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
     });
     server.use(
       http.get(`*/admin/kpi/plans/${planId}`, () =>
@@ -1708,12 +1648,12 @@ describe('KPI MVP UX', () => {
     expect(parsed.allocations[0]?.allocationStartDate).not.toBe('2026-04-30');
   });
 
-  it('TEAM_MANAGER allocation picker uses the scoped managed-member endpoint', async () => {
+  it('global plus managed actor allocation picker uses the scoped managed-member endpoint', async () => {
     let managedMemberLookupCalled = false;
     let genericEmploymentProfileLookupCalled = false;
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.enterActual'],
-      scopeGrants: { kpi: ['managedGroup'] },
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
     });
     server.use(
       http.get('*/admin/kpi/plans/kpi-plan-published-draft-allocation', () =>
@@ -1788,11 +1728,11 @@ describe('KPI MVP UX', () => {
     ]);
   });
 
-  it('TEAM_MANAGER submits allocation draft on a published KPI plan', async () => {
+  it('global plus managed actor submits allocation draft on a published KPI plan', async () => {
     let called = false;
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.enterActual'],
-      scopeGrants: { kpi: ['managedGroup'] },
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
     });
     server.use(
       http.get('*/admin/kpi/plans/kpi-plan-published-submittable-allocation', () =>
@@ -2028,10 +1968,10 @@ describe('KPI MVP UX', () => {
     expect(finalResultReads).toBe(0);
   });
 
-  it('saves ORG_UNIT allocation draft through scoped managed members without showing raw IDs', async () => {
+  it('global plus managed actor saves ORG_UNIT allocation draft through scoped managed members without showing raw IDs', async () => {
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual'],
-      scopeGrants: { kpi: ['managedGroup'] },
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
     });
     const plan = await createKpiPlan({
       title: 'Org Unit allocation draft KPI',
@@ -2178,10 +2118,10 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByText('org-unit-correction')).not.toBeInTheDocument();
   });
 
-  it('keeps ORG_UNIT write actions hidden for read-only managed actors', async () => {
+  it('keeps ORG_UNIT write actions hidden for global plus read-only managed actors', async () => {
     mockKpiCapabilities({
       permissions: ['kpi.read', 'kpi.readProgress'],
-      scopeGrants: { kpi: ['managedGroup'] },
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
     });
 
     renderRoute('/kpi/plans/kpi-plan-org-unit');
@@ -3265,7 +3205,7 @@ describe('KPI MVP UX', () => {
     ).rejects.toThrow();
   });
 
-  it('hides global KPI lifecycle action when global KPI scope is missing', async () => {
+  it('denies Admin KPI detail when global KPI scope is missing for a non-manager actor', async () => {
     server.use(
       http.get('*/admin/me/capabilities', () =>
         HttpResponse.json({
@@ -3276,15 +3216,14 @@ describe('KPI MVP UX', () => {
             isActive: true,
             roles: ['role-admin'],
             permissions: ['kpi.read', 'kpi.finalize'],
-            scopeGrants: { kpi: ['managedGroup'] },
+            scopeGrants: { kpi: ['self'] },
           },
         }),
       ),
     );
     renderRoute('/kpi/plans/kpi-plan-published');
-    await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Finalize' })).not.toBeInTheDocument(),
-    );
+    expect(await screen.findByText('Access denied')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finalize' })).not.toBeInTheDocument();
   });
 
   it('fails closed without create action when capability data is unavailable', async () => {

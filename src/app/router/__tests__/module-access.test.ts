@@ -26,7 +26,7 @@ const accessible = (
   moduleIds.filter((moduleId) => canAccessModule(capabilities, moduleId));
 
 describe('module access model', () => {
-  it('allows TEAM_MANAGER managed group routes without treating managedGroup as global', () => {
+  it('keeps TEAM_MANAGER managed group access out of the Admin KPI module', () => {
     const capabilities = makeCapabilities({
       roles: ['TEAM_MANAGER'],
       permissions: [
@@ -58,8 +58,23 @@ describe('module access model', () => {
         'commission-rules',
         'commission-settlements',
       ]),
-    ).toEqual(['kpi', 'event-assignment', 'talent', 'talent-group', 'work-schedule']);
+    ).toEqual(['event-assignment', 'talent', 'talent-group', 'work-schedule']);
+    expect(canAccessModule(capabilities, 'kpi')).toBe(false);
     expect(canAccessModule(capabilities, 'contract-registry')).toBe(false);
+  });
+
+  it('keeps Admin KPI access for global and global plus managed KPI actors', () => {
+    const globalCapabilities = makeCapabilities({
+      permissions: ['kpi.read'],
+      scopeGrants: { kpi: ['global'] },
+    });
+    const globalManagedCapabilities = makeCapabilities({
+      permissions: ['kpi.read', 'kpi.readProgress'],
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
+    });
+
+    expect(canAccessModule(globalCapabilities, 'kpi')).toBe(true);
+    expect(canAccessModule(globalManagedCapabilities, 'kpi')).toBe(true);
   });
 
   it('allows PRODUCTION_OPS event and operational modules by read permission plus scopes', () => {
