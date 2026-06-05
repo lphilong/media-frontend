@@ -19,6 +19,7 @@ import {
 import {
   EmptyState,
   ErrorState,
+  DetailBackLink,
   LoadingState,
   PageContainer,
   StatusBadge,
@@ -246,12 +247,10 @@ const ManagerKpiDetail = ({ context }: { context: ManagerWorkspaceContext }): JS
       <section className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <Link
+            <DetailBackLink
               to={APP_PATHS.managerKpi}
-              className="text-sm font-medium text-accent hover:underline"
-            >
-              {t('manager-workspace:actions.backToKpi')}
-            </Link>
+              label={t('manager-workspace:actions.backToKpi')}
+            />
             <h2 className="mt-2 text-lg font-semibold text-text">{plan.title}</h2>
             <p className="font-mono text-xs text-muted">{plan.planCode}</p>
           </div>
@@ -318,9 +317,7 @@ const ManagerKpiDetail = ({ context }: { context: ManagerWorkspaceContext }): JS
                 <th className="px-3 py-2 font-medium">
                   {t('manager-workspace:kpi.detail.target')}
                 </th>
-                <th className="px-3 py-2 font-medium">
-                  {t('manager-workspace:kpi.detail.unit')}
-                </th>
+                <th className="px-3 py-2 font-medium">{t('manager-workspace:kpi.detail.unit')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -366,7 +363,11 @@ const ManagerKpiDetail = ({ context }: { context: ManagerWorkspaceContext }): JS
       </section>
 
       {plan.subjectType === 'ORG_UNIT' ? (
-        <KpiOrgUnitOperationsSection plan={plan} actionPolicy={orgUnitOperationsPolicy} />
+        <KpiOrgUnitOperationsSection
+          plan={plan}
+          actionPolicy={orgUnitOperationsPolicy}
+          excludedEmploymentProfileId={context.employmentProfile?.id}
+        />
       ) : (
         <section className="rounded border border-border bg-panel p-4 shadow-sm">
           <h3 className="text-sm font-semibold text-text">

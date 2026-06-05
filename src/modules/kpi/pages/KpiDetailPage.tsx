@@ -1,3 +1,4 @@
+import { Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -378,9 +379,11 @@ const toOrgUnitDraftRows = (
 export const KpiOrgUnitOperationsSection = ({
   plan,
   actionPolicy,
+  excludedEmploymentProfileId,
 }: {
   plan: KpiPlanDetail;
   actionPolicy?: KpiOrgUnitOperationsActionPolicy;
+  excludedEmploymentProfileId?: string;
 }): JSX.Element => {
   const { t } = useTranslation(['kpi', 'common']);
   const { notifyError, notifySuccess } = useMutationFeedback();
@@ -433,8 +436,7 @@ export const KpiOrgUnitOperationsSection = ({
     isLoading: capabilitiesQuery.isLoading,
     isError: capabilitiesQuery.isError,
   };
-  const policyDisabledReason =
-    actionPolicy?.disabledReason ?? t('kpi:orgUnitOperations.readOnly');
+  const policyDisabledReason = actionPolicy?.disabledReason ?? t('kpi:orgUnitOperations.readOnly');
   const enterActualHint = applyOrgUnitActionPolicy(
     createKpiActionCapabilityHint(capabilityState, 'enterActual', capabilityCopy),
     actionPolicy?.canEnterActual,
@@ -472,6 +474,13 @@ export const KpiOrgUnitOperationsSection = ({
   );
 
   const allocations = useMemo(() => allocationsQuery.data ?? [], [allocationsQuery.data]);
+  const selectableManagedMembers = useMemo(
+    () =>
+      (managedMembersQuery.data ?? []).filter(
+        (member) => member.employmentProfileId !== excludedEmploymentProfileId,
+      ),
+    [excludedEmploymentProfileId, managedMembersQuery.data],
+  );
   const allocationById = useMemo(
     () => new Map(allocations.map((allocation) => [allocation.id, allocation])),
     [allocations],
@@ -545,6 +554,10 @@ export const KpiOrgUnitOperationsSection = ({
       );
       return;
     }
+    if (allocationDraftRows.length === 0) {
+      setAllocationError(t('kpi:validation.allocationMemberRequired'));
+      return;
+    }
     let invalidMetric = false;
     const rows = allocationDraftRows.map((row) => ({
       employmentProfileId: row.employmentProfileId.trim(),
@@ -573,6 +586,10 @@ export const KpiOrgUnitOperationsSection = ({
     } catch (error) {
       setAllocationError((error as Error | NormalizedApiError).message);
     }
+  };
+
+  const removeAllocationDraftRow = (rowIndex: number): void => {
+    setAllocationDraftRows((current) => current.filter((_, index) => index !== rowIndex));
   };
 
   const submitAllocationDraft = async (): Promise<void> => {
@@ -830,48 +847,67 @@ export const KpiOrgUnitOperationsSection = ({
                           </th>
                         ))}
                         <th className="px-3 py-2 text-left">{t('kpi:fields.note')}</th>
+                        <th className="px-3 py-2 text-right">
+                          <span className="sr-only">{t('kpi:table.actions')}</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {allocationDraftRows.map((row, rowIndex) => (
-                        <tr
-                          key={`${row.employmentProfileId}-${rowIndex}`}
-                          className="border-t border-border"
-                        >
-                          <td className="min-w-[240px] px-3 py-2">
-                            <select
-                              aria-label={`${t('kpi:fields.managedMember')} ${rowIndex + 1}`}
-                              value={row.employmentProfileId}
-                              disabled={Boolean(allocationDraftDisabledReason)}
-                              className="w-full rounded border border-border bg-panel px-2 py-1 disabled:opacity-50"
-                              onChange={(event) =>
-                                setAllocationDraftRows((current) =>
-                                  current.map((item, index) =>
-                                    index === rowIndex
-                                      ? { ...item, employmentProfileId: event.target.value }
-                                      : item,
-                                  ),
-                                )
-                              }
-                            >
-                              <option value="">{t('kpi:filters.managedMemberPlaceholder')}</option>
-                              {(managedMembersQuery.data ?? []).map((member) => (
-                                <option
-                                  key={member.employmentProfileId}
-                                  value={member.employmentProfileId}
-                                >
-                                  {member.employeeCode
-                                    ? `${member.displayName} - ${member.employeeCode}`
-                                    : member.displayName}
+                      {allocationDraftRows.map((row, rowIndex) => {
+                        const selectedMember = memberByEmploymentProfileId.get(
+                          row.employmentProfileId,
+                        );
+                        const selectedIsPickerCandidate = selectableManagedMembers.some(
+                          (member) => member.employmentProfileId === row.employmentProfileId,
+                        );
+                        const selectedLabel = selectedMember
+                          ? selectedMember.employeeCode
+                            ? `${selectedMember.displayName} - ${selectedMember.employeeCode}`
+                            : selectedMember.displayName
+                          : row.employmentProfileId;
+
+                        return (
+                          <tr
+                            key={`${row.employmentProfileId}-${rowIndex}`}
+                            className="border-t border-border"
+                          >
+                            <td className="min-w-[240px] px-3 py-2">
+                              <select
+                                aria-label={`${t('kpi:fields.managedMember')} ${rowIndex + 1}`}
+                                value={row.employmentProfileId}
+                                disabled={Boolean(allocationDraftDisabledReason)}
+                                className="w-full rounded border border-border bg-panel px-2 py-1 disabled:opacity-50"
+                                onChange={(event) =>
+                                  setAllocationDraftRows((current) =>
+                                    current.map((item, index) =>
+                                      index === rowIndex
+                                        ? { ...item, employmentProfileId: event.target.value }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                              >
+                                <option value="">
+                                  {t('kpi:filters.managedMemberPlaceholder')}
                                 </option>
-                              ))}
-                            </select>
-                          </td>
-                          {plan.targetMetrics.map((metric) => {
-                            const selectedMember = memberByEmploymentProfileId.get(
-                              row.employmentProfileId,
-                            );
-                            return (
+                                {row.employmentProfileId && !selectedIsPickerCandidate ? (
+                                  <option value={row.employmentProfileId} disabled>
+                                    {selectedLabel}
+                                  </option>
+                                ) : null}
+                                {selectableManagedMembers.map((member) => (
+                                  <option
+                                    key={member.employmentProfileId}
+                                    value={member.employmentProfileId}
+                                  >
+                                    {member.employeeCode
+                                      ? `${member.displayName} - ${member.employeeCode}`
+                                      : member.displayName}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            {plan.targetMetrics.map((metric) => (
                               <td key={metric.metricCode} className="px-3 py-2">
                                 <input
                                   aria-label={`${selectedMember?.displayName ?? t('kpi:fields.member')} ${t(
@@ -897,27 +933,39 @@ export const KpiOrgUnitOperationsSection = ({
                                   }
                                 />
                               </td>
-                            );
-                          })}
-                          <td className="px-3 py-2">
-                            <input
-                              aria-label={`${t('kpi:fields.note')} ${rowIndex + 1}`}
-                              value={row.note}
-                              disabled={Boolean(allocationDraftDisabledReason)}
-                              className="w-48 rounded border border-border bg-panel px-2 py-1 disabled:opacity-50"
-                              onChange={(event) =>
-                                setAllocationDraftRows((current) =>
-                                  current.map((item, index) =>
-                                    index === rowIndex
-                                      ? { ...item, note: event.target.value }
-                                      : item,
-                                  ),
-                                )
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ))}
+                            ))}
+                            <td className="px-3 py-2">
+                              <input
+                                aria-label={`${t('kpi:fields.note')} ${rowIndex + 1}`}
+                                value={row.note}
+                                disabled={Boolean(allocationDraftDisabledReason)}
+                                className="w-48 rounded border border-border bg-panel px-2 py-1 disabled:opacity-50"
+                                onChange={(event) =>
+                                  setAllocationDraftRows((current) =>
+                                    current.map((item, index) =>
+                                      index === rowIndex
+                                        ? { ...item, note: event.target.value }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <button
+                                type="button"
+                                aria-label={`${t('kpi:actions.removeAllocationMember')} ${rowIndex + 1}`}
+                                title={t('kpi:actions.removeAllocationMember')}
+                                disabled={Boolean(allocationDraftDisabledReason)}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded border border-border text-muted hover:bg-slate-50 hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
+                                onClick={() => removeAllocationDraftRow(rowIndex)}
+                              >
+                                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1107,7 +1155,7 @@ export const KpiOrgUnitOperationsSection = ({
           <div className="rounded border border-border p-3 text-sm">
             <div className="font-medium">{t('kpi:orgUnitOperations.managedMemberPicker')}</div>
             <div className="mt-2 flex flex-wrap gap-2">
-              {(managedMembersQuery.data ?? []).map((member) => (
+              {selectableManagedMembers.map((member) => (
                 <span
                   key={member.employmentProfileId}
                   className="rounded border border-border px-2 py-1"

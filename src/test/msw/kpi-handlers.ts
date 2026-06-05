@@ -377,6 +377,12 @@ const orgUnitManagedMembers = [
     displayName: 'Bao Le',
     orgUnitId: 'org-unit-001',
   },
+  {
+    employmentProfileId: 'ep-manager',
+    employeeCode: 'EP-MGR-001',
+    displayName: 'Mina Manager',
+    orgUnitId: 'org-unit-001',
+  },
 ];
 
 const subjectRefFor = (subjectType: KpiSubjectType, subjectId: string): ReferenceSummary | null => {
@@ -972,12 +978,17 @@ let allocations: Record<string, KpiAllocation[]> = {};
 let actualEntries: ActualEntry[] = [];
 let corrections: ActualCorrection[] = [];
 let actualExcuses: ActualExcuse[] = [];
+let lastAllocationDraftPayload: Record<string, unknown> | undefined;
+
+export const readLastKpiAllocationDraftPayload = (): Record<string, unknown> | undefined =>
+  lastAllocationDraftPayload;
 
 export const resetKpiMockData = (): void => {
   planSeed = 100;
   actualSeed = 100;
   correctionSeed = 100;
   excuseSeed = 100;
+  lastAllocationDraftPayload = undefined;
   plans = initialPlans.map((plan) => ({
     ...plan,
     subjectRef: plan.subjectRef ? { ...plan.subjectRef } : null,
@@ -1741,6 +1752,13 @@ const validateDraftAllocationPayload = (
       };
     }
     seenProfiles.add(employmentProfileId);
+    if (plan.subjectType === 'ORG_UNIT' && employmentProfileId === 'ep-manager') {
+      return {
+        ok: false,
+        message: 'KPI Org Unit allocation cannot include the current manager as a member',
+        status: 409,
+      };
+    }
     const isActiveManagedMember =
       plan.subjectType === 'ORG_UNIT'
         ? orgUnitManagedMembers.some(
@@ -2967,6 +2985,7 @@ export const kpiHandlers = [
       );
     }
     const body = await parseJsonBody(request);
+    lastAllocationDraftPayload = body;
     const unsupported = rejectUnsupportedBody(body, ['allocations']);
     if (unsupported) return unsupported;
     if (!Array.isArray(body.allocations) || body.allocations.length === 0) {
@@ -3039,6 +3058,17 @@ export const kpiHandlers = [
     const body = await parseJsonBody(request);
     const unsupported = rejectUnsupportedBody(body, []);
     if (unsupported) return unsupported;
+    if (
+      plan.subjectType === 'ORG_UNIT' &&
+      (allocations[plan.id] ?? []).some(
+        (allocation) => allocation.memberEmploymentProfileId === 'ep-manager',
+      )
+    ) {
+      return HttpResponse.json(
+        { message: 'KPI Org Unit allocation cannot include the current manager as a member' },
+        { status: 409 },
+      );
+    }
     (allocations[plan.id] ?? []).forEach((allocation) => {
       allocation.allocationStatus = 'PENDING_APPROVAL';
       allocation.submittedAt = now;

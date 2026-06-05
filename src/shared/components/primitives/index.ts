@@ -3,6 +3,7 @@ export * from '@shared/components/primitives/ActionRail';
 export * from '@shared/components/primitives/BlockerBanner';
 export * from '@shared/components/primitives/ConfirmDialog';
 export * from '@shared/components/primitives/CursorPager';
+export * from '@shared/components/primitives/DetailBackLink';
 export * from '@shared/components/primitives/DetailPageShell';
 export * from '@shared/components/primitives/EmptyState';
 export * from '@shared/components/primitives/ErrorState';

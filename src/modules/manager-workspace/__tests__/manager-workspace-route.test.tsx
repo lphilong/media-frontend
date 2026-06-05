@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { afterAll, beforeAll, vi } from 'vitest';
 
 import { appRoutes } from '@app/router/router';
+import { parseKpiAllocationDraftPayloadForTest } from '@modules/kpi/api/kpi.api';
 import { parseManagerWorkspaceContextForTest } from '@modules/manager-workspace/api/manager-workspace.api';
 import { setLocale } from '@shared/i18n/i18n';
 import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
@@ -20,7 +21,7 @@ import {
   resetManagerWorkspaceMockData,
   setMockManagerWorkspaceContext,
 } from '@test/msw/manager-workspace-handlers';
-import { resetKpiMockData } from '@test/msw/kpi-handlers';
+import { readLastKpiAllocationDraftPayload, resetKpiMockData } from '@test/msw/kpi-handlers';
 import { server } from '@test/msw/server';
 import { renderAppWithProviders } from '@test/render-app-route';
 
@@ -249,7 +250,9 @@ describe('/manager workspace route', () => {
     expect(within(operations).getByText('Org Unit allocations')).toBeInTheDocument();
     expect(within(operations).getByText('Progress and actuals')).toBeInTheDocument();
     expect(within(operations).getByText('Operational final result')).toBeInTheDocument();
-    expect(await within(operations).findByText('Managed write actions available')).toBeInTheDocument();
+    expect(
+      await within(operations).findByText('Managed write actions available'),
+    ).toBeInTheDocument();
     expect(await within(operations).findAllByText('Published Allocation')).not.toHaveLength(0);
 
     expect(
@@ -288,6 +291,9 @@ describe('/manager workspace route', () => {
     });
 
     const operations = await screen.findByTestId('org-unit-operations');
+    const backLink = screen.getByRole('link', { name: 'Back to managed KPI' });
+    expect(backLink.querySelector('svg')).toBeInTheDocument();
+    expect(backLink).toHaveAttribute('href', '/manager/kpi');
     expect(
       await within(operations).findByRole('button', { name: 'Save Allocation Draft' }),
     ).toBeEnabled();
@@ -296,12 +302,36 @@ describe('/manager workspace route', () => {
     ).toBeEnabled();
 
     const targetInput = await within(operations).findByLabelText('An Nguyen Revenue VND');
-    await userEvent.clear(targetInput);
-    await userEvent.type(targetInput, '1.000.000');
+    expect(targetInput).toHaveValue('1.000.000');
+    const firstMemberSelect = within(operations).getByRole('combobox', {
+      name: 'Managed member 1',
+    });
+    expect(firstMemberSelect).toHaveTextContent('An Nguyen - EP-OPS-001');
+    expect(firstMemberSelect).toHaveTextContent('Bao Le - EP-OPS-002');
+    expect(firstMemberSelect).not.toHaveTextContent('Mina Manager');
+
+    await userEvent.click(within(operations).getByRole('button', { name: 'Add member' }));
+    const secondMemberSelect = within(operations).getByRole('combobox', {
+      name: 'Managed member 2',
+    });
+    await userEvent.selectOptions(secondMemberSelect, 'employment-profile-ops-002');
+    const baoTargetInput = await within(operations).findByLabelText('Bao Le Revenue VND');
+    await userEvent.clear(baoTargetInput);
+    await userEvent.type(baoTargetInput, '1.000.000');
+    await userEvent.click(within(operations).getByRole('button', { name: 'Remove member 1' }));
+    expect(within(operations).queryByLabelText('An Nguyen Revenue VND')).not.toBeInTheDocument();
+
     await userEvent.click(
       within(operations).getByRole('button', { name: 'Save Allocation Draft' }),
     );
     expect(await screen.findByText('Allocation draft saved.')).toBeInTheDocument();
+    await waitFor(() => expect(readLastKpiAllocationDraftPayload()).toBeDefined());
+    const parsedDraft = parseKpiAllocationDraftPayloadForTest(readLastKpiAllocationDraftPayload());
+    expect(parsedDraft.allocations).toHaveLength(1);
+    expect(parsedDraft.allocations[0]).toMatchObject({
+      employmentProfileId: 'employment-profile-ops-002',
+    });
+    expect(parsedDraft.allocations[0]?.targetMetrics[0]?.targetValue).toBe(1000000);
 
     await userEvent.click(within(operations).getByRole('button', { name: 'Submit Allocation' }));
     expect(await screen.findByText('Allocation submitted for approval.')).toBeInTheDocument();
@@ -401,6 +431,9 @@ describe('/manager workspace route', () => {
       within(operations).queryByRole('button', { name: 'Submit Allocation' }),
     ).not.toBeInTheDocument();
     expect(
+      within(operations).queryByRole('button', { name: /Remove member/ }),
+    ).not.toBeInTheDocument();
+    expect(
       within(operations).queryByRole('button', { name: 'Save changed cells' }),
     ).not.toBeInTheDocument();
     expect(
@@ -427,6 +460,9 @@ describe('/manager workspace route', () => {
     ).not.toBeInTheDocument();
     expect(
       within(operations).queryByRole('button', { name: 'Submit Allocation' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByRole('button', { name: /Remove member/ }),
     ).not.toBeInTheDocument();
     expect(
       within(operations).queryByRole('button', { name: 'Save changed cells' }),
