@@ -1,6 +1,13 @@
-import { BarChart3, Building2, LayoutDashboard, UsersRound } from 'lucide-react';
+import {
+  BarChart3,
+  Building2,
+  CalendarDays,
+  LayoutDashboard,
+  UserRound,
+  UsersRound,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { APP_PATHS } from '@app/router/paths';
@@ -21,24 +28,34 @@ import {
   ErrorState,
   DetailBackLink,
   LoadingState,
-  PageContainer,
   StatusBadge,
 } from '@shared/components/primitives';
 import { LocaleSwitcher, SessionArea } from '@shared/components/shell';
+import {
+  WorkspaceHeader,
+  WorkspaceModuleSwitcher,
+  WorkspacePanel,
+  WorkspaceReadinessCard,
+  WorkspaceShell,
+  type WorkspaceModuleItem,
+} from '@shared/components/workspace';
 
 type KpiTabId = 'unit' | 'talentGroup';
 
-type ManagerWorkspaceView = 'overview' | 'kpi';
+type ManagerWorkspaceModuleId = 'overview' | 'kpi' | 'work' | 'events' | 'groups' | 'members';
 
-type ManagerWorkspaceNavItem = {
-  id: ManagerWorkspaceView;
-  path: string;
+type ManagerWorkspaceModuleConfig = {
+  id: ManagerWorkspaceModuleId;
   icon: typeof LayoutDashboard;
 };
 
-const managerWorkspaceNavItems: ManagerWorkspaceNavItem[] = [
-  { id: 'overview', path: APP_PATHS.manager, icon: LayoutDashboard },
-  { id: 'kpi', path: APP_PATHS.managerKpi, icon: BarChart3 },
+const managerWorkspaceModules: ManagerWorkspaceModuleConfig[] = [
+  { id: 'overview', icon: LayoutDashboard },
+  { id: 'kpi', icon: BarChart3 },
+  { id: 'work', icon: CalendarDays },
+  { id: 'events', icon: CalendarDays },
+  { id: 'groups', icon: Building2 },
+  { id: 'members', icon: UserRound },
 ];
 
 const statusTone = {
@@ -56,7 +73,7 @@ const statusTone = {
 const getSubjectName = (plan: KpiPlanListItem, fallback: string): string =>
   plan.subjectRef?.name ?? plan.subjectRef?.displayName ?? plan.subjectRef?.code ?? fallback;
 
-const getActiveView = (pathname: string): ManagerWorkspaceView =>
+const getRouteModule = (pathname: string): ManagerWorkspaceModuleId =>
   pathname.startsWith(APP_PATHS.managerKpi) ? 'kpi' : 'overview';
 
 const isManagerKpiDetailPath = (pathname: string): boolean =>
@@ -72,6 +89,49 @@ const getEnabledKpiTabs = (context: ManagerWorkspaceContext): KpiTabId[] => {
   }
   return tabs;
 };
+
+const disabledManagerModuleIds: ReadonlySet<ManagerWorkspaceModuleId> = new Set([
+  'work',
+  'events',
+  'groups',
+  'members',
+]);
+
+const buildManagerWorkspaceModuleItems = (
+  context: ManagerWorkspaceContext,
+  t: (key: string) => string,
+): Array<WorkspaceModuleItem<ManagerWorkspaceModuleId>> =>
+  managerWorkspaceModules.map((module) => {
+    const isKpiDisabled = module.id === 'kpi' && !context.modules.kpi.visible;
+    const isUnsupported = disabledManagerModuleIds.has(module.id);
+    const disabledReason =
+      isUnsupported || isKpiDisabled
+        ? t(`manager-workspace:modules.${module.id}.disabledReason`)
+        : undefined;
+
+    return {
+      id: module.id,
+      icon: module.icon,
+      label: t(`manager-workspace:modules.${module.id}.title`),
+      description: t(`manager-workspace:modules.${module.id}.summary`),
+      statusLabel: t(
+        `manager-workspace:status.${
+          isUnsupported ? 'contractNeeded' : isKpiDisabled ? 'readinessNeeded' : 'available'
+        }`,
+      ),
+      disabled: isUnsupported || isKpiDisabled,
+      disabledReason,
+    };
+  });
+
+const getDisabledModulePanelCopy = (
+  moduleId: ManagerWorkspaceModuleId,
+  t: (key: string) => string,
+): { title: string; message: string; badgeLabel: string } => ({
+  title: t(`manager-workspace:modules.${moduleId}.title`),
+  message: t(`manager-workspace:modules.${moduleId}.readinessMessage`),
+  badgeLabel: t('manager-workspace:status.contractNeeded'),
+});
 
 const KpiPlanTable = ({
   plans,
@@ -490,199 +550,334 @@ const ManagerWorkspaceOverview = ({
   context: ManagerWorkspaceContext;
 }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace', 'common']);
+  const disabledModules: ManagerWorkspaceModuleId[] = ['work', 'events', 'groups', 'members'];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <section className="rounded border border-border bg-panel p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-text">
-          {t('manager-workspace:overview.profileTitle')}
-        </h2>
-        {context.employmentProfile ? (
-          <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div className="rounded border border-border bg-bg px-3 py-2">
-              <dt className="text-xs font-medium uppercase text-muted">
-                {t('manager-workspace:fields.displayName')}
-              </dt>
-              <dd className="mt-1 text-sm font-medium text-text">
-                {context.employmentProfile.displayName}
-              </dd>
+    <div className="space-y-4" data-testid="manager-overview-panel">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <section className="rounded border border-border bg-panel p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-text">
+                {t('manager-workspace:overview.readinessTitle')}
+              </h2>
+              <p className="text-sm text-muted">
+                {t('manager-workspace:overview.readinessSummary')}
+              </p>
             </div>
-            <div className="rounded border border-border bg-bg px-3 py-2">
-              <dt className="text-xs font-medium uppercase text-muted">
-                {t('manager-workspace:fields.employeeCode')}
-              </dt>
-              <dd className="mt-1 font-mono text-sm text-text">
-                {context.employmentProfile.employeeCode ??
-                  t('manager-workspace:values.notAvailable')}
-              </dd>
-            </div>
-            <div className="rounded border border-border bg-bg px-3 py-2">
-              <dt className="text-xs font-medium uppercase text-muted">
-                {t('manager-workspace:fields.status')}
-              </dt>
-              <dd className="mt-1">
+            <StatusBadge
+              label={t(
+                `manager-workspace:status.${
+                  context.readiness.canUseManagerWorkspace ? 'available' : 'readinessNeeded'
+                }`,
+              )}
+              tone={context.readiness.canUseManagerWorkspace ? 'success' : 'warning'}
+              uppercase={false}
+            />
+          </div>
+          {context.readiness.reasons.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {context.readiness.reasons.map((reason) => (
                 <StatusBadge
-                  label={
-                    context.employmentProfile.employmentStatus
-                      ? t(
-                          `manager-workspace:employmentStatus.${context.employmentProfile.employmentStatus}`,
-                        )
-                      : t('manager-workspace:values.notAvailable')
-                  }
-                  status={context.employmentProfile.employmentStatus}
-                  toneByStatus={statusTone}
+                  key={reason}
+                  label={t(`manager-workspace:readiness.${reason}`)}
+                  tone="warning"
+                  uppercase={false}
                 />
-              </dd>
+              ))}
             </div>
-          </dl>
-        ) : (
-          <EmptyState
-            title={t('manager-workspace:empty.noProfileTitle')}
-            message={t('manager-workspace:empty.noProfileMessage')}
-          />
-        )}
-      </section>
+          ) : (
+            <p className="mt-3 text-sm text-muted">
+              {t('manager-workspace:overview.readyMessage')}
+            </p>
+          )}
+        </section>
 
-      <section className="rounded border border-border bg-panel p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-text">
-          {t('manager-workspace:overview.scopeTitle')}
-        </h2>
-        {context.scopes.orgUnits.length === 0 && context.scopes.talentGroups.length === 0 ? (
-          <EmptyState
-            title={t('manager-workspace:empty.noAssignmentsTitle')}
-            message={t('manager-workspace:empty.noAssignmentsMessage')}
-          />
-        ) : (
-          <div className="mt-3 space-y-3">
-            {context.scopes.orgUnits.map((scope) => (
-              <div
-                key={`ou-${scope.orgUnitId}`}
-                className="rounded border border-border bg-bg px-3 py-2"
-                data-testid="manager-scope-org-unit"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="text-sm font-medium text-text">{scope.name}</div>
-                    <div className="font-mono text-xs text-muted">
-                      {scope.code ?? scope.orgUnitId}
-                    </div>
-                  </div>
-                  <StatusBadge
-                    label={t(`manager-workspace:orgUnitRole.${scope.role}`)}
-                    status={scope.role}
-                    toneByStatus={statusTone}
-                    uppercase={false}
-                  />
-                </div>
-              </div>
-            ))}
-            {context.scopes.talentGroups.map((scope) => (
-              <div
-                key={`tg-${scope.talentGroupId}`}
-                className="rounded border border-border bg-bg px-3 py-2"
-                data-testid="manager-scope-talent-group"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="text-sm font-medium text-text">{scope.name}</div>
-                    <div className="font-mono text-xs text-muted">
-                      {scope.code ?? scope.talentGroupId}
-                    </div>
-                  </div>
-                  <StatusBadge
-                    label={t('manager-workspace:kpi.tabs.talentGroup')}
-                    tone="info"
-                    uppercase={false}
-                  />
-                </div>
-              </div>
+        <section className="rounded border border-border bg-panel p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-text">
+            {t('manager-workspace:overview.kpiTitle')}
+          </h2>
+          <p className="text-sm text-muted">{t('manager-workspace:overview.kpiSummary')}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <StatusBadge
+              label={t(
+                `manager-workspace:status.${
+                  context.modules.kpi.visible ? 'available' : 'readinessNeeded'
+                }`,
+              )}
+              tone={context.modules.kpi.visible ? 'success' : 'warning'}
+              uppercase={false}
+            />
+            {context.modules.kpi.unitKpiVisible ? (
+              <StatusBadge
+                label={t('manager-workspace:kpi.tabs.unit')}
+                tone="info"
+                uppercase={false}
+              />
+            ) : null}
+            {context.modules.kpi.talentGroupKpiVisible ? (
+              <StatusBadge
+                label={t('manager-workspace:kpi.tabs.talentGroup')}
+                tone="info"
+                uppercase={false}
+              />
+            ) : null}
+          </div>
+        </section>
+
+        <section className="rounded border border-border bg-panel p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-text">
+            {t('manager-workspace:overview.unsupportedTitle')}
+          </h2>
+          <p className="text-sm text-muted">{t('manager-workspace:overview.unsupportedSummary')}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {disabledModules.map((moduleId) => (
+              <StatusBadge
+                key={moduleId}
+                label={t(`manager-workspace:modules.${moduleId}.title`)}
+                tone="warning"
+                uppercase={false}
+              />
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded border border-border bg-panel p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-text">
+            {t('manager-workspace:overview.profileTitle')}
+          </h2>
+          {context.employmentProfile ? (
+            <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="rounded border border-border bg-bg px-3 py-2">
+                <dt className="text-xs font-medium uppercase text-muted">
+                  {t('manager-workspace:fields.displayName')}
+                </dt>
+                <dd className="mt-1 text-sm font-medium text-text">
+                  {context.employmentProfile.displayName}
+                </dd>
+              </div>
+              <div className="rounded border border-border bg-bg px-3 py-2">
+                <dt className="text-xs font-medium uppercase text-muted">
+                  {t('manager-workspace:fields.employeeCode')}
+                </dt>
+                <dd className="mt-1 font-mono text-sm text-text">
+                  {context.employmentProfile.employeeCode ??
+                    t('manager-workspace:values.notAvailable')}
+                </dd>
+              </div>
+              <div className="rounded border border-border bg-bg px-3 py-2">
+                <dt className="text-xs font-medium uppercase text-muted">
+                  {t('manager-workspace:fields.status')}
+                </dt>
+                <dd className="mt-1">
+                  <StatusBadge
+                    label={
+                      context.employmentProfile.employmentStatus
+                        ? t(
+                            `manager-workspace:employmentStatus.${context.employmentProfile.employmentStatus}`,
+                          )
+                        : t('manager-workspace:values.notAvailable')
+                    }
+                    status={context.employmentProfile.employmentStatus}
+                    toneByStatus={statusTone}
+                  />
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <EmptyState
+              title={t('manager-workspace:empty.noProfileTitle')}
+              message={t('manager-workspace:empty.noProfileMessage')}
+            />
+          )}
+        </section>
+
+        <section className="rounded border border-border bg-panel p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-text">
+            {t('manager-workspace:overview.scopeTitle')}
+          </h2>
+          {context.scopes.orgUnits.length === 0 && context.scopes.talentGroups.length === 0 ? (
+            <EmptyState
+              title={t('manager-workspace:empty.noAssignmentsTitle')}
+              message={t('manager-workspace:empty.noAssignmentsMessage')}
+            />
+          ) : (
+            <div className="mt-3 space-y-3">
+              {context.scopes.orgUnits.map((scope) => (
+                <div
+                  key={`ou-${scope.orgUnitId}`}
+                  className="rounded border border-border bg-bg px-3 py-2"
+                  data-testid="manager-scope-org-unit"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-medium text-text">{scope.name}</div>
+                      <div className="font-mono text-xs text-muted">
+                        {scope.code ?? scope.orgUnitId}
+                      </div>
+                    </div>
+                    <StatusBadge
+                      label={t(`manager-workspace:orgUnitRole.${scope.role}`)}
+                      status={scope.role}
+                      toneByStatus={statusTone}
+                      uppercase={false}
+                    />
+                  </div>
+                </div>
+              ))}
+              {context.scopes.talentGroups.map((scope) => (
+                <div
+                  key={`tg-${scope.talentGroupId}`}
+                  className="rounded border border-border bg-bg px-3 py-2"
+                  data-testid="manager-scope-talent-group"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-medium text-text">{scope.name}</div>
+                      <div className="font-mono text-xs text-muted">
+                        {scope.code ?? scope.talentGroupId}
+                      </div>
+                    </div>
+                    <StatusBadge
+                      label={t('manager-workspace:kpi.tabs.talentGroup')}
+                      tone="info"
+                      uppercase={false}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
+  );
+};
+
+const ManagerUnsupportedModulePanel = ({
+  moduleId,
+}: {
+  moduleId: ManagerWorkspaceModuleId;
+}): JSX.Element => {
+  const { t } = useTranslation(['manager-workspace']);
+  const copy = getDisabledModulePanelCopy(moduleId, t);
+
+  return (
+    <WorkspaceReadinessCard
+      title={copy.title}
+      message={copy.message}
+      badgeLabel={copy.badgeLabel}
+    />
   );
 };
 
 export const ManagerWorkspacePage = (): JSX.Element => {
   const { t } = useTranslation(['manager-workspace']);
   const location = useLocation();
-  const activeView = getActiveView(location.pathname);
+  const navigate = useNavigate();
+  const routeModule = getRouteModule(location.pathname);
   const isKpiDetail = isManagerKpiDetailPath(location.pathname);
+  const [activeModule, setActiveModule] = useState<ManagerWorkspaceModuleId>(routeModule);
   const contextQuery = useManagerWorkspaceContext();
   const context = contextQuery.data;
+  const moduleItems = useMemo(
+    () => (context ? buildManagerWorkspaceModuleItems(context, t) : []),
+    [context, t],
+  );
+
+  useEffect(() => {
+    setActiveModule(routeModule);
+  }, [routeModule]);
+
+  const handleSelectModule = (moduleId: ManagerWorkspaceModuleId): void => {
+    setActiveModule(moduleId);
+
+    if (moduleId === 'overview') {
+      navigate(APP_PATHS.manager);
+      return;
+    }
+
+    if (moduleId === 'kpi') {
+      navigate(APP_PATHS.managerKpi);
+    }
+  };
+
+  const profileSlot = context?.employmentProfile ? (
+    <div className="flex flex-wrap justify-start gap-2 md:justify-end">
+      <StatusBadge label={context.employmentProfile.displayName} tone="info" uppercase={false} />
+      {context.employmentProfile.employmentStatus ? (
+        <StatusBadge
+          label={t(
+            `manager-workspace:employmentStatus.${context.employmentProfile.employmentStatus}`,
+          )}
+          status={context.employmentProfile.employmentStatus}
+          toneByStatus={statusTone}
+          uppercase={false}
+        />
+      ) : null}
+    </div>
+  ) : null;
 
   return (
-    <main className="min-h-screen bg-bg text-text" data-testid="manager-workspace-shell">
-      <div className="border-b border-border bg-panel">
-        <PageContainer className="py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-text">{t('manager-workspace:title')}</h1>
-              <p className="text-sm text-muted">{t('manager-workspace:subtitle')}</p>
-            </div>
-            <div className="flex flex-col gap-3 md:items-end">
-              <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
-                <LocaleSwitcher />
-                <SessionArea />
-              </div>
-              <nav className="flex flex-wrap gap-2" aria-label={t('manager-workspace:nav.label')}>
-                {managerWorkspaceNavItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = activeView === item.id;
-                  const disabled =
-                    item.id === 'kpi' && context ? !context.modules.kpi.visible : false;
+    <WorkspaceShell
+      testId="manager-workspace-shell"
+      header={
+        <WorkspaceHeader
+          title={t('manager-workspace:title')}
+          subtitle={t('manager-workspace:subtitle')}
+          actions={
+            <>
+              <LocaleSwitcher />
+              <SessionArea />
+            </>
+          }
+          profile={profileSlot}
+        />
+      }
+    >
+      {contextQuery.isLoading ? <LoadingState lines={5} /> : null}
+      {contextQuery.isError ? (
+        <ErrorState
+          title={t('manager-workspace:errors.contextTitle')}
+          message={t('manager-workspace:errors.contextMessage')}
+        />
+      ) : null}
 
-                  return (
-                    <Link
-                      key={item.id}
-                      to={disabled ? APP_PATHS.manager : item.path}
-                      aria-disabled={disabled}
-                      className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm font-medium ${
-                        active
-                          ? 'border-text bg-text text-bg'
-                          : 'border-border bg-bg text-text hover:bg-bg'
-                      } ${disabled ? 'pointer-events-none opacity-60' : ''}`}
-                      data-testid={`manager-nav-${item.id}`}
-                    >
-                      <Icon className="h-4 w-4" aria-hidden="true" />
-                      {t(`manager-workspace:nav.${item.id}`)}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-          </div>
-        </PageContainer>
-      </div>
-
-      <PageContainer className="space-y-5 py-5">
-        {contextQuery.isLoading ? <LoadingState lines={5} /> : null}
-        {contextQuery.isError ? (
-          <ErrorState
-            title={t('manager-workspace:errors.contextTitle')}
-            message={t('manager-workspace:errors.contextMessage')}
+      {context ? (
+        <>
+          <WorkspaceModuleSwitcher
+            items={moduleItems}
+            activeId={activeModule}
+            label={t('manager-workspace:nav.label')}
+            selectedLabel={t('manager-workspace:status.selectedModule')}
+            onSelect={handleSelectModule}
+            getTestId={(moduleId) => `manager-module-${moduleId}`}
           />
-        ) : null}
 
-        {context && context.readiness.reasons.length > 0 ? (
-          <section className="rounded border border-border bg-panel p-4 shadow-sm">
-            <StatusBadge
-              label={t(`manager-workspace:readiness.${context.readiness.reasons[0]}`)}
-              tone={context.readiness.canUseManagerWorkspace ? 'warning' : 'danger'}
-              uppercase={false}
-            />
-          </section>
-        ) : null}
-
-        {context && activeView === 'overview' ? (
-          <ManagerWorkspaceOverview context={context} />
-        ) : null}
-        {context && activeView === 'kpi' && !isKpiDetail ? (
-          <ManagerKpiSlice context={context} />
-        ) : null}
-        {context && isKpiDetail ? <ManagerKpiDetail context={context} /> : null}
-      </PageContainer>
-    </main>
+          {activeModule === 'overview' ? (
+            <WorkspacePanel testId="manager-panel-overview">
+              <ManagerWorkspaceOverview context={context} />
+            </WorkspacePanel>
+          ) : null}
+          {activeModule === 'kpi' && !isKpiDetail ? (
+            <WorkspacePanel testId="manager-panel-kpi">
+              <ManagerKpiSlice context={context} />
+            </WorkspacePanel>
+          ) : null}
+          {activeModule === 'kpi' && isKpiDetail ? (
+            <WorkspacePanel testId="manager-panel-kpi-detail">
+              <ManagerKpiDetail context={context} />
+            </WorkspacePanel>
+          ) : null}
+          {disabledManagerModuleIds.has(activeModule) ? (
+            <WorkspacePanel testId={`manager-panel-${activeModule}`}>
+              <ManagerUnsupportedModulePanel moduleId={activeModule} />
+            </WorkspacePanel>
+          ) : null}
+        </>
+      ) : null}
+    </WorkspaceShell>
   );
 };

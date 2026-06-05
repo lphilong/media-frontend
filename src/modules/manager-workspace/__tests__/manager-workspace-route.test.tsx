@@ -140,6 +140,117 @@ describe('/manager workspace route', () => {
     expect(mockAuthAdapter.logoutRedirect).toHaveBeenCalledWith('/');
   });
 
+  it('renders Staff-like Manager shell modules with Overview active by default', async () => {
+    await renderRoute('/manager');
+
+    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(await screen.findByTestId('manager-module-overview')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByTestId('manager-module-kpi')).toHaveAttribute('aria-selected', 'false');
+
+    for (const moduleId of ['overview', 'kpi', 'work', 'events', 'groups', 'members']) {
+      expect(screen.getByTestId(`manager-module-${moduleId}`)).toBeInTheDocument();
+    }
+
+    expect(screen.getByRole('tab', { name: /Overview/ })).toHaveTextContent('Selected');
+    expect(screen.getByRole('tab', { name: /Managed Work/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: /Managed Events/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: /Managed Groups/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: /Managed Members/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+
+    expect(await screen.findByTestId('manager-panel-overview')).toBeInTheDocument();
+    expect(await screen.findByTestId('manager-overview-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-panel-kpi')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('manager-kpi-detail')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+  });
+
+  it('switches to Managed KPI as the only active full panel', async () => {
+    const user = userEvent.setup();
+    await renderRoute('/manager');
+
+    await user.click(await screen.findByTestId('manager-module-kpi'));
+
+    expect(await screen.findByTestId('manager-panel-kpi')).toBeInTheDocument();
+    expect(await screen.findByTestId('manager-kpi-tab-unit')).toBeInTheDocument();
+    expect(screen.getByTestId('manager-module-kpi')).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('manager-module-overview')).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByTestId('manager-panel-overview')).not.toBeInTheDocument();
+    expect(screen.queryByText('Manager Profile')).not.toBeInTheDocument();
+  });
+
+  it('renders unsupported Manager modules as readiness-only panels without Admin data calls', async () => {
+    const user = userEvent.setup();
+    let adminWorkShiftCalls = 0;
+    let adminEventCalls = 0;
+    let adminPeopleCalls = 0;
+    let adminTalentGroupCalls = 0;
+
+    server.use(
+      http.all('*/admin/work-shifts*', () => {
+        adminWorkShiftCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+      http.all('*/admin/events*', () => {
+        adminEventCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+      http.all('*/admin/employment-profiles*', () => {
+        adminPeopleCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+      http.all('*/admin/talent-groups*', () => {
+        adminTalentGroupCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/manager');
+
+    await user.click(await screen.findByTestId('manager-module-work'));
+    expect(await screen.findByTestId('manager-panel-work')).toBeInTheDocument();
+    expect(await screen.findByText(/Managed Work is readiness-only/)).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-panel-overview')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Work Schedule' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('manager-module-events'));
+    expect(await screen.findByTestId('manager-panel-events')).toBeInTheDocument();
+    expect(await screen.findByText(/Managed Events is readiness-only/)).toBeInTheDocument();
+    expect(screen.queryByText('EVT-202605-000005')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('manager-module-groups'));
+    expect(await screen.findByTestId('manager-panel-groups')).toBeInTheDocument();
+    expect(await screen.findByText(/Managed Groups is readiness-only/)).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('manager-module-members'));
+    expect(await screen.findByTestId('manager-panel-members')).toBeInTheDocument();
+    expect(await screen.findByText(/Managed Members is readiness-only/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'People Operations Hub' }),
+    ).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(adminWorkShiftCalls).toBe(0);
+      expect(adminEventCalls).toBe(0);
+      expect(adminPeopleCalls).toBe(0);
+      expect(adminTalentGroupCalls).toBe(0);
+    });
+  });
+
   it('does not replace Self-Service root routing for staff actors', async () => {
     await renderRoute('/', () => {
       setMockCurrentActorCapabilities(staffCapabilities());
@@ -174,7 +285,12 @@ describe('/manager workspace route', () => {
     });
 
     expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(await screen.findByTestId('manager-module-kpi')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     expect(await screen.findByTestId('manager-kpi-tab-unit')).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-panel-overview')).not.toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
   });
@@ -185,6 +301,10 @@ describe('/manager workspace route', () => {
     });
 
     expect(await screen.findByTestId('manager-kpi-detail')).toBeInTheDocument();
+    expect(await screen.findByTestId('manager-module-kpi')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     expect(screen.getByRole('heading', { name: 'Operations unit KPI' })).toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();

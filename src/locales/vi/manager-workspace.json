@@ -11,7 +11,46 @@
     "backToKpi": "Quay lai KPI quan ly"
   },
   "status": {
-    "readOnlyShell": "Pham vi quan ly"
+    "readOnlyShell": "Pham vi quan ly",
+    "available": "San sang",
+    "selectedModule": "Dang chon",
+    "contractNeeded": "Can hop dong",
+    "readinessNeeded": "Can san sang"
+  },
+  "modules": {
+    "overview": {
+      "title": "Tong quan",
+      "summary": "Tinh trang san sang, ho so, pham vi va trang thai module quan ly."
+    },
+    "kpi": {
+      "title": "KPI quan ly",
+      "summary": "Cac ke hoach KPI da cong bo theo phan cong hieu luc.",
+      "disabledReason": "KPI quan ly hien thi khi co phan cong KPI quan ly hieu luc."
+    },
+    "work": {
+      "title": "Cong viec quan ly",
+      "summary": "Tac vu ca lam viec cho pham vi duoc phan cong.",
+      "disabledReason": "Hop dong Manager Work chua duoc bat.",
+      "readinessMessage": "Cong viec quan ly chi la trang thai san sang trong batch nay. Khong co route WorkSchedule Manager hoac du lieu Admin WorkSchedule nao duoc hien thi tai day."
+    },
+    "events": {
+      "title": "Su kien quan ly",
+      "summary": "Hien thi va tac vu su kien cho pham vi duoc phan cong.",
+      "disabledReason": "Hop dong Manager Events chua duoc bat.",
+      "readinessMessage": "Su kien quan ly chi la trang thai san sang trong batch nay. Khong co route Manager Events hoac du lieu Admin Event nao duoc hien thi tai day."
+    },
+    "groups": {
+      "title": "Nhom quan ly",
+      "summary": "Ngu canh Org Unit va Talent Group duoc phan cong.",
+      "disabledReason": "Hop dong Manager Groups rieng chua duoc bat.",
+      "readinessMessage": "Nhom quan ly chi la trang thai san sang trong batch nay. Tong quan van hien thi tom tat pham vi duoc phan cong; khong mo route Groups rieng hoac trang thiet lap."
+    },
+    "members": {
+      "title": "Thanh vien quan ly",
+      "summary": "Ngu canh thanh vien cho pham vi duoc phan cong.",
+      "disabledReason": "Hop dong Manager Members chua duoc bat.",
+      "readinessMessage": "Thanh vien quan ly chi la trang thai san sang trong batch nay. People Hub va du lieu Admin EmploymentProfile khong duoc hien thi nhu module Manager Members."
+    }
   },
   "values": {
     "notAvailable": "Khong co du lieu"
@@ -23,6 +62,13 @@
     "MISSING_KPI_MANAGER_CAPABILITY": "Thieu quyen KPI quan ly"
   },
   "overview": {
+    "readinessTitle": "Trang thai san sang",
+    "readinessSummary": "Ngu canh quan ly va tinh trang phan cong hien tai.",
+    "readyMessage": "Ngu canh Manager Workspace da san sang.",
+    "kpiTitle": "Trang thai KPI",
+    "kpiSummary": "KPI quan ly hien thi theo phan cong hieu luc.",
+    "unsupportedTitle": "Trang thai module",
+    "unsupportedSummary": "Cac module Manager nay can hop dong backend trong tuong lai truoc khi hien thi du lieu van hanh.",
     "profileTitle": "Ho so quan ly",
     "scopeTitle": "Pham vi quan ly"
   },

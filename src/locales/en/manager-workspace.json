@@ -11,7 +11,46 @@
     "backToKpi": "Back to managed KPI"
   },
   "status": {
-    "readOnlyShell": "Manager scope"
+    "readOnlyShell": "Manager scope",
+    "available": "Available",
+    "selectedModule": "Selected",
+    "contractNeeded": "Contract needed",
+    "readinessNeeded": "Readiness needed"
+  },
+  "modules": {
+    "overview": {
+      "title": "Overview",
+      "summary": "Manager readiness, profile, scope, and module status."
+    },
+    "kpi": {
+      "title": "Managed KPI",
+      "summary": "Published KPI plans visible through your effective assignments.",
+      "disabledReason": "Managed KPI appears after an effective KPI manager assignment is available."
+    },
+    "work": {
+      "title": "Managed Work",
+      "summary": "Work shift operations for assigned scopes.",
+      "disabledReason": "Manager Work contracts are not enabled yet.",
+      "readinessMessage": "Managed Work is readiness-only in this batch. No WorkSchedule Manager route or Admin WorkSchedule data is exposed here."
+    },
+    "events": {
+      "title": "Managed Events",
+      "summary": "Event visibility and operations for assigned scopes.",
+      "disabledReason": "Manager Events contracts are not enabled yet.",
+      "readinessMessage": "Managed Events is readiness-only in this batch. No Manager Events route or Admin Event data is exposed here."
+    },
+    "groups": {
+      "title": "Managed Groups",
+      "summary": "Assigned Org Unit and Talent Group context.",
+      "disabledReason": "Dedicated Manager Groups contracts are not enabled yet.",
+      "readinessMessage": "Managed Groups is readiness-only in this batch. Existing assigned scope summaries remain in Overview; no dedicated Groups module route or setup page is exposed."
+    },
+    "members": {
+      "title": "Managed Members",
+      "summary": "Member context for assigned scopes.",
+      "disabledReason": "Manager Members contracts are not enabled yet.",
+      "readinessMessage": "Managed Members is readiness-only in this batch. People Hub and Admin EmploymentProfile data are not exposed as a Manager Members module."
+    }
   },
   "values": {
     "notAvailable": "Not available"
@@ -23,6 +62,13 @@
     "MISSING_KPI_MANAGER_CAPABILITY": "KPI manager capability is missing"
   },
   "overview": {
+    "readinessTitle": "Workspace readiness",
+    "readinessSummary": "Current manager context and assignment readiness.",
+    "readyMessage": "Manager Workspace context is available.",
+    "kpiTitle": "KPI readiness",
+    "kpiSummary": "Managed KPI visibility is driven by effective assignments.",
+    "unsupportedTitle": "Module readiness",
+    "unsupportedSummary": "These Manager modules need future backend contracts before they can show operational data.",
     "profileTitle": "Manager Profile",
     "scopeTitle": "Managed Scope"
   },

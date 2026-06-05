@@ -11,7 +11,46 @@
     "backToKpi": "返回管理 KPI"
   },
   "status": {
-    "readOnlyShell": "管理范围"
+    "readOnlyShell": "管理范围",
+    "available": "可用",
+    "selectedModule": "已选择",
+    "contractNeeded": "需要契约",
+    "readinessNeeded": "需要就绪"
+  },
+  "modules": {
+    "overview": {
+      "title": "概览",
+      "summary": "管理者就绪状态、档案、范围和模块状态。"
+    },
+    "kpi": {
+      "title": "管理 KPI",
+      "summary": "通过当前有效分配可见的已发布 KPI 计划。",
+      "disabledReason": "存在有效 KPI 管理分配后才显示管理 KPI。"
+    },
+    "work": {
+      "title": "管理工作",
+      "summary": "分配范围内的工作班次操作。",
+      "disabledReason": "Manager Work 契约尚未启用。",
+      "readinessMessage": "管理工作在本批次仅显示就绪状态。此处不会暴露 WorkSchedule Manager 路由或 Admin WorkSchedule 数据。"
+    },
+    "events": {
+      "title": "管理活动",
+      "summary": "分配范围内的活动可见性和操作。",
+      "disabledReason": "Manager Events 契约尚未启用。",
+      "readinessMessage": "管理活动在本批次仅显示就绪状态。此处不会暴露 Manager Events 路由或 Admin Event 数据。"
+    },
+    "groups": {
+      "title": "管理分组",
+      "summary": "已分配的 Org Unit 和 Talent Group 上下文。",
+      "disabledReason": "独立 Manager Groups 契约尚未启用。",
+      "readinessMessage": "管理分组在本批次仅显示就绪状态。Overview 保留已分配范围摘要；不会暴露独立 Groups 模块路由或设置页面。"
+    },
+    "members": {
+      "title": "管理成员",
+      "summary": "分配范围内的成员上下文。",
+      "disabledReason": "Manager Members 契约尚未启用。",
+      "readinessMessage": "管理成员在本批次仅显示就绪状态。People Hub 和 Admin EmploymentProfile 数据不会作为 Manager Members 模块暴露。"
+    }
   },
   "values": {
     "notAvailable": "暂无数据"
@@ -23,6 +62,13 @@
     "MISSING_KPI_MANAGER_CAPABILITY": "缺少 KPI 管理能力"
   },
   "overview": {
+    "readinessTitle": "工作台就绪状态",
+    "readinessSummary": "当前管理上下文和分配就绪状态。",
+    "readyMessage": "Manager Workspace 上下文可用。",
+    "kpiTitle": "KPI 就绪状态",
+    "kpiSummary": "管理 KPI 可见性由有效分配决定。",
+    "unsupportedTitle": "模块就绪状态",
+    "unsupportedSummary": "这些 Manager 模块需要未来后端契约后才能显示运营数据。",
     "profileTitle": "管理者档案",
     "scopeTitle": "管理范围"
   },
