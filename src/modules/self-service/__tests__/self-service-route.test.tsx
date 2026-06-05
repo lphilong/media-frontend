@@ -1473,6 +1473,25 @@ describe('/self-service route', () => {
     expect(screen.queryByText('Event Assignment')).not.toBeInTheDocument();
   });
 
+  it('keeps TALENT_STAFF_SELF denied from raw Admin WorkSchedule routes without self-service redirect', async () => {
+    let adminWorkShiftCalls = 0;
+    server.use(
+      http.get('*/admin/work-shifts*', () => {
+        adminWorkShiftCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/work-schedule/my-shifts');
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
+    expect(screen.queryByText('Studio filming shift')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(adminWorkShiftCalls).toBe(0);
+    });
+  });
+
   it('keeps TALENT_STAFF_SELF denied from the Admin KPI route without self-service redirect', async () => {
     let adminKpiCalls = 0;
     server.use(

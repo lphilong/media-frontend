@@ -190,6 +190,42 @@ describe('/manager workspace route', () => {
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
   });
 
+  it('fails closed for manager-only raw Admin WorkSchedule and Event routes', async () => {
+    const scopedOperationsCapabilities = managerCapabilities({
+      permissions: [
+        'workSchedule.read',
+        'event.read',
+        'kpi.read',
+        'kpi.readProgress',
+        'kpi.enterActual',
+        'kpi.correctActual',
+      ],
+      scopeGrants: {
+        workSchedule: ['self', 'team'],
+        eventAssignment: ['managedGroup'],
+        kpi: ['managedGroup'],
+      },
+    });
+
+    await renderRoute('/work-shifts', () => {
+      setMockCurrentActorCapabilities(scopedOperationsCapabilities);
+    });
+
+    expect(await screen.findByText(/Access denied|Permission denied/)).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Work Schedule' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-work-shifts')).not.toBeInTheDocument();
+
+    await renderRoute('/events/event-managed-scheduled', () => {
+      setMockCurrentActorCapabilities(scopedOperationsCapabilities);
+    });
+
+    expect(await screen.findByText(/Access denied|Permission denied/)).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
+    expect(screen.queryByText('EVT-202605-000005')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-events')).not.toBeInTheDocument();
+  });
+
   it('keeps Admin KPI route ownership for actors with global and managed KPI posture', async () => {
     await renderRoute('/kpi/plans/kpi-plan-org-unit', () => {
       setMockCurrentActorCapabilities(

@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { http, HttpResponse } from 'msw';
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -125,7 +125,7 @@ describe('work schedule capability UX hints', () => {
     expect(screen.getByText(i18n.t('work-schedule:detail.archivedReadOnly'))).toBeInTheDocument();
   });
 
-  it('hides official Work Shift mutation actions on Team Work Shifts even with stale mutation permissions', async () => {
+  it('denies Team Work Shifts Admin route access even with stale mutation permissions', async () => {
     mockCapabilities({
       permissions: [
         'workSchedule.read',
@@ -138,7 +138,9 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-schedule/team-shifts');
 
-    await screen.findByText('SHIFT001');
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('SHIFT001')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:actions.scheduleWorkShift'),
@@ -151,8 +153,7 @@ describe('work schedule capability UX hints', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows TEAM_MANAGER request entry and own pending cancel without approve or reject actions', async () => {
-    const user = userEvent.setup();
+  it('denies TEAM_MANAGER raw Admin Team Work Shifts route without redirect', async () => {
     mockCapabilities({
       id: 'team-manager-user-1',
       roles: ['TEAM_MANAGER'],
@@ -162,23 +163,14 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-schedule/team-shifts');
 
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('SHIFT001')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(
-      await screen.findByRole('heading', {
-        name: i18n.t('work-schedule:surfaces.team.title'),
-      }),
-    ).toBeInTheDocument();
-    expect(await screen.findByText('SHIFT001')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', {
+      screen.queryByRole('button', {
         name: i18n.t('work-schedule:requests.actions.requestChange'),
       }),
-    ).toBeInTheDocument();
-    expect(await screen.findByText('WSR-202605-000001')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', {
-        name: i18n.t('work-schedule:requests.actions.cancel'),
-      }),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:requests.actions.approve'),
@@ -189,30 +181,6 @@ describe('work schedule capability UX hints', () => {
         name: i18n.t('work-schedule:requests.actions.reject'),
       }),
     ).not.toBeInTheDocument();
-
-    fireEvent.change(
-      screen.getByLabelText(i18n.t('work-schedule:requests.fields.targetEmploymentProfileId')),
-      { target: { value: 'ep-002' } },
-    );
-    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:requests.fields.title')), {
-      target: { value: 'Manager request coverage' },
-    });
-    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:requests.fields.startAt')), {
-      target: { value: '2026-05-25T09:00' },
-    });
-    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:requests.fields.endAt')), {
-      target: { value: '2026-05-25T11:00' },
-    });
-    fireEvent.change(screen.getByLabelText(i18n.t('work-schedule:requests.fields.reason')), {
-      target: { value: 'Need managed team coverage' },
-    });
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('work-schedule:requests.actions.requestChange'),
-      }),
-    );
-
-    expect(await screen.findByText('WSR-202605-000761')).toBeInTheDocument();
   });
 
   it('shows PRODUCTION_OPS approval queue with pending approve and reject affordances', async () => {
@@ -248,7 +216,7 @@ describe('work schedule capability UX hints', () => {
     expect(reject).toBeEnabled();
   });
 
-  it('lets scoped HR view request context without approval actions', async () => {
+  it('denies department-scoped HR from raw Admin Department Work Shifts route', async () => {
     mockCapabilities({
       id: 'hr-user-1',
       roles: ['HR_OPERATIONS'],
@@ -258,8 +226,8 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-schedule/department-shifts');
 
-    expect(await screen.findByText('WSR-202605-000001')).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('work-schedule:requests.title'))).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('WSR-202605-000001')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:requests.actions.approve'),
@@ -307,7 +275,7 @@ describe('work schedule capability UX hints', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('does not expose self-request or admin request mutation actions for TALENT_STAFF_SELF', async () => {
+  it('denies TALENT_STAFF_SELF from raw Admin My Work Shifts route', async () => {
     mockCapabilities({
       id: 'talent-staff-self-user-1',
       roles: ['TALENT_STAFF_SELF'],
@@ -318,11 +286,8 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-schedule/my-shifts');
 
-    expect(
-      await screen.findByRole('heading', {
-        name: i18n.t('work-schedule:surfaces.my.title'),
-      }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:requests.actions.requestChange'),
@@ -444,7 +409,7 @@ describe('work schedule capability UX hints', () => {
     expect(publishedEdit).toBeDisabled();
   });
 
-  it('scope-hides Work Shift actions without global authority', async () => {
+  it('denies direct Work Shift detail without global authority', async () => {
     mockCapabilities({
       permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
       workScheduleScopes: ['self'],
@@ -452,7 +417,8 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-shifts/work-shift-001?scope=team');
 
-    await screen.findByText('SHIFT001');
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('SHIFT001')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:actions.edit'),
@@ -462,7 +428,8 @@ describe('work schedule capability UX hints', () => {
     cleanup();
     renderRoute('/work-shifts/work-shift-001');
 
-    await screen.findByText('SHIFT001');
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('SHIFT001')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:actions.edit'),
@@ -482,7 +449,7 @@ describe('work schedule capability UX hints', () => {
     await waitFor(() => expect(globalEdit).toBeEnabled());
   });
 
-  it('scope-hides Monthly Roster actions only from explicit roster requested scope', async () => {
+  it('denies Monthly Roster route access without global authority', async () => {
     mockCapabilities({
       permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
       workScheduleScopes: ['department'],
@@ -490,7 +457,8 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-schedule/rosters/roster-draft?scope=global');
 
-    await screen.findByText('ROSTER_DRAFT');
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('ROSTER_DRAFT')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:monthlyRosters.actions.editDraft'),
@@ -500,10 +468,20 @@ describe('work schedule capability UX hints', () => {
     cleanup();
     renderRoute('/work-schedule/rosters/roster-draft');
 
-    const unscopedEditDraft = await screen.findByRole('button', {
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('ROSTER_DRAFT')).not.toBeInTheDocument();
+
+    cleanup();
+    mockCapabilities({
+      permissions: ['workSchedule.read', 'workSchedule.update', 'workSchedule.manageLifecycle'],
+      workScheduleScopes: ['global'],
+    });
+    renderRoute('/work-schedule/rosters/roster-draft');
+
+    const globalEditDraft = await screen.findByRole('button', {
       name: i18n.t('work-schedule:monthlyRosters.actions.editDraft'),
     });
-    await waitFor(() => expect(unscopedEditDraft).toBeEnabled());
+    await waitFor(() => expect(globalEditDraft).toBeEnabled());
   });
 
   it('hides Work Schedule actions when capability fetch fails', async () => {

@@ -78,7 +78,7 @@ describe('event assignment wave 6 surfaces', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('TEAM_MANAGER with managedGroup scope sees Event nav and only managed Event rows', async () => {
+  it('TEAM_MANAGER with managedGroup-only scope is denied from the Admin Event route', async () => {
     setEventCapabilities({
       roles: ['TEAM_MANAGER'],
       permissions: [
@@ -92,20 +92,15 @@ describe('event assignment wave 6 surfaces', () => {
 
     renderRoute('/events');
 
-    expect(await screen.findByTestId('nav-link-events')).toBeInTheDocument();
-    expect(
-      await screen.findByRole('heading', { name: i18n.t('event-assignment:page.title') }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('EVT-202605-000002')).toBeInTheDocument();
-    expect(screen.getByText('EVT-202603-000003')).toBeInTheDocument();
-    expect(screen.getByText('EVT-202605-000005')).toBeInTheDocument();
-    expect(screen.queryByText('EVT-202605-000001')).not.toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-events')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('event-assignment:actions.create') }),
     ).not.toBeInTheDocument();
   });
 
-  it('TEAM_MANAGER with managedGroup empty Event result shows empty state instead of No Access', async () => {
+  it('TEAM_MANAGER with managedGroup-only scope fails closed instead of showing scoped empty state', async () => {
     setEventCapabilities({
       roles: ['TEAM_MANAGER'],
       permissions: ['event.read'],
@@ -114,10 +109,8 @@ describe('event assignment wave 6 surfaces', () => {
 
     renderRoute('/events?search=NO_MATCH');
 
-    expect(
-      await screen.findByText(i18n.t('event-assignment:states.emptyTitle')),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('event-assignment:states.emptyTitle'))).not.toBeInTheDocument();
   });
 
   it('VIEWER_AUDITOR with global Event scope sees Event read-only', async () => {
@@ -191,7 +184,7 @@ describe('event assignment wave 6 surfaces', () => {
     expect(screen.getByText('Luna')).toBeInTheDocument();
   });
 
-  it('requires the eventAssignment global scope for Event detail mutation actions', async () => {
+  it('denies managedGroup-only actors from raw Admin Event detail URLs', async () => {
     setEventCapabilities({
       roles: ['role-admin'],
       permissions: [
@@ -205,7 +198,9 @@ describe('event assignment wave 6 surfaces', () => {
 
     renderRoute('/events/event-managed-scheduled');
 
-    expect(await screen.findByText('EVT-202605-000005')).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('EVT-202605-000005')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('event-assignment:actions.edit') }),
     ).not.toBeInTheDocument();

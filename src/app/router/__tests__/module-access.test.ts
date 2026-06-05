@@ -26,7 +26,7 @@ const accessible = (
   moduleIds.filter((moduleId) => canAccessModule(capabilities, moduleId));
 
 describe('module access model', () => {
-  it('keeps TEAM_MANAGER managed group access out of the Admin KPI module', () => {
+  it('keeps TEAM_MANAGER scoped operations access out of Admin-owned modules', () => {
     const capabilities = makeCapabilities({
       roles: ['TEAM_MANAGER'],
       permissions: [
@@ -58,8 +58,10 @@ describe('module access model', () => {
         'commission-rules',
         'commission-settlements',
       ]),
-    ).toEqual(['event-assignment', 'talent', 'talent-group', 'work-schedule']);
+    ).toEqual(['talent', 'talent-group']);
     expect(canAccessModule(capabilities, 'kpi')).toBe(false);
+    expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
+    expect(canAccessModule(capabilities, 'work-schedule')).toBe(false);
     expect(canAccessModule(capabilities, 'contract-registry')).toBe(false);
   });
 
@@ -103,7 +105,7 @@ describe('module access model', () => {
     ).toEqual(['event-assignment', 'work-schedule', 'platform-account', 'studio-resource']);
   });
 
-  it('allows HR_OPERATIONS department schedules and lookup-only studio resource references only', () => {
+  it('denies HR_OPERATIONS department schedule scope from Admin WorkSchedule ownership', () => {
     const capabilities = makeCapabilities({
       roles: ['HR_OPERATIONS'],
       permissions: [
@@ -119,8 +121,44 @@ describe('module access model', () => {
       },
     });
 
-    expect(canAccessModule(capabilities, 'work-schedule')).toBe(true);
+    expect(canAccessModule(capabilities, 'work-schedule')).toBe(false);
     expect(canAccessModule(capabilities, 'studio-resource')).toBe(false);
+  });
+
+  it('keeps Admin WorkSchedule and Events access for global plus scoped actors', () => {
+    const capabilities = makeCapabilities({
+      roles: ['PRODUCTION_OPS', 'TEAM_MANAGER'],
+      permissions: ['event.read', 'workSchedule.read'],
+      scopeGrants: {
+        eventAssignment: ['global', 'managedGroup'],
+        workSchedule: ['global', 'team', 'department'],
+      },
+    });
+
+    expect(canAccessModule(capabilities, 'work-schedule')).toBe(true);
+    expect(canAccessModule(capabilities, 'event-assignment')).toBe(true);
+  });
+
+  it.each([
+    ['team scoped WorkSchedule', 'team'],
+    ['self scoped WorkSchedule', 'self'],
+    ['department scoped WorkSchedule', 'department'],
+  ] as const)('denies Admin WorkSchedule for %s actors', (_name, scope) => {
+    const capabilities = makeCapabilities({
+      permissions: ['workSchedule.read'],
+      scopeGrants: { workSchedule: [scope] },
+    });
+
+    expect(canAccessModule(capabilities, 'work-schedule')).toBe(false);
+  });
+
+  it('denies Admin Events for managedGroup-only actors', () => {
+    const capabilities = makeCapabilities({
+      permissions: ['event.read'],
+      scopeGrants: { eventAssignment: ['managedGroup'] },
+    });
+
+    expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
   });
 
   it('keeps COMMERCIAL_FINANCE lookup permissions from unlocking full modules', () => {
@@ -225,7 +263,7 @@ describe('module access model', () => {
       },
     });
 
-    expect(canAccessModule(capabilities, 'work-schedule')).toBe(true);
+    expect(canAccessModule(capabilities, 'work-schedule')).toBe(false);
     expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
     expect(canAccessModule(capabilities, 'employment-profile')).toBe(false);
     expect(canAccessModule(capabilities, 'talent')).toBe(false);

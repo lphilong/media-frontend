@@ -128,7 +128,7 @@ export const moduleAccessDefinitions: Readonly<
       allPermissions: [PERMISSIONS.WORK_SCHEDULE_READ],
       anyScope: {
         module: 'workSchedule',
-        anyOf: ['self', 'team', 'department', 'global'],
+        anyOf: ['global'],
       },
     },
   },
@@ -139,7 +139,7 @@ export const moduleAccessDefinitions: Readonly<
       allPermissions: [PERMISSIONS.EVENT_READ],
       anyScope: {
         module: 'eventAssignment',
-        anyOf: ['global', 'managedGroup'],
+        anyOf: ['global'],
       },
     },
   },
