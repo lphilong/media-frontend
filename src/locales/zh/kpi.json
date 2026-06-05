@@ -229,7 +229,7 @@
     "statusSummary": "Actual status summary",
     "supportingMetrics": "Supporting metrics",
     "closingState": "Closing state",
-    "selectedPlan": "Selected group plan",
+    "selectedPlan": "Selected KPI plan",
     "viewDetail": "View detail",
     "noAllocations": "No allocations",
     "unnamedMember": "Unnamed member",
@@ -330,7 +330,7 @@
     "allocationMismatch": "发布前分配合计必须等于计划目标。",
     "allocationMemberRequired": "At least one allocation member is required.",
     "employmentProfileRequired": "Employment profile ID is required.",
-    "invalidActualDate": "使用 DD-MM-YYYY。不要使用 YYYY-MM-DD 或斜杠日期。",
+    "invalidActualDate": "Use YYYY-MM-DD.",
     "duplicateConflict": "Actual 已存在且值不同。请使用编辑或修正流程。",
     "reasonRequired": "必须填写修正原因。",
     "excuseReasonRequired": "Excuse reason code and reason text are required.",
@@ -374,7 +374,7 @@
     "excuseUnmarked": "例外已移除。"
   },
   "states": {
-    "emptyActualWorkspace": "No group plans are available for actual entry.",
+    "emptyActualWorkspace": "No KPI plans are available for actual entry.",
     "actualWorkspaceLoadErrorTitle": "Unable to load Actual Workspace",
     "actualWorkspaceLoadErrorMessage": "Unable to load Actual Workspace plans.",
     "actualWorkspaceDetailLoadErrorTitle": "Unable to load group plan detail",

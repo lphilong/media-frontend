@@ -437,7 +437,7 @@ const actualWorkspacePlanSummarySchema = z
     planCode: z.string().trim().min(1),
     title: z.string().trim().min(1),
     periodMonth: periodMonthSchema,
-    subjectType: z.literal('TALENT_GROUP'),
+    subjectType: z.enum(['TALENT_GROUP', 'ORG_UNIT']),
     subjectId: z.string().trim().min(1),
     subjectRef: referenceSummarySchema.nullable(),
     planStatus: statusSchema,
@@ -856,6 +856,7 @@ const sanitizeAllocationQuery = (
 
 const actualWorkspacePlanQuerySchema = z
   .object({
+    subjectType: z.enum(['TALENT_GROUP', 'ORG_UNIT']).optional(),
     periodMonth: periodMonthSchema.optional(),
     groupId: z.string().trim().min(1).optional(),
     subjectId: z.string().trim().min(1).optional(),

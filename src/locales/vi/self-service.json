@@ -1,16 +1,30 @@
 {
   "page": {
     "eyebrow": "Không gian nhân sự",
-    "title": "Tự phục vụ",
+    "title": "Staff Workspace",
+    "subtitle": "Du lieu cua rieng ban: ho so, lich lam viec, KPI, nhom Talent va tuy chon tai khoan.",
     "readOnly": "Nền tảng chỉ đọc"
   },
   "navigation": {
     "label": "Các mục tự phục vụ"
   },
+  "overview": {
+    "title": "Tong quan",
+    "summary": "Trang thai san sang va tom tat du lieu cua rieng ban trong Self-Service.",
+    "profileReadiness": "Trang thai ho so",
+    "accountLink": "Lien ket tai khoan",
+    "todayWork": "Tom tat hom nay",
+    "todayWorkValue": "{{workShiftCount}} ca / {{eventCount}} su kien",
+    "preferences": "Ngon ngu / mui gio"
+  },
   "sections": {
     "profile": {
       "title": "Hồ sơ ",
       "summary": "Tóm tắt hồ sơ nhân sự ở chế độ chỉ đọc."
+    },
+    "work": {
+      "title": "Cong viec cua toi",
+      "summary": "Ca lam va su kien cua rieng ban o che do chi doc."
     },
     "workShifts": {
       "title": "Ca làm ",
@@ -125,9 +139,11 @@
   },
   "status": {
     "available": "Có sẵn",
+    "selectedModule": "Dang chon",
     "comingSoon": "Sắp có",
     "readOnly": "Chỉ đọc",
-    "preferencesOnly": "Chỉ tùy chọn"
+    "preferencesOnly": "Chỉ tùy chọn",
+    "ownDataOnly": "Chi du lieu cua ban"
   },
   "actions": {
     "logout": "Đăng xuất",

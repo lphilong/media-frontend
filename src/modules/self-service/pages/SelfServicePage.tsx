@@ -1,15 +1,13 @@
 import {
-  BadgeCheck,
   CalendarDays,
   ChartNoAxesColumnIncreasing,
   ChevronDown,
   IdCard,
   KeyRound,
-  LogOut,
+  LayoutDashboard,
   Mail,
   RotateCcw,
   Save,
-  ShieldCheck,
   UserCog,
   UsersRound,
 } from 'lucide-react';
@@ -32,7 +30,6 @@ import {
   useUpdateSelfServiceAccountPreferences,
   useSelfServiceWorkShifts,
 } from '@modules/self-service/api/self-service.api';
-import { useAuth } from '@shared/auth/auth-context';
 import {
   EmptyState,
   ErrorState,
@@ -41,29 +38,69 @@ import {
   ReadOnlyFieldGrid,
   StatusBadge,
 } from '@shared/components/primitives';
+import { LocaleSwitcher, SessionArea } from '@shared/components/shell';
 import {
   formatBusinessTimestamp,
   formatDecimal,
   formatPercent,
 } from '@shared/formatting/formatters';
-import { setLocale as setAppLocale } from '@shared/i18n/i18n';
 
 const SELF_SERVICE_CURRENT_PERSON_NOT_LINKED = 'SELF_SERVICE_CURRENT_PERSON_NOT_LINKED';
 const SELF_SERVICE_VALIDATION_ERROR = 'SELF_SERVICE_VALIDATION_ERROR';
 
 type NavCard = {
-  id: 'profile' | 'workShifts' | 'kpi' | 'events' | 'talentGroups' | 'account';
+  id: SelfServiceModuleId;
   icon: typeof IdCard;
+  titleKey: string;
+  summaryKey: string;
   statusKey: string;
 };
 
+type SelfServiceModuleId = 'overview' | 'profile' | 'work' | 'kpi' | 'talentGroups' | 'account';
+
 const navCards: NavCard[] = [
-  { id: 'profile', icon: IdCard, statusKey: 'self-service:status.available' },
-  { id: 'workShifts', icon: CalendarDays, statusKey: 'self-service:status.available' },
-  { id: 'kpi', icon: ChartNoAxesColumnIncreasing, statusKey: 'self-service:status.available' },
-  { id: 'events', icon: BadgeCheck, statusKey: 'self-service:status.available' },
-  { id: 'talentGroups', icon: UsersRound, statusKey: 'self-service:status.available' },
-  { id: 'account', icon: UserCog, statusKey: 'self-service:status.available' },
+  {
+    id: 'overview',
+    icon: LayoutDashboard,
+    titleKey: 'self-service:overview.title',
+    summaryKey: 'self-service:overview.summary',
+    statusKey: 'self-service:status.available',
+  },
+  {
+    id: 'profile',
+    icon: IdCard,
+    titleKey: 'self-service:sections.profile.title',
+    summaryKey: 'self-service:sections.profile.summary',
+    statusKey: 'self-service:status.available',
+  },
+  {
+    id: 'work',
+    icon: CalendarDays,
+    titleKey: 'self-service:sections.work.title',
+    summaryKey: 'self-service:sections.work.summary',
+    statusKey: 'self-service:status.available',
+  },
+  {
+    id: 'kpi',
+    icon: ChartNoAxesColumnIncreasing,
+    titleKey: 'self-service:sections.kpi.title',
+    summaryKey: 'self-service:sections.kpi.summary',
+    statusKey: 'self-service:status.available',
+  },
+  {
+    id: 'talentGroups',
+    icon: UsersRound,
+    titleKey: 'self-service:sections.talentGroups.title',
+    summaryKey: 'self-service:sections.talentGroups.summary',
+    statusKey: 'self-service:status.available',
+  },
+  {
+    id: 'account',
+    icon: UserCog,
+    titleKey: 'self-service:sections.account.title',
+    summaryKey: 'self-service:sections.account.summary',
+    statusKey: 'self-service:status.available',
+  },
 ];
 
 const statusTone = {
@@ -386,6 +423,7 @@ const AccountPreferencesForm = ({
               setShowSuccess(false);
             }}
             className="mt-1 w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+            data-testid="self-service-account-locale-select"
           >
             {SELF_SERVICE_SUPPORTED_LOCALES.map((option) => (
               <option key={option} value={option}>
@@ -410,6 +448,7 @@ const AccountPreferencesForm = ({
               setShowSuccess(false);
             }}
             className="mt-1 w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+            data-testid="self-service-account-timezone-select"
           >
             {timezoneOptions.map((option) => (
               <option key={option} value={option}>
@@ -442,6 +481,7 @@ const AccountPreferencesForm = ({
           type="submit"
           disabled={!isDirty || isSaving}
           className="inline-flex items-center gap-2 rounded border border-text bg-text px-3 py-2 text-sm font-medium text-bg disabled:cursor-not-allowed disabled:opacity-60"
+          data-testid="self-service-account-save-preferences"
         >
           <Save className="h-4 w-4" aria-hidden="true" />
           {isSaving ? t('self-service:actions.saving') : t('self-service:actions.savePreferences')}
@@ -460,74 +500,11 @@ const AccountPreferencesForm = ({
   );
 };
 
-type SelfServiceLanguageSwitcherProps = {
-  currentPerson?: SelfServiceCurrentPerson;
-};
-
-const SelfServiceLanguageSwitcher = ({
-  currentPerson,
-}: SelfServiceLanguageSwitcherProps): JSX.Element => {
-  const { t } = useTranslation(['self-service']);
-  const updatePreferences = useUpdateSelfServiceAccountPreferences();
-  const currentLocaleCandidate = currentPerson?.locale ?? 'en';
-  const currentLocale = SELF_SERVICE_SUPPORTED_LOCALES.includes(
-    currentLocaleCandidate as (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number],
-  )
-    ? (currentLocaleCandidate as (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number])
-    : 'en';
-
-  const handleChange = (value: string): void => {
-    const locale = value as (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number];
-
-    if (!SELF_SERVICE_SUPPORTED_LOCALES.includes(locale) || locale === currentLocale) {
-      return;
-    }
-
-    void setAppLocale(locale);
-    updatePreferences.mutate(
-      { locale },
-      {
-        onError: () => {
-          void setAppLocale(currentLocale);
-        },
-        onSuccess: (updated) => {
-          const updatedLocale = updated.locale as
-            | (typeof SELF_SERVICE_SUPPORTED_LOCALES)[number]
-            | undefined;
-
-          if (updatedLocale && SELF_SERVICE_SUPPORTED_LOCALES.includes(updatedLocale)) {
-            void setAppLocale(updatedLocale);
-          }
-        },
-      },
-    );
-  };
-
-  return (
-    <label className="inline-flex items-center gap-2 text-sm text-muted">
-      <span className="sr-only">{t('self-service:fields.language')}</span>
-      <select
-        value={currentLocale}
-        disabled={!currentPerson || updatePreferences.isPending}
-        onChange={(event) => handleChange(event.target.value)}
-        className="rounded border border-border bg-bg px-2 py-2 text-sm text-text disabled:cursor-not-allowed disabled:opacity-60"
-        data-testid="self-service-language-switcher"
-      >
-        {SELF_SERVICE_SUPPORTED_LOCALES.map((option) => (
-          <option key={option} value={option}>
-            {t(`self-service:localeOptions.${option}`)}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-};
-
 export const SelfServicePage = (): JSX.Element => {
   const { t } = useTranslation(['self-service', 'common', 'errors']);
-  const { logout } = useAuth();
   const currentPersonQuery = useSelfServiceCurrentPerson();
   const currentPerson = currentPersonQuery.data;
+  const [activeModule, setActiveModule] = useState<SelfServiceModuleId>('overview');
   const [workShiftCursor, setWorkShiftCursor] = useState<string | undefined>(undefined);
   const [workShiftPages, setWorkShiftPages] = useState<SelfServiceWorkShift[]>([]);
   const [workShiftNextCursor, setWorkShiftNextCursor] = useState<string | undefined>(undefined);
@@ -590,56 +567,85 @@ export const SelfServicePage = (): JSX.Element => {
     <main className="min-h-screen bg-bg text-text" data-testid="self-service-shell">
       <header className="border-b border-border bg-panel">
         <PageContainer className="py-4">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase text-muted">
                 {t('self-service:page.eyebrow')}
               </p>
-              <h1 className="text-2xl font-semibold">{t('self-service:page.title')}</h1>
+              <h1 className="text-2xl font-semibold text-text">{t('self-service:page.title')}</h1>
+              <p className="text-sm text-muted">{t('self-service:page.subtitle')}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <SelfServiceLanguageSwitcher currentPerson={currentPerson} />
-              <div className="inline-flex items-center gap-2 text-sm text-muted">
-                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                <span>{t('self-service:page.readOnly')}</span>
+            <div className="flex flex-col gap-3 md:items-end">
+              <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+                <div data-testid="self-service-locale-control">
+                  <LocaleSwitcher />
+                </div>
+                <SessionArea />
               </div>
-              <button
-                type="button"
-                onClick={() => void logout()}
-                className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-bg"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                {t('self-service:actions.logout')}
-              </button>
+              {currentPerson ? (
+                <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+                  <StatusBadge
+                    label={t(`self-service:employmentStatus.${currentPerson.employmentStatus}`)}
+                    status={currentPerson.employmentStatus}
+                    toneByStatus={statusTone}
+                  />
+                  <span className="rounded border border-border bg-bg px-2 py-1 text-xs font-medium text-text">
+                    {currentPerson.displayName}
+                  </span>
+                  <span className="rounded border border-border bg-bg px-2 py-1 font-mono text-xs text-muted">
+                    {currentPerson.employeeCode}
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
         </PageContainer>
       </header>
 
-      <PageContainer className="space-y-5">
+      <PageContainer className="space-y-5 py-5">
         <section
           aria-label={t('self-service:navigation.label')}
+          role="tablist"
           className="grid gap-3 md:grid-cols-3 xl:grid-cols-6"
         >
           {navCards.map((card) => {
             const Icon = card.icon;
+            const active = activeModule === card.id;
             return (
-              <div
+              <button
                 key={card.id}
-                className="rounded-lg border border-border bg-panel p-3 shadow-sm"
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => setActiveModule(card.id)}
+                className={`rounded border p-3 text-left shadow-sm transition ${
+                  active
+                    ? 'border-text bg-text text-bg'
+                    : 'border-border bg-panel text-text hover:bg-bg'
+                }`}
                 data-testid={`self-service-nav-${card.id}`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                  <StatusBadge label={t(card.statusKey)} tone="neutral" uppercase={false} />
+                  <Icon
+                    className={`h-5 w-5 ${active ? 'text-bg' : 'text-primary'}`}
+                    aria-hidden="true"
+                  />
+                  <StatusBadge
+                    label={t(
+                      active ? 'self-service:status.selectedModule' : card.statusKey,
+                    )}
+                    tone={active ? 'success' : 'neutral'}
+                    uppercase={false}
+                  />
                 </div>
                 <p className="mt-3 text-sm font-semibold">
-                  {t(`self-service:sections.${card.id}.title`)}
+                  {t(card.titleKey)}
                 </p>
-                <p className="mt-1 min-h-10 text-xs text-muted">
-                  {t(`self-service:sections.${card.id}.summary`)}
+                <p className={`mt-1 min-h-10 text-xs ${active ? 'text-bg/80' : 'text-muted'}`}>
+                  {t(card.summaryKey)}
                 </p>
-              </div>
+              </button>
             );
           })}
         </section>
@@ -661,8 +667,77 @@ export const SelfServicePage = (): JSX.Element => {
           />
         ) : null}
 
-        {currentPerson ? (
-          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+        {currentPerson && activeModule === 'overview' ? (
+          <section
+            className="rounded border border-border bg-panel p-4 shadow-sm"
+            data-testid="self-service-overview"
+            role="tabpanel"
+          >
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-text">
+                  {t('self-service:overview.title')}
+                </h2>
+                <p className="text-sm text-muted">{t('self-service:overview.summary')}</p>
+              </div>
+              <StatusBadge label={t('self-service:status.ownDataOnly')} tone="info" />
+            </div>
+
+            <dl className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded border border-border bg-bg px-3 py-2">
+                <dt className="text-xs font-medium uppercase text-muted">
+                  {t('self-service:overview.profileReadiness')}
+                </dt>
+                <dd className="mt-1">
+                  <StatusBadge
+                    label={t(`self-service:employmentStatus.${currentPerson.employmentStatus}`)}
+                    status={currentPerson.employmentStatus}
+                    toneByStatus={statusTone}
+                  />
+                </dd>
+              </div>
+              <div className="rounded border border-border bg-bg px-3 py-2">
+                <dt className="text-xs font-medium uppercase text-muted">
+                  {t('self-service:overview.accountLink')}
+                </dt>
+                <dd className="mt-1">
+                  <StatusBadge
+                    label={t(`self-service:accountLinkStatus.${currentPerson.accountLinkStatus}`)}
+                    status={currentPerson.accountLinkStatus}
+                    toneByStatus={statusTone}
+                  />
+                </dd>
+              </div>
+              <div className="rounded border border-border bg-bg px-3 py-2">
+                <dt className="text-xs font-medium uppercase text-muted">
+                  {t('self-service:overview.todayWork')}
+                </dt>
+                <dd className="mt-1 text-sm font-medium text-text">
+                  {t('self-service:overview.todayWorkValue', {
+                    workShiftCount: workShifts.length,
+                    eventCount: events.length,
+                  })}
+                </dd>
+              </div>
+              <div className="rounded border border-border bg-bg px-3 py-2">
+                <dt className="text-xs font-medium uppercase text-muted">
+                  {t('self-service:overview.preferences')}
+                </dt>
+                <dd className="mt-1 text-sm font-medium text-text">
+                  {emptyValue(currentPerson.locale, notAvailable)} /{' '}
+                  {emptyValue(currentPerson.timezone, notAvailable)}
+                </dd>
+              </div>
+            </dl>
+          </section>
+        ) : null}
+
+        {currentPerson && activeModule === 'kpi' ? (
+          <section
+            className="rounded border border-border bg-panel p-4 shadow-sm"
+            data-testid="self-service-panel-kpi"
+            role="tabpanel"
+          >
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold">{t('self-service:sections.kpi.title')}</h2>
@@ -742,8 +817,12 @@ export const SelfServicePage = (): JSX.Element => {
           </section>
         ) : null}
 
-        {currentPerson ? (
-          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+        {currentPerson && activeModule === 'profile' ? (
+          <section
+            className="rounded border border-border bg-panel p-4 shadow-sm"
+            data-testid="self-service-panel-profile"
+            role="tabpanel"
+          >
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold">
@@ -809,8 +888,12 @@ export const SelfServicePage = (): JSX.Element => {
           </section>
         ) : null}
 
-        {currentPerson ? (
-          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+        {currentPerson && activeModule === 'talentGroups' ? (
+          <section
+            className="rounded border border-border bg-panel p-4 shadow-sm"
+            data-testid="self-service-panel-talentGroups"
+            role="tabpanel"
+          >
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold">
@@ -966,10 +1049,11 @@ export const SelfServicePage = (): JSX.Element => {
           </section>
         ) : null}
 
-        {currentPerson ? (
+        {currentPerson && activeModule === 'account' ? (
           <section
-            className="rounded-lg border border-border bg-panel p-4 shadow-sm"
+            className="rounded border border-border bg-panel p-4 shadow-sm"
             data-testid="self-service-account-card"
+            role="tabpanel"
           >
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -1084,213 +1168,224 @@ export const SelfServicePage = (): JSX.Element => {
           </section>
         ) : null}
 
-        {currentPerson ? (
-          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
+        {currentPerson && activeModule === 'work' ? (
+          <section
+            className="rounded border border-border bg-panel p-4 shadow-sm"
+            data-testid="self-service-panel-work"
+            role="tabpanel"
+          >
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold">
+                <h2 className="text-lg font-semibold">{t('self-service:sections.work.title')}</h2>
+                <p className="text-sm text-muted">{t('self-service:sections.work.summary')}</p>
+              </div>
+              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
+            </div>
+
+            <div className="mb-4 rounded border border-border bg-bg p-3">
+              <div className="mb-4">
+                <h3 className="text-base font-semibold">
                   {t('self-service:sections.workShifts.title')}
-                </h2>
+                </h3>
                 <p className="text-sm text-muted">
                   {t('self-service:sections.workShifts.summary')}
                 </p>
               </div>
-              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
+
+              {workShiftsQuery.isLoading && workShifts.length === 0 ? (
+                <LoadingState lines={4} />
+              ) : null}
+
+              {workShiftsQuery.isError ? (
+                <ErrorState
+                  title={t('self-service:errors.workShiftsTitle')}
+                  message={t('self-service:errors.workShiftsMessage')}
+                />
+              ) : null}
+
+              {!workShiftsQuery.isLoading && !workShiftsQuery.isError && workShifts.length === 0 ? (
+                <EmptyState
+                  title={t('self-service:empty.workShiftsTitle')}
+                  message={t('self-service:empty.workShiftsMessage')}
+                />
+              ) : null}
+
+              {workShifts.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table
+                    className="min-w-full text-left text-sm"
+                    aria-label={t('self-service:tables.workShifts')}
+                  >
+                    <thead className="border-b border-border text-xs uppercase text-muted">
+                      <tr>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:workShiftFields.title')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:workShiftFields.status')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:workShiftFields.startsAt')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:workShiftFields.endsAt')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:workShiftFields.sourceType')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {workShifts.map((shift) => (
+                        <tr key={shift.workShiftId} data-testid="self-service-work-shift-row">
+                          <td className="px-3 py-3 font-medium text-text">{shift.title}</td>
+                          <td className="px-3 py-3">
+                            <StatusBadge
+                              label={t(`self-service:workShiftStatus.${shift.status}`)}
+                              status={shift.status}
+                              toneByStatus={statusTone}
+                            />
+                          </td>
+                          <td className="px-3 py-3">{formatBusinessTimestamp(shift.startsAt)}</td>
+                          <td className="px-3 py-3">{formatBusinessTimestamp(shift.endsAt)}</td>
+                          <td className="px-3 py-3">
+                            {t(`self-service:workShiftSourceType.${shift.sourceType}`)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {workShiftNextCursor ? (
+                    <div className="mt-3 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setWorkShiftCursor(workShiftNextCursor)}
+                        disabled={isLoadingMoreWorkShifts}
+                        className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-bg disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                        {isLoadingMoreWorkShifts
+                          ? t('self-service:actions.loadingMore')
+                          : t('self-service:actions.loadMore')}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
-            {workShiftsQuery.isLoading && workShifts.length === 0 ? (
-              <LoadingState lines={4} />
-            ) : null}
-
-            {workShiftsQuery.isError ? (
-              <ErrorState
-                title={t('self-service:errors.workShiftsTitle')}
-                message={t('self-service:errors.workShiftsMessage')}
-              />
-            ) : null}
-
-            {!workShiftsQuery.isLoading && !workShiftsQuery.isError && workShifts.length === 0 ? (
-              <EmptyState
-                title={t('self-service:empty.workShiftsTitle')}
-                message={t('self-service:empty.workShiftsMessage')}
-              />
-            ) : null}
-
-            {workShifts.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table
-                  className="min-w-full text-left text-sm"
-                  aria-label={t('self-service:tables.workShifts')}
-                >
-                  <thead className="border-b border-border text-xs uppercase text-muted">
-                    <tr>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:workShiftFields.title')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:workShiftFields.status')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:workShiftFields.startsAt')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:workShiftFields.endsAt')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:workShiftFields.sourceType')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {workShifts.map((shift) => (
-                      <tr key={shift.workShiftId} data-testid="self-service-work-shift-row">
-                        <td className="px-3 py-3 font-medium text-text">{shift.title}</td>
-                        <td className="px-3 py-3">
-                          <StatusBadge
-                            label={t(`self-service:workShiftStatus.${shift.status}`)}
-                            status={shift.status}
-                            toneByStatus={statusTone}
-                          />
-                        </td>
-                        <td className="px-3 py-3">{formatBusinessTimestamp(shift.startsAt)}</td>
-                        <td className="px-3 py-3">{formatBusinessTimestamp(shift.endsAt)}</td>
-                        <td className="px-3 py-3">
-                          {t(`self-service:workShiftSourceType.${shift.sourceType}`)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {workShiftNextCursor ? (
-                  <div className="mt-3 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setWorkShiftCursor(workShiftNextCursor)}
-                      disabled={isLoadingMoreWorkShifts}
-                      className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-bg disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                      {isLoadingMoreWorkShifts
-                        ? t('self-service:actions.loadingMore')
-                        : t('self-service:actions.loadMore')}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </section>
-        ) : null}
-
-        {currentPerson ? (
-          <section className="rounded-lg border border-border bg-panel p-4 shadow-sm">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">{t('self-service:sections.events.title')}</h2>
+            <div className="rounded border border-border bg-bg p-3">
+              <div className="mb-4">
+                <h3 className="text-base font-semibold">
+                  {t('self-service:sections.events.title')}
+                </h3>
                 <p className="text-sm text-muted">{t('self-service:sections.events.summary')}</p>
               </div>
-              <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
-            </div>
+              {eventsQuery.isLoading ? (
+                <div data-testid="self-service-events-loading">
+                  <LoadingState lines={4} />
+                </div>
+              ) : null}
 
-            {eventsQuery.isLoading ? (
-              <div data-testid="self-service-events-loading">
-                <LoadingState lines={4} />
-              </div>
-            ) : null}
+              {eventsQuery.isError ? (
+                <ErrorState
+                  title={t('self-service:errors.eventsTitle')}
+                  message={t('self-service:errors.eventsMessage')}
+                />
+              ) : null}
 
-            {eventsQuery.isError ? (
-              <ErrorState
-                title={t('self-service:errors.eventsTitle')}
-                message={t('self-service:errors.eventsMessage')}
-              />
-            ) : null}
+              {eventsMeta?.window ? (
+                <p className="mb-3 rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+                  {t('self-service:events.windowCopy', {
+                    recentPastDays: eventsMeta.window.recentPastDays,
+                    upcomingDays: eventsMeta.window.upcomingDays,
+                    windowStartAt: formatBusinessTimestamp(eventsMeta.window.windowStartAt),
+                    windowEndAt: formatBusinessTimestamp(eventsMeta.window.windowEndAt),
+                  })}
+                  {eventsMeta.truncated ? ` ${t('self-service:events.truncatedCopy')}` : ''}
+                </p>
+              ) : null}
 
-            {eventsMeta?.window ? (
-              <p className="mb-3 rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
-                {t('self-service:events.windowCopy', {
-                  recentPastDays: eventsMeta.window.recentPastDays,
-                  upcomingDays: eventsMeta.window.upcomingDays,
-                  windowStartAt: formatBusinessTimestamp(eventsMeta.window.windowStartAt),
-                  windowEndAt: formatBusinessTimestamp(eventsMeta.window.windowEndAt),
-                })}
-                {eventsMeta.truncated ? ` ${t('self-service:events.truncatedCopy')}` : ''}
-              </p>
-            ) : null}
+              {!eventsQuery.isLoading && !eventsQuery.isError && events.length === 0 ? (
+                <EmptyState
+                  title={t('self-service:empty.eventsTitle')}
+                  message={t('self-service:empty.eventsMessage')}
+                />
+              ) : null}
 
-            {!eventsQuery.isLoading && !eventsQuery.isError && events.length === 0 ? (
-              <EmptyState
-                title={t('self-service:empty.eventsTitle')}
-                message={t('self-service:empty.eventsMessage')}
-              />
-            ) : null}
-
-            {events.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table
-                  className="min-w-full text-left text-sm"
-                  aria-label={t('self-service:tables.events')}
-                >
-                  <thead className="border-b border-border text-xs uppercase text-muted">
-                    <tr>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:eventFields.eventCode')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:eventFields.title')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:eventFields.status')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:eventFields.startsAt')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:eventFields.endsAt')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:eventFields.assignmentKind')}
-                      </th>
-                      <th className="px-3 py-2 font-medium">
-                        {t('self-service:eventFields.assignmentStatus')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {events.map((event) => (
-                      <tr key={event.eventId} data-testid="self-service-event-row">
-                        <td className="px-3 py-3 font-mono text-xs text-text">{event.eventCode}</td>
-                        <td className="px-3 py-3 font-medium text-text">{event.title}</td>
-                        <td className="px-3 py-3">
-                          <StatusBadge
-                            label={t(`self-service:eventStatus.${event.status}`)}
-                            status={event.status}
-                            toneByStatus={statusTone}
-                          />
-                        </td>
-                        <td className="px-3 py-3">{formatBusinessTimestamp(event.startsAt)}</td>
-                        <td className="px-3 py-3">{formatBusinessTimestamp(event.endsAt)}</td>
-                        <td className="px-3 py-3">
-                          <StatusBadge
-                            label={t(`self-service:eventAssignmentKind.${event.ownAssignmentKind}`)}
-                            status={event.ownAssignmentKind}
-                            toneByStatus={statusTone}
-                            uppercase={false}
-                          />
-                        </td>
-                        <td className="px-3 py-3">
-                          <StatusBadge
-                            label={t(
-                              `self-service:eventAssignmentStatus.${event.ownAssignmentStatus}`,
-                            )}
-                            status={event.ownAssignmentStatus}
-                            toneByStatus={statusTone}
-                          />
-                        </td>
+              {events.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table
+                    className="min-w-full text-left text-sm"
+                    aria-label={t('self-service:tables.events')}
+                  >
+                    <thead className="border-b border-border text-xs uppercase text-muted">
+                      <tr>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:eventFields.eventCode')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:eventFields.title')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:eventFields.status')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:eventFields.startsAt')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:eventFields.endsAt')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:eventFields.assignmentKind')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('self-service:eventFields.assignmentStatus')}
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : null}
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {events.map((event) => (
+                        <tr key={event.eventId} data-testid="self-service-event-row">
+                          <td className="px-3 py-3 font-mono text-xs text-text">
+                            {event.eventCode}
+                          </td>
+                          <td className="px-3 py-3 font-medium text-text">{event.title}</td>
+                          <td className="px-3 py-3">
+                            <StatusBadge
+                              label={t(`self-service:eventStatus.${event.status}`)}
+                              status={event.status}
+                              toneByStatus={statusTone}
+                            />
+                          </td>
+                          <td className="px-3 py-3">{formatBusinessTimestamp(event.startsAt)}</td>
+                          <td className="px-3 py-3">{formatBusinessTimestamp(event.endsAt)}</td>
+                          <td className="px-3 py-3">
+                            <StatusBadge
+                              label={t(
+                                `self-service:eventAssignmentKind.${event.ownAssignmentKind}`,
+                              )}
+                              status={event.ownAssignmentKind}
+                              toneByStatus={statusTone}
+                              uppercase={false}
+                            />
+                          </td>
+                          <td className="px-3 py-3">
+                            <StatusBadge
+                              label={t(
+                                `self-service:eventAssignmentStatus.${event.ownAssignmentStatus}`,
+                              )}
+                              status={event.ownAssignmentStatus}
+                              toneByStatus={statusTone}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
           </section>
         ) : null}
       </PageContainer>

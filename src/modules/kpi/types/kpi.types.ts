@@ -183,6 +183,7 @@ export type KpiPlanQuery = {
 };
 
 export type KpiActualWorkspacePlanQuery = {
+  subjectType?: Extract<KpiSubjectType, 'TALENT_GROUP' | 'ORG_UNIT'>;
   periodMonth?: string;
   groupId?: string;
   subjectId?: string;
@@ -504,7 +505,7 @@ export type KpiActualWorkspacePlanSummary = {
   planCode: string;
   title: string;
   periodMonth: string;
-  subjectType: 'TALENT_GROUP';
+  subjectType: Extract<KpiSubjectType, 'TALENT_GROUP' | 'ORG_UNIT'>;
   subjectId: string;
   subjectRef: ReferenceSummary | null;
   planStatus: KpiPlanStatus;

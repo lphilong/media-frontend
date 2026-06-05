@@ -289,8 +289,14 @@ describe('KPI MVP UX', () => {
     renderRoute('/kpi');
     await openProgressActualsTab();
 
+    const orgUnitRow = (await screen.findByText('KPI-202606-ORG-001')).closest('tr');
+    expect(orgUnitRow).not.toBeNull();
+    expect(within(orgUnitRow!).getByText('Org Unit')).toBeInTheDocument();
+    expect(within(orgUnitRow!).getByText('Operations Unit')).toBeInTheDocument();
+
     const row = (await screen.findByText('KPI-202605-000002')).closest('tr');
     expect(row).not.toBeNull();
+    expect(within(row!).getByText('Talent Group')).toBeInTheDocument();
     expect(within(row!).getByText('Creator Team')).toBeInTheDocument();
     expect(within(row!).getByText('05-2026')).toBeInTheDocument();
     expect(within(row!).getByText('1.000.000 VND')).toBeInTheDocument();
@@ -318,6 +324,30 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByText('kpi-plan-published-alloc-1')).toBeInTheDocument();
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('employment-profile-001')).not.toBeInTheDocument();
+  });
+
+  it('opens ORG_UNIT Admin actual workspace detail and loads the ORG_UNIT actual grid', async () => {
+    vi.setSystemTime(new Date('2026-06-15T09:00:00+07:00'));
+
+    renderRoute('/kpi?subjectType=ORG_UNIT');
+    await openProgressActualsTab();
+
+    const workspaceRow = (await screen.findByText('KPI-202606-ORG-001')).closest('tr');
+    expect(workspaceRow).not.toBeNull();
+    await userEvent.click(within(workspaceRow!).getByRole('button', { name: 'View detail' }));
+
+    expect(await screen.findByText('An Nguyen')).toBeInTheDocument();
+    expect(screen.getByText(/Org Unit - Operations Unit - 06-2026/)).toBeInTheDocument();
+    expect(screen.queryByText('employment-profile-ops-001')).not.toBeInTheDocument();
+    expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
+
+    const actualDate = screen.getByLabelText('Actual date');
+    await userEvent.clear(actualDate);
+    await userEvent.type(actualDate, '2026-06-15');
+    await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
+
+    expect(readLastKpiOrgUnitActualGridDate()).toBe('2026-06-15');
+    expect(await screen.findByLabelText('An Nguyen Revenue VND actual')).toBeInTheDocument();
   });
 
   it('shows finalized result snapshot and null-snapshot fallback in Actual Workspace detail', async () => {

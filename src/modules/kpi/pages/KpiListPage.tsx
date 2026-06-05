@@ -15,23 +15,29 @@ import {
 import {
   useCreateKpiActualMutation,
   useCreateKpiCorrectionMutation,
+  useCreateKpiOrgUnitActualMutation,
+  useCreateKpiOrgUnitCorrectionMutation,
   useKpiAllocations,
   useCreateKpiPlanMutation,
   useKpiActualDailyGrid,
   useKpiActualWorkspacePlanDetail,
   useKpiActualWorkspacePlans,
   useKpiCorrectionHistory,
+  useKpiOrgUnitActualGrid,
+  useKpiOrgUnitCorrectionHistory,
   useKpiPlans,
   useMarkKpiActualExcuseMutation,
+  useMarkKpiOrgUnitActualExcuseMutation,
   useUnmarkKpiActualExcuseMutation,
+  useUnmarkKpiOrgUnitActualExcuseMutation,
   useUpdateKpiActualMutation,
+  useUpdateKpiOrgUnitActualMutation,
 } from '@modules/kpi/hooks/use-kpi';
 import type {
   KpiActualEntryStatusSummary,
   KpiActualExcuseReasonCode,
   KpiActualExcuseStatus,
   KpiActualGridMetricCell,
-  KpiActualGridRow,
   KpiActualWorkspaceMetricSummary,
   KpiActualWorkspaceMissingSignal,
   KpiActualWorkspacePlanQuery,
@@ -40,6 +46,7 @@ import type {
   KpiCreatePlanPayload,
   KpiMetricCode,
   KpiPlanQuery,
+  KpiSubjectType,
 } from '@modules/kpi/types/kpi.types';
 import {
   kpiActualExcuseReasonCodes,
@@ -73,8 +80,16 @@ type TargetDraft = {
   value: string;
 };
 
+type ActualWorkspaceGridSubjectType = Extract<KpiSubjectType, 'TALENT_GROUP' | 'ORG_UNIT'>;
+
+type ActualWorkspaceGridRow = {
+  allocationId: string;
+  memberDisplayName: string | null;
+  metrics: KpiActualGridMetricCell[];
+};
+
 type CorrectionTarget = {
-  row: KpiActualGridRow;
+  row: ActualWorkspaceGridRow;
   cell: KpiActualGridMetricCell;
   proposedValue?: string;
 };
@@ -321,6 +336,7 @@ export const KpiListPage = (): JSX.Element => {
   const [loadedActualGrid, setLoadedActualGrid] = useState<{
     kpiPlanId: string;
     actualDate: string;
+    subjectType: ActualWorkspaceGridSubjectType;
   }>();
   const [actualWorkspaceCursor, setActualWorkspaceCursor] = useState<string>();
   const [actualWorkspaceNextCursor, setActualWorkspaceNextCursor] = useState<string>();
@@ -332,14 +348,26 @@ export const KpiListPage = (): JSX.Element => {
   const [correctionTarget, setCorrectionTarget] = useState<CorrectionTarget | null>(null);
   const [excuseDraft, setExcuseDraft] = useState<ExcuseDraft | null>(null);
 
-  const actualGridQuery = useKpiActualDailyGrid(
-    loadedActualGrid?.kpiPlanId,
-    loadedActualGrid?.actualDate,
+  const talentGroupActualGridQuery = useKpiActualDailyGrid(
+    loadedActualGrid?.subjectType === 'TALENT_GROUP' ? loadedActualGrid.kpiPlanId : undefined,
+    loadedActualGrid?.subjectType === 'TALENT_GROUP' ? loadedActualGrid.actualDate : undefined,
   );
+  const orgUnitActualGridQuery = useKpiOrgUnitActualGrid(
+    loadedActualGrid?.subjectType === 'ORG_UNIT' ? loadedActualGrid.kpiPlanId : undefined,
+    loadedActualGrid?.subjectType === 'ORG_UNIT' ? loadedActualGrid.actualDate : undefined,
+  );
+  const actualGridQuery =
+    loadedActualGrid?.subjectType === 'ORG_UNIT'
+      ? orgUnitActualGridQuery
+      : talentGroupActualGridQuery;
   const createActualMutation = useCreateKpiActualMutation();
+  const createOrgUnitActualMutation = useCreateKpiOrgUnitActualMutation();
   const updateActualMutation = useUpdateKpiActualMutation();
+  const updateOrgUnitActualMutation = useUpdateKpiOrgUnitActualMutation();
   const markActualExcuseMutation = useMarkKpiActualExcuseMutation();
+  const markOrgUnitActualExcuseMutation = useMarkKpiOrgUnitActualExcuseMutation();
   const unmarkActualExcuseMutation = useUnmarkKpiActualExcuseMutation();
+  const unmarkOrgUnitActualExcuseMutation = useUnmarkKpiOrgUnitActualExcuseMutation();
   const capabilityCopy = useMemo(
     () => ({
       loading: t('common:capabilities.checkingPermissions'),
@@ -453,18 +481,25 @@ export const KpiListPage = (): JSX.Element => {
     [searchParams],
   );
   const actualWorkspaceBaseQuery = useMemo<KpiActualWorkspacePlanQuery>(
-    () => ({
-      search: query.search,
-      periodMonth: query.periodMonth,
-      subjectId: query.subjectType === 'TALENT_GROUP' ? query.subjectId : undefined,
-      groupId: query.groupId,
-      allocationCoverage: actualWorkspaceAllocationCoverage,
-      hasOverdueActuals: actualWorkspaceHasOverdueActuals,
-      hasPendingActuals: actualWorkspaceHasPendingActuals,
-      limit: actualWorkspacePageLimit,
-      sortBy: actualWorkspaceSortBy,
-      sortDirection: actualWorkspaceSortDirection,
-    }),
+    () => {
+      const subjectType =
+        query.subjectType === 'TALENT_GROUP' || query.subjectType === 'ORG_UNIT'
+          ? query.subjectType
+          : undefined;
+      return {
+        search: query.search,
+        periodMonth: query.periodMonth,
+        subjectType,
+        subjectId: subjectType ? query.subjectId : undefined,
+        groupId: subjectType === 'ORG_UNIT' ? undefined : query.groupId,
+        allocationCoverage: actualWorkspaceAllocationCoverage,
+        hasOverdueActuals: actualWorkspaceHasOverdueActuals,
+        hasPendingActuals: actualWorkspaceHasPendingActuals,
+        limit: actualWorkspacePageLimit,
+        sortBy: actualWorkspaceSortBy,
+        sortDirection: actualWorkspaceSortDirection,
+      };
+    },
     [
       actualWorkspaceAllocationCoverage,
       actualWorkspaceHasOverdueActuals,
@@ -629,11 +664,11 @@ export const KpiListPage = (): JSX.Element => {
     }
   };
 
-  const cellKey = (row: KpiActualGridRow, cell: KpiActualGridMetricCell): string =>
+  const cellKey = (row: ActualWorkspaceGridRow, cell: KpiActualGridMetricCell): string =>
     `${row.allocationId}:${cell.metricCode}`;
 
   const openExcuseDraft = (
-    row: KpiActualGridRow,
+    row: ActualWorkspaceGridRow,
     cell: KpiActualGridMetricCell,
     status: KpiActualExcuseStatus,
   ): void => {
@@ -658,7 +693,7 @@ export const KpiListPage = (): JSX.Element => {
       return;
     }
     try {
-      await markActualExcuseMutation.mutateAsync({
+      const payload = {
         kpiPlanId: loadedActualGrid.kpiPlanId,
         allocationId: excuseDraft.allocationId,
         metricCode: excuseDraft.metricCode,
@@ -666,7 +701,12 @@ export const KpiListPage = (): JSX.Element => {
         status: excuseDraft.status,
         reasonCode: excuseDraft.reasonCode,
         reasonText: excuseDraft.reasonText,
-      });
+      };
+      if (loadedActualGrid.subjectType === 'ORG_UNIT') {
+        await markOrgUnitActualExcuseMutation.mutateAsync(payload);
+      } else {
+        await markActualExcuseMutation.mutateAsync(payload);
+      }
       setExcuseDraft(null);
       setCellDrafts({});
       notifySuccess('kpi:feedback.actualExcuseMarked');
@@ -687,10 +727,15 @@ export const KpiListPage = (): JSX.Element => {
       return;
     }
     try {
-      await unmarkActualExcuseMutation.mutateAsync({
+      const payload = {
         kpiPlanId: loadedActualGrid.kpiPlanId,
         excuseId: cell.actualExcuse.id,
-      });
+      };
+      if (loadedActualGrid.subjectType === 'ORG_UNIT') {
+        await unmarkOrgUnitActualExcuseMutation.mutateAsync(payload);
+      } else {
+        await unmarkActualExcuseMutation.mutateAsync(payload);
+      }
       setExcuseDraft(null);
       setCellDrafts({});
       notifySuccess('kpi:feedback.actualExcuseUnmarked');
@@ -733,19 +778,29 @@ export const KpiListPage = (): JSX.Element => {
         }
         try {
           if (!cell.hasEntry) {
-            await createActualMutation.mutateAsync({
+            const payload = {
               kpiPlanId: grid.kpiPlanId,
               allocationId: row.allocationId,
               metricCode: cell.metricCode,
               actualDate: grid.actualDate,
               actualValue: parsed,
-            });
+            };
+            if (grid.subjectType === 'ORG_UNIT') {
+              await createOrgUnitActualMutation.mutateAsync(payload);
+            } else {
+              await createActualMutation.mutateAsync(payload);
+            }
           } else if (cell.canDirectEdit && !cell.requiresCorrection && cell.actualEntryId) {
-            await updateActualMutation.mutateAsync({
+            const payload = {
               kpiPlanId: grid.kpiPlanId,
               actualEntryId: cell.actualEntryId,
               actualValue: parsed,
-            });
+            };
+            if (grid.subjectType === 'ORG_UNIT') {
+              await updateOrgUnitActualMutation.mutateAsync(payload);
+            } else {
+              await updateActualMutation.mutateAsync(payload);
+            }
           } else if (cell.actualEntryId) {
             if (correctActualHint.disabled) {
               setActualError(correctActualHint.disabledReason ?? capabilityCopy.unavailable);
@@ -782,10 +837,15 @@ export const KpiListPage = (): JSX.Element => {
       setActualError(t('kpi:validation.invalidActualDate'));
       return;
     }
-    const next = { kpiPlanId: selectedWorkspacePlanId, actualDate };
+    const next = {
+      kpiPlanId: selectedWorkspacePlanId,
+      actualDate,
+      subjectType: actualWorkspaceDetailQuery.data.subjectType,
+    };
     if (
       loadedActualGrid?.kpiPlanId === next.kpiPlanId &&
-      loadedActualGrid.actualDate === next.actualDate
+      loadedActualGrid.actualDate === next.actualDate &&
+      loadedActualGrid.subjectType === next.subjectType
     ) {
       void actualGridQuery.refetch();
       return;
@@ -1616,7 +1676,8 @@ export const KpiListPage = (): JSX.Element => {
                 <thead className="bg-slate-100">
                   <tr>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.planCode')}</th>
-                    <th className="px-3 py-2 text-left">{t('kpi:fields.group')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.subjectType')}</th>
+                    <th className="px-3 py-2 text-left">{t('kpi:fields.subject')}</th>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.periodMonth')}</th>
                     <th className="px-3 py-2 text-left">
                       {t('kpi:actualWorkspace.revenueTarget')}
@@ -1644,6 +1705,7 @@ export const KpiListPage = (): JSX.Element => {
                   {actualWorkspacePlans.map((plan) => (
                     <tr key={plan.planId} className="border-t border-border">
                       <td className="px-3 py-2">{plan.planCode}</td>
+                      <td className="px-3 py-2">{t(`kpi:subjectTypes.${plan.subjectType}`)}</td>
                       <td className="px-3 py-2">
                         {plan.subjectRef?.displayName ??
                           plan.subjectRef?.name ??
@@ -1720,6 +1782,7 @@ export const KpiListPage = (): JSX.Element => {
               <div>
                 <h3 className="font-semibold">{t('kpi:actualWorkspace.selectedPlan')}</h3>
                 <p className="text-sm text-muted">
+                  {t(`kpi:subjectTypes.${actualWorkspaceDetailQuery.data.subjectType}`)} -{' '}
                   {actualWorkspaceDetailQuery.data.subjectRef?.displayName ??
                     actualWorkspaceDetailQuery.data.subjectRef?.name ??
                     t('kpi:fields.subjectUnavailable')}{' '}
@@ -2185,6 +2248,11 @@ export const KpiListPage = (): JSX.Element => {
         <CorrectionPanel
           kpiPlanId={actualGridQuery.data?.kpiPlanId ?? selectedWorkspacePlanId ?? ''}
           actualDate={actualGridQuery.data?.actualDate ?? actualDate}
+          subjectType={
+            actualGridQuery.data?.subjectType === 'ORG_UNIT'
+              ? 'ORG_UNIT'
+              : (loadedActualGrid?.subjectType ?? 'TALENT_GROUP')
+          }
           target={correctionTarget}
           initialValue={correctionTarget.proposedValue}
           correctionHint={correctActualHint}
@@ -2202,6 +2270,7 @@ export const KpiListPage = (): JSX.Element => {
 const CorrectionPanel = ({
   kpiPlanId,
   actualDate,
+  subjectType,
   target,
   initialValue,
   correctionHint,
@@ -2209,6 +2278,7 @@ const CorrectionPanel = ({
 }: {
   kpiPlanId: string;
   actualDate: string;
+  subjectType: ActualWorkspaceGridSubjectType;
   target: CorrectionTarget;
   initialValue?: string;
   correctionHint: ReturnType<typeof createKpiActionCapabilityHint>;
@@ -2217,7 +2287,16 @@ const CorrectionPanel = ({
   const { t } = useTranslation(['kpi', 'common']);
   const { notifySuccess } = useMutationFeedback();
   const correctionMutation = useCreateKpiCorrectionMutation();
-  const historyQuery = useKpiCorrectionHistory(kpiPlanId, target.cell.actualEntryId ?? undefined);
+  const orgUnitCorrectionMutation = useCreateKpiOrgUnitCorrectionMutation();
+  const historyQuery = useKpiCorrectionHistory(
+    subjectType === 'TALENT_GROUP' ? kpiPlanId : undefined,
+    target.cell.actualEntryId ?? undefined,
+  );
+  const orgUnitHistoryQuery = useKpiOrgUnitCorrectionHistory(
+    subjectType === 'ORG_UNIT' ? kpiPlanId : undefined,
+    target.cell.actualEntryId ?? undefined,
+  );
+  const activeHistoryQuery = subjectType === 'ORG_UNIT' ? orgUnitHistoryQuery : historyQuery;
   const [correctedValue, setCorrectedValue] = useState(
     initialValue ?? formatKpiMetricInput(target.cell.metricCode, target.cell.effectiveValue),
   );
@@ -2246,12 +2325,17 @@ const CorrectionPanel = ({
       return;
     }
     try {
-      await correctionMutation.mutateAsync({
+      const payload = {
         kpiPlanId,
         actualEntryId: target.cell.actualEntryId,
         correctedValue: parsed,
         reason,
-      });
+      };
+      if (subjectType === 'ORG_UNIT') {
+        await orgUnitCorrectionMutation.mutateAsync(payload);
+      } else {
+        await correctionMutation.mutateAsync(payload);
+      }
       notifySuccess('kpi:feedback.correctionCreated');
       onClose();
     } catch (submitError) {
@@ -2319,7 +2403,9 @@ const CorrectionPanel = ({
       </div>
       <button
         type="button"
-        disabled={correctionHint.disabled || correctionMutation.isPending}
+        disabled={
+          correctionHint.disabled || correctionMutation.isPending || orgUnitCorrectionMutation.isPending
+        }
         title={correctionHint.disabledReason}
         className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
         onClick={() => void submit()}
@@ -2328,7 +2414,7 @@ const CorrectionPanel = ({
       </button>
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">{t('kpi:correction.history')}</h3>
-        {historyQuery.data?.map((item) => (
+        {activeHistoryQuery.data?.map((item) => (
           <div key={item.id} className="rounded border border-border p-2 text-sm">
             {formatKpiNumber(item.metricCode, item.previousValue)} {'->'}{' '}
             {formatKpiNumber(item.metricCode, item.correctedValue)} - {item.reason}

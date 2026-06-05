@@ -1,16 +1,30 @@
 {
   "page": {
     "eyebrow": "员工工作区",
-    "title": "自助服务",
+    "title": "Staff Workspace",
+    "subtitle": "Only your own profile, schedule, KPI, Talent Group, and account preferences.",
     "readOnly": "只读基础"
   },
   "navigation": {
     "label": "自助服务区域"
   },
+  "overview": {
+    "title": "Overview",
+    "summary": "Readiness and today's own-data snapshot from Self-Service.",
+    "profileReadiness": "Profile readiness",
+    "accountLink": "Account link",
+    "todayWork": "Today snapshot",
+    "todayWorkValue": "{{workShiftCount}} shifts / {{eventCount}} events",
+    "preferences": "Locale / timezone"
+  },
   "sections": {
     "profile": {
       "title": "我的资料",
       "summary": "只读员工资料摘要。"
+    },
+    "work": {
+      "title": "我的工作",
+      "summary": "只读查看分配给你自己的班次和活动。"
     },
     "workShifts": {
       "title": "我的班次",
@@ -125,9 +139,11 @@
   },
   "status": {
     "available": "可用",
+    "selectedModule": "已选择",
     "comingSoon": "即将推出",
     "readOnly": "只读",
-    "preferencesOnly": "仅偏好"
+    "preferencesOnly": "仅偏好",
+    "ownDataOnly": "Own data only"
   },
   "actions": {
     "logout": "退出登录",

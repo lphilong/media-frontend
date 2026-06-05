@@ -6,6 +6,7 @@ import { http, HttpResponse } from 'msw';
 import { vi } from 'vitest';
 
 import { appRoutes } from '@app/router/router';
+import { useShellStore } from '@app/store/shell-store';
 import { parseSelfServiceKpiResponseForTest } from '@modules/self-service/api/self-service.api';
 import { setLocale } from '@shared/i18n/i18n';
 import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
@@ -66,6 +67,7 @@ const staffCapabilities = (): MockCapabilities => ({
 const renderRoute = async (path: string, setup?: () => void): Promise<void> => {
   cleanup();
   await setLocale('en');
+  useShellStore.getState().setLocale('en');
   resetSelfServiceMockData();
   setMockCurrentActorCapabilities(staffCapabilities());
   mockAuthAdapter.logoutRedirect.mockClear();
@@ -78,6 +80,13 @@ const renderRoute = async (path: string, setup?: () => void): Promise<void> => {
   await act(async () => {
     renderAppWithProviders(<RouterProvider router={router} />);
   });
+};
+
+const switchSelfServiceModule = async (
+  moduleId: 'overview' | 'profile' | 'work' | 'kpi' | 'talentGroups' | 'account',
+): Promise<void> => {
+  const user = userEvent.setup();
+  await user.click(await screen.findByTestId(`self-service-nav-${moduleId}`));
 };
 
 const makeSelfServiceKpiItem = (
@@ -163,22 +172,47 @@ describe('/self-service route', () => {
     await renderRoute('/');
 
     expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Self-Service' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
   });
 
-  it('renders staff shell and read-only My Profile summary outside the admin sidebar', async () => {
+  it('renders staff shell with Overview as the default active panel outside the admin sidebar', async () => {
     await renderRoute('/self-service');
 
     expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Self-Service' })).toBeInTheDocument();
-    expect((await screen.findAllByText('Mina Staff')).length).toBeGreaterThanOrEqual(2);
+    expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
+    expect(await screen.findByTestId('self-service-overview')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
+    expect((await screen.findAllByText('Mina Staff')).length).toBeGreaterThanOrEqual(1);
     expect((await screen.findAllByText('EP-SELF-001')).length).toBeGreaterThanOrEqual(1);
-    expect(await screen.findByText('mina.staff@example.test')).toBeInTheDocument();
-    expect((await screen.findAllByText('Creator Mina')).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole('heading', { name: 'My Profile' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'My KPI' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-account-card')).not.toBeInTheDocument();
+    expect(screen.queryByText('mina.staff@example.test')).not.toBeInTheDocument();
+    expect(screen.queryByText('Creator Mina')).not.toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-employment-profiles')).not.toBeInTheDocument();
+  });
+
+  it('uses button module switching instead of anchor-scroll navigation and updates active state', async () => {
+    await renderRoute('/self-service');
+
+    const user = userEvent.setup();
+    const overviewTab = await screen.findByTestId('self-service-nav-overview');
+    const profileTab = await screen.findByTestId('self-service-nav-profile');
+
+    expect(overviewTab).toHaveAttribute('aria-selected', 'true');
+    expect(profileTab).toHaveAttribute('aria-selected', 'false');
+    expect(profileTab.tagName).toBe('BUTTON');
+    expect(profileTab).not.toHaveAttribute('href');
+
+    await user.click(profileTab);
+
+    expect(profileTab).toHaveAttribute('aria-selected', 'true');
+    expect(overviewTab).toHaveAttribute('aria-selected', 'false');
+    expect(await screen.findByTestId('self-service-panel-profile')).toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-overview')).not.toBeInTheDocument();
   });
 
   it('parses nullable current-person locale and renders My Profile instead of not-linked state', async () => {
@@ -202,10 +236,12 @@ describe('/self-service route', () => {
       }),
     );
 
+    await switchSelfServiceModule('profile');
+
     expect(await screen.findByRole('heading', { name: 'My Profile' })).toBeInTheDocument();
     expect((await screen.findAllByText('EP-LINKED-NULL')).length).toBeGreaterThanOrEqual(1);
-    expect(await screen.findByText('linked.null.locale@example.test')).toBeInTheDocument();
     expect((await screen.findAllByText('TAL-LINKED-NULL')).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByTestId('self-service-panel-kpi')).not.toBeInTheDocument();
     expect(screen.queryByText('No linked Employment Profile')).not.toBeInTheDocument();
   });
 
@@ -272,6 +308,8 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
+    await switchSelfServiceModule('work');
+
     expect(await screen.findByRole('heading', { name: 'My Work Shifts' })).toBeInTheDocument();
     expect(await screen.findByText('Studio filming shift')).toBeInTheDocument();
     expect(await screen.findByText('Content review shift')).toBeInTheDocument();
@@ -333,6 +371,8 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
+    await user.click(await screen.findByTestId('self-service-nav-work'));
+
     expect(await screen.findByText('First page shift')).toBeInTheDocument();
     expect(screen.queryByText('Second page shift')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Load more' }));
@@ -347,7 +387,7 @@ describe('/self-service route', () => {
   it('does not render forbidden person, HR, Auth0, password setup, or role data', async () => {
     await renderRoute('/self-service');
 
-    expect((await screen.findAllByText('Mina Staff')).length).toBeGreaterThanOrEqual(2);
+    expect((await screen.findAllByText('Mina Staff')).length).toBeGreaterThanOrEqual(1);
     const bodyText = document.body.textContent ?? '';
     for (const forbidden of [
       'Mina Legal',
@@ -416,7 +456,9 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
-    expect(await screen.findByTestId('self-service-nav-events')).toHaveTextContent('Available');
+    await switchSelfServiceModule('work');
+
+    expect(await screen.findByTestId('self-service-nav-work')).toHaveTextContent('Selected');
     expect(await screen.findByTestId('self-service-nav-kpi')).toHaveTextContent('Available');
     expect(await screen.findByRole('heading', { name: 'My Events' })).toBeInTheDocument();
     expect(await screen.findByText('EVT-SELF-TAL')).toBeInTheDocument();
@@ -496,6 +538,8 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
+    await switchSelfServiceModule('work');
+
     expect(await screen.findByText('EVT-CAPPED')).toBeInTheDocument();
     expect(await screen.findByText('Capped visible event')).toBeInTheDocument();
     expect(
@@ -554,6 +598,8 @@ describe('/self-service route', () => {
     );
 
     await renderRoute('/self-service');
+
+    await switchSelfServiceModule('kpi');
 
     expect(await screen.findByRole('heading', { name: 'My KPI' })).toBeInTheDocument();
     expect(await screen.findByText('June operations KPI')).toBeInTheDocument();
@@ -634,6 +680,8 @@ describe('/self-service route', () => {
         history: [],
       }),
     );
+
+    await switchSelfServiceModule('kpi');
 
     expect(await screen.findByText('June creator group KPI')).toBeInTheDocument();
     expect(await screen.findByText('TikTok Diamond count')).toBeInTheDocument();
@@ -759,6 +807,8 @@ describe('/self-service route', () => {
       );
     });
 
+    await switchSelfServiceModule('kpi');
+
     expect(await screen.findByText('June operations KPI')).toBeInTheDocument();
     expect(screen.getByText('Current period')).toBeInTheDocument();
     expect(screen.getByText('Previous KPI history')).toBeInTheDocument();
@@ -834,6 +884,8 @@ describe('/self-service route', () => {
       }),
     );
 
+    await switchSelfServiceModule('kpi');
+
     expect(
       await screen.findByText('No official KPI is published for the current period.'),
     ).toBeInTheDocument();
@@ -884,6 +936,8 @@ describe('/self-service route', () => {
     );
 
     await renderRoute('/self-service');
+
+    await switchSelfServiceModule('kpi');
 
     expect(await screen.findByText('Old shape current KPI')).toBeInTheDocument();
     expect(screen.getByText('Current period')).toBeInTheDocument();
@@ -938,8 +992,10 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
+    await switchSelfServiceModule('talentGroups');
+
     expect(await screen.findByTestId('self-service-nav-talentGroups')).toHaveTextContent(
-      'Available',
+      'Selected',
     );
     expect(await screen.findByRole('heading', { name: 'My Talent Groups' })).toBeInTheDocument();
     expect(await screen.findByText('Creator Team')).toBeInTheDocument();
@@ -1023,6 +1079,8 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
+    await switchSelfServiceModule('talentGroups');
+
     expect(
       await screen.findByText('Showing the first 10 active Talent Groups.'),
     ).toBeInTheDocument();
@@ -1036,6 +1094,8 @@ describe('/self-service route', () => {
 
   it('renders My KPI empty, loading, and error states safely', async () => {
     await renderRoute('/self-service', () => setMockSelfServiceKpi([]));
+
+    await switchSelfServiceModule('kpi');
 
     expect(
       await screen.findByText('No official KPI is published for the current period.'),
@@ -1064,6 +1124,7 @@ describe('/self-service route', () => {
     );
 
     await renderRoute('/self-service');
+    await switchSelfServiceModule('kpi');
     expect(await screen.findByTestId('self-service-kpi-loading')).toBeInTheDocument();
     resolveKpi();
     await waitFor(() => {
@@ -1077,12 +1138,15 @@ describe('/self-service route', () => {
     );
 
     await renderRoute('/self-service');
+    await switchSelfServiceModule('kpi');
     expect(await screen.findByText('KPI unavailable')).toBeInTheDocument();
     expect(await screen.findByText('Your official KPI could not be loaded.')).toBeInTheDocument();
   });
 
   it('renders My Talent Groups empty, loading, and error states safely', async () => {
     await renderRoute('/self-service', () => setMockSelfServiceTalentGroups([]));
+
+    await switchSelfServiceModule('talentGroups');
 
     expect(await screen.findByText('No Talent Groups')).toBeInTheDocument();
     expect(
@@ -1103,6 +1167,7 @@ describe('/self-service route', () => {
     );
 
     await renderRoute('/self-service');
+    await switchSelfServiceModule('talentGroups');
     expect(await screen.findByTestId('self-service-talent-groups-loading')).toBeInTheDocument();
     resolveTalentGroups();
     await waitFor(() => {
@@ -1116,12 +1181,15 @@ describe('/self-service route', () => {
     );
 
     await renderRoute('/self-service');
+    await switchSelfServiceModule('talentGroups');
     expect(await screen.findByText('Talent Groups unavailable')).toBeInTheDocument();
     expect(await screen.findByText('Your Talent Groups could not be loaded.')).toBeInTheDocument();
   });
 
   it('renders My Events empty, loading, and error states safely', async () => {
     await renderRoute('/self-service', () => setMockSelfServiceEvents([]));
+
+    await switchSelfServiceModule('work');
 
     expect(await screen.findByText('No events')).toBeInTheDocument();
     expect(
@@ -1140,6 +1208,7 @@ describe('/self-service route', () => {
     );
 
     await renderRoute('/self-service');
+    await switchSelfServiceModule('work');
     expect(await screen.findByTestId('self-service-events-loading')).toBeInTheDocument();
     resolveEvents();
     await waitFor(() => {
@@ -1153,6 +1222,7 @@ describe('/self-service route', () => {
     );
 
     await renderRoute('/self-service');
+    await switchSelfServiceModule('work');
     expect(await screen.findByText('Events unavailable')).toBeInTheDocument();
     expect(await screen.findByText('Your events could not be loaded.')).toBeInTheDocument();
   });
@@ -1168,17 +1238,26 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
+    await switchSelfServiceModule('account');
+
     expect(await screen.findByTestId('self-service-account-card')).toBeInTheDocument();
-    expect(await screen.findByTestId('self-service-account-preferences-form')).toBeInTheDocument();
-    expect(await screen.findByTestId('self-service-nav-account')).toHaveTextContent('Available');
+    const preferencesForm = await screen.findByTestId('self-service-account-preferences-form');
+    expect(preferencesForm).toBeInTheDocument();
+    expect(await screen.findByTestId('self-service-nav-account')).toHaveTextContent('Selected');
     expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument();
     expect(await screen.findByText('mina.staff@example.test')).toBeInTheDocument();
-    expect(await screen.findByText('Linked')).toBeInTheDocument();
+    expect((await screen.findAllByText('Linked')).length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByText('Asia/Saigon')).toBeInTheDocument();
-    expect(screen.getByLabelText('Locale')).toBeInTheDocument();
-    expect(screen.getByLabelText('Timezone')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save preferences' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Reset' })).toBeDisabled();
+    expect(
+      within(preferencesForm).getByTestId('self-service-account-locale-select'),
+    ).toBeInTheDocument();
+    expect(
+      within(preferencesForm).getByTestId('self-service-account-timezone-select'),
+    ).toBeInTheDocument();
+    expect(
+      within(preferencesForm).getByTestId('self-service-account-save-preferences'),
+    ).toBeDisabled();
+    expect(within(preferencesForm).getByRole('button', { name: 'Reset' })).toBeDisabled();
     expect(
       screen.queryByRole('button', {
         name: /change email|change password|reset password|setup|link|unlink/i,
@@ -1260,9 +1339,18 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
-    await user.selectOptions(await screen.findByLabelText('Locale'), 'vi');
-    await user.selectOptions(await screen.findByLabelText('Timezone'), 'Asia/Ho_Chi_Minh');
-    await user.click(screen.getByRole('button', { name: 'Save preferences' }));
+    await user.click(await screen.findByTestId('self-service-nav-account'));
+
+    const preferencesForm = await screen.findByTestId('self-service-account-preferences-form');
+    await user.selectOptions(
+      within(preferencesForm).getByTestId('self-service-account-locale-select'),
+      'vi',
+    );
+    await user.selectOptions(
+      within(preferencesForm).getByTestId('self-service-account-timezone-select'),
+      'Asia/Ho_Chi_Minh',
+    );
+    await user.click(within(preferencesForm).getByTestId('self-service-account-save-preferences'));
 
     await waitFor(() => {
       expect(patchBodies).toEqual([{ locale: 'vi', timezone: 'Asia/Ho_Chi_Minh' }]);
@@ -1272,7 +1360,7 @@ describe('/self-service route', () => {
     expect(screen.getByText('Current timezone: Asia/Ho_Chi_Minh')).toBeInTheDocument();
   });
 
-  it('switches Self-Service language through the safe locale preference flow only', async () => {
+  it('keeps the shared locale switcher available without admin User API calls', async () => {
     const user = userEvent.setup();
     const patchBodies: unknown[] = [];
     let adminUserCalls = 0;
@@ -1309,14 +1397,19 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
-    await user.selectOptions(await screen.findByTestId('self-service-language-switcher'), 'zh');
+    const localeControl = await screen.findByTestId('self-service-locale-control');
+    await user.selectOptions(within(localeControl).getByLabelText('Locale'), 'zh');
 
     await waitFor(() => {
-      expect(patchBodies).toEqual([{ locale: 'zh' }]);
+      expect(patchBodies).toEqual([]);
       expect(adminUserCalls).toBe(0);
-      expect(screen.getByTestId('self-service-language-switcher')).toHaveValue('zh');
+      expect(within(localeControl).getByLabelText('Locale')).toHaveValue('zh');
     });
-    expect(await screen.findByRole('heading', { name: '自助服务' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
+    await act(async () => {
+      await setLocale('en');
+      useShellStore.getState().setLocale('en');
+    });
   });
 
   it('shows a safe preferences validation error and does not expose forbidden mutation fields', async () => {
@@ -1338,10 +1431,16 @@ describe('/self-service route', () => {
 
     await renderRoute('/self-service');
 
-    await user.selectOptions(await screen.findByLabelText('Locale'), 'zh');
-    await user.click(screen.getByRole('button', { name: 'Save preferences' }));
+    await user.click(await screen.findByTestId('self-service-nav-account'));
 
-    expect(await screen.findByText('Preferences could not be saved.')).toBeInTheDocument();
+    const preferencesForm = await screen.findByTestId('self-service-account-preferences-form');
+    await user.selectOptions(
+      within(preferencesForm).getByTestId('self-service-account-locale-select'),
+      'zh',
+    );
+    await user.click(within(preferencesForm).getByTestId('self-service-account-save-preferences'));
+
+    expect(await within(preferencesForm).findByRole('alert')).toBeInTheDocument();
     const bodyText = document.body.textContent ?? '';
     for (const forbidden of ['userId', 'employmentProfileId', 'role', 'scope', 'auth0']) {
       expect(bodyText).not.toContain(forbidden);
@@ -1352,11 +1451,11 @@ describe('/self-service route', () => {
     await renderRoute('/self-service');
 
     const user = userEvent.setup();
-    const logoutButton = await screen.findByRole('button', { name: 'Log out' });
+    const logoutButton = await screen.findByRole('button', { name: /log\s*out/i });
     await user.click(logoutButton);
 
     await waitFor(() => {
-      expect(mockAuthAdapter.logoutRedirect).toHaveBeenCalledWith('/auth/login');
+      expect(mockAuthAdapter.logoutRedirect).toHaveBeenCalledWith('/');
     });
   });
 

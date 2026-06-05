@@ -229,7 +229,7 @@
     "statusSummary": "Tom tat trang thai actual",
     "supportingMetrics": "Chi so ho tro",
     "closingState": "Trang thai dong ky",
-    "selectedPlan": "Ke hoach nhom da chon",
+    "selectedPlan": "Ke hoach KPI da chon",
     "viewDetail": "Xem chi tiet",
     "noAllocations": "Chua co phan bo",
     "unnamedMember": "Thanh vien chua co ten",
@@ -330,7 +330,7 @@
     "allocationMismatch": "Tổng phân bổ phải bằng mục tiêu kế hoạch trước khi publish.",
     "allocationMemberRequired": "Can it nhat mot thanh vien phan bo.",
     "employmentProfileRequired": "Bat buoc co ID ho so nhan su.",
-    "invalidActualDate": "Dùng DD-MM-YYYY.",
+    "invalidActualDate": "Dung YYYY-MM-DD.",
     "duplicateConflict": "Số thực đạt đã tồn tại với giá trị khác. Hãy sửa hoặc điều chỉnh.",
     "reasonRequired": "Bắt buộc nhập lý do điều chỉnh.",
     "excuseReasonRequired": "Bat buoc chon ma ly do va nhap noi dung ly do.",
@@ -374,7 +374,7 @@
     "excuseUnmarked": "Đã bỏ ngoại lệ."
   },
   "states": {
-    "emptyActualWorkspace": "Khong co ke hoach nhom de nhap actual.",
+    "emptyActualWorkspace": "Khong co ke hoach KPI de nhap actual.",
     "actualWorkspaceLoadErrorTitle": "Khong tai duoc khong gian nhap actual",
     "actualWorkspaceLoadErrorMessage": "Khong tai duoc danh sach ke hoach nhap actual.",
     "actualWorkspaceDetailLoadErrorTitle": "Khong tai duoc chi tiet ke hoach nhom",

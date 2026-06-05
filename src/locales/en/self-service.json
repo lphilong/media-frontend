@@ -1,16 +1,30 @@
 {
   "page": {
     "eyebrow": "Staff workspace",
-    "title": "Self-Service",
+    "title": "Staff Workspace",
+    "subtitle": "Your own profile, schedule, KPI, Talent Group, and account preferences.",
     "readOnly": "Read-only foundation"
   },
   "navigation": {
     "label": "Self-service sections"
   },
+  "overview": {
+    "title": "Overview",
+    "summary": "Readiness and today's own-data snapshot from Self-Service.",
+    "profileReadiness": "Profile readiness",
+    "accountLink": "Account link",
+    "todayWork": "Today snapshot",
+    "todayWorkValue": "{{workShiftCount}} shifts / {{eventCount}} events",
+    "preferences": "Locale / timezone"
+  },
   "sections": {
     "profile": {
       "title": "My Profile",
       "summary": "Read-only staff profile summary."
+    },
+    "work": {
+      "title": "My Work",
+      "summary": "Read-only shifts and events assigned to your own profile."
     },
     "workShifts": {
       "title": "My Work Shifts",
@@ -108,9 +122,11 @@
   },
   "status": {
     "available": "Available",
+    "selectedModule": "Selected",
     "comingSoon": "Coming soon",
     "readOnly": "Read-only",
-    "preferencesOnly": "Preferences only"
+    "preferencesOnly": "Preferences only",
+    "ownDataOnly": "Own data only"
   },
   "actions": {
     "logout": "Log out",

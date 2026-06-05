@@ -220,7 +220,8 @@ type ActualEntry = {
   id: string;
   kpiPlanId: string;
   allocationId: string;
-  memberTalentId: string;
+  memberEmploymentProfileId: string | null;
+  memberTalentId: string | null;
   metricCode: KpiMetricCode;
   actualDate: string;
   actualValue: number;
@@ -328,6 +329,7 @@ const allowedListQueryKeys = [
   'sortDirection',
 ] as const;
 const allowedActualWorkspaceListQueryKeys = [
+  'subjectType',
   'periodMonth',
   'groupId',
   'subjectId',
@@ -1020,6 +1022,7 @@ export const resetKpiMockData = (): void => {
       id: 'actual-editable',
       kpiPlanId: 'kpi-plan-published',
       allocationId: 'kpi-plan-published-alloc-1',
+      memberEmploymentProfileId: 'employment-profile-001',
       memberTalentId: 'talent-001',
       metricCode: 'REVENUE_VND',
       actualDate: '2026-05-16',
@@ -1039,6 +1042,7 @@ export const resetKpiMockData = (): void => {
       id: 'actual-locked',
       kpiPlanId: 'kpi-plan-published',
       allocationId: 'kpi-plan-published-alloc-2',
+      memberEmploymentProfileId: 'employment-profile-002',
       memberTalentId: 'talent-002',
       metricCode: 'REVENUE_VND',
       actualDate: '2026-05-16',
@@ -1058,6 +1062,7 @@ export const resetKpiMockData = (): void => {
       id: 'actual-excused-conflict',
       kpiPlanId: 'kpi-plan-published',
       allocationId: 'kpi-plan-published-alloc-1',
+      memberEmploymentProfileId: 'employment-profile-001',
       memberTalentId: 'talent-001',
       metricCode: 'CONTENT_OUTPUT_COUNT',
       actualDate: '2026-05-15',
@@ -1077,6 +1082,7 @@ export const resetKpiMockData = (): void => {
       id: 'actual-not-required-conflict',
       kpiPlanId: 'kpi-plan-published',
       allocationId: 'kpi-plan-published-alloc-1',
+      memberEmploymentProfileId: 'employment-profile-001',
       memberTalentId: 'talent-001',
       metricCode: 'CONTENT_OUTPUT_COUNT',
       actualDate: '2026-05-14',
@@ -1096,6 +1102,7 @@ export const resetKpiMockData = (): void => {
       id: 'actual-finalized',
       kpiPlanId: 'kpi-plan-finalized',
       allocationId: 'kpi-plan-finalized-alloc-1',
+      memberEmploymentProfileId: 'employment-profile-001',
       memberTalentId: 'talent-001',
       metricCode: 'REVENUE_VND',
       actualDate: '2026-04-16',
@@ -1239,6 +1246,10 @@ const validateAllocationListQuery = (searchParams: URLSearchParams) => {
 };
 
 const validateActualWorkspaceListQuery = (searchParams: URLSearchParams) => {
+  const subjectType = searchParams.get('subjectType');
+  if (subjectType && subjectType !== 'TALENT_GROUP' && subjectType !== 'ORG_UNIT') {
+    return validationError(`KPI actual workspace subjectType is unsupported: ${subjectType}`);
+  }
   const periodMonth = searchParams.get('periodMonth');
   if (periodMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(periodMonth)) {
     return validationError('KPI periodMonth must use YYYY-MM format');
@@ -2140,6 +2151,15 @@ const exposeOrgUnitActualEntry = (entry: ActualEntry) => {
   };
 };
 
+const exposeTalentGroupActualEntry = (entry: ActualEntry) => {
+  const { memberEmploymentProfileId: _memberEmploymentProfileId, ...safeEntry } = entry;
+  void _memberEmploymentProfileId;
+  return {
+    ...safeEntry,
+    memberTalentId: safeEntry.memberTalentId ?? 'talent-unknown',
+  };
+};
+
 type WorkspaceMemberActual = {
   values: Partial<Record<KpiMetricCode, number>>;
   missing: number;
@@ -2253,7 +2273,7 @@ const toActualWorkspaceSummary = (plan: KpiPlan) => {
     planCode: plan.planCode,
     title: plan.title,
     periodMonth: plan.periodMonth,
-    subjectType: 'TALENT_GROUP' as const,
+    subjectType: plan.subjectType as Extract<KpiSubjectType, 'TALENT_GROUP' | 'ORG_UNIT'>,
     subjectId: plan.subjectId,
     subjectRef: plan.subjectRef ?? null,
     planStatus: plan.status,
@@ -2338,6 +2358,7 @@ type ActualWorkspacePlanSortRow = {
 type ActualWorkspaceCursorEnvelope = {
   v: 1;
   queryKey: {
+    subjectType: string | null;
     periodMonth: string | null;
     groupId: string | null;
     subjectId: string | null;
@@ -2396,6 +2417,7 @@ const readActualWorkspaceStatusFilters = (
 const buildActualWorkspaceQueryKey = (
   searchParams: URLSearchParams,
 ): ActualWorkspaceCursorEnvelope['queryKey'] => ({
+  subjectType: searchParams.get('subjectType') || null,
   periodMonth: searchParams.get('periodMonth') || null,
   groupId: searchParams.get('groupId') || null,
   subjectId: searchParams.get('subjectId') || null,
@@ -2509,6 +2531,7 @@ const actualWorkspaceCursorValue = (
 
 const listActualWorkspacePlans = (request: Request) => {
   const url = new URL(request.url);
+  const subjectType = url.searchParams.get('subjectType');
   const groupId = url.searchParams.get('groupId');
   const subjectId = url.searchParams.get('subjectId');
   const periodMonth = url.searchParams.get('periodMonth');
@@ -2518,7 +2541,14 @@ const listActualWorkspacePlans = (request: Request) => {
   const allocationCoverage = readActualWorkspaceCoverageFilter(url.searchParams);
   const statusFilters = readActualWorkspaceStatusFilters(url.searchParams);
   return plans
-    .filter((plan) => plan.subjectType === 'TALENT_GROUP')
+    .filter((plan) => plan.subjectType === 'TALENT_GROUP' || plan.subjectType === 'ORG_UNIT')
+    .filter((plan) => (!subjectType ? true : plan.subjectType === subjectType))
+    .filter((plan) => {
+      const publishedCount = (allocations[plan.id] ?? []).filter(
+        (allocation) => allocation.allocationStatus === 'PUBLISHED',
+      ).length;
+      return plan.subjectType === 'TALENT_GROUP' || publishedCount > 0;
+    })
     .filter((plan) => (!groupId ? true : plan.subjectId === groupId))
     .filter((plan) => (!subjectId ? true : plan.subjectId === subjectId))
     .filter((plan) => (!periodMonth ? true : plan.periodMonth === periodMonth))
@@ -2609,7 +2639,13 @@ export const kpiHandlers = [
   }),
   http.get('*/admin/kpi/actual-workspace/plans/:kpiPlanId', ({ params }) => {
     const plan = readPlan(String(params.kpiPlanId));
-    if (!plan || plan.subjectType !== 'TALENT_GROUP') {
+    if (!plan || (plan.subjectType !== 'TALENT_GROUP' && plan.subjectType !== 'ORG_UNIT')) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (
+      plan.subjectType === 'ORG_UNIT' &&
+      !(allocations[plan.id] ?? []).some((allocation) => allocation.allocationStatus === 'PUBLISHED')
+    ) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
     return HttpResponse.json({
@@ -3400,7 +3436,8 @@ export const kpiHandlers = [
       id: `org-unit-actual-${actualSeed}`,
       kpiPlanId: plan.id,
       allocationId: allocation.id,
-      memberTalentId: allocation.memberTalentId ?? 'talent-unknown',
+      memberEmploymentProfileId: allocation.memberEmploymentProfileId,
+      memberTalentId: null,
       metricCode,
       actualDate: String(body.actualDate),
       actualValue: Number(body.actualValue),
@@ -3698,7 +3735,7 @@ export const kpiHandlers = [
     );
     if (existing) {
       if (existing.actualValue === Number(body.actualValue)) {
-        return HttpResponse.json({ data: existing });
+        return HttpResponse.json({ data: exposeTalentGroupActualEntry(existing) });
       }
       return HttpResponse.json(
         { message: 'Duplicate actual with different value' },
@@ -3710,6 +3747,7 @@ export const kpiHandlers = [
       id: `actual-${actualSeed}`,
       kpiPlanId: String(params.kpiPlanId),
       allocationId: String(body.allocationId),
+      memberEmploymentProfileId: allocation?.memberEmploymentProfileId ?? null,
       memberTalentId: allocation?.memberTalentId ?? 'talent-unknown',
       metricCode,
       actualDate: String(body.actualDate),
@@ -3726,7 +3764,7 @@ export const kpiHandlers = [
       lastEditedByActorId: null,
     };
     actualEntries.push(entry);
-    return HttpResponse.json({ data: entry });
+    return HttpResponse.json({ data: exposeTalentGroupActualEntry(entry) });
   }),
   http.patch('*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId', async ({ params, request }) => {
     const plan = readPlan(String(params.kpiPlanId));
@@ -3760,7 +3798,7 @@ export const kpiHandlers = [
     entry.actualValue = Number(body.actualValue);
     entry.effectiveValue = Number(body.actualValue);
     entry.editCount += 1;
-    return HttpResponse.json({ data: entry });
+    return HttpResponse.json({ data: exposeTalentGroupActualEntry(entry) });
   }),
   http.get('*/admin/kpi/plans/:kpiPlanId/actuals/:actualEntryId/corrections', ({ params }) => {
     return HttpResponse.json({
@@ -3852,7 +3890,10 @@ export const kpiHandlers = [
       entry.correctionCount += 1;
       entry.latestCorrectionId = correction.id;
       return HttpResponse.json({
-        data: { actualEntry: entry, correction: exposeCorrection(correction) },
+        data: {
+          actualEntry: exposeTalentGroupActualEntry(entry),
+          correction: exposeCorrection(correction),
+        },
       });
     },
   ),
