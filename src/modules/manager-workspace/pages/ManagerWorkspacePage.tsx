@@ -20,6 +20,7 @@ import {
 import type { KpiPlanDetail, KpiPlanListItem, KpiSubjectType } from '@modules/kpi/types/kpi.types';
 import {
   useManagerWorkspaceContext,
+  useManagerWorkShifts,
   type ManagerWorkspaceContext,
   type ManagerWorkspaceOrgUnitScope,
 } from '@modules/manager-workspace/api/manager-workspace.api';
@@ -74,7 +75,11 @@ const getSubjectName = (plan: KpiPlanListItem, fallback: string): string =>
   plan.subjectRef?.name ?? plan.subjectRef?.displayName ?? plan.subjectRef?.code ?? fallback;
 
 const getRouteModule = (pathname: string): ManagerWorkspaceModuleId =>
-  pathname.startsWith(APP_PATHS.managerKpi) ? 'kpi' : 'overview';
+  pathname.startsWith(APP_PATHS.managerKpi)
+    ? 'kpi'
+    : pathname.startsWith(APP_PATHS.managerWorkShifts)
+      ? 'work'
+      : 'overview';
 
 const isManagerKpiDetailPath = (pathname: string): boolean =>
   pathname.startsWith(`${APP_PATHS.managerKpi}/plans/`);
@@ -91,7 +96,6 @@ const getEnabledKpiTabs = (context: ManagerWorkspaceContext): KpiTabId[] => {
 };
 
 const disabledManagerModuleIds: ReadonlySet<ManagerWorkspaceModuleId> = new Set([
-  'work',
   'events',
   'groups',
   'members',
@@ -103,9 +107,10 @@ const buildManagerWorkspaceModuleItems = (
 ): Array<WorkspaceModuleItem<ManagerWorkspaceModuleId>> =>
   managerWorkspaceModules.map((module) => {
     const isKpiDisabled = module.id === 'kpi' && !context.modules.kpi.visible;
+    const isWorkDisabled = module.id === 'work' && !context.modules.workShifts.visible;
     const isUnsupported = disabledManagerModuleIds.has(module.id);
     const disabledReason =
-      isUnsupported || isKpiDisabled
+      isUnsupported || isKpiDisabled || isWorkDisabled
         ? t(`manager-workspace:modules.${module.id}.disabledReason`)
         : undefined;
 
@@ -116,10 +121,14 @@ const buildManagerWorkspaceModuleItems = (
       description: t(`manager-workspace:modules.${module.id}.summary`),
       statusLabel: t(
         `manager-workspace:status.${
-          isUnsupported ? 'contractNeeded' : isKpiDisabled ? 'readinessNeeded' : 'available'
+          isUnsupported
+            ? 'contractNeeded'
+            : isKpiDisabled || isWorkDisabled
+              ? 'readinessNeeded'
+              : 'available'
         }`,
       ),
-      disabled: isUnsupported || isKpiDisabled,
+      disabled: isUnsupported || isKpiDisabled || isWorkDisabled,
       disabledReason,
     };
   });
@@ -544,13 +553,126 @@ const ManagerKpiSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX
   );
 };
 
+const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX.Element => {
+  const { t } = useTranslation(['manager-workspace']);
+  const [month, setMonth] = useState('');
+  const workShiftsQuery = useManagerWorkShifts(month || undefined, context.modules.workShifts.visible);
+  const data = workShiftsQuery.data;
+
+  if (!context.modules.workShifts.visible) {
+    return (
+      <EmptyState
+        title={t('manager-workspace:empty.workReadinessTitle')}
+        message={t('manager-workspace:empty.workReadinessMessage')}
+      />
+    );
+  }
+
+  return (
+    <section className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm" data-testid="manager-work-panel">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-text">{t('manager-workspace:work.title')}</h2>
+          <p className="text-sm text-muted">{t('manager-workspace:work.summary')}</p>
+        </div>
+        <StatusBadge label={t('manager-workspace:work.readOnly')} tone="neutral" />
+      </div>
+
+      <label className="block max-w-xs text-sm font-medium text-text">
+        {t('manager-workspace:work.month')}
+        <input
+          className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
+          type="month"
+          value={month}
+          onChange={(event) => setMonth(event.target.value)}
+        />
+      </label>
+
+      {workShiftsQuery.isLoading ? <LoadingState lines={4} /> : null}
+      {workShiftsQuery.isError ? (
+        <ErrorState
+          title={t('manager-workspace:errors.workTitle')}
+          message={t('manager-workspace:errors.workMessage')}
+        />
+      ) : null}
+
+      {data ? (
+        <>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <SummaryCard label={t('manager-workspace:work.shiftsShown')} value={data.meta.returnedShiftCount} />
+            <SummaryCard label={t('manager-workspace:work.membersRepresented')} value={data.meta.representedMemberCount} />
+            <SummaryCard label={t('manager-workspace:work.period')} value={data.meta.month} />
+          </div>
+          {data.items.length === 0 ? (
+            <EmptyState
+              title={t('manager-workspace:empty.workTitle')}
+              message={
+                data.meta.managedMemberCount === 0
+                  ? t('manager-workspace:empty.workNoMembersMessage')
+                  : t('manager-workspace:empty.workMessage')
+              }
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm" aria-label={t('manager-workspace:work.tableLabel')}>
+                <thead className="border-b border-border text-xs uppercase text-muted">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">{t('manager-workspace:work.dateTime')}</th>
+                    <th className="px-3 py-2 font-medium">{t('manager-workspace:work.member')}</th>
+                    <th className="px-3 py-2 font-medium">{t('manager-workspace:work.shift')}</th>
+                    <th className="px-3 py-2 font-medium">{t('manager-workspace:work.source')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {data.items.map((shift) => (
+                    <tr key={shift.workShiftId} data-testid="manager-work-shift-row">
+                      <td className="px-3 py-3">
+                        <div>{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: shift.timezone }).format(shift.shiftStartAt)}</div>
+                        <div className="text-xs text-muted">
+                          {new Intl.DateTimeFormat(undefined, { timeStyle: 'short', timeZone: shift.timezone }).format(shift.shiftStartAt)}
+                          {' - '}
+                          {new Intl.DateTimeFormat(undefined, { timeStyle: 'short', timeZone: shift.timezone }).format(shift.shiftEndAt)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="font-medium text-text">{shift.member.displayName}</div>
+                        {shift.member.employeeCode ? <div className="font-mono text-xs text-muted">{shift.member.employeeCode}</div> : null}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div>{shift.title}</div>
+                        <StatusBadge label={t('manager-workspace:work.active')} tone="success" />
+                      </td>
+                      <td className="px-3 py-3">
+                        {t(`manager-workspace:work.sourceTypes.${shift.sourceType}`)}
+                        {shift.sourceRosterMonth ? <div className="text-xs text-muted">{shift.sourceRosterMonth}</div> : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="text-xs text-muted">{t('manager-workspace:work.draftNotice')}</p>
+        </>
+      ) : null}
+    </section>
+  );
+};
+
+const SummaryCard = ({ label, value }: { label: string; value: string | number }): JSX.Element => (
+  <div className="rounded border border-border bg-bg px-3 py-2">
+    <div className="text-xs font-medium uppercase text-muted">{label}</div>
+    <div className="mt-1 text-lg font-semibold text-text">{value}</div>
+  </div>
+);
+
 const ManagerWorkspaceOverview = ({
   context,
 }: {
   context: ManagerWorkspaceContext;
 }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace', 'common']);
-  const disabledModules: ManagerWorkspaceModuleId[] = ['work', 'events', 'groups', 'members'];
+  const disabledModules: ManagerWorkspaceModuleId[] = ['events', 'groups', 'members'];
 
   return (
     <div className="space-y-4" data-testid="manager-overview-panel">
@@ -801,6 +923,11 @@ export const ManagerWorkspacePage = (): JSX.Element => {
 
     if (moduleId === 'kpi') {
       navigate(APP_PATHS.managerKpi);
+      return;
+    }
+
+    if (moduleId === 'work') {
+      navigate(APP_PATHS.managerWorkShifts);
     }
   };
 
@@ -869,6 +996,11 @@ export const ManagerWorkspacePage = (): JSX.Element => {
           {activeModule === 'kpi' && isKpiDetail ? (
             <WorkspacePanel testId="manager-panel-kpi-detail">
               <ManagerKpiDetail context={context} />
+            </WorkspacePanel>
+          ) : null}
+          {activeModule === 'work' ? (
+            <WorkspacePanel testId="manager-panel-work">
+              <ManagerWorkSlice context={context} />
             </WorkspacePanel>
           ) : null}
           {disabledManagerModuleIds.has(activeModule) ? (

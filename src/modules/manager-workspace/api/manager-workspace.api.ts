@@ -47,6 +47,16 @@ const disabledModuleSchema = z
   })
   .strict();
 
+const workShiftsModuleSchema = z.union([
+  z.object({ visible: z.literal(true) }).strict(),
+  z
+    .object({
+      visible: z.literal(false),
+      reason: z.enum(['NO_MANAGED_SCOPE_ASSIGNED', 'MISSING_WORK_SCHEDULE_READ_CAPABILITY']),
+    })
+    .strict(),
+]);
+
 export const managerWorkspaceContextSchema = z
   .object({
     actor: z
@@ -86,7 +96,7 @@ export const managerWorkspaceContextSchema = z
             talentGroupKpiVisible: z.boolean(),
           })
           .strict(),
-        workShifts: disabledModuleSchema,
+        workShifts: workShiftsModuleSchema,
         events: disabledModuleSchema,
         members: disabledModuleSchema,
       })
@@ -121,5 +131,68 @@ export const useManagerWorkspaceContext = () =>
     retry: false,
   });
 
+const managerWorkShiftSchema = z
+  .object({
+    workShiftId: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    status: z.literal('ACTIVE'),
+    shiftStartAt: z.number().int(),
+    shiftEndAt: z.number().int(),
+    timezone: z.literal('Asia/Ho_Chi_Minh'),
+    sourceType: z.enum(['MANUAL', 'ROSTER_GENERATED']),
+    sourceRosterMonth: z.string().trim().min(1).nullable(),
+    member: z
+      .object({
+        employmentProfileId: z.string().trim().min(1),
+        displayName: z.string().trim().min(1),
+        employeeCode: z.string().trim().min(1).optional(),
+      })
+      .strict(),
+  })
+  .strict();
+
+const managerWorkShiftListResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(managerWorkShiftSchema),
+        meta: z
+          .object({
+            month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+            timezone: z.literal('Asia/Ho_Chi_Minh'),
+            managedMemberCount: z.number().int().nonnegative(),
+            representedMemberCount: z.number().int().nonnegative(),
+            returnedShiftCount: z.number().int().nonnegative(),
+            nextCursor: z.string().trim().min(1).optional(),
+          })
+          .strict(),
+      })
+      .strict(),
+  })
+  .strict();
+
+export type ManagerWorkShiftList = z.infer<typeof managerWorkShiftListResponseSchema>['data'];
+
+export const fetchManagerWorkShifts = async (month?: string): Promise<ManagerWorkShiftList> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/manager-workspace/work-schedule/work-shifts',
+    params: month ? { month } : undefined,
+  });
+
+  return managerWorkShiftListResponseSchema.parse(response).data;
+};
+
+export const useManagerWorkShifts = (month: string | undefined, enabled: boolean) =>
+  useQuery({
+    queryKey: ['manager-workspace', 'work-shifts', month ?? 'current'],
+    queryFn: () => fetchManagerWorkShifts(month),
+    enabled,
+    retry: false,
+  });
+
 export const parseManagerWorkspaceContextForTest = (response: unknown): ManagerWorkspaceContext =>
   managerWorkspaceContextResponseSchema.parse(response).data;
+
+export const parseManagerWorkShiftListForTest = (response: unknown): ManagerWorkShiftList =>
+  managerWorkShiftListResponseSchema.parse(response).data;

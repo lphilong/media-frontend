@@ -6,7 +6,10 @@ import { afterAll, beforeAll, vi } from 'vitest';
 
 import { appRoutes } from '@app/router/router';
 import { parseKpiAllocationDraftPayloadForTest } from '@modules/kpi/api/kpi.api';
-import { parseManagerWorkspaceContextForTest } from '@modules/manager-workspace/api/manager-workspace.api';
+import {
+  parseManagerWorkShiftListForTest,
+  parseManagerWorkspaceContextForTest,
+} from '@modules/manager-workspace/api/manager-workspace.api';
 import { setLocale } from '@shared/i18n/i18n';
 import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 import {
@@ -18,7 +21,9 @@ import {
   managerWorkspaceOrgUnitOperatorContext,
   managerWorkspaceOrgUnitOnlyContext,
   managerWorkspaceTalentGroupOnlyContext,
+  managerWorkspaceWorkEnabledContext,
   resetManagerWorkspaceMockData,
+  setMockManagerWorkShifts,
   setMockManagerWorkspaceContext,
 } from '@test/msw/manager-workspace-handlers';
 import {
@@ -223,7 +228,7 @@ describe('/manager workspace route', () => {
 
     await user.click(await screen.findByTestId('manager-module-work'));
     expect(await screen.findByTestId('manager-panel-work')).toBeInTheDocument();
-    expect(await screen.findByText(/Managed Work is readiness-only/)).toBeInTheDocument();
+    expect(await screen.findByText(/No effective managed WorkSchedule scope/)).toBeInTheDocument();
     expect(screen.queryByTestId('manager-panel-overview')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Work Schedule' })).not.toBeInTheDocument();
 
@@ -718,6 +723,80 @@ describe('/manager workspace route', () => {
     await waitFor(() => {
       expect(subjectTypes).toEqual(['ORG_UNIT', 'TALENT_GROUP']);
     });
+  });
+
+  it('renders /manager/work-shifts with managed OrgUnit and TalentGroup published shifts only', async () => {
+    let rawAdminWorkShiftCalls = 0;
+    server.use(
+      http.get('*/admin/work-shifts', () => {
+        rawAdminWorkShiftCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    expect(await screen.findByTestId('manager-panel-work')).toBeInTheDocument();
+    expect(await screen.findByText('Org Unit Member')).toBeInTheDocument();
+    expect(await screen.findByText('Talent Group Member')).toBeInTheDocument();
+    expect(screen.getAllByTestId('manager-work-shift-row')).toHaveLength(2);
+    expect(screen.getByText('Draft rosters are not visible here until they are published.')).toBeInTheDocument();
+    expect(rawAdminWorkShiftCalls).toBe(0);
+    expect(screen.queryByRole('button', { name: /create|edit|cancel|request|approve/i })).not.toBeInTheDocument();
+  });
+
+  it('renders Managed Work empty state when no published shifts or eligible members exist', async () => {
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+      setMockManagerWorkShifts({
+        items: [],
+        meta: {
+          month: '2026-06',
+          timezone: 'Asia/Ho_Chi_Minh',
+          managedMemberCount: 0,
+          representedMemberCount: 0,
+          returnedShiftCount: 0,
+        },
+      });
+    });
+
+    expect(await screen.findByText(/no eligible active managed members/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-work-shift-row')).not.toBeInTheDocument();
+  });
+
+  it('rejects unsafe manager WorkShift fields at the client boundary', () => {
+    expect(() =>
+      parseManagerWorkShiftListForTest({
+        data: {
+          items: [
+            {
+              workShiftId: 'shift-unsafe',
+              title: 'Unsafe shift',
+              status: 'ACTIVE',
+              shiftStartAt: 1,
+              shiftEndAt: 2,
+              timezone: 'Asia/Ho_Chi_Minh',
+              sourceType: 'MANUAL',
+              sourceRosterMonth: null,
+              userAuthId: 'user-secret',
+              member: {
+                employmentProfileId: 'ep-1',
+                displayName: 'Safe member',
+              },
+            },
+          ],
+          meta: {
+            month: '2026-06',
+            timezone: 'Asia/Ho_Chi_Minh',
+            managedMemberCount: 1,
+            representedMemberCount: 1,
+            returnedShiftCount: 1,
+          },
+        },
+      }),
+    ).toThrow();
   });
 
   it('rejects unsafe manager context fields at the client boundary', () => {

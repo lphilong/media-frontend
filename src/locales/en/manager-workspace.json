@@ -4,7 +4,8 @@
   "nav": {
     "label": "Manager workspace navigation",
     "overview": "Overview",
-    "kpi": "My Managed KPI"
+    "kpi": "My Managed KPI",
+    "work": "Managed Work"
   },
   "actions": {
     "open": "Open",
@@ -29,9 +30,9 @@
     },
     "work": {
       "title": "Managed Work",
-      "summary": "Work shift operations for assigned scopes.",
-      "disabledReason": "Manager Work contracts are not enabled yet.",
-      "readinessMessage": "Managed Work is readiness-only in this batch. No WorkSchedule Manager route or Admin WorkSchedule data is exposed here."
+      "summary": "Published official shifts for members in your assigned scopes.",
+      "disabledReason": "Managed Work requires an effective assignment and WorkSchedule read capability.",
+      "readinessMessage": "Managed Work is unavailable until an effective Org Unit or Talent Group assignment is available."
     },
     "events": {
       "title": "Managed Events",
@@ -128,6 +129,26 @@
       }
     }
   },
+  "work": {
+    "title": "Managed Work",
+    "summary": "Published official WorkShifts for active members in your exact managed Org Units and Talent Groups.",
+    "readOnly": "Read-only manager scope",
+    "month": "Month",
+    "shiftsShown": "Active shifts shown",
+    "membersRepresented": "Members represented",
+    "period": "Period",
+    "tableLabel": "Managed published WorkShifts",
+    "dateTime": "Date and time",
+    "member": "Member",
+    "shift": "Shift",
+    "source": "Source",
+    "active": "Active",
+    "draftNotice": "Draft rosters are not visible here until they are published.",
+    "sourceTypes": {
+      "MANUAL": "Manual exception",
+      "ROSTER_GENERATED": "Monthly roster"
+    }
+  },
   "empty": {
     "noProfileTitle": "No linked profile",
     "noProfileMessage": "Your account is authenticated, but no manager-ready Employment Profile is linked.",
@@ -138,7 +159,12 @@
     "kpiListTitle": "No published KPI plans",
     "kpiListMessage": "No published KPI plans are visible for this managed scope yet.",
     "kpiDetailUnavailableTitle": "KPI plan unavailable",
-    "kpiDetailUnavailableMessage": "This KPI plan is not visible through your current manager assignments."
+    "kpiDetailUnavailableMessage": "This KPI plan is not visible through your current manager assignments.",
+    "workReadinessTitle": "Managed Work unavailable",
+    "workReadinessMessage": "No effective managed WorkSchedule scope is available.",
+    "workTitle": "No published shifts",
+    "workMessage": "No active published official shifts are visible for the selected month. Draft rosters are not visible until published.",
+    "workNoMembersMessage": "Your assignments currently contain no eligible active managed members."
   },
   "errors": {
     "contextTitle": "Manager Workspace unavailable",
@@ -146,6 +172,8 @@
     "kpiTitle": "Managed KPI unavailable",
     "kpiMessage": "Managed KPI plans could not be loaded.",
     "kpiDetailTitle": "Managed KPI detail unavailable",
-    "kpiDetailMessage": "The selected KPI plan could not be loaded."
+    "kpiDetailMessage": "The selected KPI plan could not be loaded.",
+    "workTitle": "Managed Work unavailable",
+    "workMessage": "Managed published shifts could not be loaded."
   }
 }

@@ -489,6 +489,14 @@ export const appRoutes: RouteObject[] = [
     ),
   },
   {
+    path: APP_PATHS.managerWorkShifts,
+    element: (
+      <RequireAuth>
+        <LazyManagerWorkspaceElement />
+      </RequireAuth>
+    ),
+  },
+  {
     path: APP_PATHS.managerKpiPlanDetailPattern,
     element: (
       <RequireAuth>

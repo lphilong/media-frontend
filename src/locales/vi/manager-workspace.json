@@ -4,7 +4,8 @@
   "nav": {
     "label": "Dieu huong khong gian quan ly",
     "overview": "Tong quan",
-    "kpi": "KPI toi quan ly"
+    "kpi": "KPI toi quan ly",
+    "work": "Cong viec quan ly"
   },
   "actions": {
     "open": "Mo",
@@ -29,9 +30,9 @@
     },
     "work": {
       "title": "Cong viec quan ly",
-      "summary": "Tac vu ca lam viec cho pham vi duoc phan cong.",
-      "disabledReason": "Hop dong Manager Work chua duoc bat.",
-      "readinessMessage": "Cong viec quan ly chi la trang thai san sang trong batch nay. Khong co route WorkSchedule Manager hoac du lieu Admin WorkSchedule nao duoc hien thi tai day."
+      "summary": "Ca lam viec chinh thuc da cong bo trong pham vi duoc phan cong.",
+      "disabledReason": "Can phan cong hieu luc va quyen doc WorkSchedule.",
+      "readinessMessage": "Chua co pham vi Org Unit hoac Talent Group hieu luc."
     },
     "events": {
       "title": "Su kien quan ly",
@@ -128,6 +129,26 @@
       }
     }
   },
+  "work": {
+    "title": "Cong viec quan ly",
+    "summary": "Ca lam viec chinh thuc da cong bo cho thanh vien dang hoat dong trong pham vi quan ly.",
+    "readOnly": "Pham vi quan ly chi doc",
+    "month": "Thang",
+    "shiftsShown": "Ca dang hien thi",
+    "membersRepresented": "Thanh vien co ca",
+    "period": "Ky",
+    "tableLabel": "Ca lam viec da cong bo",
+    "dateTime": "Ngay va gio",
+    "member": "Thanh vien",
+    "shift": "Ca lam viec",
+    "source": "Nguon",
+    "active": "Dang hoat dong",
+    "draftNotice": "Roster nhap khong hien thi cho den khi duoc cong bo.",
+    "sourceTypes": {
+      "MANUAL": "Ngoai le thu cong",
+      "ROSTER_GENERATED": "Roster hang thang"
+    }
+  },
   "empty": {
     "noProfileTitle": "Chua lien ket ho so",
     "noProfileMessage": "Tai khoan da dang nhap nhung chua lien ket voi Employment Profile san sang cho quan ly.",
@@ -138,7 +159,12 @@
     "kpiListTitle": "Chua co KPI da cong bo",
     "kpiListMessage": "Chua co ke hoach KPI da cong bo trong pham vi quan ly nay.",
     "kpiDetailUnavailableTitle": "Khong xem duoc ke hoach KPI",
-    "kpiDetailUnavailableMessage": "Ke hoach KPI nay khong nam trong phan cong quan ly hien tai cua ban."
+    "kpiDetailUnavailableMessage": "Ke hoach KPI nay khong nam trong phan cong quan ly hien tai cua ban.",
+    "workReadinessTitle": "Chua xem duoc cong viec quan ly",
+    "workReadinessMessage": "Chua co pham vi WorkSchedule quan ly hieu luc.",
+    "workTitle": "Chua co ca da cong bo",
+    "workMessage": "Khong co ca chinh thuc dang hoat dong trong thang da chon. Roster nhap chi hien thi sau khi cong bo.",
+    "workNoMembersMessage": "Phan cong hien tai khong co thanh vien dang hoat dong du dieu kien."
   },
   "errors": {
     "contextTitle": "Khong tai duoc khong gian quan ly",
@@ -146,6 +172,8 @@
     "kpiTitle": "Khong tai duoc KPI quan ly",
     "kpiMessage": "Khong tai duoc cac ke hoach KPI quan ly.",
     "kpiDetailTitle": "Khong tai duoc chi tiet KPI quan ly",
-    "kpiDetailMessage": "Khong tai duoc ke hoach KPI da chon."
+    "kpiDetailMessage": "Khong tai duoc ke hoach KPI da chon.",
+    "workTitle": "Khong tai duoc cong viec quan ly",
+    "workMessage": "Khong tai duoc cac ca lam viec da cong bo."
   }
 }

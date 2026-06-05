@@ -1,6 +1,9 @@
 import { http, HttpResponse } from 'msw';
 
-import type { ManagerWorkspaceContext } from '@modules/manager-workspace/api/manager-workspace.api';
+import type {
+  ManagerWorkspaceContext,
+  ManagerWorkShiftList,
+} from '@modules/manager-workspace/api/manager-workspace.api';
 
 const kpiCapabilities = {
   read: true,
@@ -38,7 +41,7 @@ const baseContext = (): ManagerWorkspaceContext => ({
     },
     workShifts: {
       visible: false,
-      reason: 'NOT_ENABLED_IN_MANAGER_WORKSPACE_YET',
+      reason: 'NO_MANAGED_SCOPE_ASSIGNED',
     },
     events: {
       visible: false,
@@ -209,10 +212,74 @@ export const managerWorkspaceDualContext = (): ManagerWorkspaceContext => {
   };
 };
 
+export const managerWorkspaceWorkEnabledContext = (): ManagerWorkspaceContext => {
+  const context = managerWorkspaceDualContext();
+  return {
+    ...context,
+    modules: {
+      ...context.modules,
+      workShifts: {
+        visible: true,
+      },
+    },
+  };
+};
+
+const defaultManagerWorkShifts = (): ManagerWorkShiftList => ({
+  items: [
+    {
+      workShiftId: 'manager-shift-org',
+      title: 'Production morning shift',
+      status: 'ACTIVE',
+      shiftStartAt: Date.parse('2026-06-08T09:00:00+07:00'),
+      shiftEndAt: Date.parse('2026-06-08T17:00:00+07:00'),
+      timezone: 'Asia/Ho_Chi_Minh',
+      sourceType: 'MANUAL',
+      sourceRosterMonth: null,
+      member: {
+        employmentProfileId: 'ep-org-member',
+        displayName: 'Org Unit Member',
+        employeeCode: 'EP-ORG-001',
+      },
+    },
+    {
+      workShiftId: 'manager-shift-group',
+      title: 'Talent group roster shift',
+      status: 'ACTIVE',
+      shiftStartAt: Date.parse('2026-06-09T10:00:00+07:00'),
+      shiftEndAt: Date.parse('2026-06-09T18:00:00+07:00'),
+      timezone: 'Asia/Ho_Chi_Minh',
+      sourceType: 'ROSTER_GENERATED',
+      sourceRosterMonth: '2026-06',
+      member: {
+        employmentProfileId: 'ep-group-member',
+        displayName: 'Talent Group Member',
+        employeeCode: 'EP-TG-001',
+      },
+    },
+  ],
+  meta: {
+    month: '2026-06',
+    timezone: 'Asia/Ho_Chi_Minh',
+    managedMemberCount: 2,
+    representedMemberCount: 2,
+    returnedShiftCount: 2,
+  },
+});
+
 let managerWorkspaceContext = managerWorkspaceDualContext();
+let managerWorkShifts = defaultManagerWorkShifts();
 
 export const resetManagerWorkspaceMockData = (): void => {
   managerWorkspaceContext = managerWorkspaceDualContext();
+  managerWorkShifts = defaultManagerWorkShifts();
+};
+
+export const setMockManagerWorkShifts = (value: ManagerWorkShiftList): void => {
+  managerWorkShifts = {
+    items: value.items.map((item) => ({ ...item, member: { ...item.member } })),
+    meta: { ...value.meta },
+  };
 };
 
 export const setMockManagerWorkspaceContext = (context: ManagerWorkspaceContext): void => {
@@ -228,5 +295,8 @@ export const setMockManagerWorkspaceContext = (context: ManagerWorkspaceContext)
 export const managerWorkspaceHandlers = [
   http.get('*/admin/manager-workspace/context', () =>
     HttpResponse.json({ data: managerWorkspaceContext }),
+  ),
+  http.get('*/admin/manager-workspace/work-schedule/work-shifts', () =>
+    HttpResponse.json({ data: managerWorkShifts }),
   ),
 ];

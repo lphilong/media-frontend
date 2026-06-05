@@ -128,7 +128,32 @@
       }
     }
   },
+  "work": {
+    "title": "Managed Work",
+    "summary": "Published official WorkShifts for active managed members.",
+    "readOnly": "Read-only manager scope",
+    "month": "Month",
+    "shiftsShown": "Active shifts shown",
+    "membersRepresented": "Members represented",
+    "period": "Period",
+    "tableLabel": "Managed published WorkShifts",
+    "dateTime": "Date and time",
+    "member": "Member",
+    "shift": "Shift",
+    "source": "Source",
+    "active": "Active",
+    "draftNotice": "Draft rosters are not visible until published.",
+    "sourceTypes": {
+      "MANUAL": "Manual exception",
+      "ROSTER_GENERATED": "Monthly roster"
+    }
+  },
   "empty": {
+    "workReadinessTitle": "Managed Work unavailable",
+    "workReadinessMessage": "No effective managed WorkSchedule scope is available.",
+    "workTitle": "No published shifts",
+    "workMessage": "No active published official shifts are visible for the selected month.",
+    "workNoMembersMessage": "No eligible active managed members are available.",
     "noProfileTitle": "未关联档案",
     "noProfileMessage": "账号已认证，但尚未关联可用于管理工作台的雇佣档案。",
     "noAssignmentsTitle": "无管理分配",
@@ -141,6 +166,8 @@
     "kpiDetailUnavailableMessage": "此 KPI 计划不在你当前的管理分配范围内。"
   },
   "errors": {
+    "workTitle": "Managed Work unavailable",
+    "workMessage": "Managed published shifts could not be loaded.",
     "contextTitle": "管理工作台不可用",
     "contextMessage": "无法加载你的管理工作台上下文。",
     "kpiTitle": "管理 KPI 不可用",
