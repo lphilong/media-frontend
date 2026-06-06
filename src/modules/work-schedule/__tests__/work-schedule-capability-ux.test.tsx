@@ -216,6 +216,112 @@ describe('work schedule capability UX hints', () => {
     expect(reject).toBeEnabled();
   });
 
+  it('renders Admin request batch queue and approves selected pending lines', async () => {
+    const user = userEvent.setup();
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'workSchedule.read',
+        'workSchedule.create',
+        'workSchedule.update',
+        'workSchedule.manageLifecycle',
+      ],
+      workScheduleScopes: ['global'],
+    });
+
+    renderRoute('/work-schedule/request-batches');
+
+    expect(
+      await screen.findByRole('heading', {
+        name: i18n.t('work-schedule:requestBatches.page.title'),
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('WSB-202606-000100')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Official WorkShift was no longer active at approval time.'),
+    ).toBeInTheDocument();
+
+    await user.click(
+      await screen.findByRole('checkbox', {
+        name: i18n.t('work-schedule:requestBatches.actions.selectLine', { lineNo: 1 }),
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requestBatches.actions.approveSelected'),
+      }),
+    );
+
+    expect(
+      await screen.findByText(
+        i18n.t('work-schedule:requestBatches.lineCounts.summary', {
+          pending: 1,
+          approved: 1,
+          failedToApply: 2,
+          total: 4,
+        }),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.requestChange'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('requires Admin reject and cancel reasons before calling selected-line decision endpoints', async () => {
+    const user = userEvent.setup();
+    let rejectCalls = 0;
+    let cancelCalls = 0;
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'workSchedule.read',
+        'workSchedule.create',
+        'workSchedule.update',
+        'workSchedule.manageLifecycle',
+      ],
+      workScheduleScopes: ['global'],
+    });
+    server.use(
+      http.post('*/admin/work-schedule/request-batches/:batchId/reject-lines', () => {
+        rejectCalls += 1;
+        return HttpResponse.json({ data: {} });
+      }),
+      http.post('*/admin/work-schedule/request-batches/:batchId/cancel-lines', () => {
+        cancelCalls += 1;
+        return HttpResponse.json({ data: {} });
+      }),
+    );
+
+    renderRoute('/work-schedule/request-batches');
+
+    expect(await screen.findByText('WSB-202606-000100')).toBeInTheDocument();
+    await user.click(
+      await screen.findByRole('checkbox', {
+        name: i18n.t('work-schedule:requestBatches.actions.selectLine', { lineNo: 1 }),
+      }),
+    );
+
+    const rejectSelected = screen.getByRole('button', {
+      name: i18n.t('work-schedule:requestBatches.actions.rejectSelected'),
+    });
+    const cancelSelected = screen.getByRole('button', {
+      name: i18n.t('work-schedule:requestBatches.actions.cancelSelected'),
+    });
+    expect(rejectSelected).toBeDisabled();
+    expect(cancelSelected).toBeDisabled();
+
+    await user.click(rejectSelected);
+    await user.click(cancelSelected);
+    await waitFor(() => {
+      expect(rejectCalls).toBe(0);
+      expect(cancelCalls).toBe(0);
+    });
+  });
+
   it('shows only Admin/global WorkSchedule surfaces even when global Admin also has scoped grants', async () => {
     mockCapabilities({
       permissions: [

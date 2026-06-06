@@ -132,6 +132,11 @@
     "title": "Managed Work",
     "summary": "Published official WorkShifts for active managed members.",
     "readOnly": "Read-only manager scope",
+    "scopeBadge": "Manager WorkSchedule scope",
+    "tabs": {
+      "published": "Published shifts",
+      "requests": "Requests"
+    },
     "month": "Month",
     "shiftsShown": "Active shifts shown",
     "membersRepresented": "Members represented",
@@ -146,6 +151,79 @@
     "sourceTypes": {
       "MANUAL": "Manual exception",
       "ROSTER_GENERATED": "Monthly roster"
+    }
+  },
+  "requests": {
+    "copy": {
+      "approval": "Requests do not change official shifts until Admin/Ops approval.",
+      "draftRoster": "Draft roster rows are not requestable.",
+      "cancellation": "Use request cancellation only for pending requests.",
+      "taxonomy": "Leave/absence policy is not classified in this step. This is schedule change request, not attendance."
+    },
+    "fields": {
+      "periodMonth": "Request month",
+      "note": "Batch note",
+      "type": "Request type",
+      "member": "Managed member",
+      "workShift": "Active official WorkShift",
+      "title": "Requested title",
+      "start": "Requested start",
+      "end": "Requested end",
+      "reason": "Reason",
+      "cancellationReason": "Cancellation reason"
+    },
+    "types": {
+      "CREATE_SHIFT": "Create shift",
+      "RESCHEDULE_SHIFT": "Reschedule shift",
+      "CANCEL_SHIFT": "Cancel shift"
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "PARTIALLY_APPROVED": "Partially approved",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "lineStatuses": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled",
+      "FAILED_TO_APPLY": "Failed to apply"
+    },
+    "actions": {
+      "submit": "Submit batch",
+      "removeLine": "Remove line",
+      "cancelBatch": "Cancel batch",
+      "cancelLine": "Cancel line",
+      "add": {
+        "CREATE_SHIFT": "Add create",
+        "RESCHEDULE_SHIFT": "Add reschedule",
+        "CANCEL_SHIFT": "Add cancel"
+      }
+    },
+    "lineTitle": "Request line {{lineNo}}",
+    "ownBatches": "My request batches",
+    "counts": "{{pending}} pending / {{total}} total",
+    "validation": {
+      "noLines": "Add at least one request line.",
+      "maxLines": "A batch can contain at most 50 lines.",
+      "reason": "Each line reason must be 10-1000 characters.",
+      "shiftRequired": "Choose an active official WorkShift for reschedule or cancel.",
+      "windowRequired": "Create and reschedule lines require start and end.",
+      "windowOrder": "Requested end must be after requested start.",
+      "lineMonth": "Requested line dates must be inside the selected request month.",
+      "periodWindow": "Choose the current month or one of the next two months.",
+      "duplicate": "Remove duplicate request lines before submitting."
+    },
+    "feedback": {
+      "submitFailed": "Request batch could not be submitted."
+    },
+    "empty": {
+      "noMembersTitle": "No managed members available",
+      "noMembersMessage": "The request composer needs manager-safe member data from published active shifts.",
+      "noBatchesTitle": "No request batches",
+      "noBatchesMessage": "Submitted request batches for this month will appear here."
     }
   },
   "empty": {

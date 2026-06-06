@@ -37,6 +37,19 @@ export type WorkScheduleRequestType = 'CREATE_SHIFT' | 'RESCHEDULE_SHIFT' | 'CAN
 export type WorkScheduleRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 export type WorkScheduleRequestTargetKind = 'EMPLOYMENT_PROFILE_WORK_SHIFT';
 export type WorkScheduleRequestSource = 'TEAM_MANAGER';
+export type WorkScheduleRequestBatchStatus =
+  | 'PENDING'
+  | 'PARTIALLY_APPROVED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED';
+export type WorkScheduleRequestBatchScopeSummary = 'ORG_UNIT' | 'TALENT_GROUP' | 'MIXED';
+export type WorkScheduleRequestLineStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'FAILED_TO_APPLY';
 
 export const ROSTER_EXCEPTION_TYPES: readonly RosterExceptionType[] = [
   'WORKING_TO_OFF',
@@ -262,6 +275,83 @@ export type WorkScheduleRequestRejectPayload = {
 };
 
 export type WorkScheduleRequestCancelPayload = {
+  cancellationReason?: string | null;
+};
+
+export type WorkScheduleRequestLineCounts = {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  cancelled: number;
+  failedToApply: number;
+};
+
+export type WorkScheduleRequestBatchListItem = {
+  id: string;
+  batchCode: string;
+  submittedByEmploymentProfileId: string;
+  submittedByEmploymentProfileRef?: ReferenceSummary | null;
+  periodMonth: string;
+  scopeSummary: WorkScheduleRequestBatchScopeSummary;
+  status: WorkScheduleRequestBatchStatus;
+  note: string | null;
+  lineCounts: WorkScheduleRequestLineCounts;
+  clientToken: string;
+  submittedAt: number | string;
+  cancelledAt: number | string | null;
+  resolvedAt: number | string | null;
+  createdAt: number | string;
+  updatedAt: number | string;
+};
+
+export type WorkScheduleRequestBatchLine = {
+  id: string;
+  batchId: string;
+  lineNo: number;
+  requestType: WorkScheduleRequestType;
+  memberEmploymentProfileId: string;
+  memberEmploymentProfileRef?: ReferenceSummary | null;
+  workShiftId: string | null;
+  workShiftRef?: ReferenceSummary | null;
+  requestedStartAt: number | string | null;
+  requestedEndAt: number | string | null;
+  timezone: 'Asia/Ho_Chi_Minh';
+  title: string | null;
+  description: string | null;
+  externalRef: string | null;
+  reason: string;
+  status: WorkScheduleRequestLineStatus;
+  approvalNote: string | null;
+  rejectionReason: string | null;
+  cancellationReason: string | null;
+  failureReason: string | null;
+  appliedWorkShiftId: string | null;
+  appliedWorkShiftRef?: ReferenceSummary | null;
+  createdAt: number | string;
+  updatedAt: number | string;
+  approvedAt: number | string | null;
+  rejectedAt: number | string | null;
+  cancelledAt: number | string | null;
+  failedAt: number | string | null;
+};
+
+export type WorkScheduleRequestBatchDetail = WorkScheduleRequestBatchListItem & {
+  lines: WorkScheduleRequestBatchLine[];
+};
+
+export type WorkScheduleRequestBatchListQuery = {
+  status?: WorkScheduleRequestBatchStatus;
+  periodMonth?: string;
+  submittedByEmploymentProfileId?: string;
+  limit?: number;
+  cursor?: string;
+};
+
+export type WorkScheduleRequestBatchLineDecisionPayload = {
+  lineIds: string[];
+  approvalNote?: string | null;
+  rejectionReason?: string | null;
   cancellationReason?: string | null;
 };
 

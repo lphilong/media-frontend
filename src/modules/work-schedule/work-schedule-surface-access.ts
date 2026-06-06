@@ -12,6 +12,7 @@ export type WorkScheduleSurfaceId =
   | 'team-shifts'
   | 'department-shifts'
   | 'global-ops'
+  | 'request-batches'
   | 'monthly-rosters'
   | 'work-patterns'
   | 'holiday-calendars';
@@ -56,6 +57,13 @@ export const workScheduleSurfaceDefinitions: readonly WorkScheduleSurfaceDefinit
     showInAdminNavigation: true,
   },
   {
+    id: 'request-batches',
+    path: APP_PATHS.workScheduleRequestBatches,
+    scope: 'global',
+    labelKey: 'work-schedule:rosterNav.requestBatches',
+    showInAdminNavigation: true,
+  },
+  {
     id: 'monthly-rosters',
     path: APP_PATHS.monthlyRosters,
     scope: 'global',
@@ -93,6 +101,8 @@ export const canAccessWorkScheduleSurface = (
       return false;
     case 'global-ops':
       return hasScopeGrant(capabilities, 'workSchedule', 'global');
+    case 'request-batches':
+      return hasScopeGrant(capabilities, 'workSchedule', 'global');
     case 'monthly-rosters':
       return hasScopeGrant(capabilities, 'workSchedule', 'global');
     case 'work-patterns':
@@ -109,6 +119,7 @@ export const resolveDefaultWorkScheduleSurfacePath = (
 ): string | null => {
   const priority: readonly WorkScheduleSurfaceId[] = [
     'global-ops',
+    'request-batches',
     'monthly-rosters',
     'work-patterns',
     'holiday-calendars',

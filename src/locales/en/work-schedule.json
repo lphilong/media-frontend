@@ -324,10 +324,79 @@
     "teamShifts": "Team Work Shifts",
     "departmentShifts": "Department Work Shifts / Roster",
     "globalOps": "Official Work Shifts",
+    "requestBatches": "Request Approval Queue",
     "monthlyRosters": "Monthly Rosters",
     "workPatterns": "Work Patterns",
     "holidayCalendars": "Holiday Calendars",
     "notImplemented": "Not implemented in this slice"
+  },
+  "requestBatches": {
+    "page": {
+      "title": "Request Approval Queue",
+      "subtitle": "Admin/Ops review for Manager WorkSchedule request batches and selected pending lines."
+    },
+    "copy": {
+      "adminAuthority": "Admin/Ops approval"
+    },
+    "filters": {
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "periodMonth": "Period month"
+    },
+    "fields": {
+      "periodMonth": "Period month",
+      "scopeSummary": "Scope",
+      "pending": "Pending lines"
+    },
+    "scopeSummaries": {
+      "ORG_UNIT": "Org Unit",
+      "TALENT_GROUP": "Talent Group",
+      "MIXED": "Mixed"
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "PARTIALLY_APPROVED": "Partially approved",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "lineStatuses": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled",
+      "FAILED_TO_APPLY": "Failed to apply"
+    },
+    "lineCounts": {
+      "summary": "{{pending}} pending / {{approved}} approved / {{failedToApply}} failed / {{total}} total"
+    },
+    "decisions": {
+      "title": "Selected-line decision",
+      "approvalNote": "Approval note (optional)",
+      "reason": "Rejection or cancellation reason"
+    },
+    "actions": {
+      "approveSelected": "Approve selected",
+      "rejectSelected": "Reject selected",
+      "cancelSelected": "Cancel selected",
+      "selectLine": "Select line {{lineNo}}"
+    },
+    "table": {
+      "caption": "Request batch lines",
+      "line": "Line",
+      "member": "Member",
+      "request": "Request",
+      "status": "Status",
+      "notes": "Notes"
+    },
+    "states": {
+      "emptyTitle": "No request batches",
+      "emptyMessage": "No request batches match the current filters.",
+      "listErrorTitle": "Request queue could not be loaded",
+      "listErrorMessage": "The system rejected or did not return request batch data.",
+      "detailErrorTitle": "Request batch detail could not be loaded",
+      "detailErrorMessage": "The selected request batch could not be loaded."
+    }
   },
   "patterns": {
     "page": {

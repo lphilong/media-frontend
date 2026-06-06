@@ -29,6 +29,10 @@ import type {
   WorkPatternRecord,
   WorkPatternUpdatePayload,
   WorkScheduleRequestApprovePayload,
+  WorkScheduleRequestBatchDetail,
+  WorkScheduleRequestBatchLineDecisionPayload,
+  WorkScheduleRequestBatchListItem,
+  WorkScheduleRequestBatchListQuery,
   WorkScheduleRequestCancelPayload,
   WorkScheduleRequestCreatePayload,
   WorkScheduleRequestListQuery,
@@ -89,6 +93,21 @@ const workScheduleRequestStatusSchema = z.enum([
   'APPROVED',
   'REJECTED',
   'CANCELLED',
+]);
+const workScheduleRequestBatchStatusSchema = z.enum([
+  'PENDING',
+  'PARTIALLY_APPROVED',
+  'APPROVED',
+  'REJECTED',
+  'CANCELLED',
+]);
+const workScheduleRequestBatchScopeSummarySchema = z.enum(['ORG_UNIT', 'TALENT_GROUP', 'MIXED']);
+const workScheduleRequestLineStatusSchema = z.enum([
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'CANCELLED',
+  'FAILED_TO_APPLY',
 ]);
 const timestampSchema = z.union([z.number(), z.string()]);
 const referenceSummarySchema = z
@@ -255,6 +274,89 @@ const workScheduleRequestListResponseSchema = z
 const workScheduleRequestDetailResponseSchema = z
   .object({
     data: workScheduleRequestSchema,
+  })
+  .strict();
+
+const requestLineCountsSchema = z
+  .object({
+    total: z.number().int().nonnegative(),
+    pending: z.number().int().nonnegative(),
+    approved: z.number().int().nonnegative(),
+    rejected: z.number().int().nonnegative(),
+    cancelled: z.number().int().nonnegative(),
+    failedToApply: z.number().int().nonnegative(),
+  })
+  .strict();
+
+const workScheduleRequestBatchListItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    batchCode: z.string().trim().min(1),
+    submittedByEmploymentProfileId: z.string().trim().min(1),
+    submittedByEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
+    periodMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    scopeSummary: workScheduleRequestBatchScopeSummarySchema,
+    status: workScheduleRequestBatchStatusSchema,
+    note: z.string().nullable(),
+    lineCounts: requestLineCountsSchema,
+    clientToken: z.string().trim().min(1),
+    submittedAt: timestampSchema,
+    cancelledAt: timestampSchema.nullable(),
+    resolvedAt: timestampSchema.nullable(),
+    createdAt: timestampSchema,
+    updatedAt: timestampSchema,
+  })
+  .strict();
+
+const workScheduleRequestBatchLineSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    batchId: z.string().trim().min(1),
+    lineNo: z.number().int().positive(),
+    requestType: workScheduleRequestTypeSchema,
+    memberEmploymentProfileId: z.string().trim().min(1),
+    memberEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
+    workShiftId: z.string().nullable(),
+    workShiftRef: referenceSummarySchema.nullable().optional(),
+    requestedStartAt: timestampSchema.nullable(),
+    requestedEndAt: timestampSchema.nullable(),
+    timezone: z.literal('Asia/Ho_Chi_Minh'),
+    title: z.string().nullable(),
+    description: z.string().nullable(),
+    externalRef: z.string().nullable(),
+    reason: z.string().trim().min(1),
+    status: workScheduleRequestLineStatusSchema,
+    approvalNote: z.string().nullable(),
+    rejectionReason: z.string().nullable(),
+    cancellationReason: z.string().nullable(),
+    failureReason: z.string().nullable(),
+    appliedWorkShiftId: z.string().nullable(),
+    appliedWorkShiftRef: referenceSummarySchema.nullable().optional(),
+    createdAt: timestampSchema,
+    updatedAt: timestampSchema,
+    approvedAt: timestampSchema.nullable(),
+    rejectedAt: timestampSchema.nullable(),
+    cancelledAt: timestampSchema.nullable(),
+    failedAt: timestampSchema.nullable(),
+  })
+  .strict();
+
+const workScheduleRequestBatchDetailSchema = workScheduleRequestBatchListItemSchema
+  .extend({
+    lines: z.array(workScheduleRequestBatchLineSchema),
+  })
+  .strict();
+
+const workScheduleRequestBatchListResponseSchema = z
+  .object({
+    data: z.array(workScheduleRequestBatchListItemSchema),
+    meta: cursorMetaSchema,
+  })
+  .strict();
+
+const workScheduleRequestBatchDetailResponseSchema = z
+  .object({
+    data: workScheduleRequestBatchDetailSchema,
   })
   .strict();
 
@@ -1069,6 +1171,90 @@ export const fetchWorkScheduleRequestDetail = async (
   });
 
   return workScheduleRequestDetailResponseSchema.parse(response).data;
+};
+
+const sanitizeWorkScheduleRequestBatchListQuery = (
+  query: WorkScheduleRequestBatchListQuery,
+): WorkScheduleRequestBatchListQuery =>
+  Object.fromEntries(
+    Object.entries(query).filter(([, value]) => value !== undefined && value !== ''),
+  ) as WorkScheduleRequestBatchListQuery;
+
+export const fetchWorkScheduleRequestBatches = async (
+  query: WorkScheduleRequestBatchListQuery,
+): Promise<CursorPagedResponse<WorkScheduleRequestBatchListItem>> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/work-schedule/request-batches',
+    params: sanitizeWorkScheduleRequestBatchListQuery(query),
+  });
+
+  return workScheduleRequestBatchListResponseSchema.parse(response);
+};
+
+export const fetchWorkScheduleRequestBatchDetail = async (
+  batchId: string,
+): Promise<WorkScheduleRequestBatchDetail> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/work-schedule/request-batches/${encodeURIComponent(batchId)}`,
+  });
+
+  return workScheduleRequestBatchDetailResponseSchema.parse(response).data;
+};
+
+const sanitizeLineDecisionPayload = (
+  payload: WorkScheduleRequestBatchLineDecisionPayload,
+): WorkScheduleRequestBatchLineDecisionPayload => ({
+  lineIds: payload.lineIds.map((lineId) => lineId.trim()).filter(Boolean),
+  ...(payload.approvalNote !== undefined
+    ? { approvalNote: sanitizeNullableText(payload.approvalNote) }
+    : {}),
+  ...(payload.rejectionReason !== undefined
+    ? { rejectionReason: sanitizeNullableText(payload.rejectionReason) }
+    : {}),
+  ...(payload.cancellationReason !== undefined
+    ? { cancellationReason: sanitizeNullableText(payload.cancellationReason) }
+    : {}),
+});
+
+export const approveWorkScheduleRequestBatchLines = async (
+  batchId: string,
+  payload: WorkScheduleRequestBatchLineDecisionPayload,
+): Promise<WorkScheduleRequestBatchDetail> => {
+  const response = await apiRequest<unknown, WorkScheduleRequestBatchLineDecisionPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/request-batches/${encodeURIComponent(batchId)}/approve-lines`,
+    data: sanitizeLineDecisionPayload(payload),
+  });
+
+  return workScheduleRequestBatchDetailResponseSchema.parse(response).data;
+};
+
+export const rejectWorkScheduleRequestBatchLines = async (
+  batchId: string,
+  payload: WorkScheduleRequestBatchLineDecisionPayload,
+): Promise<WorkScheduleRequestBatchDetail> => {
+  const response = await apiRequest<unknown, WorkScheduleRequestBatchLineDecisionPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/request-batches/${encodeURIComponent(batchId)}/reject-lines`,
+    data: sanitizeLineDecisionPayload(payload),
+  });
+
+  return workScheduleRequestBatchDetailResponseSchema.parse(response).data;
+};
+
+export const cancelWorkScheduleRequestBatchLines = async (
+  batchId: string,
+  payload: WorkScheduleRequestBatchLineDecisionPayload,
+): Promise<WorkScheduleRequestBatchDetail> => {
+  const response = await apiRequest<unknown, WorkScheduleRequestBatchLineDecisionPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/request-batches/${encodeURIComponent(batchId)}/cancel-lines`,
+    data: sanitizeLineDecisionPayload(payload),
+  });
+
+  return workScheduleRequestBatchDetailResponseSchema.parse(response).data;
 };
 
 export const createWorkScheduleRequest = async (

@@ -53,6 +53,7 @@ export const APP_PATHS = {
   workScheduleTeamShifts: '/work-schedule/team-shifts',
   workScheduleDepartmentShifts: '/work-schedule/department-shifts',
   workScheduleGlobalOps: '/work-schedule/global-ops',
+  workScheduleRequestBatches: '/work-schedule/request-batches',
   workPatterns: '/work-schedule/patterns',
   workPatternDetailPattern: '/work-schedule/patterns/:workPatternId',
   workPatternDetail: (workPatternId: string) =>

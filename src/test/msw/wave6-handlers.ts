@@ -25,6 +25,18 @@ type MonthlyRosterPreviewRowKind =
 type WorkScheduleScope = 'self' | 'team' | 'department' | 'global';
 type WorkScheduleRequestType = 'CREATE_SHIFT' | 'RESCHEDULE_SHIFT' | 'CANCEL_SHIFT';
 type WorkScheduleRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+type WorkScheduleRequestBatchStatus =
+  | 'PENDING'
+  | 'PARTIALLY_APPROVED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED';
+type WorkScheduleRequestLineStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'FAILED_TO_APPLY';
 type EventAssignmentKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
 type EventStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
 
@@ -105,6 +117,63 @@ type WorkScheduleRequestRecord = {
   appliedWorkShiftId: string | null;
   createdAt: number;
   updatedAt: number;
+};
+
+type WorkScheduleRequestBatchLineRecord = {
+  id: string;
+  batchId: string;
+  lineNo: number;
+  requestType: WorkScheduleRequestType;
+  memberEmploymentProfileId: string;
+  memberEmploymentProfileRef?: ReferenceSummary | null;
+  workShiftId: string | null;
+  workShiftRef?: ReferenceSummary | null;
+  requestedStartAt: number | null;
+  requestedEndAt: number | null;
+  timezone: 'Asia/Ho_Chi_Minh';
+  title: string | null;
+  description: string | null;
+  externalRef: string | null;
+  reason: string;
+  status: WorkScheduleRequestLineStatus;
+  approvalNote: string | null;
+  rejectionReason: string | null;
+  cancellationReason: string | null;
+  failureReason: string | null;
+  appliedWorkShiftId: string | null;
+  appliedWorkShiftRef?: ReferenceSummary | null;
+  createdAt: number;
+  updatedAt: number;
+  approvedAt: number | null;
+  rejectedAt: number | null;
+  cancelledAt: number | null;
+  failedAt: number | null;
+};
+
+type WorkScheduleRequestBatchRecord = {
+  id: string;
+  batchCode: string;
+  submittedByEmploymentProfileId: string;
+  submittedByEmploymentProfileRef?: ReferenceSummary | null;
+  periodMonth: string;
+  scopeSummary: 'ORG_UNIT' | 'TALENT_GROUP' | 'MIXED';
+  status: WorkScheduleRequestBatchStatus;
+  note: string | null;
+  lineCounts: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    cancelled: number;
+    failedToApply: number;
+  };
+  clientToken: string;
+  submittedAt: number;
+  cancelledAt: number | null;
+  resolvedAt: number | null;
+  createdAt: number;
+  updatedAt: number;
+  lines: WorkScheduleRequestBatchLineRecord[];
 };
 
 type WorkPatternRecord = {
@@ -866,6 +935,155 @@ let workScheduleRequests: WorkScheduleRequestRecord[] = [
     updatedAt: now - 1_000,
   },
 ];
+let workScheduleRequestBatches: WorkScheduleRequestBatchRecord[] = [];
+
+const createInitialWorkScheduleRequestBatches = (): WorkScheduleRequestBatchRecord[] => [
+  {
+    id: 'admin-batch-001',
+    batchCode: 'WSB-202606-000100',
+    submittedByEmploymentProfileId: 'ep-manager-001',
+    submittedByEmploymentProfileRef: {
+      id: 'ep-manager-001',
+      code: 'MGR-001',
+      displayName: 'Mina Manager',
+    },
+    periodMonth: '2026-06',
+    scopeSummary: 'MIXED',
+    status: 'PENDING',
+    note: 'Mixed scope manager request',
+    lineCounts: { total: 4, pending: 2, approved: 0, rejected: 0, cancelled: 0, failedToApply: 2 },
+    clientToken: 'admin-batch-token-001',
+    submittedAt: Date.parse('2026-06-06T09:00:00+07:00'),
+    cancelledAt: null,
+    resolvedAt: null,
+    createdAt: Date.parse('2026-06-06T09:00:00+07:00'),
+    updatedAt: Date.parse('2026-06-06T09:00:00+07:00'),
+    lines: [
+      {
+        id: 'admin-line-pending-create',
+        batchId: 'admin-batch-001',
+        lineNo: 1,
+        requestType: 'CREATE_SHIFT',
+        memberEmploymentProfileId: 'ep-001',
+        memberEmploymentProfileRef: { id: 'ep-001', code: 'EP-001', displayName: 'Production Member' },
+        workShiftId: null,
+        workShiftRef: null,
+        requestedStartAt: Date.parse('2026-06-12T09:00:00+07:00'),
+        requestedEndAt: Date.parse('2026-06-12T17:00:00+07:00'),
+        timezone: 'Asia/Ho_Chi_Minh',
+        title: 'Extra production shift',
+        description: null,
+        externalRef: null,
+        reason: 'Need extra coverage for production handoff.',
+        status: 'PENDING',
+        approvalNote: null,
+        rejectionReason: null,
+        cancellationReason: null,
+        failureReason: null,
+        appliedWorkShiftId: null,
+        appliedWorkShiftRef: null,
+        createdAt: now,
+        updatedAt: now,
+        approvedAt: null,
+        rejectedAt: null,
+        cancelledAt: null,
+        failedAt: null,
+      },
+      {
+        id: 'admin-line-pending-reschedule',
+        batchId: 'admin-batch-001',
+        lineNo: 2,
+        requestType: 'RESCHEDULE_SHIFT',
+        memberEmploymentProfileId: 'ep-002',
+        memberEmploymentProfileRef: { id: 'ep-002', code: 'EP-002', displayName: 'Talent Support' },
+        workShiftId: 'work-shift-001',
+        workShiftRef: { id: 'work-shift-001', title: 'Main studio morning shift' },
+        requestedStartAt: Date.parse('2026-06-13T10:00:00+07:00'),
+        requestedEndAt: Date.parse('2026-06-13T18:00:00+07:00'),
+        timezone: 'Asia/Ho_Chi_Minh',
+        title: null,
+        description: null,
+        externalRef: null,
+        reason: 'Member needs later coverage after production change.',
+        status: 'PENDING',
+        approvalNote: null,
+        rejectionReason: null,
+        cancellationReason: null,
+        failureReason: null,
+        appliedWorkShiftId: null,
+        appliedWorkShiftRef: null,
+        createdAt: now,
+        updatedAt: now,
+        approvedAt: null,
+        rejectedAt: null,
+        cancelledAt: null,
+        failedAt: null,
+      },
+      {
+        id: 'admin-line-failed',
+        batchId: 'admin-batch-001',
+        lineNo: 3,
+        requestType: 'CANCEL_SHIFT',
+        memberEmploymentProfileId: 'ep-003',
+        memberEmploymentProfileRef: { id: 'ep-003', code: 'EP-003', displayName: 'Historical Member' },
+        workShiftId: 'work-shift-historical',
+        workShiftRef: { id: 'work-shift-historical', title: 'Historical active work shift' },
+        requestedStartAt: null,
+        requestedEndAt: null,
+        timezone: 'Asia/Ho_Chi_Minh',
+        title: null,
+        description: null,
+        externalRef: null,
+        reason: 'Original shift no longer applies.',
+        status: 'FAILED_TO_APPLY',
+        approvalNote: null,
+        rejectionReason: null,
+        cancellationReason: null,
+        failureReason: 'Official WorkShift was no longer active at approval time.',
+        appliedWorkShiftId: null,
+        appliedWorkShiftRef: null,
+        createdAt: now,
+        updatedAt: now,
+        approvedAt: null,
+        rejectedAt: null,
+        cancelledAt: null,
+        failedAt: now,
+      },
+      {
+        id: 'admin-line-failed-second',
+        batchId: 'admin-batch-001',
+        lineNo: 4,
+        requestType: 'CREATE_SHIFT',
+        memberEmploymentProfileId: 'ep-004',
+        memberEmploymentProfileRef: { id: 'ep-004', code: 'EP-004', displayName: 'Conflict Member' },
+        workShiftId: null,
+        workShiftRef: null,
+        requestedStartAt: Date.parse('2026-06-14T09:00:00+07:00'),
+        requestedEndAt: Date.parse('2026-06-14T17:00:00+07:00'),
+        timezone: 'Asia/Ho_Chi_Minh',
+        title: 'Conflicting shift',
+        description: null,
+        externalRef: null,
+        reason: 'Coverage request that conflicted during approval.',
+        status: 'FAILED_TO_APPLY',
+        approvalNote: null,
+        rejectionReason: null,
+        cancellationReason: null,
+        failureReason: 'Requested window overlaps an existing official WorkShift.',
+        appliedWorkShiftId: null,
+        appliedWorkShiftRef: null,
+        createdAt: now,
+        updatedAt: now,
+        approvedAt: null,
+        rejectedAt: null,
+        cancelledAt: null,
+        failedAt: now,
+      },
+    ],
+  },
+];
+
+workScheduleRequestBatches = createInitialWorkScheduleRequestBatches();
 let workPatterns = initialWorkPatterns.map((record) => ({ ...record }));
 let holidayCalendars = initialHolidayCalendars.map((record) => ({
   ...record,
@@ -921,6 +1139,7 @@ export const resetWave6MockData = (): void => {
       updatedAt: now - 1_000,
     },
   ];
+  workScheduleRequestBatches = createInitialWorkScheduleRequestBatches();
   workPatterns = initialWorkPatterns.map((record) => ({ ...record }));
   holidayCalendars = initialHolidayCalendars.map((record) => ({
     ...record,
@@ -1487,6 +1706,80 @@ const toEventDetail = (record: EventRecord) => ({
   externalRef: record.externalRef,
   updatedAt: record.updatedAt,
 });
+
+const recalculateRequestBatch = (
+  batch: WorkScheduleRequestBatchRecord,
+): WorkScheduleRequestBatchRecord => {
+  const counts = {
+    total: batch.lines.length,
+    pending: batch.lines.filter((line) => line.status === 'PENDING').length,
+    approved: batch.lines.filter((line) => line.status === 'APPROVED').length,
+    rejected: batch.lines.filter((line) => line.status === 'REJECTED').length,
+    cancelled: batch.lines.filter((line) => line.status === 'CANCELLED').length,
+    failedToApply: batch.lines.filter((line) => line.status === 'FAILED_TO_APPLY').length,
+  };
+  const terminalStatus: WorkScheduleRequestBatchStatus =
+    counts.cancelled === counts.total
+      ? 'CANCELLED'
+      : counts.rejected === counts.total
+        ? 'REJECTED'
+        : counts.approved === counts.total
+          ? 'APPROVED'
+          : counts.approved > 0
+            ? 'PARTIALLY_APPROVED'
+            : batch.status;
+
+  return {
+    ...batch,
+    status: counts.pending > 0 ? batch.status : terminalStatus,
+    lineCounts: counts,
+    updatedAt: Date.now(),
+  };
+};
+
+const decideRequestBatchLines = (
+  batchId: string,
+  lineIdsValue: unknown,
+  status: Extract<WorkScheduleRequestLineStatus, 'APPROVED' | 'REJECTED' | 'CANCELLED'>,
+  notes: {
+    approvalNote?: string | null;
+    rejectionReason?: string | null;
+    cancellationReason?: string | null;
+  },
+) => {
+  const lineIds = Array.isArray(lineIdsValue)
+    ? lineIdsValue.filter((value): value is string => typeof value === 'string')
+    : [];
+  if (lineIds.length === 0) {
+    return HttpResponse.json({ message: 'lineIds must contain at least one line id' }, { status: 422 });
+  }
+  const batchIndex = workScheduleRequestBatches.findIndex((item) => item.id === batchId);
+  if (batchIndex < 0) {
+    return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+  }
+  const now = Date.now();
+  const batch = workScheduleRequestBatches[batchIndex];
+  workScheduleRequestBatches[batchIndex] = recalculateRequestBatch({
+    ...batch,
+    lines: batch.lines.map((line) => {
+      if (!lineIds.includes(line.id) || line.status !== 'PENDING') {
+        return line;
+      }
+      return {
+        ...line,
+        status,
+        approvalNote: notes.approvalNote ?? line.approvalNote,
+        rejectionReason: notes.rejectionReason ?? line.rejectionReason,
+        cancellationReason: notes.cancellationReason ?? line.cancellationReason,
+        approvedAt: status === 'APPROVED' ? now : line.approvedAt,
+        rejectedAt: status === 'REJECTED' ? now : line.rejectedAt,
+        cancelledAt: status === 'CANCELLED' ? now : line.cancelledAt,
+        updatedAt: now,
+      };
+    }),
+  });
+  return HttpResponse.json({ data: workScheduleRequestBatches[batchIndex] });
+};
 
 const readEventAssignmentSubjectRef = (
   assignment: EventAssignmentRecord,
@@ -3520,6 +3813,68 @@ export const wave6Handlers = [
 
     const rows = filterWorkShiftRows(workShifts, url.searchParams);
     return HttpResponse.json(paginate(rows.map(toWorkShiftListItem), url.searchParams));
+  }),
+
+  http.get('*/admin/work-schedule/request-batches', ({ request }) => {
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const periodMonth = url.searchParams.get('periodMonth');
+    const rows = workScheduleRequestBatches
+      .filter((batch) => !status || batch.status === status)
+      .filter((batch) => !periodMonth || batch.periodMonth === periodMonth)
+      .map((batch) => {
+        const item: Partial<WorkScheduleRequestBatchRecord> = { ...batch };
+        delete item.lines;
+        return item;
+      });
+    return HttpResponse.json(paginate(rows, url.searchParams));
+  }),
+
+  http.get('*/admin/work-schedule/request-batches/:batchId', ({ params }) => {
+    const batch = workScheduleRequestBatches.find((item) => item.id === String(params.batchId));
+    if (!batch) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    return HttpResponse.json({ data: batch });
+  }),
+
+  http.post('*/admin/work-schedule/request-batches/:batchId/approve-lines', async ({ params, request }) => {
+    const body = (await parseJsonBody(request)) as { lineIds?: unknown; approvalNote?: unknown };
+    const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'approvalNote']);
+    if (bodyFailure) {
+      return bodyFailure;
+    }
+    return decideRequestBatchLines(String(params.batchId), body.lineIds, 'APPROVED', {
+      approvalNote: typeof body.approvalNote === 'string' ? body.approvalNote : null,
+    });
+  }),
+
+  http.post('*/admin/work-schedule/request-batches/:batchId/reject-lines', async ({ params, request }) => {
+    const body = (await parseJsonBody(request)) as { lineIds?: unknown; rejectionReason?: unknown };
+    const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'rejectionReason']);
+    if (bodyFailure) {
+      return bodyFailure;
+    }
+    if (typeof body.rejectionReason !== 'string' || body.rejectionReason.trim().length < 10) {
+      return HttpResponse.json({ message: 'rejectionReason is required' }, { status: 422 });
+    }
+    return decideRequestBatchLines(String(params.batchId), body.lineIds, 'REJECTED', {
+      rejectionReason: body.rejectionReason,
+    });
+  }),
+
+  http.post('*/admin/work-schedule/request-batches/:batchId/cancel-lines', async ({ params, request }) => {
+    const body = (await parseJsonBody(request)) as { lineIds?: unknown; cancellationReason?: unknown };
+    const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'cancellationReason']);
+    if (bodyFailure) {
+      return bodyFailure;
+    }
+    if (typeof body.cancellationReason !== 'string' || body.cancellationReason.trim().length < 10) {
+      return HttpResponse.json({ message: 'cancellationReason is required' }, { status: 422 });
+    }
+    return decideRequestBatchLines(String(params.batchId), body.lineIds, 'CANCELLED', {
+      cancellationReason: body.cancellationReason,
+    });
   }),
 
   http.get('*/admin/work-schedule/requests', ({ request }) => {

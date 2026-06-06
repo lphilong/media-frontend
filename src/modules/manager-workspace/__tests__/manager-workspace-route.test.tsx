@@ -1,4 +1,4 @@
-import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
@@ -745,6 +745,183 @@ describe('/manager workspace route', () => {
     expect(screen.getByText('Draft rosters are not visible here until they are published.')).toBeInTheDocument();
     expect(rawAdminWorkShiftCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /create|edit|cancel|request|approve/i })).not.toBeInTheDocument();
+  });
+
+  it('submits a manager request batch through Manager Workspace endpoints only', async () => {
+    const user = userEvent.setup();
+    let managerSubmitCalls = 0;
+    let rawAdminBatchCalls = 0;
+    server.use(
+      http.post('*/admin/manager-workspace/work-schedule/request-batches', async ({ request }) => {
+        managerSubmitCalls += 1;
+        const body = (await request.json()) as Record<string, unknown>;
+        expect(body).toMatchObject({
+          periodMonth: '2026-06',
+        });
+        expect(Array.isArray(body.lines)).toBe(true);
+        return HttpResponse.json({
+          data: {
+            id: 'manager-batch-created',
+            batchCode: 'WSB-CREATED',
+            status: 'PENDING',
+            periodMonth: '2026-06',
+            scopeSummary: 'ORG_UNIT',
+            note: null,
+            lineCounts: {
+              total: 1,
+              pending: 1,
+              approved: 0,
+              rejected: 0,
+              cancelled: 0,
+              failedToApply: 0,
+            },
+            clientToken: 'manager-ui-test-token',
+            submittedAt: Date.now(),
+            cancelledAt: null,
+            resolvedAt: null,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            lines: [],
+          },
+        });
+      }),
+      http.all('*/admin/work-schedule/request-batches*', () => {
+        rawAdminBatchCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    await user.click(await screen.findByRole('tab', { name: 'Requests' }));
+    await user.click(screen.getByRole('button', { name: 'Add create' }));
+    await user.click(screen.getByRole('button', { name: 'Submit batch' }));
+
+    expect(await screen.findByText('Each line reason must be 10-1000 characters.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Requested start'), {
+      target: { value: '2026-06-20T09:00' },
+    });
+    fireEvent.change(screen.getByLabelText('Requested end'), {
+      target: { value: '2026-06-20T11:00' },
+    });
+    await user.type(screen.getByLabelText('Reason'), 'Need a special production support shift.');
+    await user.click(screen.getByRole('button', { name: 'Submit batch' }));
+
+    await waitFor(() => expect(managerSubmitCalls).toBe(1));
+    expect(rawAdminBatchCalls).toBe(0);
+    expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
+  });
+
+  it('adds reschedule and cancel lines, removes a draft line, and submits through Manager endpoints only', async () => {
+    const user = userEvent.setup();
+    let rawAdminBatchCalls = 0;
+    let capturedPayload: Record<string, unknown> | undefined;
+    server.use(
+      http.post('*/admin/manager-workspace/work-schedule/request-batches', async ({ request }) => {
+        capturedPayload = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({
+          data: {
+            id: 'manager-batch-reschedule-cancel',
+            batchCode: 'WSB-RESCHEDULE-CANCEL',
+            status: 'PENDING',
+            periodMonth: '2026-06',
+            scopeSummary: 'ORG_UNIT',
+            note: null,
+            lineCounts: {
+              total: 2,
+              pending: 2,
+              approved: 0,
+              rejected: 0,
+              cancelled: 0,
+              failedToApply: 0,
+            },
+            clientToken: 'manager-ui-test-token',
+            submittedAt: Date.now(),
+            cancelledAt: null,
+            resolvedAt: null,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            lines: [],
+          },
+        });
+      }),
+      http.all('*/admin/work-schedule/request-batches*', () => {
+        rawAdminBatchCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    await user.click(await screen.findByRole('tab', { name: 'Requests' }));
+    await user.click(screen.getByRole('button', { name: 'Add create' }));
+    await user.click(screen.getByRole('button', { name: 'Add reschedule' }));
+    await user.click(screen.getByRole('button', { name: 'Add cancel' }));
+
+    expect(screen.getAllByRole('button', { name: 'Remove line' })).toHaveLength(3);
+    await user.click(screen.getAllByRole('button', { name: 'Remove line' })[0]);
+    expect(screen.getAllByRole('button', { name: 'Remove line' })).toHaveLength(2);
+
+    const reasonFields = screen.getAllByLabelText('Reason');
+    await user.type(reasonFields[0], 'Reschedule to align with production coverage.');
+    await user.type(reasonFields[1], 'Cancel because production coverage is no longer needed.');
+    await user.click(screen.getByRole('button', { name: 'Submit batch' }));
+
+    await waitFor(() => expect(capturedPayload).toBeDefined());
+    expect(capturedPayload).toMatchObject({ periodMonth: '2026-06' });
+    const lines = capturedPayload?.lines as Array<Record<string, unknown>>;
+    expect(lines).toHaveLength(2);
+    expect(lines.map((line) => line.requestType)).toEqual(['RESCHEDULE_SHIFT', 'CANCEL_SHIFT']);
+    expect(lines[0]).toMatchObject({
+      memberEmploymentProfileId: 'ep-org-member',
+      workShiftId: 'manager-shift-org',
+    });
+    expect(lines[1]).toMatchObject({
+      memberEmploymentProfileId: 'ep-org-member',
+      workShiftId: 'manager-shift-org',
+      requestedStartAt: null,
+      requestedEndAt: null,
+      title: null,
+    });
+    expect(rawAdminBatchCalls).toBe(0);
+    expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
+  });
+
+  it('cancels own pending request lines and batches with a manager cancellation reason only', async () => {
+    const user = userEvent.setup();
+    let rawAdminBatchCalls = 0;
+    server.use(
+      http.all('*/admin/work-schedule/request-batches*', () => {
+        rawAdminBatchCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    await user.click(await screen.findByRole('tab', { name: 'Requests' }));
+    expect(await screen.findByText('WSB-202606-000001')).toBeInTheDocument();
+
+    const cancellationReason = screen.getByLabelText('Cancellation reason');
+    const cancelLine = await screen.findAllByRole('button', { name: 'Cancel line' });
+    expect(cancelLine[0]).toBeDisabled();
+    await user.type(cancellationReason, 'Manager cancellation reason.');
+    await user.click(cancelLine[0]);
+
+    expect(await screen.findByText('Manager cancellation reason.')).toBeInTheDocument();
+
+    const cancelBatch = await screen.findByRole('button', { name: 'Cancel batch' });
+    await user.click(cancelBatch);
+
+    expect(await screen.findAllByText('Cancelled')).not.toHaveLength(0);
+    expect(rawAdminBatchCalls).toBe(0);
+    expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
   });
 
   it('renders Managed Work empty state when no published shifts or eligible members exist', async () => {

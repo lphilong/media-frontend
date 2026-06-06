@@ -3,8 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addHolidayCalendarEntry,
   addRosterException,
+  approveWorkScheduleRequestBatchLines,
   approveWorkScheduleRequest,
   archiveMonthlyRoster,
+  cancelWorkScheduleRequestBatchLines,
   cancelWorkScheduleRequest,
   createHolidayCalendar,
   createMonthlyRosterDraft,
@@ -23,11 +25,14 @@ import {
   fetchWorkShiftsByResource,
   fetchWorkShiftsBySubject,
   fetchWorkScheduleRequests,
+  fetchWorkScheduleRequestBatches,
+  fetchWorkScheduleRequestBatchDetail,
   performHolidayCalendarLifecycleAction,
   performWorkPatternLifecycleAction,
   performWorkShiftLifecycleAction,
   publishMonthlyRoster,
   reassignWorkShiftSubject,
+  rejectWorkScheduleRequestBatchLines,
   rejectWorkScheduleRequest,
   removeHolidayCalendarEntry,
   removeRosterException,
@@ -57,6 +62,8 @@ import type {
   WorkPatternListQuery,
   WorkPatternUpdatePayload,
   WorkScheduleRequestApprovePayload,
+  WorkScheduleRequestBatchLineDecisionPayload,
+  WorkScheduleRequestBatchListQuery,
   WorkScheduleRequestCancelPayload,
   WorkScheduleRequestCreatePayload,
   WorkScheduleRequestListQuery,
@@ -112,6 +119,18 @@ const toWorkScheduleRequestListQueryToken = (query: WorkScheduleRequestListQuery
     }, {}),
   ).toString();
 
+const toWorkScheduleRequestBatchListQueryToken = (
+  query: WorkScheduleRequestBatchListQuery,
+): string =>
+  new URLSearchParams(
+    Object.entries(query).reduce<Record<string, string>>((accumulator, [key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        accumulator[key] = String(value);
+      }
+      return accumulator;
+    }, {}),
+  ).toString();
+
 export const workScheduleQueryKeys = {
   all: (): readonly ['work-schedule'] => WORK_SCHEDULE_QUERY_ROOT,
   flatList: (query: WorkShiftListQuery) =>
@@ -151,6 +170,15 @@ export const workScheduleQueryKeys = {
   monthlyRosterPublish: () => ['work-schedule', 'monthly-rosters', 'publish'] as const,
   requestList: (query: WorkScheduleRequestListQuery) =>
     ['work-schedule', 'requests', 'list', toWorkScheduleRequestListQueryToken(query)] as const,
+  requestBatchList: (query: WorkScheduleRequestBatchListQuery) =>
+    [
+      'work-schedule',
+      'request-batches',
+      'list',
+      toWorkScheduleRequestBatchListQueryToken(query),
+    ] as const,
+  requestBatchDetail: (batchId: string) =>
+    ['work-schedule', 'request-batches', 'detail', batchId] as const,
 };
 
 export const useWorkShiftFlatList = (
@@ -204,6 +232,30 @@ export const useWorkScheduleRequestList = (
     queryKey: workScheduleQueryKeys.requestList(query),
     queryFn: () => fetchWorkScheduleRequests(query),
     enabled: options?.enabled ?? true,
+  });
+};
+
+export const useWorkScheduleRequestBatchList = (
+  query: WorkScheduleRequestBatchListQuery,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: workScheduleQueryKeys.requestBatchList(query),
+    queryFn: () => fetchWorkScheduleRequestBatches(query),
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useWorkScheduleRequestBatchDetail = (
+  batchId: string | undefined,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: batchId
+      ? workScheduleQueryKeys.requestBatchDetail(batchId)
+      : [...WORK_SCHEDULE_QUERY_ROOT, 'request-batches', 'detail'],
+    queryFn: () => fetchWorkScheduleRequestBatchDetail(batchId ?? ''),
+    enabled: Boolean(batchId) && (options?.enabled ?? true),
   });
 };
 
@@ -440,6 +492,57 @@ export const useRejectWorkScheduleRequestMutation = () => {
       requestId: string;
       payload: WorkScheduleRequestRejectPayload;
     }) => rejectWorkScheduleRequest(requestId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useApproveWorkScheduleRequestBatchLinesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: WorkScheduleRequestBatchLineDecisionPayload;
+    }) => approveWorkScheduleRequestBatchLines(batchId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useRejectWorkScheduleRequestBatchLinesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: WorkScheduleRequestBatchLineDecisionPayload;
+    }) => rejectWorkScheduleRequestBatchLines(batchId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useCancelWorkScheduleRequestBatchLinesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: WorkScheduleRequestBatchLineDecisionPayload;
+    }) => cancelWorkScheduleRequestBatchLines(batchId, payload),
     onSuccess: async () => {
       await invalidateWorkScheduleQueries(queryClient);
     },

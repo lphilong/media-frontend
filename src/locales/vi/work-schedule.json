@@ -324,10 +324,79 @@
     "globalOps": "Ca làm việc chính thức",
     "label": "Các phần lịch làm việc",
     "workShifts": "Ca làm việc",
+    "requestBatches": "Hàng đợi duyệt yêu cầu",
     "monthlyRosters": "Bảng lịch tháng",
     "workPatterns": "Mẫu lịch làm",
     "holidayCalendars": "Lịch nghỉ lễ",
     "notImplemented": "Chưa triển khai trong lát cắt này"
+  },
+  "requestBatches": {
+    "page": {
+      "title": "Hàng đợi duyệt yêu cầu",
+      "subtitle": "Admin/Ops duyệt batch yêu cầu WorkSchedule của quản lý theo từng dòng đang chờ."
+    },
+    "copy": {
+      "adminAuthority": "Duyệt bởi Admin/Ops"
+    },
+    "filters": {
+      "status": "Trạng thái",
+      "allStatuses": "Tất cả trạng thái",
+      "periodMonth": "Tháng"
+    },
+    "fields": {
+      "periodMonth": "Tháng",
+      "scopeSummary": "Phạm vi",
+      "pending": "Dòng đang chờ"
+    },
+    "scopeSummaries": {
+      "ORG_UNIT": "Org Unit",
+      "TALENT_GROUP": "Talent Group",
+      "MIXED": "Hỗn hợp"
+    },
+    "statuses": {
+      "PENDING": "Đang chờ",
+      "PARTIALLY_APPROVED": "Duyệt một phần",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Đã từ chối",
+      "CANCELLED": "Đã hủy"
+    },
+    "lineStatuses": {
+      "PENDING": "Đang chờ",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Đã từ chối",
+      "CANCELLED": "Đã hủy",
+      "FAILED_TO_APPLY": "Áp dụng thất bại"
+    },
+    "lineCounts": {
+      "summary": "{{pending}} chờ / {{approved}} duyệt / {{failedToApply}} lỗi / {{total}} tổng"
+    },
+    "decisions": {
+      "title": "Quyết định dòng đã chọn",
+      "approvalNote": "Ghi chú duyệt (tùy chọn)",
+      "reason": "Lý do từ chối hoặc hủy"
+    },
+    "actions": {
+      "approveSelected": "Duyệt dòng đã chọn",
+      "rejectSelected": "Từ chối dòng đã chọn",
+      "cancelSelected": "Hủy dòng đã chọn",
+      "selectLine": "Chọn dòng {{lineNo}}"
+    },
+    "table": {
+      "caption": "Dòng yêu cầu trong batch",
+      "line": "Dòng",
+      "member": "Thành viên",
+      "request": "Yêu cầu",
+      "status": "Trạng thái",
+      "notes": "Ghi chú"
+    },
+    "states": {
+      "emptyTitle": "Không có batch yêu cầu",
+      "emptyMessage": "Không có batch yêu cầu khớp bộ lọc.",
+      "listErrorTitle": "Không tải được hàng đợi",
+      "listErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu batch.",
+      "detailErrorTitle": "Không tải được chi tiết batch",
+      "detailErrorMessage": "Không tải được batch yêu cầu đã chọn."
+    }
   },
   "patterns": {
     "page": {

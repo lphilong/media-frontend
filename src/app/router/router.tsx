@@ -245,6 +245,12 @@ const MonthlyRosterDetailPage = lazy(() =>
   })),
 );
 
+const WorkScheduleRequestBatchQueuePage = lazy(() =>
+  import('@modules/work-schedule/pages/WorkScheduleRequestBatchQueuePage').then((module) => ({
+    default: module.WorkScheduleRequestBatchQueuePage,
+  })),
+);
+
 const RouteLoadingFallback = (): JSX.Element => (
   <PageContainer>
     <LoadingState lines={5} />
@@ -413,6 +419,14 @@ function LazyMonthlyRosterDetailElement(): JSX.Element {
   );
 }
 
+function LazyWorkScheduleRequestBatchQueueElement(): JSX.Element {
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <WorkScheduleRequestBatchQueuePage />
+    </Suspense>
+  );
+}
+
 function ModuleDetailStubElement({
   definition,
 }: {
@@ -559,6 +573,18 @@ export const appRoutes: RouteObject[] = [
           breadcrumbKey: 'work-schedule:rosterNav.globalOps',
           titleKey: 'work-schedule:surfaces.globalOps.title',
           subtitleKey: 'work-schedule:surfaces.globalOps.subtitle',
+        } satisfies ModuleRouteHandle,
+      },
+      {
+        path: APP_PATHS.workScheduleRequestBatches.replace(/^\//, ''),
+        element: withModuleAccess(
+          'work-schedule',
+          <LazyWorkScheduleRequestBatchQueueElement />,
+        ),
+        handle: {
+          breadcrumbKey: 'work-schedule:rosterNav.requestBatches',
+          titleKey: 'work-schedule:requestBatches.page.title',
+          subtitleKey: 'work-schedule:requestBatches.page.subtitle',
         } satisfies ModuleRouteHandle,
       },
       {

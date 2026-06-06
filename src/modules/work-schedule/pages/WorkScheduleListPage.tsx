@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import { WorkShiftGuidedWorkflow } from '@modules/work-schedule/components/WorkShiftGuidedWorkflow';
 import {
@@ -398,26 +397,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
         Boolean(capabilitiesQuery.data) &&
         hasScopeGrant(capabilitiesQuery.data, 'workSchedule', routeSurfaceScope ?? 'self'),
     },
-  );
-
-  usePageActions(
-    canCreateWorkShift ? (
-      <div className="flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setIsGuidedWorkflowOpen((current) => !current);
-            setGuidedWorkflowError(null);
-          }}
-          data-action-priority="primary"
-          className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-        >
-          {isGuidedWorkflowOpen
-            ? t('work-schedule:actions.closeGuidedWorkflow')
-            : t('work-schedule:actions.scheduleWorkShift')}
-        </button>
-      </div>
-    ) : null,
   );
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
@@ -883,6 +862,34 @@ export const WorkScheduleListPage = (): JSX.Element => {
       banner={
         <div className="space-y-3">
           <WorkScheduleSubnavigation active={routeSurface?.id ?? 'global-ops'} />
+          {routeSurface?.id === 'global-ops' ? (
+            <div className="flex flex-col gap-2 rounded border border-border bg-panel px-3 py-2 text-sm text-text sm:flex-row sm:items-center sm:justify-between">
+              <span>{t('work-schedule:requestBatches.page.subtitle')}</span>
+              <div className="flex flex-wrap gap-2">
+                {canCreateWorkShift ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsGuidedWorkflowOpen((current) => !current);
+                      setGuidedWorkflowError(null);
+                    }}
+                    data-action-priority="primary"
+                    className="inline-flex min-h-9 items-center justify-center rounded border border-accent bg-accent px-3 py-2 font-medium text-white"
+                  >
+                    {isGuidedWorkflowOpen
+                      ? t('work-schedule:actions.closeGuidedWorkflow')
+                      : t('work-schedule:actions.scheduleWorkShift')}
+                  </button>
+                ) : null}
+                <Link
+                  className="inline-flex min-h-9 items-center justify-center rounded border border-border bg-bg px-3 py-2 font-medium text-text hover:bg-slate-50"
+                  to={APP_PATHS.workScheduleRequestBatches}
+                >
+                  {t('work-schedule:rosterNav.requestBatches')}
+                </Link>
+              </div>
+            </div>
+          ) : null}
           {routeMode !== 'flat' ? (
             <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-text">
               {t(`work-schedule:relatedModes.${routeMode}`)}

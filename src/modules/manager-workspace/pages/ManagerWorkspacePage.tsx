@@ -3,6 +3,9 @@ import {
   Building2,
   CalendarDays,
   LayoutDashboard,
+  Plus,
+  Send,
+  Trash2,
   UserRound,
   UsersRound,
 } from 'lucide-react';
@@ -20,7 +23,16 @@ import {
 import type { KpiPlanDetail, KpiPlanListItem, KpiSubjectType } from '@modules/kpi/types/kpi.types';
 import {
   useManagerWorkspaceContext,
+  useCancelManagerRequestBatchMutation,
+  useCancelManagerRequestLineMutation,
+  useManagerRequestBatchDetail,
+  useManagerRequestBatches,
   useManagerWorkShifts,
+  useSubmitManagerRequestBatchMutation,
+  type ManagerRequestBatchLine,
+  type ManagerSubmitRequestBatchLinePayload,
+  type ManagerWorkShiftList,
+  type ManagerWorkScheduleRequestType,
   type ManagerWorkspaceContext,
   type ManagerWorkspaceOrgUnitScope,
 } from '@modules/manager-workspace/api/manager-workspace.api';
@@ -69,6 +81,15 @@ const statusTone = {
   DEPARTMENT_OWNER: 'info',
   UNIT_MANAGER: 'success',
   UNIT_OPERATOR: 'neutral',
+} as const;
+
+const batchStatusTone = {
+  PENDING: 'warning',
+  PARTIALLY_APPROVED: 'info',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+  CANCELLED: 'muted',
+  FAILED_TO_APPLY: 'danger',
 } as const;
 
 const getSubjectName = (plan: KpiPlanListItem, fallback: string): string =>
@@ -199,6 +220,89 @@ const KpiPlanTable = ({
     </div>
   );
 };
+
+type ManagerWorkTab = 'published' | 'requests';
+type DraftRequestLine = ManagerSubmitRequestBatchLinePayload & {
+  localId: string;
+  startLocal: string;
+  endLocal: string;
+};
+
+const requestTypeOptions: readonly ManagerWorkScheduleRequestType[] = [
+  'CREATE_SHIFT',
+  'RESCHEDULE_SHIFT',
+  'CANCEL_SHIFT',
+];
+
+const getHcmMonth = (timestamp = Date.now()): string => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(new Date(timestamp));
+  return `${parts.find((part) => part.type === 'year')?.value}-${parts.find(
+    (part) => part.type === 'month',
+  )?.value}`;
+};
+
+const getAllowedRequestMonths = (): string[] => {
+  const [yearText, monthText] = getHcmMonth().split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  return [0, 1, 2].map((offset) => {
+    const monthIndex = month - 1 + offset;
+    const nextYear = year + Math.floor(monthIndex / 12);
+    const nextMonth = (monthIndex % 12) + 1;
+    return `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+  });
+};
+
+const hcmLocalToTimestamp = (value: string): number | null => {
+  if (!value) {
+    return null;
+  }
+  const timestamp = Date.parse(`${value}:00+07:00`);
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
+const timestampToDateTimeLocal = (value: number): string => {
+  const date = new Date(value + 7 * 60 * 60 * 1000);
+  return date.toISOString().slice(0, 16);
+};
+
+const createDraftLine = (
+  requestType: ManagerWorkScheduleRequestType,
+  memberEmploymentProfileId: string,
+  workShiftId?: string,
+): DraftRequestLine => ({
+  localId: `line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  requestType,
+  memberEmploymentProfileId,
+  ...(workShiftId ? { workShiftId } : {}),
+  requestedStartAt: null,
+  requestedEndAt: null,
+  timezone: 'Asia/Ho_Chi_Minh',
+  title: requestType === 'CREATE_SHIFT' ? 'Schedule change request' : null,
+  reason: '',
+  startLocal: '',
+  endLocal: '',
+});
+
+const formatManagerRequestTimestamp = (value: number | null, timezone = 'Asia/Ho_Chi_Minh') =>
+  value === null
+    ? '-'
+    : new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: timezone,
+      }).format(value);
+
+const lineDecisionText = (line: ManagerRequestBatchLine): string | null =>
+  line.failureReason ??
+  line.rejectionReason ??
+  line.cancellationReason ??
+  line.approvalNote ??
+  null;
 
 const canViewPlanForManagerContext = (
   context: ManagerWorkspaceContext,
@@ -556,8 +660,36 @@ const ManagerKpiSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX
 const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace']);
   const [month, setMonth] = useState('');
+  const [activeTab, setActiveTab] = useState<ManagerWorkTab>('published');
+  const [periodMonth, setPeriodMonth] = useState(getHcmMonth());
+  const [batchNote, setBatchNote] = useState('');
+  const [draftLines, setDraftLines] = useState<DraftRequestLine[]>([]);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
+  const [cancelReason, setCancelReason] = useState('');
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const workShiftsQuery = useManagerWorkShifts(month || undefined, context.modules.workShifts.visible);
   const data = workShiftsQuery.data;
+  const requestBatchesQuery = useManagerRequestBatches(
+    { periodMonth: periodMonth || undefined },
+    context.modules.workShifts.visible && activeTab === 'requests',
+  );
+  const selectedBatchIdOrFirst = selectedBatchId ?? requestBatchesQuery.data?.items[0]?.id;
+  const requestBatchDetailQuery = useManagerRequestBatchDetail(
+    selectedBatchIdOrFirst,
+    context.modules.workShifts.visible && activeTab === 'requests',
+  );
+  const submitBatchMutation = useSubmitManagerRequestBatchMutation();
+  const cancelBatchMutation = useCancelManagerRequestBatchMutation();
+  const cancelLineMutation = useCancelManagerRequestLineMutation();
+  const allowedMonths = useMemo(() => getAllowedRequestMonths(), []);
+  const managedMembers = useMemo(() => {
+    const members = new Map<string, ManagerWorkShiftList['items'][number]['member']>();
+    data?.items.forEach((shift) => {
+      members.set(shift.member.employmentProfileId, shift.member);
+    });
+    return [...members.values()];
+  }, [data]);
+  const activeShiftOptions = data?.items ?? [];
 
   if (!context.modules.workShifts.visible) {
     return (
@@ -568,6 +700,110 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
     );
   }
 
+  const addLine = (requestType: ManagerWorkScheduleRequestType): void => {
+    const firstMember = managedMembers[0];
+    if (!firstMember || draftLines.length >= 50) {
+      setValidationMessage(t('manager-workspace:requests.validation.maxLines'));
+      return;
+    }
+    const firstShift = activeShiftOptions[0];
+    const line = createDraftLine(
+      requestType,
+      firstMember.employmentProfileId,
+      requestType === 'CREATE_SHIFT' ? undefined : firstShift?.workShiftId,
+    );
+    if (firstShift && requestType === 'RESCHEDULE_SHIFT') {
+      line.startLocal = timestampToDateTimeLocal(firstShift.shiftStartAt);
+      line.endLocal = timestampToDateTimeLocal(firstShift.shiftEndAt);
+      line.requestedStartAt = firstShift.shiftStartAt;
+      line.requestedEndAt = firstShift.shiftEndAt;
+    }
+    setDraftLines((current) => [...current, line]);
+    setValidationMessage(null);
+  };
+
+  const updateLine = (localId: string, patch: Partial<DraftRequestLine>): void => {
+    setDraftLines((current) =>
+      current.map((line) => (line.localId === localId ? { ...line, ...patch } : line)),
+    );
+  };
+
+  const validateDraft = (): string | null => {
+    if (!allowedMonths.includes(periodMonth)) {
+      return t('manager-workspace:requests.validation.periodWindow');
+    }
+    if (draftLines.length === 0) {
+      return t('manager-workspace:requests.validation.noLines');
+    }
+    if (draftLines.length > 50) {
+      return t('manager-workspace:requests.validation.maxLines');
+    }
+    const seen = new Set<string>();
+    for (const line of draftLines) {
+      const reasonLength = line.reason.trim().length;
+      if (reasonLength < 10 || reasonLength > 1000) {
+        return t('manager-workspace:requests.validation.reason');
+      }
+      if (line.requestType !== 'CREATE_SHIFT' && !line.workShiftId) {
+        return t('manager-workspace:requests.validation.shiftRequired');
+      }
+      if (line.requestType !== 'CANCEL_SHIFT') {
+        if (line.requestedStartAt === null || line.requestedEndAt === null) {
+          return t('manager-workspace:requests.validation.windowRequired');
+        }
+        if ((line.requestedEndAt ?? 0) <= (line.requestedStartAt ?? 0)) {
+          return t('manager-workspace:requests.validation.windowOrder');
+        }
+        if (getHcmMonth(line.requestedStartAt) !== periodMonth) {
+          return t('manager-workspace:requests.validation.lineMonth');
+        }
+      }
+      const fingerprint = [
+        line.requestType,
+        line.memberEmploymentProfileId,
+        line.workShiftId ?? '',
+        line.requestedStartAt ?? '',
+        line.requestedEndAt ?? '',
+      ].join('|');
+      if (seen.has(fingerprint)) {
+        return t('manager-workspace:requests.validation.duplicate');
+      }
+      seen.add(fingerprint);
+    }
+    return null;
+  };
+
+  const submitDraft = async (): Promise<void> => {
+    const validation = validateDraft();
+    setValidationMessage(validation);
+    if (validation) {
+      return;
+    }
+    const payloadLines = draftLines.map((line) => ({
+      requestType: line.requestType,
+      memberEmploymentProfileId: line.memberEmploymentProfileId,
+      workShiftId: line.requestType === 'CREATE_SHIFT' ? null : (line.workShiftId ?? null),
+      requestedStartAt: line.requestType === 'CANCEL_SHIFT' ? null : line.requestedStartAt,
+      requestedEndAt: line.requestType === 'CANCEL_SHIFT' ? null : line.requestedEndAt,
+      timezone: 'Asia/Ho_Chi_Minh' as const,
+      title: line.requestType === 'CREATE_SHIFT' ? line.title : null,
+      description: line.description ?? null,
+      externalRef: line.externalRef ?? null,
+      reason: line.reason,
+    }));
+    const batch = await submitBatchMutation.mutateAsync({
+      payload: {
+        periodMonth,
+        clientToken: `manager-ui-${Date.now()}`,
+        note: batchNote,
+        lines: payloadLines,
+      },
+    });
+    setSelectedBatchId(batch.id);
+    setDraftLines([]);
+    setBatchNote('');
+  };
+
   return (
     <section className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm" data-testid="manager-work-panel">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -575,7 +811,31 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
           <h2 className="text-lg font-semibold text-text">{t('manager-workspace:work.title')}</h2>
           <p className="text-sm text-muted">{t('manager-workspace:work.summary')}</p>
         </div>
-        <StatusBadge label={t('manager-workspace:work.readOnly')} tone="neutral" />
+        <StatusBadge label={t('manager-workspace:work.scopeBadge')} tone="neutral" />
+      </div>
+
+      <div className="flex flex-wrap gap-2" role="tablist">
+        {(['published', 'requests'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab}
+            className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm font-medium ${
+              activeTab === tab
+                ? 'border-text bg-text text-bg'
+                : 'border-border bg-bg text-text hover:bg-panel'
+            }`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab === 'published' ? (
+              <CalendarDays className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Send className="h-4 w-4" aria-hidden="true" />
+            )}
+            {t(`manager-workspace:work.tabs.${tab}`)}
+          </button>
+        ))}
       </div>
 
       <label className="block max-w-xs text-sm font-medium text-text">
@@ -596,7 +856,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
         />
       ) : null}
 
-      {data ? (
+      {data && activeTab === 'published' ? (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
             <SummaryCard label={t('manager-workspace:work.shiftsShown')} value={data.meta.returnedShiftCount} />
@@ -654,6 +914,364 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
           )}
           <p className="text-xs text-muted">{t('manager-workspace:work.draftNotice')}</p>
         </>
+      ) : null}
+
+      {data && activeTab === 'requests' ? (
+        <div className="space-y-4" data-testid="manager-work-requests">
+          <div className="rounded border border-border bg-bg p-3 text-sm text-muted">
+            <p>{t('manager-workspace:requests.copy.approval')}</p>
+            <p>{t('manager-workspace:requests.copy.draftRoster')}</p>
+            <p>{t('manager-workspace:requests.copy.cancellation')}</p>
+            <p>{t('manager-workspace:requests.copy.taxonomy')}</p>
+          </div>
+
+          {managedMembers.length === 0 ? (
+            <EmptyState
+              title={t('manager-workspace:requests.empty.noMembersTitle')}
+              message={t('manager-workspace:requests.empty.noMembersMessage')}
+            />
+          ) : (
+            <div className="space-y-4 rounded border border-border bg-bg p-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="text-sm font-medium text-text">
+                    {t('manager-workspace:requests.fields.periodMonth')}
+                    <select
+                      className="mt-1 w-full rounded border border-border bg-panel px-3 py-2"
+                      value={periodMonth}
+                      onChange={(event) => setPeriodMonth(event.target.value)}
+                    >
+                      {allowedMonths.map((allowedMonth) => (
+                        <option key={allowedMonth} value={allowedMonth}>
+                          {allowedMonth}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-sm font-medium text-text">
+                    {t('manager-workspace:requests.fields.note')}
+                    <input
+                      className="mt-1 w-full rounded border border-border bg-panel px-3 py-2"
+                      value={batchNote}
+                      onChange={(event) => setBatchNote(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {requestTypeOptions.map((requestType) => (
+                    <button
+                      key={requestType}
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-panel disabled:opacity-50"
+                      disabled={
+                        draftLines.length >= 50 ||
+                        (requestType !== 'CREATE_SHIFT' && activeShiftOptions.length === 0)
+                      }
+                      onClick={() => addLine(requestType)}
+                    >
+                      <Plus className="h-4 w-4" aria-hidden="true" />
+                      {t(`manager-workspace:requests.actions.add.${requestType}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {draftLines.length > 0 ? (
+                <div className="space-y-3">
+                  {draftLines.map((line, index) => (
+                    <div key={line.localId} className="rounded border border-border bg-panel p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="font-medium text-text">
+                          {t('manager-workspace:requests.lineTitle', { lineNo: index + 1 })}
+                        </div>
+                        <button
+                          type="button"
+                          className="inline-flex items-center rounded border border-border p-2 text-text hover:bg-bg"
+                          aria-label={t('manager-workspace:requests.actions.removeLine')}
+                          onClick={() =>
+                            setDraftLines((current) =>
+                              current.filter((item) => item.localId !== line.localId),
+                            )
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                      <div className="mt-3 grid gap-3 md:grid-cols-3">
+                        <label className="text-sm font-medium text-text">
+                          {t('manager-workspace:requests.fields.type')}
+                          <select
+                            className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
+                            value={line.requestType}
+                            onChange={(event) => {
+                              const requestType = event.target.value as ManagerWorkScheduleRequestType;
+                              updateLine(line.localId, {
+                                requestType,
+                                workShiftId:
+                                  requestType === 'CREATE_SHIFT'
+                                    ? null
+                                    : (activeShiftOptions[0]?.workShiftId ?? ''),
+                              });
+                            }}
+                          >
+                            {requestTypeOptions.map((requestType) => (
+                              <option key={requestType} value={requestType}>
+                                {t(`manager-workspace:requests.types.${requestType}`)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="text-sm font-medium text-text">
+                          {t('manager-workspace:requests.fields.member')}
+                          <select
+                            className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
+                            value={line.memberEmploymentProfileId}
+                            onChange={(event) =>
+                              updateLine(line.localId, {
+                                memberEmploymentProfileId: event.target.value,
+                              })
+                            }
+                          >
+                            {managedMembers.map((member) => (
+                              <option key={member.employmentProfileId} value={member.employmentProfileId}>
+                                {member.displayName}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {line.requestType !== 'CREATE_SHIFT' ? (
+                          <label className="text-sm font-medium text-text">
+                            {t('manager-workspace:requests.fields.workShift')}
+                            <select
+                              className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
+                              value={line.workShiftId ?? ''}
+                              onChange={(event) => {
+                                const shift = activeShiftOptions.find(
+                                  (item) => item.workShiftId === event.target.value,
+                                );
+                                updateLine(line.localId, {
+                                  workShiftId: event.target.value,
+                                  memberEmploymentProfileId:
+                                    shift?.member.employmentProfileId ?? line.memberEmploymentProfileId,
+                                });
+                              }}
+                            >
+                              {activeShiftOptions.map((shift) => (
+                                <option key={shift.workShiftId} value={shift.workShiftId}>
+                                  {shift.title} - {shift.member.displayName}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        ) : null}
+                        {line.requestType === 'CREATE_SHIFT' ? (
+                          <label className="text-sm font-medium text-text md:col-span-3">
+                            {t('manager-workspace:requests.fields.title')}
+                            <input
+                              className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
+                              value={line.title ?? ''}
+                              onChange={(event) =>
+                                updateLine(line.localId, { title: event.target.value })
+                              }
+                            />
+                          </label>
+                        ) : null}
+                        {line.requestType !== 'CANCEL_SHIFT' ? (
+                          <>
+                            <label className="text-sm font-medium text-text">
+                              {t('manager-workspace:requests.fields.start')}
+                              <input
+                                className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
+                                type="datetime-local"
+                                value={line.startLocal}
+                                onChange={(event) =>
+                                  updateLine(line.localId, {
+                                    startLocal: event.target.value,
+                                    requestedStartAt: hcmLocalToTimestamp(event.target.value),
+                                  })
+                                }
+                              />
+                            </label>
+                            <label className="text-sm font-medium text-text">
+                              {t('manager-workspace:requests.fields.end')}
+                              <input
+                                className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
+                                type="datetime-local"
+                                value={line.endLocal}
+                                onChange={(event) =>
+                                  updateLine(line.localId, {
+                                    endLocal: event.target.value,
+                                    requestedEndAt: hcmLocalToTimestamp(event.target.value),
+                                  })
+                                }
+                              />
+                            </label>
+                          </>
+                        ) : null}
+                        <label className="text-sm font-medium text-text md:col-span-3">
+                          {t('manager-workspace:requests.fields.reason')}
+                          <textarea
+                            className="mt-1 min-h-20 w-full rounded border border-border bg-bg px-3 py-2"
+                            value={line.reason}
+                            onChange={(event) =>
+                              updateLine(line.localId, { reason: event.target.value })
+                            }
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {validationMessage ? <p className="text-sm text-danger">{validationMessage}</p> : null}
+              {submitBatchMutation.isError ? (
+                <p className="text-sm text-danger">
+                  {t('manager-workspace:requests.feedback.submitFailed')}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                disabled={draftLines.length === 0 || submitBatchMutation.isPending}
+                onClick={() => void submitDraft()}
+              >
+                <Send className="h-4 w-4" aria-hidden="true" />
+                {t('manager-workspace:requests.actions.submit')}
+              </button>
+            </div>
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-[minmax(260px,340px)_1fr]">
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-text">
+                {t('manager-workspace:requests.ownBatches')}
+              </h3>
+              {requestBatchesQuery.isLoading ? <LoadingState lines={3} /> : null}
+              {requestBatchesQuery.data?.items.length === 0 ? (
+                <EmptyState
+                  title={t('manager-workspace:requests.empty.noBatchesTitle')}
+                  message={t('manager-workspace:requests.empty.noBatchesMessage')}
+                />
+              ) : null}
+              {requestBatchesQuery.data?.items.map((batch) => (
+                <button
+                  key={batch.id}
+                  type="button"
+                  className={`w-full rounded border px-3 py-2 text-left ${
+                    selectedBatchIdOrFirst === batch.id
+                      ? 'border-accent bg-accent/10'
+                      : 'border-border bg-bg hover:bg-panel'
+                  }`}
+                  onClick={() => setSelectedBatchId(batch.id)}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-muted">{batch.batchCode}</span>
+                    <StatusBadge
+                      label={t(`manager-workspace:requests.statuses.${batch.status}`)}
+                      status={batch.status}
+                      toneByStatus={batchStatusTone}
+                    />
+                  </div>
+                  <div className="mt-1 text-xs text-muted">
+                    {t('manager-workspace:requests.counts', batch.lineCounts)}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-3 rounded border border-border bg-bg p-3">
+              {requestBatchDetailQuery.isLoading ? <LoadingState lines={4} /> : null}
+              {requestBatchDetailQuery.data ? (
+                <>
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <h3 className="font-semibold text-text">{requestBatchDetailQuery.data.batchCode}</h3>
+                      <p className="text-sm text-muted">{requestBatchDetailQuery.data.periodMonth}</p>
+                    </div>
+                    <StatusBadge
+                      label={t(`manager-workspace:requests.statuses.${requestBatchDetailQuery.data.status}`)}
+                      status={requestBatchDetailQuery.data.status}
+                      toneByStatus={batchStatusTone}
+                    />
+                  </div>
+                  {requestBatchDetailQuery.data.status === 'PENDING' ? (
+                    <div className="flex flex-col gap-2 md:flex-row md:items-end">
+                      <label className="flex-1 text-sm font-medium text-text">
+                        {t('manager-workspace:requests.fields.cancellationReason')}
+                        <input
+                          className="mt-1 w-full rounded border border-border bg-panel px-3 py-2"
+                          value={cancelReason}
+                          onChange={(event) => setCancelReason(event.target.value)}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
+                        disabled={cancelReason.trim().length < 10 || cancelBatchMutation.isPending}
+                        onClick={() =>
+                          void cancelBatchMutation.mutateAsync({
+                            batchId: requestBatchDetailQuery.data.id,
+                            payload: { cancellationReason: cancelReason },
+                          })
+                        }
+                      >
+                        {t('manager-workspace:requests.actions.cancelBatch')}
+                      </button>
+                    </div>
+                  ) : null}
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left text-sm">
+                      <tbody className="divide-y divide-border">
+                        {requestBatchDetailQuery.data.lines.map((line) => (
+                          <tr key={line.id} data-testid="manager-request-line">
+                            <td className="px-3 py-3">
+                              <div className="font-medium text-text">
+                                {t(`manager-workspace:requests.types.${line.requestType}`)}
+                              </div>
+                              <div className="text-xs text-muted">{line.member.displayName}</div>
+                              <div className="text-xs text-muted">
+                                {formatManagerRequestTimestamp(line.requestedStartAt, line.timezone)}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3">
+                              <StatusBadge
+                                label={t(`manager-workspace:requests.lineStatuses.${line.status}`)}
+                                status={line.status}
+                                toneByStatus={batchStatusTone}
+                              />
+                              {lineDecisionText(line) ? (
+                                <div className="mt-1 text-xs text-muted">{lineDecisionText(line)}</div>
+                              ) : null}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              {line.status === 'PENDING' ? (
+                                <button
+                                  type="button"
+                                  className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
+                                  disabled={cancelReason.trim().length < 10 || cancelLineMutation.isPending}
+                                  onClick={() =>
+                                    void cancelLineMutation.mutateAsync({
+                                      batchId: requestBatchDetailQuery.data.id,
+                                      lineId: line.id,
+                                      payload: { cancellationReason: cancelReason },
+                                    })
+                                  }
+                                >
+                                  {t('manager-workspace:requests.actions.cancelLine')}
+                                </button>
+                              ) : null}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
       ) : null}
     </section>
   );

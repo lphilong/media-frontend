@@ -133,6 +133,11 @@
     "title": "Cong viec quan ly",
     "summary": "Ca lam viec chinh thuc da cong bo cho thanh vien dang hoat dong trong pham vi quan ly.",
     "readOnly": "Pham vi quan ly chi doc",
+    "scopeBadge": "Pham vi WorkSchedule quan ly",
+    "tabs": {
+      "published": "Ca da cong bo",
+      "requests": "Yeu cau"
+    },
     "month": "Thang",
     "shiftsShown": "Ca dang hien thi",
     "membersRepresented": "Thanh vien co ca",
@@ -147,6 +152,79 @@
     "sourceTypes": {
       "MANUAL": "Ngoai le thu cong",
       "ROSTER_GENERATED": "Roster hang thang"
+    }
+  },
+  "requests": {
+    "copy": {
+      "approval": "Yeu cau khong thay doi ca chinh thuc cho den khi Admin/Ops phe duyet.",
+      "draftRoster": "Dong roster nhap khong the gui yeu cau.",
+      "cancellation": "Chi huy yeu cau dang cho xu ly.",
+      "taxonomy": "Chua phan loai chinh sach nghi/absence trong buoc nay. Day la yeu cau thay doi lich, khong phai cham cong."
+    },
+    "fields": {
+      "periodMonth": "Thang yeu cau",
+      "note": "Ghi chu batch",
+      "type": "Loai yeu cau",
+      "member": "Thanh vien quan ly",
+      "workShift": "WorkShift chinh thuc dang hoat dong",
+      "title": "Tieu de yeu cau",
+      "start": "Bat dau yeu cau",
+      "end": "Ket thuc yeu cau",
+      "reason": "Ly do",
+      "cancellationReason": "Ly do huy"
+    },
+    "types": {
+      "CREATE_SHIFT": "Tao ca",
+      "RESCHEDULE_SHIFT": "Doi lich ca",
+      "CANCEL_SHIFT": "Huy ca"
+    },
+    "statuses": {
+      "PENDING": "Dang cho",
+      "PARTIALLY_APPROVED": "Phe duyet mot phan",
+      "APPROVED": "Da phe duyet",
+      "REJECTED": "Da tu choi",
+      "CANCELLED": "Da huy"
+    },
+    "lineStatuses": {
+      "PENDING": "Dang cho",
+      "APPROVED": "Da phe duyet",
+      "REJECTED": "Da tu choi",
+      "CANCELLED": "Da huy",
+      "FAILED_TO_APPLY": "Ap dung that bai"
+    },
+    "actions": {
+      "submit": "Gui batch",
+      "removeLine": "Xoa dong",
+      "cancelBatch": "Huy batch",
+      "cancelLine": "Huy dong",
+      "add": {
+        "CREATE_SHIFT": "Them tao ca",
+        "RESCHEDULE_SHIFT": "Them doi lich",
+        "CANCEL_SHIFT": "Them huy ca"
+      }
+    },
+    "lineTitle": "Dong yeu cau {{lineNo}}",
+    "ownBatches": "Batch yeu cau cua toi",
+    "counts": "{{pending}} dang cho / {{total}} tong",
+    "validation": {
+      "noLines": "Them it nhat mot dong yeu cau.",
+      "maxLines": "Mot batch toi da 50 dong.",
+      "reason": "Ly do moi dong phai co 10-1000 ky tu.",
+      "shiftRequired": "Chon WorkShift chinh thuc dang hoat dong cho doi lich hoac huy.",
+      "windowRequired": "Tao ca va doi lich can thoi gian bat dau va ket thuc.",
+      "windowOrder": "Thoi gian ket thuc phai sau thoi gian bat dau.",
+      "lineMonth": "Ngay cua dong yeu cau phai nam trong thang da chon.",
+      "periodWindow": "Chon thang hien tai hoac mot trong hai thang tiep theo.",
+      "duplicate": "Xoa dong yeu cau trung lap truoc khi gui."
+    },
+    "feedback": {
+      "submitFailed": "Khong gui duoc batch yeu cau."
+    },
+    "empty": {
+      "noMembersTitle": "Chua co thanh vien quan ly",
+      "noMembersMessage": "Composer can du lieu thanh vien an toan tu ca dang hoat dong da cong bo.",
+      "noBatchesTitle": "Chua co batch yeu cau",
+      "noBatchesMessage": "Batch yeu cau da gui trong thang nay se hien thi tai day."
     }
   },
   "empty": {
