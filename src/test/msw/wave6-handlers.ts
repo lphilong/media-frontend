@@ -37,6 +37,23 @@ type WorkScheduleRequestLineStatus =
   | 'REJECTED'
   | 'CANCELLED'
   | 'FAILED_TO_APPLY';
+type WorkScheduleAvailabilityBatchStatus =
+  | 'PENDING'
+  | 'PARTIALLY_APPROVED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED';
+type WorkScheduleAvailabilityLineStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+type WorkScheduleAvailabilityType =
+  | 'UNAVAILABLE_FULL_DAY'
+  | 'PREFERRED_TIME'
+  | 'OTHER_AVAILABILITY_NOTE';
+type WorkScheduleAvailabilityTaxonomyCode =
+  | 'SICK_LEAVE'
+  | 'AUTHORIZED_LEAVE'
+  | 'SHIFT_CHANGE'
+  | 'OTHER';
+type WorkScheduleAvailabilityApplyStatus = 'NOT_APPLIED' | 'ADVISORY_ONLY' | 'APPLIED';
 type EventAssignmentKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
 type EventStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
 
@@ -176,6 +193,74 @@ type WorkScheduleRequestBatchRecord = {
   lines: WorkScheduleRequestBatchLineRecord[];
 };
 
+type WorkScheduleAvailabilityLineRecord = {
+  id: string;
+  batchId: string;
+  lineNo: number;
+  member: {
+    employmentProfileId: string;
+    displayName: string;
+    employeeCode?: string;
+    status?: string;
+  };
+  availabilityType: WorkScheduleAvailabilityType;
+  taxonomyCode: WorkScheduleAvailabilityTaxonomyCode;
+  availabilityDate: string | null;
+  dateRangeStart: string | null;
+  dateRangeEnd: string | null;
+  preferredStartLocalTime: string | null;
+  preferredEndLocalTime: string | null;
+  reason: string;
+  status: WorkScheduleAvailabilityLineStatus;
+  applyStatus: WorkScheduleAvailabilityApplyStatus;
+  policyEvaluationStatus: 'NOT_EVALUATED';
+  appliedRosterId: string | null;
+  appliedRosterExceptionId: string | null;
+  appliedRosterExceptionIds: string[];
+  appliedAt: number | null;
+  adminDecisionNote: string | null;
+  rejectionReason: string | null;
+  cancellationReason: string | null;
+  createdAt: number;
+  updatedAt: number;
+  approvedAt: number | null;
+  rejectedAt: number | null;
+  cancelledAt: number | null;
+};
+
+type WorkScheduleAvailabilityBatchRecord = {
+  id: string;
+  availabilityBatchCode: string;
+  status: WorkScheduleAvailabilityBatchStatus;
+  periodMonth: string;
+  targetType: 'ORG_UNIT' | 'TALENT_GROUP';
+  targetMode: 'EXACT_ONLY';
+  targetOrgUnitId: string | null;
+  targetTalentGroupId: string | null;
+  target?: ReferenceSummary | null;
+  submitter: {
+    employmentProfileId: string;
+    displayName: string;
+    employeeCode?: string;
+    status?: string;
+  };
+  note: string | null;
+  lineCounts: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    cancelled: number;
+  };
+  clientToken: string;
+  submittedAt: number;
+  cancelledAt: number | null;
+  resolvedAt: number | null;
+  createdAt: number;
+  updatedAt: number;
+  lines: WorkScheduleAvailabilityLineRecord[];
+};
+
 type WorkPatternRecord = {
   workPatternId: string;
   patternCode: string;
@@ -241,6 +326,12 @@ type RosterExceptionRecord = {
   studioResourceRefs?: ReferenceSummary[];
   reason: string | null;
   sourceNote: string | null;
+  sourceAvailabilityBatchId?: string | null;
+  sourceAvailabilityLineId?: string | null;
+  sourceAvailabilityType?: WorkScheduleAvailabilityType | null;
+  sourceAvailabilityTaxonomyCode?: WorkScheduleAvailabilityTaxonomyCode | null;
+  sourceAppliedAt?: number | null;
+  sourceApplyNote?: string | null;
   description: string | null;
   externalRef: string | null;
   removedAt: number | null;
@@ -649,6 +740,12 @@ const initialMonthlyRosters: MonthlyRosterRecord[] = [
         studioResourceIds: [],
         reason: null,
         sourceNote: null,
+        sourceAvailabilityBatchId: 'admin-availability-batch-1',
+        sourceAvailabilityLineId: 'admin-availability-line-applied',
+        sourceAvailabilityType: 'UNAVAILABLE_FULL_DAY',
+        sourceAvailabilityTaxonomyCode: 'AUTHORIZED_LEAVE',
+        sourceAppliedAt: now - 7_300,
+        sourceApplyNote: 'Applied from availability planning',
         description: null,
         externalRef: null,
         removedAt: null,
@@ -936,6 +1033,7 @@ let workScheduleRequests: WorkScheduleRequestRecord[] = [
   },
 ];
 let workScheduleRequestBatches: WorkScheduleRequestBatchRecord[] = [];
+let workScheduleAvailabilityBatches: WorkScheduleAvailabilityBatchRecord[] = [];
 
 const createInitialWorkScheduleRequestBatches = (): WorkScheduleRequestBatchRecord[] => [
   {
@@ -1083,7 +1181,222 @@ const createInitialWorkScheduleRequestBatches = (): WorkScheduleRequestBatchReco
   },
 ];
 
+const createInitialWorkScheduleAvailabilityBatches = (): WorkScheduleAvailabilityBatchRecord[] => {
+  const now = Date.now();
+  return [
+    {
+      id: 'admin-availability-batch-1',
+      availabilityBatchCode: 'AVB-202606-000100',
+      status: 'PARTIALLY_APPROVED',
+      periodMonth: '2026-05',
+      targetType: 'ORG_UNIT',
+      targetMode: 'EXACT_ONLY',
+      targetOrgUnitId: 'ou-sales',
+      targetTalentGroupId: null,
+      target: {
+        id: 'ou-sales',
+        code: 'SALES',
+        name: 'Sales',
+        displayName: 'Sales',
+      },
+      submitter: {
+        employmentProfileId: 'ep-manager-001',
+        displayName: 'Taylor Manager',
+        employeeCode: 'MGR001',
+        status: 'ACTIVE',
+      },
+      note: 'June availability planning',
+      lineCounts: {
+        total: 5,
+        pending: 1,
+        approved: 3,
+        rejected: 1,
+        cancelled: 0,
+      },
+      clientToken: 'admin-availability-token-1',
+      submittedAt: now - 8_000,
+      cancelledAt: null,
+      resolvedAt: null,
+      createdAt: now - 8_000,
+      updatedAt: now - 7_000,
+      lines: [
+        {
+          id: 'admin-availability-line-pending',
+          batchId: 'admin-availability-batch-1',
+          lineNo: 1,
+          member: {
+            employmentProfileId: 'employment-profile-001',
+            displayName: 'Alex Employee',
+            employeeCode: 'EMP001',
+            status: 'ACTIVE',
+          },
+          availabilityType: 'UNAVAILABLE_FULL_DAY',
+          taxonomyCode: 'AUTHORIZED_LEAVE',
+          availabilityDate: '2026-06-10',
+          dateRangeStart: '2026-06-10',
+          dateRangeEnd: '2026-06-10',
+          preferredStartLocalTime: null,
+          preferredEndLocalTime: null,
+          reason: 'Family commitment before roster publish',
+          status: 'PENDING',
+          applyStatus: 'NOT_APPLIED',
+          policyEvaluationStatus: 'NOT_EVALUATED',
+          appliedRosterId: null,
+          appliedRosterExceptionId: null,
+          appliedRosterExceptionIds: [],
+          appliedAt: null,
+          adminDecisionNote: null,
+          rejectionReason: null,
+          cancellationReason: null,
+          createdAt: now - 8_000,
+          updatedAt: now - 8_000,
+          approvedAt: null,
+          rejectedAt: null,
+          cancelledAt: null,
+        },
+        {
+          id: 'admin-availability-line-approved',
+          batchId: 'admin-availability-batch-1',
+          lineNo: 2,
+          member: {
+            employmentProfileId: 'employment-profile-002',
+            displayName: 'Blair Employee',
+            employeeCode: 'EMP002',
+            status: 'ACTIVE',
+          },
+          availabilityType: 'PREFERRED_TIME',
+          taxonomyCode: 'SHIFT_CHANGE',
+          availabilityDate: '2026-06-11',
+          dateRangeStart: '2026-06-11',
+          dateRangeEnd: '2026-06-11',
+          preferredStartLocalTime: '10:00',
+          preferredEndLocalTime: '18:00',
+          reason: 'Prefers later start for morning appointment',
+          status: 'APPROVED',
+          applyStatus: 'NOT_APPLIED',
+          policyEvaluationStatus: 'NOT_EVALUATED',
+          appliedRosterId: null,
+          appliedRosterExceptionId: null,
+          appliedRosterExceptionIds: [],
+          appliedAt: null,
+          adminDecisionNote: 'Approved for roster planning',
+          rejectionReason: null,
+          cancellationReason: null,
+          createdAt: now - 7_900,
+          updatedAt: now - 7_000,
+          approvedAt: now - 7_000,
+          rejectedAt: null,
+          cancelledAt: null,
+        },
+        {
+          id: 'admin-availability-line-advisory',
+          batchId: 'admin-availability-batch-1',
+          lineNo: 3,
+          member: {
+            employmentProfileId: 'employment-profile-001',
+            displayName: 'Alex Employee',
+            employeeCode: 'EMP001',
+            status: 'ACTIVE',
+          },
+          availabilityType: 'OTHER_AVAILABILITY_NOTE',
+          taxonomyCode: 'OTHER',
+          availabilityDate: '2026-06-14',
+          dateRangeStart: '2026-06-14',
+          dateRangeEnd: '2026-06-14',
+          preferredStartLocalTime: null,
+          preferredEndLocalTime: null,
+          reason: 'Training day note for planner',
+          status: 'APPROVED',
+          applyStatus: 'NOT_APPLIED',
+          policyEvaluationStatus: 'NOT_EVALUATED',
+          appliedRosterId: null,
+          appliedRosterExceptionId: null,
+          appliedRosterExceptionIds: [],
+          appliedAt: null,
+          adminDecisionNote: 'Advisory note accepted',
+          rejectionReason: null,
+          cancellationReason: null,
+          createdAt: now - 7_800,
+          updatedAt: now - 7_000,
+          approvedAt: now - 7_000,
+          rejectedAt: null,
+          cancelledAt: null,
+        },
+        {
+          id: 'admin-availability-line-applied',
+          batchId: 'admin-availability-batch-1',
+          lineNo: 4,
+          member: {
+            employmentProfileId: 'employment-profile-001',
+            displayName: 'Alex Employee',
+            employeeCode: 'EMP001',
+            status: 'ACTIVE',
+          },
+          availabilityType: 'UNAVAILABLE_FULL_DAY',
+          taxonomyCode: 'AUTHORIZED_LEAVE',
+          availabilityDate: '2026-06-15',
+          dateRangeStart: '2026-06-15',
+          dateRangeEnd: '2026-06-15',
+          preferredStartLocalTime: null,
+          preferredEndLocalTime: null,
+          reason: 'Approved day off for roster planning',
+          status: 'APPROVED',
+          applyStatus: 'APPLIED',
+          policyEvaluationStatus: 'NOT_EVALUATED',
+          appliedRosterId: 'roster-draft',
+          appliedRosterExceptionId: 'roster-exception-001',
+          appliedRosterExceptionIds: ['roster-exception-001'],
+          appliedAt: now - 7_300,
+          adminDecisionNote: 'Approved for draft roster',
+          rejectionReason: null,
+          cancellationReason: null,
+          createdAt: now - 7_700,
+          updatedAt: now - 7_300,
+          approvedAt: now - 7_400,
+          rejectedAt: null,
+          cancelledAt: null,
+        },
+        {
+          id: 'admin-availability-line-rejected',
+          batchId: 'admin-availability-batch-1',
+          lineNo: 5,
+          member: {
+            employmentProfileId: 'employment-profile-002',
+            displayName: 'Blair Employee',
+            employeeCode: 'EMP002',
+            status: 'ACTIVE',
+          },
+          availabilityType: 'UNAVAILABLE_FULL_DAY',
+          taxonomyCode: 'SICK_LEAVE',
+          availabilityDate: '2026-06-16',
+          dateRangeStart: '2026-06-16',
+          dateRangeEnd: '2026-06-16',
+          preferredStartLocalTime: null,
+          preferredEndLocalTime: null,
+          reason: 'Late note that needs manager correction',
+          status: 'REJECTED',
+          applyStatus: 'NOT_APPLIED',
+          policyEvaluationStatus: 'NOT_EVALUATED',
+          appliedRosterId: null,
+          appliedRosterExceptionId: null,
+          appliedRosterExceptionIds: [],
+          appliedAt: null,
+          adminDecisionNote: null,
+          rejectionReason: 'Needs corrected date before planning',
+          cancellationReason: null,
+          createdAt: now - 7_600,
+          updatedAt: now - 7_200,
+          approvedAt: null,
+          rejectedAt: now - 7_200,
+          cancelledAt: null,
+        },
+      ],
+    },
+  ];
+};
+
 workScheduleRequestBatches = createInitialWorkScheduleRequestBatches();
+workScheduleAvailabilityBatches = createInitialWorkScheduleAvailabilityBatches();
 let workPatterns = initialWorkPatterns.map((record) => ({ ...record }));
 let holidayCalendars = initialHolidayCalendars.map((record) => ({
   ...record,
@@ -1140,6 +1453,7 @@ export const resetWave6MockData = (): void => {
     },
   ];
   workScheduleRequestBatches = createInitialWorkScheduleRequestBatches();
+  workScheduleAvailabilityBatches = createInitialWorkScheduleAvailabilityBatches();
   workPatterns = initialWorkPatterns.map((record) => ({ ...record }));
   holidayCalendars = initialHolidayCalendars.map((record) => ({
     ...record,
@@ -1737,6 +2051,38 @@ const recalculateRequestBatch = (
   };
 };
 
+const recalculateAvailabilityBatch = (
+  batch: WorkScheduleAvailabilityBatchRecord,
+): WorkScheduleAvailabilityBatchRecord => {
+  const pending = batch.lines.filter((line) => line.status === 'PENDING').length;
+  const approved = batch.lines.filter((line) => line.status === 'APPROVED').length;
+  const rejected = batch.lines.filter((line) => line.status === 'REJECTED').length;
+  const cancelled = batch.lines.filter((line) => line.status === 'CANCELLED').length;
+  const terminalStatus: WorkScheduleAvailabilityBatchStatus =
+    pending > 0
+      ? approved > 0 || rejected > 0 || cancelled > 0
+        ? 'PARTIALLY_APPROVED'
+        : 'PENDING'
+      : approved > 0 && rejected === 0 && cancelled === 0
+        ? 'APPROVED'
+        : approved > 0
+          ? 'PARTIALLY_APPROVED'
+          : cancelled > 0 && rejected === 0
+            ? 'CANCELLED'
+            : 'REJECTED';
+  return {
+    ...batch,
+    status: terminalStatus,
+    lineCounts: {
+      total: batch.lines.length,
+      pending,
+      approved,
+      rejected,
+      cancelled,
+    },
+  };
+};
+
 const decideRequestBatchLines = (
   batchId: string,
   lineIdsValue: unknown,
@@ -1779,6 +2125,50 @@ const decideRequestBatchLines = (
     }),
   });
   return HttpResponse.json({ data: workScheduleRequestBatches[batchIndex] });
+};
+
+const decideAvailabilityBatchLines = (
+  batchId: string,
+  lineIdsValue: unknown,
+  status: WorkScheduleAvailabilityLineStatus,
+  notes: {
+    adminDecisionNote?: string | null;
+    rejectionReason?: string | null;
+    cancellationReason?: string | null;
+  },
+) => {
+  const lineIds = Array.isArray(lineIdsValue)
+    ? lineIdsValue.filter((value): value is string => typeof value === 'string')
+    : [];
+  if (lineIds.length === 0) {
+    return HttpResponse.json({ message: 'lineIds must contain at least one line id' }, { status: 422 });
+  }
+  const batchIndex = workScheduleAvailabilityBatches.findIndex((item) => item.id === batchId);
+  if (batchIndex < 0) {
+    return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+  }
+  const now = Date.now();
+  const batch = workScheduleAvailabilityBatches[batchIndex];
+  workScheduleAvailabilityBatches[batchIndex] = recalculateAvailabilityBatch({
+    ...batch,
+    lines: batch.lines.map((line) => {
+      if (!lineIds.includes(line.id) || line.status !== 'PENDING') {
+        return line;
+      }
+      return {
+        ...line,
+        status,
+        adminDecisionNote: notes.adminDecisionNote ?? line.adminDecisionNote,
+        rejectionReason: notes.rejectionReason ?? line.rejectionReason,
+        cancellationReason: notes.cancellationReason ?? line.cancellationReason,
+        approvedAt: status === 'APPROVED' ? now : line.approvedAt,
+        rejectedAt: status === 'REJECTED' ? now : line.rejectedAt,
+        cancelledAt: status === 'CANCELLED' ? now : line.cancelledAt,
+        updatedAt: now,
+      };
+    }),
+  });
+  return HttpResponse.json({ data: workScheduleAvailabilityBatches[batchIndex] });
 };
 
 const readEventAssignmentSubjectRef = (
@@ -3093,6 +3483,158 @@ export const wave6Handlers = [
     return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
   }),
 
+  http.post('*/admin/work-schedule/rosters/:monthlyRosterId/apply-availability-lines', async ({ params, request }) => {
+    const body = (await parseJsonBody(request)) as {
+      availabilityLineIds?: unknown;
+      applyNote?: unknown;
+      note?: unknown;
+      scope?: unknown;
+    };
+    const bodyFailure = rejectUnsupportedBody(body, [
+      'availabilityLineIds',
+      'applyNote',
+      'note',
+      'scope',
+    ]);
+    if (bodyFailure) {
+      return bodyFailure;
+    }
+    const roster = readMonthlyRoster(String(params.monthlyRosterId));
+    if (!roster) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (roster.status !== 'DRAFT') {
+      return HttpResponse.json({ message: 'Roster must be DRAFT' }, { status: 422 });
+    }
+    const lineIds = Array.isArray(body.availabilityLineIds)
+      ? body.availabilityLineIds.filter((value): value is string => typeof value === 'string')
+      : [];
+    const now = Date.now();
+    const results = lineIds.map((lineId) => {
+      const batchIndex = workScheduleAvailabilityBatches.findIndex((batch) =>
+        batch.lines.some((line) => line.id === lineId),
+      );
+      if (batchIndex < 0) {
+        return {
+          availabilityLineId: lineId,
+          outcome: 'FAILED',
+          rosterExceptionId: null,
+          rosterExceptionIds: [],
+          reason: 'Line not found',
+        };
+      }
+      const batch = workScheduleAvailabilityBatches[batchIndex];
+      const lineIndex = batch.lines.findIndex((line) => line.id === lineId);
+      const line = batch.lines[lineIndex];
+      if (!line || line.status !== 'APPROVED') {
+        return {
+          availabilityLineId: lineId,
+          outcome: 'FAILED',
+          rosterExceptionId: null,
+          rosterExceptionIds: [],
+          reason: 'Line is not approved',
+        };
+      }
+      if (line.appliedRosterId === roster.monthlyRosterId) {
+        return {
+          availabilityLineId: lineId,
+          outcome: 'SKIPPED_ALREADY_APPLIED',
+          rosterExceptionId: line.appliedRosterExceptionId,
+          rosterExceptionIds: line.appliedRosterExceptionIds,
+          reason: 'Already applied to this roster',
+        };
+      }
+      if (line.availabilityType === 'OTHER_AVAILABILITY_NOTE') {
+        batch.lines[lineIndex] = {
+          ...line,
+          applyStatus: 'ADVISORY_ONLY',
+          appliedAt: now,
+          updatedAt: now,
+        };
+        return {
+          availabilityLineId: lineId,
+          outcome: 'ADVISORY_ONLY',
+          rosterExceptionId: null,
+          rosterExceptionIds: [],
+          reason: 'Availability note is advisory only',
+        };
+      }
+      const rosterExceptionId = `roster-exception-availability-${now}-${line.lineNo}`;
+      const exception: RosterExceptionRecord = {
+        rosterExceptionId,
+        monthlyRosterId: roster.monthlyRosterId,
+        exceptionType:
+          line.availabilityType === 'PREFERRED_TIME' ? 'CHANGE_TIME' : 'WORKING_TO_OFF',
+        exceptionDate: line.availabilityDate ?? line.dateRangeStart ?? roster.rosterMonth,
+        subjectEmploymentProfileId: line.member.employmentProfileId,
+        subjectEmploymentProfileRef:
+          employmentProfileRefs.get(line.member.employmentProfileId) ?? null,
+        status: 'ACTIVE',
+        title: null,
+        startLocalTime:
+          line.availabilityType === 'PREFERRED_TIME' ? line.preferredStartLocalTime : null,
+        endLocalTime:
+          line.availabilityType === 'PREFERRED_TIME' ? line.preferredEndLocalTime : null,
+        workingMinutes: line.availabilityType === 'PREFERRED_TIME' ? 480 : null,
+        breakMinutes: line.availabilityType === 'PREFERRED_TIME' ? 60 : null,
+        studioResourceIds: [],
+        reason: line.reason,
+        sourceNote: typeof body.applyNote === 'string' ? body.applyNote : null,
+        sourceAvailabilityBatchId: batch.id,
+        sourceAvailabilityLineId: line.id,
+        sourceAvailabilityType: line.availabilityType,
+        sourceAvailabilityTaxonomyCode: line.taxonomyCode,
+        sourceAppliedAt: now,
+        sourceApplyNote: typeof body.applyNote === 'string' ? body.applyNote : null,
+        description: null,
+        externalRef: null,
+        removedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      roster.exceptions.push(exception);
+      batch.lines[lineIndex] = {
+        ...line,
+        applyStatus: 'APPLIED',
+        appliedRosterId: roster.monthlyRosterId,
+        appliedRosterExceptionId: rosterExceptionId,
+        appliedRosterExceptionIds: [rosterExceptionId],
+        appliedAt: now,
+        updatedAt: now,
+      };
+      return {
+        availabilityLineId: lineId,
+        outcome: 'APPLIED',
+        rosterExceptionId,
+        rosterExceptionIds: [rosterExceptionId],
+        reason: 'Applied to draft roster exception',
+      };
+    });
+    const appliedCount = results.filter((result) => result.outcome === 'APPLIED').length;
+    const advisoryOnlyCount = results.filter((result) => result.outcome === 'ADVISORY_ONLY').length;
+    const skippedAlreadyAppliedCount = results.filter(
+      (result) => result.outcome === 'SKIPPED_ALREADY_APPLIED',
+    ).length;
+    const failedCount = results.filter((result) => result.outcome === 'FAILED').length;
+    return HttpResponse.json({
+      data: {
+        monthlyRosterId: roster.monthlyRosterId,
+        rosterCode: roster.rosterCode,
+        rosterMonth: roster.rosterMonth,
+        status: roster.status,
+        targetType: roster.targetType,
+        targetMode: roster.targetMode,
+        targetOrgUnitId: roster.targetOrgUnitId,
+        targetTalentGroupId: roster.targetTalentGroupId,
+        appliedCount,
+        advisoryOnlyCount,
+        skippedAlreadyAppliedCount,
+        failedCount,
+        results,
+      },
+    });
+  }),
+
   http.get('*/admin/work-schedule/rosters/:monthlyRosterId/preview', ({ params, request }) => {
     const scope = new URL(request.url).searchParams.get('scope');
     if (scope && !isMonthlyRosterScope(scope)) {
@@ -3836,6 +4378,88 @@ export const wave6Handlers = [
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
     return HttpResponse.json({ data: batch });
+  }),
+
+  http.get('*/admin/work-schedule/availability-batches', ({ request }) => {
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const periodMonth = url.searchParams.get('periodMonth');
+    const targetType = url.searchParams.get('targetType');
+    const rows = workScheduleAvailabilityBatches
+      .filter((batch) => !status || batch.status === status)
+      .filter((batch) => !periodMonth || batch.periodMonth === periodMonth)
+      .filter((batch) => !targetType || batch.targetType === targetType)
+      .map((batch) => {
+        const item: Partial<WorkScheduleAvailabilityBatchRecord> = { ...batch };
+        delete item.lines;
+        return item;
+      });
+    return HttpResponse.json({ data: { items: rows } });
+  }),
+
+  http.get('*/admin/work-schedule/availability-batches/:batchId', ({ params }) => {
+    const batch = workScheduleAvailabilityBatches.find((item) => item.id === String(params.batchId));
+    if (!batch) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    return HttpResponse.json({ data: batch });
+  }),
+
+  http.post('*/admin/work-schedule/availability-batches/:batchId/approve-lines', async ({ params, request }) => {
+    const body = (await parseJsonBody(request)) as { lineIds?: unknown; adminDecisionNote?: unknown };
+    const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'adminDecisionNote']);
+    if (bodyFailure) {
+      return bodyFailure;
+    }
+    return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'APPROVED', {
+      adminDecisionNote: typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
+    });
+  }),
+
+  http.post('*/admin/work-schedule/availability-batches/:batchId/reject-lines', async ({ params, request }) => {
+    const body = (await parseJsonBody(request)) as {
+      lineIds?: unknown;
+      adminDecisionNote?: unknown;
+      rejectionReason?: unknown;
+    };
+    const bodyFailure = rejectUnsupportedBody(body, [
+      'lineIds',
+      'adminDecisionNote',
+      'rejectionReason',
+    ]);
+    if (bodyFailure) {
+      return bodyFailure;
+    }
+    if (typeof body.rejectionReason !== 'string' || body.rejectionReason.trim().length < 10) {
+      return HttpResponse.json({ message: 'rejectionReason is required' }, { status: 422 });
+    }
+    return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'REJECTED', {
+      adminDecisionNote: typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
+      rejectionReason: body.rejectionReason,
+    });
+  }),
+
+  http.post('*/admin/work-schedule/availability-batches/:batchId/cancel-lines', async ({ params, request }) => {
+    const body = (await parseJsonBody(request)) as {
+      lineIds?: unknown;
+      adminDecisionNote?: unknown;
+      cancellationReason?: unknown;
+    };
+    const bodyFailure = rejectUnsupportedBody(body, [
+      'lineIds',
+      'adminDecisionNote',
+      'cancellationReason',
+    ]);
+    if (bodyFailure) {
+      return bodyFailure;
+    }
+    if (typeof body.cancellationReason !== 'string' || body.cancellationReason.trim().length < 10) {
+      return HttpResponse.json({ message: 'cancellationReason is required' }, { status: 422 });
+    }
+    return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'CANCELLED', {
+      adminDecisionNote: typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
+      cancellationReason: body.cancellationReason,
+    });
   }),
 
   http.post('*/admin/work-schedule/request-batches/:batchId/approve-lines', async ({ params, request }) => {

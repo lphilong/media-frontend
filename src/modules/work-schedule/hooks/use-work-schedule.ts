@@ -3,9 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addHolidayCalendarEntry,
   addRosterException,
+  applyAvailabilityLinesToMonthlyRoster,
+  approveWorkScheduleAvailabilityBatchLines,
   approveWorkScheduleRequestBatchLines,
   approveWorkScheduleRequest,
   archiveMonthlyRoster,
+  cancelWorkScheduleAvailabilityBatchLines,
   cancelWorkScheduleRequestBatchLines,
   cancelWorkScheduleRequest,
   createHolidayCalendar,
@@ -18,6 +21,8 @@ import {
   fetchMonthlyRosterDetail,
   fetchMonthlyRosterPreview,
   fetchMonthlyRosters,
+  fetchWorkScheduleAvailabilityBatchDetail,
+  fetchWorkScheduleAvailabilityBatches,
   fetchWorkPatternDetail,
   fetchWorkPatterns,
   fetchWorkShiftDetail,
@@ -32,6 +37,7 @@ import {
   performWorkShiftLifecycleAction,
   publishMonthlyRoster,
   reassignWorkShiftSubject,
+  rejectWorkScheduleAvailabilityBatchLines,
   rejectWorkScheduleRequestBatchLines,
   rejectWorkScheduleRequest,
   removeHolidayCalendarEntry,
@@ -46,6 +52,7 @@ import {
   updateWorkShift,
 } from '@modules/work-schedule/api/work-schedule.api';
 import type {
+  ApplyAvailabilityLinesToMonthlyRosterPayload,
   HolidayCalendarCreatePayload,
   HolidayCalendarEntryPayload,
   HolidayCalendarLifecycleAction,
@@ -61,6 +68,8 @@ import type {
   WorkPatternLifecycleAction,
   WorkPatternListQuery,
   WorkPatternUpdatePayload,
+  WorkScheduleAvailabilityBatchListQuery,
+  WorkScheduleAvailabilityLineDecisionPayload,
   WorkScheduleRequestApprovePayload,
   WorkScheduleRequestBatchLineDecisionPayload,
   WorkScheduleRequestBatchListQuery,
@@ -131,6 +140,18 @@ const toWorkScheduleRequestBatchListQueryToken = (
     }, {}),
   ).toString();
 
+const toWorkScheduleAvailabilityBatchListQueryToken = (
+  query: WorkScheduleAvailabilityBatchListQuery,
+): string =>
+  new URLSearchParams(
+    Object.entries(query).reduce<Record<string, string>>((accumulator, [key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        accumulator[key] = String(value);
+      }
+      return accumulator;
+    }, {}),
+  ).toString();
+
 export const workScheduleQueryKeys = {
   all: (): readonly ['work-schedule'] => WORK_SCHEDULE_QUERY_ROOT,
   flatList: (query: WorkShiftListQuery) =>
@@ -179,6 +200,17 @@ export const workScheduleQueryKeys = {
     ] as const,
   requestBatchDetail: (batchId: string) =>
     ['work-schedule', 'request-batches', 'detail', batchId] as const,
+  availabilityBatchList: (query: WorkScheduleAvailabilityBatchListQuery) =>
+    [
+      'work-schedule',
+      'availability-batches',
+      'list',
+      toWorkScheduleAvailabilityBatchListQueryToken(query),
+    ] as const,
+  availabilityBatchDetail: (batchId: string) =>
+    ['work-schedule', 'availability-batches', 'detail', batchId] as const,
+  monthlyRosterApplyAvailability: () =>
+    ['work-schedule', 'monthly-rosters', 'apply-availability'] as const,
 };
 
 export const useWorkShiftFlatList = (
@@ -255,6 +287,30 @@ export const useWorkScheduleRequestBatchDetail = (
       ? workScheduleQueryKeys.requestBatchDetail(batchId)
       : [...WORK_SCHEDULE_QUERY_ROOT, 'request-batches', 'detail'],
     queryFn: () => fetchWorkScheduleRequestBatchDetail(batchId ?? ''),
+    enabled: Boolean(batchId) && (options?.enabled ?? true),
+  });
+};
+
+export const useWorkScheduleAvailabilityBatchList = (
+  query: WorkScheduleAvailabilityBatchListQuery,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: workScheduleQueryKeys.availabilityBatchList(query),
+    queryFn: () => fetchWorkScheduleAvailabilityBatches(query),
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useWorkScheduleAvailabilityBatchDetail = (
+  batchId: string | undefined,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: batchId
+      ? workScheduleQueryKeys.availabilityBatchDetail(batchId)
+      : [...WORK_SCHEDULE_QUERY_ROOT, 'availability-batches', 'detail'],
+    queryFn: () => fetchWorkScheduleAvailabilityBatchDetail(batchId ?? ''),
     enabled: Boolean(batchId) && (options?.enabled ?? true),
   });
 };
@@ -549,6 +605,57 @@ export const useCancelWorkScheduleRequestBatchLinesMutation = () => {
   });
 };
 
+export const useApproveWorkScheduleAvailabilityBatchLinesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: WorkScheduleAvailabilityLineDecisionPayload;
+    }) => approveWorkScheduleAvailabilityBatchLines(batchId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useRejectWorkScheduleAvailabilityBatchLinesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: WorkScheduleAvailabilityLineDecisionPayload;
+    }) => rejectWorkScheduleAvailabilityBatchLines(batchId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useCancelWorkScheduleAvailabilityBatchLinesMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: WorkScheduleAvailabilityLineDecisionPayload;
+    }) => cancelWorkScheduleAvailabilityBatchLines(batchId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
 export const useCancelWorkScheduleRequestMutation = () => {
   const queryClient = useQueryClient();
 
@@ -768,6 +875,24 @@ export const usePublishMonthlyRosterMutation = () => {
       monthlyRosterId: string;
       payload: MonthlyRosterPublishPayload;
     }) => publishMonthlyRoster(monthlyRosterId, payload),
+    onSuccess: async () => {
+      await invalidateWorkScheduleQueries(queryClient);
+    },
+  });
+};
+
+export const useApplyAvailabilityLinesToMonthlyRosterMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: workScheduleQueryKeys.monthlyRosterApplyAvailability(),
+    mutationFn: ({
+      monthlyRosterId,
+      payload,
+    }: {
+      monthlyRosterId: string;
+      payload: ApplyAvailabilityLinesToMonthlyRosterPayload;
+    }) => applyAvailabilityLinesToMonthlyRoster(monthlyRosterId, payload),
     onSuccess: async () => {
       await invalidateWorkScheduleQueries(queryClient);
     },

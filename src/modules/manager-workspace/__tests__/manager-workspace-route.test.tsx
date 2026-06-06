@@ -7,9 +7,15 @@ import { afterAll, beforeAll, vi } from 'vitest';
 import { appRoutes } from '@app/router/router';
 import { parseKpiAllocationDraftPayloadForTest } from '@modules/kpi/api/kpi.api';
 import {
+  parseManagerAvailabilityApplyStatusForTest,
+  parseManagerAvailabilityPolicyEvaluationStatusForTest,
   parseManagerWorkShiftListForTest,
   parseManagerWorkspaceContextForTest,
 } from '@modules/manager-workspace/api/manager-workspace.api';
+import {
+  parseWorkScheduleAvailabilityApplyStatusForTest,
+  parseWorkScheduleAvailabilityPolicyEvaluationStatusForTest,
+} from '@modules/work-schedule/api/work-schedule.api';
 import { setLocale } from '@shared/i18n/i18n';
 import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 import {
@@ -812,6 +818,268 @@ describe('/manager workspace route', () => {
     await waitFor(() => expect(managerSubmitCalls).toBe(1));
     expect(rawAdminBatchCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
+  });
+
+  it('submits manager availability through Manager Workspace endpoints only', async () => {
+    const user = userEvent.setup();
+    let managerSubmitCalls = 0;
+    let managerMemberPickerCalls = 0;
+    let rawAdminAvailabilityCalls = 0;
+    server.use(
+      http.get(
+        '*/admin/manager-workspace/work-schedule/availability-members',
+        ({ request }) => {
+          managerMemberPickerCalls += 1;
+          const url = new URL(request.url);
+          expect(url.searchParams.get('targetType')).toBe('ORG_UNIT');
+          expect(url.searchParams.get('targetId')).toBe('org-unit-001');
+          return HttpResponse.json({
+            data: {
+              target: {
+                targetType: 'ORG_UNIT',
+                targetId: 'org-unit-001',
+                targetMode: 'EXACT_ONLY',
+                name: 'Content Ops',
+                displayName: 'Content Ops',
+              },
+              members: [
+                {
+                  employmentProfileId: 'ep-pre-roster',
+                  displayName: 'Pre-roster Member',
+                  employeeCode: 'EP-PRE',
+                },
+              ],
+              totalMembers: 1,
+            },
+          });
+        },
+      ),
+      http.post(
+        '*/admin/manager-workspace/work-schedule/availability-batches',
+        async ({ request }) => {
+          managerSubmitCalls += 1;
+          const body = (await request.json()) as Record<string, unknown>;
+          expect(body).toMatchObject({
+            periodMonth: '2026-06',
+            targetType: 'ORG_UNIT',
+            targetMode: 'EXACT_ONLY',
+          });
+          expect(Array.isArray(body.lines)).toBe(true);
+          expect(body.lines).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({ availabilityType: 'UNAVAILABLE_FULL_DAY' }),
+              expect.objectContaining({
+                availabilityType: 'PREFERRED_TIME',
+                preferredStartLocalTime: '09:00',
+                preferredEndLocalTime: '12:00',
+              }),
+              expect.objectContaining({ availabilityType: 'OTHER_AVAILABILITY_NOTE' }),
+            ]),
+          );
+          expect(JSON.stringify(body)).not.toContain('UNAUTHORIZED_ABSENCE');
+          expect(JSON.stringify(body)).not.toContain('EXTRA_SHIFT_AVAILABLE');
+          return HttpResponse.json({
+            data: {
+              id: 'manager-availability-created',
+              availabilityBatchCode: 'AVB-CREATED',
+              status: 'PENDING',
+              periodMonth: '2026-06',
+              targetType: 'ORG_UNIT',
+              targetMode: 'EXACT_ONLY',
+              targetOrgUnitId: 'org-content',
+              targetTalentGroupId: null,
+              target: { id: 'org-content', name: 'Content Ops', displayName: 'Content Ops' },
+              note: null,
+              lineCounts: {
+                total: 1,
+                pending: 1,
+                approved: 0,
+                rejected: 0,
+                cancelled: 0,
+              },
+              clientToken: 'manager-availability-ui-test-token',
+              submittedAt: Date.now(),
+              cancelledAt: null,
+              resolvedAt: null,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              lines: [],
+            },
+          });
+        },
+      ),
+      http.all('*/admin/work-schedule/availability-batches*', () => {
+        rawAdminAvailabilityCalls += 1;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+    );
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+      setMockManagerWorkShifts({
+        items: [],
+        meta: {
+          month: '2026-06',
+          timezone: 'Asia/Ho_Chi_Minh',
+          managedMemberCount: 0,
+          representedMemberCount: 0,
+          returnedShiftCount: 0,
+        },
+      });
+    });
+
+    await user.click(await screen.findByRole('tab', { name: 'Availability' }));
+    expect(await screen.findByTestId('manager-work-availability')).toBeInTheDocument();
+    expect(screen.getByText(/pre-roster planning signal/i)).toBeInTheDocument();
+    expect(screen.queryByText('UNAUTHORIZED_ABSENCE')).not.toBeInTheDocument();
+    expect(screen.queryByText('EXTRA_SHIFT_AVAILABLE')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Add availability line' }));
+    await user.click(screen.getByRole('button', { name: 'Submit availability batch' }));
+    expect(await screen.findByText('Reason is required.')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Reason'), 'Unavailable for roster planning.');
+    await user.click(screen.getByRole('button', { name: 'Add availability line' }));
+    await user.selectOptions(screen.getAllByLabelText('Availability type')[1], 'PREFERRED_TIME');
+    await user.type(screen.getAllByLabelText('Reason')[1], 'Prefers a morning planning window.');
+    await user.type(screen.getByLabelText('Preferred start'), '09:00');
+    await user.type(screen.getByLabelText('Preferred end'), '12:00');
+    await user.click(screen.getByRole('button', { name: 'Add availability line' }));
+    await user.selectOptions(
+      screen.getAllByLabelText('Availability type')[2],
+      'OTHER_AVAILABILITY_NOTE',
+    );
+    await user.type(screen.getAllByLabelText('Reason')[2], 'Advisory planning note.');
+    await user.click(screen.getByRole('button', { name: 'Submit availability batch' }));
+
+    await waitFor(() => expect(managerSubmitCalls).toBe(1));
+    expect(managerMemberPickerCalls).toBeGreaterThan(0);
+    expect(rawAdminAvailabilityCalls).toBe(0);
+    expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
+  });
+
+  it('submits availability from default picker fixtures when no published WorkShifts exist', async () => {
+    const user = userEvent.setup();
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+      setMockManagerWorkShifts({
+        items: [],
+        meta: {
+          month: '2026-06',
+          timezone: 'Asia/Ho_Chi_Minh',
+          managedMemberCount: 1,
+          representedMemberCount: 0,
+          returnedShiftCount: 0,
+        },
+      });
+    });
+
+    await user.click(await screen.findByRole('tab', { name: 'Availability' }));
+    await user.click(await screen.findByRole('button', { name: 'Add availability line' }));
+    expect(screen.getByRole('option', { name: /Content Member One/ })).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Reason'), 'Pre-roster availability without shifts.');
+    await user.click(screen.getByRole('button', { name: 'Submit availability batch' }));
+
+    expect((await screen.findAllByText('AVB-000002')).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
+  });
+
+  it('cancels own pending availability line and batch only with a reason through Flow B endpoints', async () => {
+    const user = userEvent.setup();
+    let cancelLineCalls = 0;
+    let cancelBatchCalls = 0;
+    let rawAdminAvailabilityCalls = 0;
+    server.use(
+      http.post(
+        '*/admin/manager-workspace/work-schedule/availability-batches/:batchId/lines/:lineId/cancel',
+        () => {
+          cancelLineCalls += 1;
+          return undefined;
+        },
+      ),
+      http.post(
+        '*/admin/manager-workspace/work-schedule/availability-batches/:batchId/cancel',
+        () => {
+          cancelBatchCalls += 1;
+          return undefined;
+        },
+      ),
+      http.all('*/admin/work-schedule/availability-batches*', () => {
+        rawAdminAvailabilityCalls += 1;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+    );
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+    await user.click(await screen.findByRole('tab', { name: 'Availability' }));
+    expect(await screen.findByText('AVB-000001')).toBeInTheDocument();
+
+    const cancelLine = screen
+      .getAllByRole('button', { name: 'Cancel pending line' })
+      .find((button) => !button.hasAttribute('disabled'));
+    expect(cancelLine).toBeDefined();
+    if (!cancelLine) {
+      return;
+    }
+    await user.click(cancelLine);
+    expect(await screen.findByText('Cancellation reason is required.')).toBeInTheDocument();
+    expect(cancelLineCalls).toBe(0);
+
+    const reason = screen.getByLabelText('Cancellation reason');
+    await user.type(reason, 'Manager cancels this pending availability line.');
+    await user.click(cancelLine);
+    await waitFor(() => expect(cancelLineCalls).toBe(1));
+
+    const cancelBatch = screen.getByRole('button', { name: 'Cancel pending batch' });
+    await user.click(cancelBatch);
+    expect(await screen.findByText('Cancellation reason is required.')).toBeInTheDocument();
+    expect(cancelBatchCalls).toBe(0);
+    await user.type(reason, 'Manager cancels remaining pending availability.');
+    await user.click(cancelBatch);
+    await waitFor(() => expect(cancelBatchCalls).toBe(1));
+
+    expect(rawAdminAvailabilityCalls).toBe(0);
+    expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
+  });
+
+  it('rejects unsupported availability apply and policy statuses', () => {
+    for (const parseApplyStatus of [
+      parseManagerAvailabilityApplyStatusForTest,
+      parseWorkScheduleAvailabilityApplyStatusForTest,
+    ]) {
+      expect(() => parseApplyStatus('FUTURE_STATUS')).toThrow();
+    }
+    for (const parsePolicyStatus of [
+      parseManagerAvailabilityPolicyEvaluationStatusForTest,
+      parseWorkScheduleAvailabilityPolicyEvaluationStatusForTest,
+    ]) {
+      expect(() => parsePolicyStatus('EVALUATED')).toThrow();
+    }
+  });
+
+  it('constrains availability members to the selected target and clears prior draft lines', async () => {
+    const user = userEvent.setup();
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    await user.click(await screen.findByRole('tab', { name: 'Availability' }));
+    await user.click(await screen.findByRole('button', { name: 'Add availability line' }));
+    await screen.findByRole('option', { name: 'Content Member One (EP-CONTENT-1)' });
+    expect(screen.getByLabelText('Reason')).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('Roster target'), 'TALENT_GROUP:group-001');
+
+    await waitFor(() => expect(screen.queryByLabelText('Reason')).not.toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: 'Add availability line' }));
+    expect(
+      await screen.findByRole('option', { name: 'Creator Member One (EP-CREATOR-1)' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Content Member One (EP-CONTENT-1)' })).not.toBeInTheDocument();
   });
 
   it('adds reschedule and cancel lines, removes a draft line, and submits through Manager endpoints only', async () => {

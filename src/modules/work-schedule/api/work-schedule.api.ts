@@ -6,6 +6,8 @@ import {
   WORK_PATTERN_TIMEZONE,
 } from '@modules/work-schedule/types/work-schedule.types';
 import type {
+  ApplyAvailabilityLinesToMonthlyRosterPayload,
+  ApplyAvailabilityLinesToMonthlyRosterResult,
   CursorPagedResponse,
   HolidayCalendarCreatePayload,
   HolidayCalendarEntryPayload,
@@ -28,6 +30,10 @@ import type {
   WorkPatternListQuery,
   WorkPatternRecord,
   WorkPatternUpdatePayload,
+  WorkScheduleAvailabilityBatchDetail,
+  WorkScheduleAvailabilityBatchList,
+  WorkScheduleAvailabilityBatchListQuery,
+  WorkScheduleAvailabilityLineDecisionPayload,
   WorkScheduleRequestApprovePayload,
   WorkScheduleRequestBatchDetail,
   WorkScheduleRequestBatchLineDecisionPayload,
@@ -108,6 +114,48 @@ const workScheduleRequestLineStatusSchema = z.enum([
   'REJECTED',
   'CANCELLED',
   'FAILED_TO_APPLY',
+]);
+const workScheduleAvailabilityBatchStatusSchema = z.enum([
+  'PENDING',
+  'PARTIALLY_APPROVED',
+  'APPROVED',
+  'REJECTED',
+  'CANCELLED',
+]);
+const workScheduleAvailabilityLineStatusSchema = z.enum([
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'CANCELLED',
+]);
+const workScheduleAvailabilityTypeSchema = z.enum([
+  'UNAVAILABLE_FULL_DAY',
+  'PREFERRED_TIME',
+  'OTHER_AVAILABILITY_NOTE',
+]);
+const workScheduleAvailabilityTaxonomyCodeSchema = z.enum([
+  'SICK_LEAVE',
+  'AUTHORIZED_LEAVE',
+  'SHIFT_CHANGE',
+  'OTHER',
+]);
+const workScheduleAvailabilityApplyStatusSchema = z.enum([
+  'NOT_APPLIED',
+  'ADVISORY_ONLY',
+  'APPLIED',
+]);
+const workScheduleAvailabilityPolicyEvaluationStatusSchema = z.literal('NOT_EVALUATED');
+
+export const parseWorkScheduleAvailabilityApplyStatusForTest = (value: unknown) =>
+  workScheduleAvailabilityApplyStatusSchema.parse(value);
+
+export const parseWorkScheduleAvailabilityPolicyEvaluationStatusForTest = (value: unknown) =>
+  workScheduleAvailabilityPolicyEvaluationStatusSchema.parse(value);
+const workScheduleAvailabilityApplyOutcomeSchema = z.enum([
+  'APPLIED',
+  'ADVISORY_ONLY',
+  'SKIPPED_ALREADY_APPLIED',
+  'FAILED',
 ]);
 const timestampSchema = z.union([z.number(), z.string()]);
 const referenceSummarySchema = z
@@ -360,6 +408,103 @@ const workScheduleRequestBatchDetailResponseSchema = z
   })
   .strict();
 
+const availabilityLineCountsSchema = z
+  .object({
+    total: z.number().int().nonnegative(),
+    pending: z.number().int().nonnegative(),
+    approved: z.number().int().nonnegative(),
+    rejected: z.number().int().nonnegative(),
+    cancelled: z.number().int().nonnegative(),
+  })
+  .strict();
+
+const availabilitySafeEmploymentRefSchema = z
+  .object({
+    employmentProfileId: z.string().trim().min(1),
+    displayName: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1).optional(),
+    status: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+const workScheduleAvailabilityBatchListItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    availabilityBatchCode: z.string().trim().min(1),
+    status: workScheduleAvailabilityBatchStatusSchema,
+    periodMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    targetType: monthlyRosterTargetTypeSchema,
+    targetMode: monthlyRosterTargetModeSchema,
+    targetOrgUnitId: z.string().nullable(),
+    targetTalentGroupId: z.string().nullable(),
+    target: referenceSummarySchema.nullable().optional(),
+    submitter: availabilitySafeEmploymentRefSchema.optional(),
+    note: z.string().nullable(),
+    lineCounts: availabilityLineCountsSchema,
+    clientToken: z.string().trim().min(1),
+    submittedAt: timestampSchema,
+    cancelledAt: timestampSchema.nullable(),
+    resolvedAt: timestampSchema.nullable(),
+    createdAt: timestampSchema,
+    updatedAt: timestampSchema,
+  })
+  .strict();
+
+const workScheduleAvailabilityLineSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    batchId: z.string().trim().min(1).optional(),
+    lineNo: z.number().int().positive(),
+    member: availabilitySafeEmploymentRefSchema,
+    availabilityType: workScheduleAvailabilityTypeSchema,
+    taxonomyCode: workScheduleAvailabilityTaxonomyCodeSchema,
+    availabilityDate: z.string().nullable(),
+    dateRangeStart: z.string().nullable(),
+    dateRangeEnd: z.string().nullable(),
+    preferredStartLocalTime: z.string().nullable(),
+    preferredEndLocalTime: z.string().nullable(),
+    reason: z.string().trim().min(1),
+    status: workScheduleAvailabilityLineStatusSchema,
+    applyStatus: workScheduleAvailabilityApplyStatusSchema,
+    policyEvaluationStatus: workScheduleAvailabilityPolicyEvaluationStatusSchema,
+    appliedRosterId: z.string().nullable(),
+    appliedRosterExceptionId: z.string().nullable(),
+    appliedRosterExceptionIds: z.array(z.string()),
+    appliedAt: timestampSchema.nullable(),
+    adminDecisionNote: z.string().nullable(),
+    rejectionReason: z.string().nullable(),
+    cancellationReason: z.string().nullable(),
+    createdAt: timestampSchema,
+    updatedAt: timestampSchema,
+    approvedAt: timestampSchema.nullable(),
+    rejectedAt: timestampSchema.nullable(),
+    cancelledAt: timestampSchema.nullable(),
+  })
+  .strict();
+
+const workScheduleAvailabilityBatchDetailSchema = workScheduleAvailabilityBatchListItemSchema
+  .extend({
+    lines: z.array(workScheduleAvailabilityLineSchema),
+  })
+  .strict();
+
+const workScheduleAvailabilityBatchListResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(workScheduleAvailabilityBatchListItemSchema),
+        nextCursor: z.string().trim().min(1).optional(),
+      })
+      .strict(),
+  })
+  .strict();
+
+const workScheduleAvailabilityBatchDetailResponseSchema = z
+  .object({
+    data: workScheduleAvailabilityBatchDetailSchema,
+  })
+  .strict();
+
 const workPatternSchema = z
   .object({
     workPatternId: z.string().trim().min(1),
@@ -458,6 +603,12 @@ const rosterExceptionSchema = z
     studioResourceRefs: z.array(referenceSummarySchema).optional(),
     reason: z.string().nullable().optional(),
     sourceNote: z.string().nullable().optional(),
+    sourceAvailabilityBatchId: z.string().nullable().optional(),
+    sourceAvailabilityLineId: z.string().nullable().optional(),
+    sourceAvailabilityType: workScheduleAvailabilityTypeSchema.nullable().optional(),
+    sourceAvailabilityTaxonomyCode: workScheduleAvailabilityTaxonomyCodeSchema.nullable().optional(),
+    sourceAppliedAt: timestampSchema.nullable().optional(),
+    sourceApplyNote: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     externalRef: z.string().nullable().optional(),
     removedAt: timestampSchema.nullable().optional(),
@@ -668,6 +819,40 @@ const monthlyRosterPublishResultSchema = z
 const monthlyRosterPublishResponseSchema = z
   .object({
     data: monthlyRosterPublishResultSchema,
+  })
+  .strict();
+
+const applyAvailabilityLineResultSchema = z
+  .object({
+    availabilityLineId: z.string().trim().min(1),
+    outcome: workScheduleAvailabilityApplyOutcomeSchema,
+    rosterExceptionId: z.string().nullable(),
+    rosterExceptionIds: z.array(z.string()),
+    reason: z.string().nullable(),
+  })
+  .strict();
+
+const applyAvailabilityLinesToMonthlyRosterResultSchema = z
+  .object({
+    monthlyRosterId: z.string().trim().min(1),
+    rosterCode: z.string().trim().min(1),
+    rosterMonth: z.string().trim().min(1),
+    status: monthlyRosterStatusSchema,
+    targetType: z.string().trim().min(1),
+    targetMode: z.string().trim().min(1),
+    targetOrgUnitId: z.string().nullable(),
+    targetTalentGroupId: z.string().nullable(),
+    appliedCount: z.number().int().nonnegative(),
+    advisoryOnlyCount: z.number().int().nonnegative(),
+    skippedAlreadyAppliedCount: z.number().int().nonnegative(),
+    failedCount: z.number().int().nonnegative(),
+    results: z.array(applyAvailabilityLineResultSchema),
+  })
+  .strict();
+
+const applyAvailabilityLinesToMonthlyRosterResponseSchema = z
+  .object({
+    data: applyAvailabilityLinesToMonthlyRosterResultSchema,
   })
   .strict();
 
@@ -1012,6 +1197,15 @@ const sanitizeMonthlyRosterPublishPayload = (
   ...(payload.scope !== undefined ? { scope: payload.scope } : {}),
 });
 
+const sanitizeApplyAvailabilityLinesPayload = (
+  payload: ApplyAvailabilityLinesToMonthlyRosterPayload,
+): ApplyAvailabilityLinesToMonthlyRosterPayload => ({
+  availabilityLineIds: payload.availabilityLineIds.map((lineId) => lineId.trim()).filter(Boolean),
+  ...(payload.applyNote !== undefined ? { applyNote: sanitizeNullableText(payload.applyNote) } : {}),
+  ...(payload.note !== undefined ? { note: sanitizeNullableText(payload.note) } : {}),
+  ...(payload.scope !== undefined ? { scope: payload.scope } : {}),
+});
+
 export const fetchWorkShifts = async (
   query: WorkShiftListQuery,
 ): Promise<CursorPagedResponse<WorkShiftListItem>> => {
@@ -1180,6 +1374,13 @@ const sanitizeWorkScheduleRequestBatchListQuery = (
     Object.entries(query).filter(([, value]) => value !== undefined && value !== ''),
   ) as WorkScheduleRequestBatchListQuery;
 
+const sanitizeWorkScheduleAvailabilityBatchListQuery = (
+  query: WorkScheduleAvailabilityBatchListQuery,
+): WorkScheduleAvailabilityBatchListQuery =>
+  Object.fromEntries(
+    Object.entries(query).filter(([, value]) => value !== undefined && value !== ''),
+  ) as WorkScheduleAvailabilityBatchListQuery;
+
 export const fetchWorkScheduleRequestBatches = async (
   query: WorkScheduleRequestBatchListQuery,
 ): Promise<CursorPagedResponse<WorkScheduleRequestBatchListItem>> => {
@@ -1257,6 +1458,83 @@ export const cancelWorkScheduleRequestBatchLines = async (
   return workScheduleRequestBatchDetailResponseSchema.parse(response).data;
 };
 
+const sanitizeAvailabilityLineDecisionPayload = (
+  payload: WorkScheduleAvailabilityLineDecisionPayload,
+): WorkScheduleAvailabilityLineDecisionPayload => ({
+  lineIds: payload.lineIds.map((lineId) => lineId.trim()).filter(Boolean),
+  ...(payload.adminDecisionNote !== undefined
+    ? { adminDecisionNote: sanitizeNullableText(payload.adminDecisionNote) }
+    : {}),
+  ...(payload.rejectionReason !== undefined
+    ? { rejectionReason: sanitizeNullableText(payload.rejectionReason) }
+    : {}),
+  ...(payload.cancellationReason !== undefined
+    ? { cancellationReason: sanitizeNullableText(payload.cancellationReason) }
+    : {}),
+});
+
+export const fetchWorkScheduleAvailabilityBatches = async (
+  query: WorkScheduleAvailabilityBatchListQuery,
+): Promise<WorkScheduleAvailabilityBatchList> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/work-schedule/availability-batches',
+    params: sanitizeWorkScheduleAvailabilityBatchListQuery(query),
+  });
+
+  return workScheduleAvailabilityBatchListResponseSchema.parse(response).data;
+};
+
+export const fetchWorkScheduleAvailabilityBatchDetail = async (
+  batchId: string,
+): Promise<WorkScheduleAvailabilityBatchDetail> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/work-schedule/availability-batches/${encodeURIComponent(batchId)}`,
+  });
+
+  return workScheduleAvailabilityBatchDetailResponseSchema.parse(response).data;
+};
+
+export const approveWorkScheduleAvailabilityBatchLines = async (
+  batchId: string,
+  payload: WorkScheduleAvailabilityLineDecisionPayload,
+): Promise<WorkScheduleAvailabilityBatchDetail> => {
+  const response = await apiRequest<unknown, WorkScheduleAvailabilityLineDecisionPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/availability-batches/${encodeURIComponent(batchId)}/approve-lines`,
+    data: sanitizeAvailabilityLineDecisionPayload(payload),
+  });
+
+  return workScheduleAvailabilityBatchDetailResponseSchema.parse(response).data;
+};
+
+export const rejectWorkScheduleAvailabilityBatchLines = async (
+  batchId: string,
+  payload: WorkScheduleAvailabilityLineDecisionPayload,
+): Promise<WorkScheduleAvailabilityBatchDetail> => {
+  const response = await apiRequest<unknown, WorkScheduleAvailabilityLineDecisionPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/availability-batches/${encodeURIComponent(batchId)}/reject-lines`,
+    data: sanitizeAvailabilityLineDecisionPayload(payload),
+  });
+
+  return workScheduleAvailabilityBatchDetailResponseSchema.parse(response).data;
+};
+
+export const cancelWorkScheduleAvailabilityBatchLines = async (
+  batchId: string,
+  payload: WorkScheduleAvailabilityLineDecisionPayload,
+): Promise<WorkScheduleAvailabilityBatchDetail> => {
+  const response = await apiRequest<unknown, WorkScheduleAvailabilityLineDecisionPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/availability-batches/${encodeURIComponent(batchId)}/cancel-lines`,
+    data: sanitizeAvailabilityLineDecisionPayload(payload),
+  });
+
+  return workScheduleAvailabilityBatchDetailResponseSchema.parse(response).data;
+};
+
 export const createWorkScheduleRequest = async (
   payload: WorkScheduleRequestCreatePayload,
 ): Promise<WorkScheduleRequestRecord> => {
@@ -1329,6 +1607,21 @@ export const publishMonthlyRoster = async (
   });
 
   return monthlyRosterPublishResponseSchema.parse(response).data;
+};
+
+export const applyAvailabilityLinesToMonthlyRoster = async (
+  monthlyRosterId: string,
+  payload: ApplyAvailabilityLinesToMonthlyRosterPayload,
+): Promise<ApplyAvailabilityLinesToMonthlyRosterResult> => {
+  const response = await apiRequest<unknown, ApplyAvailabilityLinesToMonthlyRosterPayload>({
+    method: 'POST',
+    url: `/admin/work-schedule/rosters/${encodeURIComponent(
+      monthlyRosterId,
+    )}/apply-availability-lines`,
+    data: sanitizeApplyAvailabilityLinesPayload(payload),
+  });
+
+  return applyAvailabilityLinesToMonthlyRosterResponseSchema.parse(response).data;
 };
 
 export const fetchWorkPatterns = async (

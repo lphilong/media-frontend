@@ -2,6 +2,7 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
+  ClipboardList,
   LayoutDashboard,
   Plus,
   Send,
@@ -16,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { APP_PATHS } from '@app/router/paths';
 import { formatKpiNumber } from '@modules/kpi/formatting/kpi-formatting';
 import { useKpiPlanDetail, useKpiPlans } from '@modules/kpi/hooks/use-kpi';
+import { ManagerAvailabilityPanel } from '@modules/manager-workspace/components/ManagerAvailabilityPanel';
 import {
   KpiOrgUnitOperationsSection,
   type KpiOrgUnitOperationsActionPolicy,
@@ -221,7 +223,7 @@ const KpiPlanTable = ({
   );
 };
 
-type ManagerWorkTab = 'published' | 'requests';
+type ManagerWorkTab = 'published' | 'requests' | 'availability';
 type DraftRequestLine = ManagerSubmitRequestBatchLinePayload & {
   localId: string;
   startLocal: string;
@@ -815,7 +817,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
       </div>
 
       <div className="flex flex-wrap gap-2" role="tablist">
-        {(['published', 'requests'] as const).map((tab) => (
+        {(['published', 'requests', 'availability'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
@@ -830,6 +832,8 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
           >
             {tab === 'published' ? (
               <CalendarDays className="h-4 w-4" aria-hidden="true" />
+            ) : tab === 'availability' ? (
+              <ClipboardList className="h-4 w-4" aria-hidden="true" />
             ) : (
               <Send className="h-4 w-4" aria-hidden="true" />
             )}
@@ -1272,6 +1276,10 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
             </div>
           </div>
         </div>
+      ) : null}
+
+      {data && activeTab === 'availability' ? (
+        <ManagerAvailabilityPanel context={context} allowedMonths={allowedMonths} />
       ) : null}
     </section>
   );

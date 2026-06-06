@@ -5,6 +5,16 @@ import { apiRequest } from '@shared/api';
 
 export const MANAGER_WORKSPACE_CONTEXT_QUERY_KEY = ['manager-workspace', 'context'] as const;
 const MANAGER_REQUEST_BATCHES_QUERY_KEY = ['manager-workspace', 'work-schedule', 'request-batches'] as const;
+const MANAGER_AVAILABILITY_BATCHES_QUERY_KEY = [
+  'manager-workspace',
+  'work-schedule',
+  'availability-batches',
+] as const;
+const MANAGER_AVAILABILITY_MEMBERS_QUERY_KEY = [
+  'manager-workspace',
+  'work-schedule',
+  'availability-members',
+] as const;
 
 const referenceNameSchema = z
   .object({
@@ -308,11 +318,174 @@ const managerRequestBatchDetailResponseSchema = z
   })
   .strict();
 
+const availabilityBatchStatusSchema = z.enum([
+  'PENDING',
+  'PARTIALLY_APPROVED',
+  'APPROVED',
+  'REJECTED',
+  'CANCELLED',
+]);
+const availabilityLineStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']);
+const availabilityTypeSchema = z.enum([
+  'UNAVAILABLE_FULL_DAY',
+  'PREFERRED_TIME',
+  'OTHER_AVAILABILITY_NOTE',
+]);
+const availabilityTaxonomyCodeSchema = z.enum([
+  'SICK_LEAVE',
+  'AUTHORIZED_LEAVE',
+  'SHIFT_CHANGE',
+  'OTHER',
+]);
+const availabilityApplyStatusSchema = z.enum(['NOT_APPLIED', 'ADVISORY_ONLY', 'APPLIED']);
+const availabilityPolicyEvaluationStatusSchema = z.literal('NOT_EVALUATED');
+const availabilityLineCountsSchema = z
+  .object({
+    total: z.number().int().nonnegative(),
+    pending: z.number().int().nonnegative(),
+    approved: z.number().int().nonnegative(),
+    rejected: z.number().int().nonnegative(),
+    cancelled: z.number().int().nonnegative(),
+  })
+  .strict();
+const availabilityTargetSummarySchema = referenceSummarySchema.nullable().optional();
+const managerAvailabilityMemberSchema = z
+  .object({
+    employmentProfileId: z.string().trim().min(1),
+    displayName: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1).optional(),
+    status: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+const managerAvailabilityBatchListItemSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    availabilityBatchCode: z.string().trim().min(1),
+    status: availabilityBatchStatusSchema,
+    periodMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    targetType: z.enum(['ORG_UNIT', 'TALENT_GROUP']),
+    targetMode: z.literal('EXACT_ONLY'),
+    targetOrgUnitId: z.string().nullable(),
+    targetTalentGroupId: z.string().nullable(),
+    target: availabilityTargetSummarySchema,
+    note: z.string().nullable(),
+    lineCounts: availabilityLineCountsSchema,
+    clientToken: z.string().trim().min(1),
+    submittedAt: z.number().int(),
+    cancelledAt: z.number().int().nullable(),
+    resolvedAt: z.number().int().nullable(),
+    createdAt: z.number().int(),
+    updatedAt: z.number().int(),
+  })
+  .strict();
+
+const managerAvailabilityBatchLineSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    batchId: z.string().trim().min(1).optional(),
+    lineNo: z.number().int().positive(),
+    member: managerAvailabilityMemberSchema,
+    availabilityType: availabilityTypeSchema,
+    taxonomyCode: availabilityTaxonomyCodeSchema,
+    availabilityDate: z.string().nullable(),
+    dateRangeStart: z.string().nullable(),
+    dateRangeEnd: z.string().nullable(),
+    preferredStartLocalTime: z.string().nullable(),
+    preferredEndLocalTime: z.string().nullable(),
+    reason: z.string().trim().min(1),
+    status: availabilityLineStatusSchema,
+    applyStatus: availabilityApplyStatusSchema,
+    policyEvaluationStatus: availabilityPolicyEvaluationStatusSchema,
+    appliedRosterId: z.string().nullable(),
+    appliedRosterExceptionId: z.string().nullable(),
+    appliedRosterExceptionIds: z.array(z.string()),
+    appliedAt: z.number().int().nullable(),
+    adminDecisionNote: z.string().nullable(),
+    rejectionReason: z.string().nullable(),
+    cancellationReason: z.string().nullable(),
+    createdAt: z.number().int(),
+    updatedAt: z.number().int(),
+    approvedAt: z.number().int().nullable(),
+    rejectedAt: z.number().int().nullable(),
+    cancelledAt: z.number().int().nullable(),
+  })
+  .strict();
+
+const managerAvailabilityBatchDetailSchema = managerAvailabilityBatchListItemSchema
+  .extend({
+    lines: z.array(managerAvailabilityBatchLineSchema),
+  })
+  .strict();
+
+const managerAvailabilityBatchListResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(managerAvailabilityBatchListItemSchema),
+        nextCursor: z.string().trim().min(1).optional(),
+      })
+      .strict(),
+  })
+  .strict();
+
+const managerAvailabilityBatchDetailResponseSchema = z
+  .object({
+    data: managerAvailabilityBatchDetailSchema,
+  })
+  .strict();
+
+const managerAvailabilityTargetMembersSchema = z
+  .object({
+    target: z
+      .object({
+        targetType: z.enum(['ORG_UNIT', 'TALENT_GROUP']),
+        targetId: z.string().trim().min(1),
+        targetMode: z.literal('EXACT_ONLY'),
+        name: z.string().trim().min(1),
+        displayName: z.string().trim().min(1),
+        code: z.string().trim().min(1).optional(),
+      })
+      .strict(),
+    members: z.array(
+      z
+        .object({
+          employmentProfileId: z.string().trim().min(1),
+          displayName: z.string().trim().min(1),
+          employeeCode: z.string().trim().min(1).optional(),
+        })
+        .strict(),
+    ),
+    totalMembers: z.number().int().nonnegative(),
+  })
+  .strict();
+
+const managerAvailabilityTargetMembersResponseSchema = z
+  .object({
+    data: managerAvailabilityTargetMembersSchema,
+  })
+  .strict();
+
 export type ManagerWorkScheduleRequestType = z.infer<typeof requestTypeSchema>;
+export type ManagerWorkScheduleAvailabilityType = z.infer<typeof availabilityTypeSchema>;
+export type ManagerWorkScheduleAvailabilityTaxonomyCode = z.infer<
+  typeof availabilityTaxonomyCodeSchema
+>;
 export type ManagerRequestBatchListItem = z.infer<typeof managerRequestBatchListItemSchema>;
 export type ManagerRequestBatchDetail = z.infer<typeof managerRequestBatchDetailSchema>;
 export type ManagerRequestBatchLine = z.infer<typeof managerRequestBatchLineSchema>;
 export type ManagerRequestBatchList = z.infer<typeof managerRequestBatchListResponseSchema>['data'];
+export type ManagerAvailabilityBatchListItem = z.infer<
+  typeof managerAvailabilityBatchListItemSchema
+>;
+export type ManagerAvailabilityBatchDetail = z.infer<typeof managerAvailabilityBatchDetailSchema>;
+export type ManagerAvailabilityBatchLine = z.infer<typeof managerAvailabilityBatchLineSchema>;
+export type ManagerAvailabilityBatchList = z.infer<
+  typeof managerAvailabilityBatchListResponseSchema
+>['data'];
+export type ManagerAvailabilityTargetMembers = z.infer<
+  typeof managerAvailabilityTargetMembersSchema
+>;
 
 export type ManagerSubmitRequestBatchLinePayload = {
   requestType: ManagerWorkScheduleRequestType;
@@ -332,6 +505,30 @@ export type ManagerSubmitRequestBatchPayload = {
   clientToken: string;
   note?: string | null;
   lines: ManagerSubmitRequestBatchLinePayload[];
+};
+
+export type ManagerSubmitAvailabilityBatchLinePayload = {
+  memberEmploymentProfileId: string;
+  availabilityType: ManagerWorkScheduleAvailabilityType;
+  taxonomyCode: ManagerWorkScheduleAvailabilityTaxonomyCode;
+  availabilityDate?: string | null;
+  dateRangeStart?: string | null;
+  dateRangeEnd?: string | null;
+  preferredStartLocalTime?: string | null;
+  preferredEndLocalTime?: string | null;
+  reason: string;
+};
+
+export type ManagerSubmitAvailabilityBatchPayload = {
+  periodMonth: string;
+  targetType: 'ORG_UNIT' | 'TALENT_GROUP';
+  targetMode: 'EXACT_ONLY';
+  targetOrgUnitId?: string | null;
+  targetTalentGroupId?: string | null;
+  clientToken: string;
+  idempotencyKey?: string | null;
+  note?: string | null;
+  lines: ManagerSubmitAvailabilityBatchLinePayload[];
 };
 
 export type ManagerCancelRequestPayload = {
@@ -362,6 +559,46 @@ const sanitizeSubmitRequestBatchPayload = (
     ...(line.title !== undefined ? { title: sanitizeNullableText(line.title) } : {}),
     ...(line.description !== undefined ? { description: sanitizeNullableText(line.description) } : {}),
     ...(line.externalRef !== undefined ? { externalRef: sanitizeNullableText(line.externalRef) } : {}),
+    reason: line.reason.trim(),
+  })),
+});
+
+const sanitizeSubmitAvailabilityBatchPayload = (
+  payload: ManagerSubmitAvailabilityBatchPayload,
+): ManagerSubmitAvailabilityBatchPayload => ({
+  periodMonth: payload.periodMonth.trim(),
+  targetType: payload.targetType,
+  targetMode: 'EXACT_ONLY',
+  ...(payload.targetOrgUnitId !== undefined
+    ? { targetOrgUnitId: sanitizeNullableText(payload.targetOrgUnitId) }
+    : {}),
+  ...(payload.targetTalentGroupId !== undefined
+    ? { targetTalentGroupId: sanitizeNullableText(payload.targetTalentGroupId) }
+    : {}),
+  clientToken: payload.clientToken.trim(),
+  ...(payload.idempotencyKey !== undefined
+    ? { idempotencyKey: sanitizeNullableText(payload.idempotencyKey) }
+    : {}),
+  ...(payload.note !== undefined ? { note: sanitizeNullableText(payload.note) } : {}),
+  lines: payload.lines.map((line) => ({
+    memberEmploymentProfileId: line.memberEmploymentProfileId.trim(),
+    availabilityType: line.availabilityType,
+    taxonomyCode: line.taxonomyCode,
+    ...(line.availabilityDate !== undefined
+      ? { availabilityDate: sanitizeNullableText(line.availabilityDate) }
+      : {}),
+    ...(line.dateRangeStart !== undefined
+      ? { dateRangeStart: sanitizeNullableText(line.dateRangeStart) }
+      : {}),
+    ...(line.dateRangeEnd !== undefined
+      ? { dateRangeEnd: sanitizeNullableText(line.dateRangeEnd) }
+      : {}),
+    ...(line.preferredStartLocalTime !== undefined
+      ? { preferredStartLocalTime: sanitizeNullableText(line.preferredStartLocalTime) }
+      : {}),
+    ...(line.preferredEndLocalTime !== undefined
+      ? { preferredEndLocalTime: sanitizeNullableText(line.preferredEndLocalTime) }
+      : {}),
     reason: line.reason.trim(),
   })),
 });
@@ -432,6 +669,89 @@ export const cancelManagerRequestLine = async (
   return managerRequestBatchDetailResponseSchema.parse(response).data;
 };
 
+export const fetchManagerAvailabilityBatches = async (
+  query: { status?: string; periodMonth?: string } = {},
+): Promise<ManagerAvailabilityBatchList> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/manager-workspace/work-schedule/availability-batches',
+    params: Object.fromEntries(
+      Object.entries(query).filter(([, value]) => value !== undefined && value !== ''),
+    ),
+  });
+
+  return managerAvailabilityBatchListResponseSchema.parse(response).data;
+};
+
+export const fetchManagerAvailabilityTargetMembers = async (
+  targetType: 'ORG_UNIT' | 'TALENT_GROUP',
+  targetId: string,
+): Promise<ManagerAvailabilityTargetMembers> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/manager-workspace/work-schedule/availability-members',
+    params: { targetType, targetId },
+  });
+
+  return managerAvailabilityTargetMembersResponseSchema.parse(response).data;
+};
+
+export const fetchManagerAvailabilityBatchDetail = async (
+  batchId: string,
+): Promise<ManagerAvailabilityBatchDetail> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/manager-workspace/work-schedule/availability-batches/${encodeURIComponent(
+      batchId,
+    )}`,
+  });
+
+  return managerAvailabilityBatchDetailResponseSchema.parse(response).data;
+};
+
+export const submitManagerAvailabilityBatch = async (
+  payload: ManagerSubmitAvailabilityBatchPayload,
+): Promise<ManagerAvailabilityBatchDetail> => {
+  const response = await apiRequest<unknown, ManagerSubmitAvailabilityBatchPayload>({
+    method: 'POST',
+    url: '/admin/manager-workspace/work-schedule/availability-batches',
+    data: sanitizeSubmitAvailabilityBatchPayload(payload),
+  });
+
+  return managerAvailabilityBatchDetailResponseSchema.parse(response).data;
+};
+
+export const cancelManagerAvailabilityBatch = async (
+  batchId: string,
+  payload: ManagerCancelRequestPayload,
+): Promise<ManagerAvailabilityBatchDetail> => {
+  const response = await apiRequest<unknown, ManagerCancelRequestPayload>({
+    method: 'POST',
+    url: `/admin/manager-workspace/work-schedule/availability-batches/${encodeURIComponent(
+      batchId,
+    )}/cancel`,
+    data: { cancellationReason: payload.cancellationReason.trim() },
+  });
+
+  return managerAvailabilityBatchDetailResponseSchema.parse(response).data;
+};
+
+export const cancelManagerAvailabilityLine = async (
+  batchId: string,
+  lineId: string,
+  payload: ManagerCancelRequestPayload,
+): Promise<ManagerAvailabilityBatchDetail> => {
+  const response = await apiRequest<unknown, ManagerCancelRequestPayload>({
+    method: 'POST',
+    url: `/admin/manager-workspace/work-schedule/availability-batches/${encodeURIComponent(
+      batchId,
+    )}/lines/${encodeURIComponent(lineId)}/cancel`,
+    data: { cancellationReason: payload.cancellationReason.trim() },
+  });
+
+  return managerAvailabilityBatchDetailResponseSchema.parse(response).data;
+};
+
 export const useManagerRequestBatches = (
   query: { status?: string; periodMonth?: string },
   enabled: boolean,
@@ -451,8 +771,53 @@ export const useManagerRequestBatchDetail = (batchId: string | undefined, enable
     retry: false,
   });
 
+export const useManagerAvailabilityBatches = (
+  query: { status?: string; periodMonth?: string },
+  enabled: boolean,
+) =>
+  useQuery({
+    queryKey: [
+      ...MANAGER_AVAILABILITY_BATCHES_QUERY_KEY,
+      query.status ?? 'all',
+      query.periodMonth ?? 'all',
+    ],
+    queryFn: () => fetchManagerAvailabilityBatches(query),
+    enabled,
+    retry: false,
+  });
+
+export const useManagerAvailabilityTargetMembers = (
+  targetType: 'ORG_UNIT' | 'TALENT_GROUP' | undefined,
+  targetId: string | undefined,
+  enabled: boolean,
+) =>
+  useQuery({
+    queryKey: [
+      ...MANAGER_AVAILABILITY_MEMBERS_QUERY_KEY,
+      targetType ?? 'none',
+      targetId ?? 'none',
+    ],
+    queryFn: () => fetchManagerAvailabilityTargetMembers(targetType!, targetId!),
+    enabled: enabled && Boolean(targetType && targetId),
+    retry: false,
+  });
+
+export const useManagerAvailabilityBatchDetail = (batchId: string | undefined, enabled: boolean) =>
+  useQuery({
+    queryKey: [...MANAGER_AVAILABILITY_BATCHES_QUERY_KEY, 'detail', batchId ?? 'none'],
+    queryFn: () => fetchManagerAvailabilityBatchDetail(batchId ?? ''),
+    enabled: Boolean(batchId) && enabled,
+    retry: false,
+  });
+
 const invalidateManagerRequestBatches = async (queryClient: ReturnType<typeof useQueryClient>) => {
   await queryClient.invalidateQueries({ queryKey: MANAGER_REQUEST_BATCHES_QUERY_KEY });
+};
+
+const invalidateManagerAvailabilityBatches = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+) => {
+  await queryClient.invalidateQueries({ queryKey: MANAGER_AVAILABILITY_BATCHES_QUERY_KEY });
 };
 
 export const useSubmitManagerRequestBatchMutation = () => {
@@ -503,8 +868,71 @@ export const useCancelManagerRequestLineMutation = () => {
   });
 };
 
+export const useSubmitManagerAvailabilityBatchMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ payload }: { payload: ManagerSubmitAvailabilityBatchPayload }) =>
+      submitManagerAvailabilityBatch(payload),
+    onSuccess: async () => {
+      await invalidateManagerAvailabilityBatches(queryClient);
+    },
+  });
+};
+
+export const useCancelManagerAvailabilityBatchMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: ManagerCancelRequestPayload;
+    }) => cancelManagerAvailabilityBatch(batchId, payload),
+    onSuccess: async () => {
+      await invalidateManagerAvailabilityBatches(queryClient);
+    },
+  });
+};
+
+export const useCancelManagerAvailabilityLineMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      lineId,
+      payload,
+    }: {
+      batchId: string;
+      lineId: string;
+      payload: ManagerCancelRequestPayload;
+    }) => cancelManagerAvailabilityLine(batchId, lineId, payload),
+    onSuccess: async () => {
+      await invalidateManagerAvailabilityBatches(queryClient);
+    },
+  });
+};
+
 export const parseManagerWorkspaceContextForTest = (response: unknown): ManagerWorkspaceContext =>
   managerWorkspaceContextResponseSchema.parse(response).data;
 
 export const parseManagerWorkShiftListForTest = (response: unknown): ManagerWorkShiftList =>
   managerWorkShiftListResponseSchema.parse(response).data;
+
+export const parseManagerAvailabilityBatchListForTest = (
+  response: unknown,
+): ManagerAvailabilityBatchList => managerAvailabilityBatchListResponseSchema.parse(response).data;
+
+export const parseManagerAvailabilityTargetMembersForTest = (
+  response: unknown,
+): ManagerAvailabilityTargetMembers =>
+  managerAvailabilityTargetMembersResponseSchema.parse(response).data;
+
+export const parseManagerAvailabilityApplyStatusForTest = (value: unknown) =>
+  availabilityApplyStatusSchema.parse(value);
+
+export const parseManagerAvailabilityPolicyEvaluationStatusForTest = (value: unknown) =>
+  availabilityPolicyEvaluationStatusSchema.parse(value);

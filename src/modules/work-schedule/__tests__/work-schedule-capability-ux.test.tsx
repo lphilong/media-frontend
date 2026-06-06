@@ -270,6 +270,260 @@ describe('work schedule capability UX hints', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('renders Admin availability planning queue and applies selected approved lines', async () => {
+    const user = userEvent.setup();
+    let applyCalls = 0;
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'workSchedule.read',
+        'workSchedule.create',
+        'workSchedule.update',
+        'workSchedule.manageLifecycle',
+      ],
+      workScheduleScopes: ['global'],
+    });
+    server.use(
+      http.get('*/admin/work-schedule/rosters', () =>
+        HttpResponse.json({
+          data: [
+            {
+              monthlyRosterId: 'roster-draft',
+              rosterCode: 'ROSTER_DRAFT',
+              rosterMonth: '2026-05',
+              timezone: 'Asia/Ho_Chi_Minh',
+              targetSubjectKind: 'EMPLOYMENT_PROFILE',
+              targetOrgUnitMode: 'EXACT_ONLY',
+              targetType: 'ORG_UNIT',
+              targetMode: 'EXACT_ONLY',
+              targetOrgUnitId: 'ou-sales',
+              targetOrgUnitRef: {
+                id: 'ou-sales',
+                code: 'SALES',
+                name: 'Sales',
+                status: 'ACTIVE',
+              },
+              targetTalentGroupId: null,
+              targetTalentGroupRef: null,
+              targetRef: {
+                id: 'ou-sales',
+                code: 'SALES',
+                name: 'Sales',
+                status: 'ACTIVE',
+              },
+              departmentOrgUnitId: 'ou-sales',
+              departmentOrgUnitRef: {
+                id: 'ou-sales',
+                code: 'SALES',
+                name: 'Sales',
+                status: 'ACTIVE',
+              },
+              workPatternId: 'pattern-active',
+              workPatternRef: {
+                id: 'pattern-active',
+                code: 'PATTERN_ACTIVE',
+                name: 'Active operations',
+                status: 'ACTIVE',
+              },
+              holidayCalendarId: 'holiday-calendar-active',
+              holidayCalendarRef: {
+                id: 'holiday-calendar-active',
+                code: 'VN_ACTIVE',
+                name: 'Vietnam active calendar',
+                status: 'ACTIVE',
+              },
+              status: 'DRAFT',
+              draftVersion: 1,
+              exceptionCount: 1,
+              description: 'Draft roster',
+              externalRef: 'MR-DRAFT',
+              archivedAt: null,
+              createdAt: Date.parse('2026-04-20T00:00:00.000Z'),
+              updatedAt: Date.parse('2026-04-21T00:00:00.000Z'),
+            },
+          ],
+          meta: {},
+        }),
+      ),
+      http.post('*/admin/work-schedule/rosters/:monthlyRosterId/apply-availability-lines', async ({ request }) => {
+        applyCalls += 1;
+        const body = (await request.json()) as Record<string, unknown>;
+        expect(body).toMatchObject({
+          availabilityLineIds: ['admin-availability-line-approved'],
+          scope: 'global',
+        });
+        return HttpResponse.json({
+          data: {
+            monthlyRosterId: 'roster-draft',
+            rosterCode: 'ROSTER-202606-CONTENT',
+            rosterMonth: '2026-05',
+            status: 'DRAFT',
+            targetType: 'ORG_UNIT',
+            targetMode: 'EXACT_ONLY',
+            targetOrgUnitId: 'ou-sales',
+            targetTalentGroupId: null,
+            appliedCount: 1,
+            advisoryOnlyCount: 1,
+            skippedAlreadyAppliedCount: 1,
+            failedCount: 1,
+            results: [
+              {
+                availabilityLineId: 'admin-availability-line-approved',
+                outcome: 'APPLIED',
+                rosterExceptionId: 'roster-exception-created',
+                rosterExceptionIds: ['roster-exception-created'],
+                reason: 'Applied to draft roster exception',
+              },
+              {
+                availabilityLineId: 'admin-availability-line-advisory',
+                outcome: 'ADVISORY_ONLY',
+                rosterExceptionId: null,
+                rosterExceptionIds: [],
+                reason: 'Availability note is advisory only',
+              },
+              {
+                availabilityLineId: 'admin-availability-line-applied',
+                outcome: 'SKIPPED_ALREADY_APPLIED',
+                rosterExceptionId: 'roster-exception-001',
+                rosterExceptionIds: ['roster-exception-001'],
+                reason: 'Already applied',
+              },
+              {
+                availabilityLineId: 'missing-line',
+                outcome: 'FAILED',
+                rosterExceptionId: null,
+                rosterExceptionIds: [],
+                reason: 'Line not found',
+              },
+            ],
+          },
+        });
+      }),
+    );
+
+    renderRoute('/work-schedule/availability-batches');
+
+    expect(
+      await screen.findByRole('heading', {
+        name: i18n.t('work-schedule:availabilityBatches.page.title'),
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('AVB-202606-000100')).toBeInTheDocument();
+    expect((await screen.findAllByText('NOT_EVALUATED')).length).toBeGreaterThan(0);
+
+    const approvedRow = (
+      await screen.findByText(
+        i18n.t('work-schedule:availabilityBatches.types.PREFERRED_TIME'),
+      )
+    ).closest('tr');
+    expect(approvedRow).not.toBeNull();
+    if (!approvedRow) {
+      return;
+    }
+    await user.click(within(approvedRow).getAllByRole('checkbox')[1]);
+    expect(await screen.findByRole('option', { name: /ROSTER_DRAFT/ })).toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('work-schedule:availabilityBatches.apply.roster')),
+      'roster-draft',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:availabilityBatches.actions.apply'),
+      }),
+    );
+
+    await waitFor(() => expect(applyCalls).toBe(1));
+    expect(await screen.findByText(/admin-availability-line-approved: APPLIED/)).toBeInTheDocument();
+    expect(screen.getByText(/admin-availability-line-advisory: ADVISORY_ONLY/)).toBeInTheDocument();
+    expect(screen.getByText(/admin-availability-line-applied: SKIPPED_ALREADY_APPLIED/)).toBeInTheDocument();
+    expect(screen.getByText('missing-line: FAILED - Line not found')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['approve', 'approve-lines', 'approve', false],
+    ['reject', 'reject-lines', 'reject', true],
+    ['cancel', 'cancel-lines', 'cancel', true],
+  ] as const)(
+    'calls the Admin availability %s selected-line endpoint with required reason handling',
+    async (_action, endpoint, actionKey, requiresReason) => {
+      const user = userEvent.setup();
+      let endpointCalls = 0;
+      server.use(
+        http.post(`*/admin/work-schedule/availability-batches/:batchId/${endpoint}`, async ({ request }) => {
+          endpointCalls += 1;
+          const body = (await request.clone().json()) as Record<string, unknown>;
+          expect(body.lineIds).toEqual(['admin-availability-line-pending']);
+          if (actionKey === 'reject') {
+            expect(body.rejectionReason).toBe('Admin decision reason');
+          }
+          if (actionKey === 'cancel') {
+            expect(body.cancellationReason).toBe('Admin decision reason');
+          }
+          return undefined;
+        }),
+      );
+      mockCapabilities({
+        id: 'production-ops-user-1',
+        roles: ['PRODUCTION_OPS'],
+        permissions: [
+          'workSchedule.read',
+          'workSchedule.create',
+          'workSchedule.update',
+          'workSchedule.manageLifecycle',
+        ],
+        workScheduleScopes: ['global'],
+      });
+
+      renderRoute('/work-schedule/availability-batches');
+      expect(await screen.findByText('AVB-202606-000100')).toBeInTheDocument();
+      expect((await screen.findAllByText('NOT_EVALUATED')).length).toBeGreaterThan(0);
+      const reviewCheckbox = screen
+        .getAllByRole('checkbox')
+        .find((checkbox) => !checkbox.hasAttribute('disabled'));
+      expect(reviewCheckbox).toBeDefined();
+      if (!reviewCheckbox) {
+        return;
+      }
+      await user.click(reviewCheckbox);
+      const actionButton = screen.getByRole('button', {
+        name: i18n.t(`work-schedule:availabilityBatches.actions.${actionKey}`),
+      });
+
+      if (requiresReason) {
+        await user.click(actionButton);
+        expect(
+          await screen.findByText(i18n.t('work-schedule:availabilityBatches.validation.reasonRequired')),
+        ).toBeInTheDocument();
+        expect(endpointCalls).toBe(0);
+        await user.type(
+          screen.getByLabelText(i18n.t('work-schedule:availabilityBatches.review.reason')),
+          'Admin decision reason',
+        );
+      }
+
+      await user.click(actionButton);
+      await waitFor(() => expect(endpointCalls).toBe(1));
+    },
+  );
+
+  it('shows availability-sourced monthly roster exceptions', async () => {
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: ['workSchedule.read', 'workSchedule.update'],
+      workScheduleScopes: ['global'],
+    });
+
+    renderRoute('/work-schedule/rosters/roster-draft');
+
+    expect(
+      await screen.findByText(i18n.t('work-schedule:monthlyRosters.appliedAvailability.title')),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('admin-availability-line-applied')).toBeInTheDocument();
+    expect(screen.getByText(/UNAVAILABLE_FULL_DAY/)).toBeInTheDocument();
+  });
+
   it('requires Admin reject and cancel reasons before calling selected-line decision endpoints', async () => {
     const user = userEvent.setup();
     let rejectCalls = 0;

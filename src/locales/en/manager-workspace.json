@@ -136,7 +136,8 @@
     "scopeBadge": "Manager WorkSchedule scope",
     "tabs": {
       "published": "Published shifts",
-      "requests": "Requests"
+      "requests": "Requests",
+      "availability": "Availability"
     },
     "month": "Month",
     "shiftsShown": "Active shifts shown",
@@ -152,6 +153,81 @@
     "sourceTypes": {
       "MANUAL": "Manual exception",
       "ROSTER_GENERATED": "Monthly roster"
+    }
+  },
+  "availability": {
+    "copy": {
+      "planning": "Availability is a pre-roster planning signal for Admin/Ops.",
+      "noAttendance": "It is not attendance, payroll, paid leave, or unpaid leave evidence.",
+      "noAutoApply": "Approved lines are not auto-applied. Admin/Ops must apply them to a Draft Monthly Roster.",
+      "otherAdvisory": "Other availability notes are advisory only."
+    },
+    "fields": {
+      "periodMonth": "Target month",
+      "target": "Roster target",
+      "note": "Batch note",
+      "member": "Managed member",
+      "availabilityType": "Availability type",
+      "taxonomyCode": "Manager taxonomy",
+      "reason": "Reason",
+      "dateRangeStart": "Start date",
+      "dateRangeEnd": "End date",
+      "preferredStart": "Preferred start",
+      "preferredEnd": "Preferred end",
+      "cancelReason": "Cancellation reason"
+    },
+    "types": {
+      "UNAVAILABLE_FULL_DAY": "Unavailable full day",
+      "PREFERRED_TIME": "Preferred time",
+      "OTHER_AVAILABILITY_NOTE": "Other availability note"
+    },
+    "taxonomy": {
+      "SICK_LEAVE": "Sick leave",
+      "AUTHORIZED_LEAVE": "Authorized leave",
+      "SHIFT_CHANGE": "Shift change",
+      "OTHER": "Other"
+    },
+    "actions": {
+      "addLine": "Add availability line",
+      "removeLine": "Remove",
+      "submit": "Submit availability batch",
+      "cancelBatch": "Cancel pending batch",
+      "cancelLine": "Cancel pending line"
+    },
+    "lineTitle": "Availability line {{index}}",
+    "batches": {
+      "title": "My availability batches",
+      "lines": "line(s)",
+      "planningAttention": "Planning attention"
+    },
+    "table": {
+      "member": "Member",
+      "type": "Type",
+      "date": "Date",
+      "status": "Status",
+      "applyStatus": "Apply status",
+      "policy": "Policy evaluation",
+      "actions": "Actions"
+    },
+    "validation": {
+      "maxLines": "Add at least one managed member and keep the batch within 50 lines.",
+      "targetRequired": "Choose a roster target.",
+      "lineRequired": "Add at least one availability line.",
+      "memberRequired": "Choose a managed member.",
+      "reasonRequired": "Reason is required.",
+      "dateRequired": "Start and end date are required.",
+      "dateOrder": "End date must be the same as or after start date.",
+      "preferredTime": "Preferred time lines need a valid start and end time.",
+      "cancelReasonRequired": "Cancellation reason is required.",
+      "memberTargetMismatch": "Every availability line must use a member from the selected exact target."
+    },
+    "states": {
+      "loading": "Loading availability batches...",
+      "emptyBatches": "No availability batches for this month.",
+      "selectBatch": "Select an availability batch.",
+      "emptyMembersMessage": "No eligible managed members were returned for the selected exact target.",
+      "loadingMembers": "Loading eligible members for the selected target...",
+      "memberLoadError": "Eligible members could not be loaded. Availability submission is blocked."
     }
   },
   "requests": {

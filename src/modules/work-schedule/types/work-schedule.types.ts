@@ -50,6 +50,33 @@ export type WorkScheduleRequestLineStatus =
   | 'REJECTED'
   | 'CANCELLED'
   | 'FAILED_TO_APPLY';
+export type WorkScheduleAvailabilityBatchStatus =
+  | 'PENDING'
+  | 'PARTIALLY_APPROVED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED';
+export type WorkScheduleAvailabilityLineStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED';
+export type WorkScheduleAvailabilityType =
+  | 'UNAVAILABLE_FULL_DAY'
+  | 'PREFERRED_TIME'
+  | 'OTHER_AVAILABILITY_NOTE';
+export type WorkScheduleAvailabilityTaxonomyCode =
+  | 'SICK_LEAVE'
+  | 'AUTHORIZED_LEAVE'
+  | 'SHIFT_CHANGE'
+  | 'OTHER';
+export type WorkScheduleAvailabilityApplyStatus = 'NOT_APPLIED' | 'ADVISORY_ONLY' | 'APPLIED';
+export type WorkScheduleAvailabilityPolicyEvaluationStatus = 'NOT_EVALUATED';
+export type WorkScheduleAvailabilityApplyOutcome =
+  | 'APPLIED'
+  | 'ADVISORY_ONLY'
+  | 'SKIPPED_ALREADY_APPLIED'
+  | 'FAILED';
 
 export const ROSTER_EXCEPTION_TYPES: readonly RosterExceptionType[] = [
   'WORKING_TO_OFF',
@@ -355,6 +382,138 @@ export type WorkScheduleRequestBatchLineDecisionPayload = {
   cancellationReason?: string | null;
 };
 
+export type WorkScheduleAvailabilityLineCounts = {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  cancelled: number;
+};
+
+export type WorkScheduleAvailabilitySafeEmploymentRef = {
+  employmentProfileId: string;
+  displayName: string;
+  employeeCode?: string;
+  status?: string;
+};
+
+export type WorkScheduleAvailabilityTargetSummary = {
+  id: string;
+  code?: string;
+  name?: string;
+  displayName?: string;
+  status?: string;
+} | null;
+
+export type WorkScheduleAvailabilityBatchListItem = {
+  id: string;
+  availabilityBatchCode: string;
+  status: WorkScheduleAvailabilityBatchStatus;
+  periodMonth: string;
+  targetType: MonthlyRosterTargetType;
+  targetMode: MonthlyRosterTargetMode;
+  targetOrgUnitId: string | null;
+  targetTalentGroupId: string | null;
+  target?: WorkScheduleAvailabilityTargetSummary;
+  submitter?: WorkScheduleAvailabilitySafeEmploymentRef;
+  note: string | null;
+  lineCounts: WorkScheduleAvailabilityLineCounts;
+  clientToken: string;
+  submittedAt: number | string;
+  cancelledAt: number | string | null;
+  resolvedAt: number | string | null;
+  createdAt: number | string;
+  updatedAt: number | string;
+};
+
+export type WorkScheduleAvailabilityLine = {
+  id: string;
+  batchId?: string;
+  lineNo: number;
+  member: WorkScheduleAvailabilitySafeEmploymentRef;
+  availabilityType: WorkScheduleAvailabilityType;
+  taxonomyCode: WorkScheduleAvailabilityTaxonomyCode;
+  availabilityDate: string | null;
+  dateRangeStart: string | null;
+  dateRangeEnd: string | null;
+  preferredStartLocalTime: string | null;
+  preferredEndLocalTime: string | null;
+  reason: string;
+  status: WorkScheduleAvailabilityLineStatus;
+  applyStatus: WorkScheduleAvailabilityApplyStatus;
+  policyEvaluationStatus: WorkScheduleAvailabilityPolicyEvaluationStatus;
+  appliedRosterId: string | null;
+  appliedRosterExceptionId: string | null;
+  appliedRosterExceptionIds: string[];
+  appliedAt: number | string | null;
+  adminDecisionNote: string | null;
+  rejectionReason: string | null;
+  cancellationReason: string | null;
+  createdAt: number | string;
+  updatedAt: number | string;
+  approvedAt: number | string | null;
+  rejectedAt: number | string | null;
+  cancelledAt: number | string | null;
+};
+
+export type WorkScheduleAvailabilityBatchDetail = WorkScheduleAvailabilityBatchListItem & {
+  lines: WorkScheduleAvailabilityLine[];
+};
+
+export type WorkScheduleAvailabilityBatchListQuery = {
+  status?: WorkScheduleAvailabilityBatchStatus;
+  periodMonth?: string;
+  targetType?: MonthlyRosterTargetType;
+  targetOrgUnitId?: string;
+  targetTalentGroupId?: string;
+  submittedByEmploymentProfileId?: string;
+  limit?: number;
+  cursor?: string;
+};
+
+export type WorkScheduleAvailabilityBatchList = {
+  items: WorkScheduleAvailabilityBatchListItem[];
+  nextCursor?: string;
+};
+
+export type WorkScheduleAvailabilityLineDecisionPayload = {
+  lineIds: string[];
+  adminDecisionNote?: string | null;
+  rejectionReason?: string | null;
+  cancellationReason?: string | null;
+};
+
+export type ApplyAvailabilityLinesToMonthlyRosterPayload = {
+  availabilityLineIds: string[];
+  applyNote?: string | null;
+  note?: string | null;
+  scope?: MonthlyRosterScope;
+};
+
+export type ApplyAvailabilityLineResult = {
+  availabilityLineId: string;
+  outcome: WorkScheduleAvailabilityApplyOutcome;
+  rosterExceptionId: string | null;
+  rosterExceptionIds: string[];
+  reason: string | null;
+};
+
+export type ApplyAvailabilityLinesToMonthlyRosterResult = {
+  monthlyRosterId: string;
+  rosterCode: string;
+  rosterMonth: string;
+  status: MonthlyRosterStatus;
+  targetType: MonthlyRosterTargetType | string;
+  targetMode: MonthlyRosterTargetMode | string;
+  targetOrgUnitId: string | null;
+  targetTalentGroupId: string | null;
+  appliedCount: number;
+  advisoryOnlyCount: number;
+  skippedAlreadyAppliedCount: number;
+  failedCount: number;
+  results: ApplyAvailabilityLineResult[];
+};
+
 export type CursorPagedResponse<TData> = {
   data: TData[];
   meta?: {
@@ -490,6 +649,12 @@ export type RosterExceptionRecord = {
   studioResourceRefs?: ReferenceSummary[];
   reason?: string | null;
   sourceNote?: string | null;
+  sourceAvailabilityBatchId?: string | null;
+  sourceAvailabilityLineId?: string | null;
+  sourceAvailabilityType?: WorkScheduleAvailabilityType | null;
+  sourceAvailabilityTaxonomyCode?: WorkScheduleAvailabilityTaxonomyCode | null;
+  sourceAppliedAt?: number | string | null;
+  sourceApplyNote?: string | null;
   description?: string | null;
   externalRef?: string | null;
   removedAt?: number | string | null;

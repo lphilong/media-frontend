@@ -233,4 +233,28 @@ describe('route and sidebar permission model', () => {
     expect(screen.queryByTestId('nav-link-talents')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-kpi')).not.toBeInTheDocument();
   });
+
+  it.each([
+    [
+      'manager-only actor',
+      makeCapabilities({
+        roles: ['TEAM_MANAGER'],
+        permissions: ['workSchedule.read'],
+        scopeGrants: { workSchedule: ['self', 'team'] },
+      }),
+    ],
+    [
+      'self-service-only actor',
+      makeCapabilities({
+        roles: ['TALENT_STAFF_SELF'],
+        permissions: ['workSchedule.read'],
+        scopeGrants: { workSchedule: ['self'] },
+      }),
+    ],
+  ])('denies the raw Admin availability queue to a %s', async (_name, capabilities) => {
+    await renderRoute('/work-schedule/availability-batches', capabilities);
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-work-shifts')).not.toBeInTheDocument();
+  });
 });

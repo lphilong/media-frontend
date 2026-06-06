@@ -136,7 +136,8 @@
     "scopeBadge": "Pham vi WorkSchedule quan ly",
     "tabs": {
       "published": "Ca da cong bo",
-      "requests": "Yeu cau"
+      "requests": "Yeu cau",
+      "availability": "Kha dung"
     },
     "month": "Thang",
     "shiftsShown": "Ca dang hien thi",
@@ -152,6 +153,81 @@
     "sourceTypes": {
       "MANUAL": "Ngoai le thu cong",
       "ROSTER_GENERATED": "Roster hang thang"
+    }
+  },
+  "availability": {
+    "copy": {
+      "planning": "Kha dung la tin hieu lap ke hoach truoc roster cho Admin/Ops.",
+      "noAttendance": "Day khong phai du lieu cham cong, luong, nghi co luong, hay nghi khong luong.",
+      "noAutoApply": "Dong da duyet khong tu dong ap dung. Admin/Ops phai ap dung vao Monthly Roster dang nhap.",
+      "otherAdvisory": "Ghi chu kha dung khac chi mang tinh tham khao."
+    },
+    "fields": {
+      "periodMonth": "Thang muc tieu",
+      "target": "Doi tuong roster",
+      "note": "Ghi chu batch",
+      "member": "Thanh vien quan ly",
+      "availabilityType": "Loai kha dung",
+      "taxonomyCode": "Phan loai quan ly",
+      "reason": "Ly do",
+      "dateRangeStart": "Ngay bat dau",
+      "dateRangeEnd": "Ngay ket thuc",
+      "preferredStart": "Gio bat dau mong muon",
+      "preferredEnd": "Gio ket thuc mong muon",
+      "cancelReason": "Ly do huy"
+    },
+    "types": {
+      "UNAVAILABLE_FULL_DAY": "Khong kha dung ca ngay",
+      "PREFERRED_TIME": "Gio mong muon",
+      "OTHER_AVAILABILITY_NOTE": "Ghi chu kha dung khac"
+    },
+    "taxonomy": {
+      "SICK_LEAVE": "Nghi om",
+      "AUTHORIZED_LEAVE": "Nghi duoc phep",
+      "SHIFT_CHANGE": "Doi ca",
+      "OTHER": "Khac"
+    },
+    "actions": {
+      "addLine": "Them dong kha dung",
+      "removeLine": "Xoa",
+      "submit": "Gui batch kha dung",
+      "cancelBatch": "Huy batch dang cho",
+      "cancelLine": "Huy dong dang cho"
+    },
+    "lineTitle": "Dong kha dung {{index}}",
+    "batches": {
+      "title": "Batch kha dung cua toi",
+      "lines": "dong",
+      "planningAttention": "Can chu y lap ke hoach"
+    },
+    "table": {
+      "member": "Thanh vien",
+      "type": "Loai",
+      "date": "Ngay",
+      "status": "Trang thai",
+      "applyStatus": "Trang thai ap dung",
+      "policy": "Danh gia chinh sach",
+      "actions": "Thao tac"
+    },
+    "validation": {
+      "maxLines": "Them it nhat mot thanh vien quan ly va giu batch trong 50 dong.",
+      "targetRequired": "Chon doi tuong roster.",
+      "lineRequired": "Them it nhat mot dong kha dung.",
+      "memberRequired": "Chon thanh vien quan ly.",
+      "reasonRequired": "Can nhap ly do.",
+      "dateRequired": "Can ngay bat dau va ngay ket thuc.",
+      "dateOrder": "Ngay ket thuc phai bang hoac sau ngay bat dau.",
+      "preferredTime": "Dong gio mong muon can gio bat dau va ket thuc hop le.",
+      "cancelReasonRequired": "Can ly do huy.",
+      "memberTargetMismatch": "Moi dong kha dung phai dung thanh vien thuoc dung muc tieu da chon."
+    },
+    "states": {
+      "loading": "Dang tai batch kha dung...",
+      "emptyBatches": "Khong co batch kha dung trong thang nay.",
+      "selectBatch": "Chon mot batch kha dung.",
+      "emptyMembersMessage": "Khong co thanh vien du dieu kien trong dung muc tieu da chon.",
+      "loadingMembers": "Dang tai thanh vien du dieu kien cho muc tieu da chon...",
+      "memberLoadError": "Khong the tai thanh vien du dieu kien. Gui kha dung da bi chan."
     }
   },
   "requests": {

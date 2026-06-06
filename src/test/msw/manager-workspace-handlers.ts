@@ -1,6 +1,9 @@
 import { http, HttpResponse } from 'msw';
 
 import type {
+  ManagerAvailabilityBatchDetail,
+  ManagerAvailabilityBatchListItem,
+  ManagerAvailabilityTargetMembers,
   ManagerRequestBatchDetail,
   ManagerRequestBatchListItem,
   ManagerWorkspaceContext,
@@ -269,15 +272,65 @@ const defaultManagerWorkShifts = (): ManagerWorkShiftList => ({
   },
 });
 
+const defaultManagerAvailabilityTargets = (): ManagerAvailabilityTargetMembers[] => [
+  {
+    target: {
+      targetType: 'ORG_UNIT',
+      targetId: 'org-unit-001',
+      targetMode: 'EXACT_ONLY',
+      code: 'OU-PROD',
+      name: 'Production Unit',
+      displayName: 'Production Unit',
+    },
+    members: [
+      {
+        employmentProfileId: 'ep-content-1',
+        displayName: 'Content Member One',
+        employeeCode: 'EP-CONTENT-1',
+      },
+    ],
+    totalMembers: 1,
+  },
+  {
+    target: {
+      targetType: 'TALENT_GROUP',
+      targetId: 'group-001',
+      targetMode: 'EXACT_ONLY',
+      code: 'TG-CREATOR',
+      name: 'Creator Group',
+      displayName: 'Creator Group',
+    },
+    members: [
+      {
+        employmentProfileId: 'ep-creator-1',
+        displayName: 'Creator Member One',
+        employeeCode: 'EP-CREATOR-1',
+      },
+    ],
+    totalMembers: 1,
+  },
+];
+
 let managerWorkspaceContext = managerWorkspaceDualContext();
 let managerWorkShifts = defaultManagerWorkShifts();
+let managerAvailabilityTargets = defaultManagerAvailabilityTargets();
 let managerRequestBatchSeed = 1;
 let managerRequestBatches: ManagerRequestBatchDetail[] = [];
+let managerAvailabilityBatchSeed = 1;
+let managerAvailabilityBatches: ManagerAvailabilityBatchDetail[] = [];
 
 const managerBatchToListItem = (batch: ManagerRequestBatchDetail): ManagerRequestBatchListItem => {
   const item: Partial<ManagerRequestBatchDetail> = { ...batch };
   delete item.lines;
   return item as ManagerRequestBatchListItem;
+};
+
+const managerAvailabilityBatchToListItem = (
+  batch: ManagerAvailabilityBatchDetail,
+): ManagerAvailabilityBatchListItem => {
+  const item: Partial<ManagerAvailabilityBatchDetail> = { ...batch };
+  delete item.lines;
+  return item as ManagerAvailabilityBatchListItem;
 };
 
 const recalculateLineCounts = (batch: ManagerRequestBatchDetail) => {
@@ -300,6 +353,25 @@ const recalculateLineCounts = (batch: ManagerRequestBatchDetail) => {
         : resolved ?? (counts.cancelled === counts.total ? 'CANCELLED' : batch.status),
     updatedAt: Date.now(),
   } satisfies ManagerRequestBatchDetail;
+};
+
+const recalculateAvailabilityLineCounts = (
+  batch: ManagerAvailabilityBatchDetail,
+): ManagerAvailabilityBatchDetail => {
+  const pending = batch.lines.filter((line) => line.status === 'PENDING').length;
+  const approved = batch.lines.filter((line) => line.status === 'APPROVED').length;
+  const rejected = batch.lines.filter((line) => line.status === 'REJECTED').length;
+  const cancelled = batch.lines.filter((line) => line.status === 'CANCELLED').length;
+  return {
+    ...batch,
+    lineCounts: {
+      total: batch.lines.length,
+      pending,
+      approved,
+      rejected,
+      cancelled,
+    },
+  };
 };
 
 const seedManagerRequestBatches = (): ManagerRequestBatchDetail[] => [
@@ -386,11 +458,113 @@ const seedManagerRequestBatches = (): ManagerRequestBatchDetail[] => [
   },
 ];
 
+const seedManagerAvailabilityBatches = (): ManagerAvailabilityBatchDetail[] => {
+  const now = Date.now();
+  const firstMember = managerAvailabilityTargets[0].members[0];
+  const secondMember = managerAvailabilityTargets[1].members[0];
+
+  return [
+    {
+      id: 'manager-availability-batch-1',
+      availabilityBatchCode: 'AVB-000001',
+      status: 'PENDING',
+      periodMonth: '2026-06',
+      targetType: 'ORG_UNIT',
+      targetMode: 'EXACT_ONLY',
+      targetOrgUnitId: 'org-content',
+      targetTalentGroupId: null,
+      target: {
+        id: 'org-content',
+        code: 'CONTENT',
+        name: 'Content Ops',
+        displayName: 'Content Ops',
+      },
+      note: 'June roster planning',
+      lineCounts: {
+        total: 2,
+        pending: 1,
+        approved: 1,
+        rejected: 0,
+        cancelled: 0,
+      },
+      clientToken: 'manager-availability-token-1',
+      submittedAt: now - 1000,
+      cancelledAt: null,
+      resolvedAt: null,
+      createdAt: now - 1000,
+      updatedAt: now - 1000,
+      lines: [
+        {
+          id: 'manager-availability-line-1',
+          batchId: 'manager-availability-batch-1',
+          lineNo: 1,
+          member: firstMember,
+          availabilityType: 'UNAVAILABLE_FULL_DAY',
+          taxonomyCode: 'AUTHORIZED_LEAVE',
+          availabilityDate: '2026-06-12',
+          dateRangeStart: '2026-06-12',
+          dateRangeEnd: '2026-06-12',
+          preferredStartLocalTime: null,
+          preferredEndLocalTime: null,
+          reason: 'Family appointment before roster publish',
+          status: 'PENDING',
+          applyStatus: 'NOT_APPLIED',
+          policyEvaluationStatus: 'NOT_EVALUATED',
+          appliedRosterId: null,
+          appliedRosterExceptionId: null,
+          appliedRosterExceptionIds: [],
+          appliedAt: null,
+          adminDecisionNote: null,
+          rejectionReason: null,
+          cancellationReason: null,
+          createdAt: now - 1000,
+          updatedAt: now - 1000,
+          approvedAt: null,
+          rejectedAt: null,
+          cancelledAt: null,
+        },
+        {
+          id: 'manager-availability-line-2',
+          batchId: 'manager-availability-batch-1',
+          lineNo: 2,
+          member: secondMember,
+          availabilityType: 'OTHER_AVAILABILITY_NOTE',
+          taxonomyCode: 'OTHER',
+          availabilityDate: '2026-06-18',
+          dateRangeStart: '2026-06-18',
+          dateRangeEnd: '2026-06-18',
+          preferredStartLocalTime: null,
+          preferredEndLocalTime: null,
+          reason: 'Prefers lighter assignment due to training day',
+          status: 'APPROVED',
+          applyStatus: 'ADVISORY_ONLY',
+          policyEvaluationStatus: 'NOT_EVALUATED',
+          appliedRosterId: null,
+          appliedRosterExceptionId: null,
+          appliedRosterExceptionIds: [],
+          appliedAt: null,
+          adminDecisionNote: 'Advisory note accepted',
+          rejectionReason: null,
+          cancellationReason: null,
+          createdAt: now - 900,
+          updatedAt: now - 900,
+          approvedAt: now - 800,
+          rejectedAt: null,
+          cancelledAt: null,
+        },
+      ],
+    },
+  ];
+};
+
 export const resetManagerWorkspaceMockData = (): void => {
   managerWorkspaceContext = managerWorkspaceDualContext();
   managerWorkShifts = defaultManagerWorkShifts();
+  managerAvailabilityTargets = defaultManagerAvailabilityTargets();
   managerRequestBatchSeed = 1;
   managerRequestBatches = seedManagerRequestBatches();
+  managerAvailabilityBatchSeed = 1;
+  managerAvailabilityBatches = seedManagerAvailabilityBatches();
 };
 
 export const setMockManagerWorkShifts = (value: ManagerWorkShiftList): void => {
@@ -419,6 +593,200 @@ export const managerWorkspaceHandlers = [
   http.get('*/admin/manager-workspace/work-schedule/work-shifts', () =>
     HttpResponse.json({ data: managerWorkShifts }),
   ),
+  http.get('*/admin/manager-workspace/work-schedule/availability-members', ({ request }) => {
+    const url = new URL(request.url);
+    const targetType = url.searchParams.get('targetType');
+    const targetId = url.searchParams.get('targetId');
+    if (
+      (targetType !== 'ORG_UNIT' && targetType !== 'TALENT_GROUP') ||
+      !targetId
+    ) {
+      return HttpResponse.json({ message: 'invalid target' }, { status: 422 });
+    }
+    const data = managerAvailabilityTargets.find(
+      (target) => target.target.targetType === targetType && target.target.targetId === targetId,
+    );
+    if (!data) {
+      return HttpResponse.json({ message: 'target has no eligible availability members' }, { status: 422 });
+    }
+    return HttpResponse.json({ data });
+  }),
+  http.get('*/admin/manager-workspace/work-schedule/availability-batches', ({ request }) => {
+    const url = new URL(request.url);
+    const periodMonth = url.searchParams.get('periodMonth');
+    const status = url.searchParams.get('status');
+    const items = managerAvailabilityBatches
+      .filter((batch) => !periodMonth || batch.periodMonth === periodMonth)
+      .filter((batch) => !status || batch.status === status)
+      .map(managerAvailabilityBatchToListItem);
+    return HttpResponse.json({ data: { items } });
+  }),
+  http.get('*/admin/manager-workspace/work-schedule/availability-batches/:batchId', ({ params }) => {
+    const batch = managerAvailabilityBatches.find((item) => item.id === String(params.batchId));
+    if (!batch) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    return HttpResponse.json({ data: batch });
+  }),
+  http.post('*/admin/manager-workspace/work-schedule/availability-batches', async ({ request }) => {
+    const body = (await request.json()) as {
+      periodMonth?: string;
+      targetType?: 'ORG_UNIT' | 'TALENT_GROUP';
+      targetMode?: 'EXACT_ONLY';
+      targetOrgUnitId?: string | null;
+      targetTalentGroupId?: string | null;
+      clientToken?: string;
+      note?: string | null;
+      lines?: Array<Record<string, unknown>>;
+    };
+    if (!Array.isArray(body.lines) || body.lines.length === 0 || body.lines.length > 50) {
+      return HttpResponse.json({ message: 'lines must contain at most 50 lines' }, { status: 422 });
+    }
+    const missingReason = body.lines.some(
+      (line) => typeof line.reason !== 'string' || line.reason.trim().length === 0,
+    );
+    if (missingReason) {
+      return HttpResponse.json({ message: 'reason is required' }, { status: 422 });
+    }
+    const targetId =
+      body.targetType === 'TALENT_GROUP' ? body.targetTalentGroupId : body.targetOrgUnitId;
+    const availabilityTarget = managerAvailabilityTargets.find(
+      (target) =>
+        target.target.targetType === body.targetType && target.target.targetId === targetId,
+    );
+    const membersById = new Map(
+      availabilityTarget?.members.map((member) => [member.employmentProfileId, member]) ?? [],
+    );
+    if (
+      !availabilityTarget ||
+      body.lines.some((line) => !membersById.has(String(line.memberEmploymentProfileId)))
+    ) {
+      return HttpResponse.json(
+        { message: 'availability member is not eligible for the selected exact target' },
+        { status: 422 },
+      );
+    }
+    managerAvailabilityBatchSeed += 1;
+    const now = Date.now();
+    const batchId = `manager-availability-batch-${managerAvailabilityBatchSeed}`;
+    const batch: ManagerAvailabilityBatchDetail = {
+      id: batchId,
+      availabilityBatchCode: `AVB-${String(managerAvailabilityBatchSeed).padStart(6, '0')}`,
+      status: 'PENDING',
+      periodMonth: body.periodMonth ?? '2026-06',
+      targetType: body.targetType ?? 'ORG_UNIT',
+      targetMode: 'EXACT_ONLY',
+      targetOrgUnitId: body.targetOrgUnitId ?? 'org-content',
+      targetTalentGroupId: body.targetTalentGroupId ?? null,
+      target: {
+        id: availabilityTarget.target.targetId,
+        code: availabilityTarget.target.code,
+        name: availabilityTarget.target.name,
+        displayName: availabilityTarget.target.displayName,
+      },
+      note: body.note ?? null,
+      lineCounts: {
+        total: body.lines.length,
+        pending: body.lines.length,
+        approved: 0,
+        rejected: 0,
+        cancelled: 0,
+      },
+      clientToken: body.clientToken ?? `manager-availability-token-${managerAvailabilityBatchSeed}`,
+      submittedAt: now,
+      cancelledAt: null,
+      resolvedAt: null,
+      createdAt: now,
+      updatedAt: now,
+      lines: body.lines.map((line, index) => {
+        const memberId = String(line.memberEmploymentProfileId);
+        const member = membersById.get(memberId)!;
+        return {
+          id: `${batchId}-line-${index + 1}`,
+          batchId,
+          lineNo: index + 1,
+          member,
+          availabilityType: line.availabilityType as ManagerAvailabilityBatchDetail['lines'][number]['availabilityType'],
+          taxonomyCode: line.taxonomyCode as ManagerAvailabilityBatchDetail['lines'][number]['taxonomyCode'],
+          availabilityDate: typeof line.availabilityDate === 'string' ? line.availabilityDate : null,
+          dateRangeStart: typeof line.dateRangeStart === 'string' ? line.dateRangeStart : null,
+          dateRangeEnd: typeof line.dateRangeEnd === 'string' ? line.dateRangeEnd : null,
+          preferredStartLocalTime:
+            typeof line.preferredStartLocalTime === 'string' ? line.preferredStartLocalTime : null,
+          preferredEndLocalTime:
+            typeof line.preferredEndLocalTime === 'string' ? line.preferredEndLocalTime : null,
+          reason: String(line.reason),
+          status: 'PENDING',
+          applyStatus: 'NOT_APPLIED',
+          policyEvaluationStatus: 'NOT_EVALUATED',
+          appliedRosterId: null,
+          appliedRosterExceptionId: null,
+          appliedRosterExceptionIds: [],
+          appliedAt: null,
+          adminDecisionNote: null,
+          rejectionReason: null,
+          cancellationReason: null,
+          createdAt: now,
+          updatedAt: now,
+          approvedAt: null,
+          rejectedAt: null,
+          cancelledAt: null,
+        };
+      }),
+    };
+    managerAvailabilityBatches.unshift(batch);
+    return HttpResponse.json({ data: batch });
+  }),
+  http.post('*/admin/manager-workspace/work-schedule/availability-batches/:batchId/cancel', async ({ params, request }) => {
+    const body = (await request.json()) as { cancellationReason?: string };
+    const batchIndex = managerAvailabilityBatches.findIndex((item) => item.id === String(params.batchId));
+    if (batchIndex < 0) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    const now = Date.now();
+    const batch = managerAvailabilityBatches[batchIndex];
+    managerAvailabilityBatches[batchIndex] = recalculateAvailabilityLineCounts({
+      ...batch,
+      status: 'CANCELLED',
+      cancelledAt: now,
+      lines: batch.lines.map((line) =>
+        line.status === 'PENDING'
+          ? {
+              ...line,
+              status: 'CANCELLED',
+              cancellationReason: body.cancellationReason ?? 'Cancelled by manager',
+              cancelledAt: now,
+              updatedAt: now,
+            }
+          : line,
+      ),
+    });
+    return HttpResponse.json({ data: managerAvailabilityBatches[batchIndex] });
+  }),
+  http.post('*/admin/manager-workspace/work-schedule/availability-batches/:batchId/lines/:lineId/cancel', async ({ params, request }) => {
+    const body = (await request.json()) as { cancellationReason?: string };
+    const batchIndex = managerAvailabilityBatches.findIndex((item) => item.id === String(params.batchId));
+    if (batchIndex < 0) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    const now = Date.now();
+    const batch = managerAvailabilityBatches[batchIndex];
+    managerAvailabilityBatches[batchIndex] = recalculateAvailabilityLineCounts({
+      ...batch,
+      lines: batch.lines.map((line) =>
+        line.id === String(params.lineId) && line.status === 'PENDING'
+          ? {
+              ...line,
+              status: 'CANCELLED',
+              cancellationReason: body.cancellationReason ?? 'Cancelled by manager',
+              cancelledAt: now,
+              updatedAt: now,
+            }
+          : line,
+      ),
+    });
+    return HttpResponse.json({ data: managerAvailabilityBatches[batchIndex] });
+  }),
   http.get('*/admin/manager-workspace/work-schedule/request-batches', ({ request }) => {
     const url = new URL(request.url);
     const periodMonth = url.searchParams.get('periodMonth');

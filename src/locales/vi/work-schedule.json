@@ -325,6 +325,7 @@
     "label": "Các phần lịch làm việc",
     "workShifts": "Ca làm việc",
     "requestBatches": "Hàng đợi duyệt yêu cầu",
+    "availabilityBatches": "Lập kế hoạch khả dụng",
     "monthlyRosters": "Bảng lịch tháng",
     "workPatterns": "Mẫu lịch làm",
     "holidayCalendars": "Lịch nghỉ lễ",
@@ -396,6 +397,92 @@
       "listErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu batch.",
       "detailErrorTitle": "Không tải được chi tiết batch",
       "detailErrorMessage": "Không tải được batch yêu cầu đã chọn."
+    }
+  },
+  "availabilityBatches": {
+    "page": {
+      "title": "Hàng đợi lập kế hoạch khả dụng",
+      "subtitle": "Admin/Ops duyệt các dòng khả dụng trước roster do quản lý gửi."
+    },
+    "badges": {
+      "global": "WorkSchedule toàn cục"
+    },
+    "copy": {
+      "planning": "Khả dụng là dữ liệu lập kế hoạch trước khi công bố roster, không phải chứng cứ chấm công hay lương.",
+      "applyDraftOnly": "Áp dụng sẽ đưa các dòng đã duyệt vào ngoại lệ của Monthly Roster nháp.",
+      "publishStillRequired": "Vẫn cần công bố roster trước khi tạo WorkShift chính thức."
+    },
+    "filters": {
+      "status": "Trạng thái",
+      "all": "Tất cả",
+      "periodMonth": "Tháng kỳ",
+      "targetType": "Loại mục tiêu"
+    },
+    "list": {
+      "title": "Batch khả dụng"
+    },
+    "summary": {
+      "pending": "Chờ",
+      "approved": "Đã duyệt",
+      "rejected": "Từ chối",
+      "cancelled": "Đã hủy",
+      "policy": "Chính sách"
+    },
+    "review": {
+      "title": "Duyệt các dòng đang chờ đã chọn",
+      "note": "Ghi chú quyết định",
+      "reason": "Lý do từ chối/hủy"
+    },
+    "apply": {
+      "title": "Áp dụng dòng đã duyệt đã chọn",
+      "roster": "Monthly Roster nháp",
+      "selectRoster": "Chọn roster nháp",
+      "note": "Ghi chú áp dụng",
+      "resultTitle": "Kết quả áp dụng",
+      "applied": "Đã áp dụng",
+      "advisory": "Chỉ tham khảo",
+      "skipped": "Bỏ qua",
+      "failed": "Lỗi"
+    },
+    "actions": {
+      "approve": "Duyệt đã chọn",
+      "reject": "Từ chối đã chọn",
+      "cancel": "Hủy đã chọn",
+      "apply": "Áp dụng vào roster nháp"
+    },
+    "table": {
+      "review": "Duyệt",
+      "apply": "Áp dụng",
+      "member": "Thành viên",
+      "type": "Loại",
+      "date": "Ngày",
+      "status": "Trạng thái",
+      "applyStatus": "Trạng thái áp dụng",
+      "policy": "Đánh giá chính sách",
+      "refs": "Tham chiếu roster"
+    },
+    "types": {
+      "UNAVAILABLE_FULL_DAY": "Không khả dụng cả ngày",
+      "PREFERRED_TIME": "Giờ mong muốn",
+      "OTHER_AVAILABILITY_NOTE": "Ghi chú khả dụng khác"
+    },
+    "taxonomy": {
+      "SICK_LEAVE": "Nghỉ ốm",
+      "AUTHORIZED_LEAVE": "Nghỉ được phép",
+      "SHIFT_CHANGE": "Đổi ca",
+      "OTHER": "Khác"
+    },
+    "validation": {
+      "reasonRequired": "Cần lý do để từ chối hoặc hủy.",
+      "applySelectionRequired": "Chọn dòng đã duyệt và một Monthly Roster nháp."
+    },
+    "states": {
+      "loadErrorTitle": "Không tải được hàng đợi khả dụng",
+      "loadErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu batch khả dụng.",
+      "emptyTitle": "Không có batch khả dụng",
+      "emptyMessage": "Điều chỉnh bộ lọc hoặc chờ quản lý gửi.",
+      "selectTitle": "Chọn batch khả dụng",
+      "selectMessage": "Chọn một batch để duyệt các dòng khả dụng đã gửi."
     }
   },
   "patterns": {
@@ -717,6 +804,15 @@
       "readOnlyDraftSetup": "Thiết lập nháp chỉ có thể sửa khi bảng lịch ở trạng thái Nháp.",
       "structuralLock": "Bản nháp này đã có ngoại lệ. Gỡ ngoại lệ trước khi đổi tháng, phòng ban, mẫu lịch hoặc lịch nghỉ lễ."
     },
+    "appliedAvailability": {
+      "title": "Khả dụng đã áp dụng",
+      "previewLabel": "Khả dụng đã áp dụng: {{effect}} - {{type}} / {{taxonomy}} (dòng {{lineId}})",
+      "effects": {
+        "workingToOff": "nghỉ do khả dụng đã áp dụng",
+        "changeTime": "đổi giờ do khả dụng đã áp dụng",
+        "applied": "đã áp dụng vào roster nháp"
+      }
+    },
     "preview": {
       "title": "Xem trước",
       "copy": {
@@ -998,6 +1094,7 @@
         "status": "Trạng thái",
         "summary": "Tóm tắt",
         "reason": "Lý do hoặc ghi chú",
+        "sourceAvailability": "Nguồn khả dụng",
         "createdAt": "Tạo lúc",
         "updatedAt": "Cập nhật",
         "removedAt": "Gỡ lúc",

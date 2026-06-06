@@ -109,6 +109,86 @@ describe('monthly roster slice D preview', () => {
     expect(approvalCalls).toBe(0);
   });
 
+  it('maps WORKING_TO_OFF and CHANGE_TIME preview rows through roster exception availability refs', async () => {
+    const user = userEvent.setup();
+    const sourceFields = {
+      monthlyRosterId: 'roster-draft',
+      subjectEmploymentProfileId: 'ep-001',
+      status: 'ACTIVE' as const,
+      title: null,
+      workingMinutes: null,
+      breakMinutes: null,
+      studioResourceIds: [],
+      reason: null,
+      sourceNote: null,
+      sourceAvailabilityBatchId: 'availability-batch-source',
+      sourceAvailabilityType: 'UNAVAILABLE_FULL_DAY' as const,
+      sourceAvailabilityTaxonomyCode: 'AUTHORIZED_LEAVE' as const,
+      sourceAppliedAt: Date.parse('2026-05-01T00:00:00.000Z'),
+      sourceApplyNote: 'Applied for preview source mapping',
+      description: null,
+      externalRef: null,
+      removedAt: null,
+      createdAt: Date.parse('2026-05-01T00:00:00.000Z'),
+      updatedAt: Date.parse('2026-05-01T00:00:00.000Z'),
+    };
+    server.use(
+      http.get('*/admin/work-schedule/rosters/roster-draft', () =>
+        HttpResponse.json({
+          data: baseRosterDetail({
+            exceptionCount: 2,
+            exceptions: [
+              {
+                ...sourceFields,
+                rosterExceptionId: 'roster-exception-001',
+                exceptionType: 'WORKING_TO_OFF',
+                exceptionDate: '2026-05-12',
+                startLocalTime: null,
+                endLocalTime: null,
+                sourceAvailabilityLineId: 'availability-line-off',
+              },
+              {
+                ...sourceFields,
+                rosterExceptionId: 'roster-exception-change',
+                exceptionType: 'CHANGE_TIME',
+                exceptionDate: '2026-05-13',
+                startLocalTime: '10:00',
+                endLocalTime: '19:00',
+                sourceAvailabilityLineId: 'availability-line-time',
+                sourceAvailabilityType: 'PREFERRED_TIME',
+                sourceAvailabilityTaxonomyCode: 'SHIFT_CHANGE',
+              },
+            ],
+          }),
+        }),
+      ),
+    );
+
+    renderRoute('/work-schedule/rosters/roster-draft?scope=global');
+
+    expect(await screen.findByText(pt('copy.summaryFirst'))).toBeInTheDocument();
+    const summaryTable = await screen.findByRole('table', { name: pt('memberTable.caption') });
+    expect(
+      screen.queryByRole('table', {
+        name: pt('detail.memberCaption', { member: 'Alice Nguyen' }),
+      }),
+    ).not.toBeInTheDocument();
+    const aliceRow = within(summaryTable).getByText('Alice Nguyen').closest('tr');
+    expect(aliceRow).not.toBeNull();
+    if (!aliceRow) {
+      return;
+    }
+    await user.click(within(aliceRow).getByRole('button', { name: pt('actions.showDetails') }));
+
+    const detailTable = screen.getByRole('table', {
+      name: pt('detail.memberCaption', { member: 'Alice Nguyen' }),
+    });
+    expect(within(detailTable).getByText(/availability-line-off/)).toBeInTheDocument();
+    expect(within(detailTable).getByText(/availability-line-time/)).toBeInTheDocument();
+    expect(within(detailTable).getByText('roster-exception-001')).toBeInTheDocument();
+    expect(within(detailTable).getByText('roster-exception-change')).toBeInTheDocument();
+  });
+
   it('filters member summaries by issues, exceptions, and employee search', async () => {
     const user = userEvent.setup();
     renderRoute('/work-schedule/rosters/roster-draft?scope=global');

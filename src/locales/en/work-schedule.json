@@ -325,6 +325,7 @@
     "departmentShifts": "Department Work Shifts / Roster",
     "globalOps": "Official Work Shifts",
     "requestBatches": "Request Approval Queue",
+    "availabilityBatches": "Availability Planning",
     "monthlyRosters": "Monthly Rosters",
     "workPatterns": "Work Patterns",
     "holidayCalendars": "Holiday Calendars",
@@ -396,6 +397,92 @@
       "listErrorMessage": "The system rejected or did not return request batch data.",
       "detailErrorTitle": "Request batch detail could not be loaded",
       "detailErrorMessage": "The selected request batch could not be loaded."
+    }
+  },
+  "availabilityBatches": {
+    "page": {
+      "title": "Availability Planning Queue",
+      "subtitle": "Admin/Ops review for manager-submitted pre-roster availability lines."
+    },
+    "badges": {
+      "global": "Global WorkSchedule"
+    },
+    "copy": {
+      "planning": "Availability is planning input before roster publish, not attendance or payroll evidence.",
+      "applyDraftOnly": "Apply sends selected approved lines to Draft Monthly Roster exceptions.",
+      "publishStillRequired": "Publishing the roster is still required before official WorkShifts are generated."
+    },
+    "filters": {
+      "status": "Status",
+      "all": "All",
+      "periodMonth": "Period month",
+      "targetType": "Target type"
+    },
+    "list": {
+      "title": "Availability batches"
+    },
+    "summary": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "policy": "Policy"
+    },
+    "review": {
+      "title": "Review selected pending lines",
+      "note": "Decision note",
+      "reason": "Reject/cancel reason"
+    },
+    "apply": {
+      "title": "Apply selected approved lines",
+      "roster": "Draft Monthly Roster",
+      "selectRoster": "Select draft roster",
+      "note": "Apply note",
+      "resultTitle": "Apply result",
+      "applied": "Applied",
+      "advisory": "Advisory only",
+      "skipped": "Skipped",
+      "failed": "Failed"
+    },
+    "actions": {
+      "approve": "Approve selected",
+      "reject": "Reject selected",
+      "cancel": "Cancel selected",
+      "apply": "Apply to draft roster"
+    },
+    "table": {
+      "review": "Review",
+      "apply": "Apply",
+      "member": "Member",
+      "type": "Type",
+      "date": "Date",
+      "status": "Status",
+      "applyStatus": "Apply status",
+      "policy": "Policy evaluation",
+      "refs": "Roster refs"
+    },
+    "types": {
+      "UNAVAILABLE_FULL_DAY": "Unavailable full day",
+      "PREFERRED_TIME": "Preferred time",
+      "OTHER_AVAILABILITY_NOTE": "Other availability note"
+    },
+    "taxonomy": {
+      "SICK_LEAVE": "Sick leave",
+      "AUTHORIZED_LEAVE": "Authorized leave",
+      "SHIFT_CHANGE": "Shift change",
+      "OTHER": "Other"
+    },
+    "validation": {
+      "reasonRequired": "A reason is required for reject or cancel.",
+      "applySelectionRequired": "Select approved lines and a Draft Monthly Roster."
+    },
+    "states": {
+      "loadErrorTitle": "Availability queue could not be loaded",
+      "loadErrorMessage": "The system rejected or did not return availability batch data.",
+      "emptyTitle": "No availability batches found",
+      "emptyMessage": "Adjust filters or wait for manager submissions.",
+      "selectTitle": "Select an availability batch",
+      "selectMessage": "Choose a batch to review submitted availability lines."
     }
   },
   "patterns": {
@@ -725,6 +812,15 @@
       "readOnlyDraftSetup": "Draft setup is read-only unless the roster is in Draft status.",
       "structuralLock": "This draft already has exceptions. Remove the exceptions before changing the month, target, pattern, or holiday calendar."
     },
+    "appliedAvailability": {
+      "title": "Applied availability",
+      "previewLabel": "Applied availability: {{effect}} - {{type}} / {{taxonomy}} (line {{lineId}})",
+      "effects": {
+        "workingToOff": "off due to applied availability",
+        "changeTime": "changed time due to applied availability",
+        "applied": "applied to roster draft"
+      }
+    },
     "preview": {
       "title": "Preview",
       "copy": {
@@ -981,6 +1077,7 @@
         "status": "Status",
         "summary": "Summary",
         "reason": "Reason or note",
+        "sourceAvailability": "Availability source",
         "createdAt": "Created",
         "updatedAt": "Updated",
         "removedAt": "Removed",
