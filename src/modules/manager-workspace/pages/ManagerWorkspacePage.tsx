@@ -18,6 +18,7 @@ import { APP_PATHS } from '@app/router/paths';
 import { formatKpiNumber } from '@modules/kpi/formatting/kpi-formatting';
 import { useKpiPlanDetail, useKpiPlans } from '@modules/kpi/hooks/use-kpi';
 import { ManagerAvailabilityPanel } from '@modules/manager-workspace/components/ManagerAvailabilityPanel';
+import { ManagerWorkActionNeeded } from '@modules/manager-workspace/components/ManagerWorkActionNeeded';
 import {
   KpiOrgUnitOperationsSection,
   type KpiOrgUnitOperationsActionPolicy,
@@ -242,9 +243,9 @@ const getHcmMonth = (timestamp = Date.now()): string => {
     year: 'numeric',
     month: '2-digit',
   }).formatToParts(new Date(timestamp));
-  return `${parts.find((part) => part.type === 'year')?.value}-${parts.find(
-    (part) => part.type === 'month',
-  )?.value}`;
+  return `${parts.find((part) => part.type === 'year')?.value}-${
+    parts.find((part) => part.type === 'month')?.value
+  }`;
 };
 
 const getAllowedRequestMonths = (): string[] => {
@@ -669,7 +670,10 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
   const [cancelReason, setCancelReason] = useState('');
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
-  const workShiftsQuery = useManagerWorkShifts(month || undefined, context.modules.workShifts.visible);
+  const workShiftsQuery = useManagerWorkShifts(
+    month || undefined,
+    context.modules.workShifts.visible && activeTab !== 'availability',
+  );
   const data = workShiftsQuery.data;
   const requestBatchesQuery = useManagerRequestBatches(
     { periodMonth: periodMonth || undefined },
@@ -807,7 +811,10 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
   };
 
   return (
-    <section className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm" data-testid="manager-work-panel">
+    <section
+      className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm"
+      data-testid="manager-work-panel"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-text">{t('manager-workspace:work.title')}</h2>
@@ -842,18 +849,28 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
         ))}
       </div>
 
-      <label className="block max-w-xs text-sm font-medium text-text">
-        {t('manager-workspace:work.month')}
-        <input
-          className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
-          type="month"
-          value={month}
-          onChange={(event) => setMonth(event.target.value)}
-        />
-      </label>
+      <ManagerWorkActionNeeded
+        periodMonth={periodMonth}
+        enabled={context.modules.workShifts.visible}
+        onSelectTab={setActiveTab}
+      />
 
-      {workShiftsQuery.isLoading ? <LoadingState lines={4} /> : null}
-      {workShiftsQuery.isError ? (
+      {activeTab === 'published' ? (
+        <label className="block max-w-xs text-sm font-medium text-text">
+          {t('manager-workspace:work.month')}
+          <input
+            className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
+            type="month"
+            value={month}
+            onChange={(event) => setMonth(event.target.value)}
+          />
+        </label>
+      ) : null}
+
+      {activeTab !== 'availability' && workShiftsQuery.isLoading ? (
+        <LoadingState lines={4} />
+      ) : null}
+      {activeTab !== 'availability' && workShiftsQuery.isError ? (
         <ErrorState
           title={t('manager-workspace:errors.workTitle')}
           message={t('manager-workspace:errors.workMessage')}
@@ -863,8 +880,14 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
       {data && activeTab === 'published' ? (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <SummaryCard label={t('manager-workspace:work.shiftsShown')} value={data.meta.returnedShiftCount} />
-            <SummaryCard label={t('manager-workspace:work.membersRepresented')} value={data.meta.representedMemberCount} />
+            <SummaryCard
+              label={t('manager-workspace:work.shiftsShown')}
+              value={data.meta.returnedShiftCount}
+            />
+            <SummaryCard
+              label={t('manager-workspace:work.membersRepresented')}
+              value={data.meta.representedMemberCount}
+            />
             <SummaryCard label={t('manager-workspace:work.period')} value={data.meta.month} />
           </div>
           {data.items.length === 0 ? (
@@ -878,10 +901,15 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm" aria-label={t('manager-workspace:work.tableLabel')}>
+              <table
+                className="min-w-full text-left text-sm"
+                aria-label={t('manager-workspace:work.tableLabel')}
+              >
                 <thead className="border-b border-border text-xs uppercase text-muted">
                   <tr>
-                    <th className="px-3 py-2 font-medium">{t('manager-workspace:work.dateTime')}</th>
+                    <th className="px-3 py-2 font-medium">
+                      {t('manager-workspace:work.dateTime')}
+                    </th>
                     <th className="px-3 py-2 font-medium">{t('manager-workspace:work.member')}</th>
                     <th className="px-3 py-2 font-medium">{t('manager-workspace:work.shift')}</th>
                     <th className="px-3 py-2 font-medium">{t('manager-workspace:work.source')}</th>
@@ -891,16 +919,31 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                   {data.items.map((shift) => (
                     <tr key={shift.workShiftId} data-testid="manager-work-shift-row">
                       <td className="px-3 py-3">
-                        <div>{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: shift.timezone }).format(shift.shiftStartAt)}</div>
+                        <div>
+                          {new Intl.DateTimeFormat(undefined, {
+                            dateStyle: 'medium',
+                            timeZone: shift.timezone,
+                          }).format(shift.shiftStartAt)}
+                        </div>
                         <div className="text-xs text-muted">
-                          {new Intl.DateTimeFormat(undefined, { timeStyle: 'short', timeZone: shift.timezone }).format(shift.shiftStartAt)}
+                          {new Intl.DateTimeFormat(undefined, {
+                            timeStyle: 'short',
+                            timeZone: shift.timezone,
+                          }).format(shift.shiftStartAt)}
                           {' - '}
-                          {new Intl.DateTimeFormat(undefined, { timeStyle: 'short', timeZone: shift.timezone }).format(shift.shiftEndAt)}
+                          {new Intl.DateTimeFormat(undefined, {
+                            timeStyle: 'short',
+                            timeZone: shift.timezone,
+                          }).format(shift.shiftEndAt)}
                         </div>
                       </td>
                       <td className="px-3 py-3">
                         <div className="font-medium text-text">{shift.member.displayName}</div>
-                        {shift.member.employeeCode ? <div className="font-mono text-xs text-muted">{shift.member.employeeCode}</div> : null}
+                        {shift.member.employeeCode ? (
+                          <div className="font-mono text-xs text-muted">
+                            {shift.member.employeeCode}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-3 py-3">
                         <div>{shift.title}</div>
@@ -908,7 +951,9 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                       </td>
                       <td className="px-3 py-3">
                         {t(`manager-workspace:work.sourceTypes.${shift.sourceType}`)}
-                        {shift.sourceRosterMonth ? <div className="text-xs text-muted">{shift.sourceRosterMonth}</div> : null}
+                        {shift.sourceRosterMonth ? (
+                          <div className="text-xs text-muted">{shift.sourceRosterMonth}</div>
+                        ) : null}
                       </td>
                     </tr>
                   ))}
@@ -1008,7 +1053,8 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                             className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
                             value={line.requestType}
                             onChange={(event) => {
-                              const requestType = event.target.value as ManagerWorkScheduleRequestType;
+                              const requestType = event.target
+                                .value as ManagerWorkScheduleRequestType;
                               updateLine(line.localId, {
                                 requestType,
                                 workShiftId:
@@ -1037,7 +1083,10 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                             }
                           >
                             {managedMembers.map((member) => (
-                              <option key={member.employmentProfileId} value={member.employmentProfileId}>
+                              <option
+                                key={member.employmentProfileId}
+                                value={member.employmentProfileId}
+                              >
                                 {member.displayName}
                               </option>
                             ))}
@@ -1056,7 +1105,8 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                                 updateLine(line.localId, {
                                   workShiftId: event.target.value,
                                   memberEmploymentProfileId:
-                                    shift?.member.employmentProfileId ?? line.memberEmploymentProfileId,
+                                    shift?.member.employmentProfileId ??
+                                    line.memberEmploymentProfileId,
                                 });
                               }}
                             >
@@ -1128,7 +1178,9 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                 </div>
               ) : null}
 
-              {validationMessage ? <p className="text-sm text-danger">{validationMessage}</p> : null}
+              {validationMessage ? (
+                <p className="text-sm text-danger">{validationMessage}</p>
+              ) : null}
               {submitBatchMutation.isError ? (
                 <p className="text-sm text-danger">
                   {t('manager-workspace:requests.feedback.submitFailed')}
@@ -1190,11 +1242,17 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                 <>
                   <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <h3 className="font-semibold text-text">{requestBatchDetailQuery.data.batchCode}</h3>
-                      <p className="text-sm text-muted">{requestBatchDetailQuery.data.periodMonth}</p>
+                      <h3 className="font-semibold text-text">
+                        {requestBatchDetailQuery.data.batchCode}
+                      </h3>
+                      <p className="text-sm text-muted">
+                        {requestBatchDetailQuery.data.periodMonth}
+                      </p>
                     </div>
                     <StatusBadge
-                      label={t(`manager-workspace:requests.statuses.${requestBatchDetailQuery.data.status}`)}
+                      label={t(
+                        `manager-workspace:requests.statuses.${requestBatchDetailQuery.data.status}`,
+                      )}
                       status={requestBatchDetailQuery.data.status}
                       toneByStatus={batchStatusTone}
                     />
@@ -1235,7 +1293,10 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                               </div>
                               <div className="text-xs text-muted">{line.member.displayName}</div>
                               <div className="text-xs text-muted">
-                                {formatManagerRequestTimestamp(line.requestedStartAt, line.timezone)}
+                                {formatManagerRequestTimestamp(
+                                  line.requestedStartAt,
+                                  line.timezone,
+                                )}
                               </div>
                             </td>
                             <td className="px-3 py-3">
@@ -1245,7 +1306,9 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                                 toneByStatus={batchStatusTone}
                               />
                               {lineDecisionText(line) ? (
-                                <div className="mt-1 text-xs text-muted">{lineDecisionText(line)}</div>
+                                <div className="mt-1 text-xs text-muted">
+                                  {lineDecisionText(line)}
+                                </div>
                               ) : null}
                             </td>
                             <td className="px-3 py-3 text-right">
@@ -1253,7 +1316,9 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                                 <button
                                   type="button"
                                   className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
-                                  disabled={cancelReason.trim().length < 10 || cancelLineMutation.isPending}
+                                  disabled={
+                                    cancelReason.trim().length < 10 || cancelLineMutation.isPending
+                                  }
                                   onClick={() =>
                                     void cancelLineMutation.mutateAsync({
                                       batchId: requestBatchDetailQuery.data.id,
@@ -1278,7 +1343,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
         </div>
       ) : null}
 
-      {data && activeTab === 'availability' ? (
+      {activeTab === 'availability' ? (
         <ManagerAvailabilityPanel context={context} allowedMonths={allowedMonths} />
       ) : null}
     </section>

@@ -5,6 +5,7 @@ import {
   useMonthlyRosterPreview,
   usePublishMonthlyRosterMutation,
 } from '@modules/work-schedule/hooks/use-work-schedule';
+import { WorkScheduleDeadlineCue } from '@modules/work-schedule/components/WorkScheduleDeadlineCue';
 import { createWorkScheduleCapabilityHint } from '@modules/work-schedule/capability-hints';
 import type {
   MonthlyRosterPreview,
@@ -326,6 +327,11 @@ export const MonthlyRosterPublishReview = ({
   return (
     <MetadataSection title={t('work-schedule:monthlyRosters.publish.title')}>
       <div className="space-y-4">
+        <div className="grid gap-3 lg:grid-cols-2">
+          <WorkScheduleDeadlineCue targetMonth={roster.rosterMonth} cueType="PUBLISH_TARGET" />
+          <WorkScheduleDeadlineCue targetMonth={roster.rosterMonth} cueType="FREEZE_REMINDER" />
+        </div>
+
         <div className="space-y-2 rounded border border-border bg-bg px-3 py-3 text-sm text-muted">
           <p>{t('work-schedule:monthlyRosters.publish.copy.createShifts')}</p>
           <p>{t('work-schedule:monthlyRosters.publish.copy.draftPlanningOnly')}</p>
@@ -402,6 +408,32 @@ export const MonthlyRosterPublishReview = ({
             ]}
             columns={3}
           />
+        ) : null}
+
+        {preview ? (
+          <div className="rounded border border-border bg-bg p-3">
+            <h3 className="text-sm font-semibold text-text">
+              {t('work-schedule:monthlyRosters.publish.readiness.checklistTitle')}
+            </h3>
+            <ul className="mt-2 grid gap-2 text-sm text-muted sm:grid-cols-2">
+              <li>{t('work-schedule:monthlyRosters.publish.readiness.checklist.previewLoaded')}</li>
+              <li>
+                {t('work-schedule:monthlyRosters.publish.readiness.checklist.eligible', {
+                  count: preview.summary.totalEligibleProfiles,
+                })}
+              </li>
+              <li>
+                {t('work-schedule:monthlyRosters.publish.readiness.checklist.candidates', {
+                  count: preview.summary.totalCandidateShiftsAfterExceptions,
+                })}
+              </li>
+              <li>
+                {t('work-schedule:monthlyRosters.publish.readiness.checklist.issues', {
+                  count: preview.summary.totalConflicts + blockerCount,
+                })}
+              </li>
+            </ul>
+          </div>
         ) : null}
 
         {publishDisabledReason ? (

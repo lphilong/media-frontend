@@ -153,6 +153,22 @@
     "sourceTypes": {
       "MANUAL": "Ngoai le thu cong",
       "ROSTER_GENERATED": "Roster hang thang"
+    },
+    "actionNeeded": {
+      "title": "Can xu ly",
+      "summary": "Tin hieu van hanh chi de hien thi tu cac batch yeu cau va kha dung hien co.",
+      "bounded": "So lieu chi phan anh ket qua da tai cho thang da chon, khong phai tong chinh xac toan he thong.",
+      "severity": {
+        "INFO": "Thong tin",
+        "DUE_SOON": "Sap den han",
+        "BLOCKED": "Can sua"
+      },
+      "cards": {
+        "pendingAvailability": { "label": "Kha dung dang cho", "cta": "Xem muc" },
+        "rejectedAvailability": { "label": "Kha dung bi tu choi", "cta": "Xem muc" },
+        "pendingRequests": { "label": "Yeu cau dang cho", "cta": "Xem muc" },
+        "rejectedRequests": { "label": "Yeu cau bi tu choi hoac loi", "cta": "Xem muc" }
+      }
     }
   },
   "availability": {
@@ -160,7 +176,8 @@
       "planning": "Kha dung la tin hieu lap ke hoach truoc roster cho Admin/Ops.",
       "noAttendance": "Day khong phai du lieu cham cong, luong, nghi co luong, hay nghi khong luong.",
       "noAutoApply": "Dong da duyet khong tu dong ap dung. Admin/Ops phai ap dung vao Monthly Roster dang nhap.",
-      "otherAdvisory": "Ghi chu kha dung khac chi mang tinh tham khao."
+      "otherAdvisory": "Ghi chu kha dung khac chi mang tinh tham khao.",
+      "independentOfShifts": "Tab Kha dung van dung duoc khi ca da cong bo trong hoac tai that bai."
     },
     "fields": {
       "periodMonth": "Thang muc tieu",

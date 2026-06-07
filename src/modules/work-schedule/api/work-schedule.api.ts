@@ -94,12 +94,7 @@ const monthlyRosterPreviewConflictKindSchema = z.enum([
 ]);
 const workShiftSourceTypeSchema = z.enum(['MANUAL', 'ROSTER_GENERATED']);
 const workScheduleRequestTypeSchema = z.enum(['CREATE_SHIFT', 'RESCHEDULE_SHIFT', 'CANCEL_SHIFT']);
-const workScheduleRequestStatusSchema = z.enum([
-  'PENDING',
-  'APPROVED',
-  'REJECTED',
-  'CANCELLED',
-]);
+const workScheduleRequestStatusSchema = z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']);
 const workScheduleRequestBatchStatusSchema = z.enum([
   'PENDING',
   'PARTIALLY_APPROVED',
@@ -606,7 +601,9 @@ const rosterExceptionSchema = z
     sourceAvailabilityBatchId: z.string().nullable().optional(),
     sourceAvailabilityLineId: z.string().nullable().optional(),
     sourceAvailabilityType: workScheduleAvailabilityTypeSchema.nullable().optional(),
-    sourceAvailabilityTaxonomyCode: workScheduleAvailabilityTaxonomyCodeSchema.nullable().optional(),
+    sourceAvailabilityTaxonomyCode: workScheduleAvailabilityTaxonomyCodeSchema
+      .nullable()
+      .optional(),
     sourceAppliedAt: timestampSchema.nullable().optional(),
     sourceApplyNote: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
@@ -838,8 +835,8 @@ const applyAvailabilityLinesToMonthlyRosterResultSchema = z
     rosterCode: z.string().trim().min(1),
     rosterMonth: z.string().trim().min(1),
     status: monthlyRosterStatusSchema,
-    targetType: z.string().trim().min(1),
-    targetMode: z.string().trim().min(1),
+    targetType: monthlyRosterTargetTypeSchema,
+    targetMode: monthlyRosterTargetModeSchema,
     targetOrgUnitId: z.string().nullable(),
     targetTalentGroupId: z.string().nullable(),
     appliedCount: z.number().int().nonnegative(),
@@ -855,6 +852,9 @@ const applyAvailabilityLinesToMonthlyRosterResponseSchema = z
     data: applyAvailabilityLinesToMonthlyRosterResultSchema,
   })
   .strict();
+
+export const parseApplyAvailabilityLinesToMonthlyRosterResponseForTest = (response: unknown) =>
+  applyAvailabilityLinesToMonthlyRosterResponseSchema.parse(response).data;
 
 const sanitizeFlatListQuery = (
   query: WorkShiftListQuery,
@@ -1201,7 +1201,9 @@ const sanitizeApplyAvailabilityLinesPayload = (
   payload: ApplyAvailabilityLinesToMonthlyRosterPayload,
 ): ApplyAvailabilityLinesToMonthlyRosterPayload => ({
   availabilityLineIds: payload.availabilityLineIds.map((lineId) => lineId.trim()).filter(Boolean),
-  ...(payload.applyNote !== undefined ? { applyNote: sanitizeNullableText(payload.applyNote) } : {}),
+  ...(payload.applyNote !== undefined
+    ? { applyNote: sanitizeNullableText(payload.applyNote) }
+    : {}),
   ...(payload.note !== undefined ? { note: sanitizeNullableText(payload.note) } : {}),
   ...(payload.scope !== undefined ? { scope: payload.scope } : {}),
 });

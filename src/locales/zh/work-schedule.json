@@ -1186,6 +1186,55 @@
       "holidayCalendarSearch": "按名称或代码搜索活动节假日日历"
     }
   },
+  "operational": {
+    "severity": {
+      "INFO": "信息",
+      "DUE_SOON": "即将到期",
+      "OVERDUE": "已逾期",
+      "BLOCKED": "已阻止"
+    },
+    "deadlines": {
+      "labels": {
+        "ON_TRACK": "按计划",
+        "DUE_SOON": "即将到期",
+        "OVERDUE": "已逾期",
+        "NOT_APPLICABLE": "不适用"
+      },
+      "types": {
+        "AVAILABILITY_CUTOFF": "可用性目标 D0 - 7",
+        "PUBLISH_TARGET": "发布目标 D0 - 2",
+        "FREEZE_REMINDER": "冻结提醒 D0 - 1"
+      },
+      "reasons": {
+        "ON_TRACK": "剩余 {{count}} 天",
+        "DUE_SOON": "{{count}} 天后到期",
+        "OVERDUE": "已超过 {{count}} 天",
+        "NOT_APPLICABLE": "需要有效的目标月份"
+      }
+    },
+    "admin": {
+      "title": "待处理",
+      "summary": "来自现有 WorkSchedule 列表契约的有界运营提示。",
+      "bounded": "数量仅反映当前加载的有界队列结果；请打开各队列查看详情。",
+      "cards": {
+        "availability": {
+          "label": "待审批可用性行",
+          "reason": "等待 Admin/Ops 审核的管理者可用性行。",
+          "cta": "打开可用性队列"
+        },
+        "requests": {
+          "label": "待处理 Flow A 请求行",
+          "reason": "等待 Admin/Ops 审核的排班变更请求行。",
+          "cta": "打开请求队列"
+        },
+        "rosters": {
+          "label": "月度排班草稿",
+          "reason": "可能需要预览或发布的月度排班草稿。",
+          "cta": "打开月度排班"
+        }
+      }
+    }
+  },
   "advanced": {
     "customCodeTitle": "高级管理员自定义代码",
     "customShiftCodeHelp": "留空则系统自动生成班次代码。仅在管理员需要保留自定义旧代码时使用。"

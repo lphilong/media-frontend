@@ -1185,6 +1185,55 @@
       "holidayCalendarSearch": "Tìm lịch nghỉ lễ đang hoạt động theo tên hoặc mã"
     }
   },
+  "operational": {
+    "severity": {
+      "INFO": "Thông tin",
+      "DUE_SOON": "Sắp đến hạn",
+      "OVERDUE": "Quá hạn",
+      "BLOCKED": "Bị chặn"
+    },
+    "deadlines": {
+      "labels": {
+        "ON_TRACK": "Đúng tiến độ",
+        "DUE_SOON": "Sắp đến hạn",
+        "OVERDUE": "Quá hạn",
+        "NOT_APPLICABLE": "Không áp dụng"
+      },
+      "types": {
+        "AVAILABILITY_CUTOFF": "Mốc khả dụng D0 - 7",
+        "PUBLISH_TARGET": "Mục tiêu công bố D0 - 2",
+        "FREEZE_REMINDER": "Nhắc đóng băng D0 - 1"
+      },
+      "reasons": {
+        "ON_TRACK": "Còn {{count}} ngày",
+        "DUE_SOON": "Đến hạn sau {{count}} ngày",
+        "OVERDUE": "Đã qua {{count}} ngày",
+        "NOT_APPLICABLE": "Cần tháng mục tiêu hợp lệ"
+      }
+    },
+    "admin": {
+      "title": "Cần xử lý",
+      "summary": "Tín hiệu vận hành có giới hạn từ các hợp đồng danh sách WorkSchedule hiện có.",
+      "bounded": "Số liệu phản ánh kết quả hàng đợi giới hạn đang được tải; mở từng hàng đợi để xem chi tiết.",
+      "cards": {
+        "availability": {
+          "label": "Dòng khả dụng đang chờ duyệt",
+          "reason": "Dòng khả dụng của quản lý đang chờ Admin/Ops xem xét.",
+          "cta": "Mở hàng đợi khả dụng"
+        },
+        "requests": {
+          "label": "Dòng yêu cầu Flow A đang chờ",
+          "reason": "Dòng yêu cầu thay đổi lịch đang chờ Admin/Ops xem xét.",
+          "cta": "Mở hàng đợi yêu cầu"
+        },
+        "rosters": {
+          "label": "Bảng lịch tháng nháp",
+          "reason": "Bảng lịch nháp có thể cần xem trước hoặc công bố.",
+          "cta": "Mở bảng lịch tháng"
+        }
+      }
+    }
+  },
   "advanced": {
     "customCodeTitle": "Mã tùy chỉnh dành cho quản trị nâng cao",
     "customShiftCodeHelp": "Để trống để hệ thống tự sinh mã ca. Chỉ dùng khi quản trị cần giữ mã cũ tùy chỉnh."

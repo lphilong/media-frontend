@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
+import { AdminWorkScheduleActionNeeded } from '@modules/work-schedule/components/AdminWorkScheduleActionNeeded';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import { WorkShiftGuidedWorkflow } from '@modules/work-schedule/components/WorkShiftGuidedWorkflow';
 import {
@@ -862,6 +863,7 @@ export const WorkScheduleListPage = (): JSX.Element => {
       banner={
         <div className="space-y-3">
           <WorkScheduleSubnavigation active={routeSurface?.id ?? 'global-ops'} />
+          {routeSurface?.id === 'global-ops' ? <AdminWorkScheduleActionNeeded /> : null}
           {routeSurface?.id === 'global-ops' ? (
             <div className="flex flex-col gap-2 rounded border border-border bg-panel px-3 py-2 text-sm text-text sm:flex-row sm:items-center sm:justify-between">
               <span>{t('work-schedule:requestBatches.page.subtitle')}</span>

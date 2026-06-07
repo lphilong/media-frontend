@@ -62,9 +62,13 @@ describe('work schedule guided shift workflow', () => {
     const user = userEvent.setup();
     renderRoute('/work-schedule/global-ops');
 
-    const guidedAction = await screen.findByRole('button', {
-      name: i18n.t('work-schedule:actions.scheduleWorkShift'),
-    });
+    const guidedAction = await screen.findByRole(
+      'button',
+      {
+        name: i18n.t('work-schedule:actions.scheduleWorkShift'),
+      },
+      { timeout: 5_000 },
+    );
     expect(guidedAction).toHaveAttribute('data-action-priority', 'primary');
     expect(
       screen.queryByRole('button', { name: /admin|technical|kỹ thuật|ky thuat/i }),

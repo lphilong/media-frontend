@@ -153,6 +153,22 @@
     "sourceTypes": {
       "MANUAL": "Manual exception",
       "ROSTER_GENERATED": "Monthly roster"
+    },
+    "actionNeeded": {
+      "title": "Action needed",
+      "summary": "Display-only operational cues from your existing request and availability batches.",
+      "bounded": "Counts show the loaded results for the selected month, not exact global totals.",
+      "severity": {
+        "INFO": "Info",
+        "DUE_SOON": "Due soon",
+        "BLOCKED": "Needs correction"
+      },
+      "cards": {
+        "pendingAvailability": { "label": "Pending availability", "cta": "View items" },
+        "rejectedAvailability": { "label": "Rejected availability", "cta": "Review items" },
+        "pendingRequests": { "label": "Pending requests", "cta": "View items" },
+        "rejectedRequests": { "label": "Rejected or failed requests", "cta": "Review items" }
+      }
     }
   },
   "availability": {
@@ -160,7 +176,8 @@
       "planning": "Availability is a pre-roster planning signal for Admin/Ops.",
       "noAttendance": "It is not attendance, payroll, paid leave, or unpaid leave evidence.",
       "noAutoApply": "Approved lines are not auto-applied. Admin/Ops must apply them to a Draft Monthly Roster.",
-      "otherAdvisory": "Other availability notes are advisory only."
+      "otherAdvisory": "Other availability notes are advisory only.",
+      "independentOfShifts": "Availability remains usable even when published shifts are empty or unavailable."
     },
     "fields": {
       "periodMonth": "Target month",

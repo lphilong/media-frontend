@@ -426,7 +426,8 @@
       "approved": "Approved",
       "rejected": "Rejected",
       "cancelled": "Cancelled",
-      "policy": "Policy"
+      "policy": "Policy",
+      "approvedNotApplied": "Approved not applied"
     },
     "review": {
       "title": "Review selected pending lines",
@@ -987,7 +988,14 @@
       "readiness": {
         "status": "Publish readiness",
         "ready": "Ready to publish",
-        "previewFreshness": "Preview freshness"
+        "previewFreshness": "Preview freshness",
+        "checklistTitle": "Publish readiness checklist",
+        "checklist": {
+          "previewLoaded": "Preview loaded successfully",
+          "eligible": "{{count}} eligible member(s)",
+          "candidates": "{{count}} publishable candidate shift(s)",
+          "issues": "{{count}} conflict or blocker issue(s)"
+        }
       },
       "disabledReasons": {
         "notDraft": "Only Draft rosters can be published.",
@@ -1208,6 +1216,55 @@
       "talentGroupSearch": "Search active Talent Groups by name or code",
       "workPatternSearch": "Search active Work Patterns by name or code",
       "holidayCalendarSearch": "Search active Holiday Calendars by name or code"
+    }
+  },
+  "operational": {
+    "severity": {
+      "INFO": "Info",
+      "DUE_SOON": "Due soon",
+      "OVERDUE": "Overdue",
+      "BLOCKED": "Blocked"
+    },
+    "deadlines": {
+      "labels": {
+        "ON_TRACK": "On track",
+        "DUE_SOON": "Due soon",
+        "OVERDUE": "Overdue",
+        "NOT_APPLICABLE": "Not applicable"
+      },
+      "types": {
+        "AVAILABILITY_CUTOFF": "Availability cutoff (D0 - 7)",
+        "PUBLISH_TARGET": "Publish target (D0 - 2)",
+        "FREEZE_REMINDER": "Freeze reminder (D0 - 1)"
+      },
+      "reasons": {
+        "ON_TRACK": "{{count}} day(s) remain",
+        "DUE_SOON": "Due in {{count}} day(s)",
+        "OVERDUE": "Passed {{count}} day(s) ago",
+        "NOT_APPLICABLE": "A valid target month is required"
+      }
+    },
+    "admin": {
+      "title": "Action needed",
+      "summary": "Bounded operational cues from existing WorkSchedule list contracts.",
+      "bounded": "Counts reflect the currently returned bounded queue results; open each queue for detail.",
+      "cards": {
+        "availability": {
+          "label": "Pending availability approvals",
+          "reason": "Manager availability lines waiting for Admin/Ops review.",
+          "cta": "Open availability queue"
+        },
+        "requests": {
+          "label": "Pending Flow A request lines",
+          "reason": "Schedule change request lines waiting for Admin/Ops review.",
+          "cta": "Open request queue"
+        },
+        "rosters": {
+          "label": "Draft Monthly Rosters",
+          "reason": "Draft rosters still require preview review and publish.",
+          "cta": "Open Monthly Rosters"
+        }
+      }
     }
   },
   "advanced": {

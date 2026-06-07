@@ -748,9 +748,120 @@ describe('/manager workspace route', () => {
     expect(await screen.findByText('Org Unit Member')).toBeInTheDocument();
     expect(await screen.findByText('Talent Group Member')).toBeInTheDocument();
     expect(screen.getAllByTestId('manager-work-shift-row')).toHaveLength(2);
-    expect(screen.getByText('Draft rosters are not visible here until they are published.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Draft rosters are not visible here until they are published.'),
+    ).toBeInTheDocument();
     expect(rawAdminWorkShiftCalls).toBe(0);
-    expect(screen.queryByRole('button', { name: /create|edit|cancel|request|approve/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /create|edit|cancel|request|approve/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('counts partial-batch Manager lines, discloses bounded results, and keeps card CTAs read-only', async () => {
+    const user = userEvent.setup();
+    let mutationCalls = 0;
+    server.use(
+      http.post('*/admin/manager-workspace/work-schedule/*', () => {
+        mutationCalls += 1;
+        return HttpResponse.json(
+          { message: 'Action Needed cards must not mutate' },
+          { status: 500 },
+        );
+      }),
+      http.get('*/admin/manager-workspace/work-schedule/request-batches', () =>
+        HttpResponse.json({
+          data: {
+            items: [
+              {
+                id: 'partial-manager-request',
+                batchCode: 'WSB-MANAGER-PARTIAL',
+                status: 'PARTIALLY_APPROVED',
+                periodMonth: '2026-06',
+                scopeSummary: 'ORG_UNIT',
+                note: null,
+                lineCounts: {
+                  total: 7,
+                  pending: 2,
+                  approved: 2,
+                  rejected: 1,
+                  cancelled: 0,
+                  failedToApply: 2,
+                },
+                clientToken: 'manager-partial-request',
+                submittedAt: 1,
+                cancelledAt: null,
+                resolvedAt: null,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            ],
+          },
+        }),
+      ),
+      http.get('*/admin/manager-workspace/work-schedule/availability-batches', () =>
+        HttpResponse.json({
+          data: {
+            items: [
+              {
+                id: 'partial-manager-availability',
+                availabilityBatchCode: 'AVB-MANAGER-PARTIAL',
+                status: 'PARTIALLY_APPROVED',
+                periodMonth: '2026-06',
+                targetType: 'ORG_UNIT',
+                targetMode: 'EXACT_ONLY',
+                targetOrgUnitId: 'org-content',
+                targetTalentGroupId: null,
+                note: null,
+                lineCounts: { total: 4, pending: 2, approved: 1, rejected: 1, cancelled: 0 },
+                clientToken: 'manager-partial-availability',
+                submittedAt: 1,
+                cancelledAt: null,
+                resolvedAt: null,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            ],
+          },
+        }),
+      ),
+    );
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    const actionNeeded = await screen.findByTestId('manager-work-action-needed');
+    expect(
+      await within(screen.getByTestId('manager-action-needed-pendingRequests')).findByText('2'),
+    ).toBeInTheDocument();
+    expect(
+      await within(screen.getByTestId('manager-action-needed-rejectedRequests')).findByText('3'),
+    ).toBeInTheDocument();
+    expect(
+      await within(screen.getByTestId('manager-action-needed-pendingAvailability')).findByText('2'),
+    ).toBeInTheDocument();
+    expect(
+      await within(screen.getByTestId('manager-action-needed-rejectedAvailability')).findByText(
+        '1',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(actionNeeded).getByText(
+        'Counts show the loaded results for the selected month, not exact global totals.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(actionNeeded).queryByRole('button', { name: /approve|reject|apply/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      within(screen.getByTestId('manager-action-needed-pendingAvailability')).getByRole('button', {
+        name: 'View items',
+      }),
+    );
+
+    expect(await screen.findByTestId('manager-work-availability')).toBeInTheDocument();
+    expect(mutationCalls).toBe(0);
   });
 
   it('submits a manager request batch through Manager Workspace endpoints only', async () => {
@@ -805,7 +916,9 @@ describe('/manager workspace route', () => {
     await user.click(screen.getByRole('button', { name: 'Add create' }));
     await user.click(screen.getByRole('button', { name: 'Submit batch' }));
 
-    expect(await screen.findByText('Each line reason must be 10-1000 characters.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Each line reason must be 10-1000 characters.'),
+    ).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Requested start'), {
       target: { value: '2026-06-20T09:00' },
     });
@@ -826,34 +939,31 @@ describe('/manager workspace route', () => {
     let managerMemberPickerCalls = 0;
     let rawAdminAvailabilityCalls = 0;
     server.use(
-      http.get(
-        '*/admin/manager-workspace/work-schedule/availability-members',
-        ({ request }) => {
-          managerMemberPickerCalls += 1;
-          const url = new URL(request.url);
-          expect(url.searchParams.get('targetType')).toBe('ORG_UNIT');
-          expect(url.searchParams.get('targetId')).toBe('org-unit-001');
-          return HttpResponse.json({
-            data: {
-              target: {
-                targetType: 'ORG_UNIT',
-                targetId: 'org-unit-001',
-                targetMode: 'EXACT_ONLY',
-                name: 'Content Ops',
-                displayName: 'Content Ops',
-              },
-              members: [
-                {
-                  employmentProfileId: 'ep-pre-roster',
-                  displayName: 'Pre-roster Member',
-                  employeeCode: 'EP-PRE',
-                },
-              ],
-              totalMembers: 1,
+      http.get('*/admin/manager-workspace/work-schedule/availability-members', ({ request }) => {
+        managerMemberPickerCalls += 1;
+        const url = new URL(request.url);
+        expect(url.searchParams.get('targetType')).toBe('ORG_UNIT');
+        expect(url.searchParams.get('targetId')).toBe('org-unit-001');
+        return HttpResponse.json({
+          data: {
+            target: {
+              targetType: 'ORG_UNIT',
+              targetId: 'org-unit-001',
+              targetMode: 'EXACT_ONLY',
+              name: 'Content Ops',
+              displayName: 'Content Ops',
             },
-          });
-        },
-      ),
+            members: [
+              {
+                employmentProfileId: 'ep-pre-roster',
+                displayName: 'Pre-roster Member',
+                employeeCode: 'EP-PRE',
+              },
+            ],
+            totalMembers: 1,
+          },
+        });
+      }),
       http.post(
         '*/admin/manager-workspace/work-schedule/availability-batches',
         async ({ request }) => {
@@ -985,6 +1095,31 @@ describe('/manager workspace route', () => {
     expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
   });
 
+  it('keeps Availability usable when the published-shift request fails', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('*/admin/manager-workspace/work-schedule/work-shifts', () =>
+        HttpResponse.json({ message: 'Published shifts unavailable' }, { status: 503 }),
+      ),
+    );
+
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    expect(
+      await screen.findByText('Managed published shifts could not be loaded.'),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Availability' }));
+
+    expect(await screen.findByTestId('manager-work-availability')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add availability line' })).toBeEnabled();
+    expect(
+      screen.queryByText('Managed published shifts could not be loaded.'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
+  });
+
   it('cancels own pending availability line and batch only with a reason through Flow B endpoints', async () => {
     const user = userEvent.setup();
     let cancelLineCalls = 0;
@@ -1015,7 +1150,7 @@ describe('/manager workspace route', () => {
       setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
     });
     await user.click(await screen.findByRole('tab', { name: 'Availability' }));
-    expect(await screen.findByText('AVB-000001')).toBeInTheDocument();
+    expect((await screen.findAllByText('AVB-000001')).length).toBeGreaterThan(0);
 
     const cancelLine = screen
       .getAllByRole('button', { name: 'Cancel pending line' })
@@ -1079,7 +1214,9 @@ describe('/manager workspace route', () => {
     expect(
       await screen.findByRole('option', { name: 'Creator Member One (EP-CREATOR-1)' }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'Content Member One (EP-CONTENT-1)' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: 'Content Member One (EP-CONTENT-1)' }),
+    ).not.toBeInTheDocument();
   });
 
   it('adds reschedule and cancel lines, removes a draft line, and submits through Manager endpoints only', async () => {
@@ -1174,7 +1311,7 @@ describe('/manager workspace route', () => {
     });
 
     await user.click(await screen.findByRole('tab', { name: 'Requests' }));
-    expect(await screen.findByText('WSB-202606-000001')).toBeInTheDocument();
+    expect((await screen.findAllByText('WSB-202606-000001')).length).toBeGreaterThan(0);
 
     const cancellationReason = screen.getByLabelText('Cancellation reason');
     const cancelLine = await screen.findAllByRole('button', { name: 'Cancel line' });

@@ -14,6 +14,7 @@ import {
   type ManagerWorkScheduleAvailabilityType,
   type ManagerWorkspaceContext,
 } from '@modules/manager-workspace/api/manager-workspace.api';
+import { WorkScheduleDeadlineCue } from '@modules/work-schedule/components/WorkScheduleDeadlineCue';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type TargetOption = {
@@ -109,13 +110,17 @@ export const ManagerAvailabilityPanel = ({
     return [...orgUnitOptions, ...talentGroupOptions];
   }, [context.scopes.orgUnits, context.scopes.talentGroups]);
   const [targetKey, setTargetKey] = useState(() => targetOptions[0]?.key ?? '');
-  const selectedTarget = targetOptions.find((option) => option.key === targetKey) ?? targetOptions[0];
+  const selectedTarget =
+    targetOptions.find((option) => option.key === targetKey) ?? targetOptions[0];
   const membersQuery = useManagerAvailabilityTargetMembers(
     selectedTarget?.targetType,
     selectedTarget?.targetId,
     context.modules.workShifts.visible,
   );
-  const managedMembers = useMemo(() => membersQuery.data?.members ?? [], [membersQuery.data?.members]);
+  const managedMembers = useMemo(
+    () => membersQuery.data?.members ?? [],
+    [membersQuery.data?.members],
+  );
   const managedMemberIds = useMemo(
     () => new Set(managedMembers.map((member) => member.employmentProfileId)),
     [managedMembers],
@@ -160,7 +165,10 @@ export const ManagerAvailabilityPanel = ({
       setValidationMessage(t('manager-workspace:availability.validation.maxLines'));
       return;
     }
-    setDraftLines((current) => [...current, createDraftLine(firstMember.employmentProfileId, periodMonth)]);
+    setDraftLines((current) => [
+      ...current,
+      createDraftLine(firstMember.employmentProfileId, periodMonth),
+    ]);
     setValidationMessage(null);
   };
 
@@ -278,7 +286,10 @@ export const ManagerAvailabilityPanel = ({
         <p>{t('manager-workspace:availability.copy.noAttendance')}</p>
         <p>{t('manager-workspace:availability.copy.noAutoApply')}</p>
         <p>{t('manager-workspace:availability.copy.otherAdvisory')}</p>
+        <p>{t('manager-workspace:availability.copy.independentOfShifts')}</p>
       </div>
+
+      <WorkScheduleDeadlineCue targetMonth={periodMonth} cueType="AVAILABILITY_CUTOFF" />
 
       <label className="block rounded border border-border bg-bg p-3 text-sm font-medium text-text">
         {t('manager-workspace:availability.fields.target')}
@@ -374,13 +385,18 @@ export const ManagerAvailabilityPanel = ({
             <div key={line.localId} className="space-y-3 rounded border border-border bg-panel p-3">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-text">
-                  {t('manager-workspace:availability.lineTitle').replace('{{index}}', String(index + 1))}
+                  {t('manager-workspace:availability.lineTitle').replace(
+                    '{{index}}',
+                    String(index + 1),
+                  )}
                 </h3>
                 <button
                   type="button"
                   className="inline-flex items-center gap-1 rounded border border-danger px-2 py-1 text-xs text-danger"
                   onClick={() =>
-                    setDraftLines((current) => current.filter((item) => item.localId !== line.localId))
+                    setDraftLines((current) =>
+                      current.filter((item) => item.localId !== line.localId),
+                    )
                   }
                 >
                   <Trash2 className="h-3 w-3" aria-hidden="true" />
@@ -429,8 +445,8 @@ export const ManagerAvailabilityPanel = ({
                     value={line.taxonomyCode}
                     onChange={(event) =>
                       updateLine(line.localId, {
-                        taxonomyCode:
-                          event.target.value as ManagerWorkScheduleAvailabilityTaxonomyCode,
+                        taxonomyCode: event.target
+                          .value as ManagerWorkScheduleAvailabilityTaxonomyCode,
                       })
                     }
                   >
@@ -568,7 +584,9 @@ export const ManagerAvailabilityPanel = ({
                     {formatBusinessTimestamp(detailQuery.data.submittedAt)}
                   </p>
                 </div>
-                <span className={`rounded border px-2 py-1 text-xs ${badgeClass(detailQuery.data.status)}`}>
+                <span
+                  className={`rounded border px-2 py-1 text-xs ${badgeClass(detailQuery.data.status)}`}
+                >
                   {detailQuery.data.status}
                 </span>
               </div>
@@ -633,12 +651,16 @@ export const ManagerAvailabilityPanel = ({
                           ) : null}
                         </td>
                         <td className="px-3 py-2">
-                          <span className={`rounded border px-2 py-0.5 text-xs ${badgeClass(line.status)}`}>
+                          <span
+                            className={`rounded border px-2 py-0.5 text-xs ${badgeClass(line.status)}`}
+                          >
                             {line.status}
                           </span>
                         </td>
                         <td className="px-3 py-2">
-                          <span className={`rounded border px-2 py-0.5 text-xs ${badgeClass(line.applyStatus)}`}>
+                          <span
+                            className={`rounded border px-2 py-0.5 text-xs ${badgeClass(line.applyStatus)}`}
+                          >
                             {line.applyStatus}
                           </span>
                         </td>

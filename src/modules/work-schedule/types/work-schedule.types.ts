@@ -56,11 +56,7 @@ export type WorkScheduleAvailabilityBatchStatus =
   | 'APPROVED'
   | 'REJECTED'
   | 'CANCELLED';
-export type WorkScheduleAvailabilityLineStatus =
-  | 'PENDING'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'CANCELLED';
+export type WorkScheduleAvailabilityLineStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 export type WorkScheduleAvailabilityType =
   | 'UNAVAILABLE_FULL_DAY'
   | 'PREFERRED_TIME'
@@ -503,8 +499,8 @@ export type ApplyAvailabilityLinesToMonthlyRosterResult = {
   rosterCode: string;
   rosterMonth: string;
   status: MonthlyRosterStatus;
-  targetType: MonthlyRosterTargetType | string;
-  targetMode: MonthlyRosterTargetMode | string;
+  targetType: MonthlyRosterTargetType;
+  targetMode: MonthlyRosterTargetMode;
   targetOrgUnitId: string | null;
   targetTalentGroupId: string | null;
   appliedCount: number;
