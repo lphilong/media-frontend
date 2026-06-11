@@ -1,9 +1,9 @@
 {
   "page": {
-    "title": "人员就绪",
-    "subtitle": "面向运营人员记录的只读设置与就绪看板。",
-    "helper": "该看板只检测设置和就绪问题，不会自动修复记录。",
-    "placeholder": "人员就绪看板"
+    "title": "人员档案检查",
+    "subtitle": "发现导致人员档案暂不具备运营条件的问题。",
+    "helper": "该页面只检测导致人员档案暂不具备运营条件的问题，不会自动修复记录。",
+    "placeholder": "人员档案检查"
   },
   "sections": {
     "overview": "概览",
@@ -15,8 +15,12 @@
     "blockerHelper": "阻止新的运营参与的问题。",
     "warning": "警告",
     "warningHelper": "需要复核但不一定阻止所有流程的问题。",
-    "loginSelfService": "登录 / Self-Service 风险",
-    "loginSelfServiceHelper": "登录账号关联和 Self-Service 就绪问题。",
+    "employmentTerms": "雇佣条款",
+    "employmentTermsHelper": "存在雇佣条款 / 薪酬条件问题的人员档案。",
+    "accountLogin": "账号 / Self-Service",
+    "accountLoginHelper": "登录账号关联问题。",
+    "selfService": "Self-Service 风险",
+    "selfServiceHelper": "可能无法正确访问 Self-Service 的人员档案。",
     "manager": "管理者就绪风险",
     "managerHelper": "管理者 assignment 中的档案或登录就绪问题。"
   },
@@ -32,28 +36,34 @@
     "allIssueCodes": "全部问题类型"
   },
   "fields": {
-    "category": "受影响流程",
+    "affectedProfile": "受影响档案",
+    "issue": "问题",
+    "description": "描述",
+    "severity": "严重程度",
+    "category": "问题类型",
     "issueCode": "诊断代码",
     "generatedAt": "生成时间",
     "relatedEntities": "相关记录",
     "repairTarget": "导航提示:"
   },
   "actions": {
-    "openHint": "打开相关 Admin 记录"
+    "openHint": "打开相关 Admin 记录",
+    "openEmploymentTerms": "打开雇佣条款 / 薪酬条件"
   },
   "states": {
     "emptyTitle": "当前筛选没有问题",
     "emptyMessage": "没有后端 readiness issue 匹配当前筛选。这不是生产或运行时就绪声明。",
-    "loadErrorTitle": "无法加载人员就绪",
+    "loadErrorTitle": "无法加载人员档案检查",
     "loadErrorMessage": "无法加载看板数据。",
-    "refreshingInline": "正在刷新人员就绪数据...",
+    "refreshingInline": "正在刷新人员档案检查数据...",
     "refreshErrorTitle": "无法刷新问题列表",
-    "refreshErrorMessage": "正在显示上一次加载的人员就绪数据。",
+    "refreshErrorMessage": "正在显示上一次加载的人员档案检查数据。",
     "hintOnly": "没有安全的详情路由。该内容仅作为提示，不是修复操作。"
   },
   "badges": {
     "readOnly": "只读",
-    "blocking": "需要紧急处理"
+    "blocking": "需要紧急处理",
+    "blockingHelper": "该问题正在阻止新的运营操作。"
   },
   "tones": {
     "danger": "需要紧急处理",
@@ -72,7 +82,7 @@
     "INFO": "信息"
   },
   "categories": {
-    "EMPLOYMENT_TERMS_READY": "雇佣条款来源就绪",
+    "EMPLOYMENT_TERMS_READY": "雇佣条款",
     "ACCOUNT_LOGIN_READY": "登录账号",
     "EMPLOYMENT_PROFILE_LIFECYCLE": "员工档案生命周期",
     "ORGUNIT_PARTICIPATION": "运营范围",

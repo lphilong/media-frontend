@@ -30,7 +30,6 @@ import {
   FilterBarShell,
   LoadingState,
   PageContainer,
-  PageHeader,
   PermissionDeniedState,
   StatusBadge,
   type StatusBadgeTone,
@@ -53,6 +52,15 @@ type OverviewCard = {
   helperKey: string;
   value: number;
   tone: StatusBadgeTone;
+  filter:
+    | {
+        kind: 'severity';
+        value: PeopleReadinessSeverity;
+      }
+    | {
+        kind: 'category';
+        value: PeopleReadinessCategory;
+      };
 };
 
 const severityTone: Record<PeopleReadinessSeverity, StatusBadgeTone> = {
@@ -136,6 +144,19 @@ const resolveSafeRepairLink = (
 const readEntityStatus = (entity: PeopleReadinessSafeEntitySummary): string | undefined =>
   entity.lifecycleStatus ?? entity.status;
 
+const isOverviewCardActive = (card: OverviewCard, filters: FilterState): boolean =>
+  card.filter.kind === 'severity'
+    ? filters.severity === card.filter.value
+    : filters.category === card.filter.value;
+
+const getRepairActionKey = (issue: PeopleReadinessIssue, repairLink: string | null): string => {
+  if (repairLink && issue.category === 'EMPLOYMENT_TERMS_READY') {
+    return 'actions.openEmploymentTerms';
+  }
+
+  return repairLink ? 'actions.openHint' : 'states.hintOnly';
+};
+
 const SelectFilter = <TValue extends string>({
   label,
   value,
@@ -170,8 +191,12 @@ const SelectFilter = <TValue extends string>({
 
 const OverviewCards = ({
   cards,
+  filters,
+  onToggle,
 }: {
   cards: readonly OverviewCard[];
+  filters: FilterState;
+  onToggle: (card: OverviewCard) => void;
 }): JSX.Element => {
   const { t, i18n } = useTranslation('people-readiness');
   const locale = i18n.language.startsWith('en')
@@ -189,18 +214,32 @@ const OverviewCards = ({
         <StatusBadge label={t('badges.readOnly')} tone="info" uppercase={false} />
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <div key={card.id} className="rounded border border-border bg-panel p-4 shadow-shell">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-medium text-muted">{t(card.labelKey)}</p>
-              <StatusBadge label={t(`tones.${card.tone}`)} tone={card.tone} uppercase={false} />
-            </div>
-            <p className="mt-2 text-2xl font-semibold text-text">
-              {formatInteger(card.value, locale)}
-            </p>
-            <p className="mt-2 text-sm text-muted">{t(card.helperKey)}</p>
-          </div>
-        ))}
+        {cards.map((card) => {
+          const active = isOverviewCardActive(card, filters);
+
+          return (
+            <button
+              key={card.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onToggle(card)}
+              className={`rounded border p-4 text-left shadow-shell transition focus:outline-none focus:ring-2 focus:ring-accent ${
+                active
+                  ? 'border-accent bg-accent/10'
+                  : 'border-border bg-panel hover:border-accent/50'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-medium text-muted">{t(card.labelKey)}</p>
+                <StatusBadge label={t(`tones.${card.tone}`)} tone={card.tone} uppercase={false} />
+              </div>
+              <p className="mt-2 text-2xl font-semibold text-text">
+                {formatInteger(card.value, locale)}
+              </p>
+              <p className="mt-2 text-sm text-muted">{t(card.helperKey)}</p>
+            </button>
+          );
+        })}
       </div>
     </section>
   );
@@ -211,12 +250,12 @@ const EntitySummary = ({ entity }: { entity: PeopleReadinessSafeEntitySummary })
   const status = readEntityStatus(entity);
 
   return (
-    <div className="min-w-[180px]">
+    <div>
       <p className="font-medium text-text">{entity.displayName}</p>
-      <div className="mt-1 flex flex-wrap gap-1 text-xs text-muted">
-        <span>{t(`entities.${entity.entityType}`)}</span>
+      <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted">
         {entity.code ? <span>{entity.code}</span> : null}
         {status ? <span>{t(`statuses.${status}`, { defaultValue: status })}</span> : null}
+        <span>{t(`entities.${entity.entityType}`)}</span>
       </div>
     </div>
   );
@@ -225,69 +264,93 @@ const EntitySummary = ({ entity }: { entity: PeopleReadinessSafeEntitySummary })
 const IssueRow = ({ issue }: { issue: PeopleReadinessIssue }): JSX.Element => {
   const { t } = useTranslation('people-readiness');
   const repairLink = resolveSafeRepairLink(issue.repairTarget, issue.primaryEntity);
+  const repairActionKey = getRepairActionKey(issue, repairLink);
 
   return (
     <article className="rounded border border-border bg-panel p-4 shadow-shell">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-[240px] flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <StatusBadge
-              label={t(`severities.${issue.severity}`)}
-              tone={severityTone[issue.severity]}
-              uppercase={false}
-            />
-            {issue.isBlockingForNewOperations ? (
-              <StatusBadge label={t('badges.blocking')} tone="danger" uppercase={false} />
-            ) : null}
+      <div className="space-y-4">
+        <section aria-label={t('fields.affectedProfile')}>
+          <p className="text-xs font-medium uppercase text-muted">{t('fields.affectedProfile')}</p>
+          <div className="mt-1 rounded border border-border bg-bg px-3 py-2">
+            <EntitySummary entity={issue.primaryEntity} />
           </div>
-          <h3 className="text-base font-semibold text-text">
+        </section>
+
+        <section aria-label={t('fields.issue')}>
+          <p className="text-xs font-medium uppercase text-muted">{t('fields.issue')}</p>
+          <h3 className="mt-1 text-base font-semibold text-text">
             {t(`issueTitles.${issue.issueCode}`)}
           </h3>
-          <p className="mt-1 text-sm text-muted">{t(`issueDescriptions.${issue.issueCode}`)}</p>
-        </div>
-        <EntitySummary entity={issue.primaryEntity} />
-      </div>
+        </section>
 
-      <dl className="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
-        <div>
-          <dt className="font-medium text-muted">{t('fields.category')}</dt>
-          <dd className="mt-1 text-text">{t(`categories.${issue.category}`)}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-muted">{t('fields.issueCode')}</dt>
-          <dd className="mt-1 break-all font-mono text-xs text-muted">{issue.issueCode}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-muted">{t('fields.generatedAt')}</dt>
-          <dd className="mt-1 text-text">{formatBusinessTimestamp(issue.generatedAt)}</dd>
-        </div>
-      </dl>
+        <section aria-label={t('fields.description')}>
+          <p className="text-xs font-medium uppercase text-muted">{t('fields.description')}</p>
+          <p className="mt-1 text-sm text-text">{t(`issueDescriptions.${issue.issueCode}`)}</p>
+        </section>
 
-      {issue.relatedEntities.length > 0 ? (
-        <div className="mt-4">
-          <p className="text-sm font-medium text-muted">{t('fields.relatedEntities')}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {issue.relatedEntities.map((entity) => (
-              <span
-                key={`${entity.entityType}-${entity.id}`}
-                className="rounded border border-border bg-bg px-2 py-1 text-xs text-text"
-              >
-                {entity.displayName} · {t(`entities.${entity.entityType}`)}
-              </span>
-            ))}
+        <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+          <div>
+            <dt className="font-medium text-muted">{t('fields.severity')}</dt>
+            <dd className="mt-1">
+              <StatusBadge
+                label={t(`severities.${issue.severity}`)}
+                tone={severityTone[issue.severity]}
+                uppercase={false}
+              />
+              {issue.isBlockingForNewOperations ? (
+                <p className="mt-2 text-xs text-muted">{t('badges.blockingHelper')}</p>
+              ) : null}
+            </dd>
           </div>
-        </div>
-      ) : null}
+          <div>
+            <dt className="font-medium text-muted">{t('fields.category')}</dt>
+            <dd className="mt-1">
+              <StatusBadge
+                label={t(`categories.${issue.category}`)}
+                tone="info"
+                uppercase={false}
+              />
+            </dd>
+          </div>
+        </dl>
 
-      <div className="mt-4 rounded border border-dashed border-border bg-bg px-3 py-2 text-sm">
-        <span className="font-medium text-muted">{t('fields.repairTarget')} </span>
-        {repairLink ? (
-          <Link className="font-medium text-accent hover:underline" to={repairLink}>
-            {t('actions.openHint')}
-          </Link>
-        ) : (
-          <span className="text-muted">{t('states.hintOnly')}</span>
-        )}
+        {issue.relatedEntities.length > 0 ? (
+          <div>
+            <p className="text-sm font-medium text-muted">{t('fields.relatedEntities')}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {issue.relatedEntities.map((entity) => (
+                <span
+                  key={`${entity.entityType}-${entity.id}`}
+                  className="rounded border border-border bg-bg px-2 py-1 text-xs text-text"
+                >
+                  {entity.displayName} · {t(`entities.${entity.entityType}`)}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="rounded border border-dashed border-border bg-bg px-3 py-2 text-sm">
+          <span className="font-medium text-muted">{t('fields.repairTarget')} </span>
+          {repairLink ? (
+            <Link className="font-medium text-accent hover:underline" to={repairLink}>
+              {t(repairActionKey)}
+            </Link>
+          ) : (
+            <span className="text-muted">{t(repairActionKey)}</span>
+          )}
+        </div>
+
+        <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+          <div>
+            <dt className="font-medium text-muted">{t('fields.issueCode')}</dt>
+            <dd className="mt-1 break-all font-mono text-xs text-muted">{issue.issueCode}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-muted">{t('fields.generatedAt')}</dt>
+            <dd className="mt-1 text-muted">{formatBusinessTimestamp(issue.generatedAt)}</dd>
+          </div>
+        </dl>
       </div>
     </article>
   );
@@ -313,14 +376,24 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
     setFilters((current) => ({ ...current, [key]: value }));
     resetCursor();
   };
+  const toggleOverviewFilter = (card: OverviewCard): void => {
+    const active = isOverviewCardActive(card, filters);
+    if (card.filter.kind === 'severity') {
+      updateFilter('severity', active ? '' : card.filter.value);
+      return;
+    }
+    updateFilter('category', active ? '' : card.filter.value);
+  };
 
   const combinedError = summaryQuery.error ?? issuesQuery.error;
   const apiError = asApiError(combinedError);
 
-  if ((summaryQuery.isPending && !summaryQuery.data) || (issuesQuery.isPending && !issuesQuery.data)) {
+  if (
+    (summaryQuery.isPending && !summaryQuery.data) ||
+    (issuesQuery.isPending && !issuesQuery.data)
+  ) {
     return (
       <PageContainer>
-        <PageHeader title={t('people-readiness:page.title')} subtitle={t('people-readiness:page.subtitle')} />
         <LoadingState lines={10} />
       </PageContainer>
     );
@@ -337,7 +410,6 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
 
     return (
       <PageContainer>
-        <PageHeader title={t('people-readiness:page.title')} subtitle={t('people-readiness:page.subtitle')} />
         <ErrorState
           title={t('people-readiness:states.loadErrorTitle')}
           message={readErrorMessage(
@@ -364,6 +436,7 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
       helperKey: 'overview.blockerHelper',
       value: countSeverity(summary, 'BLOCKER'),
       tone: 'danger',
+      filter: { kind: 'severity', value: 'BLOCKER' },
     },
     {
       id: 'warning',
@@ -371,14 +444,31 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
       helperKey: 'overview.warningHelper',
       value: countSeverity(summary, 'WARNING'),
       tone: 'warning',
+      filter: { kind: 'severity', value: 'WARNING' },
     },
     {
-      id: 'login-self-service',
-      labelKey: 'overview.loginSelfService',
-      helperKey: 'overview.loginSelfServiceHelper',
-      value:
-        countCategory(summary, 'ACCOUNT_LOGIN_READY') + countCategory(summary, 'SELF_SERVICE_READY'),
+      id: 'employment-terms',
+      labelKey: 'overview.employmentTerms',
+      helperKey: 'overview.employmentTermsHelper',
+      value: countCategory(summary, 'EMPLOYMENT_TERMS_READY'),
       tone: 'info',
+      filter: { kind: 'category', value: 'EMPLOYMENT_TERMS_READY' },
+    },
+    {
+      id: 'account-login',
+      labelKey: 'overview.accountLogin',
+      helperKey: 'overview.accountLoginHelper',
+      value: countCategory(summary, 'ACCOUNT_LOGIN_READY'),
+      tone: 'info',
+      filter: { kind: 'category', value: 'ACCOUNT_LOGIN_READY' },
+    },
+    {
+      id: 'self-service',
+      labelKey: 'overview.selfService',
+      helperKey: 'overview.selfServiceHelper',
+      value: countCategory(summary, 'SELF_SERVICE_READY'),
+      tone: 'info',
+      filter: { kind: 'category', value: 'SELF_SERVICE_READY' },
     },
     {
       id: 'manager',
@@ -386,26 +476,29 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
       helperKey: 'overview.managerHelper',
       value: countCategory(summary, 'MANAGER_ASSIGNMENT_READY'),
       tone: 'warning',
+      filter: { kind: 'category', value: 'MANAGER_ASSIGNMENT_READY' },
     },
   ];
 
   return (
     <PageContainer className="space-y-5">
-      <PageHeader title={t('people-readiness:page.title')} subtitle={t('people-readiness:page.subtitle')} />
-
       <div className="rounded border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
         <span className="font-semibold">{t('people-readiness:badges.readOnly')}.</span>{' '}
         {t('people-readiness:page.helper')}
       </div>
 
-      {summary ? <OverviewCards cards={cards} /> : null}
+      {summary ? (
+        <OverviewCards cards={cards} filters={filters} onToggle={toggleOverviewFilter} />
+      ) : null}
 
       <section className="space-y-3" aria-labelledby="people-readiness-issues">
         <div>
           <h2 id="people-readiness-issues" className="text-base font-semibold text-text">
             {t('people-readiness:sections.issueInbox')}
           </h2>
-          <p className="mt-1 text-sm text-muted">{t('people-readiness:sections.issueInboxHelper')}</p>
+          <p className="mt-1 text-sm text-muted">
+            {t('people-readiness:sections.issueInboxHelper')}
+          </p>
         </div>
 
         <FilterBarShell>
@@ -482,7 +575,9 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
         ) : null}
 
         <div className="space-y-3">
-          {issues?.items.map((issue) => <IssueRow key={issue.id} issue={issue} />)}
+          {issues?.items.map((issue) => (
+            <IssueRow key={issue.id} issue={issue} />
+          ))}
         </div>
 
         {issues ? (

@@ -1,9 +1,9 @@
 {
   "page": {
-    "title": "People Readiness",
-    "subtitle": "Read-only setup and readiness dashboard for operational people records.",
-    "helper": "This dashboard detects setup and readiness issues. It does not repair records automatically.",
-    "placeholder": "People Readiness dashboard"
+    "title": "People Profile Check",
+    "subtitle": "Detect issues that keep people records from being operationally eligible.",
+    "helper": "This screen detects issues that keep people records from being operationally eligible. It does not repair records automatically.",
+    "placeholder": "People Profile Check"
   },
   "sections": {
     "overview": "Overview",
@@ -15,8 +15,12 @@
     "blockerHelper": "Blocking issues for new operational participation.",
     "warning": "Warnings",
     "warningHelper": "Issues that need review but may not block every flow.",
-    "loginSelfService": "Login / Self-Service risks",
-    "loginSelfServiceHelper": "Account linkage and Self-Service readiness issues.",
+    "employmentTerms": "Employment terms",
+    "employmentTermsHelper": "People records with employment terms / pay condition issues.",
+    "accountLogin": "Account / Self-Service",
+    "accountLoginHelper": "Login account linkage issues.",
+    "selfService": "Self-Service risks",
+    "selfServiceHelper": "People records that may not access Self-Service correctly.",
     "manager": "Manager readiness risks",
     "managerHelper": "Manager assignment rows with profile or login readiness issues."
   },
@@ -32,28 +36,34 @@
     "allIssueCodes": "All issue types"
   },
   "fields": {
-    "category": "Affected flow",
+    "affectedProfile": "Affected profile",
+    "issue": "Issue",
+    "description": "Description",
+    "severity": "Severity",
+    "category": "Issue category",
     "issueCode": "Diagnostic code",
     "generatedAt": "Generated at",
     "relatedEntities": "Related records",
     "repairTarget": "Navigation hint:"
   },
   "actions": {
-    "openHint": "Open related Admin record"
+    "openHint": "Open related Admin record",
+    "openEmploymentTerms": "Open employment terms / pay conditions"
   },
   "states": {
     "emptyTitle": "No issues in this filter",
     "emptyMessage": "No backend readiness issues match the current filter. This is not a production or runtime readiness claim.",
-    "loadErrorTitle": "Could not load People Readiness",
+    "loadErrorTitle": "Could not load People Profile Check",
     "loadErrorMessage": "The dashboard data could not be loaded.",
-    "refreshingInline": "Refreshing People Readiness data...",
+    "refreshingInline": "Refreshing People Profile Check data...",
     "refreshErrorTitle": "Could not refresh issues",
-    "refreshErrorMessage": "Showing the last loaded People Readiness data.",
+    "refreshErrorMessage": "Showing the last loaded People Profile Check data.",
     "hintOnly": "No safe detail route is available. Use this as a non-actionable hint."
   },
   "badges": {
     "readOnly": "Read-only",
-    "blocking": "Needs urgent handling"
+    "blocking": "Needs urgent handling",
+    "blockingHelper": "This issue blocks new operational actions."
   },
   "tones": {
     "danger": "Needs urgent handling",
@@ -73,7 +83,7 @@
     "INFO": "Information"
   },
   "categories": {
-    "EMPLOYMENT_TERMS_READY": "Employment Terms source readiness",
+    "EMPLOYMENT_TERMS_READY": "Employment terms",
     "ACCOUNT_LOGIN_READY": "Login account",
     "EMPLOYMENT_PROFILE_LIFECYCLE": "Employment profile lifecycle",
     "ORGUNIT_PARTICIPATION": "Operational scope",

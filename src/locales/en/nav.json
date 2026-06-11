@@ -5,14 +5,14 @@
   "groups": {
     "overview": "Overview",
     "identityAccess": "Identity & Access",
-    "organization": "Organization",
+    "organization": "People & Organization",
     "talentOwnership": "Talent & Ownership",
     "operations": "Operations",
     "commercial": "Commercial"
   },
   "items": {
     "dashboard": "Dashboard",
-    "peopleReadiness": "People Readiness",
+    "peopleReadiness": "People Profile Check",
     "users": "Users",
     "roles": "Roles",
     "orgUnits": "Org Units",

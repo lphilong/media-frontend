@@ -5,14 +5,14 @@
   "groups": {
     "overview": "概览",
     "identityAccess": "身份与访问",
-    "organization": "组织",
+    "organization": "人员与组织",
     "talentOwnership": "Talent 与归属",
     "operations": "运营",
     "commercial": "商业"
   },
   "items": {
     "dashboard": "仪表盘",
-    "peopleReadiness": "人员就绪",
+    "peopleReadiness": "人员档案检查",
     "users": "用户",
     "roles": "角色",
     "orgUnits": "组织单元",

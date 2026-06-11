@@ -37,8 +37,9 @@ const makeCapabilities = (
 const renderPeopleReadinessRoute = async (
   capabilities = makeCapabilities({}),
   path = '/people-readiness',
+  locale: 'en' | 'vi' | 'zh' = 'en',
 ) => {
-  await setLocale('en');
+  await setLocale(locale);
   setMockCurrentActorCapabilities(capabilities);
   const router = createMemoryRouter(appRoutes, {
     initialEntries: [path],
@@ -79,7 +80,7 @@ const lastIssuesRequest = (): URL => {
   return new URL(raw);
 };
 
-describe('People Readiness dashboard', () => {
+describe('People Profile Check dashboard', () => {
   it('strictly parses the Employment Terms category and five issue codes while rejecting unknown codes', () => {
     const codes = [
       'ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS',
@@ -116,11 +117,27 @@ describe('People Readiness dashboard', () => {
 
     expect(await screen.findByTestId('admin-shell-main')).toBeInTheDocument();
     expect(await screen.findByTestId('nav-link-people-readiness')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'People Readiness' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'People Profile Check' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'People Profile Check' })).toHaveLength(1);
     expect(await screen.findByText('Issue Inbox')).toBeInTheDocument();
     expect(screen.getByText('Read-only.')).toBeInTheDocument();
     expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
+  });
+
+  it('uses the Vietnamese People Profile Check naming in the route and sidebar', async () => {
+    await renderPeopleReadinessRoute(makeCapabilities({}), '/people-readiness', 'vi');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Kiểm tra hồ sơ nhân sự' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Kiểm tra hồ sơ nhân sự' })).toHaveLength(1);
+    expect(screen.getByTestId('nav-link-people-readiness')).toHaveTextContent(
+      'Kiểm tra hồ sơ nhân sự',
+    );
+    expect(screen.queryByText('Sẵn sàng nhân sự')).not.toBeInTheDocument();
   });
 
   it('fails closed for unsupported Manager and Self-Service style actors', async () => {
@@ -160,7 +177,8 @@ describe('People Readiness dashboard', () => {
     await renderPeopleReadinessRoute();
 
     expect(await screen.findByText('Urgent issues')).toBeInTheDocument();
-    expect(screen.getByText('Login / Self-Service risks')).toBeInTheDocument();
+    expect(screen.getByText('Account / Self-Service')).toBeInTheDocument();
+    expect(screen.getAllByText('Self-Service risks').length).toBeGreaterThan(0);
     expect(await screen.findByText('No Org Person')).toBeInTheDocument();
     expect(screen.getByText('EMPLOYMENT_PROFILE_MISSING_ORG_UNIT')).toBeInTheDocument();
     expect(screen.getAllByText('Open related Admin record')[0]).toHaveAttribute(
@@ -233,6 +251,58 @@ describe('People Readiness dashboard', () => {
     expect(lastIssuesRequest().searchParams.has('bulk')).toBe(false);
   });
 
+  it('uses overview cards as backend-supported quick filters and keeps dropdowns in sync', async () => {
+    await renderPeopleReadinessRoute();
+    await screen.findByText('No Org Person');
+
+    await userEvent.click(screen.getByRole('button', { name: /Urgent issues/i }));
+    await waitFor(() => {
+      expect(lastIssuesRequest().searchParams.get('severity')).toBe('BLOCKER');
+    });
+    expect(screen.getByRole('button', { name: /Urgent issues/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByLabelText('Severity')).toHaveValue('BLOCKER');
+
+    await userEvent.click(screen.getByRole('button', { name: /Urgent issues/i }));
+    await waitFor(() => {
+      expect(lastIssuesRequest().searchParams.has('severity')).toBe(false);
+    });
+    expect(screen.getByRole('button', { name: /Urgent issues/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByLabelText('Severity')).toHaveValue('');
+
+    const warningCard = screen.getByRole('button', { name: /Warnings/i });
+    await userEvent.click(warningCard);
+    await waitFor(() => {
+      expect(lastIssuesRequest().searchParams.get('severity')).toBe('WARNING');
+    });
+    expect(screen.getByLabelText('Severity')).toHaveValue('WARNING');
+
+    const employmentTermsCard = screen.getByRole('button', { name: /Employment terms/i });
+    await userEvent.click(employmentTermsCard);
+    await waitFor(() => {
+      expect(lastIssuesRequest().searchParams.get('category')).toBe('EMPLOYMENT_TERMS_READY');
+    });
+    expect(screen.getByRole('button', { name: /Employment terms/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByLabelText('Affected flow')).toHaveValue('EMPLOYMENT_TERMS_READY');
+
+    await userEvent.selectOptions(screen.getByLabelText('Affected flow'), '');
+    await waitFor(() => {
+      expect(lastIssuesRequest().searchParams.has('category')).toBe(false);
+    });
+    expect(screen.getByRole('button', { name: /Employment terms/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
   it('renders empty and backend forbidden states cleanly', async () => {
     setPeopleReadinessIssues([]);
     await renderPeopleReadinessRoute();
@@ -298,7 +368,7 @@ describe('People Readiness dashboard', () => {
     expect(
       screen.getByText('Current candidate terms do not contain valid base salary data.'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Employment Terms source readiness' })).toHaveValue(
+    expect(screen.getByRole('option', { name: 'Employment terms' })).toHaveValue(
       'EMPLOYMENT_TERMS_READY',
     );
     expect(screen.getByRole('option', { name: 'Employment Terms overlap' })).toHaveValue(
@@ -307,6 +377,39 @@ describe('People Readiness dashboard', () => {
     expect(screen.queryByText('Backend summary is not user-facing.')).not.toBeInTheDocument();
     expect(screen.queryByText('classification-only')).not.toBeInTheDocument();
     expect(screen.queryByText('internalDiagnostic')).not.toBeInTheDocument();
+  });
+
+  it('renders issue cards with distinct severity/category badges and secondary technical code', async () => {
+    setPeopleReadinessIssues([employmentTermsIssue('EMPLOYMENT_TERMS_MISSING_BASE_SALARY')]);
+    await renderPeopleReadinessRoute();
+
+    const heading = await screen.findByRole('heading', { name: 'Base salary data is missing' });
+    const article = heading.closest('article');
+
+    if (!article) {
+      throw new Error('Issue row did not render as an article');
+    }
+
+    expect(within(article).getByText('Affected profile')).toBeInTheDocument();
+    expect(within(article).getByText('Employment Terms Person')).toBeInTheDocument();
+    expect(within(article).getByText('EP-HRET')).toBeInTheDocument();
+    expect(within(article).getByText('Active')).toBeInTheDocument();
+    expect(within(article).getByText('Issue')).toBeInTheDocument();
+    expect(within(article).getByText('Description')).toBeInTheDocument();
+    expect(
+      within(article).getByText('Current candidate terms do not contain valid base salary data.'),
+    ).toBeInTheDocument();
+    expect(within(article).getByText('Severity')).toBeInTheDocument();
+    expect(within(article).getAllByText('Needs urgent handling')).toHaveLength(1);
+    expect(within(article).getByText('Issue category')).toBeInTheDocument();
+    expect(within(article).getByText('Employment terms')).toBeInTheDocument();
+    expect(
+      within(article).getByRole('link', { name: 'Open employment terms / pay conditions' }),
+    ).toHaveAttribute('href', '/employment-profiles/ep-hret#employment-terms');
+    expect(within(article).getByText('Diagnostic code')).toBeInTheDocument();
+    expect(within(article).getByText('EMPLOYMENT_TERMS_MISSING_BASE_SALARY')).toBeInTheDocument();
+    expect(within(article).queryByText(/allowance amount/i)).not.toBeInTheDocument();
+    expect(within(article).queryByText(/VND/)).not.toBeInTheDocument();
   });
 
   it('renders localized titles and descriptions for all five HRET issue codes', async () => {
@@ -333,13 +436,13 @@ describe('People Readiness dashboard', () => {
 
     cleanup();
     await setLocale('vi');
-    expect(
-      i18n.t('people-readiness:issueTitles.ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS'),
-    ).toBe('Thiếu điều khoản lương');
+    expect(i18n.t('people-readiness:issueTitles.ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS')).toBe(
+      'Thiếu điều khoản lương',
+    );
     await setLocale('zh');
-    expect(
-      i18n.t('people-readiness:issueTitles.EMPLOYMENT_TERMS_OVERLAP'),
-    ).toBe('雇佣条款有效期重叠');
+    expect(i18n.t('people-readiness:issueTitles.EMPLOYMENT_TERMS_OVERLAP')).toBe(
+      '雇佣条款有效期重叠',
+    );
   });
 
   it('navigates HRET repair targets to the section and preserves no-access no-fetch behavior', async () => {
@@ -360,7 +463,9 @@ describe('People Readiness dashboard', () => {
     );
     await renderPeopleReadinessRoute(makeCapabilities({ permissions: ['employmentProfile.read'] }));
 
-    const link = await screen.findByRole('link', { name: 'Open related Admin record' });
+    const link = await screen.findByRole('link', {
+      name: 'Open employment terms / pay conditions',
+    });
     expect(link).toHaveAttribute('href', '/employment-profiles/ep-001#employment-terms');
     await userEvent.click(link);
 
@@ -411,6 +516,44 @@ describe('People Readiness dashboard', () => {
 
     expect(within(article).getByText(/No safe detail route is available/)).toBeInTheDocument();
     expect(within(article).queryByRole('link', { name: 'Open related Admin record' })).toBeNull();
+  });
+
+  it('places People Profile Check under People & Organization and not Operations', async () => {
+    await renderPeopleReadinessRoute(
+      makeCapabilities({
+        permissions: [
+          'employmentProfile.read',
+          'orgUnit.read',
+          'workSchedule.read',
+          'eventAssignment.read',
+        ],
+        scopeGrants: {
+          workSchedule: ['global'],
+          eventAssignment: ['global'],
+        },
+      }),
+    );
+
+    const peopleLink = await screen.findByTestId('nav-link-people-readiness');
+    const peopleSection = peopleLink.closest('section');
+
+    if (!peopleSection) {
+      throw new Error('People Profile Check nav link did not render inside a section');
+    }
+
+    expect(within(peopleSection).getByText('People & Organization')).toBeInTheDocument();
+    expect(within(peopleSection).getByText('Org Units')).toBeInTheDocument();
+    expect(within(peopleSection).getByText('Employment Profiles')).toBeInTheDocument();
+
+    const operationsHeader = screen.getByText('Operations');
+    const operationsSection = operationsHeader.closest('section');
+
+    if (!operationsSection) {
+      throw new Error('Operations nav section did not render');
+    }
+
+    expect(within(operationsSection).queryByTestId('nav-link-people-readiness')).toBeNull();
+    expect(within(operationsSection).queryByText('Employment Terms')).not.toBeInTheDocument();
   });
 });
 

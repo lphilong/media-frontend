@@ -1,9 +1,9 @@
 {
   "page": {
-    "title": "Sẵn sàng nhân sự",
-    "subtitle": "Bảng kiểm tra chỉ đọc cho hồ sơ nhân sự vận hành.",
-    "helper": "Dashboard này phát hiện vấn đề thiết lập và readiness. Hệ thống chưa tự động sửa hồ sơ.",
-    "placeholder": "Dashboard Sẵn sàng nhân sự"
+    "title": "Kiểm tra hồ sơ nhân sự",
+    "subtitle": "Phát hiện các vấn đề khiến hồ sơ nhân sự chưa đủ điều kiện vận hành.",
+    "helper": "Màn hình này chỉ phát hiện vấn đề khiến hồ sơ nhân sự chưa đủ điều kiện vận hành. Hệ thống không tự động sửa hồ sơ.",
+    "placeholder": "Kiểm tra hồ sơ nhân sự"
   },
   "sections": {
     "overview": "Tổng quan",
@@ -15,8 +15,12 @@
     "blockerHelper": "Vấn đề đang chặn tham gia vận hành mới.",
     "warning": "Cảnh báo",
     "warningHelper": "Vấn đề cần rà soát nhưng không nhất thiết chặn mọi luồng.",
-    "loginSelfService": "Rủi ro tài khoản / Self-Service",
-    "loginSelfServiceHelper": "Vấn đề liên kết tài khoản đăng nhập và readiness Self-Service.",
+    "employmentTerms": "Điều khoản lương",
+    "employmentTermsHelper": "Hồ sơ có vấn đề về điều khoản làm việc / lương.",
+    "accountLogin": "Tài khoản / Self-Service",
+    "accountLoginHelper": "Vấn đề liên kết tài khoản đăng nhập.",
+    "selfService": "Rủi ro Self-Service",
+    "selfServiceHelper": "Hồ sơ có thể không truy cập đúng Self-Service.",
     "manager": "Rủi ro sẵn sàng quản lý",
     "managerHelper": "Assignment quản lý có vấn đề về hồ sơ hoặc tài khoản đăng nhập."
   },
@@ -32,28 +36,34 @@
     "allIssueCodes": "Tất cả loại vấn đề"
   },
   "fields": {
-    "category": "Luồng ảnh hưởng",
-    "issueCode": "Mã chẩn đoán",
+    "affectedProfile": "Hồ sơ bị ảnh hưởng",
+    "issue": "Vấn đề",
+    "description": "Mô tả",
+    "severity": "Mức độ",
+    "category": "Loại vấn đề",
+    "issueCode": "Mã kỹ thuật",
     "generatedAt": "Thời điểm tạo",
     "relatedEntities": "Bản ghi liên quan",
     "repairTarget": "Gợi ý điều hướng:"
   },
   "actions": {
-    "openHint": "Mở bản ghi Admin liên quan"
+    "openHint": "Mở bản ghi Admin liên quan",
+    "openEmploymentTerms": "Mở điều khoản làm việc / lương"
   },
   "states": {
     "emptyTitle": "Không có vấn đề trong bộ lọc này",
     "emptyMessage": "Không có issue readiness backend nào khớp bộ lọc hiện tại. Đây không phải xác nhận production hoặc runtime readiness.",
-    "loadErrorTitle": "Không tải được Sẵn sàng nhân sự",
+    "loadErrorTitle": "Không tải được kiểm tra hồ sơ nhân sự",
     "loadErrorMessage": "Không tải được dữ liệu dashboard.",
-    "refreshingInline": "Đang làm mới dữ liệu Sẵn sàng nhân sự...",
+    "refreshingInline": "Đang làm mới dữ liệu kiểm tra hồ sơ nhân sự...",
     "refreshErrorTitle": "Không làm mới được danh sách vấn đề",
-    "refreshErrorMessage": "Đang hiển thị dữ liệu Sẵn sàng nhân sự đã tải gần nhất.",
+    "refreshErrorMessage": "Đang hiển thị dữ liệu kiểm tra hồ sơ nhân sự đã tải gần nhất.",
     "hintOnly": "Chưa có route chi tiết an toàn. Chỉ dùng như gợi ý, không phải thao tác sửa."
   },
   "badges": {
     "readOnly": "Chỉ đọc",
-    "blocking": "Cần xử lý gấp"
+    "blocking": "Cần xử lý gấp",
+    "blockingHelper": "Vấn đề này đang chặn thao tác vận hành mới."
   },
   "tones": {
     "danger": "Cần xử lý gấp",
@@ -72,7 +82,7 @@
     "INFO": "Thông tin"
   },
   "categories": {
-    "EMPLOYMENT_TERMS_READY": "Điều kiện nguồn điều khoản lương",
+    "EMPLOYMENT_TERMS_READY": "Điều khoản lương",
     "ACCOUNT_LOGIN_READY": "Tài khoản đăng nhập",
     "EMPLOYMENT_PROFILE_LIFECYCLE": "Vòng đời hồ sơ nhân sự",
     "ORGUNIT_PARTICIPATION": "Phạm vi vận hành",

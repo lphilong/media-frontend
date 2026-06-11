@@ -5,14 +5,14 @@
   "groups": {
     "overview": "Tổng quan",
     "identityAccess": "Danh tính & Quyền truy cập",
-    "organization": "Tổ chức",
+    "organization": "Nhân sự & Tổ chức",
     "talentOwnership": "Talent & Sở hữu",
     "operations": "Vận hành",
     "commercial": "Thương mại"
   },
   "items": {
     "dashboard": "Bảng điều khiển",
-    "peopleReadiness": "Sẵn sàng nhân sự",
+    "peopleReadiness": "Kiểm tra hồ sơ nhân sự",
     "users": "Người dùng",
     "roles": "Vai trò",
     "orgUnits": "Đơn vị tổ chức",

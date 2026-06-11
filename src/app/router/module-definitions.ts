@@ -40,7 +40,7 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     id: 'people-readiness',
     listPath: APP_PATHS.peopleReadiness,
     namespace: 'people-readiness',
-    navGroup: 'operations',
+    navGroup: 'organization',
     navItemKey: 'peopleReadiness',
     listTitleKey: 'people-readiness:page.title',
     listSubtitleKey: 'people-readiness:page.subtitle',
@@ -314,6 +314,12 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
         navItemKey: 'employmentProfiles',
         to: APP_PATHS.employmentProfiles,
       },
+      {
+        id: 'people-readiness',
+        moduleId: 'people-readiness',
+        navItemKey: 'peopleReadiness',
+        to: APP_PATHS.peopleReadiness,
+      },
     ],
   },
   {
@@ -343,12 +349,6 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
   {
     id: 'operations',
     items: [
-      {
-        id: 'people-readiness',
-        moduleId: 'people-readiness',
-        navItemKey: 'peopleReadiness',
-        to: APP_PATHS.peopleReadiness,
-      },
       {
         id: 'work-shifts',
         moduleId: 'work-schedule',
