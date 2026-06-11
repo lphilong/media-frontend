@@ -11,6 +11,7 @@ export const PEOPLE_READINESS_CATEGORIES = [
   'SELF_SERVICE_READY',
   'WORKSCHEDULE_READY',
   'KPI_READY',
+  'EMPLOYMENT_TERMS_READY',
 ] as const;
 
 export const PEOPLE_READINESS_SEVERITIES = ['BLOCKER', 'WARNING', 'INFO'] as const;
@@ -35,6 +36,11 @@ export const PEOPLE_READINESS_ISSUE_CODES = [
   'TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY',
   'TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY',
   'SELF_SERVICE_PROFILE_NOT_ACTIVE',
+  'ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS',
+  'EMPLOYMENT_TERMS_PENDING_APPROVAL',
+  'EMPLOYMENT_TERMS_EXPIRED',
+  'EMPLOYMENT_TERMS_MISSING_BASE_SALARY',
+  'EMPLOYMENT_TERMS_OVERLAP',
 ] as const;
 
 export const PEOPLE_READINESS_ENTITY_TYPES = [
@@ -140,6 +146,10 @@ const issueListResponseSchema = z
   })
   .strict();
 
+export const parsePeopleReadinessIssueListResponse = (
+  value: unknown,
+): PeopleReadinessIssueList => issueListResponseSchema.parse(value).data;
+
 export type PeopleReadinessCategory = z.infer<typeof peopleReadinessCategorySchema>;
 export type PeopleReadinessSeverity = z.infer<typeof peopleReadinessSeveritySchema>;
 export type PeopleReadinessIssueCode = z.infer<typeof peopleReadinessIssueCodeSchema>;
@@ -188,5 +198,5 @@ export const fetchPeopleReadinessIssues = async (
     params: sanitizeIssueQuery(query),
   });
 
-  return issueListResponseSchema.parse(response).data;
+  return parsePeopleReadinessIssueListResponse(response);
 };

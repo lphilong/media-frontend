@@ -72,6 +72,7 @@
     "INFO": "信息"
   },
   "categories": {
+    "EMPLOYMENT_TERMS_READY": "雇佣条款来源就绪",
     "ACCOUNT_LOGIN_READY": "登录账号",
     "EMPLOYMENT_PROFILE_LIFECYCLE": "员工档案生命周期",
     "ORGUNIT_PARTICIPATION": "运营范围",
@@ -102,6 +103,11 @@
     "PENDING": "待处理"
   },
   "issueTitles": {
+    "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "缺少雇佣条款",
+    "EMPLOYMENT_TERMS_PENDING_APPROVAL": "雇佣条款待审批",
+    "EMPLOYMENT_TERMS_EXPIRED": "雇佣条款已失效",
+    "EMPLOYMENT_TERMS_MISSING_BASE_SALARY": "缺少基本工资数据",
+    "EMPLOYMENT_TERMS_OVERLAP": "雇佣条款有效期重叠",
     "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "启用的登录账号没有员工档案",
     "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "管理者档案缺少启用的登录账号",
     "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "员工档案关联了未启用的登录账号",
@@ -123,6 +129,11 @@
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "该档案不应使用 Self-Service"
   },
   "issueDescriptions": {
+    "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "在职档案没有当前已批准且可作为工资来源的雇佣条款。",
+    "EMPLOYMENT_TERMS_PENDING_APPROVAL": "请复核待审批条款。若没有其他当前有效来源，该档案不能作为工资来源。",
+    "EMPLOYMENT_TERMS_EXPIRED": "之前批准的工资来源已结束，且没有当前有效的替代来源。",
+    "EMPLOYMENT_TERMS_MISSING_BASE_SALARY": "当前候选条款缺少有效的基本工资数据。",
+    "EMPLOYMENT_TERMS_OVERLAP": "该档案存在多个已批准工资来源的有效期重叠。",
     "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "复核该登录账号是否应该链接到员工档案。",
     "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "持有管理者 assignment 的档案需要启用的登录账号。",
     "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "关联账号缺失或未启用，需要复核。",

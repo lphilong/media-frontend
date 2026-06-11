@@ -73,6 +73,7 @@
     "INFO": "Information"
   },
   "categories": {
+    "EMPLOYMENT_TERMS_READY": "Employment Terms source readiness",
     "ACCOUNT_LOGIN_READY": "Login account",
     "EMPLOYMENT_PROFILE_LIFECYCLE": "Employment profile lifecycle",
     "ORGUNIT_PARTICIPATION": "Operational scope",
@@ -103,6 +104,11 @@
     "PENDING": "Pending"
   },
   "issueTitles": {
+    "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "Missing Employment Terms",
+    "EMPLOYMENT_TERMS_PENDING_APPROVAL": "Employment Terms are pending approval",
+    "EMPLOYMENT_TERMS_EXPIRED": "Employment Terms have expired",
+    "EMPLOYMENT_TERMS_MISSING_BASE_SALARY": "Base salary data is missing",
+    "EMPLOYMENT_TERMS_OVERLAP": "Employment Terms overlap",
     "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Active login account has no employment profile",
     "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "Manager profile is missing an active login account",
     "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "Employment profile is linked to an inactive login account",
@@ -124,6 +130,11 @@
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Profile should not use Self-Service"
   },
   "issueDescriptions": {
+    "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "The active profile has no current approved source eligible for payroll use.",
+    "EMPLOYMENT_TERMS_PENDING_APPROVAL": "Review the pending terms. The profile is not eligible as a payroll source unless another current valid source exists.",
+    "EMPLOYMENT_TERMS_EXPIRED": "The previous approved payroll source ended and no current valid replacement exists.",
+    "EMPLOYMENT_TERMS_MISSING_BASE_SALARY": "Current candidate terms do not contain valid base salary data.",
+    "EMPLOYMENT_TERMS_OVERLAP": "More than one approved payroll-source effective range overlaps for this profile.",
     "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Review whether the login account should be linked to an employment profile.",
     "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "A manager-assigned profile needs an active linked login account.",
     "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "The linked account is missing or inactive and should be reviewed.",

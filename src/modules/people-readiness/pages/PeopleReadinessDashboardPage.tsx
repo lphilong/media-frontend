@@ -111,7 +111,8 @@ const resolveSafeRepairLink = (
   }
 
   if (target.targetType === 'EMPLOYMENT_PROFILE') {
-    return surface === APP_PATHS.employmentProfileDetail(target.targetId) ? surface : null;
+    const detail = APP_PATHS.employmentProfileDetail(target.targetId);
+    return surface === detail || surface === `${detail}#employment-terms` ? surface : null;
   }
   if (target.targetType === 'USER') {
     return surface === APP_PATHS.userDetail(target.targetId) ? surface : null;

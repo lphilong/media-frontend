@@ -6,7 +6,10 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 
 import { appRoutes } from '@app/router/router';
-import type { PeopleReadinessIssue } from '@modules/people-readiness/api/people-readiness.api';
+import {
+  parsePeopleReadinessIssueListResponse,
+  type PeopleReadinessIssue,
+} from '@modules/people-readiness/api/people-readiness.api';
 import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 import {
   peopleReadinessRequestLog,
@@ -77,6 +80,37 @@ const lastIssuesRequest = (): URL => {
 };
 
 describe('People Readiness dashboard', () => {
+  it('strictly parses the Employment Terms category and five issue codes while rejecting unknown codes', () => {
+    const codes = [
+      'ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS',
+      'EMPLOYMENT_TERMS_PENDING_APPROVAL',
+      'EMPLOYMENT_TERMS_EXPIRED',
+      'EMPLOYMENT_TERMS_MISSING_BASE_SALARY',
+      'EMPLOYMENT_TERMS_OVERLAP',
+    ] as const;
+    const items = codes.map((issueCode) => employmentTermsIssue(issueCode));
+    const response = {
+      data: {
+        items,
+        nextCursor: null,
+        totalCount: items.length,
+        generatedAt: Date.parse('2026-06-07T02:00:00.000Z'),
+        appliedFilters: { category: 'EMPLOYMENT_TERMS_READY' },
+      },
+    };
+
+    expect(parsePeopleReadinessIssueListResponse(response).items).toHaveLength(5);
+    expect(() =>
+      parsePeopleReadinessIssueListResponse({
+        ...response,
+        data: {
+          ...response.data,
+          items: [{ ...items[0], issueCode: 'UNKNOWN_EMPLOYMENT_TERMS_CODE' }],
+        },
+      }),
+    ).toThrow();
+  });
+
   it('renders the authorized Admin route through the Admin shell and sidebar', async () => {
     await renderPeopleReadinessRoute();
 
@@ -221,8 +255,16 @@ describe('People Readiness dashboard', () => {
     expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
   });
 
-  it('does not expose unsafe metadata or offer repair mutations', async () => {
+  it('does not display backend metadata or offer repair mutations', async () => {
     let mutationCount = 0;
+    setPeopleReadinessIssues([
+      {
+        ...employmentTermsIssue('EMPLOYMENT_TERMS_EXPIRED'),
+        metadata: {
+          internalDiagnostic: 'classification-only',
+        },
+      },
+    ]);
     server.use(
       http.post('*/admin/people-readiness/:action', () => {
         mutationCount += 1;
@@ -231,15 +273,104 @@ describe('People Readiness dashboard', () => {
     );
 
     await renderPeopleReadinessRoute();
-    await screen.findByText('No Org Person');
+    await screen.findByText('Employment Terms Person');
 
-    expect(screen.queryByText('0900000000')).not.toBeInTheDocument();
-    expect(screen.queryByText('1000000')).not.toBeInTheDocument();
-    expect(screen.queryByText('unsafePhone')).not.toBeInTheDocument();
-    expect(screen.queryByText(/payroll/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('classification-only')).not.toBeInTheDocument();
+    expect(screen.queryByText('internalDiagnostic')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /fix all/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /repair/i })).not.toBeInTheDocument();
     expect(mutationCount).toBe(0);
+  });
+
+  it('renders localized HRET copy and filters without displaying backend summary or metadata', async () => {
+    const issue = {
+      ...employmentTermsIssue('EMPLOYMENT_TERMS_MISSING_BASE_SALARY'),
+      metadata: {
+        internalDiagnostic: 'classification-only',
+      },
+    };
+    setPeopleReadinessIssues([issue]);
+    await renderPeopleReadinessRoute();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Base salary data is missing' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Current candidate terms do not contain valid base salary data.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Employment Terms source readiness' })).toHaveValue(
+      'EMPLOYMENT_TERMS_READY',
+    );
+    expect(screen.getByRole('option', { name: 'Employment Terms overlap' })).toHaveValue(
+      'EMPLOYMENT_TERMS_OVERLAP',
+    );
+    expect(screen.queryByText('Backend summary is not user-facing.')).not.toBeInTheDocument();
+    expect(screen.queryByText('classification-only')).not.toBeInTheDocument();
+    expect(screen.queryByText('internalDiagnostic')).not.toBeInTheDocument();
+  });
+
+  it('renders localized titles and descriptions for all five HRET issue codes', async () => {
+    const codes = [
+      'ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS',
+      'EMPLOYMENT_TERMS_PENDING_APPROVAL',
+      'EMPLOYMENT_TERMS_EXPIRED',
+      'EMPLOYMENT_TERMS_MISSING_BASE_SALARY',
+      'EMPLOYMENT_TERMS_OVERLAP',
+    ] as const;
+    setPeopleReadinessIssues(codes.map((code, index) => employmentTermsIssue(code, `ep-${index}`)));
+    await renderPeopleReadinessRoute();
+
+    for (const code of codes) {
+      expect(
+        await screen.findByRole('heading', {
+          name: i18n.t(`people-readiness:issueTitles.${code}`),
+        }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(i18n.t(`people-readiness:issueDescriptions.${code}`)),
+      ).toBeInTheDocument();
+    }
+
+    cleanup();
+    await setLocale('vi');
+    expect(
+      i18n.t('people-readiness:issueTitles.ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS'),
+    ).toBe('Thiếu điều khoản lương');
+    await setLocale('zh');
+    expect(
+      i18n.t('people-readiness:issueTitles.EMPLOYMENT_TERMS_OVERLAP'),
+    ).toBe('雇佣条款有效期重叠');
+  });
+
+  it('navigates HRET repair targets to the section and preserves no-access no-fetch behavior', async () => {
+    setPeopleReadinessIssues([
+      employmentTermsIssue('ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS', 'ep-001'),
+    ]);
+    let employmentTermsFetchCount = 0;
+    let contractRegistryRequestCount = 0;
+    server.use(
+      http.get('*/admin/employment-profiles/:employmentProfileId/employment-terms', () => {
+        employmentTermsFetchCount += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+      http.all('*/admin/contract-records*', () => {
+        contractRegistryRequestCount += 1;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+    );
+    await renderPeopleReadinessRoute(makeCapabilities({ permissions: ['employmentProfile.read'] }));
+
+    const link = await screen.findByRole('link', { name: 'Open related Admin record' });
+    expect(link).toHaveAttribute('href', '/employment-profiles/ep-001#employment-terms');
+    await userEvent.click(link);
+
+    const heading = await screen.findByRole('heading', { name: /Employment Terms/i });
+    expect(heading.closest('section')).toHaveAttribute('id', 'employment-terms');
+    expect(
+      screen.getByText(i18n.t('employment-profile:employmentTerms.accessRequired')),
+    ).toBeInTheDocument();
+    expect(employmentTermsFetchCount).toBe(0);
+    expect(contractRegistryRequestCount).toBe(0);
   });
 
   it('renders non-actionable repair hints when no safe detail route exists', async () => {
@@ -281,4 +412,38 @@ describe('People Readiness dashboard', () => {
     expect(within(article).getByText(/No safe detail route is available/)).toBeInTheDocument();
     expect(within(article).queryByRole('link', { name: 'Open related Admin record' })).toBeNull();
   });
+});
+
+const employmentTermsIssue = (
+  issueCode:
+    | 'ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS'
+    | 'EMPLOYMENT_TERMS_PENDING_APPROVAL'
+    | 'EMPLOYMENT_TERMS_EXPIRED'
+    | 'EMPLOYMENT_TERMS_MISSING_BASE_SALARY'
+    | 'EMPLOYMENT_TERMS_OVERLAP',
+  employmentProfileId = 'ep-hret',
+): PeopleReadinessIssue => ({
+  id: `${issueCode}:EMPLOYMENT_PROFILE:${employmentProfileId}`,
+  issueCode,
+  category: 'EMPLOYMENT_TERMS_READY',
+  severity: issueCode === 'EMPLOYMENT_TERMS_PENDING_APPROVAL' ? 'WARNING' : 'BLOCKER',
+  primaryEntityType: 'EMPLOYMENT_PROFILE',
+  primaryEntity: {
+    entityType: 'EMPLOYMENT_PROFILE',
+    id: employmentProfileId,
+    displayName: 'Employment Terms Person',
+    code: 'EP-HRET',
+    lifecycleStatus: 'ACTIVE',
+    adminRepairTarget: `/employment-profiles/${employmentProfileId}`,
+  },
+  relatedEntities: [],
+  summary: 'Backend summary is not user-facing.',
+  repairTarget: {
+    targetType: 'EMPLOYMENT_PROFILE',
+    targetId: employmentProfileId,
+    suggestedSurface: `/employment-profiles/${employmentProfileId}#employment-terms`,
+    suggestedAction: 'Review Employment Terms',
+  },
+  generatedAt: Date.parse('2026-06-07T02:00:00.000Z'),
+  isBlockingForNewOperations: issueCode !== 'EMPLOYMENT_TERMS_PENDING_APPROVAL',
 });

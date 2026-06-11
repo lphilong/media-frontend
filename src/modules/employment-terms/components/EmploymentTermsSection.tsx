@@ -205,6 +205,7 @@ export const EmploymentTermsSection = ({
 
   return (
     <section
+      id="employment-terms"
       className="rounded-lg border border-border bg-panel p-5 shadow-shell"
       aria-labelledby="employment-terms-title"
     >
@@ -417,6 +418,7 @@ const EmploymentTermsAccessState = ({ children }: { children: ReactNode }): JSX.
 
   return (
     <section
+      id="employment-terms"
       className="rounded-lg border border-border bg-panel p-5 shadow-shell"
       aria-labelledby="employment-terms-title"
     >

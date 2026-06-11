@@ -8,6 +8,38 @@ import type {
 
 const generatedAt = Date.parse('2026-06-07T02:00:00.000Z');
 
+const employmentTermsIssues: PeopleReadinessIssue[] = [
+  ['ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS', 'BLOCKER', 'ep-terms-missing'],
+  ['EMPLOYMENT_TERMS_PENDING_APPROVAL', 'WARNING', 'ep-terms-pending'],
+  ['EMPLOYMENT_TERMS_EXPIRED', 'BLOCKER', 'ep-terms-expired'],
+  ['EMPLOYMENT_TERMS_MISSING_BASE_SALARY', 'BLOCKER', 'ep-terms-no-base'],
+  ['EMPLOYMENT_TERMS_OVERLAP', 'BLOCKER', 'ep-terms-overlap'],
+].map(([issueCode, severity, employmentProfileId]) => ({
+  id: `${issueCode}:EMPLOYMENT_PROFILE:${employmentProfileId}`,
+  issueCode: issueCode as PeopleReadinessIssue['issueCode'],
+  category: 'EMPLOYMENT_TERMS_READY',
+  severity: severity as PeopleReadinessIssue['severity'],
+  primaryEntityType: 'EMPLOYMENT_PROFILE',
+  primaryEntity: {
+    entityType: 'EMPLOYMENT_PROFILE',
+    id: employmentProfileId,
+    displayName: `Employment Terms ${employmentProfileId}`,
+    code: employmentProfileId.toUpperCase(),
+    lifecycleStatus: 'ACTIVE',
+    adminRepairTarget: `/employment-profiles/${employmentProfileId}`,
+  },
+  relatedEntities: [],
+  summary: 'Review Employment Terms.',
+  repairTarget: {
+    targetType: 'EMPLOYMENT_PROFILE',
+    targetId: employmentProfileId,
+    suggestedSurface: `/employment-profiles/${employmentProfileId}#employment-terms`,
+    suggestedAction: 'Review Employment Terms',
+  },
+  generatedAt,
+  isBlockingForNewOperations: severity === 'BLOCKER',
+}));
+
 const initialIssues: PeopleReadinessIssue[] = [
   {
     id: 'EMPLOYMENT_PROFILE_MISSING_ORG_UNIT:EMPLOYMENT_PROFILE:ep-no-org',
@@ -33,10 +65,6 @@ const initialIssues: PeopleReadinessIssue[] = [
     },
     generatedAt,
     isBlockingForNewOperations: true,
-    metadata: {
-      unsafePhone: '0900000000',
-      salaryAmount: 1000000,
-    },
   },
   {
     id: 'SELF_SERVICE_PROFILE_NOT_ACTIVE:EMPLOYMENT_PROFILE:ep-inactive',
@@ -160,6 +188,7 @@ const initialIssues: PeopleReadinessIssue[] = [
     generatedAt,
     isBlockingForNewOperations: true,
   },
+  ...employmentTermsIssues,
 ];
 
 let issues = [...initialIssues];

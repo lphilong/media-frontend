@@ -72,6 +72,7 @@
     "INFO": "Thông tin"
   },
   "categories": {
+    "EMPLOYMENT_TERMS_READY": "Điều kiện nguồn điều khoản lương",
     "ACCOUNT_LOGIN_READY": "Tài khoản đăng nhập",
     "EMPLOYMENT_PROFILE_LIFECYCLE": "Vòng đời hồ sơ nhân sự",
     "ORGUNIT_PARTICIPATION": "Phạm vi vận hành",
@@ -102,6 +103,11 @@
     "PENDING": "Đang chờ"
   },
   "issueTitles": {
+    "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "Thiếu điều khoản lương",
+    "EMPLOYMENT_TERMS_PENDING_APPROVAL": "Điều khoản lương đang chờ duyệt",
+    "EMPLOYMENT_TERMS_EXPIRED": "Điều khoản lương đã hết hiệu lực",
+    "EMPLOYMENT_TERMS_MISSING_BASE_SALARY": "Thiếu dữ liệu lương cơ bản",
+    "EMPLOYMENT_TERMS_OVERLAP": "Có điều khoản lương chồng lấn",
     "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Tài khoản active chưa có hồ sơ nhân sự",
     "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "Hồ sơ quản lý thiếu tài khoản đăng nhập active",
     "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "Hồ sơ nhân sự liên kết tài khoản không active",
@@ -123,6 +129,11 @@
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Hồ sơ không nên dùng Self-Service"
   },
   "issueDescriptions": {
+    "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "Hồ sơ chưa có điều khoản đã duyệt, đang hiệu lực và đủ điều kiện làm nguồn bảng lương.",
+    "EMPLOYMENT_TERMS_PENDING_APPROVAL": "Cần rà soát điều khoản đang chờ duyệt. Hồ sơ chưa đủ điều kiện làm nguồn bảng lương nếu không có nguồn hiện tại hợp lệ khác.",
+    "EMPLOYMENT_TERMS_EXPIRED": "Nguồn điều khoản đã duyệt trước đó đã hết hiệu lực và chưa có nguồn thay thế hợp lệ.",
+    "EMPLOYMENT_TERMS_MISSING_BASE_SALARY": "Điều khoản hiện tại đang thiếu dữ liệu lương cơ bản hợp lệ.",
+    "EMPLOYMENT_TERMS_OVERLAP": "Có nhiều khoảng hiệu lực của điều khoản đã duyệt và đủ điều kiện làm nguồn bảng lương bị chồng lấn.",
     "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Cần rà soát tài khoản đăng nhập có nên liên kết với hồ sơ nhân sự hay không.",
     "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "Hồ sơ đang giữ assignment quản lý cần có tài khoản đăng nhập active.",
     "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "Tài khoản liên kết đang thiếu hoặc không active và cần được rà soát.",
