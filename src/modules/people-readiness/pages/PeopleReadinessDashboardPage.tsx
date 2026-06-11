@@ -52,15 +52,10 @@ type OverviewCard = {
   helperKey: string;
   value: number;
   tone: StatusBadgeTone;
-  filter:
-    | {
-        kind: 'severity';
-        value: PeopleReadinessSeverity;
-      }
-    | {
-        kind: 'category';
-        value: PeopleReadinessCategory;
-      };
+  filter: {
+    kind: 'severity';
+    value: PeopleReadinessSeverity;
+  };
 };
 
 const severityTone: Record<PeopleReadinessSeverity, StatusBadgeTone> = {
@@ -94,11 +89,6 @@ const countSeverity = (
   summary: PeopleReadinessSummary | undefined,
   severity: PeopleReadinessSeverity,
 ): number => summary?.countsBySeverity[severity] ?? 0;
-
-const countCategory = (
-  summary: PeopleReadinessSummary | undefined,
-  category: PeopleReadinessCategory,
-): number => summary?.countsByCategory[category] ?? 0;
 
 const buildIssueQuery = (filters: FilterState, cursor?: string): PeopleReadinessIssuesQuery => ({
   ...(filters.category ? { category: filters.category } : {}),
@@ -145,9 +135,7 @@ const readEntityStatus = (entity: PeopleReadinessSafeEntitySummary): string | un
   entity.lifecycleStatus ?? entity.status;
 
 const isOverviewCardActive = (card: OverviewCard, filters: FilterState): boolean =>
-  card.filter.kind === 'severity'
-    ? filters.severity === card.filter.value
-    : filters.category === card.filter.value;
+  filters.severity === card.filter.value;
 
 const getRepairActionKey = (issue: PeopleReadinessIssue, repairLink: string | null): string => {
   if (repairLink && issue.category === 'EMPLOYMENT_TERMS_READY') {
@@ -213,7 +201,7 @@ const OverviewCards = ({
         </h2>
         <StatusBadge label={t('badges.readOnly')} tone="info" uppercase={false} />
       </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {cards.map((card) => {
           const active = isOverviewCardActive(card, filters);
 
@@ -269,12 +257,20 @@ const IssueRow = ({ issue }: { issue: PeopleReadinessIssue }): JSX.Element => {
   return (
     <article className="rounded border border-border bg-panel p-4 shadow-shell">
       <div className="space-y-4">
-        <section aria-label={t('fields.affectedProfile')}>
-          <p className="text-xs font-medium uppercase text-muted">{t('fields.affectedProfile')}</p>
-          <div className="mt-1 rounded border border-border bg-bg px-3 py-2">
-            <EntitySummary entity={issue.primaryEntity} />
+        <header className="border-b border-border pb-3">
+          <div
+            aria-label={t('fields.affectedProfile')}
+            data-layout="compact-header"
+            data-testid="people-readiness-affected-profile"
+          >
+            <p className="text-xs font-medium uppercase text-muted">
+              {t('fields.affectedProfile')}
+            </p>
+            <div className="mt-1">
+              <EntitySummary entity={issue.primaryEntity} />
+            </div>
           </div>
-        </section>
+        </header>
 
         <section aria-label={t('fields.issue')}>
           <p className="text-xs font-medium uppercase text-muted">{t('fields.issue')}</p>
@@ -378,11 +374,7 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
   };
   const toggleOverviewFilter = (card: OverviewCard): void => {
     const active = isOverviewCardActive(card, filters);
-    if (card.filter.kind === 'severity') {
-      updateFilter('severity', active ? '' : card.filter.value);
-      return;
-    }
-    updateFilter('category', active ? '' : card.filter.value);
+    updateFilter('severity', active ? '' : card.filter.value);
   };
 
   const combinedError = summaryQuery.error ?? issuesQuery.error;
@@ -447,36 +439,12 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
       filter: { kind: 'severity', value: 'WARNING' },
     },
     {
-      id: 'employment-terms',
-      labelKey: 'overview.employmentTerms',
-      helperKey: 'overview.employmentTermsHelper',
-      value: countCategory(summary, 'EMPLOYMENT_TERMS_READY'),
+      id: 'info',
+      labelKey: 'overview.info',
+      helperKey: 'overview.infoHelper',
+      value: countSeverity(summary, 'INFO'),
       tone: 'info',
-      filter: { kind: 'category', value: 'EMPLOYMENT_TERMS_READY' },
-    },
-    {
-      id: 'account-login',
-      labelKey: 'overview.accountLogin',
-      helperKey: 'overview.accountLoginHelper',
-      value: countCategory(summary, 'ACCOUNT_LOGIN_READY'),
-      tone: 'info',
-      filter: { kind: 'category', value: 'ACCOUNT_LOGIN_READY' },
-    },
-    {
-      id: 'self-service',
-      labelKey: 'overview.selfService',
-      helperKey: 'overview.selfServiceHelper',
-      value: countCategory(summary, 'SELF_SERVICE_READY'),
-      tone: 'info',
-      filter: { kind: 'category', value: 'SELF_SERVICE_READY' },
-    },
-    {
-      id: 'manager',
-      labelKey: 'overview.manager',
-      helperKey: 'overview.managerHelper',
-      value: countCategory(summary, 'MANAGER_ASSIGNMENT_READY'),
-      tone: 'warning',
-      filter: { kind: 'category', value: 'MANAGER_ASSIGNMENT_READY' },
+      filter: { kind: 'severity', value: 'INFO' },
     },
   ];
 

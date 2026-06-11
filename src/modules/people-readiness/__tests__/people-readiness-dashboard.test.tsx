@@ -177,8 +177,33 @@ describe('People Profile Check dashboard', () => {
     await renderPeopleReadinessRoute();
 
     expect(await screen.findByText('Urgent issues')).toBeInTheDocument();
-    expect(screen.getByText('Account / Self-Service')).toBeInTheDocument();
-    expect(screen.getAllByText('Self-Service risks').length).toBeGreaterThan(0);
+    const overviewSection = screen.getByRole('heading', { name: 'Overview' }).closest('section');
+
+    if (!overviewSection) {
+      throw new Error('People Readiness overview did not render');
+    }
+
+    expect(within(overviewSection).getAllByRole('button')).toHaveLength(3);
+    expect(
+      within(overviewSection).getByRole('button', { name: /Urgent issues/i }),
+    ).toBeInTheDocument();
+    expect(within(overviewSection).getByRole('button', { name: /Warnings/i })).toBeInTheDocument();
+    expect(
+      within(overviewSection).getByRole('button', { name: /Information/i }),
+    ).toBeInTheDocument();
+    expect(within(overviewSection).queryByText('Employment terms')).not.toBeInTheDocument();
+    expect(within(overviewSection).queryByText('Account / Self-Service')).not.toBeInTheDocument();
+    expect(within(overviewSection).queryByText('Self-Service risks')).not.toBeInTheDocument();
+    expect(within(overviewSection).queryByText('Manager readiness risks')).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Employment terms' })).toHaveValue(
+      'EMPLOYMENT_TERMS_READY',
+    );
+    expect(screen.getByRole('option', { name: 'Self-Service risks' })).toHaveValue(
+      'SELF_SERVICE_READY',
+    );
+    expect(screen.getByRole('option', { name: 'Manager readiness' })).toHaveValue(
+      'MANAGER_ASSIGNMENT_READY',
+    );
     expect(await screen.findByText('No Org Person')).toBeInTheDocument();
     expect(screen.getByText('EMPLOYMENT_PROFILE_MISSING_ORG_UNIT')).toBeInTheDocument();
     expect(screen.getAllByText('Open related Admin record')[0]).toHaveAttribute(
@@ -249,6 +274,13 @@ describe('People Profile Check dashboard', () => {
     expect(lastIssuesRequest().searchParams.has('search')).toBe(false);
     expect(lastIssuesRequest().searchParams.has('sortBy')).toBe(false);
     expect(lastIssuesRequest().searchParams.has('bulk')).toBe(false);
+
+    await userEvent.selectOptions(screen.getByLabelText('Severity'), 'WARNING');
+    await waitFor(() => {
+      const params = lastIssuesRequest().searchParams;
+      expect(params.get('severity')).toBe('WARNING');
+      expect(params.has('cursor')).toBe(false);
+    });
   });
 
   it('uses overview cards as backend-supported quick filters and keeps dropdowns in sync', async () => {
@@ -280,27 +312,40 @@ describe('People Profile Check dashboard', () => {
     await waitFor(() => {
       expect(lastIssuesRequest().searchParams.get('severity')).toBe('WARNING');
     });
-    expect(screen.getByLabelText('Severity')).toHaveValue('WARNING');
-
-    const employmentTermsCard = screen.getByRole('button', { name: /Employment terms/i });
-    await userEvent.click(employmentTermsCard);
-    await waitFor(() => {
-      expect(lastIssuesRequest().searchParams.get('category')).toBe('EMPLOYMENT_TERMS_READY');
-    });
-    expect(screen.getByRole('button', { name: /Employment terms/i })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /Warnings/i })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
-    expect(screen.getByLabelText('Affected flow')).toHaveValue('EMPLOYMENT_TERMS_READY');
+    expect(screen.getByLabelText('Severity')).toHaveValue('WARNING');
 
-    await userEvent.selectOptions(screen.getByLabelText('Affected flow'), '');
+    await userEvent.click(screen.getByRole('button', { name: /Information/i }));
     await waitFor(() => {
-      expect(lastIssuesRequest().searchParams.has('category')).toBe(false);
+      expect(lastIssuesRequest().searchParams.get('severity')).toBe('INFO');
     });
-    expect(screen.getByRole('button', { name: /Employment terms/i })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /Warnings/i })).toHaveAttribute(
       'aria-pressed',
       'false',
     );
+    expect(screen.getByRole('button', { name: /Information/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByLabelText('Severity')).toHaveValue('INFO');
+
+    await userEvent.selectOptions(screen.getByLabelText('Severity'), 'BLOCKER');
+    await waitFor(() => {
+      expect(lastIssuesRequest().searchParams.get('severity')).toBe('BLOCKER');
+    });
+    expect(screen.getByRole('button', { name: /Urgent issues/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: /Information/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(lastIssuesRequest().searchParams.has('category')).toBe(false);
+    expect(screen.queryByRole('button', { name: /Employment terms/i })).not.toBeInTheDocument();
   });
 
   it('renders empty and backend forbidden states cleanly', async () => {
@@ -380,7 +425,17 @@ describe('People Profile Check dashboard', () => {
   });
 
   it('renders issue cards with distinct severity/category badges and secondary technical code', async () => {
-    setPeopleReadinessIssues([employmentTermsIssue('EMPLOYMENT_TERMS_MISSING_BASE_SALARY')]);
+    setPeopleReadinessIssues([
+      {
+        ...employmentTermsIssue('EMPLOYMENT_TERMS_MISSING_BASE_SALARY'),
+        metadata: {
+          allowanceAmount: 16000000,
+          currency: 'VND',
+          sourceNote: 'Approved salary source note',
+          rawEmploymentTermsId: 'hret-raw-secret-1',
+        },
+      },
+    ]);
     await renderPeopleReadinessRoute();
 
     const heading = await screen.findByRole('heading', { name: 'Base salary data is missing' });
@@ -390,7 +445,10 @@ describe('People Profile Check dashboard', () => {
       throw new Error('Issue row did not render as an article');
     }
 
-    expect(within(article).getByText('Affected profile')).toBeInTheDocument();
+    const affectedProfile = within(article).getByTestId('people-readiness-affected-profile');
+    expect(affectedProfile).toHaveAttribute('data-layout', 'compact-header');
+    expect(affectedProfile.querySelector('.rounded.border')).toBeNull();
+    expect(within(affectedProfile).getByText('Affected profile')).toBeInTheDocument();
     expect(within(article).getByText('Employment Terms Person')).toBeInTheDocument();
     expect(within(article).getByText('EP-HRET')).toBeInTheDocument();
     expect(within(article).getByText('Active')).toBeInTheDocument();
@@ -410,6 +468,8 @@ describe('People Profile Check dashboard', () => {
     expect(within(article).getByText('EMPLOYMENT_TERMS_MISSING_BASE_SALARY')).toBeInTheDocument();
     expect(within(article).queryByText(/allowance amount/i)).not.toBeInTheDocument();
     expect(within(article).queryByText(/VND/)).not.toBeInTheDocument();
+    expect(within(article).queryByText('Approved salary source note')).not.toBeInTheDocument();
+    expect(within(article).queryByText('hret-raw-secret-1')).not.toBeInTheDocument();
   });
 
   it('renders localized titles and descriptions for all five HRET issue codes', async () => {

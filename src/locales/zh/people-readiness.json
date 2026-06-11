@@ -15,6 +15,8 @@
     "blockerHelper": "阻止新的运营参与的问题。",
     "warning": "警告",
     "warningHelper": "需要复核但不一定阻止所有流程的问题。",
+    "info": "信息",
+    "infoHelper": "不是阻断项的 readiness 信息。",
     "employmentTerms": "雇佣条款",
     "employmentTermsHelper": "存在雇佣条款 / 薪酬条件问题的人员档案。",
     "accountLogin": "账号 / Self-Service",
