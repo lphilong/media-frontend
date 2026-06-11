@@ -2,18 +2,23 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createEmploymentTerms,
+  fetchEmploymentTermsAdminList,
   fetchEmploymentTerms,
   fetchEmploymentTermsDetail,
   transitionEmploymentTerms,
   updateEmploymentTerms,
 } from '@modules/employment-terms/api/employment-terms.api';
-import type { EmploymentTermsPayload } from '@modules/employment-terms/types/employment-terms.types';
+import type {
+  EmploymentTermsAdminFilters,
+  EmploymentTermsPayload,
+} from '@modules/employment-terms/types/employment-terms.types';
 
 const ROOT = ['employment-terms'] as const;
 
 export const employmentTermsQueryKeys = {
   all: () => ROOT,
   list: (employmentProfileId: string) => [...ROOT, 'list', employmentProfileId] as const,
+  adminList: (filters: EmploymentTermsAdminFilters) => [...ROOT, 'admin-list', filters] as const,
   detail: (employmentProfileId: string, termsId: string) =>
     [...ROOT, 'detail', employmentProfileId, termsId] as const,
 };
@@ -23,6 +28,12 @@ export const useEmploymentTermsList = (employmentProfileId?: string) =>
     queryKey: employmentProfileId ? employmentTermsQueryKeys.list(employmentProfileId) : ROOT,
     queryFn: () => fetchEmploymentTerms(employmentProfileId ?? ''),
     enabled: Boolean(employmentProfileId),
+  });
+
+export const useEmploymentTermsAdminList = (filters: EmploymentTermsAdminFilters) =>
+  useQuery({
+    queryKey: employmentTermsQueryKeys.adminList(filters),
+    queryFn: () => fetchEmploymentTermsAdminList(filters),
   });
 
 export const useEmploymentTermsDetail = (employmentProfileId?: string, termsId?: string) =>

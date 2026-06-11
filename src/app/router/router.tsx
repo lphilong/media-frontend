@@ -38,6 +38,11 @@ const modulePageMap: Record<string, LazyExoticComponent<LazyModuleRoute>> = {
       default: module.PeopleReadinessDashboardPage,
     })),
   ),
+  'employment-terms': lazy(() =>
+    import('@modules/employment-terms/pages/EmploymentTermsWorkspacePage').then((module) => ({
+      default: module.EmploymentTermsWorkspacePage,
+    })),
+  ),
   'org-unit': lazy(() =>
     import('@modules/org-unit/pages/OrgUnitListPage').then((module) => ({
       default: module.OrgUnitListPage,
@@ -489,7 +494,7 @@ const standardModuleDefinitions = moduleRouteDefinitions.filter(
   (definition) =>
     !['dashboard', 'commission-rules', 'commission-settlements'].includes(definition.id),
 );
-const realModuleIds = new Set(Object.keys(moduleDetailPageMap));
+const realModuleIds = new Set([...Object.keys(modulePageMap), ...Object.keys(moduleDetailPageMap)]);
 
 export const appRoutes: RouteObject[] = [
   {

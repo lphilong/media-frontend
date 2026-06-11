@@ -13,6 +13,7 @@ export const I18N_NAMESPACES = [
   'errors',
   'dashboard-lite',
   'people-readiness',
+  'employment-terms',
   'user',
   'role',
   'org-unit',

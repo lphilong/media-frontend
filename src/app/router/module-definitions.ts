@@ -103,6 +103,16 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     placeholderKey: 'employment-profile:page.placeholder',
   },
   {
+    id: 'employment-terms',
+    listPath: APP_PATHS.employmentTerms,
+    namespace: 'employment-terms',
+    navGroup: 'organization',
+    navItemKey: 'employmentTerms',
+    listTitleKey: 'employment-terms:page.title',
+    listSubtitleKey: 'employment-terms:page.subtitle',
+    placeholderKey: 'employment-terms:page.placeholder',
+  },
+  {
     id: 'talent',
     listPath: APP_PATHS.talents,
     detailPath: APP_PATHS.talentDetailPattern,
@@ -313,6 +323,12 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
         moduleId: 'employment-profile',
         navItemKey: 'employmentProfiles',
         to: APP_PATHS.employmentProfiles,
+      },
+      {
+        id: 'employment-terms',
+        moduleId: 'employment-terms',
+        navItemKey: 'employmentTerms',
+        to: APP_PATHS.employmentTerms,
       },
       {
         id: 'people-readiness',

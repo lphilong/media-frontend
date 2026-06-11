@@ -1,0 +1,104 @@
+{
+  "page": {
+    "title": "工作条款 / 薪资",
+    "subtitle": "跨员工跟踪工作条款、薪资和工资来源状态。",
+    "placeholder": "工作条款 / 薪资工作区"
+  },
+  "notices": {
+    "readOnlyTitle": "只读工作区",
+    "structuredTerms": "此页面列出结构化工作条款和工资来源状态，不是劳动合同文件管理。"
+  },
+  "sections": {
+    "quickFilters": "快速筛选",
+    "filters": "工作条款筛选"
+  },
+  "quickFilters": {
+    "currentEffective": "当前生效条款",
+    "pendingApproval": "待审批",
+    "expired": "已失效",
+    "missingBaseSalary": "缺少基本工资",
+    "overlap": "存在重叠",
+    "payrollSourceEligible": "用作工资来源",
+    "payrollSourceIneligible": "不作为工资来源"
+  },
+  "filters": {
+    "search": "搜索",
+    "searchPlaceholder": "员工档案、员工编号或条款编号",
+    "employmentProfileId": "EmploymentProfile ID",
+    "orgUnitId": "OrgUnit ID",
+    "employmentStatus": "任职状态",
+    "allEmploymentStatuses": "全部任职状态",
+    "status": "条款状态",
+    "allStatuses": "全部条款状态",
+    "payrollEligible": "工资来源",
+    "allPayrollSource": "全部工资来源状态",
+    "readiness": "准备状态",
+    "allReadiness": "全部准备状态",
+    "effectiveOn": "生效日期",
+    "expiringBefore": "失效早于",
+    "limit": "限制"
+  },
+  "table": {
+    "profile": "员工档案",
+    "terms": "条款",
+    "effectiveDates": "生效日期",
+    "payrollSource": "工资来源",
+    "amounts": "薪资 / 津贴",
+    "readiness": "准备标记",
+    "action": "操作"
+  },
+  "statuses": {
+    "DRAFT": "草稿",
+    "PENDING_APPROVAL": "待审批",
+    "APPROVED": "已审批",
+    "SUPERSEDED": "已替代",
+    "CANCELLED": "已取消"
+  },
+  "employmentStatuses": {
+    "ACTIVE": "在职",
+    "ON_LEAVE": "休假",
+    "SUSPENDED": "暂停",
+    "TERMINATED": "已离职",
+    "ARCHIVED": "已归档"
+  },
+  "payFrequencies": {
+    "MONTHLY": "每月"
+  },
+  "payrollSource": {
+    "eligible": "可作为工资来源",
+    "ineligible": "不作为工资来源"
+  },
+  "readiness": {
+    "CURRENT_EFFECTIVE": "当前生效条款",
+    "PENDING_APPROVAL": "待审批",
+    "EXPIRED": "已失效",
+    "MISSING_BASE_SALARY": "缺少基本工资",
+    "OVERLAPPING": "存在重叠",
+    "PAYROLL_SOURCE_ELIGIBLE": "用作工资来源",
+    "PAYROLL_SOURCE_INELIGIBLE": "不作为工资来源"
+  },
+  "privacy": {
+    "redacted": "因访问权限已隐藏",
+    "permissionRequired": "需要薪资数据查看权限"
+  },
+  "labels": {
+    "openEnded": "长期有效",
+    "notAvailable": "暂无"
+  },
+  "actions": {
+    "openProfile": "打开档案",
+    "clearFilters": "清除筛选"
+  },
+  "states": {
+    "loadErrorTitle": "无法加载工作条款",
+    "loadErrorMessage": "请检查访问权限或重试。",
+    "refreshingInline": "正在刷新工作条款...",
+    "refreshErrorTitle": "刷新失败",
+    "refreshErrorMessage": "当前结果仍会保留。",
+    "emptyTitle": "没有符合筛选的工作条款",
+    "emptyMessage": "没有条款符合当前筛选。"
+  },
+  "pagination": {
+    "loaded": "最多显示 {{count}} 条已加载结果。"
+  }
+}

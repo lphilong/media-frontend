@@ -5,6 +5,7 @@ export const APP_PATHS = {
   root: '/',
   dashboard: '/dashboard',
   peopleReadiness: '/people-readiness',
+  employmentTerms: '/employment-terms',
   selfService: '/self-service',
   manager: '/manager',
   managerKpi: '/manager/kpi',

@@ -13,6 +13,7 @@
   "items": {
     "dashboard": "Bảng điều khiển",
     "peopleReadiness": "Kiểm tra hồ sơ nhân sự",
+    "employmentTerms": "Điều khoản làm việc / lương",
     "users": "Người dùng",
     "roles": "Vai trò",
     "orgUnits": "Đơn vị tổ chức",
@@ -34,6 +35,7 @@
   "short": {
     "dashboard": "DB",
     "peopleReadiness": "PR",
+    "employmentTerms": "ET",
     "users": "US",
     "roles": "RO",
     "orgUnits": "OU",

@@ -2,8 +2,14 @@ import { z } from 'zod';
 
 import { apiRequest } from '@shared/api';
 import type {
+  EmploymentTermsAdminFilters,
+  EmploymentTermsAdminListResponse,
   EmploymentTermsPayload,
   EmploymentTermsRecord,
+} from '@modules/employment-terms/types/employment-terms.types';
+import {
+  EMPLOYMENT_PROFILE_EMPLOYMENT_STATUSES,
+  EMPLOYMENT_TERMS_ADMIN_READINESS_FILTERS,
 } from '@modules/employment-terms/types/employment-terms.types';
 
 const canonicalDateSchema = z.number().int().nonnegative();
@@ -20,6 +26,8 @@ const canonicalDateInputSchema = z
     );
   }, 'Invalid canonical date');
 const statusSchema = z.enum(['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SUPERSEDED', 'CANCELLED']);
+const readinessSchema = z.enum(EMPLOYMENT_TERMS_ADMIN_READINESS_FILTERS);
+const employmentStatusSchema = z.enum(EMPLOYMENT_PROFILE_EMPLOYMENT_STATUSES);
 const allowanceCommonShape = {
   type: z.string().min(1).max(64),
   label: z.string().min(1).max(120),
@@ -75,6 +83,65 @@ export const employmentTermsRecordSchema = z.discriminatedUnion('sensitiveAmount
   sensitiveRecordSchema,
   redactedRecordSchema,
 ]);
+const referenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1).optional(),
+    title: z.string().trim().min(1).optional(),
+    displayName: z.string().trim().min(1).optional(),
+    status: z.string().trim().min(1).optional(),
+  })
+  .strict();
+const adminProfileSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1),
+    displayName: z.string().trim().min(1),
+    legalName: z.string().trim().min(1),
+    employmentStatus: employmentStatusSchema,
+    orgUnitId: z.string().trim().min(1),
+    orgUnitRef: referenceSummarySchema.nullable(),
+    linkedUserRef: referenceSummarySchema.nullable().optional(),
+  })
+  .strict();
+const adminListItemShape = {
+  employmentProfile: adminProfileSummarySchema,
+  isCurrentEffective: z.boolean(),
+  isExpired: z.boolean(),
+  isPendingApproval: z.boolean(),
+  hasMissingBaseSalary: z.boolean(),
+  hasOverlapForProfile: z.boolean(),
+  payrollSourceEligibility: z.enum(['ELIGIBLE', 'INELIGIBLE']),
+};
+const adminListItemSchema = z.discriminatedUnion('sensitiveAmountsRedacted', [
+  sensitiveRecordSchema.extend(adminListItemShape).strict(),
+  redactedRecordSchema.extend(adminListItemShape).strict(),
+]);
+const adminAppliedFiltersSchema = z
+  .object({
+    employmentProfileId: z.string().trim().min(1).optional(),
+    orgUnitId: z.string().trim().min(1).optional(),
+    employmentStatus: employmentStatusSchema.optional(),
+    status: statusSchema.optional(),
+    payrollEligible: z.boolean().optional(),
+    effectiveOn: canonicalDateSchema,
+    expiringBefore: canonicalDateSchema.optional(),
+    readiness: readinessSchema.optional(),
+    search: z.string().trim().min(1).optional(),
+  })
+  .strict();
+const adminListResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(adminListItemSchema),
+        nextCursor: z.string().trim().min(1).nullable(),
+        appliedFilters: adminAppliedFiltersSchema,
+      })
+      .strict(),
+  })
+  .strict();
 const payloadAllowanceSchema = z
   .object({
     type: z.string().min(1).max(64),
@@ -120,6 +187,33 @@ export const fetchEmploymentTerms = async (
 ): Promise<EmploymentTermsRecord[]> => {
   const response = await apiRequest<unknown>({ method: 'GET', url: baseUrl(employmentProfileId) });
   return listResponseSchema.parse(response).data;
+};
+
+const sanitizeAdminFilters = (
+  filters: EmploymentTermsAdminFilters,
+): Record<string, string | number | boolean | undefined> => ({
+  employmentProfileId: filters.employmentProfileId,
+  orgUnitId: filters.orgUnitId,
+  employmentStatus: filters.employmentStatus,
+  status: filters.status,
+  payrollEligible: filters.payrollEligible,
+  effectiveOn: filters.effectiveOn,
+  expiringBefore: filters.expiringBefore,
+  readiness: filters.readiness,
+  search: filters.search,
+  cursor: filters.cursor,
+  limit: filters.limit,
+});
+
+export const fetchEmploymentTermsAdminList = async (
+  filters: EmploymentTermsAdminFilters,
+): Promise<EmploymentTermsAdminListResponse> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/employment-terms',
+    params: sanitizeAdminFilters(filters),
+  });
+  return adminListResponseSchema.parse(response).data;
 };
 
 export const fetchEmploymentTermsDetail = async (

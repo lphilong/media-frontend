@@ -13,6 +13,7 @@
   "items": {
     "dashboard": "Dashboard",
     "peopleReadiness": "People Profile Check",
+    "employmentTerms": "Employment Terms / Salary",
     "users": "Users",
     "roles": "Roles",
     "orgUnits": "Org Units",
@@ -34,6 +35,7 @@
   "short": {
     "dashboard": "DB",
     "peopleReadiness": "PR",
+    "employmentTerms": "ET",
     "users": "US",
     "roles": "RO",
     "orgUnits": "OU",

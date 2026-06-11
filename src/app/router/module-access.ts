@@ -14,6 +14,7 @@ import {
 export type ModuleAccessModuleId =
   | 'dashboard'
   | 'people-readiness'
+  | 'employment-terms'
   | 'user'
   | 'role'
   | 'org-unit'
@@ -66,6 +67,14 @@ export const moduleAccessDefinitions: Readonly<
     routePaths: ['/people-readiness'],
     access: {
       allPermissions: [PERMISSIONS.EMPLOYMENT_PROFILE_READ],
+      excludeSelfServiceOnly: true,
+    },
+  },
+  'employment-terms': {
+    id: 'employment-terms',
+    routePaths: ['/employment-terms'],
+    access: {
+      allPermissions: [PERMISSIONS.EMPLOYMENT_TERMS_READ],
       excludeSelfServiceOnly: true,
     },
   },

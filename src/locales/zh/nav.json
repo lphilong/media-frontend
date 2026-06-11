@@ -13,6 +13,7 @@
   "items": {
     "dashboard": "仪表盘",
     "peopleReadiness": "人员档案检查",
+    "employmentTerms": "工作条款 / 薪资",
     "users": "用户",
     "roles": "角色",
     "orgUnits": "组织单元",
@@ -34,6 +35,7 @@
   "short": {
     "dashboard": "DB",
     "peopleReadiness": "PR",
+    "employmentTerms": "ET",
     "users": "US",
     "roles": "RO",
     "orgUnits": "OU",

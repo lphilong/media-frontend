@@ -1,0 +1,104 @@
+{
+  "page": {
+    "title": "Điều khoản làm việc / lương",
+    "subtitle": "Theo dõi điều khoản làm việc, lương và trạng thái nguồn bảng lương của nhân sự.",
+    "placeholder": "Không gian Điều khoản làm việc / lương"
+  },
+  "notices": {
+    "readOnlyTitle": "Không gian chỉ đọc",
+    "structuredTerms": "Màn hình này liệt kê điều khoản làm việc có cấu trúc và trạng thái nguồn bảng lương, không phải quản lý tài liệu hợp đồng lao động."
+  },
+  "sections": {
+    "quickFilters": "Bộ lọc nhanh",
+    "filters": "Bộ lọc điều khoản làm việc"
+  },
+  "quickFilters": {
+    "currentEffective": "Điều khoản đang hiệu lực",
+    "pendingApproval": "Chờ duyệt",
+    "expired": "Đã hết hiệu lực",
+    "missingBaseSalary": "Thiếu lương cơ bản",
+    "overlap": "Có overlap",
+    "payrollSourceEligible": "Dùng làm nguồn bảng lương",
+    "payrollSourceIneligible": "Không dùng làm nguồn bảng lương"
+  },
+  "filters": {
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Tên hồ sơ, mã nhân sự hoặc mã điều khoản",
+    "employmentProfileId": "EmploymentProfile ID",
+    "orgUnitId": "OrgUnit ID",
+    "employmentStatus": "Trạng thái nhân sự",
+    "allEmploymentStatuses": "Tất cả trạng thái nhân sự",
+    "status": "Trạng thái điều khoản",
+    "allStatuses": "Tất cả trạng thái điều khoản",
+    "payrollEligible": "Nguồn bảng lương",
+    "allPayrollSource": "Tất cả trạng thái nguồn bảng lương",
+    "readiness": "Trạng thái sẵn sàng",
+    "allReadiness": "Tất cả trạng thái sẵn sàng",
+    "effectiveOn": "Hiệu lực vào ngày",
+    "expiringBefore": "Hết hiệu lực trước",
+    "limit": "Giới hạn"
+  },
+  "table": {
+    "profile": "Hồ sơ nhân sự",
+    "terms": "Điều khoản",
+    "effectiveDates": "Ngày hiệu lực",
+    "payrollSource": "Nguồn bảng lương",
+    "amounts": "Lương / phụ cấp",
+    "readiness": "Cờ trạng thái",
+    "action": "Thao tác"
+  },
+  "statuses": {
+    "DRAFT": "Nháp",
+    "PENDING_APPROVAL": "Chờ duyệt",
+    "APPROVED": "Đã duyệt",
+    "SUPERSEDED": "Đã thay thế",
+    "CANCELLED": "Đã hủy"
+  },
+  "employmentStatuses": {
+    "ACTIVE": "Đang làm",
+    "ON_LEAVE": "Nghỉ phép",
+    "SUSPENDED": "Tạm ngưng",
+    "TERMINATED": "Nghỉ việc",
+    "ARCHIVED": "Lưu trữ"
+  },
+  "payFrequencies": {
+    "MONTHLY": "Hàng tháng"
+  },
+  "payrollSource": {
+    "eligible": "Đủ điều kiện làm nguồn bảng lương",
+    "ineligible": "Không dùng làm nguồn bảng lương"
+  },
+  "readiness": {
+    "CURRENT_EFFECTIVE": "Điều khoản đang hiệu lực",
+    "PENDING_APPROVAL": "Chờ duyệt",
+    "EXPIRED": "Đã hết hiệu lực",
+    "MISSING_BASE_SALARY": "Thiếu lương cơ bản",
+    "OVERLAPPING": "Có overlap",
+    "PAYROLL_SOURCE_ELIGIBLE": "Dùng làm nguồn bảng lương",
+    "PAYROLL_SOURCE_INELIGIBLE": "Không dùng làm nguồn bảng lương"
+  },
+  "privacy": {
+    "redacted": "Đã ẩn theo quyền truy cập",
+    "permissionRequired": "Cần quyền xem dữ liệu lương"
+  },
+  "labels": {
+    "openEnded": "Không giới hạn",
+    "notAvailable": "Chưa có"
+  },
+  "actions": {
+    "openProfile": "Mở hồ sơ",
+    "clearFilters": "Xóa bộ lọc"
+  },
+  "states": {
+    "loadErrorTitle": "Không tải được điều khoản làm việc",
+    "loadErrorMessage": "Kiểm tra quyền truy cập hoặc thử lại.",
+    "refreshingInline": "Đang cập nhật điều khoản làm việc...",
+    "refreshErrorTitle": "Cập nhật thất bại",
+    "refreshErrorMessage": "Kết quả hiện tại vẫn được giữ lại.",
+    "emptyTitle": "Không có điều khoản phù hợp bộ lọc",
+    "emptyMessage": "Không có điều khoản phù hợp bộ lọc hiện tại."
+  },
+  "pagination": {
+    "loaded": "Đang hiển thị tối đa {{count}} kết quả đã tải."
+  }
+}

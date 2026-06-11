@@ -58,9 +58,11 @@ describe('module access model', () => {
         'commission-rules',
         'commission-settlements',
         'people-readiness',
+        'employment-terms',
       ]),
     ).toEqual(['talent', 'talent-group']);
     expect(canAccessModule(capabilities, 'people-readiness')).toBe(false);
+    expect(canAccessModule(capabilities, 'employment-terms')).toBe(false);
     expect(canAccessModule(capabilities, 'kpi')).toBe(false);
     expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
     expect(canAccessModule(capabilities, 'work-schedule')).toBe(false);
@@ -218,6 +220,7 @@ describe('module access model', () => {
         'revenueLedger.read',
         'dashboardLite.read',
         'employmentProfile.read',
+        'employmentTerms.read',
       ],
       scopeGrants: {
         dashboardLite: ['global'],
@@ -234,6 +237,7 @@ describe('module access model', () => {
     expect(getAccessibleModuleIds(capabilities)).toEqual([
       'dashboard',
       'people-readiness',
+      'employment-terms',
       'org-unit',
       'employment-profile',
       'talent',
@@ -271,6 +275,7 @@ describe('module access model', () => {
     expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
     expect(canAccessModule(capabilities, 'employment-profile')).toBe(false);
     expect(canAccessModule(capabilities, 'people-readiness')).toBe(false);
+    expect(canAccessModule(capabilities, 'employment-terms')).toBe(false);
     expect(canAccessModule(capabilities, 'talent')).toBe(false);
     expect(canAccessModule(capabilities, 'kpi')).toBe(false);
   });
@@ -295,5 +300,22 @@ describe('module access model', () => {
         'event-assignment',
       ),
     ).toBe('missing-scope');
+  });
+
+  it('requires employmentTerms.read for the top-level Employment Terms workspace', () => {
+    const profileReader = makeCapabilities({
+      roles: ['HR_OPERATIONS'],
+      permissions: ['employmentProfile.read'],
+      scopeGrants: {},
+    });
+    const termsReader = makeCapabilities({
+      roles: ['HR_OPERATIONS'],
+      permissions: ['employmentTerms.read'],
+      scopeGrants: {},
+    });
+
+    expect(canAccessModule(profileReader, 'employment-terms')).toBe(false);
+    expect(getModuleAccessReason(profileReader, 'employment-terms')).toBe('missing-permission');
+    expect(canAccessModule(termsReader, 'employment-terms')).toBe(true);
   });
 });

@@ -114,6 +114,36 @@ describe('route and sidebar permission model', () => {
     expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
   });
 
+  it('shows Employment Terms under People & Organization as a real active route', async () => {
+    await renderRoute(
+      '/employment-terms',
+      makeCapabilities({
+        roles: ['HR_OPERATIONS'],
+        permissions: ['orgUnit.read', 'employmentProfile.read', 'employmentTerms.read'],
+        scopeGrants: {},
+      }),
+    );
+
+    const orgUnits = await screen.findByTestId('nav-link-org-units');
+    const employmentProfiles = await screen.findByTestId('nav-link-employment-profiles');
+    const employmentTerms = await screen.findByTestId('nav-link-employment-terms');
+    const peopleReadiness = await screen.findByTestId('nav-link-people-readiness');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Employment Terms / Salary' }))
+      .toBeInTheDocument();
+    expect(employmentTerms).toHaveClass('text-accent');
+    expect(orgUnits.compareDocumentPosition(employmentProfiles) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBeTruthy();
+    expect(
+      employmentProfiles.compareDocumentPosition(employmentTerms) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      employmentTerms.compareDocumentPosition(peopleReadiness) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.queryByText('Labor Contract')).not.toBeInTheDocument();
+  });
+
   it('fails closed for HR department-only authority on raw Admin WorkSchedule routes', async () => {
     await renderRoute(
       '/work-schedule/department-shifts',

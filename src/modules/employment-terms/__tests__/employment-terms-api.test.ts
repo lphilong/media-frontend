@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 
 import {
   createEmploymentTerms,
+  fetchEmploymentTermsAdminList,
   fetchEmploymentTerms,
   updateEmploymentTerms,
 } from '@modules/employment-terms/api/employment-terms.api';
@@ -67,6 +68,33 @@ const record = (overrides: Record<string, unknown> = {}) => ({
   supersedesTermsId: null,
   supersededByTermsId: null,
   version: 1,
+  ...overrides,
+});
+
+const adminRecord = (overrides: Record<string, unknown> = {}) => ({
+  ...record({
+    id: 'terms-admin-1',
+    status: 'APPROVED',
+    sensitiveAmountsRedacted: true,
+    baseSalaryAmount: undefined,
+    allowances: [],
+  }),
+  employmentProfile: {
+    id: 'ep-001',
+    employeeCode: 'EP-000001',
+    displayName: 'Alice',
+    legalName: 'Alice Nguyen',
+    employmentStatus: 'ACTIVE',
+    orgUnitId: 'ou-sales',
+    orgUnitRef: { id: 'ou-sales', code: 'OU-000002', name: 'Sales', status: 'ACTIVE' },
+    linkedUserRef: null,
+  },
+  isCurrentEffective: true,
+  isExpired: false,
+  isPendingApproval: false,
+  hasMissingBaseSalary: false,
+  hasOverlapForProfile: false,
+  payrollSourceEligibility: 'ELIGIBLE',
   ...overrides,
 });
 
@@ -218,5 +246,146 @@ describe('Employment Terms API boundary', () => {
     configure();
 
     await expect(createEmploymentTerms('ep-001', payload())).rejects.toMatchObject({ status });
+  });
+
+  it('parses the accepted all-profiles admin list response', async () => {
+    server.use(
+      http.get('*/admin/employment-terms', () =>
+        HttpResponse.json({
+          data: {
+            items: [adminRecord()],
+            nextCursor: 'opaque-next-cursor',
+            appliedFilters: {
+              effectiveOn: Date.UTC(2026, 0, 1),
+              readiness: 'CURRENT_EFFECTIVE',
+            },
+          },
+        }),
+      ),
+    );
+
+    await expect(
+      fetchEmploymentTermsAdminList({ readiness: 'CURRENT_EFFECTIVE', limit: 10 }),
+    ).resolves.toMatchObject({
+      items: [
+        {
+          employmentProfile: { displayName: 'Alice' },
+          sensitiveAmountsRedacted: true,
+        },
+      ],
+      nextCursor: 'opaque-next-cursor',
+      appliedFilters: { readiness: 'CURRENT_EFFECTIVE' },
+    });
+  });
+
+  it('rejects unknown admin readiness enum values from the backend', async () => {
+    server.use(
+      http.get('*/admin/employment-terms', () =>
+        HttpResponse.json({
+          data: {
+            items: [adminRecord()],
+            nextCursor: null,
+            appliedFilters: {
+              effectiveOn: Date.UTC(2026, 0, 1),
+              readiness: 'READY',
+            },
+          },
+        }),
+      ),
+    );
+
+    await expect(fetchEmploymentTermsAdminList({})).rejects.toThrow();
+  });
+
+  it('keeps redacted all-profiles amounts absent instead of coercing them to zero', async () => {
+    server.use(
+      http.get('*/admin/employment-terms', () =>
+        HttpResponse.json({
+          data: {
+            items: [
+              adminRecord({
+                sensitiveAmountsRedacted: true,
+                baseSalaryAmount: undefined,
+                allowances: [
+                  {
+                    type: 'MEAL',
+                    label: 'Meal allowance',
+                    currencyCode: 'VND',
+                    payrollEligible: true,
+                    effectiveFrom: null,
+                    effectiveTo: null,
+                    sourceNote: null,
+                  },
+                ],
+              }),
+            ],
+            nextCursor: null,
+            appliedFilters: { effectiveOn: Date.UTC(2026, 0, 1) },
+          },
+        }),
+      ),
+    );
+
+    const result = await fetchEmploymentTermsAdminList({});
+
+    expect(result.items[0]?.baseSalaryAmount).toBeUndefined();
+    expect(result.items[0]?.baseSalaryAmount).not.toBe(0);
+    expect(result.items[0]?.allowances[0]).not.toHaveProperty('amount');
+  });
+
+  it('serializes supported admin list filters and cursor without unsupported params', async () => {
+    let capturedUrl = new URL('http://localhost/placeholder');
+    server.use(
+      http.get('*/admin/employment-terms', ({ request }) => {
+        capturedUrl = new URL(request.url);
+        return HttpResponse.json({
+          data: {
+            items: [],
+            nextCursor: null,
+            appliedFilters: { effectiveOn: Date.UTC(2026, 0, 1) },
+          },
+        });
+      }),
+    );
+
+    await fetchEmploymentTermsAdminList({
+      employmentProfileId: 'ep-001',
+      orgUnitId: 'ou-sales',
+      employmentStatus: 'ACTIVE',
+      status: 'APPROVED',
+      payrollEligible: true,
+      effectiveOn: '2026-01-01',
+      expiringBefore: '2026-12-31',
+      readiness: 'OVERLAPPING',
+      search: 'Alice',
+      cursor: 'opaque',
+      limit: 50,
+    });
+
+    const url = capturedUrl;
+    expect(url.searchParams.get('employmentProfileId')).toBe('ep-001');
+    expect(url.searchParams.get('orgUnitId')).toBe('ou-sales');
+    expect(url.searchParams.get('employmentStatus')).toBe('ACTIVE');
+    expect(url.searchParams.get('status')).toBe('APPROVED');
+    expect(url.searchParams.get('payrollEligible')).toBe('true');
+    expect(url.searchParams.get('effectiveOn')).toBe('2026-01-01');
+    expect(url.searchParams.get('expiringBefore')).toBe('2026-12-31');
+    expect(url.searchParams.get('readiness')).toBe('OVERLAPPING');
+    expect(url.searchParams.get('search')).toBe('Alice');
+    expect(url.searchParams.get('cursor')).toBe('opaque');
+    expect(url.searchParams.get('limit')).toBe('50');
+    expect([...url.searchParams.keys()].sort()).toEqual([
+      'cursor',
+      'effectiveOn',
+      'employmentProfileId',
+      'employmentStatus',
+      'expiringBefore',
+      'limit',
+      'orgUnitId',
+      'payrollEligible',
+      'readiness',
+      'search',
+      'status',
+    ]);
   });
 });

@@ -1,0 +1,104 @@
+{
+  "page": {
+    "title": "Employment Terms / Salary",
+    "subtitle": "Track employment terms, salary, and payroll-source status across people.",
+    "placeholder": "Employment Terms workspace"
+  },
+  "notices": {
+    "readOnlyTitle": "Read-only workspace",
+    "structuredTerms": "This workspace lists structured employment terms and payroll-source state. It is not labor contract document management."
+  },
+  "sections": {
+    "quickFilters": "Quick filters",
+    "filters": "Employment Terms filters"
+  },
+  "quickFilters": {
+    "currentEffective": "Current effective terms",
+    "pendingApproval": "Pending approval",
+    "expired": "Expired",
+    "missingBaseSalary": "Missing base salary",
+    "overlap": "Has overlap",
+    "payrollSourceEligible": "Use as payroll source",
+    "payrollSourceIneligible": "Do not use as payroll source"
+  },
+  "filters": {
+    "search": "Search",
+    "searchPlaceholder": "Profile name, employee code, or terms code",
+    "employmentProfileId": "EmploymentProfile ID",
+    "orgUnitId": "OrgUnit ID",
+    "employmentStatus": "Employment status",
+    "allEmploymentStatuses": "All employment statuses",
+    "status": "Terms status",
+    "allStatuses": "All terms statuses",
+    "payrollEligible": "Payroll source",
+    "allPayrollSource": "All payroll-source states",
+    "readiness": "Readiness",
+    "allReadiness": "All readiness states",
+    "effectiveOn": "Effective on",
+    "expiringBefore": "Expiring before",
+    "limit": "Limit"
+  },
+  "table": {
+    "profile": "EmploymentProfile",
+    "terms": "Terms",
+    "effectiveDates": "Effective dates",
+    "payrollSource": "Payroll source",
+    "amounts": "Salary / allowances",
+    "readiness": "Readiness flags",
+    "action": "Action"
+  },
+  "statuses": {
+    "DRAFT": "Draft",
+    "PENDING_APPROVAL": "Pending approval",
+    "APPROVED": "Approved",
+    "SUPERSEDED": "Superseded",
+    "CANCELLED": "Cancelled"
+  },
+  "employmentStatuses": {
+    "ACTIVE": "Active",
+    "ON_LEAVE": "On leave",
+    "SUSPENDED": "Suspended",
+    "TERMINATED": "Terminated",
+    "ARCHIVED": "Archived"
+  },
+  "payFrequencies": {
+    "MONTHLY": "Monthly"
+  },
+  "payrollSource": {
+    "eligible": "Eligible as payroll source",
+    "ineligible": "Not used as payroll source"
+  },
+  "readiness": {
+    "CURRENT_EFFECTIVE": "Current effective terms",
+    "PENDING_APPROVAL": "Pending approval",
+    "EXPIRED": "Expired",
+    "MISSING_BASE_SALARY": "Missing base salary",
+    "OVERLAPPING": "Has overlap",
+    "PAYROLL_SOURCE_ELIGIBLE": "Use as payroll source",
+    "PAYROLL_SOURCE_INELIGIBLE": "Do not use as payroll source"
+  },
+  "privacy": {
+    "redacted": "Hidden by access permission",
+    "permissionRequired": "Salary data permission required"
+  },
+  "labels": {
+    "openEnded": "Open-ended",
+    "notAvailable": "Not available"
+  },
+  "actions": {
+    "openProfile": "Open profile",
+    "clearFilters": "Clear filters"
+  },
+  "states": {
+    "loadErrorTitle": "Employment Terms could not be loaded",
+    "loadErrorMessage": "Check your access or try again.",
+    "refreshingInline": "Refreshing Employment Terms...",
+    "refreshErrorTitle": "Refresh failed",
+    "refreshErrorMessage": "The current results remain visible.",
+    "emptyTitle": "No matching employment terms",
+    "emptyMessage": "No terms match the current filters."
+  },
+  "pagination": {
+    "loaded": "Showing up to {{count}} loaded results."
+  }
+}
