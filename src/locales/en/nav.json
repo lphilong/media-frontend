@@ -6,9 +6,11 @@
     "overview": "Overview",
     "identityAccess": "Identity & Access",
     "organization": "People & Organization",
-    "talentOwnership": "Talent & Ownership",
-    "operations": "Operations",
-    "commercial": "Commercial"
+    "talentOwnership": "Talent & Operating Channels",
+    "workResources": "Work Schedule & Resources",
+    "events": "Events",
+    "performance": "Performance",
+    "commercial": "Commercial & Reconciliation"
   },
   "items": {
     "dashboard": "Dashboard",

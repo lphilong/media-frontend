@@ -23,10 +23,12 @@ import {
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
   PermissionDeniedState,
   SearchBoxSeam,
@@ -241,15 +243,55 @@ export const RoleListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const clearRoleFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      state: undefined,
+    });
+  }, [patchQuery]);
+
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (query.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: query.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (query.state) {
+      items.push({
+        id: 'state',
+        label: t('role:filters.state'),
+        value: t(`role:states.${query.state}`),
+        onClear: () => patchQuery({ state: undefined }),
+      });
+    }
+
+    return items;
+  }, [patchQuery, query.search, query.state, t]);
+
   return (
     <ModuleListScreenShell
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             <SearchBoxSeam
               value={query.search ?? ''}
               placeholder={t('role:filters.searchPlaceholder')}
               onApply={(value) => patchQuery({ search: value || undefined })}
+            />
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              onClearAll={appliedFilterChips.length > 0 ? clearRoleFilters : undefined}
             />
           }
         >
@@ -274,7 +316,7 @@ export const RoleListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <>
@@ -307,6 +349,8 @@ export const RoleListPage = (): JSX.Element => {
         <CursorPager
           canGoBack={canGoBack}
           canGoNext={canGoNext}
+          displayedCount={listQueryResult.data?.data.length}
+          limit={query.limit ?? 20}
           onNext={onNext}
           onPrevious={onPrevious}
         />

@@ -20,11 +20,12 @@ import {
   type HolidayCalendarUpdatePayload,
 } from '@modules/work-schedule/types/work-schedule.types';
 import { FormGrid } from '@shared/forms';
-import { ModuleMutationSurface } from '@shared/modules';
+import { ModuleMutationSurface, type ModuleMutationSurfaceProps } from '@shared/modules';
 
 type BaseSurfaceProps = {
   onCancel: () => void;
   isPending?: boolean;
+  presentation?: ModuleMutationSurfaceProps['presentation'];
 };
 
 type CalendarFormValues = {
@@ -209,6 +210,7 @@ export const HolidayCalendarCreateSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: BaseSurfaceProps & {
   onSubmit: (payload: HolidayCalendarCreatePayload) => Promise<void> | void;
 }): JSX.Element => {
@@ -244,6 +246,7 @@ export const HolidayCalendarCreateSurface = ({
         title={t('work-schedule:holidayCalendars.mutations.create.title')}
         subtitle={t('work-schedule:holidayCalendars.mutations.create.subtitle')}
         kind="create"
+        presentation={presentation}
         submitLabel={t('work-schedule:holidayCalendars.mutations.create.submit')}
         pendingLabel={t('work-schedule:holidayCalendars.mutations.create.pending')}
         cancelLabel={t('common:actions.cancel')}
@@ -285,6 +288,7 @@ export const HolidayCalendarEditSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: BaseSurfaceProps & {
   initialValues: HolidayCalendarRecord;
   onSubmit: (payload: HolidayCalendarUpdatePayload) => Promise<void> | void;
@@ -321,6 +325,7 @@ export const HolidayCalendarEditSurface = ({
         title={t('work-schedule:holidayCalendars.mutations.edit.title')}
         subtitle={t('work-schedule:holidayCalendars.mutations.edit.subtitle')}
         kind="edit"
+        presentation={presentation}
         submitLabel={t('work-schedule:holidayCalendars.mutations.edit.submit')}
         pendingLabel={t('work-schedule:holidayCalendars.mutations.edit.pending')}
         cancelLabel={t('common:actions.cancel')}
@@ -378,6 +383,7 @@ export const HolidayCalendarEntrySurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: BaseSurfaceProps & {
   initialValues?: HolidayCalendarEntryRecord;
   isReadOnly?: boolean;
@@ -423,6 +429,7 @@ export const HolidayCalendarEntrySurface = ({
         }
         subtitle={t('work-schedule:holidayCalendars.entries.subtitle')}
         kind={initialValues ? 'edit' : 'create'}
+        presentation={presentation}
         submitLabel={
           initialValues
             ? t('work-schedule:holidayCalendars.entries.update')

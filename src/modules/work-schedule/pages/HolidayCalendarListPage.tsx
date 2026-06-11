@@ -20,11 +20,14 @@ import {
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  useModalHost,
   PermissionDeniedState,
   SearchBoxSeam,
   useDestructiveConfirm,
@@ -104,6 +107,7 @@ export const HolidayCalendarListPage = (): JSX.Element => {
   const createMutation = useCreateHolidayCalendarMutation();
   const lifecycleMutation = useHolidayCalendarLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
+  const { close: closeModal, openDrawer } = useModalHost();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [, setCursorStack] = useState(createCursorStack);
@@ -116,6 +120,54 @@ export const HolidayCalendarListPage = (): JSX.Element => {
     permission: PERMISSIONS.WORK_SCHEDULE_MANAGE_LIFECYCLE,
     scope: { module: 'workSchedule', value: 'global' },
   });
+
+  const onCreateSubmit = useCallback(
+    async (payload: Parameters<typeof createMutation.mutateAsync>[0]['payload']) => {
+      try {
+        const record = await createMutation.mutateAsync({ payload });
+        notifySuccess('work-schedule:holidayCalendars.feedback.created');
+        setIsCreateOpen(false);
+        navigate(APP_PATHS.holidayCalendarDetail(record.holidayCalendarId));
+      } catch (error) {
+        notifyError(error as NormalizedApiError);
+      }
+    },
+    [createMutation, navigate, notifyError, notifySuccess],
+  );
+
+  useEffect(() => {
+    if (!isCreateOpen || !canCreateHolidayCalendar) {
+      closeModal();
+      return;
+    }
+
+    openDrawer({
+      title: t('work-schedule:holidayCalendars.mutations.create.title'),
+      content: (
+        <HolidayCalendarCreateSurface
+          presentation="drawer"
+          isPending={createMutation.isPending}
+          onCancel={() => setIsCreateOpen(false)}
+          onSubmit={onCreateSubmit}
+        />
+      ),
+    });
+  }, [
+    canCreateHolidayCalendar,
+    closeModal,
+    createMutation.isPending,
+    isCreateOpen,
+    onCreateSubmit,
+    openDrawer,
+    t,
+  ]);
+
+  useEffect(
+    () => () => {
+      closeModal();
+    },
+    [closeModal],
+  );
 
   usePageActions(
     canCreateHolidayCalendar ? (
@@ -230,17 +282,59 @@ export const HolidayCalendarListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const clearHolidayCalendarFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+    });
+  }, [patchQuery]);
+
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (listQuery.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: listQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (listQuery.status) {
+      items.push({
+        id: 'status',
+        label: t('work-schedule:holidayCalendars.filters.status'),
+        value: t(`work-schedule:holidayCalendars.statuses.${listQuery.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+
+    return items;
+  }, [listQuery.search, listQuery.status, patchQuery, t]);
+  const hasActiveFilters = appliedFilterChips.length > 0;
+
   return (
     <ModuleListScreenShell
       mode="flat-list"
       banner={<WorkScheduleSubnavigation active="holiday-calendars" />}
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             <SearchBoxSeam
               value={listQuery.search ?? ''}
               placeholder={t('work-schedule:holidayCalendars.filters.searchPlaceholder')}
               onApply={(value) => patchQuery({ search: value || undefined })}
+            />
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              emptyLabel={t('common:filters.noFiltersApplied')}
+              onClearAll={hasActiveFilters ? clearHolidayCalendarFilters : undefined}
             />
           }
         >
@@ -262,25 +356,7 @@ export const HolidayCalendarListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-        </FilterBarShell>
-      }
-      interactionSection={
-        canCreateHolidayCalendar && isCreateOpen ? (
-          <HolidayCalendarCreateSurface
-            isPending={createMutation.isPending}
-            onCancel={() => setIsCreateOpen(false)}
-            onSubmit={async (payload) => {
-              try {
-                const record = await createMutation.mutateAsync({ payload });
-                notifySuccess('work-schedule:holidayCalendars.feedback.created');
-                setIsCreateOpen(false);
-                navigate(APP_PATHS.holidayCalendarDetail(record.holidayCalendarId));
-              } catch (error) {
-                notifyError(error as NormalizedApiError);
-              }
-            }}
-          />
-        ) : null
+        </FilterToolbar>
       }
       tableSection={
         <AdminTableShell
@@ -296,6 +372,8 @@ export const HolidayCalendarListPage = (): JSX.Element => {
         <CursorPager
           canGoBack={canGoBack}
           canGoNext={canGoNext}
+          displayedCount={listQueryResult.data?.data.length}
+          limit={listQuery.limit ?? 20}
           onNext={onNext}
           onPrevious={onPrevious}
         />

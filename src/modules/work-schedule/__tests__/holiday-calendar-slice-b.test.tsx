@@ -17,12 +17,18 @@ const renderRoute = (path: string) => {
   renderAppWithProviders(<RouterProvider router={router} />);
 };
 
+const textContentEquals =
+  (expected: string) =>
+  (_content: string, element: Element | null): boolean =>
+    Boolean(element?.classList.contains('truncate') && element.textContent === expected);
+
 describe('holiday calendar slice B surfaces', () => {
   beforeEach(async () => {
     await setLocale(DEFAULT_LOCALE);
   });
 
-  it('renders list rows and emits only supported status/search params', async () => {
+  it('renders list rows with applied chips and emits only supported status/search params', async () => {
+    const user = userEvent.setup();
     let capturedKeys: string[] = [];
     server.use(
       http.get('*/admin/work-schedule/holiday-calendars', ({ request }) => {
@@ -56,6 +62,36 @@ describe('holiday calendar slice B surfaces', () => {
       await screen.findByTestId('module-list-shell', {}, { timeout: 3000 }),
     ).toBeInTheDocument();
     await waitFor(() => expect(capturedKeys).toEqual(['search', 'status']));
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getByText(textContentEquals(`${i18n.t('common:labels.search')}: VN`)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        textContentEquals(
+          `${i18n.t('work-schedule:holidayCalendars.filters.status')}: ${i18n.t(
+            'work-schedule:holidayCalendars.statuses.DRAFT',
+          )}`,
+        ),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('common:pagination.pageStatus'))).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t('common:labels.search')}`,
+      }),
+    );
+    await waitFor(() => expect(capturedKeys).toEqual(['status']));
+    expect(
+      screen.queryByText(textContentEquals(`${i18n.t('common:labels.search')}: VN`)),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
+    await waitFor(() => expect(capturedKeys).toEqual([]));
+    expect(screen.getByText(i18n.t('common:filters.noFiltersApplied'))).toBeInTheDocument();
   });
 
   it('explains that Holiday Calendars drive roster generation rather than leave or attendance', async () => {
@@ -102,11 +138,13 @@ describe('holiday calendar slice B surfaces', () => {
       }),
     );
 
-    const surface = screen
-      .getByRole('heading', {
-        name: i18n.t('work-schedule:holidayCalendars.mutations.create.title'),
-      })
-      .closest('section');
+    const surface =
+      screen
+        .getAllByRole('heading', {
+          name: i18n.t('work-schedule:holidayCalendars.mutations.create.title'),
+        })
+        .map((heading) => heading.closest('section'))
+        .find(Boolean) ?? null;
     expect(surface).not.toBeNull();
     const form = within(surface as HTMLElement);
     expect(

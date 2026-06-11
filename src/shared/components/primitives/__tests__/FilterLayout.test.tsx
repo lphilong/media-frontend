@@ -59,7 +59,7 @@ describe('shared filter layout primitives', () => {
     expect(screen.getByLabelText('Status')).toBeInTheDocument();
     expect(screen.getByText('Applied filters')).toBeInTheDocument();
     expect(screen.getByText(/Created before:/)).toBeInTheDocument();
-    expect(screen.getByText(/20:26 28-05-2026/)).toBeInTheDocument();
+    expect(screen.getByText(/03:26 29-05-2026, giờ Việt Nam/)).toBeInTheDocument();
     expect(screen.queryByText(/1780000000000/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear filter: Status' }));

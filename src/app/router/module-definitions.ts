@@ -7,7 +7,9 @@ export type NavGroup =
   | 'identityAccess'
   | 'organization'
   | 'talentOwnership'
-  | 'operations'
+  | 'workResources'
+  | 'events'
+  | 'performance'
   | 'commercial';
 
 export type ModuleRouteDefinition = {
@@ -160,7 +162,7 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     detailPath: APP_PATHS.studioResourceDetailPattern,
     detailParamKey: 'studioResourceId',
     namespace: 'studio-resource',
-    navGroup: 'talentOwnership',
+    navGroup: 'workResources',
     navItemKey: 'studioResources',
     listTitleKey: 'studio-resource:page.title',
     listSubtitleKey: 'studio-resource:page.subtitle',
@@ -174,7 +176,7 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     detailPath: APP_PATHS.workShiftDetailPattern,
     detailParamKey: 'workShiftId',
     namespace: 'work-schedule',
-    navGroup: 'operations',
+    navGroup: 'workResources',
     navItemKey: 'workShifts',
     listTitleKey: 'work-schedule:surfaces.globalOps.title',
     listSubtitleKey: 'work-schedule:surfaces.globalOps.subtitle',
@@ -188,7 +190,7 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     detailPath: APP_PATHS.eventDetailPattern,
     detailParamKey: 'eventId',
     namespace: 'event-assignment',
-    navGroup: 'operations',
+    navGroup: 'events',
     navItemKey: 'events',
     listTitleKey: 'event-assignment:page.title',
     listSubtitleKey: 'event-assignment:page.subtitle',
@@ -216,7 +218,7 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     detailPath: APP_PATHS.talentKpiRecordDetailPattern,
     detailParamKey: 'talentKpiRecordId',
     namespace: 'talent-kpi',
-    navGroup: 'commercial',
+    navGroup: 'performance',
     navItemKey: 'talentKpi',
     listTitleKey: 'talent-kpi:page.title',
     listSubtitleKey: 'talent-kpi:page.subtitle',
@@ -230,7 +232,7 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     detailPath: APP_PATHS.kpiPlanDetailPattern,
     detailParamKey: 'kpiPlanId',
     namespace: 'kpi',
-    navGroup: 'commercial',
+    navGroup: 'performance',
     navItemKey: 'kpi',
     listTitleKey: 'kpi:page.title',
     listSubtitleKey: 'kpi:page.subtitle',
@@ -354,28 +356,45 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
         navItemKey: 'platformAccounts',
         to: APP_PATHS.platformAccounts,
       },
+    ],
+  },
+  {
+    id: 'workResources',
+    items: [
       {
         id: 'studio-resources',
         moduleId: 'studio-resource',
         navItemKey: 'studioResources',
         to: APP_PATHS.studioResources,
       },
-    ],
-  },
-  {
-    id: 'operations',
-    items: [
       {
         id: 'work-shifts',
         moduleId: 'work-schedule',
         navItemKey: 'workShifts',
         to: APP_PATHS.workShifts,
       },
+    ],
+  },
+  {
+    id: 'events',
+    items: [
       {
         id: 'events',
         moduleId: 'event-assignment',
         navItemKey: 'events',
         to: APP_PATHS.events,
+      },
+    ],
+  },
+  {
+    id: 'performance',
+    items: [
+      { id: 'kpi', moduleId: 'kpi', navItemKey: 'kpi', to: APP_PATHS.kpi },
+      {
+        id: 'talent-kpi',
+        moduleId: 'talent-kpi',
+        navItemKey: 'talentKpi',
+        to: APP_PATHS.talentKpiRecords,
       },
     ],
   },
@@ -388,7 +407,6 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
         navItemKey: 'contractRegistry',
         to: APP_PATHS.contractRecords,
       },
-      { id: 'kpi', moduleId: 'kpi', navItemKey: 'kpi', to: APP_PATHS.kpi },
       {
         id: 'revenue-ledger',
         moduleId: 'revenue-ledger',

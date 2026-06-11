@@ -24,5 +24,8 @@ export const useMutationFeedback = () => {
     notifyInfo: (messageKey: string) => {
       pushToast(t(messageKey), 'info');
     },
+    notifyNeutral: (messageKey: string) => {
+      pushToast(t(messageKey), 'neutral');
+    },
   };
 };

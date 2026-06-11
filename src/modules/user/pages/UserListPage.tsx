@@ -30,10 +30,12 @@ import {
   type CapabilityMissingReason,
 } from '@shared/auth/current-actor-capabilities';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
   PermissionDeniedState,
   SearchBoxSeam,
@@ -284,15 +286,65 @@ export const UserListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
+  const clearUserFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      state: undefined,
+      actorKind: undefined,
+    });
+  }, [patchQuery]);
+
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (query.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: query.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (query.state) {
+      items.push({
+        id: 'state',
+        label: t('user:filters.state'),
+        value: t(`user:statuses.${query.state}`),
+        onClear: () => patchQuery({ state: undefined }),
+      });
+    }
+
+    if (query.actorKind) {
+      items.push({
+        id: 'actor-kind',
+        label: t('user:filters.actorKind'),
+        value: t(`user:actorKinds.${query.actorKind}`),
+        onClear: () => patchQuery({ actorKind: undefined }),
+      });
+    }
+
+    return items;
+  }, [patchQuery, query.actorKind, query.search, query.state, t]);
+
   return (
     <ModuleListScreenShell
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             <SearchBoxSeam
               value={query.search ?? ''}
               placeholder={t('user:filters.searchPlaceholder')}
               onApply={(value) => patchQuery({ search: value || undefined })}
+            />
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              onClearAll={appliedFilterChips.length > 0 ? clearUserFilters : undefined}
             />
           }
         >
@@ -338,7 +390,7 @@ export const UserListPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-        </FilterBarShell>
+        </FilterToolbar>
       }
       interactionSection={
         <div ref={provisionPanelRef} className="space-y-4">
@@ -383,6 +435,8 @@ export const UserListPage = (): JSX.Element => {
         <CursorPager
           canGoBack={canGoBack}
           canGoNext={canGoNext}
+          displayedCount={listQueryResult.data?.data.length}
+          limit={query.limit ?? 20}
           onNext={onNext}
           onPrevious={onPrevious}
         />

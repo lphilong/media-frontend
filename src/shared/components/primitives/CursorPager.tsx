@@ -1,38 +1,34 @@
-import { useTranslation } from 'react-i18next';
+import { ListPagination } from '@shared/components/primitives/ListPagination';
 
 type CursorPagerProps = {
   canGoBack: boolean;
   canGoNext: boolean;
   onPrevious: () => void;
   onNext: () => void;
+  limit?: number;
+  displayedCount?: number;
+  totalCount?: number;
 };
 
 export const CursorPager = ({
   canGoBack,
   canGoNext,
+  displayedCount,
+  limit,
   onPrevious,
   onNext,
+  totalCount,
 }: CursorPagerProps): JSX.Element => {
-  const { t } = useTranslation('common');
-
   return (
-    <div className="flex items-center justify-end gap-2">
-      <button
-        type="button"
-        onClick={onPrevious}
-        disabled={!canGoBack}
-        className="rounded border border-border bg-panel px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {t('actions.previous')}
-      </button>
-      <button
-        type="button"
-        onClick={onNext}
-        disabled={!canGoNext}
-        className="rounded border border-border bg-panel px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {t('actions.next')}
-      </button>
-    </div>
+    <ListPagination
+      mode="cursor"
+      canGoBack={canGoBack}
+      canGoNext={canGoNext}
+      displayedCount={displayedCount}
+      limit={limit}
+      onNext={onNext}
+      onPrevious={onPrevious}
+      totalCount={totalCount}
+    />
   );
 };

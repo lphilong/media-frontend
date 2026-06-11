@@ -14,11 +14,12 @@ import type {
   StudioResourceUpdatePayload,
 } from '@modules/studio-resource/types/studio-resource.types';
 import { FormGrid, GeneratedCodeNotice, SelectField, TextInputField } from '@shared/forms';
-import { ModuleMutationSurface } from '@shared/modules';
+import { ModuleMutationSurface, type ModuleMutationSurfaceProps } from '@shared/modules';
 
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
   isPending?: boolean;
+  presentation?: ModuleMutationSurfaceProps['presentation'];
 };
 
 type StudioResourceCreateSurfaceProps = BaseMutationSurfaceProps & {
@@ -134,6 +135,7 @@ export const StudioResourceCreateSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: StudioResourceCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['studio-resource', 'common']);
   const form = useForm<StudioResourceCreateFormValues>({
@@ -182,6 +184,7 @@ export const StudioResourceCreateSurface = ({
         title={t('studio-resource:mutations.create.title')}
         subtitle={t('studio-resource:mutations.create.subtitle')}
         kind="create"
+        presentation={presentation}
         submitLabel={t('studio-resource:mutations.create.submit')}
         pendingLabel={t('studio-resource:mutations.create.pending')}
         cancelLabel={t('common:actions.cancel')}
@@ -239,6 +242,7 @@ export const StudioResourceEditSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: StudioResourceEditSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['studio-resource', 'common']);
   const canEditOccupancy = resourceClass === 'SPACE';
@@ -290,6 +294,7 @@ export const StudioResourceEditSurface = ({
         title={t('studio-resource:mutations.edit.title')}
         subtitle={t('studio-resource:mutations.edit.subtitle')}
         kind="edit"
+        presentation={presentation}
         submitLabel={t('studio-resource:mutations.edit.submit')}
         pendingLabel={t('studio-resource:mutations.edit.pending')}
         cancelLabel={t('common:actions.cancel')}

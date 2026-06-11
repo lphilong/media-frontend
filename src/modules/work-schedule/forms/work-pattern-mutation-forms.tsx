@@ -20,11 +20,12 @@ import {
   type WorkPatternWeekdayToken,
 } from '@modules/work-schedule/types/work-schedule.types';
 import { FormGrid, TextInputField } from '@shared/forms';
-import { ModuleMutationSurface } from '@shared/modules';
+import { ModuleMutationSurface, type ModuleMutationSurfaceProps } from '@shared/modules';
 
 type BaseSurfaceProps = {
   onCancel: () => void;
   isPending?: boolean;
+  presentation?: ModuleMutationSurfaceProps['presentation'];
 };
 
 type WorkPatternCreateSurfaceProps = BaseSurfaceProps & {
@@ -335,6 +336,7 @@ export const WorkPatternCreateSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: WorkPatternCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['work-schedule', 'common']);
   const form = useForm<WorkPatternFormValues>({
@@ -384,6 +386,7 @@ export const WorkPatternCreateSurface = ({
         title={t('work-schedule:patterns.mutations.create.title')}
         subtitle={t('work-schedule:patterns.mutations.create.subtitle')}
         kind="create"
+        presentation={presentation}
         submitLabel={t('work-schedule:patterns.mutations.create.submit')}
         pendingLabel={t('work-schedule:patterns.mutations.create.pending')}
         cancelLabel={t('common:actions.cancel')}
@@ -417,6 +420,7 @@ export const WorkPatternEditSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: WorkPatternEditSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['work-schedule', 'common']);
   const structuralReadOnly = initialValues.status !== 'DRAFT';
@@ -483,6 +487,7 @@ export const WorkPatternEditSurface = ({
             : t('work-schedule:patterns.mutations.edit.subtitle')
         }
         kind="edit"
+        presentation={presentation}
         submitLabel={t('work-schedule:patterns.mutations.edit.submit')}
         pendingLabel={t('work-schedule:patterns.mutations.edit.pending')}
         cancelLabel={t('common:actions.cancel')}

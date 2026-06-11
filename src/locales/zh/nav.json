@@ -6,9 +6,11 @@
     "overview": "概览",
     "identityAccess": "身份与访问",
     "organization": "人员与组织",
-    "talentOwnership": "Talent 与归属",
-    "operations": "运营",
-    "commercial": "商业"
+    "talentOwnership": "Talent 与运营渠道",
+    "workResources": "排班与资源",
+    "events": "活动",
+    "performance": "绩效",
+    "commercial": "商业与对账"
   },
   "items": {
     "dashboard": "仪表盘",

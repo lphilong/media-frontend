@@ -26,11 +26,14 @@ import {
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
+  useModalHost,
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
@@ -166,6 +169,7 @@ export const StudioResourceListPage = (): JSX.Element => {
   const createMutation = useCreateStudioResourceMutation();
   const lifecycleMutation = useStudioResourceLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
+  const { close: closeModal, openDrawer } = useModalHost();
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -207,6 +211,53 @@ export const StudioResourceListPage = (): JSX.Element => {
   const canManageStudioResourceLifecycle = canShowAction(capabilitiesQuery.data, {
     permission: PERMISSIONS.STUDIO_RESOURCE_MANAGE_LIFECYCLE,
   });
+
+  const onCreateSubmit = useCallback(
+    async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
+      try {
+        await createMutation.mutateAsync(payload);
+        notifySuccess('studio-resource:feedback.created');
+        setIsCreateOpen(false);
+      } catch (error) {
+        notifyError(error as NormalizedApiError);
+      }
+    },
+    [createMutation, notifyError, notifySuccess],
+  );
+
+  useEffect(() => {
+    if (!isCreateOpen || !canCreateStudioResource) {
+      closeModal();
+      return;
+    }
+
+    openDrawer({
+      title: t('studio-resource:mutations.create.title'),
+      content: (
+        <StudioResourceCreateSurface
+          presentation="drawer"
+          isPending={createMutation.isPending}
+          onCancel={() => setIsCreateOpen(false)}
+          onSubmit={onCreateSubmit}
+        />
+      ),
+    });
+  }, [
+    canCreateStudioResource,
+    closeModal,
+    createMutation.isPending,
+    isCreateOpen,
+    onCreateSubmit,
+    openDrawer,
+    t,
+  ]);
+
+  useEffect(
+    () => () => {
+      closeModal();
+    },
+    [closeModal],
+  );
 
   const pageActions = (
     <div className="flex flex-wrap items-center gap-2">
@@ -285,16 +336,6 @@ export const StudioResourceListPage = (): JSX.Element => {
     });
   };
 
-  const onCreateSubmit = async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
-    try {
-      await createMutation.mutateAsync(payload);
-      notifySuccess('studio-resource:feedback.created');
-      setIsCreateOpen(false);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
   const onLifecycleAction = useCallback(
     async (studioResourceId: string, action: StudioResourceLifecycleAction) => {
       const confirmed = await requestDestructiveConfirm({
@@ -367,6 +408,68 @@ export const StudioResourceListPage = (): JSX.Element => {
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
   const activeQuery = isAvailabilityView ? availabilityQuery : flatListQuery;
+  const clearStudioResourceFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      operationalStatus: undefined,
+      resourceClass: undefined,
+      hasMaxOccupancy: undefined,
+      sortBy: undefined,
+      sortDirection: undefined,
+    });
+  }, [patchQuery]);
+
+  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (activeQuery.search) {
+      items.push({
+        id: 'search',
+        label: t('common:labels.search'),
+        value: activeQuery.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+
+    if (activeQuery.operationalStatus) {
+      items.push({
+        id: 'operationalStatus',
+        label: t('studio-resource:filters.operationalStatus'),
+        value: t(`studio-resource:statuses.${activeQuery.operationalStatus}`),
+        onClear: () => patchQuery({ operationalStatus: undefined }),
+      });
+    }
+
+    if (activeQuery.resourceClass) {
+      items.push({
+        id: 'resourceClass',
+        label: t('studio-resource:filters.resourceClass'),
+        value: t(`studio-resource:resourceClasses.${activeQuery.resourceClass}`),
+        onClear: () => patchQuery({ resourceClass: undefined }),
+      });
+    }
+
+    if (activeQuery.hasMaxOccupancy !== undefined) {
+      items.push({
+        id: 'hasMaxOccupancy',
+        label: t('studio-resource:filters.hasMaxOccupancy'),
+        value: activeQuery.hasMaxOccupancy
+          ? t('studio-resource:filters.withOccupancy')
+          : t('studio-resource:filters.withoutOccupancy'),
+        onClear: () => patchQuery({ hasMaxOccupancy: undefined }),
+      });
+    }
+
+    return items;
+  }, [
+    activeQuery.hasMaxOccupancy,
+    activeQuery.operationalStatus,
+    activeQuery.resourceClass,
+    activeQuery.search,
+    patchQuery,
+    t,
+  ]);
+  const hasActiveFilters = appliedFilterChips.length > 0;
 
   return (
     <ModuleListScreenShell
@@ -381,7 +484,7 @@ export const StudioResourceListPage = (): JSX.Element => {
         </div>
       }
       filterBar={
-        <FilterBarShell
+        <FilterToolbar
           searchSlot={
             <SearchBoxSeam
               value={activeQuery.search ?? ''}
@@ -407,6 +510,16 @@ export const StudioResourceListPage = (): JSX.Element => {
                   sortDirection,
                 })
               }
+            />
+          }
+          appliedFilters={
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={appliedFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              emptyLabel={t('common:filters.noFiltersApplied')}
+              onClearAll={hasActiveFilters ? clearStudioResourceFilters : undefined}
             />
           }
         >
@@ -476,18 +589,7 @@ export const StudioResourceListPage = (): JSX.Element => {
               <option value="false">{t('studio-resource:filters.withoutOccupancy')}</option>
             </select>
           </label>
-        </FilterBarShell>
-      }
-      interactionSection={
-        <>
-          {canCreateStudioResource && isCreateOpen ? (
-            <StudioResourceCreateSurface
-              isPending={createMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
-              onSubmit={onCreateSubmit}
-            />
-          ) : null}
-        </>
+        </FilterToolbar>
       }
       tableSection={
         <div className="space-y-4">
@@ -518,6 +620,8 @@ export const StudioResourceListPage = (): JSX.Element => {
           canGoNext={canGoNext}
           onNext={onNext}
           onPrevious={onPrevious}
+          displayedCount={listQueryResult.data?.data.length}
+          limit={activeQuery.limit ?? 20}
         />
       }
       state={shellState}

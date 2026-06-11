@@ -17,11 +17,16 @@ const renderRoute = (path: string) => {
   renderAppWithProviders(<RouterProvider router={router} />);
 };
 
+const textContentEquals =
+  (expected: string) =>
+  (_content: string, element: Element | null): boolean =>
+    Boolean(element?.classList.contains('truncate') && element.textContent === expected);
+
 const findCreateSurface = async () => {
-  const heading = await screen.findByRole('heading', {
+  const headings = await screen.findAllByRole('heading', {
     name: i18n.t('work-schedule:patterns.mutations.create.title'),
   });
-  const surface = heading.closest('section');
+  const surface = headings.map((heading) => heading.closest('section')).find(Boolean) ?? null;
   expect(surface).not.toBeNull();
   return surface as HTMLElement;
 };
@@ -124,7 +129,8 @@ describe('work pattern slice A surfaces', () => {
     expect(screen.queryByText(/preview|publish|approval|change request/i)).not.toBeInTheDocument();
   });
 
-  it('only emits backend-supported status, search, cursor, and limit query params', async () => {
+  it('only emits backend-supported query params and renders safe filter/pagination controls', async () => {
+    const user = userEvent.setup();
     let capturedKeys: string[] = [];
     server.use(
       http.get('*/admin/work-schedule/patterns', ({ request }) => {
@@ -140,6 +146,36 @@ describe('work pattern slice A surfaces', () => {
 
     await screen.findByText(i18n.t('work-schedule:patterns.states.emptyTitle'));
     expect(capturedKeys).toEqual(['search', 'status']);
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getByText(textContentEquals(`${i18n.t('common:labels.search')}: PAT`)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        textContentEquals(
+          `${i18n.t('work-schedule:patterns.filters.status')}: ${i18n.t(
+            'work-schedule:patterns.statuses.DRAFT',
+          )}`,
+        ),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('common:pagination.pageStatus'))).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t('common:labels.search')}`,
+      }),
+    );
+    await waitFor(() => expect(capturedKeys).toEqual(['status']));
+    expect(
+      screen.queryByText(textContentEquals(`${i18n.t('common:labels.search')}: PAT`)),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
+    await waitFor(() => expect(capturedKeys).toEqual([]));
+    expect(screen.getByText(i18n.t('common:filters.noFiltersApplied'))).toBeInTheDocument();
   });
 
   it('validates create fields, keeps calculated end time read-only, and submits canonical days', async () => {

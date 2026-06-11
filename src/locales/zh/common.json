@@ -22,6 +22,18 @@
     "clearFilter": "清除筛选",
     "noFiltersApplied": "未应用筛选"
   },
+  "pagination": {
+    "navigation": "列表分页",
+    "pageStatus": "第 {{page}} / {{total}} 页",
+    "goToPage": "跳转到页",
+    "go": "跳转",
+    "pageSize": "每页行数",
+    "cursorShowingLimit": "最多显示 {{count}} 行",
+    "cursorDisclosure": "此列表按加载批次分页，没有总页数。",
+    "totalRows": "总行数：{{count}}",
+    "noPrevious": "没有上一页",
+    "noNext": "没有下一页"
+  },
   "locales": {
     "vi": "Tiếng Việt",
     "en": "English",
@@ -46,6 +58,44 @@
   },
   "states": {
     "loading": "加载中"
+  },
+  "semanticStates": {
+    "loading": {
+      "title": "正在加载数据",
+      "message": "列表正在更新。"
+    },
+    "no-data": {
+      "title": "暂无数据",
+      "message": "当前范围内没有可显示的行。"
+    },
+    "no-matching-filters": {
+      "title": "没有符合当前筛选的行",
+      "message": "可尝试清除筛选或检查其他标签页。"
+    },
+    "no-permission": {
+      "title": "你没有权限查看此数据",
+      "message": "如果工作需要此访问权限，请联系 Admin。"
+    },
+    "no-scope": {
+      "title": "分配范围内没有数据",
+      "message": "工作范围由 Admin/Ops 或负责配置的人员分配。"
+    },
+    "missing-profile": {
+      "title": "尚未关联员工档案",
+      "message": "Admin 需要先将登录账号关联到员工档案，个人数据才会显示。"
+    },
+    "blocked-profile": {
+      "title": "员工档案不可运营",
+      "message": "只有员工档案处于可运营状态时才显示数据。"
+    },
+    "service-error": {
+      "title": "无法加载数据",
+      "message": "请重试。如果问题持续，请联系系统管理员。"
+    },
+    "bounded-results": {
+      "title": "结果按加载批次显示",
+      "message": "此列表没有总页数；请使用上一页/下一页切换结果批次。"
+    }
   },
   "capabilities": {
     "missingPermission": "你没有执行此操作的权限。",

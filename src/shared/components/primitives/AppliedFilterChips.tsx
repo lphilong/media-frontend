@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 
-import { formatUtcTimestamp } from '@shared/formatting/formatters';
+import { formatVietnamTimestamp } from '@shared/formatting/formatters';
 
 export type AppliedFilterChipItem = {
   id: string;
@@ -40,7 +40,7 @@ const formatChipValue = (item: AppliedFilterChipItem): string => {
   }
 
   const timestampValue = /^-?\d+$/.test(item.value) ? Number(item.value) : item.value;
-  return formatUtcTimestamp(timestampValue);
+  return formatVietnamTimestamp(timestampValue);
 };
 
 export const AppliedFilterChips = ({

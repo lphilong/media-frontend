@@ -22,6 +22,18 @@
     "clearFilter": "Clear filter",
     "noFiltersApplied": "No filters applied"
   },
+  "pagination": {
+    "navigation": "List pagination",
+    "pageStatus": "Page {{page}} / {{total}}",
+    "goToPage": "Go to page",
+    "go": "Go",
+    "pageSize": "Rows per page",
+    "cursorShowingLimit": "Showing up to {{count}} rows",
+    "cursorDisclosure": "This list uses load-by-load pagination and has no total page count.",
+    "totalRows": "Total rows: {{count}}",
+    "noPrevious": "No previous page",
+    "noNext": "No next page"
+  },
   "locales": {
     "vi": "Tiếng Việt",
     "en": "English",
@@ -46,6 +58,44 @@
   },
   "states": {
     "loading": "Loading"
+  },
+  "semanticStates": {
+    "loading": {
+      "title": "Loading data",
+      "message": "The list is being updated."
+    },
+    "no-data": {
+      "title": "No data yet",
+      "message": "There are no rows to show in the current scope."
+    },
+    "no-matching-filters": {
+      "title": "No rows match the current filters",
+      "message": "Try clearing filters or checking another tab."
+    },
+    "no-permission": {
+      "title": "You do not have permission to view this data",
+      "message": "Contact an Admin if this access is needed for your work."
+    },
+    "no-scope": {
+      "title": "No data in your assigned scope",
+      "message": "Working scope is assigned by Admin/Ops or the responsible setup owner."
+    },
+    "missing-profile": {
+      "title": "No linked employment profile",
+      "message": "An Admin must link this login account to an employment profile before personal data can appear."
+    },
+    "blocked-profile": {
+      "title": "Employment profile is not operational",
+      "message": "Data is shown only when the employment profile is in an operational status."
+    },
+    "service-error": {
+      "title": "Could not load data",
+      "message": "Try again. If the issue continues, contact the system administrator."
+    },
+    "bounded-results": {
+      "title": "Results are shown by load",
+      "message": "This list has no total page count; use Previous/Next to move between loaded result sets."
+    }
   },
   "capabilities": {
     "missingPermission": "You do not have permission to perform this action.",

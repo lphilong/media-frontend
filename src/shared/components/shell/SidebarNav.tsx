@@ -1,5 +1,14 @@
 import clsx from 'clsx';
-import { KeyRound, LayoutGrid, Landmark, Rocket, Wrench } from 'lucide-react';
+import {
+  BarChart3,
+  CalendarDays,
+  Handshake,
+  KeyRound,
+  LayoutGrid,
+  Landmark,
+  Rocket,
+  Wrench,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -16,7 +25,9 @@ const navGroupOrder: NavGroup[] = [
   'identityAccess',
   'organization',
   'talentOwnership',
-  'operations',
+  'workResources',
+  'events',
+  'performance',
   'commercial',
 ];
 
@@ -25,8 +36,10 @@ const navGroupIconMap: Record<NavGroup, JSX.Element> = {
   identityAccess: <KeyRound className="h-4 w-4" />,
   organization: <Landmark className="h-4 w-4" />,
   talentOwnership: <Rocket className="h-4 w-4" />,
-  operations: <Wrench className="h-4 w-4" />,
-  commercial: <LayoutGrid className="h-4 w-4" />,
+  workResources: <Wrench className="h-4 w-4" />,
+  events: <CalendarDays className="h-4 w-4" />,
+  performance: <BarChart3 className="h-4 w-4" />,
+  commercial: <Handshake className="h-4 w-4" />,
 };
 
 type SidebarNavProps = {

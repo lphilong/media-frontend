@@ -144,6 +144,63 @@ describe('route and sidebar permission model', () => {
     expect(screen.queryByText('Labor Contract')).not.toBeInTheDocument();
   });
 
+  it('groups key Admin modules under the UIX sidebar sections without changing access', async () => {
+    await renderRoute(
+      '/dashboard',
+      makeCapabilities({
+        roles: ['ADMIN_FULL'],
+        permissions: [
+          'dashboardLite.read',
+          'user:view',
+          'role:view',
+          'orgUnit.read',
+          'employmentProfile.read',
+          'employmentTerms.read',
+          'talent.read',
+          'talentGroup.read',
+          'platformAccount.read',
+          'studioResource.read',
+          'workSchedule.read',
+          'event.read',
+          'kpi.read',
+          'talentKpi.read',
+          'contractRegistry.read',
+          'revenueLedger.read',
+          'commissionRule.read',
+          'commissionSettlement.read',
+        ],
+        scopeGrants: {
+          dashboardLite: ['global'],
+          workSchedule: ['global'],
+          eventAssignment: ['global'],
+          kpi: ['global'],
+          talentKpi: ['global'],
+          contractRegistry: ['global'],
+          revenueLedger: ['global'],
+          commission: ['global'],
+        },
+      }),
+    );
+
+    expect(await screen.findByText('Identity & Access')).toBeInTheDocument();
+    expect(screen.getByText('People & Organization')).toBeInTheDocument();
+    expect(screen.getByText('Talent & Operating Channels')).toBeInTheDocument();
+    expect(screen.getByText('Work Schedule & Resources')).toBeInTheDocument();
+    expect(screen.getAllByText('Events').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Performance')).toBeInTheDocument();
+    expect(screen.getByText('Commercial & Reconciliation')).toBeInTheDocument();
+
+    const studioResources = await screen.findByTestId('nav-link-studio-resources');
+    const workShifts = await screen.findByTestId('nav-link-work-shifts');
+    const kpi = await screen.findByTestId('nav-link-kpi');
+    const revenueLedger = await screen.findByTestId('nav-link-revenue-ledger');
+
+    expect(studioResources.compareDocumentPosition(workShifts) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBeTruthy();
+    expect(kpi.compareDocumentPosition(revenueLedger) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBeTruthy();
+  });
+
   it('fails closed for HR department-only authority on raw Admin WorkSchedule routes', async () => {
     await renderRoute(
       '/work-schedule/department-shifts',

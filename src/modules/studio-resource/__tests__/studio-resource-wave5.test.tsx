@@ -15,9 +15,15 @@ const renderRoute = (path: string) => {
   renderAppWithProviders(<RouterProvider router={router} />);
 };
 
+const textContentEquals =
+  (expected: string) =>
+  (_content: string, element: Element | null): boolean =>
+    Boolean(element?.classList.contains('truncate') && element.textContent === expected);
+
 describe('studio-resource wave 5 surfaces', () => {
-  it('renders query-driven list rows and drops archived rows by default', async () => {
+  it('renders query-driven list rows with applied chips and bounded cursor disclosure', async () => {
     await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
     renderRoute('/studio-resources?resourceClass=SPACE&search=Main&scope=global');
 
     expect(
@@ -26,6 +32,36 @@ describe('studio-resource wave 5 surfaces', () => {
     expect(await screen.findByText('SR-000001', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('Main Studio')).toBeInTheDocument();
     expect(screen.queryByText('Archived Studio')).not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getByText(textContentEquals(`${i18n.t('common:labels.search')}: Main`)),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        textContentEquals(
+          `${i18n.t('studio-resource:filters.resourceClass')}: ${i18n.t(
+            'studio-resource:resourceClasses.SPACE',
+          )}`,
+        ),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('common:pagination.pageStatus'))).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t('common:labels.search')}`,
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        screen.queryByText(textContentEquals(`${i18n.t('common:labels.search')}: Main`)),
+      ).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
+    expect(await screen.findByText(i18n.t('common:filters.noFiltersApplied'))).toBeInTheDocument();
   });
 
   it('renders availability view with the documented thinner payload', async () => {
@@ -94,10 +130,11 @@ describe('studio-resource wave 5 surfaces', () => {
       }),
     );
 
-    const createSurfaceHeading = await screen.findByRole('heading', {
+    const createSurfaceHeadings = await screen.findAllByRole('heading', {
       name: i18n.t('studio-resource:mutations.create.title'),
     });
-    const createSurface = createSurfaceHeading.closest('section');
+    const createSurface =
+      createSurfaceHeadings.map((heading) => heading.closest('section')).find(Boolean) ?? null;
     expect(createSurface).not.toBeNull();
     if (!createSurface) {
       return;

@@ -22,6 +22,18 @@
     "clearFilter": "Xóa bộ lọc",
     "noFiltersApplied": "Chưa áp dụng bộ lọc"
   },
+  "pagination": {
+    "navigation": "Phân trang danh sách",
+    "pageStatus": "Trang {{page}} / {{total}}",
+    "goToPage": "Đi tới trang",
+    "go": "Tới",
+    "pageSize": "Số dòng mỗi trang",
+    "cursorShowingLimit": "Đang hiển thị tối đa {{count}} dòng",
+    "cursorDisclosure": "Danh sách dùng phân trang theo lượt tải, không có tổng số trang.",
+    "totalRows": "Tổng số dòng: {{count}}",
+    "noPrevious": "Không có trang trước",
+    "noNext": "Không có trang tiếp theo"
+  },
   "locales": {
     "vi": "Tiếng Việt",
     "en": "English",
@@ -46,6 +58,44 @@
   },
   "states": {
     "loading": "Đang tải"
+  },
+  "semanticStates": {
+    "loading": {
+      "title": "Đang tải dữ liệu",
+      "message": "Danh sách đang được cập nhật."
+    },
+    "no-data": {
+      "title": "Chưa có dữ liệu",
+      "message": "Chưa có dòng nào để hiển thị trong phạm vi hiện tại."
+    },
+    "no-matching-filters": {
+      "title": "Không có dòng nào khớp bộ lọc",
+      "message": "Thử xóa bộ lọc hoặc kiểm tra tab khác nếu cần."
+    },
+    "no-permission": {
+      "title": "Bạn không có quyền xem dữ liệu này",
+      "message": "Liên hệ Admin nếu bạn cần quyền truy cập cho công việc hiện tại."
+    },
+    "no-scope": {
+      "title": "Không có dữ liệu trong phạm vi được phân công",
+      "message": "Phạm vi làm việc được cấp bởi Admin/Ops hoặc người phụ trách thiết lập."
+    },
+    "missing-profile": {
+      "title": "Chưa liên kết hồ sơ nhân sự",
+      "message": "Admin cần liên kết tài khoản đăng nhập với hồ sơ nhân sự trước khi dữ liệu cá nhân hiển thị."
+    },
+    "blocked-profile": {
+      "title": "Hồ sơ nhân sự chưa hoạt động",
+      "message": "Dữ liệu chỉ hiển thị khi hồ sơ nhân sự ở trạng thái được phép vận hành."
+    },
+    "service-error": {
+      "title": "Không tải được dữ liệu",
+      "message": "Thử tải lại. Nếu lỗi tiếp tục xảy ra, liên hệ người quản trị hệ thống."
+    },
+    "bounded-results": {
+      "title": "Kết quả đang hiển thị theo lượt tải",
+      "message": "Danh sách này không có tổng số trang; dùng Trước/Tiếp để xem lượt dữ liệu kế tiếp."
+    }
   },
   "capabilities": {
     "missingPermission": "Bạn không có quyền thực hiện hành động này.",

@@ -7,9 +7,14 @@ const ToastTrigger = (): JSX.Element => {
   const { pushToast } = useToast();
 
   return (
-    <button type="button" onClick={() => pushToast('Saved', 'success')}>
-      Show toast
-    </button>
+    <div>
+      <button type="button" onClick={() => pushToast('Saved', 'success')}>
+        Show toast
+      </button>
+      <button type="button" onClick={() => pushToast('Loaded bounded results', 'neutral')}>
+        Show neutral toast
+      </button>
+    </div>
   );
 };
 
@@ -35,5 +40,17 @@ describe('ToastProvider', () => {
     unmount();
 
     expect(clearTimeoutSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders neutral toast feedback as a status', () => {
+    render(
+      <ToastProvider>
+        <ToastTrigger />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show neutral toast' }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loaded bounded results');
   });
 });

@@ -20,6 +20,7 @@ const safeFormat = (value: number | string | Date, formatter: (date: Date) => st
 const padTwo = (value: number): string => value.toString().padStart(2, '0');
 
 export const DEFAULT_BUSINESS_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+export const VIETNAM_TIME_LABEL = 'giờ Việt Nam';
 const DATETIME_LOCAL_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -129,6 +130,25 @@ export const formatBusinessTimestamp = (
   } catch {
     return safeFormat(value, (date) => formatBusinessDateTime(date, DEFAULT_BUSINESS_TIME_ZONE));
   }
+};
+
+export const formatVietnamTimestamp = (value: number | string | Date): string => {
+  const formatted = formatBusinessTimestamp(value, DEFAULT_BUSINESS_TIME_ZONE);
+  return formatted === '-' ? formatted : `${formatted}, ${VIETNAM_TIME_LABEL}`;
+};
+
+export const formatVietnamMonth = (value: string): string => {
+  const match = /^(\d{4})-(\d{2})$/.exec(value.trim());
+  if (!match) {
+    return '-';
+  }
+
+  return `${match[2]}-${match[1]}`;
+};
+
+export const formatVietnamMonthLabel = (value: string): string => {
+  const formatted = formatVietnamMonth(value);
+  return formatted === '-' ? formatted : `Tháng ${formatted}`;
 };
 
 export const formatBusinessDateTimeInputValue = (

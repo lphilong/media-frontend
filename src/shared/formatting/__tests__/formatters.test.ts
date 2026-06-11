@@ -12,6 +12,9 @@ import {
   formatUtcDateInputValue,
   formatUtcTimestamp,
   formatUtcMidnightDateLike,
+  formatVietnamMonth,
+  formatVietnamMonthLabel,
+  formatVietnamTimestamp,
   parseBusinessDateTimeInputValue,
   parseUtcMidnightDateInputValue,
   readReferenceDisplay,
@@ -41,6 +44,15 @@ describe('formatters', () => {
 
   it('uses an explicit timezone parameter for business timestamp display', () => {
     expect(formatBusinessTimestamp('2026-05-20T07:14:00.000Z', 'UTC')).toBe('07:14 20-05-2026');
+  });
+
+  it('formats operator-facing Vietnam time labels', () => {
+    expect(formatVietnamTimestamp('2026-05-20T07:14:00.000Z')).toBe(
+      '14:14 20-05-2026, giờ Việt Nam',
+    );
+    expect(formatVietnamTimestamp('not-a-date')).toBe('-');
+    expect(formatVietnamMonth('2026-05')).toBe('05-2026');
+    expect(formatVietnamMonthLabel('2026-05')).toBe('Tháng 05-2026');
   });
 
   it.each(['America/Los_Angeles', 'UTC'])(

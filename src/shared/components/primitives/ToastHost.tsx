@@ -9,7 +9,7 @@ import {
   type PropsWithChildren,
 } from 'react';
 
-type ToastTone = 'success' | 'error' | 'warning' | 'info';
+type ToastTone = 'success' | 'error' | 'warning' | 'info' | 'neutral';
 
 type ToastItem = {
   id: number;
@@ -26,6 +26,7 @@ const toneClassMap: Record<ToastTone, string> = {
   error: 'border-rose-300 bg-rose-50 text-rose-900',
   warning: 'border-amber-300 bg-amber-50 text-amber-900',
   info: 'border-blue-300 bg-blue-50 text-blue-900',
+  neutral: 'border-slate-300 bg-slate-50 text-slate-900',
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);

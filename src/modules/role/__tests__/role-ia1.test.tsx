@@ -27,6 +27,10 @@ describe('role IA-1 surfaces', () => {
       await screen.findByRole('heading', { name: i18n.t('role:page.title') }),
     ).toBeInTheDocument();
     expect(await screen.findByText('ADMIN', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(screen.getAllByText(i18n.t('role:states.ACTIVE')).length).toBeGreaterThan(0);
+    expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
+    expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
     expect(screen.getByText('Admin role')).toBeInTheDocument();
     expect(screen.queryByText('Archived role')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /grant scope/i })).not.toBeInTheDocument();

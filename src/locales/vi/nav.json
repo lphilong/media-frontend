@@ -6,9 +6,11 @@
     "overview": "Tổng quan",
     "identityAccess": "Danh tính & Quyền truy cập",
     "organization": "Nhân sự & Tổ chức",
-    "talentOwnership": "Talent & Sở hữu",
-    "operations": "Vận hành",
-    "commercial": "Thương mại"
+    "talentOwnership": "Talent & kênh vận hành",
+    "workResources": "Lịch làm việc & nguồn lực",
+    "events": "Sự kiện",
+    "performance": "Hiệu suất",
+    "commercial": "Thương mại & đối soát"
   },
   "items": {
     "dashboard": "Bảng điều khiển",
