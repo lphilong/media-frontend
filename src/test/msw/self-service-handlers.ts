@@ -18,6 +18,8 @@ type SelfServiceCurrentPerson = {
   timezone?: string | null;
 };
 
+type SelfServiceCurrentPersonMode = 'success' | 'not-linked' | 'profile-not-operational';
+
 type SelfServiceWorkShift = {
   workShiftId: string;
   title: string;
@@ -396,6 +398,7 @@ let selfServiceCurrentPerson: SelfServiceCurrentPerson = {
   ...defaultSelfServiceCurrentPerson,
   linkedInternalTalent: { ...defaultSelfServiceCurrentPerson.linkedInternalTalent! },
 };
+let selfServiceCurrentPersonMode: SelfServiceCurrentPersonMode = 'success';
 let selfServiceWorkShifts: SelfServiceWorkShift[] = defaultSelfServiceWorkShifts.map((shift) => ({
   ...shift,
 }));
@@ -440,6 +443,7 @@ let selfServiceTalentGroups: SelfServiceTalentGroup[] = defaultSelfServiceTalent
 );
 
 export const resetSelfServiceMockData = (): void => {
+  selfServiceCurrentPersonMode = 'success';
   selfServiceCurrentPerson = {
     ...defaultSelfServiceCurrentPerson,
     linkedInternalTalent: { ...defaultSelfServiceCurrentPerson.linkedInternalTalent! },
@@ -460,12 +464,21 @@ export const resetSelfServiceMockData = (): void => {
 };
 
 export const setMockSelfServiceCurrentPerson = (value: SelfServiceCurrentPerson): void => {
+  selfServiceCurrentPersonMode = 'success';
   selfServiceCurrentPerson = {
     ...value,
     linkedInternalTalent: value.linkedInternalTalent
       ? { ...value.linkedInternalTalent }
       : undefined,
   };
+};
+
+export const setMockSelfServiceCurrentPersonNotLinked = (): void => {
+  selfServiceCurrentPersonMode = 'not-linked';
+};
+
+export const setMockSelfServiceProfileNotOperational = (): void => {
+  selfServiceCurrentPersonMode = 'profile-not-operational';
 };
 
 export const setMockSelfServiceWorkShifts = (value: SelfServiceWorkShift[]): void => {
@@ -500,13 +513,51 @@ export const setMockSelfServiceTalentGroups = (value: SelfServiceTalentGroup[]):
   }));
 };
 
+const createCurrentPersonErrorResponse = () => {
+  if (selfServiceCurrentPersonMode === 'not-linked') {
+    return HttpResponse.json(
+      {
+        error: {
+          code: 'SELF_SERVICE_CURRENT_PERSON_NOT_LINKED',
+          message: 'No linked Employment Profile',
+        },
+      },
+      { status: 404 },
+    );
+  }
+
+  if (selfServiceCurrentPersonMode === 'profile-not-operational') {
+    return HttpResponse.json(
+      {
+        error: {
+          code: 'SELF_SERVICE_PROFILE_NOT_OPERATIONAL',
+          message: 'Self-Service access is not available for this profile status.',
+        },
+      },
+      { status: 403 },
+    );
+  }
+
+  return null;
+};
+
 export const selfServiceHandlers = [
   http.get('*/self-service/me', () => {
+    const errorResponse = createCurrentPersonErrorResponse();
+    if (errorResponse) {
+      return errorResponse;
+    }
+
     return HttpResponse.json({
       data: selfServiceCurrentPerson,
     });
   }),
   http.patch('*/self-service/account/preferences', async ({ request }) => {
+    const errorResponse = createCurrentPersonErrorResponse();
+    if (errorResponse) {
+      return errorResponse;
+    }
+
     const body = (await request.json()) as Record<string, unknown>;
     const unsupportedFields = Object.keys(body).filter(
       (field) => !allowedPreferenceFields.has(field),

@@ -251,6 +251,10 @@
   "errors": {
     "currentPersonNotLinkedTitle": "No linked Employment Profile",
     "currentPersonNotLinkedMessage": "Your account is authenticated, but no staff profile is linked for self-service yet.",
+    "profileNotOperationalTitle": "Self-Service is not available",
+    "profileNotOperationalMessage": "Your employment profile is not currently eligible to use Self-Service. Contact HR/Admin if this needs to be reviewed.",
+    "profileNotOperationalLabel": "Access not available",
+    "profileNotOperationalHelper": "Access is checked by the people system. This screen only shows the status and does not repair data.",
     "currentPersonLoadTitle": "Self-Service unavailable",
     "currentPersonLoadMessage": "Your profile could not be loaded.",
     "workShiftsTitle": "Work shifts unavailable",

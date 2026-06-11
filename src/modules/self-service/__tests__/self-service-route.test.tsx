@@ -14,7 +14,9 @@ import {
   resetSelfServiceMockData,
   setMockSelfServiceEvents,
   setMockSelfServiceCurrentPerson,
+  setMockSelfServiceCurrentPersonNotLinked,
   setMockSelfServiceKpi,
+  setMockSelfServiceProfileNotOperational,
   setMockSelfServiceTalentGroups,
   setMockSelfServiceWorkShifts,
 } from '@test/msw/self-service-handlers';
@@ -246,21 +248,7 @@ describe('/self-service route', () => {
   });
 
   it('renders no-linked profile state only for the backend self-service not-linked error', async () => {
-    server.use(
-      http.get('*/self-service/me', () =>
-        HttpResponse.json(
-          {
-            error: {
-              code: 'SELF_SERVICE_CURRENT_PERSON_NOT_LINKED',
-              message: 'No linked Employment Profile',
-            },
-          },
-          { status: 404 },
-        ),
-      ),
-    );
-
-    await renderRoute('/self-service');
+    await renderRoute('/self-service', () => setMockSelfServiceCurrentPersonNotLinked());
 
     expect(await screen.findByText('No linked Employment Profile')).toBeInTheDocument();
     expect(
@@ -268,7 +256,145 @@ describe('/self-service route', () => {
         'Your account is authenticated, but no staff profile is linked for self-service yet.',
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByText('Self-Service is not available')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-profile-not-operational')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'My Profile' })).not.toBeInTheDocument();
+  });
+
+  it('renders blocked state for backend non-operational profile denial before loading panels', async () => {
+    let workShiftCalls = 0;
+    let eventCalls = 0;
+    let kpiCalls = 0;
+    let talentGroupCalls = 0;
+    let preferencesCalls = 0;
+
+    server.use(
+      http.get('*/self-service/work-shifts', () => {
+        workShiftCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+      http.get('*/self-service/events', () => {
+        eventCalls += 1;
+        return HttpResponse.json({ data: [] });
+      }),
+      http.get('*/self-service/kpi', () => {
+        kpiCalls += 1;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+      http.get('*/self-service/talent-groups', () => {
+        talentGroupCalls += 1;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+      http.patch('*/self-service/account/preferences', () => {
+        preferencesCalls += 1;
+        return HttpResponse.json({ data: {} });
+      }),
+    );
+
+    await renderRoute('/self-service', () => setMockSelfServiceProfileNotOperational());
+
+    expect(await screen.findByTestId('self-service-profile-not-operational')).toBeInTheDocument();
+    expect(await screen.findByText('Access not available')).toBeInTheDocument();
+    expect(await screen.findByText('Self-Service is not available')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Your employment profile is not currently eligible to use Self-Service. Contact HR/Admin if this needs to be reviewed.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Access is checked by the people system. This screen only shows the status and does not repair data.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('SELF_SERVICE_PROFILE_NOT_OPERATIONAL')).not.toBeInTheDocument();
+    expect(screen.queryByText('No linked Employment Profile')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-overview')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-panel-profile')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-panel-work')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-panel-kpi')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-panel-talentGroups')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-account-card')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: /fix all|repair|backfill|payroll|attendance|commission/i,
+      }),
+    ).toBeNull();
+    const blockedText =
+      screen.getByTestId('self-service-profile-not-operational').textContent ?? '';
+    expect(blockedText).not.toMatch(/suspended|terminated|archived|payroll|attendance|commission/i);
+    expect(blockedText).not.toContain('SELF_SERVICE_PROFILE_NOT_OPERATIONAL');
+    await waitFor(() => {
+      expect(workShiftCalls).toBe(0);
+      expect(eventCalls).toBe(0);
+      expect(kpiCalls).toBe(0);
+      expect(talentGroupCalls).toBe(0);
+      expect(preferencesCalls).toBe(0);
+    });
+  });
+
+  it('lands staff actors on the self-service blocked state without redirect loops', async () => {
+    server.use(
+      http.get('*/admin/me/capabilities', () =>
+        HttpResponse.json(
+          { error: { code: 'FORBIDDEN', message: 'Permission denied' } },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await renderRoute('/', () => setMockSelfServiceProfileNotOperational());
+
+    expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();
+    expect(await screen.findByTestId('self-service-profile-not-operational')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-overview')).not.toBeInTheDocument();
+  });
+
+  it('does not treat every current-person 403 as a non-operational profile block', async () => {
+    server.use(
+      http.get('*/self-service/me', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'FORBIDDEN',
+              message: 'Permission denied',
+            },
+          },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await renderRoute('/self-service');
+
+    expect(await screen.findByText('Self-Service unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Your profile could not be loaded.')).toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-profile-not-operational')).not.toBeInTheDocument();
+    expect(screen.queryByText('Access not available')).not.toBeInTheDocument();
+    expect(screen.queryByText('FORBIDDEN')).not.toBeInTheDocument();
+  });
+
+  it('has non-operational profile blocked-state copy in every self-service locale', async () => {
+    const locales = ['en', 'vi', 'zh'] as const;
+    const keys = [
+      'errors.profileNotOperationalTitle',
+      'errors.profileNotOperationalMessage',
+      'errors.profileNotOperationalLabel',
+      'errors.profileNotOperationalHelper',
+    ];
+
+    for (const locale of locales) {
+      await setLocale(locale);
+      useShellStore.getState().setLocale(locale);
+      for (const key of keys) {
+        const fullKey = `self-service:${key}`;
+        expect(i18n.t(fullKey)).not.toBe(fullKey);
+        expect(i18n.t(fullKey).trim()).not.toHaveLength(0);
+      }
+    }
+
+    await setLocale('en');
+    useShellStore.getState().setLocale('en');
   });
 
   it('renders generic current-person load errors for parse/client failures', async () => {
@@ -1419,12 +1545,13 @@ describe('/self-service route', () => {
     await renderRoute('/self-service');
 
     const localeControl = await screen.findByTestId('self-service-locale-control');
-    await user.selectOptions(within(localeControl).getByLabelText('Locale'), 'zh');
+    const localeSelect = within(localeControl).getByRole('combobox');
+    await user.selectOptions(localeSelect, 'zh');
 
     await waitFor(() => {
       expect(patchBodies).toEqual([]);
       expect(adminUserCalls).toBe(0);
-      expect(within(localeControl).getByLabelText('Locale')).toHaveValue('zh');
+      expect(localeSelect).toHaveValue('zh');
     });
     expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
     await act(async () => {

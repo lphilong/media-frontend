@@ -46,6 +46,7 @@ import {
 } from '@shared/formatting/formatters';
 
 const SELF_SERVICE_CURRENT_PERSON_NOT_LINKED = 'SELF_SERVICE_CURRENT_PERSON_NOT_LINKED';
+const SELF_SERVICE_PROFILE_NOT_OPERATIONAL = 'SELF_SERVICE_PROFILE_NOT_OPERATIONAL';
 const SELF_SERVICE_VALIDATION_ERROR = 'SELF_SERVICE_VALIDATION_ERROR';
 
 type NavCard = {
@@ -147,6 +148,17 @@ const isCurrentPersonNotLinkedError = (error: unknown): boolean => {
         message === 'No linked Employment Profile' ||
         message === 'Current actor is not linked to a non-archived EmploymentProfile'))
   );
+};
+
+const isProfileNotOperationalError = (error: unknown): boolean => {
+  if (!isRecord(error)) {
+    return false;
+  }
+
+  const code = typeof error.code === 'string' ? error.code : undefined;
+  const status = typeof error.status === 'number' ? error.status : undefined;
+
+  return status === 403 && code === SELF_SERVICE_PROFILE_NOT_OPERATIONAL;
 };
 
 const formatMetricValue = (metric: SelfServiceKpiMetric, value: number): string => {
@@ -577,6 +589,7 @@ export const SelfServicePage = (): JSX.Element => {
   const talentGroupsMeta = talentGroupsQuery.data?.meta;
   const notAvailable = t('self-service:values.notAvailable');
   const currentPersonNotLinked = isCurrentPersonNotLinkedError(currentPersonQuery.error);
+  const profileNotOperational = isProfileNotOperationalError(currentPersonQuery.error);
 
   useEffect(() => {
     if (!currentPersonQuery.isSuccess) {
@@ -713,7 +726,34 @@ export const SelfServicePage = (): JSX.Element => {
 
         {currentPersonQuery.isLoading && !currentPerson ? <LoadingState lines={6} /> : null}
 
-        {currentPersonQuery.isError ? (
+        {currentPersonQuery.isError && profileNotOperational ? (
+          <section
+            className="rounded border border-warning/40 bg-panel p-6 shadow-sm"
+            data-testid="self-service-profile-not-operational"
+            role="status"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <StatusBadge
+                  label={t('self-service:errors.profileNotOperationalLabel')}
+                  tone="warning"
+                  uppercase={false}
+                />
+                <h2 className="mt-3 text-lg font-semibold text-text">
+                  {t('self-service:errors.profileNotOperationalTitle')}
+                </h2>
+                <p className="mt-2 max-w-3xl text-sm text-muted">
+                  {t('self-service:errors.profileNotOperationalMessage')}
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+              {t('self-service:errors.profileNotOperationalHelper')}
+            </p>
+          </section>
+        ) : null}
+
+        {currentPersonQuery.isError && !profileNotOperational ? (
           <ErrorState
             title={t(
               currentPersonNotLinked
