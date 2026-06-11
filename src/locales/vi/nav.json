@@ -12,6 +12,7 @@
   },
   "items": {
     "dashboard": "Bảng điều khiển",
+    "peopleReadiness": "Sẵn sàng nhân sự",
     "users": "Người dùng",
     "roles": "Vai trò",
     "orgUnits": "Đơn vị tổ chức",
@@ -32,6 +33,7 @@
   },
   "short": {
     "dashboard": "DB",
+    "peopleReadiness": "PR",
     "users": "US",
     "roles": "RO",
     "orgUnits": "OU",

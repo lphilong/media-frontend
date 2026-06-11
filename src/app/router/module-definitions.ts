@@ -37,6 +37,16 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     placeholderKey: 'dashboard-lite:page.placeholder',
   },
   {
+    id: 'people-readiness',
+    listPath: APP_PATHS.peopleReadiness,
+    namespace: 'people-readiness',
+    navGroup: 'operations',
+    navItemKey: 'peopleReadiness',
+    listTitleKey: 'people-readiness:page.title',
+    listSubtitleKey: 'people-readiness:page.subtitle',
+    placeholderKey: 'people-readiness:page.placeholder',
+  },
+  {
     id: 'user',
     listPath: APP_PATHS.users,
     detailPath: APP_PATHS.userDetailPattern,
@@ -333,6 +343,12 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
   {
     id: 'operations',
     items: [
+      {
+        id: 'people-readiness',
+        moduleId: 'people-readiness',
+        navItemKey: 'peopleReadiness',
+        to: APP_PATHS.peopleReadiness,
+      },
       {
         id: 'work-shifts',
         moduleId: 'work-schedule',

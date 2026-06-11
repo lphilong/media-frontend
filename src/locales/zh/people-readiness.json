@@ -1,0 +1,146 @@
+{
+  "page": {
+    "title": "人员就绪",
+    "subtitle": "面向运营人员记录的只读设置与就绪看板。",
+    "helper": "该看板只检测设置和就绪问题，不会自动修复记录。",
+    "placeholder": "人员就绪看板"
+  },
+  "sections": {
+    "overview": "概览",
+    "issueInbox": "问题列表",
+    "issueInboxHelper": "行数据来自已接受的后端问题集合，并且只使用后端支持的筛选项。"
+  },
+  "overview": {
+    "blocker": "紧急问题",
+    "blockerHelper": "阻止新的运营参与的问题。",
+    "warning": "警告",
+    "warningHelper": "需要复核但不一定阻止所有流程的问题。",
+    "loginSelfService": "登录 / Self-Service 风险",
+    "loginSelfServiceHelper": "登录账号关联和 Self-Service 就绪问题。",
+    "manager": "管理者就绪风险",
+    "managerHelper": "管理者 assignment 中的档案或登录就绪问题。"
+  },
+  "filters": {
+    "category": "受影响流程",
+    "severity": "严重程度",
+    "entityType": "主对象",
+    "issueCode": "问题类型",
+    "limit": "行数",
+    "allCategories": "全部流程",
+    "allSeverities": "全部严重程度",
+    "allEntityTypes": "全部对象",
+    "allIssueCodes": "全部问题类型"
+  },
+  "fields": {
+    "category": "受影响流程",
+    "issueCode": "诊断代码",
+    "generatedAt": "生成时间",
+    "relatedEntities": "相关记录",
+    "repairTarget": "导航提示:"
+  },
+  "actions": {
+    "openHint": "打开相关 Admin 记录"
+  },
+  "states": {
+    "emptyTitle": "当前筛选没有问题",
+    "emptyMessage": "没有后端 readiness issue 匹配当前筛选。这不是生产或运行时就绪声明。",
+    "loadErrorTitle": "无法加载人员就绪",
+    "loadErrorMessage": "无法加载看板数据。",
+    "refreshingInline": "正在刷新人员就绪数据...",
+    "refreshErrorTitle": "无法刷新问题列表",
+    "refreshErrorMessage": "正在显示上一次加载的人员就绪数据。",
+    "hintOnly": "没有安全的详情路由。该内容仅作为提示，不是修复操作。"
+  },
+  "badges": {
+    "readOnly": "只读",
+    "blocking": "需要紧急处理"
+  },
+  "tones": {
+    "danger": "需要紧急处理",
+    "warning": "警告",
+    "info": "信息",
+    "neutral": "需要复核",
+    "success": "就绪",
+    "muted": "只读"
+  },
+  "pagination": {
+    "total": "{{count}} 个问题"
+  },
+  "severities": {
+    "BLOCKER": "需要紧急处理",
+    "WARNING": "警告",
+    "INFO": "信息"
+  },
+  "categories": {
+    "ACCOUNT_LOGIN_READY": "登录账号",
+    "EMPLOYMENT_PROFILE_LIFECYCLE": "员工档案生命周期",
+    "ORGUNIT_PARTICIPATION": "运营范围",
+    "TALENTGROUP_MEMBER_LINKAGE": "TalentGroup 健康",
+    "MANAGER_ASSIGNMENT_READY": "管理者就绪",
+    "SELF_SERVICE_READY": "Self-Service 风险",
+    "WORKSCHEDULE_READY": "WorkSchedule 就绪",
+    "KPI_READY": "KPI 就绪"
+  },
+  "entities": {
+    "USER": "登录账号",
+    "EMPLOYMENT_PROFILE": "员工档案",
+    "TALENT": "Talent",
+    "ORG_UNIT": "OrgUnit",
+    "TALENT_GROUP": "TalentGroup",
+    "TALENT_GROUP_MEMBER": "TalentGroup 成员",
+    "ORG_UNIT_MANAGER_ASSIGNMENT": "OrgUnit 管理者 assignment",
+    "TALENT_GROUP_MANAGER_ASSIGNMENT": "TalentGroup 管理者 assignment"
+  },
+  "statuses": {
+    "ACTIVE": "启用",
+    "ON_LEAVE": "休假",
+    "SUSPENDED": "暂停",
+    "TERMINATED": "离职",
+    "ARCHIVED": "归档",
+    "INACTIVE": "停用",
+    "DISABLED": "禁用",
+    "PENDING": "待处理"
+  },
+  "issueTitles": {
+    "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "启用的登录账号没有员工档案",
+    "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "管理者档案缺少启用的登录账号",
+    "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "员工档案关联了未启用的登录账号",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_FOR_OPERATIONS": "员工档案未达到运营就绪",
+    "EMPLOYMENT_PROFILE_MISSING_ORG_UNIT": "员工档案缺少 OrgUnit",
+    "EMPLOYMENT_PROFILE_IN_INACTIVE_ORG_UNIT": "员工档案属于未启用的 OrgUnit",
+    "INTERNAL_TALENT_MISSING_EMPLOYMENT_PROFILE": "内部 Talent 缺少员工档案链接",
+    "INTERNAL_TALENT_LINKED_PROFILE_NOT_ACTIVE": "内部 Talent 链接了未就绪的员工档案",
+    "EXTERNAL_TALENT_HAS_EMPLOYMENT_PROFILE_LINK": "外部 Talent 存在员工档案链接",
+    "TALENTGROUP_ACTIVE_MEMBER_MISSING_EMPLOYMENT_PROFILE": "启用的 TalentGroup 成员缺少员工档案",
+    "TALENTGROUP_ACTIVE_MEMBER_LINKED_PROFILE_NOT_ACTIVE": "启用的 TalentGroup 成员链接了未就绪的档案",
+    "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "启用的 TalentGroup 成员指向未启用 Talent",
+    "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "TalentGroup 没有可运营成员",
+    "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "OrgUnit 没有启用的员工档案",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "OrgUnit 管理者档案未就绪",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "OrgUnit 管理者登录未就绪",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "TalentGroup 管理者档案未就绪",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "TalentGroup 管理者登录未就绪",
+    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "该档案不应使用 Self-Service"
+  },
+  "issueDescriptions": {
+    "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "复核该登录账号是否应该链接到员工档案。",
+    "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "持有管理者 assignment 的档案需要启用的登录账号。",
+    "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "关联账号缺失或未启用，需要复核。",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_FOR_OPERATIONS": "档案生命周期不符合新的运营参与条件。",
+    "EMPLOYMENT_PROFILE_MISSING_ORG_UNIT": "在使用运营流程前，需要将人员分配到正确的 OrgUnit。",
+    "EMPLOYMENT_PROFILE_IN_INACTIVE_ORG_UNIT": "已分配的 OrgUnit 已停用、归档或缺失。",
+    "INTERNAL_TALENT_MISSING_EMPLOYMENT_PROFILE": "内部 Talent 在运营中必须解析到员工档案身份。",
+    "INTERNAL_TALENT_LINKED_PROFILE_NOT_ACTIVE": "链接的员工档案不是启用或休假状态。",
+    "EXTERNAL_TALENT_HAS_EMPLOYMENT_PROFILE_LINK": "外部 Talent 应与内部员工档案保持分离。",
+    "TALENTGROUP_ACTIVE_MEMBER_MISSING_EMPLOYMENT_PROFILE": "启用的 TalentGroup 成员无法解析到内部运营人员。",
+    "TALENTGROUP_ACTIVE_MEMBER_LINKED_PROFILE_NOT_ACTIVE": "链接的档案不符合运营参与条件。",
+    "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "启用 membership 指向了未启用、归档或缺失的 Talent。",
+    "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "依赖该组进行运营前，请复核成员和内部档案链接。",
+    "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "该 OrgUnit 没有启用或休假的员工档案。",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "被分配的 OrgUnit 管理者没有就绪的员工档案。",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "被分配的 OrgUnit 管理者没有启用的 admin 登录账号。",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "被分配的 TalentGroup 管理者没有就绪的员工档案。",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "被分配的 TalentGroup 管理者没有启用的 admin 登录账号。",
+    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "关联员工档案的生命周期不适合 Self-Service 访问。"
+  }
+}

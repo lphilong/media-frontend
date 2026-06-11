@@ -19,6 +19,10 @@ import {
   managerWorkspaceHandlers,
   resetManagerWorkspaceMockData,
 } from '@test/msw/manager-workspace-handlers';
+import {
+  peopleReadinessHandlers,
+  resetPeopleReadinessMockData,
+} from '@test/msw/people-readiness-handlers';
 import { resetSelfServiceMockData, selfServiceHandlers } from '@test/msw/self-service-handlers';
 
 type OrgUnitStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
@@ -508,6 +512,7 @@ export const resetMockData = (): void => {
   resetIdentityAccessMockData();
   resetSelfServiceMockData();
   resetManagerWorkspaceMockData();
+  resetPeopleReadinessMockData();
 };
 
 const readOrgUnit = (orgUnitId: string): OrgUnitRecord | undefined =>
@@ -1766,4 +1771,5 @@ export const handlers = [
   ...identityAccessHandlers,
   ...selfServiceHandlers,
   ...managerWorkspaceHandlers,
+  ...peopleReadinessHandlers,
 ];

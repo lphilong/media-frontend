@@ -1,0 +1,146 @@
+{
+  "page": {
+    "title": "Sẵn sàng nhân sự",
+    "subtitle": "Bảng kiểm tra chỉ đọc cho hồ sơ nhân sự vận hành.",
+    "helper": "Dashboard này phát hiện vấn đề thiết lập và readiness. Hệ thống chưa tự động sửa hồ sơ.",
+    "placeholder": "Dashboard Sẵn sàng nhân sự"
+  },
+  "sections": {
+    "overview": "Tổng quan",
+    "issueInbox": "Danh sách vấn đề",
+    "issueInboxHelper": "Dữ liệu lấy từ bộ issue backend đã chấp nhận và chỉ dùng các bộ lọc backend hỗ trợ."
+  },
+  "overview": {
+    "blocker": "Cần xử lý gấp",
+    "blockerHelper": "Vấn đề đang chặn tham gia vận hành mới.",
+    "warning": "Cảnh báo",
+    "warningHelper": "Vấn đề cần rà soát nhưng không nhất thiết chặn mọi luồng.",
+    "loginSelfService": "Rủi ro tài khoản / Self-Service",
+    "loginSelfServiceHelper": "Vấn đề liên kết tài khoản đăng nhập và readiness Self-Service.",
+    "manager": "Rủi ro sẵn sàng quản lý",
+    "managerHelper": "Assignment quản lý có vấn đề về hồ sơ hoặc tài khoản đăng nhập."
+  },
+  "filters": {
+    "category": "Luồng ảnh hưởng",
+    "severity": "Mức độ",
+    "entityType": "Đối tượng chính",
+    "issueCode": "Loại vấn đề",
+    "limit": "Số dòng",
+    "allCategories": "Tất cả luồng",
+    "allSeverities": "Tất cả mức độ",
+    "allEntityTypes": "Tất cả đối tượng",
+    "allIssueCodes": "Tất cả loại vấn đề"
+  },
+  "fields": {
+    "category": "Luồng ảnh hưởng",
+    "issueCode": "Mã chẩn đoán",
+    "generatedAt": "Thời điểm tạo",
+    "relatedEntities": "Bản ghi liên quan",
+    "repairTarget": "Gợi ý điều hướng:"
+  },
+  "actions": {
+    "openHint": "Mở bản ghi Admin liên quan"
+  },
+  "states": {
+    "emptyTitle": "Không có vấn đề trong bộ lọc này",
+    "emptyMessage": "Không có issue readiness backend nào khớp bộ lọc hiện tại. Đây không phải xác nhận production hoặc runtime readiness.",
+    "loadErrorTitle": "Không tải được Sẵn sàng nhân sự",
+    "loadErrorMessage": "Không tải được dữ liệu dashboard.",
+    "refreshingInline": "Đang làm mới dữ liệu Sẵn sàng nhân sự...",
+    "refreshErrorTitle": "Không làm mới được danh sách vấn đề",
+    "refreshErrorMessage": "Đang hiển thị dữ liệu Sẵn sàng nhân sự đã tải gần nhất.",
+    "hintOnly": "Chưa có route chi tiết an toàn. Chỉ dùng như gợi ý, không phải thao tác sửa."
+  },
+  "badges": {
+    "readOnly": "Chỉ đọc",
+    "blocking": "Cần xử lý gấp"
+  },
+  "tones": {
+    "danger": "Cần xử lý gấp",
+    "warning": "Cảnh báo",
+    "info": "Thông tin",
+    "neutral": "Cần rà soát",
+    "success": "Sẵn sàng",
+    "muted": "Chỉ đọc"
+  },
+  "pagination": {
+    "total": "{{count}} vấn đề"
+  },
+  "severities": {
+    "BLOCKER": "Cần xử lý gấp",
+    "WARNING": "Cảnh báo",
+    "INFO": "Thông tin"
+  },
+  "categories": {
+    "ACCOUNT_LOGIN_READY": "Tài khoản đăng nhập",
+    "EMPLOYMENT_PROFILE_LIFECYCLE": "Vòng đời hồ sơ nhân sự",
+    "ORGUNIT_PARTICIPATION": "Phạm vi vận hành",
+    "TALENTGROUP_MEMBER_LINKAGE": "Tình trạng nhóm Talent",
+    "MANAGER_ASSIGNMENT_READY": "Sẵn sàng quản lý",
+    "SELF_SERVICE_READY": "Rủi ro Self-Service",
+    "WORKSCHEDULE_READY": "Readiness WorkSchedule",
+    "KPI_READY": "Readiness KPI"
+  },
+  "entities": {
+    "USER": "Tài khoản đăng nhập",
+    "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
+    "TALENT": "Talent",
+    "ORG_UNIT": "OrgUnit",
+    "TALENT_GROUP": "TalentGroup",
+    "TALENT_GROUP_MEMBER": "Thành viên TalentGroup",
+    "ORG_UNIT_MANAGER_ASSIGNMENT": "Assignment quản lý OrgUnit",
+    "TALENT_GROUP_MANAGER_ASSIGNMENT": "Assignment quản lý TalentGroup"
+  },
+  "statuses": {
+    "ACTIVE": "Đang hoạt động",
+    "ON_LEAVE": "Nghỉ phép",
+    "SUSPENDED": "Tạm ngưng",
+    "TERMINATED": "Nghỉ việc",
+    "ARCHIVED": "Lưu trữ",
+    "INACTIVE": "Không hoạt động",
+    "DISABLED": "Đã vô hiệu hóa",
+    "PENDING": "Đang chờ"
+  },
+  "issueTitles": {
+    "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Tài khoản active chưa có hồ sơ nhân sự",
+    "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "Hồ sơ quản lý thiếu tài khoản đăng nhập active",
+    "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "Hồ sơ nhân sự liên kết tài khoản không active",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_FOR_OPERATIONS": "Hồ sơ nhân sự chưa sẵn sàng vận hành",
+    "EMPLOYMENT_PROFILE_MISSING_ORG_UNIT": "Hồ sơ nhân sự thiếu OrgUnit",
+    "EMPLOYMENT_PROFILE_IN_INACTIVE_ORG_UNIT": "Hồ sơ nhân sự thuộc OrgUnit không active",
+    "INTERNAL_TALENT_MISSING_EMPLOYMENT_PROFILE": "Talent nội bộ thiếu liên kết hồ sơ nhân sự",
+    "INTERNAL_TALENT_LINKED_PROFILE_NOT_ACTIVE": "Talent nội bộ liên kết hồ sơ không sẵn sàng",
+    "EXTERNAL_TALENT_HAS_EMPLOYMENT_PROFILE_LINK": "Talent external có liên kết hồ sơ nhân sự",
+    "TALENTGROUP_ACTIVE_MEMBER_MISSING_EMPLOYMENT_PROFILE": "Thành viên TalentGroup active thiếu hồ sơ nhân sự",
+    "TALENTGROUP_ACTIVE_MEMBER_LINKED_PROFILE_NOT_ACTIVE": "Thành viên TalentGroup active liên kết hồ sơ không sẵn sàng",
+    "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "Thành viên TalentGroup active trỏ tới Talent không active",
+    "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "TalentGroup không có thành viên vận hành dùng được",
+    "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "OrgUnit không có hồ sơ nhân sự active",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Quản lý OrgUnit chưa sẵn sàng hồ sơ",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Quản lý OrgUnit chưa sẵn sàng tài khoản",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Quản lý TalentGroup chưa sẵn sàng hồ sơ",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Quản lý TalentGroup chưa sẵn sàng tài khoản",
+    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Hồ sơ không nên dùng Self-Service"
+  },
+  "issueDescriptions": {
+    "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Cần rà soát tài khoản đăng nhập có nên liên kết với hồ sơ nhân sự hay không.",
+    "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "Hồ sơ đang giữ assignment quản lý cần có tài khoản đăng nhập active.",
+    "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "Tài khoản liên kết đang thiếu hoặc không active và cần được rà soát.",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_FOR_OPERATIONS": "Trạng thái vòng đời hồ sơ chưa đủ điều kiện tham gia vận hành mới.",
+    "EMPLOYMENT_PROFILE_MISSING_ORG_UNIT": "Cần gán nhân sự vào đúng OrgUnit vận hành trước khi dùng trong các flow vận hành.",
+    "EMPLOYMENT_PROFILE_IN_INACTIVE_ORG_UNIT": "OrgUnit đang gán đã inactive, archived hoặc không còn tồn tại.",
+    "INTERNAL_TALENT_MISSING_EMPLOYMENT_PROFILE": "Talent nội bộ phải resolve về hồ sơ nhân sự khi dùng cho vận hành.",
+    "INTERNAL_TALENT_LINKED_PROFILE_NOT_ACTIVE": "Hồ sơ nhân sự liên kết không ở trạng thái active hoặc nghỉ phép.",
+    "EXTERNAL_TALENT_HAS_EMPLOYMENT_PROFILE_LINK": "Talent external phải tách khỏi hồ sơ nhân sự nội bộ.",
+    "TALENTGROUP_ACTIVE_MEMBER_MISSING_EMPLOYMENT_PROFILE": "Thành viên TalentGroup active chưa resolve được về người vận hành nội bộ.",
+    "TALENTGROUP_ACTIVE_MEMBER_LINKED_PROFILE_NOT_ACTIVE": "Hồ sơ liên kết chưa đủ điều kiện tham gia vận hành.",
+    "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "Membership active đang trỏ tới Talent inactive, archived hoặc bị thiếu.",
+    "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "Cần rà soát membership và liên kết hồ sơ nội bộ trước khi dùng nhóm cho vận hành.",
+    "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "OrgUnit không có hồ sơ nhân sự active hoặc nghỉ phép.",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Người được gán quản lý OrgUnit chưa có hồ sơ nhân sự sẵn sàng.",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Người được gán quản lý OrgUnit chưa có tài khoản admin active.",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Người được gán quản lý TalentGroup chưa có hồ sơ nhân sự sẵn sàng.",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Người được gán quản lý TalentGroup chưa có tài khoản admin active.",
+    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Vòng đời hồ sơ nhân sự liên kết không hợp lệ cho truy cập Self-Service."
+  }
+}

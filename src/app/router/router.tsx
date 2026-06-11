@@ -26,6 +26,11 @@ import { LoadingState, ModulePlaceholderPage, PageContainer } from '@shared/comp
 type LazyModuleRoute = ComponentType<Record<string, never>>;
 
 const modulePageMap: Record<string, LazyExoticComponent<LazyModuleRoute>> = {
+  'people-readiness': lazy(() =>
+    import('@modules/people-readiness/pages/PeopleReadinessDashboardPage').then((module) => ({
+      default: module.PeopleReadinessDashboardPage,
+    })),
+  ),
   'org-unit': lazy(() =>
     import('@modules/org-unit/pages/OrgUnitListPage').then((module) => ({
       default: module.OrgUnitListPage,

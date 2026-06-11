@@ -1,0 +1,147 @@
+{
+  "page": {
+    "title": "People Readiness",
+    "subtitle": "Read-only setup and readiness dashboard for operational people records.",
+    "helper": "This dashboard detects setup and readiness issues. It does not repair records automatically.",
+    "placeholder": "People Readiness dashboard"
+  },
+  "sections": {
+    "overview": "Overview",
+    "issueInbox": "Issue Inbox",
+    "issueInboxHelper": "Rows come from the accepted backend issue set and use backend-supported filters only."
+  },
+  "overview": {
+    "blocker": "Urgent issues",
+    "blockerHelper": "Blocking issues for new operational participation.",
+    "warning": "Warnings",
+    "warningHelper": "Issues that need review but may not block every flow.",
+    "loginSelfService": "Login / Self-Service risks",
+    "loginSelfServiceHelper": "Account linkage and Self-Service readiness issues.",
+    "manager": "Manager readiness risks",
+    "managerHelper": "Manager assignment rows with profile or login readiness issues."
+  },
+  "filters": {
+    "category": "Affected flow",
+    "severity": "Severity",
+    "entityType": "Primary entity",
+    "issueCode": "Issue type",
+    "limit": "Rows",
+    "allCategories": "All flows",
+    "allSeverities": "All severities",
+    "allEntityTypes": "All entities",
+    "allIssueCodes": "All issue types"
+  },
+  "fields": {
+    "category": "Affected flow",
+    "issueCode": "Diagnostic code",
+    "generatedAt": "Generated at",
+    "relatedEntities": "Related records",
+    "repairTarget": "Navigation hint:"
+  },
+  "actions": {
+    "openHint": "Open related Admin record"
+  },
+  "states": {
+    "emptyTitle": "No issues in this filter",
+    "emptyMessage": "No backend readiness issues match the current filter. This is not a production or runtime readiness claim.",
+    "loadErrorTitle": "Could not load People Readiness",
+    "loadErrorMessage": "The dashboard data could not be loaded.",
+    "refreshingInline": "Refreshing People Readiness data...",
+    "refreshErrorTitle": "Could not refresh issues",
+    "refreshErrorMessage": "Showing the last loaded People Readiness data.",
+    "hintOnly": "No safe detail route is available. Use this as a non-actionable hint."
+  },
+  "badges": {
+    "readOnly": "Read-only",
+    "blocking": "Needs urgent handling"
+  },
+  "tones": {
+    "danger": "Needs urgent handling",
+    "warning": "Warning",
+    "info": "Information",
+    "neutral": "Review",
+    "success": "Ready",
+    "muted": "Read-only"
+  },
+  "pagination": {
+    "total": "{{count}} issue",
+    "total_plural": "{{count}} issues"
+  },
+  "severities": {
+    "BLOCKER": "Needs urgent handling",
+    "WARNING": "Warning",
+    "INFO": "Information"
+  },
+  "categories": {
+    "ACCOUNT_LOGIN_READY": "Login account",
+    "EMPLOYMENT_PROFILE_LIFECYCLE": "Employment profile lifecycle",
+    "ORGUNIT_PARTICIPATION": "Operational scope",
+    "TALENTGROUP_MEMBER_LINKAGE": "TalentGroup health",
+    "MANAGER_ASSIGNMENT_READY": "Manager readiness",
+    "SELF_SERVICE_READY": "Self-Service risks",
+    "WORKSCHEDULE_READY": "WorkSchedule readiness",
+    "KPI_READY": "KPI readiness"
+  },
+  "entities": {
+    "USER": "Login account",
+    "EMPLOYMENT_PROFILE": "Employment profile",
+    "TALENT": "Talent",
+    "ORG_UNIT": "OrgUnit",
+    "TALENT_GROUP": "TalentGroup",
+    "TALENT_GROUP_MEMBER": "TalentGroup member",
+    "ORG_UNIT_MANAGER_ASSIGNMENT": "OrgUnit manager assignment",
+    "TALENT_GROUP_MANAGER_ASSIGNMENT": "TalentGroup manager assignment"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "ON_LEAVE": "On leave",
+    "SUSPENDED": "Suspended",
+    "TERMINATED": "Terminated",
+    "ARCHIVED": "Archived",
+    "INACTIVE": "Inactive",
+    "DISABLED": "Disabled",
+    "PENDING": "Pending"
+  },
+  "issueTitles": {
+    "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Active login account has no employment profile",
+    "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "Manager profile is missing an active login account",
+    "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "Employment profile is linked to an inactive login account",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_FOR_OPERATIONS": "Employment profile is not ready for operations",
+    "EMPLOYMENT_PROFILE_MISSING_ORG_UNIT": "Employment profile is missing an OrgUnit",
+    "EMPLOYMENT_PROFILE_IN_INACTIVE_ORG_UNIT": "Employment profile is assigned to an inactive OrgUnit",
+    "INTERNAL_TALENT_MISSING_EMPLOYMENT_PROFILE": "Internal Talent is missing an employment profile link",
+    "INTERNAL_TALENT_LINKED_PROFILE_NOT_ACTIVE": "Internal Talent is linked to a non-operational profile",
+    "EXTERNAL_TALENT_HAS_EMPLOYMENT_PROFILE_LINK": "External Talent has an employment profile link",
+    "TALENTGROUP_ACTIVE_MEMBER_MISSING_EMPLOYMENT_PROFILE": "Active TalentGroup member is missing an employment profile",
+    "TALENTGROUP_ACTIVE_MEMBER_LINKED_PROFILE_NOT_ACTIVE": "Active TalentGroup member is linked to a non-operational profile",
+    "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "Active TalentGroup member points to inactive Talent",
+    "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "TalentGroup has no operational members",
+    "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "OrgUnit has no active employment profiles",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "OrgUnit manager profile is not ready",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "OrgUnit manager login is not ready",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "TalentGroup manager profile is not ready",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "TalentGroup manager login is not ready",
+    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Profile should not use Self-Service"
+  },
+  "issueDescriptions": {
+    "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Review whether the login account should be linked to an employment profile.",
+    "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "A manager-assigned profile needs an active linked login account.",
+    "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "The linked account is missing or inactive and should be reviewed.",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_FOR_OPERATIONS": "The profile lifecycle is not eligible for new operational participation.",
+    "EMPLOYMENT_PROFILE_MISSING_ORG_UNIT": "Assign the person to the correct operational OrgUnit before using operational flows.",
+    "EMPLOYMENT_PROFILE_IN_INACTIVE_ORG_UNIT": "The assigned OrgUnit is inactive, archived, or missing.",
+    "INTERNAL_TALENT_MISSING_EMPLOYMENT_PROFILE": "Internal Talent must resolve to the employment profile identity for operations.",
+    "INTERNAL_TALENT_LINKED_PROFILE_NOT_ACTIVE": "The linked employment profile is not active or on leave.",
+    "EXTERNAL_TALENT_HAS_EMPLOYMENT_PROFILE_LINK": "External Talent should remain separate from internal employment profiles.",
+    "TALENTGROUP_ACTIVE_MEMBER_MISSING_EMPLOYMENT_PROFILE": "The active TalentGroup member cannot resolve to an internal operational person.",
+    "TALENTGROUP_ACTIVE_MEMBER_LINKED_PROFILE_NOT_ACTIVE": "The linked profile is not eligible for operational participation.",
+    "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "The active membership points to a Talent record that is inactive, archived, or missing.",
+    "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "Review group membership and internal profile links before relying on the group operationally.",
+    "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "The OrgUnit has no active or on-leave employment profiles.",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "The assigned OrgUnit manager does not have a ready employment profile.",
+    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "The assigned OrgUnit manager does not have an active admin login account.",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "The assigned TalentGroup manager does not have a ready employment profile.",
+    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "The assigned TalentGroup manager does not have an active admin login account.",
+    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "The linked employment profile lifecycle is not valid for Self-Service access."
+  }
+}

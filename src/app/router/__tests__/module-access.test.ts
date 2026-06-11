@@ -57,8 +57,10 @@ describe('module access model', () => {
         'revenue-ledger',
         'commission-rules',
         'commission-settlements',
+        'people-readiness',
       ]),
     ).toEqual(['talent', 'talent-group']);
+    expect(canAccessModule(capabilities, 'people-readiness')).toBe(false);
     expect(canAccessModule(capabilities, 'kpi')).toBe(false);
     expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
     expect(canAccessModule(capabilities, 'work-schedule')).toBe(false);
@@ -215,6 +217,7 @@ describe('module access model', () => {
         'commissionSettlement.read',
         'revenueLedger.read',
         'dashboardLite.read',
+        'employmentProfile.read',
       ],
       scopeGrants: {
         dashboardLite: ['global'],
@@ -230,6 +233,7 @@ describe('module access model', () => {
 
     expect(getAccessibleModuleIds(capabilities)).toEqual([
       'dashboard',
+      'people-readiness',
       'org-unit',
       'employment-profile',
       'talent',
@@ -266,6 +270,7 @@ describe('module access model', () => {
     expect(canAccessModule(capabilities, 'work-schedule')).toBe(false);
     expect(canAccessModule(capabilities, 'event-assignment')).toBe(false);
     expect(canAccessModule(capabilities, 'employment-profile')).toBe(false);
+    expect(canAccessModule(capabilities, 'people-readiness')).toBe(false);
     expect(canAccessModule(capabilities, 'talent')).toBe(false);
     expect(canAccessModule(capabilities, 'kpi')).toBe(false);
   });

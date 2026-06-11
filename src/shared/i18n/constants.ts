@@ -12,6 +12,7 @@ export const I18N_NAMESPACES = [
   'nav',
   'errors',
   'dashboard-lite',
+  'people-readiness',
   'user',
   'role',
   'org-unit',

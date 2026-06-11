@@ -13,6 +13,7 @@ import {
 
 export type ModuleAccessModuleId =
   | 'dashboard'
+  | 'people-readiness'
   | 'user'
   | 'role'
   | 'org-unit'
@@ -59,6 +60,14 @@ export const moduleAccessDefinitions: Readonly<
     id: 'dashboard',
     routePaths: ['/dashboard'],
     access: { allPermissions: [PERMISSIONS.DASHBOARD_LITE_READ] },
+  },
+  'people-readiness': {
+    id: 'people-readiness',
+    routePaths: ['/people-readiness'],
+    access: {
+      allPermissions: [PERMISSIONS.EMPLOYMENT_PROFILE_READ],
+      excludeSelfServiceOnly: true,
+    },
   },
   user: {
     id: 'user',
