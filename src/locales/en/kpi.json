@@ -22,7 +22,8 @@
     "progressActuals": "Progress & Actuals"
   },
   "list": {
-    "title": "KPI plans"
+    "title": "KPI plans",
+    "boundedDisclosure": "This list is limited by the current backend result window. It does not provide a total page count."
   },
   "allocationQueue": {
     "title": "KPI Allocation approval queue",
@@ -148,6 +149,7 @@
   },
   "actualEntry": {
     "title": "Actual entry",
+    "valueAriaLabel": "Actual value for {{member}} {{metric}}",
     "directEdit": "Direct edit",
     "requiresCorrection": "Correction required"
   },
@@ -192,6 +194,7 @@
   "actualWorkspace": {
     "title": "Actual Workspace",
     "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
+    "boundaryHelper": "KPI actuals do not automatically decide revenue, commission, or payroll.",
     "revenueTarget": "Revenue target",
     "revenueActual": "Revenue actual",
     "achievement": "Achievement %",
@@ -224,6 +227,7 @@
     },
     "loadMore": "Load more",
     "loadingMore": "Loading more...",
+    "cursorDisclosure": "Loaded {{count}} row(s). More rows, when available, are loaded by opaque cursor with a backend limit of {{limit}} per request.",
     "missingSignal": "Limited missing signal",
     "limitedMissingSignal": "limited calendar-day signal",
     "statusSummary": "Actual status summary",
@@ -257,7 +261,7 @@
   "finalResult": {
     "title": "Finalized result",
     "captured": "Captured when the KPI was finalized.",
-    "readOnly": "Read-only after finalization. Actuals, corrections, excuses, and allocations can no longer change.",
+    "readOnly": "Read-only after finalization. Actuals, corrections, excuses, and allocations can no longer change. KPI finalization does not automatically create revenue, commission, or payroll.",
     "unavailable": "Final result snapshot is not available for this finalized plan.",
     "status": "Finalized status",
     "closed": "Closed",

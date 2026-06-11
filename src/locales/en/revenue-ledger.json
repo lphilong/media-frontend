@@ -130,7 +130,8 @@
     "revenueTitle": "Revenue",
     "attributionTitle": "Attribution",
     "lifecycleTitle": "Lifecycle",
-    "freeTextTitle": "Notes"
+    "freeTextTitle": "Notes",
+    "boundaryHelper": "Recorded revenue does not mean cash has been collected."
   },
   "related": {
     "navigationTitle": "Related commercial records",

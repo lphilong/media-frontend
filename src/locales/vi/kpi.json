@@ -19,10 +19,11 @@
     "label": "Không gian quản trị KPI",
     "plans": "Kế hoạch",
     "approvalQueue": "Hàng đợi duyệt",
-    "progressActuals": "Tiến độ và thực đạt"
+    "progressActuals": "Tiến độ & số thực đạt"
   },
   "list": {
-    "title": "KPI"
+    "title": "Kế hoạch KPI",
+    "boundedDisclosure": "Danh sách đang hiển thị trong giới hạn kết quả backend hiện tại. Màn này không có tổng số trang."
   },
   "allocationQueue": {
     "title": "Hàng đợi phê duyệt phân bổ KPI",
@@ -147,7 +148,8 @@
     "CANCELLED": "Đã hủy"
   },
   "actualEntry": {
-    "title": "Nhập thực đạt",
+    "title": "Nhập số thực đạt",
+    "valueAriaLabel": "Số thực đạt của {{member}} cho {{metric}}",
     "directEdit": "Sửa trực tiếp",
     "requiresCorrection": "Cần điều chỉnh"
   },
@@ -163,80 +165,82 @@
     "BLOCKED_BY_ALLOCATION_STATUS": "Phân bổ bị chặn"
   },
   "actualExcuseStatuses": {
-    "EXCUSED": "Duoc mien",
-    "NOT_REQUIRED": "Khong bat buoc"
+    "EXCUSED": "Được miễn",
+    "NOT_REQUIRED": "Không bắt buộc"
   },
   "actualExcuseReasonCodes": {
-    "MEMBER_LEAVE": "Thanh vien nghi",
-    "SCHEDULED_OFF": "Lich nghi",
-    "HOLIDAY_OR_CLOSURE": "Ngay le hoac dong cua",
-    "NO_OPERATION_REQUIRED": "Khong can van hanh",
-    "DATA_SOURCE_UNAVAILABLE": "Nguon du lieu khong san sang",
-    "OTHER": "Khac"
+    "MEMBER_LEAVE": "Thành viên nghỉ",
+    "SCHEDULED_OFF": "Lịch nghỉ",
+    "HOLIDAY_OR_CLOSURE": "Ngày lễ hoặc đóng cửa",
+    "NO_OPERATION_REQUIRED": "Không cần vận hành",
+    "DATA_SOURCE_UNAVAILABLE": "Nguồn dữ liệu chưa sẵn sàng",
+    "OTHER": "Khác"
   },
   "actualStatusSummary": {
-    "dueOpen": "Dang den han",
-    "overdue": "Qua han",
-    "entered": "Da nhap",
-    "enteredZero": "Da nhap 0",
-    "excused": "Duoc mien",
-    "notRequired": "Khong bat buoc",
-    "notDue": "Chua den han",
-    "none": "Khong co muc du kien"
+    "dueOpen": "Đang đến hạn",
+    "overdue": "Quá hạn",
+    "entered": "Đã nhập",
+    "enteredZero": "Đã nhập 0",
+    "excused": "Được miễn",
+    "notRequired": "Không bắt buộc",
+    "notDue": "Chưa đến hạn",
+    "none": "Không có mục dự kiến"
   },
   "actualExcuse": {
-    "reasonCode": "Ma ly do",
-    "reasonText": "Noi dung ly do",
-    "selectReasonCode": "Chon ly do"
+    "reasonCode": "Mã lý do",
+    "reasonText": "Nội dung lý do",
+    "selectReasonCode": "Chọn lý do"
   },
   "actualWorkspace": {
-    "title": "Khong gian nhap actual",
-    "policy": "Co the nhap truc tiep tu D 00:00 den D+1 10:00 Asia/Ho_Chi_Minh, tinh ca hai moc. Moi muc duoc sua truc tiep toi da 3 lan.",
-    "revenueTarget": "Muc tieu doanh thu",
-    "revenueActual": "Doanh thu thuc dat",
-    "achievement": "Thanh tich %",
-    "allocationCoverage": "Do bao phu quy trinh phan bo",
-    "sortBy": "Sap xep theo",
-    "sortDirection": "Huong sap xep",
+    "title": "Không gian số thực đạt",
+    "policy": "Có thể nhập trực tiếp từ D 00:00 đến D+1 10:00, Giờ Việt Nam, tính cả hai mốc. Mỗi mục được sửa trực tiếp tối đa 3 lần.",
+    "boundaryHelper": "Số thực đạt không tự quyết định doanh thu, hoa hồng hoặc bảng lương.",
+    "revenueTarget": "Mục tiêu doanh thu",
+    "revenueActual": "Doanh thu thực đạt",
+    "achievement": "Tiến độ %",
+    "allocationCoverage": "Độ bao phủ phân bổ KPI",
+    "sortBy": "Sắp xếp theo",
+    "sortDirection": "Hướng sắp xếp",
     "sortFields": {
-      "periodMonth": "Thang KPI",
-      "planCode": "Ma ke hoach",
-      "revenueActual": "Doanh thu thuc dat",
-      "achievementPercent": "Thanh tich %"
+      "periodMonth": "Tháng KPI",
+      "planCode": "Mã kế hoạch",
+      "revenueActual": "Doanh thu thực đạt",
+      "achievementPercent": "Tiến độ %"
     },
     "sortDirections": {
-      "ASC": "Tang dan",
-      "DESC": "Giam dan"
+      "ASC": "Tăng dần",
+      "DESC": "Giảm dần"
     },
     "coverageFilters": {
-      "all": "Tat ca",
-      "complete": "Hoan tat",
-      "incomplete": "Chua hoan tat"
+      "all": "Tất cả",
+      "complete": "Hoàn tất",
+      "incomplete": "Chưa hoàn tất"
     },
-    "overdueActuals": "Actual qua han",
-    "dueOpenActuals": "Actual dang den han",
+    "overdueActuals": "Số thực đạt quá hạn",
+    "dueOpenActuals": "Số thực đạt đang đến hạn",
     "statusFilters": {
-      "all": "Tat ca",
-      "hasOverdue": "Co qua han",
-      "noOverdue": "Khong qua han",
-      "hasDueOpen": "Co dang den han",
-      "noDueOpen": "Khong dang den han"
+      "all": "Tất cả",
+      "hasOverdue": "Có quá hạn",
+      "noOverdue": "Không quá hạn",
+      "hasDueOpen": "Có đang đến hạn",
+      "noDueOpen": "Không đang đến hạn"
     },
-    "loadMore": "Tai them",
-    "loadingMore": "Dang tai them...",
-    "missingSignal": "Tin hieu thieu han che",
-    "limitedMissingSignal": "tin hieu theo ngay co gioi han",
-    "statusSummary": "Tom tat trang thai actual",
-    "supportingMetrics": "Chi so ho tro",
-    "closingState": "Trang thai dong ky",
-    "selectedPlan": "Ke hoach KPI da chon",
-    "viewDetail": "Xem chi tiet",
-    "noAllocations": "Chua co phan bo",
-    "unnamedMember": "Thanh vien chua co ten",
+    "loadMore": "Tải thêm",
+    "loadingMore": "Đang tải thêm...",
+    "cursorDisclosure": "Đã tải {{count}} dòng. Nếu còn dữ liệu, hệ thống tải thêm bằng con trỏ backend với giới hạn {{limit}} dòng mỗi lần.",
+    "missingSignal": "Tín hiệu thiếu có giới hạn",
+    "limitedMissingSignal": "tín hiệu theo ngày có giới hạn",
+    "statusSummary": "Tóm tắt trạng thái số thực đạt",
+    "supportingMetrics": "Chỉ số hỗ trợ",
+    "closingState": "Trạng thái đóng kỳ",
+    "selectedPlan": "Kế hoạch KPI đã chọn",
+    "viewDetail": "Xem chi tiết",
+    "noAllocations": "Chưa có phân bổ KPI",
+    "unnamedMember": "Thành viên chưa có tên",
     "periodStates": {
-      "CURRENT": "Hien tai",
-      "CLOSING": "Dang dong ky",
-      "CLOSED": "Da dong"
+      "CURRENT": "Hiện tại",
+      "CLOSING": "Đang đóng kỳ",
+      "CLOSED": "Đã đóng"
     }
   },
   "orgUnitOperations": {
@@ -255,16 +259,16 @@
     "finalResult": "Kết quả vận hành cuối cùng"
   },
   "finalResult": {
-    "title": "Ket qua da chot",
-    "captured": "Duoc ghi nhan khi KPI duoc chot.",
-    "readOnly": "Chi doc sau khi chot. Actual, dieu chinh, mien tru va phan bo khong the thay doi.",
-    "unavailable": "Khong co anh chup ket qua cuoi cung cho ke hoach da chot nay.",
-    "status": "Trang thai chot",
-    "closed": "Da dong",
-    "targetMismatch": "Chenh lech muc tieu",
+    "title": "Kết quả đã chốt",
+    "captured": "Được ghi nhận khi KPI được chốt.",
+    "readOnly": "Chỉ đọc sau khi chốt. Số thực đạt, điều chỉnh, miễn trừ và phân bổ không thể thay đổi. Chốt kết quả KPI không tự tạo doanh thu, hoa hồng hoặc bảng lương.",
+    "unavailable": "Không có ảnh chụp kết quả cuối cùng cho kế hoạch đã chốt này.",
+    "status": "Trạng thái chốt",
+    "closed": "Đã đóng",
+    "targetMismatch": "Chênh lệch mục tiêu",
     "boolean": {
-      "true": "Co",
-      "false": "Khong"
+      "true": "Có",
+      "false": "Không"
     }
   },
   "correction": {

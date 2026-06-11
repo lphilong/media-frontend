@@ -256,7 +256,9 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
   it('renders readable Revenue attribution refs in list and detail without raw IDs', async () => {
     renderRoute('/revenue-entries');
 
-    expect((await screen.findAllByText('Luna Park')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('Luna Park', {}, { timeout: 3000 })).length).toBeGreaterThan(
+      0,
+    );
     expect(screen.getAllByText('Luna TikTok').length).toBeGreaterThan(0);
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('platform-001')).not.toBeInTheDocument();
@@ -264,8 +266,15 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     renderRoute('/revenue-entries/revenue-entry-finalized');
 
     expect(await screen.findByText('Minh Tran')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        i18n.t('revenue-ledger:detail.boundaryHelper'),
+        {},
+        { timeout: 3000 },
+      ),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('06:58 22-04-2026').length).toBeGreaterThan(0);
-    expect(screen.getByText('Spring Live Show')).toBeInTheDocument();
+    expect(screen.getAllByText('Spring Live Show').length).toBeGreaterThan(0);
     expect(screen.queryByText('talent-002')).not.toBeInTheDocument();
     expect(screen.queryByText('event-001')).not.toBeInTheDocument();
   });

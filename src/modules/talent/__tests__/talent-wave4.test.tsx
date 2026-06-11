@@ -262,6 +262,40 @@ describe('talent wave 4 surfaces', () => {
     ).toBeInTheDocument();
   });
 
+  it('resets Talent create state after host close and reopens in one click', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/talents');
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('talent:actions.create'),
+      }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: i18n.t('talent:mutations.create.title'),
+    });
+
+    await user.click(within(dialog).getByRole('button', { name: i18n.t('common:actions.close') }));
+
+    const createTrigger = await screen.findByRole('button', {
+      name: i18n.t('talent:actions.create'),
+    });
+    expect(
+      screen.queryByRole('dialog', {
+        name: i18n.t('talent:mutations.create.title'),
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(createTrigger);
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: i18n.t('talent:mutations.create.title'),
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('supports create and lifecycle transitions from list/detail surfaces', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -281,6 +315,7 @@ describe('talent wave 4 surfaces', () => {
     if (!createSurface) {
       return;
     }
+    expect(createSurface).toHaveAttribute('data-mutation-presentation', 'drawer');
 
     const createSurfaceScope = within(createSurface);
     expect(createSurfaceScope.queryByLabelText(i18n.t('talent:fields.talentCode'))).toBeNull();

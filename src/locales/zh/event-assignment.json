@@ -113,7 +113,8 @@
     "identityTitle": "事件",
     "scheduleTitle": "排期",
     "referencesTitle": "资源和平台引用",
-    "globalOnly": "仅全局"
+    "globalOnly": "仅全局",
+    "boundaryHelper": "活动完成不会自动记录收入、佣金、考勤或工资。"
   },
   "related": {
     "navigationTitle": "相关导航",

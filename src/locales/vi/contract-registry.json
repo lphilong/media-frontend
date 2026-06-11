@@ -123,7 +123,8 @@
     "linkedEntityTitle": "Thực thể liên kết và chủ sở hữu",
     "fileReferenceTitle": "Metadata tham chiếu tệp",
     "freeTextTitle": "Mô tả và tham chiếu bên ngoài",
-    "globalOnly": "Chỉ dùng phạm vi toàn cục"
+    "globalOnly": "Chỉ dùng phạm vi toàn cục",
+    "boundaryHelper": "Hợp đồng đã ký không tự tạo doanh thu hoặc hoa hồng."
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",

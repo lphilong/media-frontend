@@ -130,7 +130,8 @@
     "revenueTitle": "Doanh thu",
     "attributionTitle": "Ghi nhận",
     "lifecycleTitle": "Vòng đời",
-    "freeTextTitle": "Ghi chú"
+    "freeTextTitle": "Ghi chú",
+    "boundaryHelper": "Đã ghi nhận doanh thu không có nghĩa là đã thu tiền."
   },
   "related": {
     "navigationTitle": "Bản ghi thương mại liên quan",

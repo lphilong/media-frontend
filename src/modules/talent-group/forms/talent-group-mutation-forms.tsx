@@ -26,6 +26,7 @@ import { FormGrid, GeneratedCodeNotice, ReferencePickerField, TextInputField } f
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
   isPending?: boolean;
+  presentation?: 'page' | 'drawer';
 };
 
 type TalentGroupCreateSurfaceProps = BaseMutationSurfaceProps & {
@@ -139,6 +140,7 @@ export const TalentGroupCreateSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: TalentGroupCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['talent-group', 'common']);
   const form = useForm<TalentGroupCreateFormValues>({
@@ -184,6 +186,7 @@ export const TalentGroupCreateSurface = ({
         kind="create"
         submitLabel={t('talent-group:mutations.create.submit')}
         pendingLabel={t('talent-group:mutations.create.pending')}
+        presentation={presentation}
         cancelLabel={t('common:actions.cancel')}
         onCancel={onCancel}
         onSubmit={(event) => void handleSubmit(event)}

@@ -35,6 +35,7 @@ import {
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
   isPending?: boolean;
+  presentation?: 'page' | 'drawer';
 };
 
 type OrgUnitCreateSurfaceProps = BaseMutationSurfaceProps & {
@@ -218,6 +219,7 @@ export const OrgUnitCreateSurface = ({
   onSubmit,
   onCancel,
   isPending = false,
+  presentation,
 }: OrgUnitCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['org-unit', 'common']);
   const form = useForm<OrgUnitCreateFormValues>({
@@ -265,6 +267,7 @@ export const OrgUnitCreateSurface = ({
         kind="create"
         submitLabel={t('org-unit:mutations.create.submit')}
         pendingLabel={t('org-unit:mutations.create.pending')}
+        presentation={presentation}
         cancelLabel={t('common:actions.cancel')}
         onSubmit={(event) => void handleSubmit(event)}
         onCancel={onCancel}

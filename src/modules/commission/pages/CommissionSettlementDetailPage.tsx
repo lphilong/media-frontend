@@ -262,6 +262,13 @@ export const CommissionSettlementDetailPage = (): JSX.Element => {
           />
         ) : undefined
       }
+      banner={
+        record ? (
+          <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+            {t('commission:settlements.detail.boundaryHelper')}
+          </div>
+        ) : undefined
+      }
       readOnlyNotice={
         record?.status === 'ARCHIVED' ||
         record?.status === 'FINALIZED' ||

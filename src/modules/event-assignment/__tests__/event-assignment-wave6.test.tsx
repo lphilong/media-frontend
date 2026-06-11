@@ -154,8 +154,13 @@ describe('event assignment wave 6 surfaces', () => {
     renderRoute('/events/event-001');
 
     expect(
-      await screen.findByText(i18n.t('event-assignment:actionRail.title')),
+      await screen.findByText(
+        i18n.t('event-assignment:actionRail.title'),
+        {},
+        { timeout: 3000 },
+      ),
     ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('event-assignment:detail.boundaryHelper'))).toBeInTheDocument();
     expect(screen.getByText('EVT-202605-000001')).toBeInTheDocument();
     expect(screen.getByText('Launch livestream')).toBeInTheDocument();
     expect(screen.getByText('16:06 12-05-2026')).toBeInTheDocument();

@@ -125,7 +125,8 @@
   "detail": {
     "identityTitle": "Identity and owner",
     "locatorsTitle": "Locators, capabilities, and metadata",
-    "archivedReadOnly": "Archived platform accounts are read-only. Backend detail remains viewable when available."
+    "archivedReadOnly": "Archived platform accounts are read-only. Backend detail remains viewable when available.",
+    "boundaryHelper": "A platform account is not a login account or a payment source."
   },
   "related": {
     "navigationTitle": "Related navigation",

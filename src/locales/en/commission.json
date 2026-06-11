@@ -319,7 +319,8 @@
       "revenueEntriesTitle": "Revenue entry set",
       "linesTitle": "Read-only settlement lines",
       "lifecycleTitle": "Lifecycle metadata",
-      "freeTextTitle": "Notes"
+      "freeTextTitle": "Notes",
+      "boundaryHelper": "Finalized commission is not a payment."
     },
     "lines": {
       "caption": "Read-only settlement lines",

@@ -58,6 +58,9 @@ import {
 } from '@modules/kpi/types/kpi.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  AppliedFilterChips,
+  type AppliedFilterChipItem,
+  CursorPager,
   ErrorState,
   LoadingState,
   PageContainer,
@@ -183,6 +186,9 @@ const readActualWorkspaceBooleanFilter = (
   const value = searchParams.get(key);
   return value === 'true' ? true : value === 'false' ? false : undefined;
 };
+
+const hasQueryParam = (searchParams: URLSearchParams, key: string): boolean =>
+  Boolean(searchParams.get(key));
 
 const defaultTargets: TargetDraft[] = [{ metricCode: 'REVENUE_VND', value: '1.000.000' }];
 
@@ -480,39 +486,36 @@ export const KpiListPage = (): JSX.Element => {
     () => readActualWorkspaceBooleanFilter(searchParams, 'hasPendingActuals'),
     [searchParams],
   );
-  const actualWorkspaceBaseQuery = useMemo<KpiActualWorkspacePlanQuery>(
-    () => {
-      const subjectType =
-        query.subjectType === 'TALENT_GROUP' || query.subjectType === 'ORG_UNIT'
-          ? query.subjectType
-          : undefined;
-      return {
-        search: query.search,
-        periodMonth: query.periodMonth,
-        subjectType,
-        subjectId: subjectType ? query.subjectId : undefined,
-        groupId: subjectType === 'ORG_UNIT' ? undefined : query.groupId,
-        allocationCoverage: actualWorkspaceAllocationCoverage,
-        hasOverdueActuals: actualWorkspaceHasOverdueActuals,
-        hasPendingActuals: actualWorkspaceHasPendingActuals,
-        limit: actualWorkspacePageLimit,
-        sortBy: actualWorkspaceSortBy,
-        sortDirection: actualWorkspaceSortDirection,
-      };
-    },
-    [
-      actualWorkspaceAllocationCoverage,
-      actualWorkspaceHasOverdueActuals,
-      actualWorkspaceHasPendingActuals,
-      actualWorkspaceSortBy,
-      actualWorkspaceSortDirection,
-      query.groupId,
-      query.periodMonth,
-      query.search,
-      query.subjectId,
-      query.subjectType,
-    ],
-  );
+  const actualWorkspaceBaseQuery = useMemo<KpiActualWorkspacePlanQuery>(() => {
+    const subjectType =
+      query.subjectType === 'TALENT_GROUP' || query.subjectType === 'ORG_UNIT'
+        ? query.subjectType
+        : undefined;
+    return {
+      search: query.search,
+      periodMonth: query.periodMonth,
+      subjectType,
+      subjectId: subjectType ? query.subjectId : undefined,
+      groupId: subjectType === 'ORG_UNIT' ? undefined : query.groupId,
+      allocationCoverage: actualWorkspaceAllocationCoverage,
+      hasOverdueActuals: actualWorkspaceHasOverdueActuals,
+      hasPendingActuals: actualWorkspaceHasPendingActuals,
+      limit: actualWorkspacePageLimit,
+      sortBy: actualWorkspaceSortBy,
+      sortDirection: actualWorkspaceSortDirection,
+    };
+  }, [
+    actualWorkspaceAllocationCoverage,
+    actualWorkspaceHasOverdueActuals,
+    actualWorkspaceHasPendingActuals,
+    actualWorkspaceSortBy,
+    actualWorkspaceSortDirection,
+    query.groupId,
+    query.periodMonth,
+    query.search,
+    query.subjectId,
+    query.subjectType,
+  ]);
   const actualWorkspaceQueryShape = useMemo(
     () =>
       new URLSearchParams(
@@ -602,6 +605,218 @@ export const KpiListPage = (): JSX.Element => {
     },
     [searchParams, setSearchParams],
   );
+
+  const clearPlanFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      status: undefined,
+      subjectType: undefined,
+      subjectId: undefined,
+      groupId: undefined,
+      periodMonth: undefined,
+      metricCode: undefined,
+    });
+  }, [patchQuery]);
+
+  const clearActualWorkspaceFilters = useCallback(() => {
+    patchQuery({
+      search: undefined,
+      subjectType: undefined,
+      subjectId: undefined,
+      groupId: undefined,
+      periodMonth: undefined,
+      allocationCoverage: undefined,
+      hasOverdueActuals: undefined,
+      hasPendingActuals: undefined,
+      sortBy: undefined,
+      sortDirection: undefined,
+    });
+  }, [patchQuery]);
+
+  const planFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (query.search) {
+      items.push({
+        id: 'search',
+        label: t('kpi:filters.search'),
+        value: query.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+    if (query.status) {
+      items.push({
+        id: 'status',
+        label: t('kpi:fields.planStatus'),
+        value: t(`kpi:statuses.${query.status}`),
+        onClear: () => patchQuery({ status: undefined }),
+      });
+    }
+    if (query.subjectType) {
+      items.push({
+        id: 'subjectType',
+        label: t('kpi:fields.subjectType'),
+        value: t(`kpi:subjectTypes.${query.subjectType}`),
+        onClear: () => patchQuery({ subjectType: undefined, subjectId: undefined }),
+      });
+    }
+    if (query.subjectId) {
+      items.push({
+        id: 'subjectId',
+        label: t('kpi:fields.subject'),
+        value: query.subjectId,
+        onClear: () => patchQuery({ subjectId: undefined }),
+      });
+    }
+    if (query.groupId) {
+      items.push({
+        id: 'groupId',
+        label: t('kpi:fields.groupId'),
+        value: query.groupId,
+        onClear: () => patchQuery({ groupId: undefined }),
+      });
+    }
+    if (query.periodMonth) {
+      items.push({
+        id: 'periodMonth',
+        label: t('kpi:fields.periodMonth'),
+        value: formatPeriodMonth(query.periodMonth),
+        onClear: () => patchQuery({ periodMonth: undefined }),
+      });
+    }
+    if (query.metricCode) {
+      items.push({
+        id: 'metricCode',
+        label: t('kpi:fields.metricCode'),
+        value: t(`kpi:metricCodes.${query.metricCode}`),
+        onClear: () => patchQuery({ metricCode: undefined }),
+      });
+    }
+
+    return items;
+  }, [
+    patchQuery,
+    query.groupId,
+    query.metricCode,
+    query.periodMonth,
+    query.search,
+    query.status,
+    query.subjectId,
+    query.subjectType,
+    t,
+  ]);
+
+  const actualWorkspaceFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
+    const items: AppliedFilterChipItem[] = [];
+
+    if (query.search) {
+      items.push({
+        id: 'actual-search',
+        label: t('kpi:filters.search'),
+        value: query.search,
+        onClear: () => patchQuery({ search: undefined }),
+      });
+    }
+    if (query.periodMonth) {
+      items.push({
+        id: 'actual-periodMonth',
+        label: t('kpi:fields.periodMonth'),
+        value: formatPeriodMonth(query.periodMonth),
+        onClear: () => patchQuery({ periodMonth: undefined }),
+      });
+    }
+    if (query.subjectType === 'TALENT_GROUP' || query.subjectType === 'ORG_UNIT') {
+      items.push({
+        id: 'actual-subjectType',
+        label: t('kpi:fields.subjectType'),
+        value: t(`kpi:subjectTypes.${query.subjectType}`),
+        onClear: () => patchQuery({ subjectType: undefined, subjectId: undefined }),
+      });
+    }
+    if (
+      query.subjectId &&
+      (query.subjectType === 'TALENT_GROUP' || query.subjectType === 'ORG_UNIT')
+    ) {
+      items.push({
+        id: 'actual-subjectId',
+        label: t('kpi:fields.subject'),
+        value: query.subjectId,
+        onClear: () => patchQuery({ subjectId: undefined }),
+      });
+    }
+    if (query.groupId && query.subjectType !== 'ORG_UNIT') {
+      items.push({
+        id: 'actual-groupId',
+        label: t('kpi:fields.groupId'),
+        value: query.groupId,
+        onClear: () => patchQuery({ groupId: undefined }),
+      });
+    }
+    if (actualWorkspaceAllocationCoverage) {
+      items.push({
+        id: 'actual-allocationCoverage',
+        label: t('kpi:actualWorkspace.allocationCoverage'),
+        value: t(`kpi:actualWorkspace.coverageFilters.${actualWorkspaceAllocationCoverage}`),
+        onClear: () => patchQuery({ allocationCoverage: undefined }),
+      });
+    }
+    if (actualWorkspaceHasOverdueActuals !== undefined) {
+      items.push({
+        id: 'actual-hasOverdueActuals',
+        label: t('kpi:actualWorkspace.overdueActuals'),
+        value: t(
+          actualWorkspaceHasOverdueActuals
+            ? 'kpi:actualWorkspace.statusFilters.hasOverdue'
+            : 'kpi:actualWorkspace.statusFilters.noOverdue',
+        ),
+        onClear: () => patchQuery({ hasOverdueActuals: undefined }),
+      });
+    }
+    if (actualWorkspaceHasPendingActuals !== undefined) {
+      items.push({
+        id: 'actual-hasPendingActuals',
+        label: t('kpi:actualWorkspace.dueOpenActuals'),
+        value: t(
+          actualWorkspaceHasPendingActuals
+            ? 'kpi:actualWorkspace.statusFilters.hasDueOpen'
+            : 'kpi:actualWorkspace.statusFilters.noDueOpen',
+        ),
+        onClear: () => patchQuery({ hasPendingActuals: undefined }),
+      });
+    }
+    if (hasQueryParam(searchParams, 'sortBy')) {
+      items.push({
+        id: 'actual-sortBy',
+        label: t('kpi:actualWorkspace.sortBy'),
+        value: t(`kpi:actualWorkspace.sortFields.${actualWorkspaceSortBy}`),
+        onClear: () => patchQuery({ sortBy: undefined }),
+      });
+    }
+    if (hasQueryParam(searchParams, 'sortDirection')) {
+      items.push({
+        id: 'actual-sortDirection',
+        label: t('kpi:actualWorkspace.sortDirection'),
+        value: t(`kpi:actualWorkspace.sortDirections.${actualWorkspaceSortDirection}`),
+        onClear: () => patchQuery({ sortDirection: undefined }),
+      });
+    }
+
+    return items;
+  }, [
+    actualWorkspaceAllocationCoverage,
+    actualWorkspaceHasOverdueActuals,
+    actualWorkspaceHasPendingActuals,
+    actualWorkspaceSortBy,
+    actualWorkspaceSortDirection,
+    patchQuery,
+    query.groupId,
+    query.periodMonth,
+    query.search,
+    query.subjectId,
+    query.subjectType,
+    searchParams,
+    t,
+  ]);
 
   const parsedTargets = useMemo(() => {
     const result = targets.map((target) => ({
@@ -1195,6 +1410,14 @@ export const KpiListPage = (): JSX.Element => {
                 </button>
               ) : null}
             </div>
+            <AppliedFilterChips
+              title={t('common:filters.appliedFilters')}
+              items={planFilterChips}
+              clearFilterLabel={t('common:filters.clearFilter')}
+              clearAllLabel={t('common:filters.clearAll')}
+              emptyLabel={t('common:filters.noFiltersApplied')}
+              onClearAll={planFilterChips.length > 0 ? clearPlanFilters : undefined}
+            />
             {canShowCreatePlan && createPlanHint.disabledReason ? (
               <p className="text-sm text-danger">{createPlanHint.disabledReason}</p>
             ) : null}
@@ -1445,6 +1668,7 @@ export const KpiListPage = (): JSX.Element => {
       {isAdminPlansSectionVisible ? (
         <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
           <h2 className="text-base font-semibold">{t('kpi:list.title')}</h2>
+          <p className="text-sm text-muted">{t('kpi:list.boundedDisclosure')}</p>
           {plansQuery.isPending ? <LoadingState lines={6} /> : null}
           {plansQuery.isError && listError?.permissionDenied ? <PermissionDeniedState /> : null}
           {plansQuery.isError && !listError?.permissionDenied ? (
@@ -1512,6 +1736,16 @@ export const KpiListPage = (): JSX.Element => {
               </table>
             </div>
           ) : null}
+          {plansQuery.data ? (
+            <CursorPager
+              canGoBack={false}
+              canGoNext={false}
+              displayedCount={plansQuery.data.length}
+              limit={query.limit ?? 50}
+              onNext={() => undefined}
+              onPrevious={() => undefined}
+            />
+          ) : null}
         </section>
       ) : null}
 
@@ -1519,6 +1753,7 @@ export const KpiListPage = (): JSX.Element => {
         <section className="space-y-3 rounded-lg border border-border bg-panel p-4 shadow-shell">
           <h2 className="text-base font-semibold">{t('kpi:actualWorkspace.title')}</h2>
           <p className="text-sm text-muted">{t('kpi:actualWorkspace.policy')}</p>
+          <p className="text-sm text-muted">{t('kpi:actualWorkspace.boundaryHelper')}</p>
           <div className="flex flex-wrap items-end gap-3">
             <label className="flex min-w-[220px] flex-col gap-1 text-sm">
               <span className="text-xs font-medium uppercase text-muted">
@@ -1650,6 +1885,22 @@ export const KpiListPage = (): JSX.Element => {
               </select>
             </label>
           </div>
+          <AppliedFilterChips
+            title={t('common:filters.appliedFilters')}
+            items={actualWorkspaceFilterChips}
+            clearFilterLabel={t('common:filters.clearFilter')}
+            clearAllLabel={t('common:filters.clearAll')}
+            emptyLabel={t('common:filters.noFiltersApplied')}
+            onClearAll={
+              actualWorkspaceFilterChips.length > 0 ? clearActualWorkspaceFilters : undefined
+            }
+          />
+          <p className="text-xs text-muted">
+            {t('kpi:actualWorkspace.cursorDisclosure', {
+              count: actualWorkspacePlans.length,
+              limit: actualWorkspacePageLimit,
+            })}
+          </p>
           {actualWorkspacePlansQuery.isPending && actualWorkspacePlans.length === 0 ? (
             <LoadingState lines={4} />
           ) : null}
@@ -2081,7 +2332,11 @@ export const KpiListPage = (): JSX.Element => {
                                 </div>
                               ) : null}
                               <input
-                                aria-label={`${row.memberDisplayName ?? t('kpi:actualWorkspace.unnamedMember')} ${t(`kpi:metricCodes.${cell.metricCode}`)} actual`}
+                                aria-label={t('kpi:actualEntry.valueAriaLabel', {
+                                  member:
+                                    row.memberDisplayName ?? t('kpi:actualWorkspace.unnamedMember'),
+                                  metric: t(`kpi:metricCodes.${cell.metricCode}`),
+                                })}
                                 value={
                                   cellDrafts[cellKey(row, cell)] ??
                                   formatKpiMetricInput(cell.metricCode, cell.effectiveValue)
@@ -2404,7 +2659,9 @@ const CorrectionPanel = ({
       <button
         type="button"
         disabled={
-          correctionHint.disabled || correctionMutation.isPending || orgUnitCorrectionMutation.isPending
+          correctionHint.disabled ||
+          correctionMutation.isPending ||
+          orgUnitCorrectionMutation.isPending
         }
         title={correctionHint.disabledReason}
         className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"

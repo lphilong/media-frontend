@@ -38,6 +38,7 @@ import {
   SearchBoxSeam,
   SortControlSeam,
   useDestructiveConfirm,
+  useModalHost,
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
@@ -164,6 +165,7 @@ export const TalentGroupListPage = (): JSX.Element => {
   const createMutation = useCreateTalentGroupMutation();
   const lifecycleMutation = useTalentGroupLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
+  const { close: closeModal, openDrawer } = useModalHost();
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -230,9 +232,7 @@ export const TalentGroupListPage = (): JSX.Element => {
           onClick={() => setIsCreateOpen((current) => !current)}
           className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
         >
-          {isCreateOpen
-            ? t('talent-group:actions.closeCreate')
-            : t('talent-group:actions.create')}
+          {isCreateOpen ? t('talent-group:actions.closeCreate') : t('talent-group:actions.create')}
         </button>
       ) : null}
     </div>
@@ -272,15 +272,53 @@ export const TalentGroupListPage = (): JSX.Element => {
     });
   };
 
-  const onCreateSubmit = async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
-    try {
-      await createMutation.mutateAsync(payload);
-      notifySuccess('talent-group:feedback.created');
-      setIsCreateOpen(false);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
+  const onCreateSubmit = useCallback(
+    async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
+      try {
+        await createMutation.mutateAsync(payload);
+        notifySuccess('talent-group:feedback.created');
+        setIsCreateOpen(false);
+      } catch (error) {
+        notifyError(error as NormalizedApiError);
+      }
+    },
+    [createMutation, notifyError, notifySuccess],
+  );
+
+  useEffect(() => {
+    if (!isCreateOpen || !canCreateTalentGroup) {
+      closeModal();
+      return;
     }
-  };
+
+    openDrawer({
+      title: t('talent-group:mutations.create.title'),
+      onDismiss: () => setIsCreateOpen(false),
+      content: (
+        <TalentGroupCreateSurface
+          presentation="drawer"
+          isPending={createMutation.isPending}
+          onCancel={() => setIsCreateOpen(false)}
+          onSubmit={onCreateSubmit}
+        />
+      ),
+    });
+  }, [
+    canCreateTalentGroup,
+    closeModal,
+    createMutation.isPending,
+    isCreateOpen,
+    onCreateSubmit,
+    openDrawer,
+    t,
+  ]);
+
+  useEffect(
+    () => () => {
+      closeModal();
+    },
+    [closeModal],
+  );
 
   const onLifecycleAction = useCallback(
     async (groupId: string, action: TalentGroupLifecycleAction) => {
@@ -569,17 +607,6 @@ export const TalentGroupListPage = (): JSX.Element => {
             </select>
           </label>
         </FilterToolbar>
-      }
-      interactionSection={
-        <>
-          {canCreateTalentGroup && isCreateOpen ? (
-            <TalentGroupCreateSurface
-              isPending={createMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
-              onSubmit={onCreateSubmit}
-            />
-          ) : null}
-        </>
       }
       tableSection={
         <div className="space-y-4">

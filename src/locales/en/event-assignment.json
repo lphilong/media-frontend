@@ -113,7 +113,8 @@
     "identityTitle": "Event",
     "scheduleTitle": "Schedule",
     "referencesTitle": "Resource and platform references",
-    "globalOnly": "Global only"
+    "globalOnly": "Global only",
+    "boundaryHelper": "Completing an event does not automatically record revenue, commission, attendance, or payroll."
   },
   "related": {
     "navigationTitle": "Related navigation",

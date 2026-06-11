@@ -35,6 +35,7 @@ import {
   SearchBoxSeam,
   SortControlSeam,
   useDestructiveConfirm,
+  useModalHost,
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
@@ -137,6 +138,7 @@ export const PlatformAccountListPage = (): JSX.Element => {
   const createMutation = useCreatePlatformAccountMutation();
   const lifecycleMutation = usePlatformAccountLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
+  const { close: closeModal, openDrawer } = useModalHost();
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -217,15 +219,53 @@ export const PlatformAccountListPage = (): JSX.Element => {
     });
   };
 
-  const onCreateSubmit = async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
-    try {
-      await createMutation.mutateAsync(payload);
-      notifySuccess('platform-account:feedback.created');
-      setIsCreateOpen(false);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
+  const onCreateSubmit = useCallback(
+    async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
+      try {
+        await createMutation.mutateAsync(payload);
+        notifySuccess('platform-account:feedback.created');
+        setIsCreateOpen(false);
+      } catch (error) {
+        notifyError(error as NormalizedApiError);
+      }
+    },
+    [createMutation, notifyError, notifySuccess],
+  );
+
+  useEffect(() => {
+    if (!isCreateOpen || !canCreatePlatformAccount) {
+      closeModal();
+      return;
     }
-  };
+
+    openDrawer({
+      title: t('platform-account:mutations.create.title'),
+      onDismiss: () => setIsCreateOpen(false),
+      content: (
+        <PlatformAccountCreateSurface
+          presentation="drawer"
+          isPending={createMutation.isPending}
+          onCancel={() => setIsCreateOpen(false)}
+          onSubmit={onCreateSubmit}
+        />
+      ),
+    });
+  }, [
+    canCreatePlatformAccount,
+    closeModal,
+    createMutation.isPending,
+    isCreateOpen,
+    onCreateSubmit,
+    openDrawer,
+    t,
+  ]);
+
+  useEffect(
+    () => () => {
+      closeModal();
+    },
+    [closeModal],
+  );
 
   const onLifecycleAction = useCallback(
     async (platformAccountId: string, action: PlatformAccountLifecycleAction) => {
@@ -610,17 +650,6 @@ export const PlatformAccountListPage = (): JSX.Element => {
             </select>
           </label>
         </FilterToolbar>
-      }
-      interactionSection={
-        <>
-          {canCreatePlatformAccount && isCreateOpen ? (
-            <PlatformAccountCreateSurface
-              isPending={createMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
-              onSubmit={onCreateSubmit}
-            />
-          ) : null}
-        </>
       }
       tableSection={
         <div className="space-y-4">

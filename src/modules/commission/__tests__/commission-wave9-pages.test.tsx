@@ -341,6 +341,9 @@ describe('commission Wave 9 pages', () => {
     await renderRoute('/commission/settlements/commission-settlement-001');
 
     expect(await screen.findByText('CS-202604-000001')).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('commission:settlements.detail.boundaryHelper')),
+    ).toBeInTheDocument();
     expect(screen.getByText(i18n.t('commission:settlements.actionRail.title'))).toBeInTheDocument();
     expect(
       screen.getAllByText(i18n.t('commission:settlements.detail.linesTitle')).length,

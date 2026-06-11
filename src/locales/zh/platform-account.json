@@ -125,7 +125,8 @@
   "detail": {
     "identityTitle": "身份和所有者",
     "locatorsTitle": "定位信息、能力和元数据",
-    "archivedReadOnly": "已归档平台账号只读。后端详情可用时仍可查看。"
+    "archivedReadOnly": "已归档平台账号只读。后端详情可用时仍可查看。",
+    "boundaryHelper": "平台账号不是登录账号，也不是付款来源。"
   },
   "related": {
     "navigationTitle": "关联导航",

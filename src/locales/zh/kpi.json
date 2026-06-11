@@ -22,7 +22,8 @@
     "progressActuals": "进度与 actual"
   },
   "list": {
-    "title": "KPI 计划"
+    "title": "KPI 计划",
+    "boundedDisclosure": "当前列表受后端结果窗口限制，不显示总页数。"
   },
   "allocationQueue": {
     "title": "KPI 分配审批队列",
@@ -148,6 +149,7 @@
   },
   "actualEntry": {
     "title": "录入 actual",
+    "valueAriaLabel": "{{member}} {{metric}} 的实际达成值",
     "directEdit": "直接编辑",
     "requiresCorrection": "需要修正"
   },
@@ -192,6 +194,7 @@
   "actualWorkspace": {
     "title": "Actual Workspace",
     "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
+    "boundaryHelper": "KPI 实际达成值不会自动决定收入、佣金或工资。",
     "revenueTarget": "Revenue target",
     "revenueActual": "Revenue actual",
     "achievement": "Achievement %",
@@ -224,6 +227,7 @@
     },
     "loadMore": "加载更多",
     "loadingMore": "正在加载...",
+    "cursorDisclosure": "已加载 {{count}} 行。如有更多数据，将通过后端不透明游标加载，每次最多 {{limit}} 行。",
     "missingSignal": "Limited missing signal",
     "limitedMissingSignal": "limited calendar-day signal",
     "statusSummary": "Actual status summary",
@@ -257,7 +261,7 @@
   "finalResult": {
     "title": "Finalized result",
     "captured": "Captured when the KPI was finalized.",
-    "readOnly": "Read-only after finalization. Actuals, corrections, excuses, and allocations can no longer change.",
+    "readOnly": "Read-only after finalization. Actuals, corrections, excuses, and allocations can no longer change. KPI finalization does not automatically create revenue, commission, or payroll.",
     "unavailable": "Final result snapshot is not available for this finalized plan.",
     "status": "Finalized status",
     "closed": "Closed",

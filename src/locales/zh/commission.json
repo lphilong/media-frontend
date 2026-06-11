@@ -319,7 +319,8 @@
       "revenueEntriesTitle": "收入记录集合",
       "linesTitle": "只读结算行",
       "lifecycleTitle": "生命周期元数据",
-      "freeTextTitle": "备注"
+      "freeTextTitle": "备注",
+      "boundaryHelper": "已确认的佣金并不代表已经付款。"
     },
     "lines": {
       "caption": "只读结算行",

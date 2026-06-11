@@ -113,7 +113,8 @@
     "identityTitle": "Sự kiện",
     "scheduleTitle": "Lịch",
     "referencesTitle": "Tham chiếu tài nguyên và nền tảng",
-    "globalOnly": "Chỉ dùng phạm vi toàn cục"
+    "globalOnly": "Chỉ dùng phạm vi toàn cục",
+    "boundaryHelper": "Sự kiện hoàn thành không tự ghi nhận doanh thu, hoa hồng, chấm công hoặc bảng lương."
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",

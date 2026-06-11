@@ -31,6 +31,7 @@ import { ModuleMutationSurface } from '@shared/modules';
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
   isPending?: boolean;
+  presentation?: 'page' | 'drawer';
 };
 
 type PlatformAccountCreateSurfaceProps = BaseMutationSurfaceProps & {
@@ -225,6 +226,7 @@ export const PlatformAccountCreateSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: PlatformAccountCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['platform-account', 'common']);
   const ownerKindOptions = useOwnerKindOptions();
@@ -302,6 +304,7 @@ export const PlatformAccountCreateSurface = ({
         kind="create"
         submitLabel={t('platform-account:mutations.create.submit')}
         pendingLabel={t('platform-account:mutations.create.pending')}
+        presentation={presentation}
         cancelLabel={t('common:actions.cancel')}
         onCancel={onCancel}
         onSubmit={(event) => void handleSubmit(event)}

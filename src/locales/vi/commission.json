@@ -319,7 +319,8 @@
       "revenueEntriesTitle": "Tập bút toán doanh thu",
       "linesTitle": "Dòng quyết toán chỉ đọc",
       "lifecycleTitle": "Thông tin vòng đời",
-      "freeTextTitle": "Ghi chú"
+      "freeTextTitle": "Ghi chú",
+      "boundaryHelper": "Hoa hồng đã chốt chưa phải thanh toán."
     },
     "lines": {
       "caption": "Dòng quyết toán chỉ đọc",

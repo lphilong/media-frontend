@@ -28,6 +28,7 @@ import {
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
+  useModalHost,
 } from '@shared/components/primitives';
 import { useMutationFeedback } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
@@ -97,6 +98,7 @@ export const EmploymentProfileListPage = (): JSX.Element => {
   const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateEmploymentProfileMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
+  const { close: closeModal, openDrawer } = useModalHost();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
@@ -173,15 +175,53 @@ export const EmploymentProfileListPage = (): JSX.Element => {
     });
   };
 
-  const onCreateSubmit = async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
-    try {
-      await createMutation.mutateAsync(payload);
-      notifySuccess('employment-profile:feedback.created');
-      setIsCreateOpen(false);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
+  const onCreateSubmit = useCallback(
+    async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
+      try {
+        await createMutation.mutateAsync(payload);
+        notifySuccess('employment-profile:feedback.created');
+        setIsCreateOpen(false);
+      } catch (error) {
+        notifyError(error as NormalizedApiError);
+      }
+    },
+    [createMutation, notifyError, notifySuccess],
+  );
+
+  useEffect(() => {
+    if (!isCreateOpen || !canCreateEmploymentProfile) {
+      closeModal();
+      return;
     }
-  };
+
+    openDrawer({
+      title: t('employment-profile:mutations.create.title'),
+      onDismiss: () => setIsCreateOpen(false),
+      content: (
+        <EmploymentProfileCreateSurface
+          presentation="drawer"
+          isPending={createMutation.isPending}
+          onCancel={() => setIsCreateOpen(false)}
+          onSubmit={onCreateSubmit}
+        />
+      ),
+    });
+  }, [
+    canCreateEmploymentProfile,
+    closeModal,
+    createMutation.isPending,
+    isCreateOpen,
+    onCreateSubmit,
+    openDrawer,
+    t,
+  ]);
+
+  useEffect(
+    () => () => {
+      closeModal();
+    },
+    [closeModal],
+  );
 
   const columns = useMemo(
     () =>
@@ -526,17 +566,6 @@ export const EmploymentProfileListPage = (): JSX.Element => {
             </select>
           </label>
         </FilterToolbar>
-      }
-      interactionSection={
-        <>
-          {canCreateEmploymentProfile && isCreateOpen ? (
-            <EmploymentProfileCreateSurface
-              isPending={createMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
-              onSubmit={onCreateSubmit}
-            />
-          ) : null}
-        </>
       }
       tableSection={
         <div className="space-y-4">

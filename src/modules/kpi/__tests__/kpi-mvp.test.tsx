@@ -119,7 +119,7 @@ const openPublishedActualGrid = async (): Promise<void> => {
   await userEvent.clear(actualDate);
   await userEvent.type(actualDate, '2026-05-16');
   await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
-  await screen.findByLabelText('Luna Park Revenue VND actual');
+  await screen.findByLabelText('Actual value for Luna Park Revenue VND');
 };
 
 const mswJson = (
@@ -285,6 +285,103 @@ describe('KPI MVP UX', () => {
     expect(screen.getByRole('button', { name: 'Create KPI plan' })).toBeInTheDocument();
   });
 
+  it('renders KPI plan applied filter chips and clears one or all filters', async () => {
+    renderRoute(
+      '/kpi?status=PUBLISHED&periodMonth=2026-05&metricCode=REVENUE_VND&search=Published',
+    );
+    await waitForKpiList();
+
+    const appliedFilters = screen.getByRole('region', { name: 'Applied filters' });
+    expect(appliedFilters).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Search:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Plan status:')).toBeInTheDocument();
+    expect(within(appliedFilters).getAllByText('Published')).not.toHaveLength(0);
+    expect(within(appliedFilters).getByText('Period month:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('05-2026')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Metric:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Revenue VND')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear filter: Plan status' }));
+    await waitFor(() => expect(screen.queryByText('Plan status:')).not.toBeInTheDocument());
+    expect(screen.getByText('Search:')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+    await waitFor(() => expect(screen.getByText('No filters applied')).toBeInTheDocument());
+    expect(screen.queryByText('Search:')).not.toBeInTheDocument();
+  });
+
+  it('discloses bounded KPI plan pagination without a fake total page count', async () => {
+    renderRoute('/kpi');
+    await waitForKpiList();
+
+    expect(
+      screen.getByText(
+        'This list is limited by the current backend result window. It does not provide a total page count.',
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('navigation', { name: 'List pagination' })).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'This list uses load-by-load pagination and has no total page count.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: /go to page/i })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/Page \d+ \/ \d+/i);
+  });
+
+  it('renders Actual Workspace filter chips, boundary helper, and cursor disclosure', async () => {
+    renderRoute(
+      '/kpi?subjectType=ORG_UNIT&periodMonth=2026-06&allocationCoverage=complete&hasOverdueActuals=true&sortBy=revenueActual&sortDirection=ASC',
+    );
+    await openProgressActualsTab();
+
+    expect(
+      screen.getByText('KPI actuals do not automatically decide revenue, commission, or payroll.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Loaded \d+ row\(s\)\. More rows, when available, are loaded by opaque cursor with a backend limit of 50 per request\./,
+      ),
+    ).toBeInTheDocument();
+    const appliedFilters = screen.getByRole('region', { name: 'Applied filters' });
+    expect(appliedFilters).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Subject type:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Org Unit')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Period month:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('06-2026')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Allocation workflow coverage:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Complete')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Overdue actuals:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Has overdue')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Sort by:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Revenue actual')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Sort direction:')).toBeInTheDocument();
+    expect(within(appliedFilters).getByText('Ascending')).toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: /go to page/i })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/Page \d+ \/ \d+/i);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+    await waitFor(() => expect(screen.getByText('No filters applied')).toBeInTheDocument());
+    expect(screen.queryByText('Allocation workflow coverage:')).not.toBeInTheDocument();
+  });
+
+  it('uses accepted Vietnamese KPI admin tab labels and boundary wording', async () => {
+    await setLocale('vi');
+    renderRoute('/kpi');
+    await screen.findByRole('heading', { name: 'Kế hoạch KPI' }, lazyRouteContentWait);
+
+    expect(screen.getByRole('tab', { name: 'Kế hoạch' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Hàng đợi duyệt' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Tiến độ & số thực đạt' })).toBeInTheDocument();
+
+    await selectAdminWorkspaceTab('Tiến độ & số thực đạt');
+    expect(
+      await screen.findByText(
+        'Số thực đạt không tự quyết định doanh thu, hoa hồng hoặc bảng lương.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('renders the backend Actual Workspace revenue-first list without a progress bar', async () => {
     renderRoute('/kpi');
     await openProgressActualsTab();
@@ -347,7 +444,9 @@ describe('KPI MVP UX', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
 
     expect(readLastKpiOrgUnitActualGridDate()).toBe('2026-06-15');
-    expect(await screen.findByLabelText('An Nguyen Revenue VND actual')).toBeInTheDocument();
+    expect(
+      await screen.findByLabelText('Actual value for An Nguyen Revenue VND'),
+    ).toBeInTheDocument();
   });
 
   it('shows finalized result snapshot and null-snapshot fallback in Actual Workspace detail', async () => {
@@ -543,7 +642,7 @@ describe('KPI MVP UX', () => {
     await userEvent.clear(actualDate);
     await userEvent.type(actualDate, '2026-05-16');
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
-    const draft = await screen.findByLabelText('Luna Park Content output count actual');
+    const draft = await screen.findByLabelText('Actual value for Luna Park Content output count');
     await userEvent.clear(draft);
     await userEvent.type(draft, '3');
 
@@ -559,7 +658,7 @@ describe('KPI MVP UX', () => {
     await waitFor(() => expect(screen.queryByText('KPI-202605-000004')).not.toBeInTheDocument());
     expect(screen.queryByText('kpi-plan-published-alloc-1')).not.toBeInTheDocument();
     expect(
-      screen.queryByLabelText('Luna Park Content output count actual'),
+      screen.queryByLabelText('Actual value for Luna Park Content output count'),
     ).not.toBeInTheDocument();
   });
 
@@ -597,7 +696,7 @@ describe('KPI MVP UX', () => {
     await userEvent.clear(actualDate);
     await userEvent.type(actualDate, '2026-05-16');
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
-    await screen.findByLabelText('Luna Park Revenue VND actual');
+    await screen.findByLabelText('Actual value for Luna Park Revenue VND');
 
     await userEvent.selectOptions(
       screen.getByRole('combobox', { name: 'Sort by' }),
@@ -610,7 +709,9 @@ describe('KPI MVP UX', () => {
     });
     await waitFor(() => expect(screen.queryByText('KPI-202605-000004')).not.toBeInTheDocument());
     expect(screen.queryByText('kpi-plan-published-alloc-1')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Luna Park Revenue VND actual')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Actual value for Luna Park Revenue VND'),
+    ).not.toBeInTheDocument();
 
     await userEvent.selectOptions(
       screen.getByRole('combobox', { name: 'Sort by' }),
@@ -1501,7 +1602,12 @@ describe('KPI MVP UX', () => {
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('employment-profile-001')).not.toBeInTheDocument();
     expect(
-      within(finalResult).queryByText(/final score|payroll|payout|settlement/i),
+      within(finalResult).getByText(
+        'Read-only after finalization. Actuals, corrections, excuses, and allocations can no longer change. KPI finalization does not automatically create revenue, commission, or payroll.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(finalResult).queryByText(/final score|payout|settlement/i),
     ).not.toBeInTheDocument();
   });
 
@@ -2218,8 +2324,11 @@ describe('KPI MVP UX', () => {
     expect(within(operations).getAllByText('2.000.000 VND').length).toBeGreaterThan(0);
     expect(screen.queryByText('employment-profile-ops-001')).not.toBeInTheDocument();
     expect(within(operations).queryByText('TIKTOK_DIAMOND')).not.toBeInTheDocument();
-    expect(within(operations).queryByText(/payroll/i)).not.toBeInTheDocument();
-    expect(within(operations).queryByText(/commission/i)).not.toBeInTheDocument();
+    expect(
+      within(operations).getByText(
+        'Read-only after finalization. Actuals, corrections, excuses, and allocations can no longer change. KPI finalization does not automatically create revenue, commission, or payroll.',
+      ),
+    ).toBeInTheDocument();
     expect(within(operations).queryByText(/payout/i)).not.toBeInTheDocument();
   });
 
@@ -2337,7 +2446,9 @@ describe('KPI MVP UX', () => {
     await userEvent.click(await waitForEnabledButton('Submit excuse'));
     expect(await screen.findByText(/Member leave: Approved leave/i)).toBeInTheDocument();
 
-    const lunaContent = await screen.findByLabelText('Luna Park Content output count actual');
+    const lunaContent = await screen.findByLabelText(
+      'Actual value for Luna Park Content output count',
+    );
     await userEvent.clear(lunaContent);
     await userEvent.type(lunaContent, '3');
     await userEvent.click(await waitForEnabledButton('Save changed cells'));
@@ -2388,7 +2499,9 @@ describe('KPI MVP UX', () => {
     await userEvent.clear(actualDate);
     await userEvent.type(actualDate, '2026-05-16');
     await userEvent.click(screen.getByRole('button', { name: 'Load grid' }));
-    expect(await screen.findByLabelText('Unnamed member Revenue VND actual')).toBeInTheDocument();
+    expect(
+      await screen.findByLabelText('Actual value for Unnamed member Revenue VND'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Unnamed member')).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent('talent-private');
     expect(screen.queryByLabelText(/talent-private/i)).not.toBeInTheDocument();
@@ -2556,10 +2669,12 @@ describe('KPI MVP UX', () => {
     );
     renderRoute('/kpi');
     await openPublishedActualGrid();
-    const lunaRevenue = await screen.findByLabelText('Luna Park Revenue VND actual');
+    const lunaRevenue = await screen.findByLabelText('Actual value for Luna Park Revenue VND');
     await userEvent.clear(lunaRevenue);
     await userEvent.type(lunaRevenue, '510.000');
-    const lunaContent = await screen.findByLabelText('Luna Park Content output count actual');
+    const lunaContent = await screen.findByLabelText(
+      'Actual value for Luna Park Content output count',
+    );
     await userEvent.clear(lunaContent);
     await userEvent.type(lunaContent, '3');
     await userEvent.click(await waitForEnabledButton('Save changed cells'));
@@ -2569,7 +2684,7 @@ describe('KPI MVP UX', () => {
   it('opens correction modal for locked cells and renders history', async () => {
     renderRoute('/kpi');
     await openPublishedActualGrid();
-    const minhRevenue = await screen.findByLabelText('Minh Tran Revenue VND actual');
+    const minhRevenue = await screen.findByLabelText('Actual value for Minh Tran Revenue VND');
     await userEvent.clear(minhRevenue);
     await userEvent.type(minhRevenue, '300.000');
     await userEvent.click(await waitForEnabledButton('Save changed cells'));
@@ -2588,7 +2703,9 @@ describe('KPI MVP UX', () => {
     );
     renderRoute('/kpi');
     await openPublishedActualGrid();
-    const lunaContent = await screen.findByLabelText('Luna Park Content output count actual');
+    const lunaContent = await screen.findByLabelText(
+      'Actual value for Luna Park Content output count',
+    );
     await userEvent.clear(lunaContent);
     await userEvent.type(lunaContent, '3');
     await userEvent.click(await waitForEnabledButton('Save changed cells'));

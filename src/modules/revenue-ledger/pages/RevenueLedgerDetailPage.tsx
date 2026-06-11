@@ -288,6 +288,13 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
           />
         ) : undefined
       }
+      banner={
+        record ? (
+          <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+            {t('revenue-ledger:detail.boundaryHelper')}
+          </div>
+        ) : undefined
+      }
       readOnlyNotice={
         record?.status === 'ARCHIVED' ? (
           <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">

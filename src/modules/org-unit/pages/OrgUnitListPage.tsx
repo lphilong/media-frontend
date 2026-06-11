@@ -30,6 +30,7 @@ import {
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
+  useModalHost,
 } from '@shared/components/primitives';
 import { useDestructiveConfirm, useMutationFeedback } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
@@ -95,6 +96,7 @@ export const OrgUnitListPage = (): JSX.Element => {
   const createMutation = useCreateOrgUnitMutation();
   const lifecycleMutation = useOrgUnitLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
+  const { close: closeModal, openDrawer } = useModalHost();
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -173,15 +175,53 @@ export const OrgUnitListPage = (): JSX.Element => {
     });
   };
 
-  const onCreateSubmit = async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
-    try {
-      await createMutation.mutateAsync(payload);
-      notifySuccess('org-unit:feedback.created');
-      setIsCreateOpen(false);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
+  const onCreateSubmit = useCallback(
+    async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
+      try {
+        await createMutation.mutateAsync(payload);
+        notifySuccess('org-unit:feedback.created');
+        setIsCreateOpen(false);
+      } catch (error) {
+        notifyError(error as NormalizedApiError);
+      }
+    },
+    [createMutation, notifyError, notifySuccess],
+  );
+
+  useEffect(() => {
+    if (!isCreateOpen || !canCreateOrgUnit) {
+      closeModal();
+      return;
     }
-  };
+
+    openDrawer({
+      title: t('org-unit:mutations.create.title'),
+      onDismiss: () => setIsCreateOpen(false),
+      content: (
+        <OrgUnitCreateSurface
+          presentation="drawer"
+          isPending={createMutation.isPending}
+          onCancel={() => setIsCreateOpen(false)}
+          onSubmit={onCreateSubmit}
+        />
+      ),
+    });
+  }, [
+    canCreateOrgUnit,
+    closeModal,
+    createMutation.isPending,
+    isCreateOpen,
+    onCreateSubmit,
+    openDrawer,
+    t,
+  ]);
+
+  useEffect(
+    () => () => {
+      closeModal();
+    },
+    [closeModal],
+  );
 
   const onLifecycleAction = useCallback(
     async (orgUnitId: string, action: OrgUnitLifecycleAction) => {
@@ -483,17 +523,6 @@ export const OrgUnitListPage = (): JSX.Element => {
             </select>
           </label>
         </FilterToolbar>
-      }
-      interactionSection={
-        <>
-          {canCreateOrgUnit && isCreateOpen ? (
-            <OrgUnitCreateSurface
-              isPending={createMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
-              onSubmit={onCreateSubmit}
-            />
-          ) : null}
-        </>
       }
       tableSection={
         <div className="space-y-4">

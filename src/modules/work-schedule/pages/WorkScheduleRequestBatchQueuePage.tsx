@@ -19,7 +19,18 @@ import {
   PERMISSIONS,
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
-import { EmptyState, ErrorState, LoadingState, PageContainer, StatusBadge } from '@shared/components/primitives';
+import {
+  AppliedFilterChips,
+  CursorPager,
+  EmptyState,
+  ErrorState,
+  FilterToolbar,
+  LoadingState,
+  PageContainer,
+  StatusBadge,
+} from '@shared/components/primitives';
+
+const QUEUE_LIMIT = 50;
 
 const batchStatusTone = {
   PENDING: 'warning',
@@ -53,14 +64,24 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
     hasScopeGrant(capabilities, 'workSchedule', 'global');
   const [status, setStatus] = useState<WorkScheduleRequestBatchStatus | ''>('PENDING');
   const [periodMonth, setPeriodMonth] = useState('');
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
   const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
   const [approvalNote, setApprovalNote] = useState('');
   const [decisionReason, setDecisionReason] = useState('');
+  const resetQueueSelection = (): void => {
+    setSelectedBatchId(undefined);
+    setSelectedLineIds([]);
+  };
+  const resetCursorAndSelection = (): void => {
+    setCursorStack([]);
+    resetQueueSelection();
+  };
   const listQuery = useWorkScheduleRequestBatchList({
     status: status || undefined,
     periodMonth: periodMonth || undefined,
-    limit: 50,
+    limit: QUEUE_LIMIT,
+    cursor: cursorStack[cursorStack.length - 1],
   });
   const selectedBatchIdOrFirst = selectedBatchId ?? listQuery.data?.data[0]?.id;
   const detailQuery = useWorkScheduleRequestBatchDetail(selectedBatchIdOrFirst, {
@@ -76,6 +97,34 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
   const selectedPendingLineIds = selectedLineIds.filter((lineId) =>
     pendingLines.some((line) => line.id === lineId),
   );
+  const activeFilterChips = [
+    ...(status
+      ? [
+          {
+            id: 'status',
+            label: t('work-schedule:requestBatches.filters.status'),
+            value: t(`work-schedule:requestBatches.statuses.${status}`),
+            onClear: () => {
+              setStatus('');
+              resetCursorAndSelection();
+            },
+          },
+        ]
+      : []),
+    ...(periodMonth
+      ? [
+          {
+            id: 'periodMonth',
+            label: t('work-schedule:requestBatches.filters.periodMonth'),
+            value: periodMonth,
+            onClear: () => {
+              setPeriodMonth('');
+              resetCursorAndSelection();
+            },
+          },
+        ]
+      : []),
+  ];
 
   const resetDecisionInputs = (): void => {
     setApprovalNote('');
@@ -130,13 +179,35 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
 
         <section className="grid gap-4 lg:grid-cols-[minmax(280px,360px)_1fr]">
           <div className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <FilterToolbar
+              appliedFilters={
+                <AppliedFilterChips
+                  items={activeFilterChips}
+                  title={t('common:filters.appliedFilters')}
+                  clearFilterLabel={t('common:filters.clearFilter')}
+                  clearAllLabel={t('common:filters.clearAll')}
+                  emptyLabel={t('common:filters.noFiltersApplied')}
+                  onClearAll={
+                    activeFilterChips.length > 0
+                      ? () => {
+                          setStatus('');
+                          setPeriodMonth('');
+                          resetCursorAndSelection();
+                        }
+                      : undefined
+                  }
+                />
+              }
+            >
               <label className="text-sm font-medium text-text">
                 {t('work-schedule:requestBatches.filters.status')}
                 <select
                   className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
                   value={status}
-                  onChange={(event) => setStatus(event.target.value as WorkScheduleRequestBatchStatus | '')}
+                  onChange={(event) => {
+                    setStatus(event.target.value as WorkScheduleRequestBatchStatus | '');
+                    resetCursorAndSelection();
+                  }}
                 >
                   <option value="">{t('work-schedule:requestBatches.filters.allStatuses')}</option>
                   {(['PENDING', 'PARTIALLY_APPROVED', 'APPROVED', 'REJECTED', 'CANCELLED'] as const).map(
@@ -154,10 +225,13 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                   className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
                   type="month"
                   value={periodMonth}
-                  onChange={(event) => setPeriodMonth(event.target.value)}
+                  onChange={(event) => {
+                    setPeriodMonth(event.target.value);
+                    resetCursorAndSelection();
+                  }}
                 />
               </label>
-            </div>
+            </FilterToolbar>
 
             {listQuery.isLoading ? <LoadingState lines={4} /> : null}
             {listQuery.isError ? (
@@ -202,6 +276,25 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                 </button>
               ))}
             </div>
+            {listQuery.data ? (
+              <CursorPager
+                canGoBack={cursorStack.length > 0}
+                canGoNext={Boolean(listQuery.data.meta?.nextCursor)}
+                displayedCount={listQuery.data.data.length}
+                limit={QUEUE_LIMIT}
+                onPrevious={() => {
+                  setCursorStack((current) => current.slice(0, -1));
+                  resetQueueSelection();
+                }}
+                onNext={() => {
+                  const nextCursor = listQuery.data.meta?.nextCursor;
+                  if (nextCursor) {
+                    setCursorStack((current) => [...current, nextCursor]);
+                    resetQueueSelection();
+                  }
+                }}
+              />
+            ) : null}
           </div>
 
           <div className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm">
@@ -248,8 +341,18 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
 
                 {canDecide ? (
                   <div className="space-y-3 rounded border border-border bg-bg p-3">
-                    <div className="text-sm font-semibold text-text">
-                      {t('work-schedule:requestBatches.decisions.title')}
+                    <div>
+                      <div className="text-sm font-semibold text-text">
+                        {t('work-schedule:requestBatches.decisions.title')}
+                      </div>
+                      <p className="text-xs text-muted">
+                        {t('work-schedule:requestBatches.decisions.selectedContext', {
+                          count: selectedPendingLineIds.length,
+                        })}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {t('work-schedule:requestBatches.decisions.helper')}
+                      </p>
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">
                       <label className="text-sm font-medium text-text">

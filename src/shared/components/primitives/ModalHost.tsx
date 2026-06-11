@@ -1,7 +1,9 @@
 import {
+  useCallback,
   createContext,
   useContext,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
   type ReactNode,
@@ -14,11 +16,14 @@ type ModalPayload = {
   variant: ModalVariant;
   title: string;
   content: ReactNode;
+  onDismiss?: () => void;
 };
 
+type ModalOpenPayload = Omit<ModalPayload, 'variant'>;
+
 type ModalHostContextValue = {
-  openModal: (payload: Omit<ModalPayload, 'variant'>) => void;
-  openDrawer: (payload: Omit<ModalPayload, 'variant'>) => void;
+  openModal: (payload: ModalOpenPayload) => void;
+  openDrawer: (payload: ModalOpenPayload) => void;
   close: () => void;
 };
 
@@ -27,29 +32,51 @@ const ModalHostContext = createContext<ModalHostContextValue | null>(null);
 export const ModalHostProvider = ({ children }: PropsWithChildren): JSX.Element => {
   const { t } = useTranslation('common');
   const [modal, setModal] = useState<ModalPayload | null>(null);
+  const modalRef = useRef<ModalPayload | null>(null);
+
+  const open = useCallback((payload: ModalOpenPayload, variant: ModalVariant): void => {
+    const nextModal = { ...payload, variant };
+    modalRef.current = nextModal;
+    setModal(nextModal);
+  }, []);
+
+  const close = useCallback((): void => {
+    const currentModal = modalRef.current;
+    if (!currentModal) {
+      return;
+    }
+
+    modalRef.current = null;
+    setModal(null);
+    currentModal.onDismiss?.();
+  }, []);
 
   const value = useMemo<ModalHostContextValue>(
     () => ({
-      openModal: (payload) => setModal({ ...payload, variant: 'modal' }),
-      openDrawer: (payload) => setModal({ ...payload, variant: 'drawer' }),
-      close: () => setModal(null),
+      openModal: (payload) => open(payload, 'modal'),
+      openDrawer: (payload) => open(payload, 'drawer'),
+      close,
     }),
-    [],
+    [close, open],
   );
 
   const panelClass =
     modal?.variant === 'drawer'
-      ? 'ml-auto h-full w-full max-w-lg rounded-none rounded-l-lg'
-      : 'mx-auto w-full max-w-xl rounded-lg';
+      ? 'ml-auto h-full w-full max-w-2xl overflow-y-auto rounded-none rounded-l-lg'
+      : 'mx-auto max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-lg';
 
   return (
     <ModalHostContext.Provider value={value}>
       {children}
       {modal ? (
         <div className="fixed inset-0 z-[95] bg-black/30">
-          <div className={`bg-panel p-5 shadow-xl ${panelClass}`}>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-text">{modal.title}</h3>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={modal.title}
+            className={`bg-panel p-5 shadow-xl ${panelClass}`}
+          >
+            <div className="mb-4 flex items-center justify-end">
               <button
                 type="button"
                 onClick={value.close}

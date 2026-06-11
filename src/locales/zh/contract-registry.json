@@ -123,7 +123,8 @@
     "linkedEntityTitle": "关联实体和所有者",
     "fileReferenceTitle": "文件引用元数据",
     "freeTextTitle": "描述和外部引用",
-    "globalOnly": "仅全局范围"
+    "globalOnly": "仅全局范围",
+    "boundaryHelper": "已签署的合同不会自动产生收入或佣金。"
   },
   "related": {
     "navigationTitle": "关联导航",

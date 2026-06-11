@@ -115,6 +115,65 @@ describe('employment profile wave 3 surfaces', () => {
     expect(await screen.findByText('Alice')).toBeInTheDocument();
   });
 
+  it('opens Employment Profile create in a drawer without replacing the list', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/employment-profiles');
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('employment-profile:actions.create'),
+      }),
+    );
+    const heading = await screen.findByRole('heading', {
+      name: i18n.t('employment-profile:mutations.create.title'),
+    });
+    const surface = heading.closest('section');
+    expect(surface).toHaveAttribute('data-mutation-presentation', 'drawer');
+    expect(screen.getByText('EP-000001')).toBeInTheDocument();
+
+    await user.click(within(surface as HTMLElement).getByRole('button', { name: /hủy|cancel/i }));
+    expect(
+      screen.queryByRole('heading', {
+        name: i18n.t('employment-profile:mutations.create.title'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('resets Employment Profile create state after host close and reopens in one click', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/employment-profiles');
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('employment-profile:actions.create'),
+      }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: i18n.t('employment-profile:mutations.create.title'),
+    });
+
+    await user.click(within(dialog).getByRole('button', { name: i18n.t('common:actions.close') }));
+
+    const createTrigger = await screen.findByRole('button', {
+      name: i18n.t('employment-profile:actions.create'),
+    });
+    expect(
+      screen.queryByRole('dialog', {
+        name: i18n.t('employment-profile:mutations.create.title'),
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(createTrigger);
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: i18n.t('employment-profile:mutations.create.title'),
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('uses readable org unit and manager selectors for relationship filters', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -227,6 +286,9 @@ describe('employment profile wave 3 surfaces', () => {
       await screen.findByRole('heading', {
         name: i18n.t('employment-profile:detail.hubTitle'),
       }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('employment-profile:detail.externalContractHelper')),
     ).toBeInTheDocument();
     expect(screen.getByText(i18n.t('employment-profile:actionRail.title'))).toBeInTheDocument();
     expect(screen.getByText('Alice - EP-000001')).toBeInTheDocument();

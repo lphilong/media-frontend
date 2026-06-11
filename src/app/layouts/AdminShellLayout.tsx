@@ -4,6 +4,7 @@ import { Outlet, useMatches } from 'react-router-dom';
 
 import { usePageChromeStore } from '@app/store/page-chrome-store';
 import { useShellStore } from '@app/store/shell-store';
+import { ModalHostProvider } from '@shared/components/primitives';
 import { AppTopBar, SidebarNav } from '@shared/components/shell';
 
 type RouteHandle = {
@@ -47,35 +48,37 @@ export const AdminShellLayout = (): JSX.Element => {
     }));
 
   return (
-    <div className="flex min-h-screen bg-bg text-text">
-      <aside
-        className={`flex flex-col border-r border-border bg-panel transition-all ${sidebarCollapsed ? 'w-20' : 'w-72'}`}
-      >
-        <div className="flex items-center justify-between border-b border-border px-3 py-3">
-          {!sidebarCollapsed ? <span className="font-semibold">{t('common:app.name')}</span> : null}
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className="rounded border border-border p-1 text-muted hover:bg-slate-100"
-            aria-label={t('common:actions.toggleSidebar')}
-          >
-            <Menu className="h-4 w-4" />
-          </button>
-        </div>
-        <SidebarNav collapsed={sidebarCollapsed} />
-      </aside>
+    <ModalHostProvider>
+      <div className="flex min-h-screen bg-bg text-text">
+        <aside
+          className={`flex flex-col border-r border-border bg-panel transition-all ${sidebarCollapsed ? 'w-20' : 'w-72'}`}
+        >
+          <div className="flex items-center justify-between border-b border-border px-3 py-3">
+            {!sidebarCollapsed ? <span className="font-semibold">{t('common:app.name')}</span> : null}
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="rounded border border-border p-1 text-muted hover:bg-slate-100"
+              aria-label={t('common:actions.toggleSidebar')}
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+          </div>
+          <SidebarNav collapsed={sidebarCollapsed} />
+        </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col" data-testid="admin-shell-main">
-        <AppTopBar
-          breadcrumbs={breadcrumbs}
-          pageTitle={pageTitle}
-          pageSubtitle={pageSubtitle}
-          pageActions={pageActions ?? defaultStubAction}
-        />
-        <div className="flex-1">
-          <Outlet />
-        </div>
-      </main>
-    </div>
+        <main className="flex min-w-0 flex-1 flex-col" data-testid="admin-shell-main">
+          <AppTopBar
+            breadcrumbs={breadcrumbs}
+            pageTitle={pageTitle}
+            pageSubtitle={pageSubtitle}
+            pageActions={pageActions ?? defaultStubAction}
+          />
+          <div className="flex-1">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </ModalHostProvider>
   );
 };

@@ -20,7 +20,7 @@
     "sourcedByEmploymentProfileId": "推荐来源",
     "linkedUserId": "关联用户",
     "employmentStatus": "员工状态",
-    "contractStatus": "合同状态",
+    "contractStatus": "系统外劳动合同状态",
     "newContractStatus": "新合同状态",
     "employmentStartDate": "员工开始日期",
     "employmentEndDate": "员工结束日期",
@@ -63,7 +63,7 @@
   "filters": {
     "searchPlaceholder": "按员工编码、法定名称或显示名称搜索",
     "employmentStatus": "员工状态",
-    "contractStatus": "合同状态",
+    "contractStatus": "系统外劳动合同状态",
     "employmentKind": "员工类型",
     "employmentKindPlaceholder": "筛选按类型标记",
     "allEmploymentKinds": "所有用工类型",
@@ -135,7 +135,7 @@
     "managerEmploymentProfileId": "主管",
     "linkedUserId": "已关联用户",
     "employmentStatus": "员工状态",
-    "contractStatus": "合同状态",
+    "contractStatus": "系统外劳动合同状态",
     "createdAt": "已创建",
     "actions": "操作"
   },
@@ -143,7 +143,7 @@
     "employeeCode": "员工编码",
     "displayName": "显示名称",
     "employmentStatus": "员工状态",
-    "contractStatus": "合同状态",
+    "contractStatus": "系统外劳动合同状态",
     "orgUnitId": "组织单元",
     "managerEmploymentProfileId": "主管"
   },
@@ -166,7 +166,8 @@
     "assignmentTitle": "分配和日期",
     "hrAttributionTitle": "HR 归属",
     "noManager": "未分配主管",
-    "notAssigned": "未分配"
+    "notAssigned": "未分配",
+    "externalContractHelper": "劳动合同及法律附件由系统外 HR 流程保存。此页面仅记录运营参考状态。"
   },
   "account": {
     "linkedUserStatus": "关联用户状态",

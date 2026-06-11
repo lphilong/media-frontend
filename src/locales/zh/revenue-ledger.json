@@ -130,7 +130,8 @@
     "revenueTitle": "收入",
     "attributionTitle": "归因",
     "lifecycleTitle": "生命周期",
-    "freeTextTitle": "备注"
+    "freeTextTitle": "备注",
+    "boundaryHelper": "已记录收入不代表款项已收取。"
   },
   "related": {
     "navigationTitle": "关联商业记录",

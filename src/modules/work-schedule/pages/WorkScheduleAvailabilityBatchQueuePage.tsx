@@ -24,13 +24,18 @@ import {
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
 import {
+  AppliedFilterChips,
+  CursorPager,
   EmptyState,
   ErrorState,
+  FilterToolbar,
   LoadingState,
   PageContainer,
   StatusBadge,
 } from '@shared/components/primitives';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
+
+const QUEUE_LIMIT = 50;
 
 const batchStatusTone = {
   PENDING: 'warning',
@@ -38,6 +43,19 @@ const batchStatusTone = {
   APPROVED: 'success',
   REJECTED: 'danger',
   CANCELLED: 'muted',
+} as const;
+
+const lineStatusTone = {
+  PENDING: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'danger',
+  CANCELLED: 'muted',
+} as const;
+
+const applyStatusTone = {
+  NOT_APPLIED: 'warning',
+  ADVISORY_ONLY: 'info',
+  APPLIED: 'success',
 } as const;
 
 const canReviewLine = (line: WorkScheduleAvailabilityLine): boolean => line.status === 'PENDING';
@@ -56,6 +74,7 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
   const [status, setStatus] = useState<WorkScheduleAvailabilityBatchStatus | ''>('');
   const [periodMonth, setPeriodMonth] = useState('');
   const [targetType, setTargetType] = useState<'ORG_UNIT' | 'TALENT_GROUP' | ''>('');
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
   const [selectedReviewLineIds, setSelectedReviewLineIds] = useState<string[]>([]);
   const [selectedApplyLineIds, setSelectedApplyLineIds] = useState<string[]>([]);
@@ -66,11 +85,22 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [applyResult, setApplyResult] =
     useState<ApplyAvailabilityLinesToMonthlyRosterResult | null>(null);
+  const resetQueueSelection = (): void => {
+    setSelectedBatchId(undefined);
+    setSelectedReviewLineIds([]);
+    setSelectedApplyLineIds([]);
+    setApplyResult(null);
+  };
+  const resetCursorAndSelection = (): void => {
+    setCursorStack([]);
+    resetQueueSelection();
+  };
   const listQuery = useWorkScheduleAvailabilityBatchList({
     status: status || undefined,
     periodMonth: periodMonth || undefined,
     targetType: targetType || undefined,
-    limit: 50,
+    limit: QUEUE_LIMIT,
+    cursor: cursorStack[cursorStack.length - 1],
   });
   const selectedBatchIdOrFirst = selectedBatchId ?? listQuery.data?.items[0]?.id;
   const detailQuery = useWorkScheduleAvailabilityBatchDetail(selectedBatchIdOrFirst, {
@@ -109,6 +139,47 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
       ).length,
     [detailQuery.data?.lines],
   );
+  const activeFilterChips = [
+    ...(status
+      ? [
+          {
+            id: 'status',
+            label: t('work-schedule:availabilityBatches.filters.status'),
+            value: t(`work-schedule:availabilityBatches.statuses.${status}`),
+            onClear: () => {
+              setStatus('');
+              resetCursorAndSelection();
+            },
+          },
+        ]
+      : []),
+    ...(periodMonth
+      ? [
+          {
+            id: 'periodMonth',
+            label: t('work-schedule:availabilityBatches.filters.periodMonth'),
+            value: periodMonth,
+            onClear: () => {
+              setPeriodMonth('');
+              resetCursorAndSelection();
+            },
+          },
+        ]
+      : []),
+    ...(targetType
+      ? [
+          {
+            id: 'targetType',
+            label: t('work-schedule:availabilityBatches.filters.targetType'),
+            value: t(`work-schedule:availabilityBatches.targetTypes.${targetType}`),
+            onClear: () => {
+              setTargetType('');
+              resetCursorAndSelection();
+            },
+          },
+        ]
+      : []),
+  ];
 
   const resetDecisionInputs = (): void => {
     setSelectedReviewLineIds([]);
@@ -181,24 +252,47 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
 
           <div className="mt-4 rounded border border-border bg-bg p-3 text-sm text-muted">
             <p>{t('work-schedule:availabilityBatches.copy.planning')}</p>
+            <p>{t('work-schedule:availabilityBatches.copy.approvedNotChanged')}</p>
             <p>{t('work-schedule:availabilityBatches.copy.applyDraftOnly')}</p>
             <p>{t('work-schedule:availabilityBatches.copy.publishStillRequired')}</p>
+            <p>{t('work-schedule:availabilityBatches.copy.officialShiftBoundary')}</p>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <FilterToolbar
+            appliedFilters={
+              <AppliedFilterChips
+                items={activeFilterChips}
+                title={t('common:filters.appliedFilters')}
+                clearFilterLabel={t('common:filters.clearFilter')}
+                clearAllLabel={t('common:filters.clearAll')}
+                emptyLabel={t('common:filters.noFiltersApplied')}
+                onClearAll={
+                  activeFilterChips.length > 0
+                    ? () => {
+                        setStatus('');
+                        setPeriodMonth('');
+                        setTargetType('');
+                        resetCursorAndSelection();
+                      }
+                    : undefined
+                }
+              />
+            }
+          >
             <label className="text-sm font-medium text-text">
               {t('work-schedule:availabilityBatches.filters.status')}
               <select
                 className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
                 value={status}
-                onChange={(event) =>
-                  setStatus(event.target.value as WorkScheduleAvailabilityBatchStatus | '')
-                }
+                onChange={(event) => {
+                  setStatus(event.target.value as WorkScheduleAvailabilityBatchStatus | '');
+                  resetCursorAndSelection();
+                }}
               >
                 <option value="">{t('work-schedule:availabilityBatches.filters.all')}</option>
                 {Object.keys(batchStatusTone).map((candidate) => (
                   <option key={candidate} value={candidate}>
-                    {candidate}
+                    {t(`work-schedule:availabilityBatches.statuses.${candidate}`)}
                   </option>
                 ))}
               </select>
@@ -209,7 +303,10 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                 className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
                 type="month"
                 value={periodMonth}
-                onChange={(event) => setPeriodMonth(event.target.value)}
+                onChange={(event) => {
+                  setPeriodMonth(event.target.value);
+                  resetCursorAndSelection();
+                }}
               />
             </label>
             <label className="text-sm font-medium text-text">
@@ -217,16 +314,21 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
               <select
                 className="mt-1 w-full rounded border border-border bg-bg px-3 py-2"
                 value={targetType}
-                onChange={(event) =>
-                  setTargetType(event.target.value as 'ORG_UNIT' | 'TALENT_GROUP' | '')
-                }
+                onChange={(event) => {
+                  setTargetType(event.target.value as 'ORG_UNIT' | 'TALENT_GROUP' | '');
+                  resetCursorAndSelection();
+                }}
               >
                 <option value="">{t('work-schedule:availabilityBatches.filters.all')}</option>
-                <option value="ORG_UNIT">ORG_UNIT</option>
-                <option value="TALENT_GROUP">TALENT_GROUP</option>
+                <option value="ORG_UNIT">
+                  {t('work-schedule:availabilityBatches.targetTypes.ORG_UNIT')}
+                </option>
+                <option value="TALENT_GROUP">
+                  {t('work-schedule:availabilityBatches.targetTypes.TALENT_GROUP')}
+                </option>
               </select>
             </label>
-          </div>
+          </FilterToolbar>
 
           {listQuery.isLoading ? <LoadingState lines={4} /> : null}
           {listQuery.isError ? (
@@ -260,17 +362,18 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                       {batch.availabilityBatchCode}
                     </span>
                     <StatusBadge
-                      label={batch.status}
+                      label={t(`work-schedule:availabilityBatches.statuses.${batch.status}`)}
                       tone={batchStatusTone[batch.status] ?? 'neutral'}
                     />
                   </div>
                   <div className="mt-1 text-xs text-muted">
                     {batch.submitter?.displayName ?? '-'} - {batch.periodMonth} -{' '}
-                    {batch.target?.displayName ?? batch.target?.name ?? batch.targetType}
+                    {batch.target?.displayName ??
+                      batch.target?.name ??
+                      t(`work-schedule:availabilityBatches.targetTypes.${batch.targetType}`)}
                   </div>
                   <div className="mt-1 text-xs text-muted">
-                    {batch.lineCounts.pending} pending / {batch.lineCounts.approved} approved /{' '}
-                    {batch.lineCounts.cancelled} cancelled
+                    {t('work-schedule:availabilityBatches.lineCounts.summary', batch.lineCounts)}
                   </div>
                 </button>
               ))}
@@ -279,6 +382,27 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                   title={t('work-schedule:availabilityBatches.states.emptyTitle')}
                   message={t('work-schedule:availabilityBatches.states.emptyMessage')}
                 />
+              ) : null}
+              {listQuery.data ? (
+                <div className="p-3">
+                  <CursorPager
+                    canGoBack={cursorStack.length > 0}
+                    canGoNext={Boolean(listQuery.data.nextCursor)}
+                    displayedCount={listQuery.data.items.length}
+                    limit={QUEUE_LIMIT}
+                    onPrevious={() => {
+                      setCursorStack((current) => current.slice(0, -1));
+                      resetQueueSelection();
+                    }}
+                    onNext={() => {
+                      const nextCursor = listQuery.data?.nextCursor;
+                      if (nextCursor) {
+                        setCursorStack((current) => [...current, nextCursor]);
+                        resetQueueSelection();
+                      }
+                    }}
+                  />
+                </div>
               ) : null}
             </div>
 
@@ -296,7 +420,9 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                       </p>
                     </div>
                     <StatusBadge
-                      label={detailQuery.data.status}
+                      label={t(
+                        `work-schedule:availabilityBatches.statuses.${detailQuery.data.status}`,
+                      )}
                       tone={batchStatusTone[detailQuery.data.status] ?? 'neutral'}
                     />
                   </div>
@@ -320,7 +446,9 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                     />
                     <SummaryCard
                       label={t('work-schedule:availabilityBatches.summary.policy')}
-                      value="NOT_EVALUATED"
+                      value={t(
+                        'work-schedule:availabilityBatches.policyStatuses.NOT_EVALUATED',
+                      )}
                     />
                   </div>
 
@@ -347,6 +475,14 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                         <h3 className="text-sm font-semibold text-text">
                           {t('work-schedule:availabilityBatches.review.title')}
                         </h3>
+                        <p className="text-xs text-muted">
+                          {t('work-schedule:availabilityBatches.review.selectedContext', {
+                            count: selectedReviewLines.length,
+                          })}
+                        </p>
+                        <p className="text-xs text-muted">
+                          {t('work-schedule:availabilityBatches.review.helper')}
+                        </p>
                         <label className="block text-sm font-medium text-text">
                           {t('work-schedule:availabilityBatches.review.note')}
                           <input
@@ -394,6 +530,16 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                         <h3 className="text-sm font-semibold text-text">
                           {t('work-schedule:availabilityBatches.apply.title')}
                         </h3>
+                        <p className="text-xs text-muted">
+                          {t('work-schedule:availabilityBatches.apply.selectedContext', {
+                            count: selectedApplyLines.length,
+                          })}
+                        </p>
+                        <div className="space-y-1 rounded border border-border bg-bg p-2 text-xs text-muted">
+                          <p>{t('work-schedule:availabilityBatches.copy.approvedNotChanged')}</p>
+                          <p>{t('work-schedule:availabilityBatches.copy.applyDraftOnly')}</p>
+                          <p>{t('work-schedule:availabilityBatches.copy.publishStillRequired')}</p>
+                        </div>
                         <label className="block text-sm font-medium text-text">
                           {t('work-schedule:availabilityBatches.apply.roster')}
                           <select
@@ -524,9 +670,29 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                                 </div>
                               ) : null}
                             </td>
-                            <td className="px-3 py-2">{line.status}</td>
-                            <td className="px-3 py-2">{line.applyStatus}</td>
-                            <td className="px-3 py-2">{line.policyEvaluationStatus}</td>
+                            <td className="px-3 py-2">
+                              <StatusBadge
+                                label={t(
+                                  `work-schedule:availabilityBatches.lineStatuses.${line.status}`,
+                                )}
+                                status={line.status}
+                                toneByStatus={lineStatusTone}
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <StatusBadge
+                                label={t(
+                                  `work-schedule:availabilityBatches.applyStatuses.${line.applyStatus}`,
+                                )}
+                                status={line.applyStatus}
+                                toneByStatus={applyStatusTone}
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              {t(
+                                `work-schedule:availabilityBatches.policyStatuses.${line.policyEvaluationStatus}`,
+                              )}
+                            </td>
                             <td className="px-3 py-2">
                               {line.appliedRosterId ?? '-'}
                               {line.appliedRosterExceptionIds.length > 0 ? (
@@ -567,7 +733,8 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                       <ul className="mt-3 space-y-1 text-sm text-muted">
                         {applyResult.results.map((result) => (
                           <li key={`${result.availabilityLineId}-${result.outcome}`}>
-                            {result.availabilityLineId}: {result.outcome}
+                            {result.availabilityLineId}:{' '}
+                            {t(`work-schedule:availabilityBatches.apply.outcomes.${result.outcome}`)}
                             {result.rosterExceptionIds.length > 0
                               ? ` (${result.rosterExceptionIds.join(', ')})`
                               : ''}

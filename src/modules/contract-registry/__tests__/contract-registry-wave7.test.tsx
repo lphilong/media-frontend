@@ -92,6 +92,7 @@ describe('contract registry wave 7 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('contract-registry:actionRail.title')),
     ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('contract-registry:detail.boundaryHelper'))).toBeInTheDocument();
     expect(screen.getByText('CON-2026-000001')).toBeInTheDocument();
     expect(screen.getByText('alice-contract.pdf')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Alice Nguyen' })).toHaveLength(2);

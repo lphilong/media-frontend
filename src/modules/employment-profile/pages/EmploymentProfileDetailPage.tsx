@@ -684,6 +684,13 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
           </div>
         ) : undefined
       }
+      banner={
+        record ? (
+          <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+            {t('employment-profile:detail.externalContractHelper')}
+          </div>
+        ) : undefined
+      }
       summarySection={
         record ? (
           <MetadataSection title={t('employment-profile:detail.overviewTitle')}>

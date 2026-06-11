@@ -36,6 +36,7 @@ import {
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
   isPending?: boolean;
+  presentation?: 'page' | 'drawer';
 };
 
 type EmploymentProfileCreateSurfaceProps = BaseMutationSurfaceProps & {
@@ -316,6 +317,7 @@ export const EmploymentProfileCreateSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: EmploymentProfileCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['employment-profile', 'common']);
   const form = useForm<EmploymentProfileCreateFormValues>({
@@ -388,6 +390,7 @@ export const EmploymentProfileCreateSurface = ({
         kind="create"
         submitLabel={t('employment-profile:mutations.create.submit')}
         pendingLabel={t('employment-profile:mutations.create.pending')}
+        presentation={presentation}
         cancelLabel={t('common:actions.cancel')}
         onCancel={onCancel}
         onSubmit={(event) => void handleSubmit(event)}

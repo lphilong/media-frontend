@@ -125,7 +125,8 @@
   "detail": {
     "identityTitle": "Định danh và chủ sở hữu",
     "locatorsTitle": "Thông tin định vị, khả năng và metadata",
-    "archivedReadOnly": "Tài khoản nền tảng đã lưu trữ chỉ đọc. Vẫn xem được chi tiết khi backend có dữ liệu."
+    "archivedReadOnly": "Tài khoản nền tảng đã lưu trữ chỉ đọc. Vẫn xem được chi tiết khi backend có dữ liệu.",
+    "boundaryHelper": "Tài khoản nền tảng không phải tài khoản đăng nhập hoặc nguồn thanh toán."
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",

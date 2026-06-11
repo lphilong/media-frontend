@@ -169,6 +169,7 @@ describe('platform-account wave 5 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('platform-account:actionRail.title')),
     ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('platform-account:detail.boundaryHelper'))).toBeInTheDocument();
     expect(screen.getByText('PA-000001')).toBeInTheDocument();
     expect(screen.getByText('@mina')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mina' })).toHaveAttribute(
@@ -211,6 +212,40 @@ describe('platform-account wave 5 surfaces', () => {
     expect(screen.queryByText(/credential|token/i)).not.toBeInTheDocument();
   });
 
+  it('resets Platform Account create state after host close and reopens in one click', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/platform-accounts');
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('platform-account:actions.create'),
+      }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: i18n.t('platform-account:mutations.create.title'),
+    });
+
+    await user.click(within(dialog).getByRole('button', { name: i18n.t('common:actions.close') }));
+
+    const createTrigger = await screen.findByRole('button', {
+      name: i18n.t('platform-account:actions.create'),
+    });
+    expect(
+      screen.queryByRole('dialog', {
+        name: i18n.t('platform-account:mutations.create.title'),
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(createTrigger);
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: i18n.t('platform-account:mutations.create.title'),
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('supports create and list lifecycle transitions without delete or credential controls', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -230,6 +265,7 @@ describe('platform-account wave 5 surfaces', () => {
     if (!createSurface) {
       return;
     }
+    expect(createSurface).toHaveAttribute('data-mutation-presentation', 'drawer');
 
     expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/credential|token/i)).not.toBeInTheDocument();

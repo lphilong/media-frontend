@@ -812,6 +812,40 @@ describe('org unit wave 3 surfaces', () => {
     );
   });
 
+  it('resets Org Unit create state after host close and reopens in one click', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/org-units');
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: i18n.t('org-unit:actions.create'),
+      }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: i18n.t('org-unit:mutations.create.title'),
+    });
+
+    await user.click(within(dialog).getByRole('button', { name: i18n.t('common:actions.close') }));
+
+    const createTrigger = await screen.findByRole('button', {
+      name: i18n.t('org-unit:actions.create'),
+    });
+    expect(
+      screen.queryByRole('dialog', {
+        name: i18n.t('org-unit:mutations.create.title'),
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(createTrigger);
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: i18n.t('org-unit:mutations.create.title'),
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('supports create and lifecycle mutation flows from list/detail surfaces', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -831,6 +865,7 @@ describe('org unit wave 3 surfaces', () => {
     if (!createSurface) {
       return;
     }
+    expect(createSurface).toHaveAttribute('data-mutation-presentation', 'drawer');
 
     const createSurfaceScope = within(createSurface);
     expect(createSurfaceScope.queryByLabelText(i18n.t('org-unit:fields.code'))).toBeNull();

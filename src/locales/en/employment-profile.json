@@ -20,7 +20,7 @@
     "sourcedByEmploymentProfileId": "Sourced By",
     "linkedUserId": "Linked User",
     "employmentStatus": "Employment Status",
-    "contractStatus": "Contract Status",
+    "contractStatus": "External labor contract status",
     "newContractStatus": "New Contract Status",
     "employmentStartDate": "Employment Start Date",
     "employmentEndDate": "Employment End Date",
@@ -63,7 +63,7 @@
   "filters": {
     "searchPlaceholder": "Search by employee code, legal name, or display name",
     "employmentStatus": "Employment Status",
-    "contractStatus": "Contract Status",
+    "contractStatus": "External labor contract status",
     "employmentKind": "Employment Kind",
     "employmentKindPlaceholder": "Filter by kind token",
     "allEmploymentKinds": "All employment kinds",
@@ -135,7 +135,7 @@
     "managerEmploymentProfileId": "Manager",
     "linkedUserId": "Linked User",
     "employmentStatus": "Employment Status",
-    "contractStatus": "Contract Status",
+    "contractStatus": "External labor contract status",
     "createdAt": "Created",
     "actions": "Actions"
   },
@@ -143,7 +143,7 @@
     "employeeCode": "Employee Code",
     "displayName": "Display Name",
     "employmentStatus": "Employment Status",
-    "contractStatus": "Contract Status",
+    "contractStatus": "External labor contract status",
     "orgUnitId": "Org Unit",
     "managerEmploymentProfileId": "Manager"
   },
@@ -166,7 +166,8 @@
     "accountTitle": "Account / User Link",
     "hrAttributionTitle": "HR Attribution",
     "noManager": "No manager assigned",
-    "notAssigned": "Not assigned"
+    "notAssigned": "Not assigned",
+    "externalContractHelper": "Labor contracts and legal appendices are stored in the external HR process. This screen records only an operational reference status."
   },
   "account": {
     "linkedUserStatus": "Linked User Status",

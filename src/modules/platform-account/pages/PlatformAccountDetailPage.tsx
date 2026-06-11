@@ -350,6 +350,13 @@ export const PlatformAccountDetailPage = (): JSX.Element => {
           />
         ) : undefined
       }
+      banner={
+        record ? (
+          <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+            {t('platform-account:detail.boundaryHelper')}
+          </div>
+        ) : undefined
+      }
       readOnlyNotice={
         record?.operationalStatus === 'ARCHIVED' ? (
           <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">

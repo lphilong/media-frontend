@@ -20,7 +20,7 @@
     "sourcedByEmploymentProfileId": "Nguồn giới thiệu",
     "linkedUserId": "Người dùng liên kết",
     "employmentStatus": "Trạng thái nhân sự",
-    "contractStatus": "Trạng thái hợp đồng",
+    "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
     "newContractStatus": "Trạng thái hợp đồng mới",
     "employmentStartDate": "Ngày bắt đầu làm việc",
     "employmentEndDate": "Ngày kết thúc làm việc",
@@ -63,7 +63,7 @@
   "filters": {
     "searchPlaceholder": "Nhập mã nhân viên",
     "employmentStatus": "Trạng thái nhân sự",
-    "contractStatus": "Trạng thái hợp đồng",
+    "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
     "employmentKind": "Loại nhân sự",
     "employmentKindPlaceholder": "Lọc theo token loại nhân sự",
     "allEmploymentKinds": "Tất cả loại nhân sự",
@@ -135,7 +135,7 @@
     "managerEmploymentProfileId": "Quản lý",
     "linkedUserId": "Người dùng liên kết",
     "employmentStatus": "Trạng thái nhân sự",
-    "contractStatus": "Trạng thái hợp đồng",
+    "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
     "createdAt": "Thời điểm tạo",
     "actions": "Hành động"
   },
@@ -143,7 +143,7 @@
     "employeeCode": "Mã nhân viên",
     "displayName": "Tên hiển thị",
     "employmentStatus": "Trạng thái nhân sự",
-    "contractStatus": "Trạng thái hợp đồng",
+    "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
     "orgUnitId": "Đơn vị tổ chức",
     "managerEmploymentProfileId": "Quản lý"
   },
@@ -166,7 +166,8 @@
     "accountTitle": "Liên kết tài khoản / người dùng",
     "hrAttributionTitle": "Phân công HR",
     "noManager": "Chưa gán quản lý",
-    "notAssigned": "Chưa phân công"
+    "notAssigned": "Chưa phân công",
+    "externalContractHelper": "HĐLĐ và phụ lục pháp lý được lưu theo quy trình HR ngoài hệ thống. Màn này chỉ ghi nhận trạng thái tham chiếu để vận hành."
   },
   "account": {
     "linkedUserStatus": "Trạng thái người dùng liên kết",

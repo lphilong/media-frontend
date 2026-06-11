@@ -379,9 +379,24 @@ describe('work schedule capability UX hints', () => {
       }),
     ).toBeInTheDocument();
     expect(await screen.findByText('WSB-202606-000100')).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
+    expect(
+      screen.getAllByText(i18n.t('work-schedule:requestBatches.statuses.PENDING')).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
+    expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
+    expect(screen.queryByText(/Trang\s+\d+\s*\/\s*\d+/)).not.toBeInTheDocument();
     expect(
       await screen.findByText('Official WorkShift was no longer active at approval time.'),
     ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', {
+        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
+          'work-schedule:requestBatches.filters.status',
+        )}`,
+      }),
+    );
+    expect(screen.getByText(i18n.t('common:filters.noFiltersApplied'))).toBeInTheDocument();
 
     await user.click(
       await screen.findByRole('checkbox', {
@@ -554,7 +569,41 @@ describe('work schedule capability UX hints', () => {
       }),
     ).toBeInTheDocument();
     expect(await screen.findByText('AVB-202606-000100')).toBeInTheDocument();
-    expect((await screen.findAllByText('NOT_EVALUATED')).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(i18n.t('work-schedule:availabilityBatches.copy.approvedNotChanged')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('work-schedule:availabilityBatches.copy.applyDraftOnly')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('work-schedule:availabilityBatches.copy.officialShiftBoundary')),
+    ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
+    expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
+    expect(screen.queryByText(/Trang\s+\d+\s*\/\s*\d+/)).not.toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('work-schedule:availabilityBatches.filters.status')),
+      'PENDING',
+    );
+    expect(
+      screen.getAllByText(i18n.t('work-schedule:availabilityBatches.statuses.PENDING')).length,
+    ).toBeGreaterThan(0);
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('common:filters.clearAll'),
+      }),
+    );
+    expect(screen.getByText(i18n.t('common:filters.noFiltersApplied'))).toBeInTheDocument();
+    expect(
+      (await screen.findAllByText(
+        i18n.t('work-schedule:availabilityBatches.policyStatuses.NOT_EVALUATED'),
+      )).length,
+    ).toBeGreaterThan(0);
+    expect(
+      (await screen.findAllByText(
+        i18n.t('work-schedule:availabilityBatches.applyStatuses.NOT_APPLIED'),
+      )).length,
+    ).toBeGreaterThan(0);
 
     const approvedRow = (
       await screen.findByText(i18n.t('work-schedule:availabilityBatches.types.PREFERRED_TIME'))
@@ -577,13 +626,39 @@ describe('work schedule capability UX hints', () => {
 
     await waitFor(() => expect(applyCalls).toBe(1));
     expect(
-      await screen.findByText(/admin-availability-line-approved: APPLIED/),
+      await screen.findByText(
+        new RegExp(
+          `admin-availability-line-approved: ${i18n.t(
+            'work-schedule:availabilityBatches.apply.outcomes.APPLIED',
+          )}`,
+        ),
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText(/admin-availability-line-advisory: ADVISORY_ONLY/)).toBeInTheDocument();
     expect(
-      screen.getByText(/admin-availability-line-applied: SKIPPED_ALREADY_APPLIED/),
+      screen.getByText(
+        new RegExp(
+          `admin-availability-line-advisory: ${i18n.t(
+            'work-schedule:availabilityBatches.apply.outcomes.ADVISORY_ONLY',
+          )}`,
+        ),
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText('missing-line: FAILED - Line not found')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        new RegExp(
+          `admin-availability-line-applied: ${i18n.t(
+            'work-schedule:availabilityBatches.apply.outcomes.SKIPPED_ALREADY_APPLIED',
+          )}`,
+        ),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        `missing-line: ${i18n.t(
+          'work-schedule:availabilityBatches.apply.outcomes.FAILED',
+        )} - Line not found`,
+      ),
+    ).toBeInTheDocument();
   });
 
   it.each([
@@ -626,7 +701,13 @@ describe('work schedule capability UX hints', () => {
 
       renderRoute('/work-schedule/availability-batches');
       expect(await screen.findByText('AVB-202606-000100')).toBeInTheDocument();
-      expect((await screen.findAllByText('NOT_EVALUATED')).length).toBeGreaterThan(0);
+      expect(
+        (
+          await screen.findAllByText(
+            i18n.t('work-schedule:availabilityBatches.policyStatuses.NOT_EVALUATED'),
+          )
+        ).length,
+      ).toBeGreaterThan(0);
       const reviewCheckbox = screen
         .getAllByRole('checkbox')
         .find((checkbox) => !checkbox.hasAttribute('disabled'));

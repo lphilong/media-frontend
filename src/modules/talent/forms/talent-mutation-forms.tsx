@@ -36,6 +36,7 @@ import {
 type BaseMutationSurfaceProps = {
   onCancel: () => void;
   isPending?: boolean;
+  presentation?: 'page' | 'drawer';
 };
 
 type TalentCreateSurfaceProps = BaseMutationSurfaceProps & {
@@ -295,6 +296,7 @@ export const TalentCreateSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
+  presentation,
 }: TalentCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['talent', 'common']);
   const talentOriginOptions = useMemo(
@@ -373,6 +375,7 @@ export const TalentCreateSurface = ({
         kind="create"
         submitLabel={t('talent:mutations.create.submit')}
         pendingLabel={t('talent:mutations.create.pending')}
+        presentation={presentation}
         cancelLabel={t('common:actions.cancel')}
         onCancel={onCancel}
         onSubmit={(event) => void handleSubmit(event)}

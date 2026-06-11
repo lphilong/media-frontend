@@ -123,6 +123,59 @@ describe('talent-group wave 4 surfaces', () => {
     expect(screen.queryByText(/sortPriority\(/i)).not.toBeInTheDocument();
   });
 
+  it('opens Talent Group create in a drawer without replacing the list', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/talent-groups');
+
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('talent-group:actions.create') }),
+    );
+    const heading = await screen.findByRole('heading', {
+      name: i18n.t('talent-group:mutations.create.title'),
+    });
+    const surface = heading.closest('section');
+    expect(surface).toHaveAttribute('data-mutation-presentation', 'drawer');
+    expect(screen.getByText('TG-000001')).toBeInTheDocument();
+
+    await user.click(within(surface as HTMLElement).getByRole('button', { name: /hủy|cancel/i }));
+    expect(
+      screen.queryByRole('heading', { name: i18n.t('talent-group:mutations.create.title') }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('resets Talent Group create state after host close and reopens in one click', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/talent-groups');
+
+    await user.click(
+      await screen.findByRole('button', { name: i18n.t('talent-group:actions.create') }),
+    );
+    const dialog = await screen.findByRole('dialog', {
+      name: i18n.t('talent-group:mutations.create.title'),
+    });
+
+    await user.click(within(dialog).getByRole('button', { name: i18n.t('common:actions.close') }));
+
+    const createTrigger = await screen.findByRole('button', {
+      name: i18n.t('talent-group:actions.create'),
+    });
+    expect(
+      screen.queryByRole('dialog', {
+        name: i18n.t('talent-group:mutations.create.title'),
+      }),
+    ).not.toBeInTheDocument();
+
+    await user.click(createTrigger);
+
+    expect(
+      await screen.findByRole('dialog', {
+        name: i18n.t('talent-group:mutations.create.title'),
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('uses a talent selector for the contains-talent relationship filter', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();

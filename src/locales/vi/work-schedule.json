@@ -325,7 +325,7 @@
     "label": "Các phần lịch làm việc",
     "workShifts": "Ca làm việc",
     "requestBatches": "Hàng đợi duyệt yêu cầu",
-    "availabilityBatches": "Lập kế hoạch khả dụng",
+    "availabilityBatches": "Duyệt lịch rảnh/bận",
     "monthlyRosters": "Bảng lịch tháng",
     "workPatterns": "Mẫu lịch làm",
     "holidayCalendars": "Lịch nghỉ lễ",
@@ -333,8 +333,8 @@
   },
   "requestBatches": {
     "page": {
-      "title": "Hàng đợi duyệt yêu cầu",
-      "subtitle": "Admin/Ops duyệt batch yêu cầu WorkSchedule của quản lý theo từng dòng đang chờ."
+      "title": "Hàng đợi duyệt yêu cầu đổi lịch",
+      "subtitle": "Admin/Ops duyệt yêu cầu đổi lịch của quản lý theo từng dòng đang chờ."
     },
     "copy": {
       "adminAuthority": "Duyệt bởi Admin/Ops"
@@ -350,105 +350,147 @@
       "pending": "Dòng đang chờ"
     },
     "scopeSummaries": {
-      "ORG_UNIT": "Org Unit",
-      "TALENT_GROUP": "Talent Group",
-      "MIXED": "Hỗn hợp"
+      "ORG_UNIT": "Phạm vi Org Unit",
+      "TALENT_GROUP": "Phạm vi nhóm Talent",
+      "MIXED": "Phạm vi hỗn hợp"
     },
     "statuses": {
-      "PENDING": "Đang chờ",
+      "PENDING": "Đang chờ duyệt",
       "PARTIALLY_APPROVED": "Duyệt một phần",
       "APPROVED": "Đã duyệt",
-      "REJECTED": "Đã từ chối",
+      "REJECTED": "Bị từ chối",
       "CANCELLED": "Đã hủy"
     },
     "lineStatuses": {
-      "PENDING": "Đang chờ",
+      "PENDING": "Đang chờ duyệt",
       "APPROVED": "Đã duyệt",
-      "REJECTED": "Đã từ chối",
+      "REJECTED": "Bị từ chối",
       "CANCELLED": "Đã hủy",
-      "FAILED_TO_APPLY": "Áp dụng thất bại"
+      "FAILED_TO_APPLY": "Áp dụng lỗi"
     },
     "lineCounts": {
       "summary": "{{pending}} chờ / {{approved}} duyệt / {{failedToApply}} lỗi / {{total}} tổng"
     },
     "decisions": {
-      "title": "Quyết định dòng đã chọn",
+      "title": "Phạm vi xử lý",
+      "selectedContext": "{{count}} dòng yêu cầu đang được chọn.",
+      "helper": "Quyết định chỉ áp dụng cho các dòng yêu cầu đã chọn. Phê duyệt có thể áp dụng thay đổi ca theo kiểm tra của backend; từ chối hoặc hủy cần lý do.",
       "approvalNote": "Ghi chú duyệt (tùy chọn)",
       "reason": "Lý do từ chối hoặc hủy"
     },
     "actions": {
-      "approveSelected": "Duyệt dòng đã chọn",
+      "approveSelected": "Phê duyệt dòng đã chọn",
       "rejectSelected": "Từ chối dòng đã chọn",
-      "cancelSelected": "Hủy dòng đã chọn",
+      "cancelSelected": "Hủy yêu cầu đã chọn",
       "selectLine": "Chọn dòng {{lineNo}}"
     },
     "table": {
-      "caption": "Dòng yêu cầu trong batch",
-      "line": "Dòng",
+      "caption": "Dòng yêu cầu đổi lịch",
+      "line": "Dòng yêu cầu",
       "member": "Thành viên",
       "request": "Yêu cầu",
       "status": "Trạng thái",
       "notes": "Ghi chú"
     },
     "states": {
-      "emptyTitle": "Không có batch yêu cầu",
-      "emptyMessage": "Không có batch yêu cầu khớp bộ lọc.",
+      "emptyTitle": "Không có yêu cầu đổi lịch",
+      "emptyMessage": "Không có dòng nào cần Admin/Ops xử lý theo bộ lọc hiện tại.",
       "listErrorTitle": "Không tải được hàng đợi",
       "listErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu batch.",
       "detailErrorTitle": "Không tải được chi tiết batch",
-      "detailErrorMessage": "Không tải được batch yêu cầu đã chọn."
+      "detailErrorMessage": "Không tải được yêu cầu đổi lịch đã chọn."
     }
   },
   "availabilityBatches": {
     "page": {
-      "title": "Hàng đợi lập kế hoạch khả dụng",
-      "subtitle": "Admin/Ops duyệt các dòng khả dụng trước roster do quản lý gửi."
+      "title": "Duyệt lịch rảnh/bận",
+      "subtitle": "Admin/Ops duyệt lịch rảnh/bận trước khi áp dụng rõ ràng vào lịch nháp."
     },
     "badges": {
-      "global": "WorkSchedule toàn cục"
+      "global": "Lịch làm việc toàn hệ thống"
     },
     "copy": {
-      "planning": "Khả dụng là dữ liệu lập kế hoạch trước khi công bố roster, không phải chứng cứ chấm công hay lương.",
-      "applyDraftOnly": "Áp dụng sẽ đưa các dòng đã duyệt vào ngoại lệ của Monthly Roster nháp.",
-      "publishStillRequired": "Vẫn cần công bố roster trước khi tạo WorkShift chính thức."
+      "planning": "Lịch rảnh/bận là dữ liệu lập kế hoạch trước khi công bố lịch tháng.",
+      "approvedNotChanged": "Đã duyệt chưa có nghĩa là lịch đã đổi.",
+      "applyDraftOnly": "Đã áp dụng chỉ tác động lịch nháp.",
+      "publishStillRequired": "Chỉ sau khi công bố mới có ca làm chính thức.",
+      "officialShiftBoundary": "Ca làm chính thức là kế hoạch làm việc, không phải chấm công hoặc bảng lương."
     },
     "filters": {
       "status": "Trạng thái",
       "all": "Tất cả",
-      "periodMonth": "Tháng kỳ",
-      "targetType": "Loại mục tiêu"
+      "periodMonth": "Lịch tháng",
+      "targetType": "Phạm vi xử lý"
     },
     "list": {
-      "title": "Batch khả dụng"
+      "title": "Lịch rảnh/bận"
     },
     "summary": {
-      "pending": "Chờ",
+      "pending": "Đang chờ duyệt",
       "approved": "Đã duyệt",
       "rejected": "Từ chối",
       "cancelled": "Đã hủy",
-      "policy": "Chính sách"
+      "policy": "Đánh giá chính sách",
+      "approvedNotApplied": "Đã duyệt, chưa áp dụng"
+    },
+    "targetTypes": {
+      "ORG_UNIT": "Org Unit",
+      "TALENT_GROUP": "Nhóm Talent"
+    },
+    "statuses": {
+      "PENDING": "Đang chờ duyệt",
+      "PARTIALLY_APPROVED": "Duyệt một phần",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Bị từ chối",
+      "CANCELLED": "Đã hủy"
+    },
+    "lineStatuses": {
+      "PENDING": "Đang chờ duyệt",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Bị từ chối",
+      "CANCELLED": "Đã hủy"
+    },
+    "applyStatuses": {
+      "NOT_APPLIED": "Đã duyệt, chưa áp dụng",
+      "ADVISORY_ONLY": "Chỉ ghi chú",
+      "APPLIED": "Đã áp dụng vào lịch nháp"
+    },
+    "policyStatuses": {
+      "NOT_EVALUATED": "Chưa đánh giá chính sách"
+    },
+    "lineCounts": {
+      "summary": "{{pending}} đang chờ / {{approved}} đã duyệt / {{cancelled}} đã hủy / {{total}} tổng"
     },
     "review": {
       "title": "Duyệt các dòng đang chờ đã chọn",
+      "selectedContext": "{{count}} dòng rảnh/bận đang được chọn để duyệt.",
+      "helper": "Phê duyệt chỉ đổi trạng thái dòng rảnh/bận. Từ chối hoặc hủy cần lý do theo quy định hiện tại.",
       "note": "Ghi chú quyết định",
       "reason": "Lý do từ chối/hủy"
     },
     "apply": {
-      "title": "Áp dụng dòng đã duyệt đã chọn",
-      "roster": "Monthly Roster nháp",
-      "selectRoster": "Chọn roster nháp",
+      "title": "Áp dụng vào lịch nháp",
+      "selectedContext": "{{count}} dòng đã duyệt đang được chọn để áp dụng.",
+      "roster": "Lịch nháp",
+      "selectRoster": "Chọn lịch nháp",
       "note": "Ghi chú áp dụng",
       "resultTitle": "Kết quả áp dụng",
       "applied": "Đã áp dụng",
-      "advisory": "Chỉ tham khảo",
+      "advisory": "Chỉ ghi chú",
       "skipped": "Bỏ qua",
-      "failed": "Lỗi"
+      "failed": "Lỗi",
+      "outcomes": {
+        "APPLIED": "Đã áp dụng vào lịch nháp",
+        "ADVISORY_ONLY": "Chỉ ghi chú",
+        "SKIPPED_ALREADY_APPLIED": "Đã áp dụng trước đó",
+        "FAILED": "Không áp dụng được"
+      }
     },
     "actions": {
-      "approve": "Duyệt đã chọn",
+      "approve": "Phê duyệt đã chọn",
       "reject": "Từ chối đã chọn",
       "cancel": "Hủy đã chọn",
-      "apply": "Áp dụng vào roster nháp"
+      "apply": "Áp dụng vào lịch nháp"
     },
     "table": {
       "review": "Duyệt",
@@ -457,9 +499,9 @@
       "type": "Loại",
       "date": "Ngày",
       "status": "Trạng thái",
-      "applyStatus": "Trạng thái áp dụng",
+      "applyStatus": "Áp dụng",
       "policy": "Đánh giá chính sách",
-      "refs": "Tham chiếu roster"
+      "refs": "Tham chiếu lịch nháp"
     },
     "types": {
       "UNAVAILABLE_FULL_DAY": "Không khả dụng cả ngày",
@@ -474,15 +516,15 @@
     },
     "validation": {
       "reasonRequired": "Cần lý do để từ chối hoặc hủy.",
-      "applySelectionRequired": "Chọn dòng đã duyệt và một Monthly Roster nháp."
+      "applySelectionRequired": "Chọn dòng đã duyệt và một lịch nháp."
     },
     "states": {
       "loadErrorTitle": "Không tải được hàng đợi khả dụng",
       "loadErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu batch khả dụng.",
-      "emptyTitle": "Không có batch khả dụng",
-      "emptyMessage": "Điều chỉnh bộ lọc hoặc chờ quản lý gửi.",
-      "selectTitle": "Chọn batch khả dụng",
-      "selectMessage": "Chọn một batch để duyệt các dòng khả dụng đã gửi."
+      "emptyTitle": "Không có lịch rảnh/bận",
+      "emptyMessage": "Điều chỉnh bộ lọc hoặc chờ quản lý gửi lịch rảnh/bận.",
+      "selectTitle": "Chọn lịch rảnh/bận",
+      "selectMessage": "Chọn một lô để duyệt các dòng lịch rảnh/bận đã gửi."
     }
   },
   "patterns": {

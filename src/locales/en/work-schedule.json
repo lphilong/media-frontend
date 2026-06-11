@@ -373,6 +373,8 @@
     },
     "decisions": {
       "title": "Selected-line decision",
+      "selectedContext": "{{count}} pending request lines selected.",
+      "helper": "The decision applies only to selected request lines. Approval may apply the shift change after backend checks; rejection or cancellation requires a reason.",
       "approvalNote": "Approval note (optional)",
       "reason": "Rejection or cancellation reason"
     },
@@ -409,8 +411,10 @@
     },
     "copy": {
       "planning": "Availability is planning input before roster publish, not attendance or payroll evidence.",
-      "applyDraftOnly": "Apply sends selected approved lines to Draft Monthly Roster exceptions.",
-      "publishStillRequired": "Publishing the roster is still required before official WorkShifts are generated."
+      "approvedNotChanged": "Approved does not mean the schedule has changed.",
+      "applyDraftOnly": "Applied only affects the draft roster.",
+      "publishStillRequired": "Official shifts exist only after publish.",
+      "officialShiftBoundary": "Official shifts are work plans, not attendance or payroll."
     },
     "filters": {
       "status": "Status",
@@ -429,13 +433,44 @@
       "policy": "Policy",
       "approvedNotApplied": "Approved not applied"
     },
+    "targetTypes": {
+      "ORG_UNIT": "Org Unit",
+      "TALENT_GROUP": "Talent Group"
+    },
+    "statuses": {
+      "PENDING": "Pending review",
+      "PARTIALLY_APPROVED": "Partially approved",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "lineStatuses": {
+      "PENDING": "Pending review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "applyStatuses": {
+      "NOT_APPLIED": "Approved, not applied",
+      "ADVISORY_ONLY": "Advisory only",
+      "APPLIED": "Applied to draft roster"
+    },
+    "policyStatuses": {
+      "NOT_EVALUATED": "Policy not evaluated"
+    },
+    "lineCounts": {
+      "summary": "{{pending}} pending / {{approved}} approved / {{cancelled}} cancelled / {{total}} total"
+    },
     "review": {
       "title": "Review selected pending lines",
+      "selectedContext": "{{count}} availability lines selected for review.",
+      "helper": "Approval changes availability line status only. Reject or cancel needs the current reason field.",
       "note": "Decision note",
       "reason": "Reject/cancel reason"
     },
     "apply": {
       "title": "Apply selected approved lines",
+      "selectedContext": "{{count}} approved lines selected for draft roster apply.",
       "roster": "Draft Monthly Roster",
       "selectRoster": "Select draft roster",
       "note": "Apply note",
@@ -443,7 +478,13 @@
       "applied": "Applied",
       "advisory": "Advisory only",
       "skipped": "Skipped",
-      "failed": "Failed"
+      "failed": "Failed",
+      "outcomes": {
+        "APPLIED": "Applied to draft roster",
+        "ADVISORY_ONLY": "Advisory only",
+        "SKIPPED_ALREADY_APPLIED": "Already applied",
+        "FAILED": "Failed to apply"
+      }
     },
     "actions": {
       "approve": "Approve selected",
