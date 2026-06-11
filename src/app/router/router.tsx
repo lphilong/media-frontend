@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from 'react';
+import { Suspense, type ComponentType, type LazyExoticComponent } from 'react';
 import { createBrowserRouter, Navigate, useParams, type RouteObject } from 'react-router-dom';
 
 import { RequireAuth } from '@app/guards/RequireAuth';
@@ -12,7 +12,14 @@ import {
 import { moduleRouteDefinitions, type ModuleRouteDefinition } from '@app/router/module-definitions';
 import { canAccessModule, type ModuleAccessModuleId } from '@app/router/module-access';
 import { APP_PATHS } from '@app/router/paths';
-import { AuthCallbackPage, ForbiddenPage, LoginPage, NotFoundPage } from '@app/router/system-pages';
+import { lazyRoute as lazy } from '@app/router/lazy-route';
+import {
+  AuthCallbackPage,
+  ForbiddenPage,
+  LoginPage,
+  NotFoundPage,
+  RouteErrorPage,
+} from '@app/router/system-pages';
 import type { NormalizedApiError } from '@shared/api';
 import {
   hasAnyPermission,
@@ -539,6 +546,7 @@ export const appRoutes: RouteObject[] = [
   },
   {
     path: APP_PATHS.root,
+    errorElement: <RouteErrorPage />,
     element: (
       <RequireAuth>
         <AdminShellLayout />
@@ -596,10 +604,7 @@ export const appRoutes: RouteObject[] = [
       },
       {
         path: APP_PATHS.workScheduleRequestBatches.replace(/^\//, ''),
-        element: withModuleAccess(
-          'work-schedule',
-          <LazyWorkScheduleRequestBatchQueueElement />,
-        ),
+        element: withModuleAccess('work-schedule', <LazyWorkScheduleRequestBatchQueueElement />),
         handle: {
           breadcrumbKey: 'work-schedule:rosterNav.requestBatches',
           titleKey: 'work-schedule:requestBatches.page.title',

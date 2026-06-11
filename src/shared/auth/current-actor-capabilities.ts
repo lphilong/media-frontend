@@ -35,6 +35,10 @@ export const PERMISSIONS = {
   ORG_UNIT_MANAGE_HIERARCHY: 'orgUnit.manageHierarchy',
   ORG_UNIT_MANAGE_LIFECYCLE: 'orgUnit.manageLifecycle',
   EMPLOYMENT_PROFILE_READ: 'employmentProfile.read',
+  EMPLOYMENT_TERMS_READ: 'employmentTerms.read',
+  EMPLOYMENT_TERMS_READ_SENSITIVE: 'employmentTerms.readSensitive',
+  EMPLOYMENT_TERMS_MANAGE_DRAFT: 'employmentTerms.manageDraft',
+  EMPLOYMENT_TERMS_APPROVE: 'employmentTerms.approve',
   EMPLOYMENT_PROFILE_CREATE: 'employmentProfile.create',
   EMPLOYMENT_PROFILE_UPDATE: 'employmentProfile.update',
   EMPLOYMENT_PROFILE_LOOKUP: 'employmentProfile.lookup',
@@ -327,23 +331,25 @@ export const applyActionCapabilityHints = <TItem extends CapabilityAwareActionIt
   items: readonly TItem[],
   hints: Readonly<Record<string, ActionCapabilityHint | undefined>>,
 ): TItem[] =>
-  items.map((item) => {
-    const hint = hints[item.id];
-    if (hint?.hidden) {
-      return undefined;
-    }
+  items
+    .map((item) => {
+      const hint = hints[item.id];
+      if (hint?.hidden) {
+        return undefined;
+      }
 
-    if (item.disabled || item.disabledReason) {
-      return item;
-    }
+      if (item.disabled || item.disabledReason) {
+        return item;
+      }
 
-    if (!hint?.disabled) {
-      return item;
-    }
+      if (!hint?.disabled) {
+        return item;
+      }
 
-    return {
-      ...item,
-      disabled: true,
-      disabledReason: hint.disabledReason,
-    };
-  }).filter((item): item is TItem => Boolean(item));
+      return {
+        ...item,
+        disabled: true,
+        disabledReason: hint.disabledReason,
+      };
+    })
+    .filter((item): item is TItem => Boolean(item));

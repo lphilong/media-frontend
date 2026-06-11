@@ -24,6 +24,10 @@ import {
   resetPeopleReadinessMockData,
 } from '@test/msw/people-readiness-handlers';
 import { resetSelfServiceMockData, selfServiceHandlers } from '@test/msw/self-service-handlers';
+import {
+  employmentTermsHandlers,
+  resetEmploymentTermsMockData,
+} from '@test/msw/employment-terms-handlers';
 
 type OrgUnitStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 
@@ -69,11 +73,7 @@ type OrgUnitResponsibilityRecord = {
   updatedAt: number;
 };
 
-const orgUnitResponsibilityRoles = [
-  'DEPARTMENT_OWNER',
-  'UNIT_MANAGER',
-  'UNIT_OPERATOR',
-] as const;
+const orgUnitResponsibilityRoles = ['DEPARTMENT_OWNER', 'UNIT_MANAGER', 'UNIT_OPERATOR'] as const;
 
 const orgUnitResponsibilityUpdateFields = [
   'role',
@@ -513,6 +513,7 @@ export const resetMockData = (): void => {
   resetSelfServiceMockData();
   resetManagerWorkspaceMockData();
   resetPeopleReadinessMockData();
+  resetEmploymentTermsMockData();
 };
 
 const readOrgUnit = (orgUnitId: string): OrgUnitRecord | undefined =>
@@ -1772,4 +1773,5 @@ export const handlers = [
   ...selfServiceHandlers,
   ...managerWorkspaceHandlers,
   ...peopleReadinessHandlers,
+  ...employmentTermsHandlers,
 ];

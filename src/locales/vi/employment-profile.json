@@ -268,6 +268,78 @@
     "reactivate": "Kích hoạt lại hồ sơ nhân sự này?",
     "archive": "Lưu trữ hồ sơ nhân sự này?"
   },
+  "employmentTerms": {
+    "title": "Điều khoản làm việc / lương",
+    "subtitle": "Điều khoản làm việc có cấu trúc theo ngày hiệu lực và điều kiện làm nguồn bảng lương.",
+    "version": "Phiên bản {{version}}",
+    "eligible": "Đủ điều kiện làm nguồn bảng lương",
+    "notEligible": "Không đủ điều kiện làm nguồn bảng lương",
+    "redacted": "Đã che thông tin lương",
+    "sensitivePermission": "Số tiền đã được ẩn. Cần quyền xem dữ liệu nhạy cảm để xem hoặc chỉnh sửa.",
+    "accessRequired": "Cần quyền chuyên biệt về Điều khoản làm việc. Không có dữ liệu điều khoản hoặc tiền lương nào được tải.",
+    "allowanceNumber": "Phụ cấp {{number}}",
+    "fields": {
+      "effectiveDates": "Ngày hiệu lực",
+      "effectiveFrom": "Ngày hiệu lực",
+      "effectiveTo": "Ngày hết hiệu lực",
+      "baseSalary": "Lương cơ bản",
+      "payFrequency": "Kỳ trả lương",
+      "currency": "Tiền tệ",
+      "payrollEligible": "Điều kiện đưa vào nguồn bảng lương",
+      "sourceNote": "Nguồn xác nhận",
+      "updatedAt": "Thời điểm cập nhật",
+      "allowances": "Phụ cấp",
+      "allowanceType": "Loại phụ cấp",
+      "allowanceLabel": "Tên phụ cấp",
+      "allowanceAmount": "Số tiền phụ cấp"
+    },
+    "statuses": {
+      "DRAFT": "Bản nháp",
+      "PENDING_APPROVAL": "Chờ duyệt",
+      "APPROVED": "Đã duyệt",
+      "SUPERSEDED": "Đã được thay thế",
+      "CANCELLED": "Đã hủy"
+    },
+    "payFrequencies": { "MONTHLY": "Hàng tháng" },
+    "actions": {
+      "create": "Tạo bản nháp",
+      "update": "Cập nhật bản nháp",
+      "submit": "Gửi duyệt",
+      "approve": "Duyệt",
+      "cancel": "Hủy",
+      "details": "Xem chi tiết",
+      "save": "Lưu bản nháp",
+      "addAllowance": "Thêm phụ cấp",
+      "removeAllowance": "Xóa phụ cấp"
+    },
+    "empty": {
+      "title": "Không có điều khoản làm việc / lương",
+      "message": "Tạo bản nháp khi có điều khoản có cấu trúc đã được xác nhận.",
+      "allowances": "Không có phụ cấp."
+    },
+    "form": { "title": "Bản nháp điều khoản làm việc / lương" },
+    "validation": {
+      "required": "Thiếu trường bắt buộc.",
+      "dateRange": "Ngày hết hiệu lực không được trước ngày hiệu lực.",
+      "nonNegative": "Số tiền không được âm.",
+      "currency": "Tiền tệ phải gồm đúng ba chữ cái viết hoa.",
+      "allowanceCount": "Hỗ trợ tối đa 20 phụ cấp.",
+      "allowanceFields": "Loại và tên phụ cấp là bắt buộc và phải đúng giới hạn.",
+      "sourceNote": "Nguồn xác nhận tối đa 500 ký tự."
+    },
+    "errors": {
+      "loadTitle": "Không tải được điều khoản làm việc / lương",
+      "loadMessage": "Không tải được dữ liệu điều khoản làm việc / lương.",
+      "conflict": "Hành động xung đột với quy tắc người tạo/người duyệt hoặc điều khoản đã duyệt bị chồng lấn."
+    },
+    "feedback": {
+      "created": "Đã tạo bản nháp điều khoản.",
+      "updated": "Đã cập nhật bản nháp điều khoản.",
+      "submit": "Đã gửi điều khoản để duyệt.",
+      "approve": "Đã duyệt điều khoản.",
+      "cancel": "Đã hủy điều khoản."
+    }
+  },
   "actionRail": {
     "title": "Hành động hồ sơ nhân sự"
   }

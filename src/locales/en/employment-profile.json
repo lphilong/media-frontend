@@ -268,6 +268,78 @@
     "reactivate": "Reactivate this employment profile?",
     "archive": "Archive this employment profile?"
   },
+  "employmentTerms": {
+    "title": "Employment terms / salary",
+    "subtitle": "Structured effective-dated employment terms and payroll source eligibility.",
+    "version": "Version {{version}}",
+    "eligible": "Eligible for payroll source",
+    "notEligible": "Not eligible for payroll source",
+    "redacted": "Salary information redacted",
+    "sensitivePermission": "Amounts are hidden. Sensitive salary access is required to view or edit them.",
+    "accessRequired": "Dedicated Employment Terms permission is required. No terms or salary data was loaded.",
+    "allowanceNumber": "Allowance {{number}}",
+    "fields": {
+      "effectiveDates": "Effective dates",
+      "effectiveFrom": "Effective from",
+      "effectiveTo": "Effective to",
+      "baseSalary": "Base salary",
+      "payFrequency": "Pay frequency",
+      "currency": "Currency",
+      "payrollEligible": "Payroll eligibility",
+      "sourceNote": "Source note",
+      "updatedAt": "Updated at",
+      "allowances": "Allowances",
+      "allowanceType": "Allowance type",
+      "allowanceLabel": "Allowance label",
+      "allowanceAmount": "Allowance amount"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "PENDING_APPROVAL": "Pending approval",
+      "APPROVED": "Approved",
+      "SUPERSEDED": "Superseded",
+      "CANCELLED": "Cancelled"
+    },
+    "payFrequencies": { "MONTHLY": "Monthly" },
+    "actions": {
+      "create": "Create draft",
+      "update": "Update draft",
+      "submit": "Submit for approval",
+      "approve": "Approve",
+      "cancel": "Cancel",
+      "details": "View details",
+      "save": "Save draft",
+      "addAllowance": "Add allowance",
+      "removeAllowance": "Remove allowance"
+    },
+    "empty": {
+      "title": "No employment terms / salary",
+      "message": "Create a draft when confirmed structured terms are available.",
+      "allowances": "No allowances."
+    },
+    "form": { "title": "Employment terms draft" },
+    "validation": {
+      "required": "Required fields are missing.",
+      "dateRange": "End date must not be before effective date.",
+      "nonNegative": "Amounts must be non-negative.",
+      "currency": "Currency must be exactly three uppercase letters.",
+      "allowanceCount": "A maximum of 20 allowances is supported.",
+      "allowanceFields": "Allowance type and label are required and must stay within their limits.",
+      "sourceNote": "Source notes must be at most 500 characters."
+    },
+    "errors": {
+      "loadTitle": "Unable to load employment terms",
+      "loadMessage": "Employment terms could not be loaded.",
+      "conflict": "The action conflicts with maker/checker or overlapping approved terms."
+    },
+    "feedback": {
+      "created": "Employment terms draft created.",
+      "updated": "Employment terms draft updated.",
+      "submit": "Employment terms submitted for approval.",
+      "approve": "Employment terms approved.",
+      "cancel": "Employment terms cancelled."
+    }
+  },
   "actionRail": {
     "title": "Employment Actions"
   }

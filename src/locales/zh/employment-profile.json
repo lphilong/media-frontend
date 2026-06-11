@@ -268,6 +268,78 @@
     "reactivate": "重新启用此员工档案？",
     "archive": "归档此员工档案？"
   },
+  "employmentTerms": {
+    "title": "工作条款 / 薪资",
+    "subtitle": "按生效日期管理的结构化工作条款和薪资来源资格。",
+    "version": "版本 {{version}}",
+    "eligible": "符合薪资来源条件",
+    "notEligible": "不符合薪资来源条件",
+    "redacted": "薪资信息已隐藏",
+    "sensitivePermission": "金额已隐藏。需要敏感薪资权限才能查看或编辑。",
+    "accessRequired": "需要专用的工作条款权限。未加载任何条款或薪资数据。",
+    "allowanceNumber": "津贴 {{number}}",
+    "fields": {
+      "effectiveDates": "生效日期",
+      "effectiveFrom": "生效日期",
+      "effectiveTo": "结束日期",
+      "baseSalary": "基本工资",
+      "payFrequency": "发薪周期",
+      "currency": "币种",
+      "payrollEligible": "薪资来源资格",
+      "sourceNote": "来源说明",
+      "updatedAt": "更新时间",
+      "allowances": "津贴",
+      "allowanceType": "津贴类型",
+      "allowanceLabel": "津贴名称",
+      "allowanceAmount": "津贴金额"
+    },
+    "statuses": {
+      "DRAFT": "草稿",
+      "PENDING_APPROVAL": "待审批",
+      "APPROVED": "已批准",
+      "SUPERSEDED": "已替代",
+      "CANCELLED": "已取消"
+    },
+    "payFrequencies": { "MONTHLY": "每月" },
+    "actions": {
+      "create": "创建草稿",
+      "update": "更新草稿",
+      "submit": "提交审批",
+      "approve": "批准",
+      "cancel": "取消",
+      "details": "查看详情",
+      "save": "保存草稿",
+      "addAllowance": "添加津贴",
+      "removeAllowance": "移除津贴"
+    },
+    "empty": {
+      "title": "没有工作条款 / 薪资",
+      "message": "有已确认的结构化条款时创建草稿。",
+      "allowances": "没有津贴。"
+    },
+    "form": { "title": "工作条款草稿" },
+    "validation": {
+      "required": "缺少必填字段。",
+      "dateRange": "结束日期不能早于生效日期。",
+      "nonNegative": "金额不能为负数。",
+      "currency": "币种必须是三个大写字母。",
+      "allowanceCount": "最多支持 20 项津贴。",
+      "allowanceFields": "津贴类型和名称为必填项，并且必须符合长度限制。",
+      "sourceNote": "来源说明最多 500 个字符。"
+    },
+    "errors": {
+      "loadTitle": "无法加载工作条款",
+      "loadMessage": "无法加载工作条款数据。",
+      "conflict": "该操作与制单审批分离规则或已批准条款重叠冲突。"
+    },
+    "feedback": {
+      "created": "工作条款草稿已创建。",
+      "updated": "工作条款草稿已更新。",
+      "submit": "工作条款已提交审批。",
+      "approve": "工作条款已批准。",
+      "cancel": "工作条款已取消。"
+    }
+  },
   "actionRail": {
     "title": "员工操作"
   }

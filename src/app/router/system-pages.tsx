@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate, useRouteError } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
 import { useAuth } from '@shared/auth/auth-context';
 import { resolveReturnTarget } from '@shared/auth/return-target';
+import { captureError } from '@shared/monitoring';
 import {
   ErrorState,
   LoadingState,
@@ -198,6 +199,30 @@ export const NotFoundPage = (): JSX.Element => {
   return (
     <PageContainer>
       <NotFoundState />
+    </PageContainer>
+  );
+};
+
+export const RouteErrorPage = (): JSX.Element => {
+  const { t } = useTranslation(['common', 'errors']);
+  const error = useRouteError();
+
+  useEffect(() => {
+    captureError(error instanceof Error ? error : new Error('Route rendering failed'), {
+      category: 'route',
+      routePath: window.location.pathname,
+      moduleSurface: 'route-error-element',
+    });
+  }, [error]);
+
+  return (
+    <PageContainer>
+      <ErrorState
+        title={t('errors:unexpected.title')}
+        message={t('errors:unexpected.message')}
+        actionLabel={t('common:actions.reload')}
+        onRetry={() => window.location.reload()}
+      />
     </PageContainer>
   );
 };

@@ -12,6 +12,7 @@ import {
   buildWorkShiftsBySubjectEmploymentProfileHref,
 } from '@app/router/reference-links';
 import { createEmploymentProfileActionRailItems } from '@modules/employment-profile/actions/employment-profile-action-rail';
+import { EmploymentTermsSection } from '@modules/employment-terms/components/EmploymentTermsSection';
 import {
   EmploymentProfileContractStatusSurface,
   EmploymentProfileEditSurface,
@@ -1143,6 +1144,7 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                 </div>
               </div>
             </RelatedSectionShell>
+            <EmploymentTermsSection employmentProfileId={record.id} />
           </div>
         ) : undefined
       }
