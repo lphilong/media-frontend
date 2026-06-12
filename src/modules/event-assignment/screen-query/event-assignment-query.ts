@@ -34,7 +34,7 @@ const sortDirectionSchema = z
   .optional();
 
 const eventStatusSchema = z
-  .enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ARCHIVED'])
+  .enum(['DRAFT', 'PLANNED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'ARCHIVED'])
   .optional();
 const eventStatusGroupSchema = z.literal('ACTIVE').optional();
 const assignmentKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP']).optional();

@@ -4,6 +4,7 @@ import {
   createEvent,
   fetchEventAssignments,
   fetchEventDetail,
+  fetchEventStudioBookings,
   fetchEvents,
   fetchEventsByAssignment,
   fetchEventsByPlatform,
@@ -11,7 +12,6 @@ import {
   performEventLifecycleAction,
   replaceEventAssignments,
   replaceEventPlatformAccounts,
-  replaceEventStudioResources,
   rescheduleEvent,
   updateEvent,
 } from '@modules/event-assignment/api/event-assignment.api';
@@ -21,10 +21,10 @@ import type {
   EventByResourceQuery,
   EventCreatePayload,
   EventLifecycleAction,
+  EventLifecyclePayload,
   EventListQuery,
   EventReplaceAssignmentsPayload,
   EventReplacePlatformAccountsPayload,
-  EventReplaceStudioResourcesPayload,
   EventReschedulePayload,
   EventUpdatePayload,
 } from '@modules/event-assignment/types/event-assignment.types';
@@ -62,6 +62,7 @@ export const eventAssignmentQueryKeys = {
     ['event-assignment', 'by-platform', toByPlatformQueryToken(query)] as const,
   detail: (eventId: string) => ['event-assignment', 'detail', eventId] as const,
   assignments: (eventId: string) => ['event-assignment', 'assignments', eventId] as const,
+  studioBookings: (eventId: string) => ['event-assignment', 'studio-bookings', eventId] as const,
 };
 
 export const useEventFlatList = (query: EventListQuery, options?: { enabled?: boolean }) => {
@@ -125,6 +126,16 @@ export const useEventAssignments = (eventId?: string) => {
   });
 };
 
+export const useEventStudioBookings = (eventId?: string) => {
+  return useQuery({
+    queryKey: eventId
+      ? eventAssignmentQueryKeys.studioBookings(eventId)
+      : [...EVENT_ASSIGNMENT_QUERY_ROOT, 'studio-bookings'],
+    queryFn: () => fetchEventStudioBookings(eventId ?? ''),
+    enabled: Boolean(eventId),
+  });
+};
+
 const invalidateEventAssignmentQueries = async (queryClient: ReturnType<typeof useQueryClient>) => {
   await queryClient.invalidateQueries({ queryKey: EVENT_ASSIGNMENT_QUERY_ROOT });
 };
@@ -181,23 +192,6 @@ export const useReplaceEventAssignmentsMutation = () => {
   });
 };
 
-export const useReplaceEventStudioResourcesMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      eventId,
-      payload,
-    }: {
-      eventId: string;
-      payload: EventReplaceStudioResourcesPayload;
-    }) => replaceEventStudioResources(eventId, payload),
-    onSuccess: async () => {
-      await invalidateEventAssignmentQueries(queryClient);
-    },
-  });
-};
-
 export const useReplaceEventPlatformAccountsMutation = () => {
   const queryClient = useQueryClient();
 
@@ -219,8 +213,15 @@ export const useEventLifecycleMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ eventId, action }: { eventId: string; action: EventLifecycleAction }) =>
-      performEventLifecycleAction(eventId, action),
+    mutationFn: ({
+      eventId,
+      action,
+      payload,
+    }: {
+      eventId: string;
+      action: EventLifecycleAction;
+      payload?: EventLifecyclePayload;
+    }) => performEventLifecycleAction(eventId, action, payload),
     onSuccess: async () => {
       await invalidateEventAssignmentQueries(queryClient);
     },

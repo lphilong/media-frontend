@@ -4,6 +4,7 @@ import type {
   ManagerAvailabilityBatchDetail,
   ManagerAvailabilityBatchListItem,
   ManagerAvailabilityTargetMembers,
+  ManagerEventSummary,
   ManagerRequestBatchDetail,
   ManagerRequestBatchListItem,
   ManagerWorkspaceContext,
@@ -50,7 +51,7 @@ const baseContext = (): ManagerWorkspaceContext => ({
     },
     events: {
       visible: false,
-      reason: 'NOT_ENABLED_IN_MANAGER_WORKSPACE_YET',
+      reason: 'NO_MANAGED_SCOPE_ASSIGNED',
     },
     members: {
       visible: false,
@@ -104,6 +105,9 @@ export const managerWorkspaceOrgUnitOnlyContext = (): ManagerWorkspaceContext =>
       visible: true,
       unitKpiVisible: true,
       talentGroupKpiVisible: false,
+    },
+    events: {
+      visible: true,
     },
   },
 });
@@ -164,6 +168,9 @@ export const managerWorkspaceOrgUnitNoKpiCapabilityContext = (): ManagerWorkspac
       unitKpiVisible: false,
       talentGroupKpiVisible: false,
     },
+    events: {
+      visible: true,
+    },
   },
   readiness: {
     canUseManagerWorkspace: true,
@@ -193,6 +200,9 @@ export const managerWorkspaceTalentGroupOnlyContext = (): ManagerWorkspaceContex
       unitKpiVisible: false,
       talentGroupKpiVisible: true,
     },
+    events: {
+      visible: true,
+    },
   },
 });
 
@@ -212,6 +222,9 @@ export const managerWorkspaceDualContext = (): ManagerWorkspaceContext => {
         visible: true,
         unitKpiVisible: true,
         talentGroupKpiVisible: true,
+      },
+      events: {
+        visible: true,
       },
     },
   };
@@ -311,9 +324,85 @@ const defaultManagerAvailabilityTargets = (): ManagerAvailabilityTargetMembers[]
   },
 ];
 
+const defaultManagerEvents = (): ManagerEventSummary[] => [
+  {
+    id: 'manager-event-001',
+    eventCode: 'EVT-202606-000101',
+    title: 'Studio launch rehearsal',
+    status: 'CONFIRMED',
+    eventStartAt: Date.parse('2026-06-15T09:00:00+07:00'),
+    eventEndAt: Date.parse('2026-06-15T12:00:00+07:00'),
+    owner: {
+      id: 'ep-owner-001',
+      code: 'EP-OPS-001',
+      displayName: 'Ops Owner',
+      name: 'Ops Owner',
+    },
+    participants: [
+      {
+        id: 'ep-org-member',
+        code: 'EP-ORG-001',
+        displayName: 'Org Unit Member',
+        name: 'Org Unit Member',
+      },
+    ],
+    studioBookings: [
+      {
+        id: 'booking-manager-001',
+        status: 'CONFIRMED',
+        bookingStartAt: Date.parse('2026-06-15T08:30:00+07:00'),
+        bookingEndAt: Date.parse('2026-06-15T12:30:00+07:00'),
+        resource: {
+          id: 'studio-001',
+          code: 'ST-A',
+          displayName: 'Studio A',
+          name: 'Studio A',
+        },
+      },
+    ],
+  },
+  {
+    id: 'manager-event-002',
+    eventCode: 'EVT-202606-000102',
+    title: 'Creator group shoot',
+    status: 'PLANNED',
+    eventStartAt: Date.parse('2026-06-18T14:00:00+07:00'),
+    eventEndAt: Date.parse('2026-06-18T16:00:00+07:00'),
+    owner: {
+      id: 'ep-owner-002',
+      code: 'EP-OPS-002',
+      displayName: 'Studio Coordinator',
+      name: 'Studio Coordinator',
+    },
+    participants: [
+      {
+        id: 'ep-group-member',
+        code: 'EP-TG-001',
+        displayName: 'Talent Group Member',
+        name: 'Talent Group Member',
+      },
+    ],
+    studioBookings: [
+      {
+        id: 'booking-manager-002',
+        status: 'HELD',
+        bookingStartAt: Date.parse('2026-06-18T13:30:00+07:00'),
+        bookingEndAt: Date.parse('2026-06-18T16:30:00+07:00'),
+        resource: {
+          id: 'studio-002',
+          code: 'ST-B',
+          displayName: 'Studio B',
+          name: 'Studio B',
+        },
+      },
+    ],
+  },
+];
+
 let managerWorkspaceContext = managerWorkspaceDualContext();
 let managerWorkShifts = defaultManagerWorkShifts();
 let managerAvailabilityTargets = defaultManagerAvailabilityTargets();
+let managerEvents = defaultManagerEvents();
 let managerRequestBatchSeed = 1;
 let managerRequestBatches: ManagerRequestBatchDetail[] = [];
 let managerAvailabilityBatchSeed = 1;
@@ -343,14 +432,18 @@ const recalculateLineCounts = (batch: ManagerRequestBatchDetail) => {
     failedToApply: batch.lines.filter((line) => line.status === 'FAILED_TO_APPLY').length,
   };
   const resolved =
-    counts.pending === 0 ? (counts.approved > 0 && counts.approved < counts.total ? 'PARTIALLY_APPROVED' : undefined) : undefined;
+    counts.pending === 0
+      ? counts.approved > 0 && counts.approved < counts.total
+        ? 'PARTIALLY_APPROVED'
+        : undefined
+      : undefined;
   return {
     ...batch,
     lineCounts: counts,
     status:
       counts.pending > 0
         ? batch.status
-        : resolved ?? (counts.cancelled === counts.total ? 'CANCELLED' : batch.status),
+        : (resolved ?? (counts.cancelled === counts.total ? 'CANCELLED' : batch.status)),
     updatedAt: Date.now(),
   } satisfies ManagerRequestBatchDetail;
 };
@@ -561,6 +654,7 @@ export const resetManagerWorkspaceMockData = (): void => {
   managerWorkspaceContext = managerWorkspaceDualContext();
   managerWorkShifts = defaultManagerWorkShifts();
   managerAvailabilityTargets = defaultManagerAvailabilityTargets();
+  managerEvents = defaultManagerEvents();
   managerRequestBatchSeed = 1;
   managerRequestBatches = seedManagerRequestBatches();
   managerAvailabilityBatchSeed = 1;
@@ -590,6 +684,31 @@ export const managerWorkspaceHandlers = [
   http.get('*/admin/manager-workspace/context', () =>
     HttpResponse.json({ data: managerWorkspaceContext }),
   ),
+  http.get('*/admin/manager-workspace/events', () => {
+    if (!managerWorkspaceContext.modules.events.visible) {
+      return HttpResponse.json(
+        { message: 'manager-workspace:events.noScopeMessage' },
+        { status: 403 },
+      );
+    }
+    return HttpResponse.json({ data: { items: managerEvents } });
+  }),
+  http.get('*/admin/manager-workspace/events/:eventId', ({ params }) => {
+    if (!managerWorkspaceContext.modules.events.visible) {
+      return HttpResponse.json(
+        { message: 'manager-workspace:events.noScopeMessage' },
+        { status: 403 },
+      );
+    }
+    const event = managerEvents.find((item) => item.id === params.eventId);
+    if (!event) {
+      return HttpResponse.json(
+        { message: 'manager-workspace:events.notFoundMessage' },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({ data: event });
+  }),
   http.get('*/admin/manager-workspace/work-schedule/work-shifts', () =>
     HttpResponse.json({ data: managerWorkShifts }),
   ),
@@ -597,17 +716,17 @@ export const managerWorkspaceHandlers = [
     const url = new URL(request.url);
     const targetType = url.searchParams.get('targetType');
     const targetId = url.searchParams.get('targetId');
-    if (
-      (targetType !== 'ORG_UNIT' && targetType !== 'TALENT_GROUP') ||
-      !targetId
-    ) {
+    if ((targetType !== 'ORG_UNIT' && targetType !== 'TALENT_GROUP') || !targetId) {
       return HttpResponse.json({ message: 'invalid target' }, { status: 422 });
     }
     const data = managerAvailabilityTargets.find(
       (target) => target.target.targetType === targetType && target.target.targetId === targetId,
     );
     if (!data) {
-      return HttpResponse.json({ message: 'target has no eligible availability members' }, { status: 422 });
+      return HttpResponse.json(
+        { message: 'target has no eligible availability members' },
+        { status: 422 },
+      );
     }
     return HttpResponse.json({ data });
   }),
@@ -621,13 +740,16 @@ export const managerWorkspaceHandlers = [
       .map(managerAvailabilityBatchToListItem);
     return HttpResponse.json({ data: { items } });
   }),
-  http.get('*/admin/manager-workspace/work-schedule/availability-batches/:batchId', ({ params }) => {
-    const batch = managerAvailabilityBatches.find((item) => item.id === String(params.batchId));
-    if (!batch) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    return HttpResponse.json({ data: batch });
-  }),
+  http.get(
+    '*/admin/manager-workspace/work-schedule/availability-batches/:batchId',
+    ({ params }) => {
+      const batch = managerAvailabilityBatches.find((item) => item.id === String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      return HttpResponse.json({ data: batch });
+    },
+  ),
   http.post('*/admin/manager-workspace/work-schedule/availability-batches', async ({ request }) => {
     const body = (await request.json()) as {
       periodMonth?: string;
@@ -706,9 +828,12 @@ export const managerWorkspaceHandlers = [
           batchId,
           lineNo: index + 1,
           member,
-          availabilityType: line.availabilityType as ManagerAvailabilityBatchDetail['lines'][number]['availabilityType'],
-          taxonomyCode: line.taxonomyCode as ManagerAvailabilityBatchDetail['lines'][number]['taxonomyCode'],
-          availabilityDate: typeof line.availabilityDate === 'string' ? line.availabilityDate : null,
+          availabilityType:
+            line.availabilityType as ManagerAvailabilityBatchDetail['lines'][number]['availabilityType'],
+          taxonomyCode:
+            line.taxonomyCode as ManagerAvailabilityBatchDetail['lines'][number]['taxonomyCode'],
+          availabilityDate:
+            typeof line.availabilityDate === 'string' ? line.availabilityDate : null,
           dateRangeStart: typeof line.dateRangeStart === 'string' ? line.dateRangeStart : null,
           dateRangeEnd: typeof line.dateRangeEnd === 'string' ? line.dateRangeEnd : null,
           preferredStartLocalTime:
@@ -737,56 +862,66 @@ export const managerWorkspaceHandlers = [
     managerAvailabilityBatches.unshift(batch);
     return HttpResponse.json({ data: batch });
   }),
-  http.post('*/admin/manager-workspace/work-schedule/availability-batches/:batchId/cancel', async ({ params, request }) => {
-    const body = (await request.json()) as { cancellationReason?: string };
-    const batchIndex = managerAvailabilityBatches.findIndex((item) => item.id === String(params.batchId));
-    if (batchIndex < 0) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    const now = Date.now();
-    const batch = managerAvailabilityBatches[batchIndex];
-    managerAvailabilityBatches[batchIndex] = recalculateAvailabilityLineCounts({
-      ...batch,
-      status: 'CANCELLED',
-      cancelledAt: now,
-      lines: batch.lines.map((line) =>
-        line.status === 'PENDING'
-          ? {
-              ...line,
-              status: 'CANCELLED',
-              cancellationReason: body.cancellationReason ?? 'Cancelled by manager',
-              cancelledAt: now,
-              updatedAt: now,
-            }
-          : line,
-      ),
-    });
-    return HttpResponse.json({ data: managerAvailabilityBatches[batchIndex] });
-  }),
-  http.post('*/admin/manager-workspace/work-schedule/availability-batches/:batchId/lines/:lineId/cancel', async ({ params, request }) => {
-    const body = (await request.json()) as { cancellationReason?: string };
-    const batchIndex = managerAvailabilityBatches.findIndex((item) => item.id === String(params.batchId));
-    if (batchIndex < 0) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    const now = Date.now();
-    const batch = managerAvailabilityBatches[batchIndex];
-    managerAvailabilityBatches[batchIndex] = recalculateAvailabilityLineCounts({
-      ...batch,
-      lines: batch.lines.map((line) =>
-        line.id === String(params.lineId) && line.status === 'PENDING'
-          ? {
-              ...line,
-              status: 'CANCELLED',
-              cancellationReason: body.cancellationReason ?? 'Cancelled by manager',
-              cancelledAt: now,
-              updatedAt: now,
-            }
-          : line,
-      ),
-    });
-    return HttpResponse.json({ data: managerAvailabilityBatches[batchIndex] });
-  }),
+  http.post(
+    '*/admin/manager-workspace/work-schedule/availability-batches/:batchId/cancel',
+    async ({ params, request }) => {
+      const body = (await request.json()) as { cancellationReason?: string };
+      const batchIndex = managerAvailabilityBatches.findIndex(
+        (item) => item.id === String(params.batchId),
+      );
+      if (batchIndex < 0) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const now = Date.now();
+      const batch = managerAvailabilityBatches[batchIndex];
+      managerAvailabilityBatches[batchIndex] = recalculateAvailabilityLineCounts({
+        ...batch,
+        status: 'CANCELLED',
+        cancelledAt: now,
+        lines: batch.lines.map((line) =>
+          line.status === 'PENDING'
+            ? {
+                ...line,
+                status: 'CANCELLED',
+                cancellationReason: body.cancellationReason ?? 'Cancelled by manager',
+                cancelledAt: now,
+                updatedAt: now,
+              }
+            : line,
+        ),
+      });
+      return HttpResponse.json({ data: managerAvailabilityBatches[batchIndex] });
+    },
+  ),
+  http.post(
+    '*/admin/manager-workspace/work-schedule/availability-batches/:batchId/lines/:lineId/cancel',
+    async ({ params, request }) => {
+      const body = (await request.json()) as { cancellationReason?: string };
+      const batchIndex = managerAvailabilityBatches.findIndex(
+        (item) => item.id === String(params.batchId),
+      );
+      if (batchIndex < 0) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const now = Date.now();
+      const batch = managerAvailabilityBatches[batchIndex];
+      managerAvailabilityBatches[batchIndex] = recalculateAvailabilityLineCounts({
+        ...batch,
+        lines: batch.lines.map((line) =>
+          line.id === String(params.lineId) && line.status === 'PENDING'
+            ? {
+                ...line,
+                status: 'CANCELLED',
+                cancellationReason: body.cancellationReason ?? 'Cancelled by manager',
+                cancelledAt: now,
+                updatedAt: now,
+              }
+            : line,
+        ),
+      });
+      return HttpResponse.json({ data: managerAvailabilityBatches[batchIndex] });
+    },
+  ),
   http.get('*/admin/manager-workspace/work-schedule/request-batches', ({ request }) => {
     const url = new URL(request.url);
     const periodMonth = url.searchParams.get('periodMonth');
@@ -856,7 +991,8 @@ export const managerWorkspaceHandlers = [
           member,
           workShiftId: typeof line.workShiftId === 'string' ? line.workShiftId : null,
           workShiftRef: null,
-          requestedStartAt: typeof line.requestedStartAt === 'number' ? line.requestedStartAt : null,
+          requestedStartAt:
+            typeof line.requestedStartAt === 'number' ? line.requestedStartAt : null,
           requestedEndAt: typeof line.requestedEndAt === 'number' ? line.requestedEndAt : null,
           timezone: 'Asia/Ho_Chi_Minh',
           title: typeof line.title === 'string' ? line.title : null,
@@ -881,42 +1017,64 @@ export const managerWorkspaceHandlers = [
     managerRequestBatches.unshift(batch);
     return HttpResponse.json({ data: batch });
   }),
-  http.post('*/admin/manager-workspace/work-schedule/request-batches/:batchId/cancel', async ({ params, request }) => {
-    const body = (await request.json()) as { cancellationReason?: string };
-    const batchIndex = managerRequestBatches.findIndex((item) => item.id === String(params.batchId));
-    if (batchIndex < 0) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    const now = Date.now();
-    const batch = managerRequestBatches[batchIndex];
-    managerRequestBatches[batchIndex] = recalculateLineCounts({
-      ...batch,
-      status: 'CANCELLED',
-      cancelledAt: now,
-      lines: batch.lines.map((line) =>
-        line.status === 'PENDING'
-          ? { ...line, status: 'CANCELLED', cancellationReason: body.cancellationReason ?? 'Cancelled by manager', cancelledAt: now, updatedAt: now }
-          : line,
-      ),
-    });
-    return HttpResponse.json({ data: managerRequestBatches[batchIndex] });
-  }),
-  http.post('*/admin/manager-workspace/work-schedule/request-batches/:batchId/lines/:lineId/cancel', async ({ params, request }) => {
-    const body = (await request.json()) as { cancellationReason?: string };
-    const batchIndex = managerRequestBatches.findIndex((item) => item.id === String(params.batchId));
-    if (batchIndex < 0) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    const now = Date.now();
-    const batch = managerRequestBatches[batchIndex];
-    managerRequestBatches[batchIndex] = recalculateLineCounts({
-      ...batch,
-      lines: batch.lines.map((line) =>
-        line.id === String(params.lineId) && line.status === 'PENDING'
-          ? { ...line, status: 'CANCELLED', cancellationReason: body.cancellationReason ?? 'Cancelled by manager', cancelledAt: now, updatedAt: now }
-          : line,
-      ),
-    });
-    return HttpResponse.json({ data: managerRequestBatches[batchIndex] });
-  }),
+  http.post(
+    '*/admin/manager-workspace/work-schedule/request-batches/:batchId/cancel',
+    async ({ params, request }) => {
+      const body = (await request.json()) as { cancellationReason?: string };
+      const batchIndex = managerRequestBatches.findIndex(
+        (item) => item.id === String(params.batchId),
+      );
+      if (batchIndex < 0) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const now = Date.now();
+      const batch = managerRequestBatches[batchIndex];
+      managerRequestBatches[batchIndex] = recalculateLineCounts({
+        ...batch,
+        status: 'CANCELLED',
+        cancelledAt: now,
+        lines: batch.lines.map((line) =>
+          line.status === 'PENDING'
+            ? {
+                ...line,
+                status: 'CANCELLED',
+                cancellationReason: body.cancellationReason ?? 'Cancelled by manager',
+                cancelledAt: now,
+                updatedAt: now,
+              }
+            : line,
+        ),
+      });
+      return HttpResponse.json({ data: managerRequestBatches[batchIndex] });
+    },
+  ),
+  http.post(
+    '*/admin/manager-workspace/work-schedule/request-batches/:batchId/lines/:lineId/cancel',
+    async ({ params, request }) => {
+      const body = (await request.json()) as { cancellationReason?: string };
+      const batchIndex = managerRequestBatches.findIndex(
+        (item) => item.id === String(params.batchId),
+      );
+      if (batchIndex < 0) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const now = Date.now();
+      const batch = managerRequestBatches[batchIndex];
+      managerRequestBatches[batchIndex] = recalculateLineCounts({
+        ...batch,
+        lines: batch.lines.map((line) =>
+          line.id === String(params.lineId) && line.status === 'PENDING'
+            ? {
+                ...line,
+                status: 'CANCELLED',
+                cancellationReason: body.cancellationReason ?? 'Cancelled by manager',
+                cancelledAt: now,
+                updatedAt: now,
+              }
+            : line,
+        ),
+      });
+      return HttpResponse.json({ data: managerRequestBatches[batchIndex] });
+    },
+  ),
 ];

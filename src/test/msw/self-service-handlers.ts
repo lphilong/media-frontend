@@ -33,7 +33,7 @@ type SelfServiceEvent = {
   eventId: string;
   eventCode: string;
   title: string;
-  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
+  status: 'PLANNED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
   startsAt: number;
   endsAt: number;
   ownAssignmentKind: 'EMPLOYMENT_PROFILE' | 'TALENT';
@@ -146,7 +146,7 @@ const selfServiceEventsFixtureSource = {
       eventId: 'event-self-talent',
       eventCode: 'EVT-SELF-TAL',
       title: 'Creator livestream event',
-      status: 'SCHEDULED',
+      status: 'PLANNED',
       startsAt: Date.UTC(2026, 4, 28, 2, 0),
       endsAt: Date.UTC(2026, 4, 28, 4, 0),
       ownAssignmentKind: 'TALENT',
@@ -161,7 +161,7 @@ const selfServiceEventsFixtureSource = {
       eventId: 'event-self-employment-profile',
       eventCode: 'EVT-SELF-EP',
       title: 'Studio briefing event',
-      status: 'IN_PROGRESS',
+      status: 'CONFIRMED',
       startsAt: Date.UTC(2026, 4, 29, 3, 0),
       endsAt: Date.UTC(2026, 4, 29, 5, 0),
       ownAssignmentKind: 'EMPLOYMENT_PROFILE',

@@ -4,7 +4,11 @@ import { z } from 'zod';
 import { apiRequest } from '@shared/api';
 
 export const MANAGER_WORKSPACE_CONTEXT_QUERY_KEY = ['manager-workspace', 'context'] as const;
-const MANAGER_REQUEST_BATCHES_QUERY_KEY = ['manager-workspace', 'work-schedule', 'request-batches'] as const;
+const MANAGER_REQUEST_BATCHES_QUERY_KEY = [
+  'manager-workspace',
+  'work-schedule',
+  'request-batches',
+] as const;
 const MANAGER_AVAILABILITY_BATCHES_QUERY_KEY = [
   'manager-workspace',
   'work-schedule',
@@ -15,6 +19,7 @@ const MANAGER_AVAILABILITY_MEMBERS_QUERY_KEY = [
   'work-schedule',
   'availability-members',
 ] as const;
+const MANAGER_EVENTS_QUERY_KEY = ['manager-workspace', 'events'] as const;
 
 const referenceNameSchema = z
   .object({
@@ -68,6 +73,60 @@ const workShiftsModuleSchema = z.union([
     .strict(),
 ]);
 
+const eventsModuleSchema = z.union([
+  z.object({ visible: z.literal(true) }).strict(),
+  z
+    .object({
+      visible: z.literal(false),
+      reason: z.enum(['NO_MANAGED_SCOPE_ASSIGNED', 'MISSING_EVENT_READ_CAPABILITY']),
+    })
+    .strict(),
+]);
+
+const eventStatusSchema = z.enum([
+  'DRAFT',
+  'PLANNED',
+  'CONFIRMED',
+  'COMPLETED',
+  'CANCELLED',
+  'ARCHIVED',
+]);
+const studioBookingStatusSchema = z.enum(['HELD', 'CONFIRMED', 'RELEASED', 'CANCELLED']);
+const timestampSchema = z.union([z.number(), z.string()]);
+const managerEventReferenceSummarySchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    displayName: z.string().optional(),
+  })
+  .strict();
+
+const managerEventSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    eventCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    status: eventStatusSchema,
+    eventStartAt: timestampSchema,
+    eventEndAt: timestampSchema,
+    owner: managerEventReferenceSummarySchema.nullable(),
+    participants: z.array(managerEventReferenceSummarySchema),
+    studioBookings: z.array(
+      z
+        .object({
+          id: z.string().trim().min(1),
+          status: studioBookingStatusSchema,
+          bookingStartAt: timestampSchema,
+          bookingEndAt: timestampSchema,
+          resource: managerEventReferenceSummarySchema.nullable(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
 export const managerWorkspaceContextSchema = z
   .object({
     actor: z
@@ -108,7 +167,7 @@ export const managerWorkspaceContextSchema = z
           })
           .strict(),
         workShifts: workShiftsModuleSchema,
-        events: disabledModuleSchema,
+        events: eventsModuleSchema,
         members: disabledModuleSchema,
       })
       .strict(),
@@ -125,6 +184,7 @@ export type ManagerWorkspaceContext = z.infer<typeof managerWorkspaceContextSche
 export type ManagerWorkspaceOrgUnitScope = ManagerWorkspaceContext['scopes']['orgUnits'][number];
 export type ManagerWorkspaceTalentGroupScope =
   ManagerWorkspaceContext['scopes']['talentGroups'][number];
+export type ManagerEventSummary = z.infer<typeof managerEventSchema>;
 
 export const fetchManagerWorkspaceContext = async (): Promise<ManagerWorkspaceContext> => {
   const response = await apiRequest<unknown>({
@@ -139,6 +199,47 @@ export const useManagerWorkspaceContext = () =>
   useQuery({
     queryKey: MANAGER_WORKSPACE_CONTEXT_QUERY_KEY,
     queryFn: fetchManagerWorkspaceContext,
+    retry: false,
+  });
+
+const managerEventsResponseSchema = z
+  .object({ data: z.object({ items: z.array(managerEventSchema) }).strict() })
+  .strict();
+const managerEventDetailResponseSchema = z.object({ data: managerEventSchema }).strict();
+
+export const fetchManagerEvents = async (): Promise<ManagerEventSummary[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/manager-workspace/events',
+  });
+
+  return managerEventsResponseSchema.parse(response).data.items;
+};
+
+export const fetchManagerEventDetail = async (eventId: string): Promise<ManagerEventSummary> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/manager-workspace/events/${encodeURIComponent(eventId)}`,
+  });
+
+  return managerEventDetailResponseSchema.parse(response).data;
+};
+
+export const useManagerEvents = (options?: { enabled?: boolean }) =>
+  useQuery({
+    queryKey: MANAGER_EVENTS_QUERY_KEY,
+    queryFn: fetchManagerEvents,
+    enabled: options?.enabled ?? true,
+    retry: false,
+  });
+
+export const useManagerEventDetail = (eventId?: string, options?: { enabled?: boolean }) =>
+  useQuery({
+    queryKey: eventId
+      ? [...MANAGER_EVENTS_QUERY_KEY, eventId]
+      : [...MANAGER_EVENTS_QUERY_KEY, 'detail'],
+    queryFn: () => fetchManagerEventDetail(eventId ?? ''),
+    enabled: Boolean(eventId) && (options?.enabled ?? true),
     retry: false,
   });
 
@@ -552,13 +653,19 @@ const sanitizeSubmitRequestBatchPayload = (
   lines: payload.lines.map((line) => ({
     requestType: line.requestType,
     memberEmploymentProfileId: line.memberEmploymentProfileId.trim(),
-    ...(line.workShiftId !== undefined ? { workShiftId: sanitizeNullableText(line.workShiftId) } : {}),
+    ...(line.workShiftId !== undefined
+      ? { workShiftId: sanitizeNullableText(line.workShiftId) }
+      : {}),
     ...(line.requestedStartAt !== undefined ? { requestedStartAt: line.requestedStartAt } : {}),
     ...(line.requestedEndAt !== undefined ? { requestedEndAt: line.requestedEndAt } : {}),
     ...(line.timezone !== undefined ? { timezone: line.timezone } : {}),
     ...(line.title !== undefined ? { title: sanitizeNullableText(line.title) } : {}),
-    ...(line.description !== undefined ? { description: sanitizeNullableText(line.description) } : {}),
-    ...(line.externalRef !== undefined ? { externalRef: sanitizeNullableText(line.externalRef) } : {}),
+    ...(line.description !== undefined
+      ? { description: sanitizeNullableText(line.description) }
+      : {}),
+    ...(line.externalRef !== undefined
+      ? { externalRef: sanitizeNullableText(line.externalRef) }
+      : {}),
     reason: line.reason.trim(),
   })),
 });
@@ -757,7 +864,11 @@ export const useManagerRequestBatches = (
   enabled: boolean,
 ) =>
   useQuery({
-    queryKey: [...MANAGER_REQUEST_BATCHES_QUERY_KEY, query.status ?? 'all', query.periodMonth ?? 'all'],
+    queryKey: [
+      ...MANAGER_REQUEST_BATCHES_QUERY_KEY,
+      query.status ?? 'all',
+      query.periodMonth ?? 'all',
+    ],
     queryFn: () => fetchManagerRequestBatches(query),
     enabled,
     retry: false,
@@ -792,11 +903,7 @@ export const useManagerAvailabilityTargetMembers = (
   enabled: boolean,
 ) =>
   useQuery({
-    queryKey: [
-      ...MANAGER_AVAILABILITY_MEMBERS_QUERY_KEY,
-      targetType ?? 'none',
-      targetId ?? 'none',
-    ],
+    queryKey: [...MANAGER_AVAILABILITY_MEMBERS_QUERY_KEY, targetType ?? 'none', targetId ?? 'none'],
     queryFn: () => fetchManagerAvailabilityTargetMembers(targetType!, targetId!),
     enabled: enabled && Boolean(targetType && targetId),
     retry: false,
@@ -836,13 +943,8 @@ export const useCancelManagerRequestBatchMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      batchId,
-      payload,
-    }: {
-      batchId: string;
-      payload: ManagerCancelRequestPayload;
-    }) => cancelManagerRequestBatch(batchId, payload),
+    mutationFn: ({ batchId, payload }: { batchId: string; payload: ManagerCancelRequestPayload }) =>
+      cancelManagerRequestBatch(batchId, payload),
     onSuccess: async () => {
       await invalidateManagerRequestBatches(queryClient);
     },
@@ -884,13 +986,8 @@ export const useCancelManagerAvailabilityBatchMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      batchId,
-      payload,
-    }: {
-      batchId: string;
-      payload: ManagerCancelRequestPayload;
-    }) => cancelManagerAvailabilityBatch(batchId, payload),
+    mutationFn: ({ batchId, payload }: { batchId: string; payload: ManagerCancelRequestPayload }) =>
+      cancelManagerAvailabilityBatch(batchId, payload),
     onSuccess: async () => {
       await invalidateManagerAvailabilityBatches(queryClient);
     },

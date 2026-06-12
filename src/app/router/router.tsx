@@ -542,6 +542,22 @@ export const appRoutes: RouteObject[] = [
     ),
   },
   {
+    path: APP_PATHS.managerEvents,
+    element: (
+      <RequireAuth>
+        <LazyManagerWorkspaceElement />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: APP_PATHS.managerEventDetailPattern,
+    element: (
+      <RequireAuth>
+        <LazyManagerWorkspaceElement />
+      </RequireAuth>
+    ),
+  },
+  {
     path: APP_PATHS.managerKpiPlanDetailPattern,
     element: (
       <RequireAuth>

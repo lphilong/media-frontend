@@ -1,7 +1,7 @@
 {
   "page": {
     "title": "Sự kiện",
-    "subtitle": "Quản trị vận hành toàn cục cho sự kiện, phân công và tài nguyên.",
+    "subtitle": "Quản trị vận hành toàn cục cho sự kiện, phân công và đặt tài nguyên.",
     "placeholder": "Phân công sự kiện đã được triển khai bằng tuyến màn hình thật."
   },
   "fields": {
@@ -14,34 +14,43 @@
     "assignment": "Phân công",
     "assignmentIdIndexed": "Phân công {{index}}",
     "assignmentIndexed": "Phân công {{index}}",
-    "eventStartAt": "Bắt đầu sự kiện theo UTC",
-    "eventEndAt": "Kết thúc sự kiện theo UTC",
-    "newEventStartAt": "Bắt đầu sự kiện mới theo UTC",
-    "newEventEndAt": "Kết thúc sự kiện mới theo UTC",
+    "ownerEmploymentProfileId": "Hồ sơ nhân sự phụ trách",
+    "eventStartAt": "Bắt đầu sự kiện, Giờ Việt Nam",
+    "eventEndAt": "Kết thúc sự kiện, Giờ Việt Nam",
+    "newEventStartAt": "Bắt đầu mới, Giờ Việt Nam",
+    "newEventEndAt": "Kết thúc mới, Giờ Việt Nam",
     "studioResourceIds": "Tài nguyên studio",
+    "derivedStudioResourceIds": "Tài nguyên studio (tóm tắt từ lịch đặt)",
     "studioResources": "Tài nguyên studio",
     "studioResource": "Tài nguyên studio",
     "platformAccountIds": "Tài khoản nền tảng",
     "platformAccounts": "Tài khoản nền tảng",
     "platformAccount": "Tài khoản nền tảng",
-    "newStudioResourceIds": "Tài nguyên studio thay thế",
     "newPlatformAccountIds": "Tài khoản nền tảng thay thế",
     "description": "Mô tả",
     "externalRef": "Tham chiếu bên ngoài",
+    "reason": "Lý do",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
     "scopeBoundary": "Ranh giới phạm vi"
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã sự kiện sẽ được tạo tự động"
+    "description": "Mã sự kiện sẽ được tạo tự động."
   },
   "statuses": {
-    "SCHEDULED": "Đã lên lịch",
-    "IN_PROGRESS": "Đang diễn ra",
-    "COMPLETED": "Đã hoàn tất",
+    "DRAFT": "Nháp",
+    "PLANNED": "Đã lên kế hoạch",
+    "CONFIRMED": "Đã xác nhận",
+    "COMPLETED": "Đã hoàn thành",
     "CANCELLED": "Đã hủy",
     "ARCHIVED": "Đã lưu trữ"
+  },
+  "bookingStatuses": {
+    "HELD": "Tạm giữ",
+    "CONFIRMED": "Đã xác nhận",
+    "RELEASED": "Đã giải phóng",
+    "CANCELLED": "Đã hủy"
   },
   "assignmentStatuses": {
     "ACTIVE": "Hoạt động"
@@ -59,7 +68,7 @@
   "filters": {
     "searchPlaceholder": "Tìm đúng mã sự kiện hoặc tiền tố tiêu đề",
     "status": "Trạng thái",
-    "allStatuses": "Tất cả trạng thái đang hoạt động",
+    "allStatuses": "Tất cả trạng thái hiện hành",
     "assignmentKind": "Loại phân công",
     "allAssignmentKinds": "Tất cả loại phân công",
     "assignmentId": "Chủ thể phân công",
@@ -68,8 +77,8 @@
     "studioResourceIdPlaceholder": "Chọn tài nguyên studio",
     "platformAccountId": "Tài khoản nền tảng",
     "platformAccountIdPlaceholder": "Chọn tài khoản nền tảng",
-    "windowStartAt": "Thời gian bắt đầu UTC",
-    "windowEndAt": "Thời gian kết thúc UTC"
+    "windowStartAt": "Bắt đầu khung thời gian, Giờ Việt Nam",
+    "windowEndAt": "Kết thúc khung thời gian, Giờ Việt Nam"
   },
   "relatedModes": {
     "by-assignment": "Sự kiện liên quan theo phân công",
@@ -84,19 +93,17 @@
     "edit": "Chỉnh sửa",
     "reschedule": "Đổi lịch",
     "replaceAssignments": "Thay phân công",
-    "replaceStudioResources": "Thay tài nguyên studio",
     "replacePlatformAccounts": "Thay tài khoản nền tảng",
     "addAssignment": "Thêm phân công",
     "removeAssignment": "Gỡ phân công {{index}}",
-    "addStudioResource": "Thêm tài nguyên studio",
-    "removeStudioResource": "Gỡ tài nguyên studio {{index}}",
     "addPlatformAccount": "Thêm tài khoản nền tảng",
     "removePlatformAccount": "Gỡ tài khoản nền tảng {{index}}",
-    "start": "Bắt đầu",
-    "complete": "Hoàn tất",
+    "plan": "Lên kế hoạch",
+    "confirm": "Xác nhận",
+    "complete": "Hoàn thành",
     "cancel": "Hủy",
     "archive": "Lưu trữ",
-    "historicalArchiveEligible": "Sự kiện đã lên lịch nhưng đã qua có thể được lưu trữ từ trang chi tiết"
+    "historicalArchiveEligible": "Sự kiện đã hoàn thành trong quá khứ có thể được lưu trữ từ trang chi tiết"
   },
   "table": {
     "caption": "Danh sách sự kiện",
@@ -112,9 +119,23 @@
     "archivedReadOnly": "Sự kiện đã lưu trữ chỉ đọc.",
     "identityTitle": "Sự kiện",
     "scheduleTitle": "Lịch",
+    "bookingTitle": "Đặt tài nguyên",
     "referencesTitle": "Tham chiếu tài nguyên và nền tảng",
     "globalOnly": "Chỉ dùng phạm vi toàn cục",
-    "boundaryHelper": "Sự kiện hoàn thành không tự ghi nhận doanh thu, hoa hồng, chấm công hoặc bảng lương."
+    "boundaryHelper": "Sự kiện hoàn thành không tự ghi nhận doanh thu, hoa hồng, chấm công, bảng lương hoặc thanh toán.",
+    "bookingReadOnlyHelper": "Đặt tài nguyên được quản lý bằng StudioBooking. studioResourceIds đã lỗi thời chỉ hiển thị như tóm tắt dẫn xuất."
+  },
+  "bookings": {
+    "resource": "Tài nguyên studio",
+    "status": "Trạng thái đặt",
+    "window": "Khung đặt",
+    "conflict": "Xung đột",
+    "confirmedConflict": "Trùng lịch đã xác nhận sẽ bị chặn",
+    "heldReview": "Tạm giữ cần xử lý",
+    "noConflict": "Không có xung đột được trả về",
+    "emptyMessage": "Chưa có lịch đặt tài nguyên cho sự kiện này.",
+    "loadErrorTitle": "Không tải được lịch đặt",
+    "loadErrorMessage": "Tóm tắt đặt tài nguyên chưa sẵn sàng."
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",
@@ -128,7 +149,6 @@
     "emptyTitle": "Không có phân công đang hoạt động",
     "emptyMessage": "Danh sách phân công của sự kiện đang trống.",
     "emptyReplacementSet": "Bộ thay thế đang trống. Thêm phân công trước khi gửi nếu sự kiện cần phân công đang hoạt động.",
-    "emptyStudioResourceSet": "Chưa chọn tài nguyên studio.",
     "emptyPlatformAccountSet": "Chưa chọn tài khoản nền tảng.",
     "replacementRowLabel": "Phân công thay thế {{index}}",
     "loadErrorTitle": "Không tải được phân công",
@@ -143,12 +163,12 @@
     "emptyTitle": "Không có sự kiện",
     "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo sự kiện.",
     "loadErrorTitle": "Không tải được sự kiện",
-    "loadErrorMessage": "Hệ thống chưa thể tải dữ liệu phân công sự kiện. Vui lòng kiểm tra phạm vi hoặc thử lại sau."
+    "loadErrorMessage": "Hệ thống chưa thể tải dữ liệu sự kiện. Vui lòng kiểm tra phạm vi hoặc thử lại sau."
   },
   "mutations": {
     "create": {
       "title": "Tạo sự kiện",
-      "subtitle": "Tạo một sự kiện toàn cục với ít nhất một phân công.",
+      "subtitle": "Tạo một sự kiện toàn cục với chủ event là hồ sơ nhân sự và ít nhất một phân công.",
       "submit": "Tạo",
       "pending": "Đang tạo"
     },
@@ -160,7 +180,7 @@
     },
     "reschedule": {
       "title": "Đổi lịch sự kiện",
-      "subtitle": "Thay thế khung thời gian UTC.",
+      "subtitle": "Thay khung thời gian sự kiện và ghi nhận lý do.",
       "submit": "Đổi lịch",
       "pending": "Đang đổi lịch"
     },
@@ -170,23 +190,24 @@
       "submit": "Thay phân công",
       "pending": "Đang thay"
     },
-    "replaceStudioResources": {
-      "title": "Thay tài nguyên studio",
-      "subtitle": "Gửi toàn bộ bộ tài nguyên studio thay thế.",
-      "submit": "Thay tài nguyên studio",
-      "pending": "Đang thay"
-    },
     "replacePlatformAccounts": {
       "title": "Thay tài khoản nền tảng",
       "subtitle": "Gửi toàn bộ bộ tài khoản nền tảng thay thế.",
       "submit": "Thay tài khoản nền tảng",
       "pending": "Đang thay"
+    },
+    "cancel": {
+      "title": "Hủy sự kiện",
+      "subtitle": "Hủy sự kiện cần lý do audit.",
+      "submit": "Hủy sự kiện",
+      "pending": "Đang hủy"
     }
   },
   "placeholders": {
     "csvIds": "Các tham chiếu cách nhau bằng dấu phẩy",
     "searchReference": "Tìm theo tên hoặc mã",
-    "optional": "Không bắt buộc"
+    "optional": "Không bắt buộc",
+    "requiredReason": "Nhập lý do audit"
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
@@ -201,14 +222,13 @@
     "updated": "Đã cập nhật sự kiện.",
     "rescheduled": "Đã đổi lịch sự kiện.",
     "assignmentsReplaced": "Đã thay phân công của sự kiện.",
-    "studioResourcesReplaced": "Đã thay tài nguyên studio của sự kiện.",
     "platformAccountsReplaced": "Đã thay tài khoản nền tảng của sự kiện.",
     "lifecycleUpdated": "Đã cập nhật vòng đời sự kiện."
   },
   "confirm": {
-    "start": "Bắt đầu sự kiện này?",
-    "complete": "Hoàn tất sự kiện này?",
-    "cancel": "Hủy sự kiện này?",
+    "plan": "Lên kế hoạch sự kiện này?",
+    "confirm": "Xác nhận sự kiện này?",
+    "complete": "Hoàn thành sự kiện này?",
     "archive": "Lưu trữ sự kiện này?"
   },
   "actionRail": {

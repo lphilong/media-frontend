@@ -234,8 +234,8 @@
     "ARCHIVED": "已归档"
   },
   "eventStatus": {
-    "SCHEDULED": "已排期",
-    "IN_PROGRESS": "进行中",
+    "PLANNED": "已计划",
+    "CONFIRMED": "已确认",
     "COMPLETED": "已完成",
     "CANCELLED": "已取消",
     "ARCHIVED": "已归档"

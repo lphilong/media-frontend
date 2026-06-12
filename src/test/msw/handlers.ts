@@ -760,7 +760,7 @@ const staticReferenceLookups: Record<string, ReferenceLookupItem[]> = {
       id: 'event-001',
       label: 'Launch Livestream',
       code: 'EV-000001',
-      status: 'SCHEDULED',
+      status: 'PLANNED',
     },
   ],
   'contract-records': [

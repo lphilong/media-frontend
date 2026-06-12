@@ -130,7 +130,9 @@ describe('/manager workspace route', () => {
   it('routes manager-capable actors from root into Manager Workspace outside Admin shell', async () => {
     await renderRoute('/');
 
-    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-workspace-shell', {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Manager Workspace' })).toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
@@ -168,7 +170,9 @@ describe('/manager workspace route', () => {
       'Có thể thao tác',
     );
     expect(screen.getByTestId('manager-overview-kpi-card')).toHaveTextContent('Có thể thao tác');
-    for (const moduleId of ['events', 'groups', 'members']) {
+    expect(screen.getByTestId('manager-module-events')).toHaveTextContent('Chỉ đọc');
+    expect(screen.getByTestId('manager-module-events')).not.toHaveTextContent('Có thể thao tác');
+    for (const moduleId of ['groups', 'members']) {
       expect(screen.getByTestId(`manager-module-${moduleId}`)).toHaveTextContent(
         'Chưa mở trong workspace này',
       );
@@ -220,7 +224,8 @@ describe('/manager workspace route', () => {
       'aria-disabled',
       'true',
     );
-    expect(screen.getByRole('tab', { name: /Managed Events/ })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: /Managed Events/ })).toHaveTextContent('Read-only');
+    expect(screen.getByRole('tab', { name: /Managed Events/ })).not.toHaveAttribute(
       'aria-disabled',
       'true',
     );
@@ -254,14 +259,35 @@ describe('/manager workspace route', () => {
     expect(screen.queryByText('Manager Profile')).not.toBeInTheDocument();
   });
 
-  it('renders unavailable Manager modules without Admin data calls', async () => {
+  it('renders scoped Manager Events read-only without global Admin data calls', async () => {
     const user = userEvent.setup();
     let adminWorkShiftCalls = 0;
     let adminEventCalls = 0;
+    let managerEventCalls = 0;
     let adminPeopleCalls = 0;
     let adminTalentGroupCalls = 0;
 
     server.use(
+      http.get('*/admin/manager-workspace/events', () => {
+        managerEventCalls += 1;
+        return HttpResponse.json({
+          data: {
+            items: [
+              {
+                id: 'manager-event-test',
+                eventCode: 'EVT-MANAGER-001',
+                title: 'Scoped manager event',
+                status: 'CONFIRMED',
+                eventStartAt: Date.parse('2026-06-15T09:00:00+07:00'),
+                eventEndAt: Date.parse('2026-06-15T12:00:00+07:00'),
+                owner: { id: 'ep-owner', displayName: 'Event Owner' },
+                participants: [{ id: 'ep-member', displayName: 'Scoped Member' }],
+                studioBookings: [],
+              },
+            ],
+          },
+        });
+      }),
       http.all('*/admin/work-shifts*', () => {
         adminWorkShiftCalls += 1;
         return HttpResponse.json({ data: [] });
@@ -290,10 +316,12 @@ describe('/manager workspace route', () => {
 
     await user.click(screen.getByTestId('manager-module-events'));
     expect(await screen.findByTestId('manager-panel-events')).toBeInTheDocument();
-    expect(
-      await screen.findByText('This module is not currently available in Manager Workspace.'),
-    ).toBeInTheDocument();
-    expect(screen.queryByText('EVT-202605-000005')).not.toBeInTheDocument();
+    expect(await screen.findByText('EVT-MANAGER-001')).toBeInTheDocument();
+    expect(screen.getByTestId('manager-panel-events')).toHaveTextContent('Read-only');
+    expect(screen.getByTestId('manager-panel-events')).not.toHaveTextContent('Action available');
+    for (const action of ['Create', 'Confirm', 'Cancel', 'Complete', 'Archive']) {
+      expect(screen.queryByRole('button', { name: action })).not.toBeInTheDocument();
+    }
 
     await user.click(screen.getByTestId('manager-module-groups'));
     expect(await screen.findByTestId('manager-panel-groups')).toBeInTheDocument();
@@ -315,6 +343,7 @@ describe('/manager workspace route', () => {
     await waitFor(() => {
       expect(adminWorkShiftCalls).toBe(0);
       expect(adminEventCalls).toBe(0);
+      expect(managerEventCalls).toBe(1);
       expect(adminPeopleCalls).toBe(0);
       expect(adminTalentGroupCalls).toBe(0);
     });
@@ -466,6 +495,40 @@ describe('/manager workspace route', () => {
     );
     expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent('Chỉ đọc');
     expect(document.body).not.toHaveTextContent('Có thể thao tác');
+  });
+
+  it('shows a read-only no-scope posture for direct Manager Events routing', async () => {
+    await renderRoute('/manager/events', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceNoAssignmentsContext());
+    });
+
+    expect(await screen.findByTestId('manager-panel-events')).toBeInTheDocument();
+    expect(screen.getByTestId('manager-panel-events')).toHaveTextContent(
+      'Managed Events read-only',
+    );
+    expect(screen.getByTestId('manager-panel-events')).toHaveTextContent(
+      'No active Org Unit or Talent Group manager assignment',
+    );
+    expect(screen.getByTestId('manager-panel-events')).not.toHaveTextContent('Action available');
+  });
+
+  it('fails closed for out-of-scope Manager Event detail without leaking global data', async () => {
+    let adminEventCalls = 0;
+    server.use(
+      http.all('*/admin/events*', () => {
+        adminEventCalls += 1;
+        return HttpResponse.json({ data: { title: 'Leaked global event' } });
+      }),
+    );
+
+    await renderRoute('/manager/events/out-of-scope-event');
+
+    expect(await screen.findByText('Event unavailable')).toBeInTheDocument();
+    expect(
+      screen.getByText('This event is not visible through your assigned manager scope.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Leaked global event')).not.toBeInTheDocument();
+    expect(adminEventCalls).toBe(0);
   });
 
   it('renders Unit KPI only for OrgUnit-only manager context and queries ORG_UNIT plans', async () => {

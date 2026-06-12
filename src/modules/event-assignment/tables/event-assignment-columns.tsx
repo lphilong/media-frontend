@@ -10,7 +10,7 @@ import type {
   EventRelatedListItem,
 } from '@modules/event-assignment/types/event-assignment.types';
 import { StatusBadge } from '@shared/components/primitives';
-import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
+import { formatVietnamTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 
 export type EventTableRow = EventListItem | EventRelatedListItem;
 
@@ -22,8 +22,9 @@ type EventListColumnHandlers = {
 };
 
 const statusToneMap = {
-  SCHEDULED: 'neutral',
-  IN_PROGRESS: 'warning',
+  DRAFT: 'muted',
+  PLANNED: 'info',
+  CONFIRMED: 'success',
   COMPLETED: 'success',
   CANCELLED: 'danger',
   ARCHIVED: 'muted',
@@ -59,12 +60,16 @@ export const readEventAssignmentSubjectId = (
 const readLifecycleActions = (record: EventTableRow): EventLifecycleAction[] => {
   const actions: EventLifecycleAction[] = [];
 
-  if (record.status === 'SCHEDULED') {
-    actions.push('start', 'cancel');
+  if (record.status === 'DRAFT') {
+    actions.push('plan');
   }
 
-  if (record.status === 'IN_PROGRESS') {
-    actions.push('complete', 'cancel');
+  if (record.status === 'PLANNED') {
+    actions.push('confirm');
+  }
+
+  if (record.status === 'CONFIRMED') {
+    actions.push('complete');
   }
 
   if (canArchiveEvent(record)) {
@@ -101,12 +106,12 @@ export const createEventListColumns = (
   {
     accessorKey: 'eventStartAt',
     header: t('event-assignment:table.eventStartAt'),
-    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
+    cell: (context) => formatVietnamTimestamp(context.getValue() as number | string),
   },
   {
     accessorKey: 'eventEndAt',
     header: t('event-assignment:table.eventEndAt'),
-    cell: (context) => formatBusinessTimestamp(context.getValue() as number | string),
+    cell: (context) => formatVietnamTimestamp(context.getValue() as number | string),
   },
   {
     id: 'actions',

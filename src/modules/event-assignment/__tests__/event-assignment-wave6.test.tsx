@@ -45,7 +45,7 @@ describe('event assignment wave 6 surfaces', () => {
 
   it('renders Event list rows, filters archived by default, and exposes no scope UI', async () => {
     const user = userEvent.setup();
-    renderRoute('/events?scope=global&status=SCHEDULED');
+    renderRoute('/events?scope=global&status=PLANNED');
 
     expect(
       await screen.findByRole('heading', { name: i18n.t('event-assignment:page.title') }),
@@ -54,9 +54,9 @@ describe('event assignment wave 6 surfaces', () => {
     expect(screen.queryByText('Archived event')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/scope/i)).not.toBeInTheDocument();
     expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
-    expect(
-      screen.getAllByText(i18n.t('event-assignment:statuses.SCHEDULED')).length,
-    ).toBeGreaterThan(0);
+    expect(screen.getAllByText(i18n.t('event-assignment:statuses.PLANNED')).length).toBeGreaterThan(
+      0,
+    );
     await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
     expect(
       screen.getByRole('heading', { name: i18n.t('common:filters.moreFilters') }),
@@ -159,7 +159,7 @@ describe('event assignment wave 6 surfaces', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('renders target timestamp filter chips with readable UTC timestamps', async () => {
+  it('renders target timestamp filter chips with Vietnam time timestamps', async () => {
     renderRoute(
       '/events?statusGroup=ACTIVE&eventOverlapStartAt=1777507200000&eventOverlapEndAt=1777593600000&eventStartFromAt=1777507200000&eventStartToAt=1778112000000',
     );
@@ -171,9 +171,9 @@ describe('event assignment wave 6 surfaces', () => {
     expect(await screen.findByText('Event overlaps until:')).toBeInTheDocument();
     expect(await screen.findByText('Event starts from:')).toBeInTheDocument();
     expect(await screen.findByText('Event starts until:')).toBeInTheDocument();
-    expect(screen.getAllByText(/00:00 30-04-2026/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/00:00 01-05-2026/)).toBeInTheDocument();
-    expect(screen.getByText(/00:00 07-05-2026/)).toBeInTheDocument();
+    expect(screen.getAllByText(/07:00 30-04-2026, giờ Việt Nam/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/07:00 01-05-2026, giờ Việt Nam/)).toBeInTheDocument();
+    expect(screen.getByText(/07:00 07-05-2026, giờ Việt Nam/)).toBeInTheDocument();
     expect(screen.queryByText(/1777507200000|1777593600000|1778112000000/)).not.toBeInTheDocument();
   });
 
@@ -187,10 +187,10 @@ describe('event assignment wave 6 surfaces', () => {
     expect(screen.getByText(i18n.t('event-assignment:detail.boundaryHelper'))).toBeInTheDocument();
     expect(screen.getByText('EVT-202605-000001')).toBeInTheDocument();
     expect(screen.getByText('Launch livestream')).toBeInTheDocument();
-    expect(screen.getByText('16:06 12-05-2026')).toBeInTheDocument();
-    expect(screen.getByText('19:06 12-05-2026')).toBeInTheDocument();
+    expect(screen.getByText(/16:06 12-05-2026, giờ Việt Nam/)).toBeInTheDocument();
+    expect(screen.getByText(/19:06 12-05-2026, giờ Việt Nam/)).toBeInTheDocument();
     expect(screen.getByText(i18n.t('event-assignment:assignments.title'))).toBeInTheDocument();
-    expect(screen.getByText('Alice Nguyen')).toBeInTheDocument();
+    expect(screen.getAllByText('Alice Nguyen').length).toBeGreaterThan(0);
     expect(screen.getByText('Luna')).toBeInTheDocument();
     expect(screen.queryByText('ep-001')).not.toBeInTheDocument();
     expect(screen.queryByText('talent-002')).not.toBeInTheDocument();
@@ -209,7 +209,7 @@ describe('event assignment wave 6 surfaces', () => {
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.replaceAssignments') }),
     );
-    expect(screen.getByText('Alice Nguyen')).toBeInTheDocument();
+    expect(screen.getAllByText('Alice Nguyen').length).toBeGreaterThan(0);
     expect(screen.getByText('Luna')).toBeInTheDocument();
   });
 
@@ -261,8 +261,8 @@ describe('event assignment wave 6 surfaces', () => {
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.edit') }),
     ).toBeDisabled();
     expect(
-      screen.getByRole('button', { name: i18n.t('event-assignment:actions.start') }),
-    ).toBeDisabled();
+      screen.queryByRole('button', { name: i18n.t('event-assignment:actions.start') }),
+    ).toBeNull();
     const main = screen.getByTestId('admin-shell-main');
     expect(
       within(main).queryByText(/removed|attendance|recurrence|work shift|bulk|delete|unarchive/i),
@@ -306,7 +306,9 @@ describe('event assignment wave 6 surfaces', () => {
       scope.getByText(i18n.t('event-assignment:generatedCode.description')),
     ).toBeInTheDocument();
     await user.type(scope.getByLabelText(i18n.t('event-assignment:fields.title')), 'Wave 6 event');
-    await user.click(await scope.findByRole('button', { name: /Alice/ }));
+    const aliceOptions = await scope.findAllByRole('button', { name: /Alice/ });
+    await user.click(aliceOptions[0]);
+    await user.click(aliceOptions[1]);
     await user.type(
       scope.getByLabelText(i18n.t('event-assignment:fields.eventStartAt')),
       '2030-03-18T00:46',
@@ -315,10 +317,6 @@ describe('event assignment wave 6 surfaces', () => {
       scope.getByLabelText(i18n.t('event-assignment:fields.eventEndAt')),
       '2030-03-18T01:46',
     );
-    await user.click(
-      scope.getByRole('button', { name: i18n.t('event-assignment:actions.addStudioResource') }),
-    );
-    await user.click(await scope.findByRole('button', { name: /Main Studio/ }));
     await user.click(
       scope.getByRole('button', { name: i18n.t('event-assignment:actions.addPlatformAccount') }),
     );
@@ -340,20 +338,13 @@ describe('event assignment wave 6 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('event-assignment:assignments.title')),
     ).toBeInTheDocument();
-    expect(screen.getByText('Alice Nguyen')).toBeInTheDocument();
+    expect(screen.getAllByText('Alice Nguyen').length).toBeGreaterThan(0);
 
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('event-assignment:actions.start') }),
-    );
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('common:actions.confirmDestructive') }),
-    );
+    await user.click(screen.getByRole('button', { name: i18n.t('event-assignment:actions.plan') }));
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText(i18n.t('event-assignment:statuses.IN_PROGRESS')),
-        ).toBeInTheDocument();
+        expect(screen.getByText(i18n.t('event-assignment:statuses.PLANNED'))).toBeInTheDocument();
       },
       { timeout: 3000 },
     );

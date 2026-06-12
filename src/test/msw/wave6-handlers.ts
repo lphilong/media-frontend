@@ -55,7 +55,8 @@ type WorkScheduleAvailabilityTaxonomyCode =
   | 'OTHER';
 type WorkScheduleAvailabilityApplyStatus = 'NOT_APPLIED' | 'ADVISORY_ONLY' | 'APPLIED';
 type EventAssignmentKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
-type EventStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
+type EventStatus = 'DRAFT' | 'PLANNED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
+type StudioBookingStatus = 'HELD' | 'CONFIRMED' | 'RELEASED' | 'CANCELLED';
 
 type ReferenceSummary = {
   id: string;
@@ -430,6 +431,7 @@ type EventRecord = {
   id: string;
   eventCode: string;
   title: string;
+  ownerEmploymentProfileId: string;
   studioResourceIds: string[];
   platformAccountIds: string[];
   studioResourceRefs?: ReferenceSummary[];
@@ -439,6 +441,27 @@ type EventRecord = {
   eventEndAt: number;
   description: string | null;
   externalRef: string | null;
+  plannedAt?: number | null;
+  confirmedAt?: number | null;
+  completedAt?: number | null;
+  cancelledAt?: number | null;
+  cancellationReason?: string | null;
+  lastRescheduledAt?: number | null;
+  lastRescheduleReason?: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type StudioBookingRecord = {
+  id: string;
+  eventId: string;
+  studioResourceId: string;
+  bookingStartAt: number;
+  bookingEndAt: number;
+  status: StudioBookingStatus;
+  cancellationReason: string | null;
+  releaseReason: string | null;
+  hasConfirmedConflict: boolean;
   createdAt: number;
   updatedAt: number;
 };
@@ -790,9 +813,10 @@ const initialEvents: EventRecord[] = [
     id: 'event-001',
     eventCode: 'EVT-202605-000001',
     title: 'Launch livestream',
+    ownerEmploymentProfileId: 'ep-001',
     studioResourceIds: ['studio-001'],
     platformAccountIds: ['platform-001'],
-    status: 'SCHEDULED',
+    status: 'PLANNED',
     eventStartAt: futureStart + 400_000,
     eventEndAt: futureEnd + 400_000,
     description: 'Primary launch event',
@@ -803,10 +827,11 @@ const initialEvents: EventRecord[] = [
   {
     id: 'event-progress',
     eventCode: 'EVT-202605-000002',
-    title: 'Live event in progress',
+    title: 'Confirmed live event',
+    ownerEmploymentProfileId: 'ep-001',
     studioResourceIds: ['studio-002'],
     platformAccountIds: ['platform-001'],
-    status: 'IN_PROGRESS',
+    status: 'CONFIRMED',
     eventStartAt: futureStart + 500_000,
     eventEndAt: futureEnd + 500_000,
     description: null,
@@ -818,6 +843,7 @@ const initialEvents: EventRecord[] = [
     id: 'event-completed',
     eventCode: 'EVT-202603-000003',
     title: 'Completed event',
+    ownerEmploymentProfileId: 'ep-002',
     studioResourceIds: [],
     platformAccountIds: ['platform-003'],
     status: 'COMPLETED',
@@ -831,10 +857,11 @@ const initialEvents: EventRecord[] = [
   {
     id: 'event-empty',
     eventCode: 'EVT-202605-000004',
-    title: 'Scheduled event without assignments',
+    title: 'Draft event without assignments',
+    ownerEmploymentProfileId: 'ep-001',
     studioResourceIds: [],
     platformAccountIds: [],
-    status: 'SCHEDULED',
+    status: 'DRAFT',
     eventStartAt: futureStart + 600_000,
     eventEndAt: futureEnd + 600_000,
     description: null,
@@ -845,10 +872,11 @@ const initialEvents: EventRecord[] = [
   {
     id: 'event-managed-scheduled',
     eventCode: 'EVT-202605-000005',
-    title: 'Managed scheduled event',
+    title: 'Managed planned event',
+    ownerEmploymentProfileId: 'ep-001',
     studioResourceIds: ['studio-001'],
     platformAccountIds: ['platform-001'],
-    status: 'SCHEDULED',
+    status: 'PLANNED',
     eventStartAt: futureStart + 700_000,
     eventEndAt: futureEnd + 700_000,
     description: null,
@@ -860,6 +888,7 @@ const initialEvents: EventRecord[] = [
     id: 'event-archive',
     eventCode: 'EVT-202603-999999',
     title: 'Archived event',
+    ownerEmploymentProfileId: 'ep-002',
     studioResourceIds: [],
     platformAccountIds: [],
     status: 'ARCHIVED',
@@ -869,6 +898,35 @@ const initialEvents: EventRecord[] = [
     externalRef: null,
     createdAt: now - 4_000,
     updatedAt: now - 3_500,
+  },
+];
+
+const initialStudioBookings: StudioBookingRecord[] = [
+  {
+    id: 'booking-event-001',
+    eventId: 'event-001',
+    studioResourceId: 'studio-001',
+    bookingStartAt: futureStart + 350_000,
+    bookingEndAt: futureEnd + 450_000,
+    status: 'HELD',
+    cancellationReason: null,
+    releaseReason: null,
+    hasConfirmedConflict: true,
+    createdAt: now - 7_900,
+    updatedAt: now - 7_400,
+  },
+  {
+    id: 'booking-event-progress',
+    eventId: 'event-progress',
+    studioResourceId: 'studio-002',
+    bookingStartAt: futureStart + 450_000,
+    bookingEndAt: futureEnd + 550_000,
+    status: 'CONFIRMED',
+    cancellationReason: null,
+    releaseReason: null,
+    hasConfirmedConflict: false,
+    createdAt: now - 6_900,
+    updatedAt: now - 6_400,
   },
 ];
 
@@ -1063,7 +1121,11 @@ const createInitialWorkScheduleRequestBatches = (): WorkScheduleRequestBatchReco
         lineNo: 1,
         requestType: 'CREATE_SHIFT',
         memberEmploymentProfileId: 'ep-001',
-        memberEmploymentProfileRef: { id: 'ep-001', code: 'EP-001', displayName: 'Production Member' },
+        memberEmploymentProfileRef: {
+          id: 'ep-001',
+          code: 'EP-001',
+          displayName: 'Production Member',
+        },
         workShiftId: null,
         workShiftRef: null,
         requestedStartAt: Date.parse('2026-06-12T09:00:00+07:00'),
@@ -1123,7 +1185,11 @@ const createInitialWorkScheduleRequestBatches = (): WorkScheduleRequestBatchReco
         lineNo: 3,
         requestType: 'CANCEL_SHIFT',
         memberEmploymentProfileId: 'ep-003',
-        memberEmploymentProfileRef: { id: 'ep-003', code: 'EP-003', displayName: 'Historical Member' },
+        memberEmploymentProfileRef: {
+          id: 'ep-003',
+          code: 'EP-003',
+          displayName: 'Historical Member',
+        },
         workShiftId: 'work-shift-historical',
         workShiftRef: { id: 'work-shift-historical', title: 'Historical active work shift' },
         requestedStartAt: null,
@@ -1153,7 +1219,11 @@ const createInitialWorkScheduleRequestBatches = (): WorkScheduleRequestBatchReco
         lineNo: 4,
         requestType: 'CREATE_SHIFT',
         memberEmploymentProfileId: 'ep-004',
-        memberEmploymentProfileRef: { id: 'ep-004', code: 'EP-004', displayName: 'Conflict Member' },
+        memberEmploymentProfileRef: {
+          id: 'ep-004',
+          code: 'EP-004',
+          displayName: 'Conflict Member',
+        },
         workShiftId: null,
         workShiftRef: null,
         requestedStartAt: Date.parse('2026-06-14T09:00:00+07:00'),
@@ -1407,6 +1477,7 @@ let monthlyRosters = initialMonthlyRosters.map((record) => ({
   exceptions: record.exceptions.map((exception) => ({ ...exception })),
 }));
 let events = initialEvents.map((record) => ({ ...record }));
+let studioBookings = initialStudioBookings.map((record) => ({ ...record }));
 let assignments = initialAssignments.map((record) => ({ ...record }));
 
 export const resetWave6MockData = (): void => {
@@ -1464,6 +1535,7 @@ export const resetWave6MockData = (): void => {
     exceptions: record.exceptions.map((exception) => ({ ...exception })),
   }));
   events = initialEvents.map((record) => ({ ...record }));
+  studioBookings = initialStudioBookings.map((record) => ({ ...record }));
   assignments = initialAssignments.map((record) => ({ ...record }));
 };
 
@@ -1821,7 +1893,9 @@ const readMonthlyRosterRef = (monthlyRosterId?: string | null): ReferenceSummary
 
 const withMonthlyRosterRefs = <TRecord extends MonthlyRosterRecord>(record: TRecord): TRecord => ({
   ...record,
-  targetOrgUnitRef: record.targetOrgUnitId ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null) : null,
+  targetOrgUnitRef: record.targetOrgUnitId
+    ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null)
+    : null,
   targetTalentGroupRef: record.targetTalentGroupId
     ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
     : null,
@@ -2012,13 +2086,31 @@ const toEventRelatedItem = (record: EventRecord) => ({
 
 const toEventDetail = (record: EventRecord) => ({
   ...toEventListItem(record),
+  ownerEmploymentProfileId: record.ownerEmploymentProfileId,
+  ownerEmploymentProfileRef: employmentProfileRefs.get(record.ownerEmploymentProfileId) ?? {
+    id: record.ownerEmploymentProfileId,
+  },
   studioResourceIds: record.studioResourceIds,
   platformAccountIds: record.platformAccountIds,
   studioResourceRefs: record.studioResourceIds.map((id) => studioResourceRefs.get(id) ?? { id }),
   platformAccountRefs: record.platformAccountIds.map((id) => platformAccountRefs.get(id) ?? { id }),
   description: record.description,
   externalRef: record.externalRef,
+  plannedAt: record.plannedAt ?? null,
+  confirmedAt: record.confirmedAt ?? null,
+  completedAt: record.completedAt ?? null,
+  cancelledAt: record.cancelledAt ?? null,
+  cancellationReason: record.cancellationReason ?? null,
+  lastRescheduledAt: record.lastRescheduledAt ?? null,
+  lastRescheduleReason: record.lastRescheduleReason ?? null,
   updatedAt: record.updatedAt,
+});
+
+const toStudioBookingDetail = (record: StudioBookingRecord) => ({
+  ...record,
+  studioResourceRef: studioResourceRefs.get(record.studioResourceId) ?? {
+    id: record.studioResourceId,
+  },
 });
 
 const recalculateRequestBatch = (
@@ -2097,7 +2189,10 @@ const decideRequestBatchLines = (
     ? lineIdsValue.filter((value): value is string => typeof value === 'string')
     : [];
   if (lineIds.length === 0) {
-    return HttpResponse.json({ message: 'lineIds must contain at least one line id' }, { status: 422 });
+    return HttpResponse.json(
+      { message: 'lineIds must contain at least one line id' },
+      { status: 422 },
+    );
   }
   const batchIndex = workScheduleRequestBatches.findIndex((item) => item.id === batchId);
   if (batchIndex < 0) {
@@ -2141,7 +2236,10 @@ const decideAvailabilityBatchLines = (
     ? lineIdsValue.filter((value): value is string => typeof value === 'string')
     : [];
   if (lineIds.length === 0) {
-    return HttpResponse.json({ message: 'lineIds must contain at least one line id' }, { status: 422 });
+    return HttpResponse.json(
+      { message: 'lineIds must contain at least one line id' },
+      { status: 422 },
+    );
   }
   const batchIndex = workScheduleAvailabilityBatches.findIndex((item) => item.id === batchId);
   if (batchIndex < 0) {
@@ -2484,7 +2582,9 @@ const createPreviewRow = (
   targetType: record.targetType,
   targetMode: record.targetMode,
   targetOrgUnitId: record.targetOrgUnitId,
-  targetOrgUnitRef: record.targetOrgUnitId ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null) : null,
+  targetOrgUnitRef: record.targetOrgUnitId
+    ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null)
+    : null,
   targetTalentGroupId: record.targetTalentGroupId,
   targetTalentGroupRef: record.targetTalentGroupId
     ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
@@ -2675,7 +2775,9 @@ const buildMonthlyRosterPreview = (record: MonthlyRosterRecord) => {
     targetType: record.targetType,
     targetMode: record.targetMode,
     targetOrgUnitId: record.targetOrgUnitId,
-    targetOrgUnitRef: record.targetOrgUnitId ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null) : null,
+    targetOrgUnitRef: record.targetOrgUnitId
+      ? (orgUnitRefs.get(record.targetOrgUnitId) ?? null)
+      : null,
     targetTalentGroupId: record.targetTalentGroupId,
     targetTalentGroupRef: record.targetTalentGroupId
       ? (talentGroupRefs.get(record.targetTalentGroupId) ?? null)
@@ -3483,157 +3585,162 @@ export const wave6Handlers = [
     return HttpResponse.json({ data: withMonthlyRosterRefs(record) });
   }),
 
-  http.post('*/admin/work-schedule/rosters/:monthlyRosterId/apply-availability-lines', async ({ params, request }) => {
-    const body = (await parseJsonBody(request)) as {
-      availabilityLineIds?: unknown;
-      applyNote?: unknown;
-      note?: unknown;
-      scope?: unknown;
-    };
-    const bodyFailure = rejectUnsupportedBody(body, [
-      'availabilityLineIds',
-      'applyNote',
-      'note',
-      'scope',
-    ]);
-    if (bodyFailure) {
-      return bodyFailure;
-    }
-    const roster = readMonthlyRoster(String(params.monthlyRosterId));
-    if (!roster) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    if (roster.status !== 'DRAFT') {
-      return HttpResponse.json({ message: 'Roster must be DRAFT' }, { status: 422 });
-    }
-    const lineIds = Array.isArray(body.availabilityLineIds)
-      ? body.availabilityLineIds.filter((value): value is string => typeof value === 'string')
-      : [];
-    const now = Date.now();
-    const results = lineIds.map((lineId) => {
-      const batchIndex = workScheduleAvailabilityBatches.findIndex((batch) =>
-        batch.lines.some((line) => line.id === lineId),
-      );
-      if (batchIndex < 0) {
-        return {
-          availabilityLineId: lineId,
-          outcome: 'FAILED',
-          rosterExceptionId: null,
-          rosterExceptionIds: [],
-          reason: 'Line not found',
-        };
+  http.post(
+    '*/admin/work-schedule/rosters/:monthlyRosterId/apply-availability-lines',
+    async ({ params, request }) => {
+      const body = (await parseJsonBody(request)) as {
+        availabilityLineIds?: unknown;
+        applyNote?: unknown;
+        note?: unknown;
+        scope?: unknown;
+      };
+      const bodyFailure = rejectUnsupportedBody(body, [
+        'availabilityLineIds',
+        'applyNote',
+        'note',
+        'scope',
+      ]);
+      if (bodyFailure) {
+        return bodyFailure;
       }
-      const batch = workScheduleAvailabilityBatches[batchIndex];
-      const lineIndex = batch.lines.findIndex((line) => line.id === lineId);
-      const line = batch.lines[lineIndex];
-      if (!line || line.status !== 'APPROVED') {
-        return {
-          availabilityLineId: lineId,
-          outcome: 'FAILED',
-          rosterExceptionId: null,
-          rosterExceptionIds: [],
-          reason: 'Line is not approved',
-        };
+      const roster = readMonthlyRoster(String(params.monthlyRosterId));
+      if (!roster) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
       }
-      if (line.appliedRosterId === roster.monthlyRosterId) {
-        return {
-          availabilityLineId: lineId,
-          outcome: 'SKIPPED_ALREADY_APPLIED',
-          rosterExceptionId: line.appliedRosterExceptionId,
-          rosterExceptionIds: line.appliedRosterExceptionIds,
-          reason: 'Already applied to this roster',
-        };
+      if (roster.status !== 'DRAFT') {
+        return HttpResponse.json({ message: 'Roster must be DRAFT' }, { status: 422 });
       }
-      if (line.availabilityType === 'OTHER_AVAILABILITY_NOTE') {
+      const lineIds = Array.isArray(body.availabilityLineIds)
+        ? body.availabilityLineIds.filter((value): value is string => typeof value === 'string')
+        : [];
+      const now = Date.now();
+      const results = lineIds.map((lineId) => {
+        const batchIndex = workScheduleAvailabilityBatches.findIndex((batch) =>
+          batch.lines.some((line) => line.id === lineId),
+        );
+        if (batchIndex < 0) {
+          return {
+            availabilityLineId: lineId,
+            outcome: 'FAILED',
+            rosterExceptionId: null,
+            rosterExceptionIds: [],
+            reason: 'Line not found',
+          };
+        }
+        const batch = workScheduleAvailabilityBatches[batchIndex];
+        const lineIndex = batch.lines.findIndex((line) => line.id === lineId);
+        const line = batch.lines[lineIndex];
+        if (!line || line.status !== 'APPROVED') {
+          return {
+            availabilityLineId: lineId,
+            outcome: 'FAILED',
+            rosterExceptionId: null,
+            rosterExceptionIds: [],
+            reason: 'Line is not approved',
+          };
+        }
+        if (line.appliedRosterId === roster.monthlyRosterId) {
+          return {
+            availabilityLineId: lineId,
+            outcome: 'SKIPPED_ALREADY_APPLIED',
+            rosterExceptionId: line.appliedRosterExceptionId,
+            rosterExceptionIds: line.appliedRosterExceptionIds,
+            reason: 'Already applied to this roster',
+          };
+        }
+        if (line.availabilityType === 'OTHER_AVAILABILITY_NOTE') {
+          batch.lines[lineIndex] = {
+            ...line,
+            applyStatus: 'ADVISORY_ONLY',
+            appliedAt: now,
+            updatedAt: now,
+          };
+          return {
+            availabilityLineId: lineId,
+            outcome: 'ADVISORY_ONLY',
+            rosterExceptionId: null,
+            rosterExceptionIds: [],
+            reason: 'Availability note is advisory only',
+          };
+        }
+        const rosterExceptionId = `roster-exception-availability-${now}-${line.lineNo}`;
+        const exception: RosterExceptionRecord = {
+          rosterExceptionId,
+          monthlyRosterId: roster.monthlyRosterId,
+          exceptionType:
+            line.availabilityType === 'PREFERRED_TIME' ? 'CHANGE_TIME' : 'WORKING_TO_OFF',
+          exceptionDate: line.availabilityDate ?? line.dateRangeStart ?? roster.rosterMonth,
+          subjectEmploymentProfileId: line.member.employmentProfileId,
+          subjectEmploymentProfileRef:
+            employmentProfileRefs.get(line.member.employmentProfileId) ?? null,
+          status: 'ACTIVE',
+          title: null,
+          startLocalTime:
+            line.availabilityType === 'PREFERRED_TIME' ? line.preferredStartLocalTime : null,
+          endLocalTime:
+            line.availabilityType === 'PREFERRED_TIME' ? line.preferredEndLocalTime : null,
+          workingMinutes: line.availabilityType === 'PREFERRED_TIME' ? 480 : null,
+          breakMinutes: line.availabilityType === 'PREFERRED_TIME' ? 60 : null,
+          studioResourceIds: [],
+          reason: line.reason,
+          sourceNote: typeof body.applyNote === 'string' ? body.applyNote : null,
+          sourceAvailabilityBatchId: batch.id,
+          sourceAvailabilityLineId: line.id,
+          sourceAvailabilityType: line.availabilityType,
+          sourceAvailabilityTaxonomyCode: line.taxonomyCode,
+          sourceAppliedAt: now,
+          sourceApplyNote: typeof body.applyNote === 'string' ? body.applyNote : null,
+          description: null,
+          externalRef: null,
+          removedAt: null,
+          createdAt: now,
+          updatedAt: now,
+        };
+        roster.exceptions.push(exception);
         batch.lines[lineIndex] = {
           ...line,
-          applyStatus: 'ADVISORY_ONLY',
+          applyStatus: 'APPLIED',
+          appliedRosterId: roster.monthlyRosterId,
+          appliedRosterExceptionId: rosterExceptionId,
+          appliedRosterExceptionIds: [rosterExceptionId],
           appliedAt: now,
           updatedAt: now,
         };
         return {
           availabilityLineId: lineId,
-          outcome: 'ADVISORY_ONLY',
-          rosterExceptionId: null,
-          rosterExceptionIds: [],
-          reason: 'Availability note is advisory only',
+          outcome: 'APPLIED',
+          rosterExceptionId,
+          rosterExceptionIds: [rosterExceptionId],
+          reason: 'Applied to draft roster exception',
         };
-      }
-      const rosterExceptionId = `roster-exception-availability-${now}-${line.lineNo}`;
-      const exception: RosterExceptionRecord = {
-        rosterExceptionId,
-        monthlyRosterId: roster.monthlyRosterId,
-        exceptionType:
-          line.availabilityType === 'PREFERRED_TIME' ? 'CHANGE_TIME' : 'WORKING_TO_OFF',
-        exceptionDate: line.availabilityDate ?? line.dateRangeStart ?? roster.rosterMonth,
-        subjectEmploymentProfileId: line.member.employmentProfileId,
-        subjectEmploymentProfileRef:
-          employmentProfileRefs.get(line.member.employmentProfileId) ?? null,
-        status: 'ACTIVE',
-        title: null,
-        startLocalTime:
-          line.availabilityType === 'PREFERRED_TIME' ? line.preferredStartLocalTime : null,
-        endLocalTime:
-          line.availabilityType === 'PREFERRED_TIME' ? line.preferredEndLocalTime : null,
-        workingMinutes: line.availabilityType === 'PREFERRED_TIME' ? 480 : null,
-        breakMinutes: line.availabilityType === 'PREFERRED_TIME' ? 60 : null,
-        studioResourceIds: [],
-        reason: line.reason,
-        sourceNote: typeof body.applyNote === 'string' ? body.applyNote : null,
-        sourceAvailabilityBatchId: batch.id,
-        sourceAvailabilityLineId: line.id,
-        sourceAvailabilityType: line.availabilityType,
-        sourceAvailabilityTaxonomyCode: line.taxonomyCode,
-        sourceAppliedAt: now,
-        sourceApplyNote: typeof body.applyNote === 'string' ? body.applyNote : null,
-        description: null,
-        externalRef: null,
-        removedAt: null,
-        createdAt: now,
-        updatedAt: now,
-      };
-      roster.exceptions.push(exception);
-      batch.lines[lineIndex] = {
-        ...line,
-        applyStatus: 'APPLIED',
-        appliedRosterId: roster.monthlyRosterId,
-        appliedRosterExceptionId: rosterExceptionId,
-        appliedRosterExceptionIds: [rosterExceptionId],
-        appliedAt: now,
-        updatedAt: now,
-      };
-      return {
-        availabilityLineId: lineId,
-        outcome: 'APPLIED',
-        rosterExceptionId,
-        rosterExceptionIds: [rosterExceptionId],
-        reason: 'Applied to draft roster exception',
-      };
-    });
-    const appliedCount = results.filter((result) => result.outcome === 'APPLIED').length;
-    const advisoryOnlyCount = results.filter((result) => result.outcome === 'ADVISORY_ONLY').length;
-    const skippedAlreadyAppliedCount = results.filter(
-      (result) => result.outcome === 'SKIPPED_ALREADY_APPLIED',
-    ).length;
-    const failedCount = results.filter((result) => result.outcome === 'FAILED').length;
-    return HttpResponse.json({
-      data: {
-        monthlyRosterId: roster.monthlyRosterId,
-        rosterCode: roster.rosterCode,
-        rosterMonth: roster.rosterMonth,
-        status: roster.status,
-        targetType: roster.targetType,
-        targetMode: roster.targetMode,
-        targetOrgUnitId: roster.targetOrgUnitId,
-        targetTalentGroupId: roster.targetTalentGroupId,
-        appliedCount,
-        advisoryOnlyCount,
-        skippedAlreadyAppliedCount,
-        failedCount,
-        results,
-      },
-    });
-  }),
+      });
+      const appliedCount = results.filter((result) => result.outcome === 'APPLIED').length;
+      const advisoryOnlyCount = results.filter(
+        (result) => result.outcome === 'ADVISORY_ONLY',
+      ).length;
+      const skippedAlreadyAppliedCount = results.filter(
+        (result) => result.outcome === 'SKIPPED_ALREADY_APPLIED',
+      ).length;
+      const failedCount = results.filter((result) => result.outcome === 'FAILED').length;
+      return HttpResponse.json({
+        data: {
+          monthlyRosterId: roster.monthlyRosterId,
+          rosterCode: roster.rosterCode,
+          rosterMonth: roster.rosterMonth,
+          status: roster.status,
+          targetType: roster.targetType,
+          targetMode: roster.targetMode,
+          targetOrgUnitId: roster.targetOrgUnitId,
+          targetTalentGroupId: roster.targetTalentGroupId,
+          appliedCount,
+          advisoryOnlyCount,
+          skippedAlreadyAppliedCount,
+          failedCount,
+          results,
+        },
+      });
+    },
+  ),
 
   http.get('*/admin/work-schedule/rosters/:monthlyRosterId/preview', ({ params, request }) => {
     const scope = new URL(request.url).searchParams.get('scope');
@@ -4398,108 +4505,146 @@ export const wave6Handlers = [
   }),
 
   http.get('*/admin/work-schedule/availability-batches/:batchId', ({ params }) => {
-    const batch = workScheduleAvailabilityBatches.find((item) => item.id === String(params.batchId));
+    const batch = workScheduleAvailabilityBatches.find(
+      (item) => item.id === String(params.batchId),
+    );
     if (!batch) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
     return HttpResponse.json({ data: batch });
   }),
 
-  http.post('*/admin/work-schedule/availability-batches/:batchId/approve-lines', async ({ params, request }) => {
-    const body = (await parseJsonBody(request)) as { lineIds?: unknown; adminDecisionNote?: unknown };
-    const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'adminDecisionNote']);
-    if (bodyFailure) {
-      return bodyFailure;
-    }
-    return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'APPROVED', {
-      adminDecisionNote: typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
-    });
-  }),
+  http.post(
+    '*/admin/work-schedule/availability-batches/:batchId/approve-lines',
+    async ({ params, request }) => {
+      const body = (await parseJsonBody(request)) as {
+        lineIds?: unknown;
+        adminDecisionNote?: unknown;
+      };
+      const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'adminDecisionNote']);
+      if (bodyFailure) {
+        return bodyFailure;
+      }
+      return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'APPROVED', {
+        adminDecisionNote:
+          typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
+      });
+    },
+  ),
 
-  http.post('*/admin/work-schedule/availability-batches/:batchId/reject-lines', async ({ params, request }) => {
-    const body = (await parseJsonBody(request)) as {
-      lineIds?: unknown;
-      adminDecisionNote?: unknown;
-      rejectionReason?: unknown;
-    };
-    const bodyFailure = rejectUnsupportedBody(body, [
-      'lineIds',
-      'adminDecisionNote',
-      'rejectionReason',
-    ]);
-    if (bodyFailure) {
-      return bodyFailure;
-    }
-    if (typeof body.rejectionReason !== 'string' || body.rejectionReason.trim().length < 10) {
-      return HttpResponse.json({ message: 'rejectionReason is required' }, { status: 422 });
-    }
-    return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'REJECTED', {
-      adminDecisionNote: typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
-      rejectionReason: body.rejectionReason,
-    });
-  }),
+  http.post(
+    '*/admin/work-schedule/availability-batches/:batchId/reject-lines',
+    async ({ params, request }) => {
+      const body = (await parseJsonBody(request)) as {
+        lineIds?: unknown;
+        adminDecisionNote?: unknown;
+        rejectionReason?: unknown;
+      };
+      const bodyFailure = rejectUnsupportedBody(body, [
+        'lineIds',
+        'adminDecisionNote',
+        'rejectionReason',
+      ]);
+      if (bodyFailure) {
+        return bodyFailure;
+      }
+      if (typeof body.rejectionReason !== 'string' || body.rejectionReason.trim().length < 10) {
+        return HttpResponse.json({ message: 'rejectionReason is required' }, { status: 422 });
+      }
+      return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'REJECTED', {
+        adminDecisionNote:
+          typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
+        rejectionReason: body.rejectionReason,
+      });
+    },
+  ),
 
-  http.post('*/admin/work-schedule/availability-batches/:batchId/cancel-lines', async ({ params, request }) => {
-    const body = (await parseJsonBody(request)) as {
-      lineIds?: unknown;
-      adminDecisionNote?: unknown;
-      cancellationReason?: unknown;
-    };
-    const bodyFailure = rejectUnsupportedBody(body, [
-      'lineIds',
-      'adminDecisionNote',
-      'cancellationReason',
-    ]);
-    if (bodyFailure) {
-      return bodyFailure;
-    }
-    if (typeof body.cancellationReason !== 'string' || body.cancellationReason.trim().length < 10) {
-      return HttpResponse.json({ message: 'cancellationReason is required' }, { status: 422 });
-    }
-    return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'CANCELLED', {
-      adminDecisionNote: typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
-      cancellationReason: body.cancellationReason,
-    });
-  }),
+  http.post(
+    '*/admin/work-schedule/availability-batches/:batchId/cancel-lines',
+    async ({ params, request }) => {
+      const body = (await parseJsonBody(request)) as {
+        lineIds?: unknown;
+        adminDecisionNote?: unknown;
+        cancellationReason?: unknown;
+      };
+      const bodyFailure = rejectUnsupportedBody(body, [
+        'lineIds',
+        'adminDecisionNote',
+        'cancellationReason',
+      ]);
+      if (bodyFailure) {
+        return bodyFailure;
+      }
+      if (
+        typeof body.cancellationReason !== 'string' ||
+        body.cancellationReason.trim().length < 10
+      ) {
+        return HttpResponse.json({ message: 'cancellationReason is required' }, { status: 422 });
+      }
+      return decideAvailabilityBatchLines(String(params.batchId), body.lineIds, 'CANCELLED', {
+        adminDecisionNote:
+          typeof body.adminDecisionNote === 'string' ? body.adminDecisionNote : null,
+        cancellationReason: body.cancellationReason,
+      });
+    },
+  ),
 
-  http.post('*/admin/work-schedule/request-batches/:batchId/approve-lines', async ({ params, request }) => {
-    const body = (await parseJsonBody(request)) as { lineIds?: unknown; approvalNote?: unknown };
-    const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'approvalNote']);
-    if (bodyFailure) {
-      return bodyFailure;
-    }
-    return decideRequestBatchLines(String(params.batchId), body.lineIds, 'APPROVED', {
-      approvalNote: typeof body.approvalNote === 'string' ? body.approvalNote : null,
-    });
-  }),
+  http.post(
+    '*/admin/work-schedule/request-batches/:batchId/approve-lines',
+    async ({ params, request }) => {
+      const body = (await parseJsonBody(request)) as { lineIds?: unknown; approvalNote?: unknown };
+      const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'approvalNote']);
+      if (bodyFailure) {
+        return bodyFailure;
+      }
+      return decideRequestBatchLines(String(params.batchId), body.lineIds, 'APPROVED', {
+        approvalNote: typeof body.approvalNote === 'string' ? body.approvalNote : null,
+      });
+    },
+  ),
 
-  http.post('*/admin/work-schedule/request-batches/:batchId/reject-lines', async ({ params, request }) => {
-    const body = (await parseJsonBody(request)) as { lineIds?: unknown; rejectionReason?: unknown };
-    const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'rejectionReason']);
-    if (bodyFailure) {
-      return bodyFailure;
-    }
-    if (typeof body.rejectionReason !== 'string' || body.rejectionReason.trim().length < 10) {
-      return HttpResponse.json({ message: 'rejectionReason is required' }, { status: 422 });
-    }
-    return decideRequestBatchLines(String(params.batchId), body.lineIds, 'REJECTED', {
-      rejectionReason: body.rejectionReason,
-    });
-  }),
+  http.post(
+    '*/admin/work-schedule/request-batches/:batchId/reject-lines',
+    async ({ params, request }) => {
+      const body = (await parseJsonBody(request)) as {
+        lineIds?: unknown;
+        rejectionReason?: unknown;
+      };
+      const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'rejectionReason']);
+      if (bodyFailure) {
+        return bodyFailure;
+      }
+      if (typeof body.rejectionReason !== 'string' || body.rejectionReason.trim().length < 10) {
+        return HttpResponse.json({ message: 'rejectionReason is required' }, { status: 422 });
+      }
+      return decideRequestBatchLines(String(params.batchId), body.lineIds, 'REJECTED', {
+        rejectionReason: body.rejectionReason,
+      });
+    },
+  ),
 
-  http.post('*/admin/work-schedule/request-batches/:batchId/cancel-lines', async ({ params, request }) => {
-    const body = (await parseJsonBody(request)) as { lineIds?: unknown; cancellationReason?: unknown };
-    const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'cancellationReason']);
-    if (bodyFailure) {
-      return bodyFailure;
-    }
-    if (typeof body.cancellationReason !== 'string' || body.cancellationReason.trim().length < 10) {
-      return HttpResponse.json({ message: 'cancellationReason is required' }, { status: 422 });
-    }
-    return decideRequestBatchLines(String(params.batchId), body.lineIds, 'CANCELLED', {
-      cancellationReason: body.cancellationReason,
-    });
-  }),
+  http.post(
+    '*/admin/work-schedule/request-batches/:batchId/cancel-lines',
+    async ({ params, request }) => {
+      const body = (await parseJsonBody(request)) as {
+        lineIds?: unknown;
+        cancellationReason?: unknown;
+      };
+      const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'cancellationReason']);
+      if (bodyFailure) {
+        return bodyFailure;
+      }
+      if (
+        typeof body.cancellationReason !== 'string' ||
+        body.cancellationReason.trim().length < 10
+      ) {
+        return HttpResponse.json({ message: 'cancellationReason is required' }, { status: 422 });
+      }
+      return decideRequestBatchLines(String(params.batchId), body.lineIds, 'CANCELLED', {
+        cancellationReason: body.cancellationReason,
+      });
+    },
+  ),
 
   http.get('*/admin/work-schedule/requests', ({ request }) => {
     const url = new URL(request.url);
@@ -5035,10 +5180,11 @@ export const wave6Handlers = [
     const bodyFailure = rejectUnsupportedBody(body, [
       'eventCode',
       'title',
+      'ownerEmploymentProfileId',
       'assignments',
+      'status',
       'eventStartAt',
       'eventEndAt',
-      'studioResourceIds',
       'platformAccountIds',
       'description',
       'externalRef',
@@ -5048,14 +5194,12 @@ export const wave6Handlers = [
     }
 
     const assignmentInputs = readAssignmentInputs(body.assignments);
-    const studioResourceIds =
-      body.studioResourceIds === undefined ? [] : toStringArray(body.studioResourceIds);
     const platformAccountIds =
       body.platformAccountIds === undefined ? [] : toStringArray(body.platformAccountIds);
     if (
+      typeof body.ownerEmploymentProfileId !== 'string' ||
       !assignmentInputs ||
       assignmentInputs.length === 0 ||
-      !studioResourceIds ||
       !platformAccountIds ||
       typeof body.eventStartAt !== 'number' ||
       typeof body.eventEndAt !== 'number'
@@ -5074,9 +5218,10 @@ export const wave6Handlers = [
         generatedFixtureMonthCode('EVT', body.eventStartAt, eventSeed),
       ),
       title: String(body.title),
-      studioResourceIds,
+      ownerEmploymentProfileId: body.ownerEmploymentProfileId,
+      studioResourceIds: [],
       platformAccountIds,
-      status: 'SCHEDULED',
+      status: body.status === 'PLANNED' ? 'PLANNED' : 'DRAFT',
       eventStartAt: body.eventStartAt,
       eventEndAt: body.eventEndAt,
       description: toNullableText(body.description),
@@ -5118,6 +5263,24 @@ export const wave6Handlers = [
     });
   }),
 
+  http.get('*/admin/events/:eventId/bookings', ({ params, request }) => {
+    const queryFailure = rejectEventScopeLeakage(request) || rejectEventReadScope();
+    if (queryFailure) {
+      return queryFailure;
+    }
+
+    const event = readEvent(String(params.eventId));
+    if (!event) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    return HttpResponse.json({
+      data: studioBookings
+        .filter((booking) => booking.eventId === event.id)
+        .map(toStudioBookingDetail),
+    });
+  }),
+
   http.get('*/admin/events/:eventId', ({ params, request }) => {
     const queryFailure = rejectEventScopeLeakage(request) || rejectEventReadScope();
     if (queryFailure) {
@@ -5147,7 +5310,12 @@ export const wave6Handlers = [
     if (scopeFailure) {
       return scopeFailure;
     }
-    const bodyFailure = rejectUnsupportedBody(body, ['title', 'description', 'externalRef']);
+    const bodyFailure = rejectUnsupportedBody(body, [
+      'title',
+      'ownerEmploymentProfileId',
+      'description',
+      'externalRef',
+    ]);
     if (bodyFailure) {
       return bodyFailure;
     }
@@ -5156,11 +5324,14 @@ export const wave6Handlers = [
     if (!event) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
-    if (event.status !== 'SCHEDULED') {
+    if (event.status !== 'DRAFT' && event.status !== 'PLANNED') {
       return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
     }
 
     event.title = String(body.title ?? event.title);
+    event.ownerEmploymentProfileId = String(
+      body.ownerEmploymentProfileId ?? event.ownerEmploymentProfileId,
+    );
     event.description = toNullableText(body.description);
     event.externalRef = toNullableText(body.externalRef);
     event.updatedAt = Date.now();
@@ -5174,7 +5345,7 @@ export const wave6Handlers = [
     if (scopeFailure) {
       return scopeFailure;
     }
-    const bodyFailure = rejectUnsupportedBody(body, ['newEventStartAt', 'newEventEndAt']);
+    const bodyFailure = rejectUnsupportedBody(body, ['newEventStartAt', 'newEventEndAt', 'reason']);
     if (bodyFailure) {
       return bodyFailure;
     }
@@ -5183,10 +5354,15 @@ export const wave6Handlers = [
     if (!event) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
-    if (event.status !== 'SCHEDULED') {
+    if (event.status !== 'DRAFT' && event.status !== 'PLANNED') {
       return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
     }
-    if (typeof body.newEventStartAt !== 'number' || typeof body.newEventEndAt !== 'number') {
+    if (
+      typeof body.newEventStartAt !== 'number' ||
+      typeof body.newEventEndAt !== 'number' ||
+      typeof body.reason !== 'string' ||
+      body.reason.trim().length === 0
+    ) {
       return HttpResponse.json(
         { message: 'event-assignment:validation.required' },
         { status: 422 },
@@ -5195,6 +5371,8 @@ export const wave6Handlers = [
 
     event.eventStartAt = body.newEventStartAt;
     event.eventEndAt = body.newEventEndAt;
+    event.lastRescheduledAt = Date.now();
+    event.lastRescheduleReason = body.reason;
     event.updatedAt = Date.now();
 
     return HttpResponse.json({ data: toEventDetail(event) });
@@ -5219,7 +5397,7 @@ export const wave6Handlers = [
     if (!event) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
-    if (event.status !== 'SCHEDULED') {
+    if (event.status !== 'DRAFT' && event.status !== 'PLANNED') {
       return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
     }
 
@@ -5229,33 +5407,16 @@ export const wave6Handlers = [
     return HttpResponse.json({ data: toEventDetail(event) });
   }),
 
-  http.post('*/admin/events/:eventId/studio-resources', async ({ params, request }) => {
+  http.post('*/admin/events/:eventId/studio-resources', async ({ request }) => {
     const body = await parseJsonBody(request);
     const scopeFailure = rejectEventScopeLeakage(request, body);
     if (scopeFailure) {
       return scopeFailure;
     }
-    const bodyFailure = rejectUnsupportedBody(body, ['newStudioResourceIds']);
-    const resourceIds = toStringArray(body.newStudioResourceIds);
-    if (bodyFailure || !resourceIds) {
-      return (
-        bodyFailure ??
-        HttpResponse.json({ message: 'event-assignment:validation.required' }, { status: 422 })
-      );
-    }
-
-    const event = readEvent(String(params.eventId));
-    if (!event) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    if (event.status !== 'SCHEDULED') {
-      return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
-    }
-
-    event.studioResourceIds = resourceIds;
-    event.updatedAt = Date.now();
-
-    return HttpResponse.json({ data: toEventDetail(event) });
+    return HttpResponse.json(
+      { message: 'event-assignment:validation.deprecatedStudioResourceIds' },
+      { status: 410 },
+    );
   }),
 
   http.post('*/admin/events/:eventId/platform-accounts', async ({ params, request }) => {
@@ -5277,7 +5438,7 @@ export const wave6Handlers = [
     if (!event) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
-    if (event.status !== 'SCHEDULED') {
+    if (event.status !== 'DRAFT' && event.status !== 'PLANNED') {
       return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
     }
 
@@ -5287,7 +5448,7 @@ export const wave6Handlers = [
     return HttpResponse.json({ data: toEventDetail(event) });
   }),
 
-  http.post('*/admin/events/:eventId/start', async ({ params, request }) => {
+  http.post('*/admin/events/:eventId/plan', async ({ params, request }) => {
     const body = await parseJsonBody(request);
     const scopeFailure = rejectEventScopeLeakage(request, body);
     const bodyFailure = rejectUnsupportedBody(body, []);
@@ -5300,11 +5461,41 @@ export const wave6Handlers = [
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
     const activeAssignments = assignments.filter((assignment) => assignment.eventId === event.id);
-    if (event.status !== 'SCHEDULED' || activeAssignments.length === 0) {
+    if (event.status !== 'DRAFT' || activeAssignments.length === 0) {
       return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
     }
 
-    event.status = 'IN_PROGRESS';
+    event.status = 'PLANNED';
+    event.plannedAt = Date.now();
+    event.updatedAt = Date.now();
+
+    return HttpResponse.json({ data: toEventDetail(event) });
+  }),
+
+  http.post('*/admin/events/:eventId/confirm', async ({ params, request }) => {
+    const body = await parseJsonBody(request);
+    const scopeFailure = rejectEventScopeLeakage(request, body);
+    const bodyFailure = rejectUnsupportedBody(body, []);
+    if (scopeFailure || bodyFailure) {
+      return scopeFailure ?? bodyFailure;
+    }
+
+    const event = readEvent(String(params.eventId));
+    if (!event) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    if (event.status !== 'PLANNED') {
+      return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
+    }
+
+    event.status = 'CONFIRMED';
+    event.confirmedAt = Date.now();
+    studioBookings
+      .filter((booking) => booking.eventId === event.id && booking.status === 'HELD')
+      .forEach((booking) => {
+        booking.status = 'CONFIRMED';
+        booking.updatedAt = Date.now();
+      });
     event.updatedAt = Date.now();
 
     return HttpResponse.json({ data: toEventDetail(event) });
@@ -5322,11 +5513,12 @@ export const wave6Handlers = [
     if (!event) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
-    if (event.status !== 'IN_PROGRESS') {
+    if (event.status !== 'CONFIRMED') {
       return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
     }
 
     event.status = 'COMPLETED';
+    event.completedAt = Date.now();
     event.updatedAt = Date.now();
 
     return HttpResponse.json({ data: toEventDetail(event) });
@@ -5335,7 +5527,7 @@ export const wave6Handlers = [
   http.post('*/admin/events/:eventId/cancel', async ({ params, request }) => {
     const body = await parseJsonBody(request);
     const scopeFailure = rejectEventScopeLeakage(request, body);
-    const bodyFailure = rejectUnsupportedBody(body, []);
+    const bodyFailure = rejectUnsupportedBody(body, ['reason']);
     if (scopeFailure || bodyFailure) {
       return scopeFailure ?? bodyFailure;
     }
@@ -5344,11 +5536,17 @@ export const wave6Handlers = [
     if (!event) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
-    if (event.status !== 'SCHEDULED' && event.status !== 'IN_PROGRESS') {
+    if (
+      typeof body.reason !== 'string' ||
+      body.reason.trim().length === 0 ||
+      (event.status !== 'DRAFT' && event.status !== 'PLANNED' && event.status !== 'CONFIRMED')
+    ) {
       return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
     }
 
     event.status = 'CANCELLED';
+    event.cancelledAt = Date.now();
+    event.cancellationReason = body.reason;
     event.updatedAt = Date.now();
 
     return HttpResponse.json({ data: toEventDetail(event) });
@@ -5366,11 +5564,8 @@ export const wave6Handlers = [
     if (!event) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
-    const canArchive =
-      event.status === 'COMPLETED' ||
-      event.status === 'CANCELLED' ||
-      (event.status === 'SCHEDULED' && event.eventEndAt < Date.now());
-    if (!canArchive || event.status === 'IN_PROGRESS' || event.status === 'ARCHIVED') {
+    const canArchive = event.status === 'COMPLETED' || event.status === 'CANCELLED';
+    if (!canArchive || event.status === 'ARCHIVED') {
       return HttpResponse.json({ message: 'errors:validation.invalidTransition' }, { status: 422 });
     }
 

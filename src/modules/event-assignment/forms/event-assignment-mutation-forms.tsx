@@ -15,16 +15,15 @@ import type {
   EventAssignmentInput,
   EventAssignmentKind,
   EventCreatePayload,
+  EventLifecyclePayload,
   EventReplaceAssignmentsPayload,
   EventReplacePlatformAccountsPayload,
-  EventReplaceStudioResourcesPayload,
   EventReschedulePayload,
   EventUpdatePayload,
 } from '@modules/event-assignment/types/event-assignment.types';
 import {
   loadEmploymentProfileReferenceOptions,
   loadPlatformAccountReferenceOptions,
-  loadStudioResourceReferenceOptions,
   loadTalentGroupReferenceOptions,
   loadTalentReferenceOptions,
 } from '@shared/components/reference/admin-reference-options';
@@ -51,9 +50,14 @@ type EventCreateSurfaceProps = BaseSurfaceProps & {
   onSubmit: (payload: EventCreatePayload) => Promise<void> | void;
 };
 
+type EventLifecycleReasonSurfaceProps = BaseSurfaceProps & {
+  onSubmit: (payload: EventLifecyclePayload) => Promise<void> | void;
+};
+
 type EventEditSurfaceProps = BaseSurfaceProps & {
   initialValues: {
     title: string;
+    ownerEmploymentProfileId: string;
     description?: string | null;
     externalRef?: string | null;
   };
@@ -72,11 +76,6 @@ type EventReplaceAssignmentsSurfaceProps = BaseSurfaceProps & {
   initialAssignments: EventAssignmentInput[];
   rosterAvailable?: boolean;
   onSubmit: (payload: EventReplaceAssignmentsPayload) => Promise<void> | void;
-};
-
-type EventReplaceStudioResourcesSurfaceProps = BaseSurfaceProps & {
-  initialResourceIds: string[];
-  onSubmit: (payload: EventReplaceStudioResourcesPayload) => Promise<void> | void;
 };
 
 type EventReplacePlatformAccountsSurfaceProps = BaseSurfaceProps & {
@@ -182,6 +181,7 @@ const createRescheduleSchema = (requiredMessage: string, rangeMessage: string) =
     .object({
       newEventStartAt: timestampField(requiredMessage),
       newEventEndAt: timestampField(requiredMessage),
+      reason: z.string().trim().min(1, requiredMessage),
     })
     .superRefine((value, context) => {
       if (value.newEventEndAt <= value.newEventStartAt) {
@@ -195,11 +195,11 @@ const createRescheduleSchema = (requiredMessage: string, rangeMessage: string) =
 
 type EventCreateFormValues = {
   title: string;
+  ownerEmploymentProfileId: string;
   assignmentKind: EventAssignmentKind;
   assignmentId: string;
   eventStartAt: string;
   eventEndAt: string;
-  studioResourceIds: IdRow[];
   platformAccountIds: IdRow[];
   description: string;
   externalRef: string;
@@ -239,13 +239,15 @@ const createCreateSchema = (
   z
     .object({
       title: z.string().trim().min(1, requiredMessage),
+      ownerEmploymentProfileId: z
+        .string()
+        .trim()
+        .min(1, requiredMessage)
+        .regex(tokenRegex, tokenMessage),
       assignmentKind: createAssignmentKindSchema(requiredMessage),
       assignmentId: z.string().trim().min(1, requiredMessage).regex(tokenRegex, tokenMessage),
       eventStartAt: timestampField(requiredMessage),
       eventEndAt: timestampField(requiredMessage),
-      studioResourceIds: z.array(
-        z.object({ id: z.string().trim().regex(tokenRegex, tokenMessage) }),
-      ),
       platformAccountIds: z.array(
         z.object({ id: z.string().trim().regex(tokenRegex, tokenMessage) }),
       ),
@@ -261,11 +263,11 @@ const createCreateSchema = (
         });
       }
 
-      [...value.studioResourceIds, ...value.platformAccountIds].forEach((row) => {
+      value.platformAccountIds.forEach((row) => {
         if (row.id && !tokenRegex.test(row.id)) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
-            path: ['studioResourceIds'],
+            path: ['platformAccountIds'],
             message: referenceMessage,
           });
         }
@@ -292,11 +294,11 @@ export const EventCreateSurface = ({
   const form = useForm<EventCreateFormValues>({
     defaultValues: {
       title: '',
+      ownerEmploymentProfileId: '',
       assignmentKind: 'EMPLOYMENT_PROFILE',
       assignmentId: '',
       eventStartAt: '',
       eventEndAt: '',
-      studioResourceIds: [],
       platformAccountIds: [],
       description: '',
       externalRef: '',
@@ -323,10 +325,10 @@ export const EventCreateSurface = ({
 
     await onSubmit({
       title: parsed.data.title,
+      ownerEmploymentProfileId: parsed.data.ownerEmploymentProfileId,
       assignments: [assignmentKindToPayload(parsed.data.assignmentKind, parsed.data.assignmentId)],
       eventStartAt: parsed.data.eventStartAt,
       eventEndAt: parsed.data.eventEndAt,
-      studioResourceIds: idsFromRows(parsed.data.studioResourceIds),
       platformAccountIds: idsFromRows(parsed.data.platformAccountIds),
       description: toNullableText(parsed.data.description),
       externalRef: toNullableText(parsed.data.externalRef),
@@ -353,6 +355,13 @@ export const EventCreateSurface = ({
             className="md:col-span-2"
           />
           <TextInputField name="title" label={t('event-assignment:fields.title')} />
+          <ReferencePickerField
+            name="ownerEmploymentProfileId"
+            label={t('event-assignment:fields.ownerEmploymentProfileId')}
+            pickerId="event-owner-employment-profile"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            placeholder={t('event-assignment:placeholders.searchReference')}
+          />
           <SelectField
             name="assignmentKind"
             label={t('event-assignment:fields.assignmentKind')}
@@ -375,18 +384,9 @@ export const EventCreateSurface = ({
             placeholder={t('event-assignment:placeholders.optional')}
           />
         </FormGrid>
-        <ReferenceIdSetEditor
-          name="studioResourceIds"
-          idFieldName="id"
-          pickerId="event-studio-resource"
-          loadOptions={loadStudioResourceReferenceOptions}
-          title={t('event-assignment:fields.studioResources')}
-          fieldLabel={t('event-assignment:fields.studioResource')}
-          addLabel={t('event-assignment:actions.addStudioResource')}
-          removeLabel={(index) => t('event-assignment:actions.removeStudioResource', { index })}
-          emptyLabel={t('event-assignment:assignments.emptyStudioResourceSet')}
-          placeholder={t('event-assignment:placeholders.searchReference')}
-        />
+        <p className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+          {t('event-assignment:detail.bookingReadOnlyHelper')}
+        </p>
         <ReferenceIdSetEditor
           name="platformAccountIds"
           idFieldName="id"
@@ -439,6 +439,7 @@ const EventAssignmentReferenceField = ({
 
 type EventEditFormValues = {
   title: string;
+  ownerEmploymentProfileId: string;
   description: string;
   externalRef: string;
 };
@@ -453,6 +454,7 @@ export const EventEditSurface = ({
   const form = useForm<EventEditFormValues>({
     defaultValues: {
       title: initialValues.title,
+      ownerEmploymentProfileId: initialValues.ownerEmploymentProfileId,
       description: initialValues.description ?? '',
       externalRef: initialValues.externalRef ?? '',
     },
@@ -462,6 +464,11 @@ export const EventEditSurface = ({
     () =>
       z.object({
         title: z.string().trim().min(1, t('event-assignment:validation.required')),
+        ownerEmploymentProfileId: z
+          .string()
+          .trim()
+          .min(1, t('event-assignment:validation.required'))
+          .regex(tokenRegex, t('event-assignment:validation.invalidToken')),
         description: z.string().trim().optional(),
         externalRef: z.string().trim().optional(),
       }),
@@ -477,6 +484,7 @@ export const EventEditSurface = ({
 
     await onSubmit({
       title: parsed.data.title,
+      ownerEmploymentProfileId: parsed.data.ownerEmploymentProfileId,
       description: toNullableText(parsed.data.description),
       externalRef: toNullableText(parsed.data.externalRef),
     });
@@ -497,6 +505,13 @@ export const EventEditSurface = ({
       >
         <FormGrid columns={2}>
           <TextInputField name="title" label={t('event-assignment:fields.title')} />
+          <ReferencePickerField
+            name="ownerEmploymentProfileId"
+            label={t('event-assignment:fields.ownerEmploymentProfileId')}
+            pickerId="event-edit-owner-employment-profile"
+            loadOptions={loadEmploymentProfileReferenceOptions}
+            placeholder={t('event-assignment:placeholders.searchReference')}
+          />
           <TextInputField name="externalRef" label={t('event-assignment:fields.externalRef')} />
         </FormGrid>
         <TextInputField name="description" label={t('event-assignment:fields.description')} />
@@ -512,10 +527,11 @@ export const EventRescheduleSurface = ({
   isPending = false,
 }: EventRescheduleSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['event-assignment', 'common']);
-  const form = useForm<{ newEventStartAt: string; newEventEndAt: string }>({
+  const form = useForm<{ newEventStartAt: string; newEventEndAt: string; reason: string }>({
     defaultValues: {
       newEventStartAt: formatBusinessDateTimeInputValue(initialValues.eventStartAt),
       newEventEndAt: formatBusinessDateTimeInputValue(initialValues.eventEndAt),
+      reason: '',
     },
   });
   const schema = useMemo(
@@ -558,6 +574,11 @@ export const EventRescheduleSurface = ({
             name="newEventEndAt"
             label={t('event-assignment:fields.newEventEndAt')}
             type="datetime-local"
+          />
+          <TextInputField
+            name="reason"
+            label={t('event-assignment:fields.reason')}
+            placeholder={t('event-assignment:placeholders.requiredReason')}
           />
         </FormGrid>
       </ModuleMutationSurface>
@@ -682,48 +703,50 @@ export const EventReplaceAssignmentsSurface = ({
   );
 };
 
-export const EventReplaceStudioResourcesSurface = ({
-  initialResourceIds,
+export const EventLifecycleReasonSurface = ({
   onCancel,
   onSubmit,
   isPending = false,
-}: EventReplaceStudioResourcesSurfaceProps): JSX.Element => {
+}: EventLifecycleReasonSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['event-assignment', 'common']);
-  const form = useForm<{ newStudioResourceIds: IdRow[] }>({
+  const form = useForm<{ reason: string }>({
     defaultValues: {
-      newStudioResourceIds: initialResourceIds.map((id) => ({ id })),
+      reason: '',
     },
   });
+  const schema = useMemo(
+    () =>
+      z.object({
+        reason: z.string().trim().min(1, t('event-assignment:validation.required')),
+      }),
+    [t],
+  );
   const handleSubmit = form.handleSubmit(async (values) => {
-    await onSubmit({
-      newStudioResourceIds: idsFromRows(values.newStudioResourceIds),
-    });
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      applySchemaErrors(form.setError, parsed.error, 'reason');
+      return;
+    }
+    await onSubmit(parsed.data);
   });
 
   return (
     <FormProvider {...form}>
       <ModuleMutationSurface
-        title={t('event-assignment:mutations.replaceStudioResources.title')}
-        subtitle={t('event-assignment:mutations.replaceStudioResources.subtitle')}
+        title={t('event-assignment:mutations.cancel.title')}
+        subtitle={t('event-assignment:mutations.cancel.subtitle')}
         kind="action"
-        submitLabel={t('event-assignment:mutations.replaceStudioResources.submit')}
-        pendingLabel={t('event-assignment:mutations.replaceStudioResources.pending')}
+        submitLabel={t('event-assignment:mutations.cancel.submit')}
+        pendingLabel={t('event-assignment:mutations.cancel.pending')}
         cancelLabel={t('common:actions.cancel')}
         onCancel={onCancel}
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <ReferenceIdSetEditor
-          name="newStudioResourceIds"
-          idFieldName="id"
-          pickerId="event-replacement-studio-resource"
-          loadOptions={loadStudioResourceReferenceOptions}
-          title={t('event-assignment:fields.studioResources')}
-          fieldLabel={t('event-assignment:fields.studioResource')}
-          addLabel={t('event-assignment:actions.addStudioResource')}
-          removeLabel={(index) => t('event-assignment:actions.removeStudioResource', { index })}
-          emptyLabel={t('event-assignment:assignments.emptyStudioResourceSet')}
-          placeholder={t('event-assignment:placeholders.searchReference')}
+        <TextInputField
+          name="reason"
+          label={t('event-assignment:fields.reason')}
+          placeholder={t('event-assignment:placeholders.requiredReason')}
         />
       </ModuleMutationSurface>
     </FormProvider>

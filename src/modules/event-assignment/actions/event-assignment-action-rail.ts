@@ -10,7 +10,6 @@ type EventActionRailHandlers = {
   onEdit: () => void;
   onReschedule: () => void;
   onReplaceAssignments: () => void;
-  onReplaceStudioResources: () => void;
   onReplacePlatformAccounts: () => void;
   onLifecycleAction: (action: EventLifecycleAction) => void;
   hasActiveAssignments?: boolean;
@@ -18,43 +17,40 @@ type EventActionRailHandlers = {
   isLifecyclePending?: (action: EventLifecycleAction) => boolean;
 };
 
-const isScheduled = (record: EventRecord): boolean => record.status === 'SCHEDULED';
+const isDraftOrPlanned = (record: EventRecord): boolean =>
+  record.status === 'DRAFT' || record.status === 'PLANNED';
 const isArchived = (record: EventRecord): boolean => record.status === 'ARCHIVED';
-const isHistorical = (record: EventRecord): boolean => Number(record.eventEndAt) < Date.now();
 
-export const canArchiveEvent = (record: Pick<EventRecord, 'status' | 'eventEndAt'>): boolean => {
-  return (
-    record.status === 'COMPLETED' ||
-    record.status === 'CANCELLED' ||
-    (record.status === 'SCHEDULED' && Number(record.eventEndAt) < Date.now())
-  );
-};
+export const canArchiveEvent = (record: Pick<EventRecord, 'status'>): boolean =>
+  record.status === 'COMPLETED' || record.status === 'CANCELLED';
 
 export const createEventActionRailItems = (
   t: TFunction,
   record: EventRecord,
   handlers: EventActionRailHandlers,
 ): ActionRailItem[] => {
-  const scheduled = isScheduled(record);
+  const editable = isDraftOrPlanned(record);
   const startDisabledByRoster = handlers.assignmentRosterKnown && !handlers.hasActiveAssignments;
-  const assignmentReplacementAvailable = scheduled && handlers.assignmentRosterKnown;
-  const canStart = scheduled && !startDisabledByRoster;
-  const canComplete = record.status === 'IN_PROGRESS';
-  const canCancel = record.status === 'SCHEDULED' || record.status === 'IN_PROGRESS';
+  const assignmentReplacementAvailable = editable && handlers.assignmentRosterKnown;
+  const canPlan = record.status === 'DRAFT' && !startDisabledByRoster;
+  const canConfirm = record.status === 'PLANNED';
+  const canComplete = record.status === 'CONFIRMED';
+  const canCancel =
+    record.status === 'DRAFT' || record.status === 'PLANNED' || record.status === 'CONFIRMED';
   const canArchive = !isArchived(record) && canArchiveEvent(record);
 
   const items: ActionRailItem[] = [
     {
       id: 'edit',
       label: t('event-assignment:actions.edit'),
-      disabled: !scheduled,
-      onClick: scheduled ? handlers.onEdit : undefined,
+      disabled: !editable,
+      onClick: editable ? handlers.onEdit : undefined,
     },
     {
       id: 'reschedule',
       label: t('event-assignment:actions.reschedule'),
-      disabled: !scheduled,
-      onClick: scheduled ? handlers.onReschedule : undefined,
+      disabled: !editable,
+      onClick: editable ? handlers.onReschedule : undefined,
     },
     {
       id: 'replace-assignments',
@@ -63,22 +59,22 @@ export const createEventActionRailItems = (
       onClick: assignmentReplacementAvailable ? handlers.onReplaceAssignments : undefined,
     },
     {
-      id: 'replace-studio-resources',
-      label: t('event-assignment:actions.replaceStudioResources'),
-      disabled: !scheduled,
-      onClick: scheduled ? handlers.onReplaceStudioResources : undefined,
-    },
-    {
       id: 'replace-platform-accounts',
       label: t('event-assignment:actions.replacePlatformAccounts'),
-      disabled: !scheduled,
-      onClick: scheduled ? handlers.onReplacePlatformAccounts : undefined,
+      disabled: !editable,
+      onClick: editable ? handlers.onReplacePlatformAccounts : undefined,
     },
     {
-      id: 'start',
-      label: t('event-assignment:actions.start'),
-      disabled: !canStart || handlers.isLifecyclePending?.('start'),
-      onClick: canStart ? () => handlers.onLifecycleAction('start') : undefined,
+      id: 'plan',
+      label: t('event-assignment:actions.plan'),
+      disabled: !canPlan || handlers.isLifecyclePending?.('plan'),
+      onClick: canPlan ? () => handlers.onLifecycleAction('plan') : undefined,
+    },
+    {
+      id: 'confirm',
+      label: t('event-assignment:actions.confirm'),
+      disabled: !canConfirm || handlers.isLifecyclePending?.('confirm'),
+      onClick: canConfirm ? () => handlers.onLifecycleAction('confirm') : undefined,
     },
     {
       id: 'complete',
@@ -100,15 +96,7 @@ export const createEventActionRailItems = (
       disabled: !canArchive || handlers.isLifecyclePending?.('archive'),
       onClick: canArchive ? () => handlers.onLifecycleAction('archive') : undefined,
     },
-    {
-      id: 'historical-readonly-note',
-      label: t('event-assignment:actions.historicalArchiveEligible'),
-      disabled: true,
-      onClick: undefined,
-    },
   ];
 
-  return items.filter(
-    (item) => item.id !== 'historical-readonly-note' || (scheduled && isHistorical(record)),
-  );
+  return items;
 };

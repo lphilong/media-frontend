@@ -16,7 +16,6 @@ import {
   EventEditSurface,
   EventReplaceAssignmentsSurface,
   EventReplacePlatformAccountsSurface,
-  EventReplaceStudioResourcesSurface,
   EventRescheduleSurface,
 } from '@modules/event-assignment/forms/event-assignment-mutation-forms';
 import type {
@@ -72,9 +71,10 @@ const eventRecord: EventRecord = {
   id: 'event-001',
   eventCode: 'EVT-202605-000001',
   title: 'Launch event',
+  ownerEmploymentProfileId: 'ep-001',
   studioResourceIds: ['studio-001'],
   platformAccountIds: ['platform-001'],
-  status: 'SCHEDULED',
+  status: 'PLANNED',
   eventStartAt: 100,
   eventEndAt: 200,
   description: null,
@@ -107,13 +107,13 @@ describe('event assignment wave 6 query and payload shaping', () => {
   it('parses and serializes only documented flat-list query keys without scope', () => {
     const query = parseScreenQueryParams(
       new URLSearchParams(
-        'status=SCHEDULED&assignmentKind=EMPLOYMENT_PROFILE&assignmentEmploymentProfileId=ep-001&containsStudioResourceId=studio-001&containsPlatformAccountId=platform-001&windowStartAt=&windowEndAt=200&limit=50&cursor=opaque&search=EVT-202605-000001&sortBy=eventStartAt&sortDirection=desc&page=2&scope=global&scopeGrants=x',
+        'status=PLANNED&assignmentKind=EMPLOYMENT_PROFILE&assignmentEmploymentProfileId=ep-001&containsStudioResourceId=studio-001&containsPlatformAccountId=platform-001&windowStartAt=&windowEndAt=200&limit=50&cursor=opaque&search=EVT-202605-000001&sortBy=eventStartAt&sortDirection=desc&page=2&scope=global&scopeGrants=x',
       ),
       eventFlatListQueryConfig,
     );
 
     expect(query).toEqual({
-      status: 'SCHEDULED',
+      status: 'PLANNED',
       assignmentKind: 'EMPLOYMENT_PROFILE',
       assignmentEmploymentProfileId: 'ep-001',
       containsStudioResourceId: 'studio-001',
@@ -156,13 +156,13 @@ describe('event assignment wave 6 query and payload shaping', () => {
   it('accepts additive Event target-filter deep links and serializes them to URL/API params', async () => {
     const query = parseScreenQueryParams(
       new URLSearchParams(
-        'statusGroup=ACTIVE&eventOverlapStartAt=1000&eventOverlapEndAt=2000&eventStartFromAt=3000&eventStartToAt=4000&status=SCHEDULED&windowStartAt=5000&windowEndAt=6000',
+        'statusGroup=ACTIVE&eventOverlapStartAt=1000&eventOverlapEndAt=2000&eventStartFromAt=3000&eventStartToAt=4000&status=PLANNED&windowStartAt=5000&windowEndAt=6000',
       ),
       eventFlatListQueryConfig,
     );
 
     expect(query).toEqual({
-      status: 'SCHEDULED',
+      status: 'PLANNED',
       statusGroup: 'ACTIVE',
       windowStartAt: 5000,
       windowEndAt: 6000,
@@ -178,7 +178,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
     expect(params.get('eventOverlapEndAt')).toBe('2000');
     expect(params.get('eventStartFromAt')).toBe('3000');
     expect(params.get('eventStartToAt')).toBe('4000');
-    expect(params.get('status')).toBe('SCHEDULED');
+    expect(params.get('status')).toBe('PLANNED');
     expect(params.get('windowStartAt')).toBe('5000');
     expect(params.get('windowEndAt')).toBe('6000');
 
@@ -201,7 +201,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
     apiRequestMock.mockResolvedValue({ data: [], meta: undefined });
     await fetchEvents(query);
     expect(apiRequestMock.mock.calls.at(-1)?.[0].params).toMatchObject({
-      status: 'SCHEDULED',
+      status: 'PLANNED',
       statusGroup: 'ACTIVE',
       windowStartAt: 5000,
       windowEndAt: 6000,
@@ -238,7 +238,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
       {
         view: 'by-platform',
         platformAccountId: 'platform-001',
-        status: 'SCHEDULED',
+        status: 'PLANNED',
         search: 'nope',
         containsPlatformAccountId: 'alias-not-supported',
         scope: 'global',
@@ -255,7 +255,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
   it('never emits Event scope or scopeGrants through the API layer', async () => {
     apiRequestMock.mockResolvedValue({ data: [], meta: undefined });
     await fetchEvents({
-      status: 'SCHEDULED',
+      status: 'PLANNED',
       scope: 'global',
       scopeGrants: ['forbidden'],
     } as Parameters<typeof fetchEvents>[0]);
@@ -264,7 +264,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
         method: 'GET',
         url: '/admin/events',
         params: {
-          status: 'SCHEDULED',
+          status: 'PLANNED',
           statusGroup: undefined,
           assignmentKind: undefined,
           assignmentEmploymentProfileId: undefined,
@@ -290,11 +290,11 @@ describe('event assignment wave 6 query and payload shaping', () => {
     expect(apiRequestMock.mock.calls.at(-1)?.[0].params).not.toHaveProperty('scopeGrants');
 
     apiRequestMock.mockResolvedValue({ data: eventRecord });
-    await performEventLifecycleAction('event-001', 'start');
+    await performEventLifecycleAction('event-001', 'plan');
     expect(apiRequestMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'POST',
-        url: '/admin/events/event-001/start',
+        url: '/admin/events/event-001/plan',
         data: {},
       }),
     );
@@ -483,7 +483,9 @@ describe('event assignment wave 6 query and payload shaping', () => {
       screen.getByText(i18n.t('event-assignment:generatedCode.description')),
     ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.title')), 'Wave 6 event');
-    await user.click(await screen.findByRole('button', { name: /Employee One/ }));
+    const employeeOptions = await screen.findAllByRole('button', { name: /Employee One/ });
+    await user.click(employeeOptions[0]);
+    await user.click(employeeOptions[1]);
     await user.type(
       screen.getByLabelText(i18n.t('event-assignment:fields.eventStartAt')),
       businessStartInput,
@@ -493,10 +495,6 @@ describe('event assignment wave 6 query and payload shaping', () => {
       businessEndInput,
     );
     await user.click(
-      screen.getByRole('button', { name: i18n.t('event-assignment:actions.addStudioResource') }),
-    );
-    await user.click(await screen.findByRole('button', { name: /Studio One/ }));
-    await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.addPlatformAccount') }),
     );
     await user.click(await screen.findByRole('button', { name: /Platform One/ }));
@@ -505,6 +503,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
     );
     expect(onCreate).toHaveBeenCalledWith({
       title: 'Wave 6 event',
+      ownerEmploymentProfileId: 'ep-001',
       assignments: [
         {
           assignmentKind: 'EMPLOYMENT_PROFILE',
@@ -513,7 +512,6 @@ describe('event assignment wave 6 query and payload shaping', () => {
       ],
       eventStartAt: businessStartUtcMs,
       eventEndAt: businessEndUtcMs,
-      studioResourceIds: ['studio-001'],
       platformAccountIds: ['platform-001'],
       description: null,
       externalRef: null,
@@ -524,7 +522,12 @@ describe('event assignment wave 6 query and payload shaping', () => {
     const onEdit = vi.fn();
     const editRender = render(
       <EventEditSurface
-        initialValues={{ title: 'Wave 6 event', description: 'old', externalRef: 'EXT' }}
+        initialValues={{
+          title: 'Wave 6 event',
+          ownerEmploymentProfileId: 'ep-001',
+          description: 'old',
+          externalRef: 'EXT',
+        }}
         onCancel={() => undefined}
         onSubmit={onEdit}
       />,
@@ -535,6 +538,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
     );
     expect(onEdit).toHaveBeenCalledWith({
       title: 'Wave 6 event',
+      ownerEmploymentProfileId: 'ep-001',
       description: null,
       externalRef: 'EXT',
     });
@@ -562,12 +566,14 @@ describe('event assignment wave 6 query and payload shaping', () => {
       screen.getByLabelText(i18n.t('event-assignment:fields.newEventEndAt')),
       rescheduleEndInput,
     );
+    await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.reason')), 'Ops change');
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:mutations.reschedule.submit') }),
     );
     expect(onReschedule).toHaveBeenCalledWith({
       newEventStartAt: rescheduleStartUtcMs,
       newEventEndAt: rescheduleEndUtcMs,
+      reason: 'Ops change',
     });
     expect(onReschedule.mock.calls.at(-1)?.[0]).not.toHaveProperty('eventCode');
     rescheduleRender.unmount();
@@ -612,31 +618,6 @@ describe('event assignment wave 6 query and payload shaping', () => {
     });
     assignmentRender.unmount();
 
-    const onResources = vi.fn();
-    const resourcesRender = render(
-      <EventReplaceStudioResourcesSurface
-        initialResourceIds={['studio-001']}
-        onCancel={() => undefined}
-        onSubmit={onResources}
-      />,
-    );
-    await user.click(
-      screen.getByRole('button', { name: /Gỡ tài nguyên studio 1|Remove studio resource 1/ }),
-    );
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('event-assignment:actions.addStudioResource') }),
-    );
-    await user.click(await screen.findByRole('button', { name: /Studio Two/ }));
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('event-assignment:mutations.replaceStudioResources.submit'),
-      }),
-    );
-    expect(onResources).toHaveBeenCalledWith({
-      newStudioResourceIds: ['studio-002'],
-    });
-    resourcesRender.unmount();
-
     const onPlatforms = vi.fn();
     render(
       <EventReplacePlatformAccountsSurface
@@ -667,10 +648,10 @@ describe('event assignment wave 6 query and payload shaping', () => {
 
     await createEvent({
       title: 'Generated event',
+      ownerEmploymentProfileId: 'ep-001',
       assignments: replacementAssignments.slice(0, 1),
       eventStartAt: 1000,
       eventEndAt: 2000,
-      studioResourceIds: [],
       platformAccountIds: [],
       description: null,
       externalRef: null,
@@ -680,10 +661,10 @@ describe('event assignment wave 6 query and payload shaping', () => {
     await createEvent({
       eventCode: 'EVTCUSTOM',
       title: 'Custom event',
+      ownerEmploymentProfileId: 'ep-001',
       assignments: replacementAssignments.slice(0, 1),
       eventStartAt: 1000,
       eventEndAt: 2000,
-      studioResourceIds: [],
       platformAccountIds: [],
       description: null,
       externalRef: null,
@@ -745,36 +726,34 @@ describe('event assignment wave 6 query and payload shaping', () => {
     ).toBeDisabled();
   }, 20_000);
 
-  it('gates lifecycle actions including empty roster start and archived read-only behavior', () => {
-    const scheduledItems = createEventActionRailItems(i18n.t, eventRecord, {
+  it('gates lifecycle actions including empty roster plan and archived read-only behavior', () => {
+    const draftRecord: EventRecord = { ...eventRecord, status: 'DRAFT' };
+    const scheduledItems = createEventActionRailItems(i18n.t, draftRecord, {
       onEdit: vi.fn(),
       onReschedule: vi.fn(),
       onReplaceAssignments: vi.fn(),
-      onReplaceStudioResources: vi.fn(),
       onReplacePlatformAccounts: vi.fn(),
       onLifecycleAction: vi.fn(),
       assignmentRosterKnown: true,
       hasActiveAssignments: true,
     });
-    expect(scheduledItems.find((item) => item.id === 'start')?.disabled).toBeFalsy();
+    expect(scheduledItems.find((item) => item.id === 'plan')?.disabled).toBeFalsy();
 
-    const emptyRosterItems = createEventActionRailItems(i18n.t, eventRecord, {
+    const emptyRosterItems = createEventActionRailItems(i18n.t, draftRecord, {
       onEdit: vi.fn(),
       onReschedule: vi.fn(),
       onReplaceAssignments: vi.fn(),
-      onReplaceStudioResources: vi.fn(),
       onReplacePlatformAccounts: vi.fn(),
       onLifecycleAction: vi.fn(),
       assignmentRosterKnown: true,
       hasActiveAssignments: false,
     });
-    expect(emptyRosterItems.find((item) => item.id === 'start')?.disabled).toBe(true);
+    expect(emptyRosterItems.find((item) => item.id === 'plan')?.disabled).toBe(true);
 
     const unknownRosterItems = createEventActionRailItems(i18n.t, eventRecord, {
       onEdit: vi.fn(),
       onReschedule: vi.fn(),
       onReplaceAssignments: vi.fn(),
-      onReplaceStudioResources: vi.fn(),
       onReplacePlatformAccounts: vi.fn(),
       onLifecycleAction: vi.fn(),
       assignmentRosterKnown: false,
@@ -791,7 +770,6 @@ describe('event assignment wave 6 query and payload shaping', () => {
         onEdit: vi.fn(),
         onReschedule: vi.fn(),
         onReplaceAssignments: vi.fn(),
-        onReplaceStudioResources: vi.fn(),
         onReplacePlatformAccounts: vi.fn(),
         onLifecycleAction: vi.fn(),
       },

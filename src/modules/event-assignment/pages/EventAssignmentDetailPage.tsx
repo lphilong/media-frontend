@@ -6,18 +6,18 @@ import { buildEntityDetailHref } from '@app/router/reference-links';
 import { createEventActionRailItems } from '@modules/event-assignment/actions/event-assignment-action-rail';
 import {
   EventEditSurface,
+  EventLifecycleReasonSurface,
   EventReplaceAssignmentsSurface,
   EventReplacePlatformAccountsSurface,
-  EventReplaceStudioResourcesSurface,
   EventRescheduleSurface,
 } from '@modules/event-assignment/forms/event-assignment-mutation-forms';
 import {
   useEventAssignments,
   useEventDetail,
   useEventLifecycleMutation,
+  useEventStudioBookings,
   useReplaceEventAssignmentsMutation,
   useReplaceEventPlatformAccountsMutation,
-  useReplaceEventStudioResourcesMutation,
   useRescheduleEventMutation,
   useUpdateEventMutation,
 } from '@modules/event-assignment/hooks/use-event-assignment';
@@ -43,7 +43,6 @@ import {
   ReferenceChip,
   RelatedSectionShell,
   StatusBadge,
-  useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
@@ -54,8 +53,8 @@ import {
   type CapabilityMissingReason,
 } from '@shared/auth/current-actor-capabilities';
 import {
-  formatBusinessTimestamp,
   formatCreatedDate,
+  formatVietnamTimestamp,
   readReferenceDisplay,
   type ReferenceSummary,
 } from '@shared/formatting/formatters';
@@ -65,16 +64,24 @@ type ActiveSurface =
   | 'edit'
   | 'reschedule'
   | 'replace-assignments'
-  | 'replace-studio-resources'
   | 'replace-platform-accounts'
+  | 'cancel'
   | null;
 
 const statusToneMap = {
-  SCHEDULED: 'neutral',
-  IN_PROGRESS: 'warning',
+  DRAFT: 'muted',
+  PLANNED: 'info',
+  CONFIRMED: 'success',
   COMPLETED: 'success',
   CANCELLED: 'danger',
   ARCHIVED: 'muted',
+} as const;
+
+const bookingStatusToneMap = {
+  HELD: 'warning',
+  CONFIRMED: 'success',
+  RELEASED: 'muted',
+  CANCELLED: 'danger',
 } as const;
 
 const formatNullable = (value?: string | number | null): string => {
@@ -99,21 +106,6 @@ const readErrorMessage = (
   }
 
   return error.message;
-};
-
-const readLifecycleConfirmKey = (action: EventLifecycleAction): string => {
-  switch (action) {
-    case 'start':
-      return 'event-assignment:confirm.start';
-    case 'complete':
-      return 'event-assignment:confirm.complete';
-    case 'cancel':
-      return 'event-assignment:confirm.cancel';
-    case 'archive':
-      return 'event-assignment:confirm.archive';
-    default:
-      return 'event-assignment:confirm.archive';
-  }
 };
 
 const createReferenceMap = (
@@ -161,14 +153,13 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
   const detailQuery = useEventDetail(eventId);
   const capabilitiesQuery = useCurrentActorCapabilities();
   const assignmentsQuery = useEventAssignments(eventId);
+  const bookingsQuery = useEventStudioBookings(eventId);
   const updateMutation = useUpdateEventMutation();
   const rescheduleMutation = useRescheduleEventMutation();
   const replaceAssignmentsMutation = useReplaceEventAssignmentsMutation();
-  const replaceStudioResourcesMutation = useReplaceEventStudioResourcesMutation();
   const replacePlatformAccountsMutation = useReplaceEventPlatformAccountsMutation();
   const lifecycleMutation = useEventLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
-  const requestDestructiveConfirm = useDestructiveConfirm();
   const [activeSurface, setActiveSurface] = useState<ActiveSurface>(null);
 
   useEffect(() => {
@@ -203,6 +194,7 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
 
   const record = detailQuery.data;
   const assignments = useMemo(() => assignmentsQuery.data ?? [], [assignmentsQuery.data]);
+  const bookings = useMemo(() => bookingsQuery.data ?? [], [bookingsQuery.data]);
   const studioResourceRefsById = useMemo(
     () => createReferenceMap(record?.studioResourceRefs),
     [record?.studioResourceRefs],
@@ -230,10 +222,8 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
         return;
       }
 
-      const confirmed = await requestDestructiveConfirm({
-        description: t(readLifecycleConfirmKey(action)),
-      });
-      if (!confirmed) {
+      if (action === 'cancel') {
+        setActiveSurface('cancel');
         return;
       }
 
@@ -247,7 +237,7 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
         notifyError(error as NormalizedApiError);
       }
     },
-    [lifecycleMutation, notifyError, notifySuccess, record, requestDestructiveConfirm, t],
+    [lifecycleMutation, notifyError, notifySuccess, record],
   );
 
   const actionItems = useMemo(() => {
@@ -273,7 +263,6 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
             setActiveSurface('replace-assignments');
           }
         },
-        onReplaceStudioResources: () => setActiveSurface('replace-studio-resources'),
         onReplacePlatformAccounts: () => setActiveSurface('replace-platform-accounts'),
         onLifecycleAction,
         assignmentRosterKnown: assignmentsQuery.isSuccess,
@@ -314,15 +303,6 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
           },
           capabilityCopy,
         ),
-        'replace-studio-resources': createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          eventUpdateRequirement,
-          capabilityCopy,
-        ),
         'replace-platform-accounts': createActionCapabilityHint(
           {
             capabilities: capabilitiesQuery.data,
@@ -332,7 +312,16 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
           eventUpdateRequirement,
           capabilityCopy,
         ),
-        start: createActionCapabilityHint(
+        plan: createActionCapabilityHint(
+          {
+            capabilities: capabilitiesQuery.data,
+            isLoading: capabilitiesQuery.isLoading,
+            isError: capabilitiesQuery.isError,
+          },
+          lifecycleRequirement,
+          capabilityCopy,
+        ),
+        confirm: createActionCapabilityHint(
           {
             capabilities: capabilitiesQuery.data,
             isLoading: capabilitiesQuery.isLoading,
@@ -441,6 +430,14 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                   value: t(`event-assignment:statuses.${record.status}`),
                 },
                 {
+                  key: 'owner',
+                  label: t('event-assignment:fields.ownerEmploymentProfileId'),
+                  value: readReferenceDisplay(
+                    record.ownerEmploymentProfileRef,
+                    record.ownerEmploymentProfileId,
+                  ),
+                },
+                {
                   key: 'scope',
                   label: t('event-assignment:fields.scopeBoundary'),
                   value: t('event-assignment:detail.globalOnly'),
@@ -459,12 +456,12 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                 {
                   key: 'start',
                   label: t('event-assignment:fields.eventStartAt'),
-                  value: formatBusinessTimestamp(record.eventStartAt),
+                  value: formatVietnamTimestamp(record.eventStartAt),
                 },
                 {
                   key: 'end',
                   label: t('event-assignment:fields.eventEndAt'),
-                  value: formatBusinessTimestamp(record.eventEndAt),
+                  value: formatVietnamTimestamp(record.eventEndAt),
                 },
                 {
                   key: 'description',
@@ -484,7 +481,7 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                 {
                   key: 'updated-at',
                   label: t('event-assignment:fields.updatedAt'),
-                  value: formatBusinessTimestamp(record.updatedAt),
+                  value: formatVietnamTimestamp(record.updatedAt),
                 },
               ]}
               columns={2}
@@ -495,12 +492,84 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
       sections={
         record ? (
           <div className="space-y-4">
+            <MetadataSection title={t('event-assignment:detail.bookingTitle')}>
+              {bookingsQuery.isError ? (
+                <ErrorState
+                  title={t('event-assignment:bookings.loadErrorTitle')}
+                  message={readErrorMessage(
+                    t,
+                    bookingsQuery.error as unknown as NormalizedApiError | null,
+                    'event-assignment:bookings.loadErrorMessage',
+                  )}
+                  actionLabel={t('common:actions.retry')}
+                  onRetry={() => void bookingsQuery.refetch()}
+                />
+              ) : bookings.length === 0 ? (
+                <p className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+                  {t('event-assignment:bookings.emptyMessage')}
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="border-b border-border text-xs uppercase text-muted">
+                      <tr>
+                        <th className="px-3 py-2 font-medium">
+                          {t('event-assignment:bookings.resource')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('event-assignment:bookings.status')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('event-assignment:bookings.window')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('event-assignment:bookings.conflict')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {bookings.map((booking) => (
+                        <tr key={booking.id}>
+                          <td className="px-3 py-3">
+                            {readReferenceDisplay(
+                              booking.studioResourceRef,
+                              booking.studioResourceId,
+                            )}
+                          </td>
+                          <td className="px-3 py-3">
+                            <StatusBadge
+                              status={booking.status}
+                              label={t(`event-assignment:bookingStatuses.${booking.status}`)}
+                              toneByStatus={bookingStatusToneMap}
+                            />
+                          </td>
+                          <td className="px-3 py-3">
+                            {formatVietnamTimestamp(booking.bookingStartAt)} -{' '}
+                            {formatVietnamTimestamp(booking.bookingEndAt)}
+                          </td>
+                          <td className="px-3 py-3">
+                            {booking.hasConfirmedConflict
+                              ? t('event-assignment:bookings.confirmedConflict')
+                              : booking.status === 'HELD'
+                                ? t('event-assignment:bookings.heldReview')
+                                : t('event-assignment:bookings.noConflict')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="mt-2 text-sm text-muted">
+                {t('event-assignment:detail.bookingReadOnlyHelper')}
+              </p>
+            </MetadataSection>
             <MetadataSection title={t('event-assignment:detail.referencesTitle')}>
               <ReadOnlyFieldGrid
                 fields={[
                   {
                     key: 'studio-resources',
-                    label: t('event-assignment:fields.studioResourceIds'),
+                    label: t('event-assignment:fields.derivedStudioResourceIds'),
                     value: formatReferenceList(record.studioResourceIds, studioResourceRefsById),
                   },
                   {
@@ -570,18 +639,22 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                 }}
               />
             ) : null}
-            {activeSurface === 'replace-studio-resources' ? (
-              <EventReplaceStudioResourcesSurface
-                initialResourceIds={record.studioResourceIds}
-                isPending={replaceStudioResourcesMutation.isPending}
+            {activeSurface === 'cancel' ? (
+              <EventLifecycleReasonSurface
+                isPending={
+                  lifecycleMutation.isPending &&
+                  lifecycleMutation.variables?.eventId === record.id &&
+                  lifecycleMutation.variables?.action === 'cancel'
+                }
                 onCancel={() => setActiveSurface(null)}
                 onSubmit={async (payload) => {
                   try {
-                    await replaceStudioResourcesMutation.mutateAsync({
+                    await lifecycleMutation.mutateAsync({
                       eventId: record.id,
+                      action: 'cancel',
                       payload,
                     });
-                    notifySuccess('event-assignment:feedback.studioResourcesReplaced');
+                    notifySuccess('event-assignment:feedback.lifecycleUpdated');
                     setActiveSurface(null);
                   } catch (error) {
                     notifyError(error as NormalizedApiError);

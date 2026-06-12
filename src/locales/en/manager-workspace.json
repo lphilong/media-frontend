@@ -9,7 +9,8 @@
   },
   "actions": {
     "open": "Open",
-    "backToKpi": "Back to managed KPI"
+    "backToKpi": "Back to managed KPI",
+    "retry": "Retry"
   },
   "status": {
     "scopeLabel": "Assigned scope",
@@ -36,9 +37,9 @@
     },
     "events": {
       "title": "Managed Events",
-      "summary": "Event visibility and operations for assigned scopes.",
-      "disabledReason": "Not opened in this workspace.",
-      "readinessMessage": "This module is not currently available in Manager Workspace."
+      "summary": "Read-only events within your assigned scopes.",
+      "disabledReason": "Managed Events requires an active assignment and Event read capability.",
+      "readinessMessage": "Managed Events is unavailable until an effective Org Unit or Talent Group assignment is available."
     },
     "groups": {
       "title": "Managed Groups",
@@ -55,6 +56,20 @@
   },
   "values": {
     "notAvailable": "Not available"
+  },
+  "eventStatuses": {
+    "DRAFT": "Draft",
+    "PLANNED": "Planned",
+    "CONFIRMED": "Confirmed",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled",
+    "ARCHIVED": "Archived"
+  },
+  "bookingStatuses": {
+    "HELD": "Held",
+    "CONFIRMED": "Confirmed",
+    "RELEASED": "Released",
+    "CANCELLED": "Cancelled"
   },
   "readiness": {
     "NO_LINKED_EMPLOYMENT_PROFILE": "No linked Employment Profile",
@@ -173,6 +188,26 @@
         "rejectedRequests": { "label": "Rejected or failed requests", "cta": "Review items" }
       }
     }
+  },
+  "events": {
+    "title": "Managed Events",
+    "boundaryHelper": "This screen is read-only. Managers can only view events within their assigned scope and cannot confirm, cancel, complete, archive, or book resources from here.",
+    "noScopeTitle": "Managed Events read-only",
+    "noScopeMessage": "No active Org Unit or Talent Group manager assignment is available for scoped event visibility.",
+    "loadErrorTitle": "Managed events unavailable",
+    "loadErrorMessage": "Events for your assigned scope could not be loaded.",
+    "notFoundTitle": "Event unavailable",
+    "notFoundMessage": "This event is not visible through your assigned manager scope.",
+    "emptyTitle": "No scoped events",
+    "emptyMessage": "No events are visible for your current manager assignments.",
+    "backToList": "Back to managed events",
+    "owner": "Owner employment profile",
+    "participants": "Participants",
+    "bookings": "Resource bookings",
+    "noBookings": "No resource bookings are exposed for this event.",
+    "resource": "Studio resource",
+    "bookingStatus": "Booking status",
+    "bookingWindow": "Booking window"
   },
   "availability": {
     "copy": {

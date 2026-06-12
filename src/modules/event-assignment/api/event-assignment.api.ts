@@ -9,19 +9,28 @@ import type {
   EventByResourceQuery,
   EventCreatePayload,
   EventLifecycleAction,
+  EventLifecyclePayload,
   EventListItem,
   EventListQuery,
   EventRecord,
   EventRelatedListItem,
   EventReplaceAssignmentsPayload,
   EventReplacePlatformAccountsPayload,
-  EventReplaceStudioResourcesPayload,
   EventReschedulePayload,
+  StudioBooking,
   EventUpdatePayload,
 } from '@modules/event-assignment/types/event-assignment.types';
 import { apiRequest } from '@shared/api';
 
-const statusSchema = z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ARCHIVED']);
+const statusSchema = z.enum([
+  'DRAFT',
+  'PLANNED',
+  'CONFIRMED',
+  'COMPLETED',
+  'CANCELLED',
+  'ARCHIVED',
+]);
+const studioBookingStatusSchema = z.enum(['HELD', 'CONFIRMED', 'RELEASED', 'CANCELLED']);
 const assignmentKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP']);
 const timestampSchema = z.union([z.number(), z.string()]);
 const referenceSummarySchema = z
@@ -53,12 +62,38 @@ const relatedListItemSchema = listItemSchema.omit({ createdAt: true }).strict();
 
 const detailSchema = listItemSchema
   .extend({
+    ownerEmploymentProfileId: z.string().trim().min(1),
+    ownerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     studioResourceIds: z.array(z.string()),
     platformAccountIds: z.array(z.string()),
     studioResourceRefs: z.array(referenceSummarySchema).optional(),
     platformAccountRefs: z.array(referenceSummarySchema).optional(),
     description: z.string().nullable().optional(),
     externalRef: z.string().nullable().optional(),
+    plannedAt: timestampSchema.nullable().optional(),
+    confirmedAt: timestampSchema.nullable().optional(),
+    completedAt: timestampSchema.nullable().optional(),
+    cancelledAt: timestampSchema.nullable().optional(),
+    cancellationReason: z.string().nullable().optional(),
+    lastRescheduledAt: timestampSchema.nullable().optional(),
+    lastRescheduleReason: z.string().nullable().optional(),
+    updatedAt: timestampSchema,
+  })
+  .strict();
+
+const studioBookingSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    eventId: z.string().trim().min(1),
+    studioResourceId: z.string().trim().min(1),
+    studioResourceRef: referenceSummarySchema.nullable().optional(),
+    bookingStartAt: timestampSchema,
+    bookingEndAt: timestampSchema,
+    status: studioBookingStatusSchema,
+    cancellationReason: z.string().nullable().optional(),
+    releaseReason: z.string().nullable().optional(),
+    hasConfirmedConflict: z.boolean(),
+    createdAt: timestampSchema,
     updatedAt: timestampSchema,
   })
   .strict();
@@ -107,6 +142,12 @@ const detailResponseSchema = z
 const assignmentListResponseSchema = z
   .object({
     data: z.array(assignmentItemSchema),
+  })
+  .strict();
+
+const studioBookingListResponseSchema = z
+  .object({
+    data: z.array(studioBookingSchema),
   })
   .strict();
 
@@ -200,10 +241,11 @@ const sanitizeAssignmentInput = (assignment: EventAssignmentInput): EventAssignm
 const sanitizeCreatePayload = (payload: EventCreatePayload): EventCreatePayload => {
   const sanitized: EventCreatePayload = {
     title: payload.title,
+    ownerEmploymentProfileId: payload.ownerEmploymentProfileId,
+    status: payload.status,
     assignments: payload.assignments.map(sanitizeAssignmentInput),
     eventStartAt: payload.eventStartAt,
     eventEndAt: payload.eventEndAt,
-    studioResourceIds: payload.studioResourceIds,
     platformAccountIds: payload.platformAccountIds,
     description: payload.description,
     externalRef: payload.externalRef,
@@ -288,6 +330,15 @@ export const fetchEventAssignments = async (eventId: string): Promise<EventAssig
   return assignmentListResponseSchema.parse(response).data;
 };
 
+export const fetchEventStudioBookings = async (eventId: string): Promise<StudioBooking[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/events/${encodeURIComponent(eventId)}/bookings`,
+  });
+
+  return studioBookingListResponseSchema.parse(response).data;
+};
+
 export const createEvent = async (payload: EventCreatePayload): Promise<EventRecord> => {
   const response = await apiRequest<unknown, EventCreatePayload>({
     method: 'POST',
@@ -337,19 +388,6 @@ export const replaceEventAssignments = async (
   return detailResponseSchema.parse(response).data;
 };
 
-export const replaceEventStudioResources = async (
-  eventId: string,
-  payload: EventReplaceStudioResourcesPayload,
-): Promise<EventRecord> => {
-  const response = await apiRequest<unknown, EventReplaceStudioResourcesPayload>({
-    method: 'POST',
-    url: `/admin/events/${encodeURIComponent(eventId)}/studio-resources`,
-    data: payload,
-  });
-
-  return detailResponseSchema.parse(response).data;
-};
-
 export const replaceEventPlatformAccounts = async (
   eventId: string,
   payload: EventReplacePlatformAccountsPayload,
@@ -366,11 +404,12 @@ export const replaceEventPlatformAccounts = async (
 export const performEventLifecycleAction = async (
   eventId: string,
   action: EventLifecycleAction,
+  payload: EventLifecyclePayload = {},
 ): Promise<EventRecord> => {
   const response = await apiRequest<unknown>({
     method: 'POST',
     url: `/admin/events/${encodeURIComponent(eventId)}/${action}`,
-    data: {},
+    data: action === 'cancel' ? { reason: payload.reason } : {},
   });
 
   return detailResponseSchema.parse(response).data;

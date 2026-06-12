@@ -120,7 +120,7 @@ const eventRefs = new Map<string, ReferenceSummary>([
       id: 'event-001',
       code: 'EVT-001',
       title: 'Spring Live Show',
-      status: 'SCHEDULED',
+      status: 'PLANNED',
     },
   ],
 ]);

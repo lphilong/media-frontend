@@ -234,8 +234,8 @@
     "ARCHIVED": "Đã lưu trữ"
   },
   "eventStatus": {
-    "SCHEDULED": "Đã lên lịch",
-    "IN_PROGRESS": "Đang diễn ra",
+    "PLANNED": "Đã lên kế hoạch",
+    "CONFIRMED": "Đã xác nhận",
     "COMPLETED": "Hoàn tất",
     "CANCELLED": "Đã hủy",
     "ARCHIVED": "Đã lưu trữ"

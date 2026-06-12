@@ -9,7 +9,8 @@
   },
   "actions": {
     "open": "打开",
-    "backToKpi": "返回管理 KPI"
+    "backToKpi": "返回管理 KPI",
+    "retry": "重试"
   },
   "status": {
     "scopeLabel": "已分配范围",
@@ -55,6 +56,20 @@
   },
   "values": {
     "notAvailable": "暂无数据"
+  },
+  "eventStatuses": {
+    "DRAFT": "草稿",
+    "PLANNED": "已计划",
+    "CONFIRMED": "已确认",
+    "COMPLETED": "已完成",
+    "CANCELLED": "已取消",
+    "ARCHIVED": "已归档"
+  },
+  "bookingStatuses": {
+    "HELD": "暂时保留",
+    "CONFIRMED": "已确认",
+    "RELEASED": "已释放",
+    "CANCELLED": "已取消"
   },
   "readiness": {
     "NO_LINKED_EMPLOYMENT_PROFILE": "未关联雇佣档案",
@@ -173,6 +188,26 @@
         "rejectedRequests": { "label": "Rejected or failed requests", "cta": "Review items" }
       }
     }
+  },
+  "events": {
+    "title": "管理活动",
+    "boundaryHelper": "此页面为只读。管理者只能查看已分配范围内的活动，不能在此确认、取消、完成、归档活动或预订资源。",
+    "noScopeTitle": "管理活动只读",
+    "noScopeMessage": "当前没有有效的组织单位或 Talent Group 管理分配可用于活动范围可见性。",
+    "loadErrorTitle": "管理活动不可用",
+    "loadErrorMessage": "无法加载已分配范围内的活动。",
+    "notFoundTitle": "活动不可用",
+    "notFoundMessage": "通过当前分配的管理范围无法查看此活动。",
+    "emptyTitle": "没有范围内活动",
+    "emptyMessage": "当前管理分配范围内没有可见活动。",
+    "backToList": "返回管理活动",
+    "owner": "负责人事档案",
+    "participants": "参与者",
+    "bookings": "资源预订",
+    "noBookings": "此活动没有公开的资源预订。",
+    "resource": "演播室资源",
+    "bookingStatus": "预订状态",
+    "bookingWindow": "预订时间"
   },
   "availability": {
     "copy": {

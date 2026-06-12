@@ -106,7 +106,7 @@ const selfServiceEventSchema = z
     eventId: z.string().trim().min(1),
     eventCode: z.string().trim().min(1),
     title: z.string().trim().min(1),
-    status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ARCHIVED']),
+    status: z.enum(['PLANNED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'ARCHIVED']),
     startsAt: z.number().int(),
     endsAt: z.number().int(),
     ownAssignmentKind: z.enum(['EMPLOYMENT_PROFILE', 'TALENT']),

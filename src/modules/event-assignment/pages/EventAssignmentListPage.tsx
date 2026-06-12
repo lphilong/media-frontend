@@ -36,7 +36,6 @@ import {
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
-  useDestructiveConfirm,
   useMutationFeedback,
   type AppliedFilterChipItem,
 } from '@shared/components/primitives';
@@ -75,8 +74,9 @@ const sortOptions = [
 
 const statusOptions = [
   '',
-  'SCHEDULED',
-  'IN_PROGRESS',
+  'DRAFT',
+  'PLANNED',
+  'CONFIRMED',
   'COMPLETED',
   'CANCELLED',
   'ARCHIVED',
@@ -99,21 +99,6 @@ const readErrorMessage = (
   }
 
   return error.message;
-};
-
-const readLifecycleConfirmKey = (action: EventLifecycleAction): string => {
-  switch (action) {
-    case 'start':
-      return 'event-assignment:confirm.start';
-    case 'complete':
-      return 'event-assignment:confirm.complete';
-    case 'cancel':
-      return 'event-assignment:confirm.cancel';
-    case 'archive':
-      return 'event-assignment:confirm.archive';
-    default:
-      return 'event-assignment:confirm.archive';
-  }
 };
 
 export const EventAssignmentListPage = (): JSX.Element => {
@@ -225,7 +210,6 @@ export const EventAssignmentListPage = (): JSX.Element => {
   const createMutation = useCreateEventMutation();
   const lifecycleMutation = useEventLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
-  const requestDestructiveConfirm = useDestructiveConfirm();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
   const [filterLabels, setFilterLabels] = useState<Partial<Record<FilterLabelKey, string>>>({});
@@ -341,13 +325,6 @@ export const EventAssignmentListPage = (): JSX.Element => {
 
   const onLifecycleAction = useCallback(
     async (eventId: string, action: EventLifecycleAction) => {
-      const confirmed = await requestDestructiveConfirm({
-        description: t(readLifecycleConfirmKey(action)),
-      });
-      if (!confirmed) {
-        return;
-      }
-
       try {
         await lifecycleMutation.mutateAsync({
           eventId,
@@ -358,7 +335,7 @@ export const EventAssignmentListPage = (): JSX.Element => {
         notifyError(error as NormalizedApiError);
       }
     },
-    [lifecycleMutation, notifyError, notifySuccess, requestDestructiveConfirm, t],
+    [lifecycleMutation, notifyError, notifySuccess],
   );
 
   const columns = useMemo(

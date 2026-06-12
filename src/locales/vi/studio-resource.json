@@ -52,7 +52,7 @@
   },
   "statuses": {
     "ACTIVE": "Hoạt động",
-    "OUT_OF_SERVICE": "Ngừng phục vụ",
+    "OUT_OF_SERVICE": "Bảo trì / Không sử dụng",
     "INACTIVE": "Không hoạt động",
     "ARCHIVED": "Đã lưu trữ"
   },

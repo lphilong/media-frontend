@@ -28,9 +28,12 @@ import {
   useManagerWorkspaceContext,
   useCancelManagerRequestBatchMutation,
   useCancelManagerRequestLineMutation,
+  useManagerEventDetail,
+  useManagerEvents,
   useManagerRequestBatchDetail,
   useManagerRequestBatches,
   useManagerWorkShifts,
+  type ManagerEventSummary,
   useSubmitManagerRequestBatchMutation,
   type ManagerRequestBatchLine,
   type ManagerSubmitRequestBatchLinePayload,
@@ -55,6 +58,7 @@ import {
   WorkspaceShell,
   type WorkspaceModuleItem,
 } from '@shared/components/workspace';
+import { formatVietnamTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 
 type KpiTabId = 'unit' | 'talentGroup';
 
@@ -103,7 +107,9 @@ const getRouteModule = (pathname: string): ManagerWorkspaceModuleId =>
     ? 'kpi'
     : pathname.startsWith(APP_PATHS.managerWorkShifts)
       ? 'work'
-      : 'overview';
+      : pathname.startsWith(APP_PATHS.managerEvents)
+        ? 'events'
+        : 'overview';
 
 const isManagerKpiDetailPath = (pathname: string): boolean =>
   pathname.startsWith(`${APP_PATHS.managerKpi}/plans/`);
@@ -120,7 +126,6 @@ const getEnabledKpiTabs = (context: ManagerWorkspaceContext): KpiTabId[] => {
 };
 
 const disabledManagerModuleIds: ReadonlySet<ManagerWorkspaceModuleId> = new Set([
-  'events',
   'groups',
   'members',
 ]);
@@ -153,6 +158,9 @@ const getManagerWorkStatusKey = (context: ManagerWorkspaceContext): ManagerModul
     ? 'actionable'
     : 'unavailable';
 
+const getManagerEventsStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey =>
+  context.modules.events.visible && hasManagerAssignedScope(context) ? 'readOnly' : 'unavailable';
+
 const getManagerOverviewStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey => {
   const hasActionableModule =
     getManagerKpiStatusKey(context) === 'actionable' ||
@@ -171,13 +179,15 @@ const buildManagerWorkspaceModuleItems = (
 ): Array<WorkspaceModuleItem<ManagerWorkspaceModuleId>> => {
   const kpiStatusKey = getManagerKpiStatusKey(context);
   const workStatusKey = getManagerWorkStatusKey(context);
+  const eventStatusKey = getManagerEventsStatusKey(context);
 
   return managerWorkspaceModules.map((module) => {
     const isKpiDisabled = module.id === 'kpi' && !context.modules.kpi.visible;
     const isWorkDisabled = module.id === 'work' && !context.modules.workShifts.visible;
+    const isEventsDisabled = module.id === 'events' && !context.modules.events.visible;
     const isUnsupported = disabledManagerModuleIds.has(module.id);
     const disabledReason =
-      isUnsupported || isKpiDisabled || isWorkDisabled
+      isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled
         ? t(`manager-workspace:modules.${module.id}.disabledReason`)
         : undefined;
 
@@ -188,23 +198,25 @@ const buildManagerWorkspaceModuleItems = (
       description: t(`manager-workspace:modules.${module.id}.summary`),
       statusLabel: t(
         `manager-workspace:status.${
-          isUnsupported || isKpiDisabled || isWorkDisabled
+          isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled
             ? 'unavailable'
             : module.id === 'kpi'
               ? kpiStatusKey
               : module.id === 'work'
                 ? workStatusKey
-                : 'readOnly'
+                : module.id === 'events'
+                  ? eventStatusKey
+                  : 'readOnly'
         }`,
       ),
       statusTone:
-        isUnsupported || isKpiDisabled || isWorkDisabled
+        isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled
           ? 'warning'
           : (module.id === 'work' && workStatusKey === 'actionable') ||
               (module.id === 'kpi' && kpiStatusKey === 'actionable')
             ? 'success'
             : 'neutral',
-      disabled: isUnsupported || isKpiDisabled || isWorkDisabled,
+      disabled: isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled,
       disabledReason,
     };
   });
@@ -1657,6 +1669,190 @@ const ManagerUnsupportedModulePanel = ({
   );
 };
 
+const managerEventStatusTone = {
+  DRAFT: 'muted',
+  PLANNED: 'info',
+  CONFIRMED: 'success',
+  COMPLETED: 'success',
+  CANCELLED: 'danger',
+  ARCHIVED: 'muted',
+} as const;
+
+const managerBookingStatusTone = {
+  HELD: 'warning',
+  CONFIRMED: 'success',
+  RELEASED: 'muted',
+  CANCELLED: 'danger',
+} as const;
+
+const ManagerEventsSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX.Element => {
+  const { t } = useTranslation(['manager-workspace']);
+  const navigate = useNavigate();
+  const { eventId } = useParams<{ eventId?: string }>();
+  const canReadEvents = context.modules.events.visible && hasManagerAssignedScope(context);
+  const listQuery = useManagerEvents({ enabled: canReadEvents });
+  const detailQuery = useManagerEventDetail(eventId, {
+    enabled: canReadEvents && Boolean(eventId),
+  });
+  const detail = detailQuery.data;
+
+  if (!canReadEvents) {
+    return (
+      <WorkspaceReadinessCard
+        title={t('manager-workspace:events.noScopeTitle')}
+        message={t('manager-workspace:events.noScopeMessage')}
+        badgeLabel={t('manager-workspace:status.readOnly')}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <WorkspaceReadinessCard
+        title={t('manager-workspace:events.title')}
+        message={t('manager-workspace:events.boundaryHelper')}
+        badgeLabel={t('manager-workspace:status.readOnly')}
+      />
+      {eventId ? (
+        <div className="space-y-3">
+          <DetailBackLink
+            to={APP_PATHS.managerEvents}
+            label={t('manager-workspace:events.backToList')}
+          />
+          {detailQuery.isLoading ? <LoadingState lines={5} /> : null}
+          {detailQuery.isError ? (
+            <ErrorState
+              title={t('manager-workspace:events.notFoundTitle')}
+              message={t('manager-workspace:events.notFoundMessage')}
+            />
+          ) : null}
+          {detail ? <ManagerEventSummaryCard event={detail} /> : null}
+        </div>
+      ) : (
+        <>
+          {listQuery.isLoading ? <LoadingState lines={5} /> : null}
+          {listQuery.isError ? (
+            <ErrorState
+              title={t('manager-workspace:events.loadErrorTitle')}
+              message={t('manager-workspace:events.loadErrorMessage')}
+              actionLabel={t('manager-workspace:actions.retry')}
+              onRetry={() => void listQuery.refetch()}
+            />
+          ) : null}
+          {listQuery.data?.length === 0 ? (
+            <EmptyState
+              title={t('manager-workspace:events.emptyTitle')}
+              message={t('manager-workspace:events.emptyMessage')}
+            />
+          ) : null}
+          <div className="grid grid-cols-1 gap-3">
+            {(listQuery.data ?? []).map((event) => (
+              <button
+                key={event.id}
+                type="button"
+                className="rounded border border-border bg-panel p-4 text-left hover:border-accent"
+                onClick={() => navigate(APP_PATHS.managerEventDetail(event.id))}
+              >
+                <ManagerEventSummaryBlock event={event} />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const ManagerEventSummaryBlock = ({ event }: { event: ManagerEventSummary }): JSX.Element => {
+  const { t } = useTranslation(['manager-workspace']);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs text-muted">{event.eventCode}</span>
+        <StatusBadge
+          status={event.status}
+          label={t(`manager-workspace:eventStatuses.${event.status}`)}
+          toneByStatus={managerEventStatusTone}
+        />
+      </div>
+      <div className="font-medium text-text">{event.title}</div>
+      <div className="text-sm text-muted">
+        {formatVietnamTimestamp(event.eventStartAt)} - {formatVietnamTimestamp(event.eventEndAt)}
+      </div>
+      <div className="text-sm text-muted">
+        {t('manager-workspace:events.owner')}: {readReferenceDisplay(event.owner)}
+      </div>
+    </div>
+  );
+};
+
+const ManagerEventSummaryCard = ({ event }: { event: ManagerEventSummary }): JSX.Element => {
+  const { t } = useTranslation(['manager-workspace']);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded border border-border bg-panel p-4">
+        <ManagerEventSummaryBlock event={event} />
+      </div>
+      <div className="rounded border border-border bg-panel p-4">
+        <h3 className="text-sm font-semibold text-text">
+          {t('manager-workspace:events.participants')}
+        </h3>
+        <p className="mt-2 text-sm text-muted">
+          {event.participants.length > 0
+            ? event.participants.map((participant) => readReferenceDisplay(participant)).join(', ')
+            : t('manager-workspace:values.notAvailable')}
+        </p>
+      </div>
+      <div className="rounded border border-border bg-panel p-4">
+        <h3 className="text-sm font-semibold text-text">
+          {t('manager-workspace:events.bookings')}
+        </h3>
+        {event.studioBookings.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">{t('manager-workspace:events.noBookings')}</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-border text-xs uppercase text-muted">
+                <tr>
+                  <th className="px-3 py-2 font-medium">
+                    {t('manager-workspace:events.resource')}
+                  </th>
+                  <th className="px-3 py-2 font-medium">
+                    {t('manager-workspace:events.bookingStatus')}
+                  </th>
+                  <th className="px-3 py-2 font-medium">
+                    {t('manager-workspace:events.bookingWindow')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {event.studioBookings.map((booking) => (
+                  <tr key={booking.id}>
+                    <td className="px-3 py-3">{readReferenceDisplay(booking.resource)}</td>
+                    <td className="px-3 py-3">
+                      <StatusBadge
+                        status={booking.status}
+                        label={t(`manager-workspace:bookingStatuses.${booking.status}`)}
+                        toneByStatus={managerBookingStatusTone}
+                      />
+                    </td>
+                    <td className="px-3 py-3">
+                      {formatVietnamTimestamp(booking.bookingStartAt)} -{' '}
+                      {formatVietnamTimestamp(booking.bookingEndAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const ManagerWorkspacePage = (): JSX.Element => {
   const { t } = useTranslation(['manager-workspace']);
   const location = useLocation();
@@ -1690,6 +1886,11 @@ export const ManagerWorkspacePage = (): JSX.Element => {
 
     if (moduleId === 'work') {
       navigate(APP_PATHS.managerWorkShifts);
+      return;
+    }
+
+    if (moduleId === 'events') {
+      navigate(APP_PATHS.managerEvents);
     }
   };
 
@@ -1777,6 +1978,11 @@ export const ManagerWorkspacePage = (): JSX.Element => {
           {activeModule === 'work' ? (
             <WorkspacePanel testId="manager-panel-work">
               <ManagerWorkSlice context={context} />
+            </WorkspacePanel>
+          ) : null}
+          {activeModule === 'events' ? (
+            <WorkspacePanel testId="manager-panel-events">
+              <ManagerEventsSlice context={context} />
             </WorkspacePanel>
           ) : null}
           {disabledManagerModuleIds.has(activeModule) ? (

@@ -1,14 +1,24 @@
 import type { ReferenceSummary } from '@shared/formatting/reference-display';
 
 export type EventAssignmentKind = 'EMPLOYMENT_PROFILE' | 'TALENT' | 'TALENT_GROUP';
-export type EventStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
+export type EventStatus =
+  | 'DRAFT'
+  | 'PLANNED'
+  | 'CONFIRMED'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'ARCHIVED';
 export type EventStatusGroup = 'ACTIVE';
 export type EventAssignmentStatus = 'ACTIVE';
+export type StudioBookingStatus = 'HELD' | 'CONFIRMED' | 'RELEASED' | 'CANCELLED';
 
 export type EventRecord = {
   id: string;
   eventCode: string;
   title: string;
+  ownerEmploymentProfileId: string;
+  ownerEmploymentProfileRef?: ReferenceSummary | null;
+  /** @deprecated Derived read summary from active StudioBooking records. */
   studioResourceIds: string[];
   platformAccountIds: string[];
   studioResourceRefs?: ReferenceSummary[];
@@ -18,6 +28,13 @@ export type EventRecord = {
   eventEndAt: number | string;
   description?: string | null;
   externalRef?: string | null;
+  plannedAt?: number | string | null;
+  confirmedAt?: number | string | null;
+  completedAt?: number | string | null;
+  cancelledAt?: number | string | null;
+  cancellationReason?: string | null;
+  lastRescheduledAt?: number | string | null;
+  lastRescheduleReason?: string | null;
   createdAt: number | string;
   updatedAt: number | string;
 };
@@ -49,6 +66,21 @@ export type EventAssignmentInput = {
   assignmentEmploymentProfileId?: string | null;
   assignmentTalentId?: string | null;
   assignmentTalentGroupId?: string | null;
+};
+
+export type StudioBooking = {
+  id: string;
+  eventId: string;
+  studioResourceId: string;
+  studioResourceRef?: ReferenceSummary | null;
+  bookingStartAt: number | string;
+  bookingEndAt: number | string;
+  status: StudioBookingStatus;
+  cancellationReason?: string | null;
+  releaseReason?: string | null;
+  hasConfirmedConflict: boolean;
+  createdAt: number | string;
+  updatedAt: number | string;
 };
 
 export type EventListQuery = {
@@ -99,10 +131,11 @@ export type EventByPlatformQuery = Pick<
 export type EventCreatePayload = {
   eventCode?: string;
   title: string;
+  ownerEmploymentProfileId: string;
+  status?: 'DRAFT' | 'PLANNED';
   assignments: EventAssignmentInput[];
   eventStartAt: number;
   eventEndAt: number;
-  studioResourceIds?: string[];
   platformAccountIds?: string[];
   description?: string | null;
   externalRef?: string | null;
@@ -110,6 +143,7 @@ export type EventCreatePayload = {
 
 export type EventUpdatePayload = {
   title: string;
+  ownerEmploymentProfileId?: string;
   description?: string | null;
   externalRef?: string | null;
 };
@@ -117,21 +151,22 @@ export type EventUpdatePayload = {
 export type EventReschedulePayload = {
   newEventStartAt: number;
   newEventEndAt: number;
+  reason: string;
 };
 
 export type EventReplaceAssignmentsPayload = {
   replacementAssignments: EventAssignmentInput[];
 };
 
-export type EventReplaceStudioResourcesPayload = {
-  newStudioResourceIds: string[];
-};
-
 export type EventReplacePlatformAccountsPayload = {
   newPlatformAccountIds: string[];
 };
 
-export type EventLifecycleAction = 'start' | 'complete' | 'cancel' | 'archive';
+export type EventLifecycleAction = 'plan' | 'confirm' | 'complete' | 'cancel' | 'archive';
+
+export type EventLifecyclePayload = {
+  reason?: string;
+};
 
 export type CursorPagedResponse<TData> = {
   data: TData[];

@@ -14,20 +14,22 @@
     "assignment": "分配对象",
     "assignmentIdIndexed": "分配对象 {{index}}",
     "assignmentIndexed": "分配对象 {{index}}",
-    "eventStartAt": "事件开始 UTC",
-    "eventEndAt": "事件结束 UTC",
-    "newEventStartAt": "新事件开始 UTC",
-    "newEventEndAt": "新事件结束 UTC",
+    "ownerEmploymentProfileId": "负责人事档案",
+    "eventStartAt": "事件开始，越南时间",
+    "eventEndAt": "事件结束，越南时间",
+    "newEventStartAt": "新的开始时间，越南时间",
+    "newEventEndAt": "新的结束时间，越南时间",
     "studioResourceIds": "演播室资源",
+    "derivedStudioResourceIds": "演播室资源（从预订派生）",
     "studioResources": "演播室资源",
     "studioResource": "演播室资源",
     "platformAccountIds": "平台账号",
     "platformAccounts": "平台账号",
     "platformAccount": "平台账号",
-    "newStudioResourceIds": "替换演播室资源",
     "newPlatformAccountIds": "替换平台账号",
     "description": "描述",
     "externalRef": "外部引用",
+    "reason": "原因",
     "createdAt": "创建时间",
     "updatedAt": "更新时间",
     "scopeBoundary": "Scope 边界"
@@ -37,11 +39,18 @@
     "description": "创建后，系统将生成事件编码。"
   },
   "statuses": {
-    "SCHEDULED": "已排期",
-    "IN_PROGRESS": "进行中",
+    "DRAFT": "草稿",
+    "PLANNED": "已计划",
+    "CONFIRMED": "已确认",
     "COMPLETED": "已完成",
     "CANCELLED": "已取消",
     "ARCHIVED": "已归档"
+  },
+  "bookingStatuses": {
+    "HELD": "暂时保留",
+    "CONFIRMED": "已确认",
+    "RELEASED": "已释放",
+    "CANCELLED": "已取消"
   },
   "assignmentStatuses": {
     "ACTIVE": "活动"
@@ -68,8 +77,8 @@
     "studioResourceIdPlaceholder": "选择演播室资源",
     "platformAccountId": "平台账号",
     "platformAccountIdPlaceholder": "选择平台账号",
-    "windowStartAt": "窗口开始 UTC",
-    "windowEndAt": "窗口结束 UTC"
+    "windowStartAt": "窗口开始，越南时间",
+    "windowEndAt": "窗口结束，越南时间"
   },
   "relatedModes": {
     "by-assignment": "按分配查看相关事件",
@@ -84,19 +93,17 @@
     "edit": "编辑",
     "reschedule": "改期",
     "replaceAssignments": "替换分配",
-    "replaceStudioResources": "替换演播室资源",
     "replacePlatformAccounts": "替换平台账号",
     "addAssignment": "添加分配",
     "removeAssignment": "移除分配 {{index}}",
-    "addStudioResource": "添加演播室资源",
-    "removeStudioResource": "移除演播室资源 {{index}}",
     "addPlatformAccount": "添加平台账号",
     "removePlatformAccount": "移除平台账号 {{index}}",
-    "start": "开始",
+    "plan": "计划",
+    "confirm": "确认",
     "complete": "完成",
     "cancel": "取消",
     "archive": "归档",
-    "historicalArchiveEligible": "历史已排期事件可在详情页归档"
+    "historicalArchiveEligible": "历史已完成事件可在详情页归档"
   },
   "table": {
     "caption": "事件列表",
@@ -112,9 +119,23 @@
     "archivedReadOnly": "已归档事件只读。",
     "identityTitle": "事件",
     "scheduleTitle": "排期",
+    "bookingTitle": "资源预订",
     "referencesTitle": "资源和平台引用",
     "globalOnly": "仅全局",
-    "boundaryHelper": "活动完成不会自动记录收入、佣金、考勤或工资。"
+    "boundaryHelper": "活动完成不会自动记录收入、佣金、考勤、工资或付款。",
+    "bookingReadOnlyHelper": "资源预订由 StudioBooking 管理。studioResourceIds 仅作为派生摘要显示。"
+  },
+  "bookings": {
+    "resource": "演播室资源",
+    "status": "预订状态",
+    "window": "预订时间",
+    "conflict": "冲突状态",
+    "confirmedConflict": "已确认的重叠会阻止此预订",
+    "heldReview": "暂时保留的预订需要审核",
+    "noConflict": "未发现冲突",
+    "emptyMessage": "此活动没有资源预订。",
+    "loadErrorTitle": "无法加载预订",
+    "loadErrorMessage": "资源预订摘要不可用。"
   },
   "related": {
     "navigationTitle": "相关导航",
@@ -128,7 +149,6 @@
     "emptyTitle": "无活动分配",
     "emptyMessage": "事件分配名单为空。",
     "emptyReplacementSet": "替换集合为空。如果活动需要启用分配，请先添加分配再提交。",
-    "emptyStudioResourceSet": "未选择演播室资源。",
     "emptyPlatformAccountSet": "未选择平台账号。",
     "replacementRowLabel": "替换分配 {{index}}",
     "loadErrorTitle": "无法加载分配",
@@ -160,7 +180,7 @@
     },
     "reschedule": {
       "title": "事件改期",
-      "subtitle": "替换 UTC 排期时间窗口。",
+      "subtitle": "替换事件时间窗口并记录原因。",
       "submit": "改期",
       "pending": "改期中"
     },
@@ -170,23 +190,24 @@
       "submit": "替换分配",
       "pending": "替换中"
     },
-    "replaceStudioResources": {
-      "title": "替换演播室资源",
-      "subtitle": "提交完整的替换演播室资源集合。",
-      "submit": "替换演播室资源",
-      "pending": "替换中"
-    },
     "replacePlatformAccounts": {
       "title": "替换平台账号",
       "subtitle": "提交完整的替换平台账号集合。",
       "submit": "替换平台账号",
       "pending": "替换中"
+    },
+    "cancel": {
+      "title": "取消活动",
+      "subtitle": "取消必须记录审计原因。",
+      "submit": "取消活动",
+      "pending": "取消中"
     }
   },
   "placeholders": {
     "csvIds": "逗号分隔的引用",
     "searchReference": "按名称或代码搜索",
-    "optional": "可选"
+    "optional": "可选",
+    "requiredReason": "请输入审计原因"
   },
   "validation": {
     "required": "此字段必填。",
@@ -201,14 +222,13 @@
     "updated": "事件已更新。",
     "rescheduled": "事件已改期。",
     "assignmentsReplaced": "事件分配已替换。",
-    "studioResourcesReplaced": "事件演播室资源已替换。",
     "platformAccountsReplaced": "事件平台账号已替换。",
     "lifecycleUpdated": "事件生命周期已更新。"
   },
   "confirm": {
-    "start": "开始此事件？",
+    "plan": "计划此活动？",
+    "confirm": "确认此活动？",
     "complete": "完成此事件？",
-    "cancel": "取消此事件？",
     "archive": "归档此事件？"
   },
   "actionRail": {

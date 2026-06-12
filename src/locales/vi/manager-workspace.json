@@ -9,7 +9,8 @@
   },
   "actions": {
     "open": "Mở",
-    "backToKpi": "Quay lại KPI được phân công"
+    "backToKpi": "Quay lại KPI được phân công",
+    "retry": "Thử lại"
   },
   "status": {
     "scopeLabel": "Phạm vi được phân công",
@@ -36,9 +37,9 @@
     },
     "events": {
       "title": "Sự kiện",
-      "summary": "Sự kiện trong phạm vi được phân công.",
-      "disabledReason": "Chưa mở trong workspace này.",
-      "readinessMessage": "Module này chưa được mở cho Không gian quản lý."
+      "summary": "Sự kiện chỉ đọc trong phạm vi được phân công.",
+      "disabledReason": "Cần phân công đang hiệu lực và quyền xem sự kiện.",
+      "readinessMessage": "Sự kiện được phân công chỉ hiển thị khi có phân công Đơn vị hoặc Nhóm Talent đang hiệu lực."
     },
     "groups": {
       "title": "Nhóm được phân công",
@@ -55,6 +56,20 @@
   },
   "values": {
     "notAvailable": "Chưa có dữ liệu"
+  },
+  "eventStatuses": {
+    "DRAFT": "Nháp",
+    "PLANNED": "Đã lên kế hoạch",
+    "CONFIRMED": "Đã xác nhận",
+    "COMPLETED": "Đã hoàn thành",
+    "CANCELLED": "Đã hủy",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "bookingStatuses": {
+    "HELD": "Tạm giữ",
+    "CONFIRMED": "Đã xác nhận",
+    "RELEASED": "Đã giải phóng",
+    "CANCELLED": "Đã hủy"
   },
   "readiness": {
     "NO_LINKED_EMPLOYMENT_PROFILE": "Chưa liên kết Hồ sơ nhân sự",
@@ -173,6 +188,26 @@
         "rejectedRequests": { "label": "Yêu cầu bị từ chối hoặc lỗi", "cta": "Xem mục" }
       }
     }
+  },
+  "events": {
+    "title": "Sự kiện được phân công",
+    "boundaryHelper": "Màn này chỉ cho phép xem. Quản lý chỉ xem được sự kiện trong phạm vi được phân công và không thể xác nhận, hủy, hoàn thành, lưu trữ hoặc đặt tài nguyên từ đây.",
+    "noScopeTitle": "Sự kiện chỉ đọc",
+    "noScopeMessage": "Chưa có phân công quản lý Đơn vị hoặc Nhóm Talent đang hiệu lực để xem sự kiện theo phạm vi.",
+    "loadErrorTitle": "Không tải được sự kiện",
+    "loadErrorMessage": "Không tải được sự kiện trong phạm vi được phân công.",
+    "notFoundTitle": "Không xem được sự kiện",
+    "notFoundMessage": "Sự kiện này không thuộc phạm vi quản lý được phân công.",
+    "emptyTitle": "Chưa có sự kiện trong phạm vi",
+    "emptyMessage": "Không có sự kiện nào hiển thị cho phân công quản lý hiện tại.",
+    "backToList": "Quay lại sự kiện được phân công",
+    "owner": "Hồ sơ nhân sự phụ trách",
+    "participants": "Người tham gia",
+    "bookings": "Đặt tài nguyên",
+    "noBookings": "Chưa có lịch đặt tài nguyên cho sự kiện này.",
+    "resource": "Tài nguyên studio",
+    "bookingStatus": "Trạng thái đặt",
+    "bookingWindow": "Khung đặt"
   },
   "availability": {
     "copy": {
