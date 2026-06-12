@@ -28,6 +28,18 @@ describe('contract registry wave 7 surfaces', () => {
       await screen.findByRole('heading', { name: i18n.t('contract-registry:page.title') }),
     ).toBeInTheDocument();
     expect(await screen.findByText('CON-2026-000001', {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(
+      screen.getAllByText(i18n.t('contract-registry:boundaries.LEGACY_EMPLOYMENT_DEPRECATED.label'))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(i18n.t('contract-registry:boundaries.COMMERCIAL_LEGAL_SUPPORTED.label'))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(i18n.t('contract-registry:boundaries.UNSUPPORTED_CONTRACT_KIND.label'))
+        .length,
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText('Alice Nguyen').length).toBeGreaterThan(0);
     expect(screen.queryByText('ep-001')).not.toBeInTheDocument();
     const activeRow = screen.getByText('CON-2026-000002').closest('tr');
@@ -48,6 +60,11 @@ describe('contract registry wave 7 surfaces', () => {
     await user.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
     expect(
       screen.getByRole('combobox', { name: i18n.t('contract-registry:filters.contractKind') }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', {
+        name: i18n.t('contract-registry:contractKinds.EMPLOYMENT'),
+      }),
     ).toBeInTheDocument();
     expect(
       screen.queryByText(/scope|scopeGrants|delete|bulk|unarchive|upload|download/i),
@@ -93,6 +110,10 @@ describe('contract registry wave 7 surfaces', () => {
       await screen.findByText(i18n.t('contract-registry:actionRail.title')),
     ).toBeInTheDocument();
     expect(screen.getByText(i18n.t('contract-registry:detail.boundaryHelper'))).toBeInTheDocument();
+    expect(
+      screen.getAllByText(i18n.t('contract-registry:boundaries.LEGACY_EMPLOYMENT_DEPRECATED.label'))
+        .length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText('CON-2026-000001')).toBeInTheDocument();
     expect(screen.getByText('alice-contract.pdf')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Alice Nguyen' })).toHaveLength(2);
@@ -102,11 +123,16 @@ describe('contract registry wave 7 surfaces', () => {
     );
     expect(screen.queryByText('ep-001')).not.toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: i18n.t('contract-registry:related.commissionRules') }),
-    ).toHaveAttribute(
-      'href',
-      '/commission/rules?view=by-contract&sourceContractRecordId=contract-record-001',
-    );
+      screen.queryByRole('link', { name: i18n.t('contract-registry:related.commissionRules') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('contract-registry:actions.markPendingSignature'),
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: i18n.t('contract-registry:actions.activate') }),
+    ).toBeDisabled();
     expect(
       screen.queryByText(/approval|signing workflow|file vault|upload|download|payroll|payout/i),
     ).not.toBeInTheDocument();
@@ -164,9 +190,15 @@ describe('contract registry wave 7 surfaces', () => {
       scope.getByLabelText(i18n.t('contract-registry:fields.title')),
       'Wave 7 contract',
     );
-    const employeeOptions = await scope.findAllByRole('button', { name: /Alice/ });
-    await user.click(employeeOptions[0]);
-    await user.click(employeeOptions[1]);
+    const contractKind = scope.getByLabelText(i18n.t('contract-registry:fields.contractKind'));
+    expect(contractKind).toHaveValue('TALENT_SERVICE');
+    expect(
+      within(contractKind).queryByRole('option', {
+        name: i18n.t('contract-registry:contractKinds.EMPLOYMENT'),
+      }),
+    ).not.toBeInTheDocument();
+    await user.click(await scope.findByRole('button', { name: /Mina/ }));
+    await user.click(await scope.findByRole('button', { name: /Alice/ }));
     await user.type(
       scope.getByLabelText(i18n.t('contract-registry:fields.effectiveStartDate')),
       '2026-01-01',

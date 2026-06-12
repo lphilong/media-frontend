@@ -587,6 +587,9 @@ export const ContractRegistryListPage = (): JSX.Element => {
       mode={routeMode === 'flat' ? 'flat-list' : 'related-list'}
       banner={
         <div className="space-y-2">
+          <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+            {t('contract-registry:page.boundaryHelper')}
+          </div>
           {routeMode !== 'flat' ? (
             <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-text">
               {t(`contract-registry:relatedModes.${routeMode}`)}

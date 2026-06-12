@@ -1,8 +1,9 @@
 {
   "page": {
     "title": "Contract Registry",
-    "subtitle": "Global legal and operational contract metadata.",
-    "placeholder": "Contract Registry is implemented as real Wave 7 routes."
+    "subtitle": "Global commercial and legal contract metadata.",
+    "placeholder": "Contract Registry is implemented as real Wave 7 routes.",
+    "boundaryHelper": "Employment contracts and employment terms belong under People/HRET and cannot be created here."
   },
   "fields": {
     "contractCode": "Contract code",
@@ -26,7 +27,8 @@
     "externalRef": "External reference",
     "createdAt": "Created at",
     "updatedAt": "Updated at",
-    "scopeBoundary": "Scope boundary"
+    "scopeBoundary": "Scope boundary",
+    "boundary": "Registry boundary"
   },
   "generatedCode": {
     "label": "System code",
@@ -41,9 +43,23 @@
     "ARCHIVED": "Archived"
   },
   "contractKinds": {
-    "EMPLOYMENT": "Employment",
+    "EMPLOYMENT": "Legacy employment record",
     "TALENT_SERVICE": "Talent service",
     "TALENT_MANAGEMENT": "Talent management"
+  },
+  "boundaries": {
+    "COMMERCIAL_LEGAL_SUPPORTED": {
+      "label": "Commercial/legal contract",
+      "helper": "Supported commercial/legal registry record."
+    },
+    "LEGACY_EMPLOYMENT_DEPRECATED": {
+      "label": "Legacy employment contract record",
+      "helper": "Readable for compatibility. Employment contracts and employment terms belong under People/HRET and cannot be promoted here."
+    },
+    "UNSUPPORTED_CONTRACT_KIND": {
+      "label": "Unsupported contract kind",
+      "helper": "This record is read-only for boundary review and is not eligible for commercial-chain use."
+    }
   },
   "linkedEntityKinds": {
     "EMPLOYMENT_PROFILE": "Employment profile",
@@ -114,7 +130,8 @@
     "status": "Status",
     "effectiveStartDate": "Start",
     "effectiveEndDate": "End",
-    "actions": "Actions"
+    "actions": "Actions",
+    "boundary": "Boundary"
   },
   "detail": {
     "archivedReadOnly": "Archived contract records are read-only.",
@@ -124,7 +141,7 @@
     "fileReferenceTitle": "File reference metadata",
     "freeTextTitle": "Description and external reference",
     "globalOnly": "Global only",
-    "boundaryHelper": "A signed contract does not automatically create revenue or commission."
+    "boundaryHelper": "Signed or active status does not create revenue, commission, payroll, payment, payout, tax, accounting, obligation acceptance, or Event evidence linkage."
   },
   "related": {
     "navigationTitle": "Related navigation",
@@ -183,7 +200,9 @@
     "invalidToken": "Use a valid reference token.",
     "invalidDate": "Use YYYY-MM-DD.",
     "kindCompatibility": "Contract kind and linked entity kind are not compatible.",
-    "filePair": "File reference ID and display name must be provided or cleared together."
+    "filePair": "File reference ID and display name must be provided or cleared together.",
+    "employmentCreateRejected": "Employment contracts cannot be created in Contract Registry.",
+    "legacyPromotionRejected": "Legacy employment records cannot be promoted for commercial registry use."
   },
   "feedback": {
     "created": "Contract record created.",

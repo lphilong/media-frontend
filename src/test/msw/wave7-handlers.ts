@@ -12,9 +12,24 @@ type ContractStatus =
   | 'EXPIRED'
   | 'TERMINATED'
   | 'ARCHIVED';
-type ContractKind = 'EMPLOYMENT' | 'TALENT_SERVICE' | 'TALENT_MANAGEMENT';
+type ContractKind = string;
 type LinkedEntityKind = 'EMPLOYMENT_PROFILE' | 'TALENT';
 type ConfidentialityTier = 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED';
+
+type ContractBoundaryMetadata = {
+  semanticBoundary: 'COMMERCIAL_LEGAL' | 'LEGACY_EMPLOYMENT' | 'UNSUPPORTED';
+  kindClassification:
+    | 'COMMERCIAL_LEGAL_SUPPORTED'
+    | 'LEGACY_EMPLOYMENT_DEPRECATED'
+    | 'UNSUPPORTED_CONTRACT_KIND';
+  commercialLegalRegistry: boolean;
+  commercialChainContextEligible: boolean;
+  directRevenueSourceEligible: false;
+  directCommissionSourceEligible: false;
+  payrollSourceEligible: false;
+  obligationAcceptanceImplemented: false;
+  eventEvidenceLinkImplemented: false;
+};
 
 type ReferenceSummary = {
   id: string;
@@ -54,6 +69,26 @@ let contractSeed = initialContractSeed;
 const inputDateToTimestamp = (value: string): number => Date.parse(`${value}T00:00:00.000Z`);
 
 const initialContracts: ContractRecord[] = [
+  {
+    id: 'contract-record-future',
+    contractCode: 'CON-2026-000003',
+    title: 'Future contract kind',
+    contractKind: 'FUTURE_CONTRACT_KIND',
+    linkedEntityKind: 'TALENT',
+    linkedEmploymentProfileId: null,
+    linkedTalentId: 'talent-001',
+    ownerEmploymentProfileId: 'ep-001',
+    confidentialityTier: 'INTERNAL',
+    status: 'DRAFT',
+    effectiveStartDate: now - day * 5,
+    effectiveEndDate: null,
+    fileReferenceId: null,
+    fileDisplayName: null,
+    description: null,
+    externalRef: null,
+    createdAt: now - day * 6,
+    updatedAt: now - day * 5,
+  },
   {
     id: 'contract-record-001',
     contractCode: 'CON-2026-000001',
@@ -302,6 +337,31 @@ const filterContracts = (
   return next.sort((left, right) => right.effectiveStartDate - left.effectiveStartDate);
 };
 
+const toBoundaryMetadata = (contractKind: ContractKind): ContractBoundaryMetadata => {
+  const commercialLegal = contractKind === 'TALENT_SERVICE' || contractKind === 'TALENT_MANAGEMENT';
+  const legacyEmployment = contractKind === 'EMPLOYMENT';
+
+  return {
+    semanticBoundary: commercialLegal
+      ? 'COMMERCIAL_LEGAL'
+      : legacyEmployment
+        ? 'LEGACY_EMPLOYMENT'
+        : 'UNSUPPORTED',
+    kindClassification: commercialLegal
+      ? 'COMMERCIAL_LEGAL_SUPPORTED'
+      : legacyEmployment
+        ? 'LEGACY_EMPLOYMENT_DEPRECATED'
+        : 'UNSUPPORTED_CONTRACT_KIND',
+    commercialLegalRegistry: commercialLegal,
+    commercialChainContextEligible: commercialLegal,
+    directRevenueSourceEligible: false,
+    directCommissionSourceEligible: false,
+    payrollSourceEligible: false,
+    obligationAcceptanceImplemented: false,
+    eventEvidenceLinkImplemented: false,
+  };
+};
+
 const toListItem = (record: ContractRecord) => ({
   id: record.id,
   contractCode: record.contractCode,
@@ -320,6 +380,7 @@ const toListItem = (record: ContractRecord) => ({
   status: record.status,
   effectiveStartDate: record.effectiveStartDate,
   effectiveEndDate: record.effectiveEndDate,
+  boundaryMetadata: toBoundaryMetadata(record.contractKind),
   createdAt: record.createdAt,
 });
 
@@ -347,6 +408,7 @@ const toByLinkedEntityItem = (record: ContractRecord) => ({
   status: record.status,
   effectiveStartDate: record.effectiveStartDate,
   effectiveEndDate: record.effectiveEndDate,
+  boundaryMetadata: toBoundaryMetadata(record.contractKind),
 });
 
 const toByOwnerItem = (record: ContractRecord) => ({
@@ -360,6 +422,7 @@ const toByOwnerItem = (record: ContractRecord) => ({
   status: record.status,
   effectiveStartDate: record.effectiveStartDate,
   effectiveEndDate: record.effectiveEndDate,
+  boundaryMetadata: toBoundaryMetadata(record.contractKind),
 });
 
 const rejectUnsupportedBody = (body: Record<string, unknown>, allowed: Set<string>) => {
@@ -375,9 +438,14 @@ const contractKindMatchesLinkedKind = (
   contractKind: ContractKind,
   linkedEntityKind: LinkedEntityKind,
 ): boolean => {
-  return contractKind === 'EMPLOYMENT'
-    ? linkedEntityKind === 'EMPLOYMENT_PROFILE'
-    : linkedEntityKind === 'TALENT';
+  if (contractKind === 'EMPLOYMENT') {
+    return linkedEntityKind === 'EMPLOYMENT_PROFILE';
+  }
+
+  return (
+    (contractKind === 'TALENT_SERVICE' || contractKind === 'TALENT_MANAGEMENT') &&
+    linkedEntityKind === 'TALENT'
+  );
 };
 
 const findContract = (contractRecordId: string): ContractRecord | undefined =>
@@ -490,6 +558,12 @@ export const wave7Handlers = [
     }
     const contractKind = body.contractKind as ContractKind;
     const linkedEntityKind = body.linkedEntityKind as LinkedEntityKind;
+    if (contractKind !== 'TALENT_SERVICE' && contractKind !== 'TALENT_MANAGEMENT') {
+      return HttpResponse.json(
+        { message: 'contract-registry:validation.employmentCreateRejected' },
+        { status: 422 },
+      );
+    }
     if (
       !contractKindMatchesLinkedKind(contractKind, linkedEntityKind) ||
       hasLinkedEntityMismatch(
@@ -713,6 +787,16 @@ export const wave7Handlers = [
         return unsupported;
       }
       const record = findContract(String(params.contractRecordId));
+      if (
+        record &&
+        record.contractKind !== 'TALENT_SERVICE' &&
+        record.contractKind !== 'TALENT_MANAGEMENT'
+      ) {
+        return HttpResponse.json(
+          { message: 'contract-registry:validation.legacyPromotionRejected' },
+          { status: 422 },
+        );
+      }
       return record
         ? setLifecycleStatus(record, 'PENDING_SIGNATURE')
         : HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
@@ -739,6 +823,16 @@ export const wave7Handlers = [
       return unsupported;
     }
     const record = findContract(String(params.contractRecordId));
+    if (
+      record &&
+      record.contractKind !== 'TALENT_SERVICE' &&
+      record.contractKind !== 'TALENT_MANAGEMENT'
+    ) {
+      return HttpResponse.json(
+        { message: 'contract-registry:validation.legacyPromotionRejected' },
+        { status: 422 },
+      );
+    }
     return record
       ? setLifecycleStatus(record, 'ACTIVE')
       : HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });

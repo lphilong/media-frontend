@@ -1,8 +1,9 @@
 {
   "page": {
     "title": "合同登记",
-    "subtitle": "全局法务和运营合同元数据。",
-    "placeholder": "合同登记已作为 Wave 7 真实路由实现。"
+    "subtitle": "全局商业和法律合同元数据。",
+    "placeholder": "合同登记已作为 Wave 7 真实路由实现。",
+    "boundaryHelper": "劳动合同和雇佣条款属于人员/HRET，不在合同登记中创建。"
   },
   "fields": {
     "contractCode": "合同编码",
@@ -26,7 +27,8 @@
     "externalRef": "外部引用",
     "createdAt": "创建时间",
     "updatedAt": "更新时间",
-    "scopeBoundary": "范围边界"
+    "scopeBoundary": "范围边界",
+    "boundary": "登记边界"
   },
   "generatedCode": {
     "label": "系统编码",
@@ -41,9 +43,23 @@
     "ARCHIVED": "已归档"
   },
   "contractKinds": {
-    "EMPLOYMENT": "员工",
+    "EMPLOYMENT": "旧劳动合同记录",
     "TALENT_SERVICE": "艺人服务",
     "TALENT_MANAGEMENT": "艺人管理"
+  },
+  "boundaries": {
+    "COMMERCIAL_LEGAL_SUPPORTED": {
+      "label": "商业/法律合同",
+      "helper": "当前支持的商业/法律登记记录。"
+    },
+    "LEGACY_EMPLOYMENT_DEPRECATED": {
+      "label": "旧劳动合同记录",
+      "helper": "仅为兼容读取和查询。劳动合同和雇佣条款属于人员/HRET。"
+    },
+    "UNSUPPORTED_CONTRACT_KIND": {
+      "label": "尚未支持的合同类型",
+      "helper": "该记录仅供边界复核，不具备商业链使用资格。"
+    }
   },
   "linkedEntityKinds": {
     "EMPLOYMENT_PROFILE": "员工档案",
@@ -114,7 +130,8 @@
     "status": "状态",
     "effectiveStartDate": "开始",
     "effectiveEndDate": "结束",
-    "actions": "操作"
+    "actions": "操作",
+    "boundary": "边界"
   },
   "detail": {
     "archivedReadOnly": "已归档合同记录只读。",
@@ -124,7 +141,7 @@
     "fileReferenceTitle": "文件引用元数据",
     "freeTextTitle": "描述和外部引用",
     "globalOnly": "仅全局范围",
-    "boundaryHelper": "已签署的合同不会自动产生收入或佣金。"
+    "boundaryHelper": "已签署或启用状态不会自动产生收入、佣金、工资、付款、支出、税务、会计、义务验收或活动证据关联。"
   },
   "related": {
     "navigationTitle": "关联导航",
@@ -183,7 +200,9 @@
     "invalidToken": "请输入有效引用 token。",
     "invalidDate": "使用 YYYY-MM-DD 格式。",
     "kindCompatibility": "合同类型和关联实体类型不兼容。",
-    "filePair": "文件引用 ID 和显示名称必须同时提供或同时清除。"
+    "filePair": "文件引用 ID 和显示名称必须同时提供或同时清除。",
+    "employmentCreateRejected": "不能在合同登记中创建劳动合同。",
+    "legacyPromotionRejected": "旧劳动合同记录不能提升为商业登记用途。"
   },
   "feedback": {
     "created": "合同记录已创建。",

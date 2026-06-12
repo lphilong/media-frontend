@@ -39,6 +39,9 @@ export const createContractActionRailItems = (
   handlers: ContractActionRailHandlers,
 ): ActionRailItem[] => {
   const status = record.status;
+  const canPromoteCommercialContract =
+    record.boundaryMetadata.kindClassification === 'COMMERCIAL_LEGAL_SUPPORTED' &&
+    record.boundaryMetadata.commercialLegalRegistry;
 
   return [
     {
@@ -63,10 +66,13 @@ export const createContractActionRailItems = (
       id: 'mark-pending-signature',
       label: t('contract-registry:actions.markPendingSignature'),
       disabled:
-        !canMarkPendingSignature(status) || handlers.isLifecyclePending?.('mark-pending-signature'),
-      onClick: canMarkPendingSignature(status)
-        ? () => handlers.onLifecycleAction('mark-pending-signature')
-        : undefined,
+        !canPromoteCommercialContract ||
+        !canMarkPendingSignature(status) ||
+        handlers.isLifecyclePending?.('mark-pending-signature'),
+      onClick:
+        canPromoteCommercialContract && canMarkPendingSignature(status)
+          ? () => handlers.onLifecycleAction('mark-pending-signature')
+          : undefined,
     },
     {
       id: 'reopen-draft',
@@ -79,10 +85,14 @@ export const createContractActionRailItems = (
     {
       id: 'activate',
       label: t('contract-registry:actions.activate'),
-      disabled: !canActivateContract(status) || handlers.isLifecyclePending?.('activate'),
-      onClick: canActivateContract(status)
-        ? () => handlers.onLifecycleAction('activate')
-        : undefined,
+      disabled:
+        !canPromoteCommercialContract ||
+        !canActivateContract(status) ||
+        handlers.isLifecyclePending?.('activate'),
+      onClick:
+        canPromoteCommercialContract && canActivateContract(status)
+          ? () => handlers.onLifecycleAction('activate')
+          : undefined,
     },
     {
       id: 'expire',
@@ -108,20 +118,23 @@ export const createContractActionRailItems = (
 };
 
 export const readContractListLifecycleActions = (
-  status: ContractStatus,
+  record: Pick<ContractRecord, 'status' | 'boundaryMetadata'>,
 ): ContractLifecycleAction[] => {
   const actions: ContractLifecycleAction[] = [];
+  const canPromoteCommercialContract =
+    record.boundaryMetadata.kindClassification === 'COMMERCIAL_LEGAL_SUPPORTED' &&
+    record.boundaryMetadata.commercialLegalRegistry;
 
-  if (canMarkPendingSignature(status)) {
+  if (canPromoteCommercialContract && canMarkPendingSignature(record.status)) {
     actions.push('mark-pending-signature');
   }
-  if (canReopenDraft(status)) {
+  if (canReopenDraft(record.status)) {
     actions.push('reopen-draft');
   }
-  if (canActivateContract(status)) {
+  if (canPromoteCommercialContract && canActivateContract(record.status)) {
     actions.push('activate');
   }
-  if (canArchiveContract(status)) {
+  if (canArchiveContract(record.status)) {
     actions.push('archive');
   }
 

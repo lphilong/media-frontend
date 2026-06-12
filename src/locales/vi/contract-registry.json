@@ -1,8 +1,9 @@
 {
   "page": {
     "title": "Sổ hợp đồng",
-    "subtitle": "Quản lý hợp đồng pháp lý và vận hành.",
-    "placeholder": "Sổ hợp đồng."
+    "subtitle": "Quản lý hồ sơ hợp đồng thương mại và pháp lý.",
+    "placeholder": "Sổ hợp đồng.",
+    "boundaryHelper": "HĐLĐ và điều khoản nhân sự thuộc hồ sơ nhân sự/HRET, không tạo mới trong Contract Registry."
   },
   "fields": {
     "contractCode": "Mã hợp đồng",
@@ -26,7 +27,8 @@
     "externalRef": "Tham chiếu bên ngoài",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
-    "scopeBoundary": "Ranh giới phạm vi"
+    "scopeBoundary": "Ranh giới phạm vi",
+    "boundary": "Ranh giới sổ hợp đồng"
   },
   "generatedCode": {
     "label": "Mã hệ thống",
@@ -41,9 +43,23 @@
     "ARCHIVED": "Đã lưu trữ"
   },
   "contractKinds": {
-    "EMPLOYMENT": "Nhân sự",
+    "EMPLOYMENT": "Hồ sơ HĐLĐ cũ",
     "TALENT_SERVICE": "Dịch vụ Talent",
     "TALENT_MANAGEMENT": "Quản lý Talent"
+  },
+  "boundaries": {
+    "COMMERCIAL_LEGAL_SUPPORTED": {
+      "label": "Hợp đồng thương mại/pháp lý",
+      "helper": "Hồ sơ thuộc phạm vi thương mại/pháp lý đang được hỗ trợ."
+    },
+    "LEGACY_EMPLOYMENT_DEPRECATED": {
+      "label": "Hồ sơ hợp đồng lao động cũ",
+      "helper": "Chỉ giữ để đọc và tra cứu tương thích. HĐLĐ và điều khoản nhân sự thuộc hồ sơ nhân sự/HRET."
+    },
+    "UNSUPPORTED_CONTRACT_KIND": {
+      "label": "Loại hợp đồng chưa hỗ trợ",
+      "helper": "Hồ sơ chỉ đọc để rà soát ranh giới và không đủ điều kiện tham gia chuỗi thương mại."
+    }
   },
   "linkedEntityKinds": {
     "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
@@ -114,7 +130,8 @@
     "status": "Trạng thái",
     "effectiveStartDate": "Bắt đầu",
     "effectiveEndDate": "Kết thúc",
-    "actions": "Hành động"
+    "actions": "Hành động",
+    "boundary": "Ranh giới"
   },
   "detail": {
     "archivedReadOnly": "Bản ghi hợp đồng đã lưu trữ chỉ đọc.",
@@ -124,7 +141,7 @@
     "fileReferenceTitle": "Metadata tham chiếu tệp",
     "freeTextTitle": "Mô tả và tham chiếu bên ngoài",
     "globalOnly": "Chỉ dùng phạm vi toàn cục",
-    "boundaryHelper": "Hợp đồng đã ký không tự tạo doanh thu hoặc hoa hồng."
+    "boundaryHelper": "Trạng thái đã ký hoặc hoạt động không tự tạo doanh thu, hoa hồng, bảng lương, thanh toán, chi trả, thuế, kế toán, chấp nhận nghĩa vụ hoặc liên kết bằng chứng Sự kiện."
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",
@@ -183,7 +200,9 @@
     "invalidToken": "Nhập token tham chiếu hợp lệ.",
     "invalidDate": "Dùng định dạng YYYY-MM-DD.",
     "kindCompatibility": "Loại hợp đồng và loại thực thể liên kết không tương thích.",
-    "filePair": "ID tham chiếu tệp và tên hiển thị phải được cung cấp hoặc xóa cùng nhau."
+    "filePair": "ID tham chiếu tệp và tên hiển thị phải được cung cấp hoặc xóa cùng nhau.",
+    "employmentCreateRejected": "Không thể tạo HĐLĐ trong Contract Registry.",
+    "legacyPromotionRejected": "Không thể chuyển hồ sơ HĐLĐ cũ sang sử dụng thương mại."
   },
   "feedback": {
     "created": "Đã tạo bản ghi hợp đồng.",

@@ -8,6 +8,12 @@ import {
 } from '@app/router/reference-links';
 import { createContractActionRailItems } from '@modules/contract-registry/actions/contract-registry-action-rail';
 import {
+  contractBoundaryToneMap,
+  readContractBoundaryHelper,
+  readContractBoundaryLabel,
+  readContractKindLabel,
+} from '@modules/contract-registry/components/contract-boundary';
+import {
   ContractAssignOwnerSurface,
   ContractDateActionSurface,
   ContractDraftCoreSurface,
@@ -292,8 +298,14 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
       }
       banner={
         record ? (
-          <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
-            {t('contract-registry:detail.boundaryHelper')}
+          <div className="space-y-2 rounded border border-border bg-panel px-3 py-2 text-sm">
+            <StatusBadge
+              status={record.boundaryMetadata.kindClassification}
+              label={readContractBoundaryLabel(t, record.boundaryMetadata)}
+              toneByStatus={contractBoundaryToneMap}
+            />
+            <p className="text-muted">{readContractBoundaryHelper(t, record.boundaryMetadata)}</p>
+            <p className="text-muted">{t('contract-registry:detail.boundaryHelper')}</p>
           </div>
         ) : undefined
       }
@@ -343,7 +355,12 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
                 {
                   key: 'kind',
                   label: t('contract-registry:fields.contractKind'),
-                  value: t(`contract-registry:contractKinds.${record.contractKind}`),
+                  value: readContractKindLabel(t, record.contractKind, record.boundaryMetadata),
+                },
+                {
+                  key: 'boundary',
+                  label: t('contract-registry:fields.boundary'),
+                  value: readContractBoundaryLabel(t, record.boundaryMetadata),
                 },
                 {
                   key: 'confidentiality',
@@ -552,7 +569,7 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
         record ? (
           <RelatedSectionShell title={t('contract-registry:related.navigationTitle')}>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {commissionRulesHref ? (
+              {commissionRulesHref && record.boundaryMetadata.commercialChainContextEligible ? (
                 <Link
                   to={commissionRulesHref}
                   className="rounded border border-border bg-bg px-3 py-2 text-sm text-accent hover:underline"

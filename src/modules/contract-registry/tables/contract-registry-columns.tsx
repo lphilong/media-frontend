@@ -6,6 +6,11 @@ import {
   canTerminateContract,
   readContractListLifecycleActions,
 } from '@modules/contract-registry/actions/contract-registry-action-rail';
+import {
+  contractBoundaryToneMap,
+  readContractBoundaryLabel,
+  readContractKindLabel,
+} from '@modules/contract-registry/components/contract-boundary';
 import type {
   ContractByLinkedEntityItem,
   ContractByOwnerItem,
@@ -87,7 +92,19 @@ export const createContractRecordColumns = (
   {
     accessorKey: 'contractKind',
     header: t('contract-registry:table.contractKind'),
-    cell: (context) => t(`contract-registry:contractKinds.${String(context.getValue() ?? '')}`),
+    cell: ({ row }) =>
+      readContractKindLabel(t, row.original.contractKind, row.original.boundaryMetadata),
+  },
+  {
+    id: 'boundary',
+    header: t('contract-registry:table.boundary'),
+    cell: ({ row }) => (
+      <StatusBadge
+        status={row.original.boundaryMetadata.kindClassification}
+        label={readContractBoundaryLabel(t, row.original.boundaryMetadata)}
+        toneByStatus={contractBoundaryToneMap}
+      />
+    ),
   },
   {
     accessorKey: 'linkedEntityKind',
@@ -150,7 +167,7 @@ export const createContractRecordColumns = (
     header: t('contract-registry:table.actions'),
     cell: ({ row }) => {
       const record = row.original;
-      const lifecycleActions = readContractListLifecycleActions(record.status).filter(
+      const lifecycleActions = readContractListLifecycleActions(record).filter(
         (action) => handlers.canShowLifecycleAction?.(action) ?? true,
       );
 

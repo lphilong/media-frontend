@@ -27,10 +27,28 @@ const statusSchema = z.enum([
   'TERMINATED',
   'ARCHIVED',
 ]);
-const contractKindSchema = z.enum(['EMPLOYMENT', 'TALENT_SERVICE', 'TALENT_MANAGEMENT']);
+const contractReadKindSchema = z.string().trim().min(1);
+const commercialLegalContractKindSchema = z.enum(['TALENT_SERVICE', 'TALENT_MANAGEMENT']);
 const linkedEntityKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT']);
 const confidentialityTierSchema = z.enum(['INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']);
 const timestampSchema = z.union([z.number(), z.string()]);
+const boundaryMetadataSchema = z
+  .object({
+    semanticBoundary: z.enum(['COMMERCIAL_LEGAL', 'LEGACY_EMPLOYMENT', 'UNSUPPORTED']),
+    kindClassification: z.enum([
+      'COMMERCIAL_LEGAL_SUPPORTED',
+      'LEGACY_EMPLOYMENT_DEPRECATED',
+      'UNSUPPORTED_CONTRACT_KIND',
+    ]),
+    commercialLegalRegistry: z.boolean(),
+    commercialChainContextEligible: z.boolean(),
+    directRevenueSourceEligible: z.literal(false),
+    directCommissionSourceEligible: z.literal(false),
+    payrollSourceEligible: z.literal(false),
+    obligationAcceptanceImplemented: z.literal(false),
+    eventEvidenceLinkImplemented: z.literal(false),
+  })
+  .strict();
 const referenceSummarySchema = z
   .object({
     id: z.string().trim().min(1),
@@ -49,7 +67,7 @@ const listItemSchema = z
     id: z.string().trim().min(1),
     contractCode: z.string().trim().min(1),
     title: z.string().trim().min(1),
-    contractKind: contractKindSchema,
+    contractKind: contractReadKindSchema,
     linkedEntityKind: linkedEntityKindSchema,
     linkedEmploymentProfileId: z.string().nullable().optional(),
     linkedTalentId: z.string().nullable().optional(),
@@ -61,6 +79,7 @@ const listItemSchema = z
     status: statusSchema,
     effectiveStartDate: timestampSchema,
     effectiveEndDate: timestampSchema.nullable().optional(),
+    boundaryMetadata: boundaryMetadataSchema,
     createdAt: timestampSchema,
   })
   .strict();
@@ -79,6 +98,7 @@ const byLinkedEntityItemSchema = listItemSchema
     status: true,
     effectiveStartDate: true,
     effectiveEndDate: true,
+    boundaryMetadata: true,
   })
   .strict();
 
@@ -94,6 +114,7 @@ const byOwnerItemSchema = listItemSchema
     status: true,
     effectiveStartDate: true,
     effectiveEndDate: true,
+    boundaryMetadata: true,
   })
   .strict();
 
@@ -124,6 +145,23 @@ const byOwnerResponseSchema = z
   .object({ data: z.array(byOwnerItemSchema), meta: cursorMetaSchema })
   .strict();
 const detailResponseSchema = z.object({ data: detailSchema }).strict();
+const createPayloadSchema = z
+  .object({
+    contractCode: z.string().optional(),
+    title: z.string(),
+    contractKind: commercialLegalContractKindSchema,
+    linkedEntityKind: z.literal('TALENT'),
+    linkedTalentId: z.string().trim().min(1),
+    ownerEmploymentProfileId: z.string(),
+    confidentialityTier: confidentialityTierSchema,
+    effectiveStartDate: z.string(),
+    effectiveEndDate: z.string().nullable().optional(),
+    fileReferenceId: z.string().optional(),
+    fileDisplayName: z.string().optional(),
+    description: z.string().nullable().optional(),
+    externalRef: z.string().nullable().optional(),
+  })
+  .strict();
 
 const sanitizeFlatListQuery = (
   query: ContractFlatListQuery,
@@ -176,31 +214,41 @@ const sanitizeByOwnerQuery = (
 });
 
 const sanitizeCreatePayload = (payload: ContractCreatePayload): ContractCreatePayload => {
-  const base: ContractCreatePayload = {
+  const parsed = createPayloadSchema.parse({
+    contractCode: payload.contractCode,
     title: payload.title,
     contractKind: payload.contractKind,
     linkedEntityKind: payload.linkedEntityKind,
+    linkedTalentId: payload.linkedTalentId,
     ownerEmploymentProfileId: payload.ownerEmploymentProfileId,
     confidentialityTier: payload.confidentialityTier,
     effectiveStartDate: payload.effectiveStartDate,
     effectiveEndDate: payload.effectiveEndDate,
+    fileReferenceId: payload.fileReferenceId,
+    fileDisplayName: payload.fileDisplayName,
     description: payload.description,
     externalRef: payload.externalRef,
+  });
+  const base: ContractCreatePayload = {
+    title: parsed.title,
+    contractKind: parsed.contractKind,
+    linkedEntityKind: parsed.linkedEntityKind,
+    linkedTalentId: parsed.linkedTalentId,
+    ownerEmploymentProfileId: parsed.ownerEmploymentProfileId,
+    confidentialityTier: parsed.confidentialityTier,
+    effectiveStartDate: parsed.effectiveStartDate,
+    effectiveEndDate: parsed.effectiveEndDate,
+    description: parsed.description,
+    externalRef: parsed.externalRef,
   };
 
-  if (payload.contractCode !== undefined) {
-    base.contractCode = payload.contractCode;
+  if (parsed.contractCode !== undefined) {
+    base.contractCode = parsed.contractCode;
   }
 
-  if (payload.linkedEntityKind === 'EMPLOYMENT_PROFILE') {
-    base.linkedEmploymentProfileId = payload.linkedEmploymentProfileId;
-  } else {
-    base.linkedTalentId = payload.linkedTalentId;
-  }
-
-  if (payload.fileReferenceId && payload.fileDisplayName) {
-    base.fileReferenceId = payload.fileReferenceId;
-    base.fileDisplayName = payload.fileDisplayName;
+  if (parsed.fileReferenceId && parsed.fileDisplayName) {
+    base.fileReferenceId = parsed.fileReferenceId;
+    base.fileDisplayName = parsed.fileDisplayName;
   }
 
   return base;

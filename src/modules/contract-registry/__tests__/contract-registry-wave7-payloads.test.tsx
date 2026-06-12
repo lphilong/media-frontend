@@ -1,11 +1,12 @@
 import i18n from 'i18next';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
   assignContractOwner,
   createContractRecord,
   expireContractRecord,
+  fetchContractRecordDetail,
   fetchContractRecords,
   performContractLifecycleAction,
   terminateContractRecord,
@@ -47,6 +48,42 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
 
 const apiRequestMock = vi.mocked(apiRequest);
 
+const legacyBoundaryMetadata = {
+  semanticBoundary: 'LEGACY_EMPLOYMENT',
+  kindClassification: 'LEGACY_EMPLOYMENT_DEPRECATED',
+  commercialLegalRegistry: false,
+  commercialChainContextEligible: false,
+  directRevenueSourceEligible: false,
+  directCommissionSourceEligible: false,
+  payrollSourceEligible: false,
+  obligationAcceptanceImplemented: false,
+  eventEvidenceLinkImplemented: false,
+} as const;
+
+const commercialBoundaryMetadata = {
+  semanticBoundary: 'COMMERCIAL_LEGAL',
+  kindClassification: 'COMMERCIAL_LEGAL_SUPPORTED',
+  commercialLegalRegistry: true,
+  commercialChainContextEligible: true,
+  directRevenueSourceEligible: false,
+  directCommissionSourceEligible: false,
+  payrollSourceEligible: false,
+  obligationAcceptanceImplemented: false,
+  eventEvidenceLinkImplemented: false,
+} as const;
+
+const unsupportedBoundaryMetadata = {
+  semanticBoundary: 'UNSUPPORTED',
+  kindClassification: 'UNSUPPORTED_CONTRACT_KIND',
+  commercialLegalRegistry: false,
+  commercialChainContextEligible: false,
+  directRevenueSourceEligible: false,
+  directCommissionSourceEligible: false,
+  payrollSourceEligible: false,
+  obligationAcceptanceImplemented: false,
+  eventEvidenceLinkImplemented: false,
+} as const;
+
 const detailRecord: ContractRecord = {
   id: 'contract-record-001',
   contractCode: 'CON-2026-000001',
@@ -64,6 +101,7 @@ const detailRecord: ContractRecord = {
   fileDisplayName: 'contract.pdf',
   description: null,
   externalRef: null,
+  boundaryMetadata: legacyBoundaryMetadata,
   createdAt: 1,
   updatedAt: 2,
 };
@@ -81,6 +119,7 @@ const listRecord = (overrides: Partial<Record<string, unknown>> = {}) => ({
   status: detailRecord.status,
   effectiveStartDate: detailRecord.effectiveStartDate,
   effectiveEndDate: detailRecord.effectiveEndDate,
+  boundaryMetadata: detailRecord.boundaryMetadata,
   createdAt: detailRecord.createdAt,
   ...overrides,
 });
@@ -233,10 +272,9 @@ describe('contract registry wave 7 query and payload shaping', () => {
     apiRequestMock.mockResolvedValue({ data: detailRecord });
     await createContractRecord({
       title: 'Wave 7 contract',
-      contractKind: 'EMPLOYMENT',
-      linkedEntityKind: 'EMPLOYMENT_PROFILE',
-      linkedEmploymentProfileId: 'ep-001',
-      linkedTalentId: 'talent-forbidden',
+      contractKind: 'TALENT_SERVICE',
+      linkedEntityKind: 'TALENT',
+      linkedTalentId: 'talent-001',
       ownerEmploymentProfileId: 'ep-001',
       confidentialityTier: 'CONFIDENTIAL',
       effectiveStartDate: '2026-01-01',
@@ -250,9 +288,9 @@ describe('contract registry wave 7 query and payload shaping', () => {
     } as Parameters<typeof createContractRecord>[0]);
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).toEqual({
       title: 'Wave 7 contract',
-      contractKind: 'EMPLOYMENT',
-      linkedEntityKind: 'EMPLOYMENT_PROFILE',
-      linkedEmploymentProfileId: 'ep-001',
+      contractKind: 'TALENT_SERVICE',
+      linkedEntityKind: 'TALENT',
+      linkedTalentId: 'talent-001',
       ownerEmploymentProfileId: 'ep-001',
       confidentialityTier: 'CONFIDENTIAL',
       effectiveStartDate: '2026-01-01',
@@ -263,6 +301,21 @@ describe('contract registry wave 7 query and payload shaping', () => {
       externalRef: null,
     });
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('contractCode');
+  });
+
+  it('rejects EMPLOYMENT create payloads before an API request can be sent', async () => {
+    await expect(
+      createContractRecord({
+        title: 'Legacy employment contract',
+        contractKind: 'EMPLOYMENT',
+        linkedEntityKind: 'EMPLOYMENT_PROFILE',
+        linkedEmploymentProfileId: 'ep-001',
+        ownerEmploymentProfileId: 'ep-001',
+        confidentialityTier: 'CONFIDENTIAL',
+        effectiveStartDate: '2026-01-01',
+      } as unknown as Parameters<typeof createContractRecord>[0]),
+    ).rejects.toThrow(/EMPLOYMENT/);
+    expect(apiRequestMock).not.toHaveBeenCalled();
   });
 
   it('keeps the API parser strict for backend confidentiality tiers', async () => {
@@ -291,6 +344,62 @@ describe('contract registry wave 7 query and payload shaping', () => {
     await expect(fetchContractRecords({})).rejects.toThrow(/STANDARD/);
   });
 
+  it('parses boundary metadata on list, detail, and mutation responses while remaining strict', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      data: [listRecord()],
+      meta: undefined,
+    });
+    await expect(fetchContractRecords({})).resolves.toMatchObject({
+      data: [{ boundaryMetadata: legacyBoundaryMetadata }],
+    });
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: [
+        listRecord({
+          contractKind: 'FUTURE_CONTRACT_KIND',
+          boundaryMetadata: unsupportedBoundaryMetadata,
+        }),
+      ],
+      meta: undefined,
+    });
+    await expect(fetchContractRecords({})).resolves.toMatchObject({
+      data: [
+        {
+          contractKind: 'FUTURE_CONTRACT_KIND',
+          boundaryMetadata: unsupportedBoundaryMetadata,
+        },
+      ],
+    });
+
+    apiRequestMock.mockResolvedValueOnce({ data: detailRecord });
+    await expect(fetchContractRecordDetail(detailRecord.id)).resolves.toMatchObject({
+      boundaryMetadata: legacyBoundaryMetadata,
+    });
+
+    apiRequestMock.mockResolvedValueOnce({ data: detailRecord });
+    await expect(
+      createContractRecord({
+        title: 'Commercial agreement',
+        contractKind: 'TALENT_SERVICE',
+        linkedEntityKind: 'TALENT',
+        linkedTalentId: 'talent-001',
+        ownerEmploymentProfileId: 'ep-001',
+        confidentialityTier: 'CONFIDENTIAL',
+        effectiveStartDate: '2026-01-01',
+        boundaryMetadata: legacyBoundaryMetadata,
+      } as Parameters<typeof createContractRecord>[0]),
+    ).resolves.toMatchObject({
+      boundaryMetadata: legacyBoundaryMetadata,
+    });
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('boundaryMetadata');
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: [listRecord({ unsupportedField: true })],
+      meta: undefined,
+    });
+    await expect(fetchContractRecords({})).rejects.toThrow(/unsupportedField/);
+  });
+
   it('submits exact mutation payloads for draft-core, owner, file reference, dates, and zero-body lifecycle', async () => {
     apiRequestMock.mockResolvedValue({ data: detailRecord });
 
@@ -306,6 +415,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
       externalRef: null,
       ownerEmploymentProfileId: 'forbidden',
       fileReferenceId: 'forbidden',
+      boundaryMetadata: legacyBoundaryMetadata,
     } as Parameters<typeof updateContractDraftCore>[1]);
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).toEqual({
       title: 'Changed',
@@ -319,6 +429,7 @@ describe('contract registry wave 7 query and payload shaping', () => {
       externalRef: null,
     });
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('contractCode');
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('boundaryMetadata');
 
     await assignContractOwner('contract-record-001', {
       newOwnerEmploymentProfileId: 'ep-002',
@@ -361,9 +472,17 @@ describe('contract registry wave 7 query and payload shaping', () => {
       screen.getByText(i18n.t('contract-registry:generatedCode.description')),
     ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('contract-registry:fields.title')), 'Contract');
-    const employeeOptions = await screen.findAllByRole('button', { name: /Employee One/ });
-    await user.click(employeeOptions[0]);
-    await user.click(employeeOptions[1]);
+    expect(screen.getByLabelText(i18n.t('contract-registry:fields.contractKind'))).toHaveValue(
+      'TALENT_SERVICE',
+    );
+    expect(
+      within(screen.getByLabelText(i18n.t('contract-registry:fields.contractKind'))).queryByRole(
+        'option',
+        { name: i18n.t('contract-registry:contractKinds.EMPLOYMENT') },
+      ),
+    ).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
+    await user.click(await screen.findByRole('button', { name: /Employee One/ }));
     await user.type(
       screen.getByLabelText(i18n.t('contract-registry:fields.effectiveStartDate')),
       '2026-01-01',
@@ -387,37 +506,16 @@ describe('contract registry wave 7 query and payload shaping', () => {
     );
     expect(onCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        linkedEntityKind: 'EMPLOYMENT_PROFILE',
-        linkedEmploymentProfileId: 'ep-001',
+        linkedEntityKind: 'TALENT',
+        linkedTalentId: 'talent-001',
         effectiveStartDate: '2026-01-01',
         fileReferenceId: 'file-001',
         fileDisplayName: 'file.pdf',
       }),
     );
-    expect(onCreate.mock.calls.at(-1)?.[0]).not.toHaveProperty('linkedTalentId');
+    expect(onCreate.mock.calls.at(-1)?.[0]).not.toHaveProperty('linkedEmploymentProfileId');
     expect(onCreate.mock.calls.at(-1)?.[0]).not.toHaveProperty('contractCode');
     createRender.unmount();
-
-    const badCompatibility = vi.fn();
-    render(<ContractCreateSurface onCancel={() => undefined} onSubmit={badCompatibility} />);
-    await user.type(screen.getByLabelText(i18n.t('contract-registry:fields.title')), 'Bad');
-    await user.selectOptions(
-      screen.getByLabelText(i18n.t('contract-registry:fields.contractKind')),
-      'TALENT_SERVICE',
-    );
-    const compatibilityEmployeeOptions = await screen.findAllByRole('button', {
-      name: /Employee One/,
-    });
-    await user.click(compatibilityEmployeeOptions[0]);
-    await user.click(compatibilityEmployeeOptions[1]);
-    await user.type(
-      screen.getByLabelText(i18n.t('contract-registry:fields.effectiveStartDate')),
-      '2026-01-01',
-    );
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('contract-registry:mutations.create.submit') }),
-    );
-    expect(badCompatibility).not.toHaveBeenCalled();
   }, 20_000);
 
   it('draft-core and action forms emit exact payloads', async () => {
@@ -430,18 +528,23 @@ describe('contract registry wave 7 query and payload shaping', () => {
         onSubmit={onDraftCore}
       />,
     );
-    await user.selectOptions(
-      screen.getByLabelText(i18n.t('contract-registry:fields.linkedEntityKind')),
-      'TALENT',
+    expect(
+      screen.queryByRole('combobox', {
+        name: i18n.t('contract-registry:fields.linkedEntityKind'),
+      }),
+    ).not.toBeInTheDocument();
+    await user.clear(screen.getByLabelText(i18n.t('contract-registry:fields.title')));
+    await user.type(
+      screen.getByLabelText(i18n.t('contract-registry:fields.title')),
+      'Legacy metadata update',
     );
-    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
     await user.click(
       screen.getByRole('button', { name: i18n.t('contract-registry:mutations.draftCore.submit') }),
     );
     expect(onDraftCore).toHaveBeenCalledWith(
       expect.objectContaining({
-        linkedEntityKind: 'TALENT',
-        linkedTalentId: 'talent-001',
+        linkedEntityKind: 'EMPLOYMENT_PROFILE',
+        linkedEmploymentProfileId: 'ep-001',
       }),
     );
     expect(onDraftCore.mock.calls.at(-1)?.[0]).not.toHaveProperty('contractCode');
@@ -493,7 +596,8 @@ describe('contract registry wave 7 query and payload shaping', () => {
       onLifecycleAction: vi.fn(),
     });
     expect(draftItems.find((item) => item.id === 'draft-core')?.disabled).toBe(false);
-    expect(draftItems.find((item) => item.id === 'mark-pending-signature')?.disabled).toBeFalsy();
+    expect(draftItems.find((item) => item.id === 'mark-pending-signature')?.disabled).toBe(true);
+    expect(draftItems.find((item) => item.id === 'activate')?.disabled).toBe(true);
     expect(draftItems.find((item) => item.id === 'expire')?.disabled).toBe(true);
 
     const archivedItems = createContractActionRailItems(
@@ -509,5 +613,29 @@ describe('contract registry wave 7 query and payload shaping', () => {
       },
     );
     expect(archivedItems.every((item) => item.disabled)).toBe(true);
+
+    const commercialItems = createContractActionRailItems(
+      i18n.t,
+      {
+        ...detailRecord,
+        contractKind: 'TALENT_SERVICE',
+        linkedEntityKind: 'TALENT',
+        linkedEmploymentProfileId: null,
+        linkedTalentId: 'talent-001',
+        boundaryMetadata: commercialBoundaryMetadata,
+      },
+      {
+        onDraftCoreEdit: vi.fn(),
+        onAssignOwner: vi.fn(),
+        onUpdateFileReference: vi.fn(),
+        onExpire: vi.fn(),
+        onTerminate: vi.fn(),
+        onLifecycleAction: vi.fn(),
+      },
+    );
+    expect(
+      commercialItems.find((item) => item.id === 'mark-pending-signature')?.disabled,
+    ).toBeFalsy();
+    expect(commercialItems.find((item) => item.id === 'activate')?.disabled).toBeFalsy();
   });
 });

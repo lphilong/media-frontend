@@ -23,6 +23,29 @@ const readContractStatus = async (contractRecordId: string): Promise<string> => 
 };
 
 describe('wave 7 MSW Contract Registry lifecycle guards', () => {
+  it('rejects new EMPLOYMENT records and legacy promotion like production', async () => {
+    const createEmployment = await requestJson('/admin/contract-records', {
+      title: 'Legacy employment contract',
+      contractKind: 'EMPLOYMENT',
+      linkedEntityKind: 'EMPLOYMENT_PROFILE',
+      linkedEmploymentProfileId: 'ep-001',
+      ownerEmploymentProfileId: 'ep-001',
+      confidentialityTier: 'INTERNAL',
+      effectiveStartDate: '2026-01-01',
+    });
+    expect(createEmployment.status).toBe(422);
+
+    const pending = await requestJson(
+      '/admin/contract-records/contract-record-001/mark-pending-signature',
+    );
+    expect(pending.status).toBe(422);
+    await expect(readContractStatus('contract-record-001')).resolves.toBe('DRAFT');
+
+    const activate = await requestJson('/admin/contract-records/contract-record-001/activate');
+    expect(activate.status).toBe(422);
+    await expect(readContractStatus('contract-record-001')).resolves.toBe('DRAFT');
+  });
+
   it('rejects invalid lifecycle transitions instead of setting statuses directly', async () => {
     await expect(readContractStatus('contract-record-active')).resolves.toBe('ACTIVE');
 
@@ -58,7 +81,7 @@ describe('wave 7 MSW Contract Registry lifecycle guards', () => {
     const archivedActivate = await requestJson(
       '/admin/contract-records/contract-record-archived/activate',
     );
-    expect(archivedActivate.status).toBe(409);
+    expect(archivedActivate.status).toBe(422);
     await expect(readContractStatus('contract-record-archived')).resolves.toBe('ARCHIVED');
 
     const archivedArchive = await requestJson(

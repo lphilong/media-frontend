@@ -9,16 +9,33 @@ export type ContractStatus =
   | 'ARCHIVED';
 
 export type ContractKind = 'EMPLOYMENT' | 'TALENT_SERVICE' | 'TALENT_MANAGEMENT';
+export type CommercialLegalContractKind = 'TALENT_SERVICE' | 'TALENT_MANAGEMENT';
+export type ContractReadKind = ContractKind | (string & {});
 export type ContractLinkedEntityKind = 'EMPLOYMENT_PROFILE' | 'TALENT';
 export type ContractConfidentialityTier = 'INTERNAL' | 'CONFIDENTIAL' | 'RESTRICTED';
 export type ContractSortBy = 'effectiveStartDate' | 'contractCode' | 'createdAt';
 export type SortDirection = 'asc' | 'desc';
 
+export type ContractBoundaryMetadata = {
+  semanticBoundary: 'COMMERCIAL_LEGAL' | 'LEGACY_EMPLOYMENT' | 'UNSUPPORTED';
+  kindClassification:
+    | 'COMMERCIAL_LEGAL_SUPPORTED'
+    | 'LEGACY_EMPLOYMENT_DEPRECATED'
+    | 'UNSUPPORTED_CONTRACT_KIND';
+  commercialLegalRegistry: boolean;
+  commercialChainContextEligible: boolean;
+  directRevenueSourceEligible: false;
+  directCommissionSourceEligible: false;
+  payrollSourceEligible: false;
+  obligationAcceptanceImplemented: false;
+  eventEvidenceLinkImplemented: false;
+};
+
 export type ContractRecord = {
   id: string;
   contractCode: string;
   title: string;
-  contractKind: ContractKind;
+  contractKind: ContractReadKind;
   linkedEntityKind: ContractLinkedEntityKind;
   linkedEmploymentProfileId?: string | null;
   linkedTalentId?: string | null;
@@ -34,6 +51,7 @@ export type ContractRecord = {
   fileDisplayName?: string | null;
   description?: string | null;
   externalRef?: string | null;
+  boundaryMetadata: ContractBoundaryMetadata;
   createdAt: number | string;
   updatedAt: number | string;
 };
@@ -55,6 +73,7 @@ export type ContractListItem = Pick<
   | 'status'
   | 'effectiveStartDate'
   | 'effectiveEndDate'
+  | 'boundaryMetadata'
   | 'createdAt'
 >;
 
@@ -72,6 +91,7 @@ export type ContractByLinkedEntityItem = Pick<
   | 'status'
   | 'effectiveStartDate'
   | 'effectiveEndDate'
+  | 'boundaryMetadata'
 >;
 
 export type ContractByOwnerItem = Pick<
@@ -86,6 +106,7 @@ export type ContractByOwnerItem = Pick<
   | 'status'
   | 'effectiveStartDate'
   | 'effectiveEndDate'
+  | 'boundaryMetadata'
 >;
 
 export type ContractFlatListQuery = {
@@ -141,10 +162,9 @@ export type ContractByOwnerQuery = Pick<
 export type ContractCreatePayload = {
   contractCode?: string;
   title: string;
-  contractKind: ContractKind;
-  linkedEntityKind: ContractLinkedEntityKind;
-  linkedEmploymentProfileId?: string;
-  linkedTalentId?: string;
+  contractKind: CommercialLegalContractKind;
+  linkedEntityKind: 'TALENT';
+  linkedTalentId: string;
   ownerEmploymentProfileId: string;
   confidentialityTier: ContractConfidentialityTier;
   effectiveStartDate: string;

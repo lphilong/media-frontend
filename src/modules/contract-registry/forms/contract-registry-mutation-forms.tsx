@@ -11,11 +11,11 @@ import { z } from 'zod';
 
 import type {
   ContractAssignOwnerPayload,
+  CommercialLegalContractKind,
   ContractConfidentialityTier,
   ContractCreatePayload,
   ContractDraftCorePayload,
   ContractFileReferencePayload,
-  ContractKind,
   ContractLinkedEntityKind,
   ContractExpirePayload,
   ContractRecord,
@@ -68,8 +68,10 @@ type DateActionSurfaceProps = BaseSurfaceProps & {
 const idRegex = /^[A-Za-z0-9_-]+$/;
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
-const contractKindOptions: ContractKind[] = ['EMPLOYMENT', 'TALENT_SERVICE', 'TALENT_MANAGEMENT'];
-const linkedEntityKindOptions: ContractLinkedEntityKind[] = ['EMPLOYMENT_PROFILE', 'TALENT'];
+const contractKindOptions = [
+  'TALENT_SERVICE',
+  'TALENT_MANAGEMENT',
+] as const satisfies readonly CommercialLegalContractKind[];
 const confidentialityTierOptions: ContractConfidentialityTier[] = [
   'INTERNAL',
   'CONFIDENTIAL',
@@ -122,22 +124,11 @@ const optionalDateField = (dateMessage: string) =>
     .optional()
     .refine((value) => !value || dateRegex.test(value), dateMessage);
 
-const assertKindCompatibility = (
-  contractKind: ContractKind,
-  linkedEntityKind: ContractLinkedEntityKind,
-): boolean => {
-  if (contractKind === 'EMPLOYMENT') {
-    return linkedEntityKind === 'EMPLOYMENT_PROFILE';
-  }
-
-  return linkedEntityKind === 'TALENT';
-};
-
 const linkedPayload = (
   linkedEntityKind: ContractLinkedEntityKind,
   linkedEntityId: string,
 ): Pick<
-  ContractCreatePayload,
+  ContractDraftCorePayload,
   'linkedEntityKind' | 'linkedEmploymentProfileId' | 'linkedTalentId'
 > => {
   if (linkedEntityKind === 'EMPLOYMENT_PROFILE') {
@@ -159,16 +150,13 @@ const createSchema = (messages: {
   required: string;
   token: string;
   date: string;
-  compatible: string;
   filePair: string;
 }) =>
   z
     .object({
       title: z.string().trim().min(1, messages.required),
-      contractKind: z.enum(contractKindOptions as [ContractKind, ...ContractKind[]]),
-      linkedEntityKind: z.enum(
-        linkedEntityKindOptions as [ContractLinkedEntityKind, ...ContractLinkedEntityKind[]],
-      ),
+      contractKind: z.enum(contractKindOptions),
+      linkedEntityKind: z.literal('TALENT'),
       linkedEntityId: z.string().trim().min(1, messages.required).regex(idRegex, messages.token),
       ownerEmploymentProfileId: z
         .string()
@@ -189,14 +177,6 @@ const createSchema = (messages: {
       externalRef: z.string().trim().optional(),
     })
     .superRefine((value, context) => {
-      if (!assertKindCompatibility(value.contractKind, value.linkedEntityKind)) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['linkedEntityKind'],
-          message: messages.compatible,
-        });
-      }
-
       if (Boolean(value.fileReferenceId) !== Boolean(value.fileDisplayName)) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
@@ -209,9 +189,7 @@ const createSchema = (messages: {
 const draftCoreSchema = (messages: { required: string; token: string; date: string }) =>
   z.object({
     title: z.string().trim().min(1, messages.required),
-    linkedEntityKind: z.enum(
-      linkedEntityKindOptions as [ContractLinkedEntityKind, ...ContractLinkedEntityKind[]],
-    ),
+    linkedEntityKind: z.enum(['EMPLOYMENT_PROFILE', 'TALENT']),
     linkedEntityId: z.string().trim().min(1, messages.required).regex(idRegex, messages.token),
     confidentialityTier: z.enum(
       confidentialityTierOptions as [ContractConfidentialityTier, ...ContractConfidentialityTier[]],
@@ -224,7 +202,7 @@ const draftCoreSchema = (messages: { required: string; token: string; date: stri
 
 type ContractCoreFormValues = {
   title: string;
-  contractKind: ContractKind;
+  contractKind: CommercialLegalContractKind;
   linkedEntityKind: ContractLinkedEntityKind;
   linkedEntityId: string;
   ownerEmploymentProfileId: string;
@@ -244,10 +222,6 @@ const useContractOptions = () => {
       value,
       label: t(`contract-registry:contractKinds.${value}`),
     })),
-    linkedEntityKinds: linkedEntityKindOptions.map((value) => ({
-      value,
-      label: t(`contract-registry:linkedEntityKinds.${value}`),
-    })),
     confidentialityTiers: confidentialityTierOptions.map((value) => ({
       value,
       label: t(`contract-registry:confidentialityTiers.${value}`),
@@ -265,8 +239,8 @@ export const ContractCreateSurface = ({
   const form = useForm<ContractCoreFormValues>({
     defaultValues: {
       title: '',
-      contractKind: 'EMPLOYMENT',
-      linkedEntityKind: 'EMPLOYMENT_PROFILE',
+      contractKind: 'TALENT_SERVICE',
+      linkedEntityKind: 'TALENT',
       linkedEntityId: '',
       ownerEmploymentProfileId: '',
       confidentialityTier: 'INTERNAL',
@@ -284,7 +258,6 @@ export const ContractCreateSurface = ({
         required: t('contract-registry:validation.required'),
         token: t('contract-registry:validation.invalidToken'),
         date: t('contract-registry:validation.invalidDate'),
-        compatible: t('contract-registry:validation.kindCompatibility'),
         filePair: t('contract-registry:validation.filePair'),
       }),
     [t],
@@ -304,7 +277,8 @@ export const ContractCreateSurface = ({
     await onSubmit({
       title: parsed.data.title,
       contractKind: parsed.data.contractKind,
-      ...linkedPayload(parsed.data.linkedEntityKind, parsed.data.linkedEntityId),
+      linkedEntityKind: 'TALENT',
+      linkedTalentId: parsed.data.linkedEntityId,
       ownerEmploymentProfileId: parsed.data.ownerEmploymentProfileId,
       confidentialityTier: parsed.data.confidentialityTier,
       effectiveStartDate: parsed.data.effectiveStartDate,
@@ -341,11 +315,14 @@ export const ContractCreateSurface = ({
             label={t('contract-registry:fields.contractKind')}
             options={options.contractKinds}
           />
-          <SelectField
-            name="linkedEntityKind"
-            label={t('contract-registry:fields.linkedEntityKind')}
-            options={options.linkedEntityKinds}
-          />
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase text-muted">
+              {t('contract-registry:fields.linkedEntityKind')}
+            </span>
+            <div className="rounded border border-border bg-panel px-3 py-2 text-sm">
+              {t('contract-registry:linkedEntityKinds.TALENT')}
+            </div>
+          </div>
           <ReferencePickerField
             name="linkedEntityId"
             label={t('contract-registry:fields.linkedEntityId')}
@@ -471,11 +448,14 @@ export const ContractDraftCoreSurface = ({
       >
         <FormGrid columns={2}>
           <TextInputField name="title" label={t('contract-registry:fields.title')} />
-          <SelectField
-            name="linkedEntityKind"
-            label={t('contract-registry:fields.linkedEntityKind')}
-            options={options.linkedEntityKinds}
-          />
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase text-muted">
+              {t('contract-registry:fields.linkedEntityKind')}
+            </span>
+            <div className="rounded border border-border bg-panel px-3 py-2 text-sm">
+              {t(`contract-registry:linkedEntityKinds.${initialValues.linkedEntityKind}`)}
+            </div>
+          </div>
           <ReferencePickerField
             name="linkedEntityId"
             label={t('contract-registry:fields.linkedEntityId')}
