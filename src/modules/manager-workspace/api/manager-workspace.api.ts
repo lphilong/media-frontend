@@ -92,6 +92,12 @@ const eventStatusSchema = z.enum([
   'ARCHIVED',
 ]);
 const studioBookingStatusSchema = z.enum(['HELD', 'CONFIRMED', 'RELEASED', 'CANCELLED']);
+const completionEvidenceRefTypeSchema = z.enum([
+  'URL',
+  'PLATFORM_REFERENCE',
+  'EXTERNAL_REFERENCE',
+  'INTERNAL_REFERENCE',
+]);
 const timestampSchema = z.union([z.number(), z.string()]);
 const managerEventReferenceSummarySchema = z
   .object({
@@ -100,6 +106,24 @@ const managerEventReferenceSummarySchema = z
     name: z.string().optional(),
     title: z.string().optional(),
     displayName: z.string().optional(),
+  })
+  .strict();
+
+const completionEvidenceRefSchema = z
+  .object({
+    type: completionEvidenceRefTypeSchema,
+    label: z.string().nullable().optional(),
+    url: z.string().nullable().optional(),
+    referenceId: z.string().nullable().optional(),
+  })
+  .strict();
+
+const completionEvidenceSchema = z
+  .object({
+    completedAt: timestampSchema.nullable().optional(),
+    completedByActorId: z.string().nullable().optional(),
+    evidenceNote: z.string().nullable().optional(),
+    evidenceRefs: z.array(completionEvidenceRefSchema),
   })
   .strict();
 
@@ -113,6 +137,7 @@ const managerEventSchema = z
     eventEndAt: timestampSchema,
     owner: managerEventReferenceSummarySchema.nullable(),
     participants: z.array(managerEventReferenceSummarySchema),
+    completionEvidence: completionEvidenceSchema.nullable().optional(),
     studioBookings: z.array(
       z
         .object({
@@ -185,6 +210,9 @@ export type ManagerWorkspaceOrgUnitScope = ManagerWorkspaceContext['scopes']['or
 export type ManagerWorkspaceTalentGroupScope =
   ManagerWorkspaceContext['scopes']['talentGroups'][number];
 export type ManagerEventSummary = z.infer<typeof managerEventSchema>;
+
+export const parseManagerEventForTest = (value: unknown): ManagerEventSummary =>
+  managerEventSchema.parse(value);
 
 export const fetchManagerWorkspaceContext = async (): Promise<ManagerWorkspaceContext> => {
   const response = await apiRequest<unknown>({

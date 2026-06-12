@@ -329,7 +329,7 @@ const defaultManagerEvents = (): ManagerEventSummary[] => [
     id: 'manager-event-001',
     eventCode: 'EVT-202606-000101',
     title: 'Studio launch rehearsal',
-    status: 'CONFIRMED',
+    status: 'COMPLETED',
     eventStartAt: Date.parse('2026-06-15T09:00:00+07:00'),
     eventEndAt: Date.parse('2026-06-15T12:00:00+07:00'),
     owner: {
@@ -346,6 +346,18 @@ const defaultManagerEvents = (): ManagerEventSummary[] => [
         name: 'Org Unit Member',
       },
     ],
+    completionEvidence: {
+      completedAt: Date.parse('2026-06-15T12:30:00+07:00'),
+      completedByActorId: 'admin-ops',
+      evidenceNote: 'Delivered manager-visible recap evidence.',
+      evidenceRefs: [
+        {
+          type: 'INTERNAL_REFERENCE',
+          label: 'Ops ticket',
+          referenceId: 'OPS-456',
+        },
+      ],
+    },
     studioBookings: [
       {
         id: 'booking-manager-001',

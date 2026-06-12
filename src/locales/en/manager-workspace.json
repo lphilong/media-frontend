@@ -71,6 +71,12 @@
     "RELEASED": "Released",
     "CANCELLED": "Cancelled"
   },
+  "evidenceRefTypes": {
+    "URL": "URL",
+    "PLATFORM_REFERENCE": "Platform reference",
+    "EXTERNAL_REFERENCE": "External reference",
+    "INTERNAL_REFERENCE": "Internal reference"
+  },
   "readiness": {
     "NO_LINKED_EMPLOYMENT_PROFILE": "No linked Employment Profile",
     "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Employment Profile is not active",
@@ -203,6 +209,12 @@
     "backToList": "Back to managed events",
     "owner": "Owner employment profile",
     "participants": "Participants",
+    "completionTitle": "Completion evidence",
+    "completedAt": "Completed at",
+    "completedBy": "Completed by",
+    "evidenceNote": "Completion note",
+    "noCompletionEvidence": "No completion evidence has been recorded.",
+    "completionBoundaryHelper": "This evidence is read-only operational context and does not create revenue, commission, attendance, payroll, payment, or payout.",
     "bookings": "Resource bookings",
     "noBookings": "No resource bookings are exposed for this event.",
     "resource": "Studio resource",

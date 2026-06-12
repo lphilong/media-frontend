@@ -32,7 +32,14 @@
     "reason": "Lý do",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
-    "scopeBoundary": "Ranh giới phạm vi"
+    "scopeBoundary": "Ranh giới phạm vi",
+    "completedAt": "Đã hoàn thành lúc",
+    "completedBy": "Người hoàn thành",
+    "evidenceNote": "Ghi chú hoàn thành",
+    "evidenceRefType": "Loại nguồn tham chiếu",
+    "evidenceRefLabel": "Nhãn nguồn tham chiếu",
+    "evidenceRefUrl": "URL tham chiếu",
+    "evidenceRefReferenceId": "Mã tham chiếu"
   },
   "generatedCode": {
     "label": "Mã hệ thống",
@@ -103,7 +110,9 @@
     "complete": "Hoàn thành",
     "cancel": "Hủy",
     "archive": "Lưu trữ",
-    "historicalArchiveEligible": "Sự kiện đã hoàn thành trong quá khứ có thể được lưu trữ từ trang chi tiết"
+    "historicalArchiveEligible": "Sự kiện đã hoàn thành trong quá khứ có thể được lưu trữ từ trang chi tiết",
+    "addEvidenceRef": "Thêm nguồn tham chiếu",
+    "removeEvidenceRef": "Gỡ nguồn tham chiếu {{index}}"
   },
   "table": {
     "caption": "Danh sách sự kiện",
@@ -124,6 +133,20 @@
     "globalOnly": "Chỉ dùng phạm vi toàn cục",
     "boundaryHelper": "Sự kiện hoàn thành không tự ghi nhận doanh thu, hoa hồng, chấm công, bảng lương hoặc thanh toán.",
     "bookingReadOnlyHelper": "Đặt tài nguyên được quản lý bằng StudioBooking. studioResourceIds đã lỗi thời chỉ hiển thị như tóm tắt dẫn xuất."
+  },
+  "evidence": {
+    "title": "Bằng chứng hoàn thành",
+    "notCompleted": "Chưa ghi nhận bằng chứng hoàn thành.",
+    "emptyReferences": "Chưa có nguồn tham chiếu.",
+    "referenceRowLabel": "Nguồn tham chiếu {{index}}",
+    "referenceUnavailable": "Chưa có tham chiếu",
+    "boundaryHelper": "Bằng chứng này chỉ ghi nhận kết quả vận hành, không tự tạo doanh thu, hoa hồng, chấm công, bảng lương, KPI, thanh toán hoặc chi trả.",
+    "refTypes": {
+      "URL": "URL",
+      "PLATFORM_REFERENCE": "Tham chiếu nền tảng",
+      "EXTERNAL_REFERENCE": "Tham chiếu bên ngoài",
+      "INTERNAL_REFERENCE": "Tham chiếu nội bộ"
+    }
   },
   "bookings": {
     "resource": "Tài nguyên studio",
@@ -201,13 +224,22 @@
       "subtitle": "Hủy sự kiện cần lý do audit.",
       "submit": "Hủy sự kiện",
       "pending": "Đang hủy"
+    },
+    "complete": {
+      "title": "Hoàn thành sự kiện",
+      "subtitle": "Cần ghi nhận kết quả bàn giao và bằng chứng vận hành.",
+      "submit": "Hoàn thành sự kiện",
+      "pending": "Đang hoàn thành"
     }
   },
   "placeholders": {
     "csvIds": "Các tham chiếu cách nhau bằng dấu phẩy",
     "searchReference": "Tìm theo tên hoặc mã",
     "optional": "Không bắt buộc",
-    "requiredReason": "Nhập lý do audit"
+    "requiredReason": "Nhập lý do audit",
+    "evidenceNote": "Tóm tắt kết quả bàn giao đã thực hiện",
+    "evidenceUrl": "https://example.com/bang-chung",
+    "evidenceReferenceId": "Mã ticket, nền tảng hoặc tham chiếu"
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
@@ -215,7 +247,10 @@
     "invalidReferenceToken": "Dùng các token tham chiếu hợp lệ, cách nhau bằng dấu phẩy.",
     "invalidWindow": "Thời điểm kết thúc phải sau thời điểm bắt đầu.",
     "noScope": "Phân công sự kiện chỉ dùng phạm vi toàn hệ thống và không nhận trường phạm vi.",
-    "rosterUnavailable": "Danh sách phân công đang hoạt động chưa ở trạng thái an toàn, nên thao tác thay thế bị chặn."
+    "rosterUnavailable": "Danh sách phân công đang hoạt động chưa ở trạng thái an toàn, nên thao tác thay thế bị chặn.",
+    "invalidEvidenceUrl": "Nhập URL http(s) hợp lệ.",
+    "evidenceReferenceRequired": "Cần mã tham chiếu cho loại bằng chứng này.",
+    "completionEvidenceRequired": "Cần bằng chứng hoàn thành."
   },
   "feedback": {
     "created": "Đã tạo sự kiện.",

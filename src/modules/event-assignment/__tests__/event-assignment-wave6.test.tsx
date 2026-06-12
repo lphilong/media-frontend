@@ -5,6 +5,12 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { appRoutes } from '@app/router/router';
+import {
+  EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH,
+} from '@modules/event-assignment/types/event-assignment.types';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import {
@@ -269,6 +275,135 @@ describe('event assignment wave 6 surfaces', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('requires completion evidence before completing a confirmed Event', async () => {
+    const user = userEvent.setup();
+    setEventCapabilities({
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'event.read',
+        'event.update',
+        'event.manageAssignments',
+        'event.manageLifecycle',
+      ],
+      scopeGrants: { eventAssignment: ['global'] },
+    });
+
+    renderRoute('/events/event-progress');
+
+    expect(await screen.findByText('EVT-202605-000002')).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:actions.complete') }),
+    );
+    expect(
+      await screen.findByRole('heading', {
+        name: i18n.t('event-assignment:mutations.complete.title'),
+      }),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:mutations.complete.submit'),
+      }),
+    );
+    expect(screen.getByText(i18n.t('event-assignment:validation.required'))).toBeInTheDocument();
+
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.evidenceNote')),
+      'Delivered recap package and operational handoff.',
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:actions.addEvidenceRef') }),
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.evidenceRefUrl')),
+      'https://example.com/evidence/event-progress',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('event-assignment:mutations.complete.submit'),
+      }),
+    );
+
+    expect(
+      await screen.findByText(i18n.t('event-assignment:statuses.COMPLETED')),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText('Delivered recap package and operational handoff.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('event-assignment:evidence.boundaryHelper')),
+    ).toBeInTheDocument();
+  }, 20_000);
+
+  it('MSW rejects over-limit completion evidence metadata', async () => {
+    const overLimitNoteResponse = await fetch(
+      'http://localhost/admin/events/event-progress/complete',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evidenceNote: 'n'.repeat(EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH + 1),
+          evidenceRefs: [],
+        }),
+      },
+    );
+    expect(overLimitNoteResponse.status).toBe(422);
+
+    const overLimitUrlResponse = await fetch(
+      'http://localhost/admin/events/event-progress/complete',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evidenceNote: 'Delivered recap.',
+          evidenceRefs: [
+            {
+              type: 'URL',
+              url: makeEvidenceUrl(EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH + 1),
+            },
+          ],
+        }),
+      },
+    );
+    expect(overLimitUrlResponse.status).toBe(422);
+
+    const overLimitReferenceResponse = await fetch(
+      'http://localhost/admin/events/event-progress/complete',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evidenceNote: 'Delivered recap.',
+          evidenceRefs: [
+            {
+              type: 'INTERNAL_REFERENCE',
+              referenceId: 'r'.repeat(EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH + 1),
+            },
+          ],
+        }),
+      },
+    );
+    expect(overLimitReferenceResponse.status).toBe(422);
+
+    const overLimitLabelResponse = await fetch(
+      'http://localhost/admin/events/event-progress/complete',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evidenceNote: 'Delivered recap.',
+          evidenceRefs: [
+            {
+              type: 'EXTERNAL_REFERENCE',
+              label: 'l'.repeat(EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH + 1),
+              referenceId: 'EXT-123',
+            },
+          ],
+        }),
+      },
+    );
+    expect(overLimitLabelResponse.status).toBe(422);
+  });
+
   it('supports create, detail roster verification, and a valid lifecycle action', async () => {
     const user = userEvent.setup();
     setEventCapabilities({
@@ -350,3 +485,8 @@ describe('event assignment wave 6 surfaces', () => {
     );
   }, 20_000);
 });
+
+const makeEvidenceUrl = (length: number): string => {
+  const prefix = 'https://example.com/';
+  return `${prefix}${'a'.repeat(length - prefix.length)}`;
+};

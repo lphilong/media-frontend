@@ -32,7 +32,14 @@
     "reason": "原因",
     "createdAt": "创建时间",
     "updatedAt": "更新时间",
-    "scopeBoundary": "Scope 边界"
+    "scopeBoundary": "Scope 边界",
+    "completedAt": "完成时间",
+    "completedBy": "完成人",
+    "evidenceNote": "完成备注",
+    "evidenceRefType": "引用类型",
+    "evidenceRefLabel": "引用标签",
+    "evidenceRefUrl": "引用 URL",
+    "evidenceRefReferenceId": "引用 ID"
   },
   "generatedCode": {
     "label": "系统编码",
@@ -103,7 +110,9 @@
     "complete": "完成",
     "cancel": "取消",
     "archive": "归档",
-    "historicalArchiveEligible": "历史已完成事件可在详情页归档"
+    "historicalArchiveEligible": "历史已完成事件可在详情页归档",
+    "addEvidenceRef": "添加证据引用",
+    "removeEvidenceRef": "移除证据引用 {{index}}"
   },
   "table": {
     "caption": "事件列表",
@@ -124,6 +133,20 @@
     "globalOnly": "仅全局",
     "boundaryHelper": "活动完成不会自动记录收入、佣金、考勤、工资或付款。",
     "bookingReadOnlyHelper": "资源预订由 StudioBooking 管理。studioResourceIds 仅作为派生摘要显示。"
+  },
+  "evidence": {
+    "title": "完成证据",
+    "notCompleted": "尚未记录完成证据。",
+    "emptyReferences": "尚未添加证据引用。",
+    "referenceRowLabel": "证据引用 {{index}}",
+    "referenceUnavailable": "引用不可用",
+    "boundaryHelper": "此证据仅记录运营交付结果，不会自动创建收入、佣金、考勤、工资、KPI、付款或支付。",
+    "refTypes": {
+      "URL": "URL",
+      "PLATFORM_REFERENCE": "平台引用",
+      "EXTERNAL_REFERENCE": "外部引用",
+      "INTERNAL_REFERENCE": "内部引用"
+    }
   },
   "bookings": {
     "resource": "演播室资源",
@@ -201,13 +224,22 @@
       "subtitle": "取消必须记录审计原因。",
       "submit": "取消活动",
       "pending": "取消中"
+    },
+    "complete": {
+      "title": "完成事件",
+      "subtitle": "完成必须记录运营交付证据。",
+      "submit": "完成事件",
+      "pending": "完成中"
     }
   },
   "placeholders": {
     "csvIds": "逗号分隔的引用",
     "searchReference": "按名称或代码搜索",
     "optional": "可选",
-    "requiredReason": "请输入审计原因"
+    "requiredReason": "请输入审计原因",
+    "evidenceNote": "概述已交付的运营结果",
+    "evidenceUrl": "https://example.com/evidence",
+    "evidenceReferenceId": "工单、平台或内部引用 ID"
   },
   "validation": {
     "required": "此字段必填。",
@@ -215,7 +247,10 @@
     "invalidReferenceToken": "请输入逗号分隔的有效标识符。",
     "invalidWindow": "结束时间必须晚于开始时间。",
     "noScope": "Event Assignment 仅限全局，不接受 scope 字段。",
-    "rosterUnavailable": "启用分配名单未安全可用，因此已阻止替换。"
+    "rosterUnavailable": "启用分配名单未安全可用，因此已阻止替换。",
+    "invalidEvidenceUrl": "请输入有效的 http(s) URL。",
+    "evidenceReferenceRequired": "此证据类型需要引用 ID。",
+    "completionEvidenceRequired": "完成证据为必填项。"
   },
   "feedback": {
     "created": "事件已创建。",

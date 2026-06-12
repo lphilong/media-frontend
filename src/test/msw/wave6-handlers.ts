@@ -1,6 +1,12 @@
 import { http, HttpResponse } from 'msw';
 
 import {
+  EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH,
+} from '@modules/event-assignment/types/event-assignment.types';
+import {
   generatedFixtureMonthCode,
   providedOrGeneratedFixtureCode,
 } from '@test/msw/generated-code-fixtures';
@@ -444,6 +450,18 @@ type EventRecord = {
   plannedAt?: number | null;
   confirmedAt?: number | null;
   completedAt?: number | null;
+  completedByActorId?: string | null;
+  completionEvidence?: {
+    completedAt?: number | null;
+    completedByActorId?: string | null;
+    evidenceNote?: string | null;
+    evidenceRefs: Array<{
+      type: 'URL' | 'PLATFORM_REFERENCE' | 'EXTERNAL_REFERENCE' | 'INTERNAL_REFERENCE';
+      label?: string | null;
+      url?: string | null;
+      referenceId?: string | null;
+    }>;
+  } | null;
   cancelledAt?: number | null;
   cancellationReason?: string | null;
   lastRescheduledAt?: number | null;
@@ -849,6 +867,20 @@ const initialEvents: EventRecord[] = [
     status: 'COMPLETED',
     eventStartAt: historicalStart,
     eventEndAt: historicalEnd,
+    completedAt: historicalEnd + 30_000,
+    completedByActorId: 'admin-ops',
+    completionEvidence: {
+      completedAt: historicalEnd + 30_000,
+      completedByActorId: 'admin-ops',
+      evidenceNote: 'Delivered final recap package and operational handoff.',
+      evidenceRefs: [
+        {
+          type: 'INTERNAL_REFERENCE',
+          label: 'Ops handoff',
+          referenceId: 'OPS-HANDOFF-003',
+        },
+      ],
+    },
     description: null,
     externalRef: null,
     createdAt: now - 6_000,
@@ -1599,6 +1631,19 @@ const toNullableText = (value: unknown): string | null => {
   return text.length > 0 ? text : null;
 };
 
+const toBoundedRequiredText = (value: unknown, maxLength: number): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const text = value.trim();
+  if (text.length === 0 || text.length > maxLength) {
+    return null;
+  }
+
+  return text;
+};
+
 const isMonthlyRosterTargetType = (value: unknown): value is 'ORG_UNIT' | 'TALENT_GROUP' =>
   value === 'ORG_UNIT' || value === 'TALENT_GROUP';
 
@@ -1670,6 +1715,99 @@ const toStringArray = (value: unknown): string[] | undefined => {
   }
 
   return value.map((item) => item.trim());
+};
+
+const eventCompletionEvidenceRefTypes = [
+  'URL',
+  'PLATFORM_REFERENCE',
+  'EXTERNAL_REFERENCE',
+  'INTERNAL_REFERENCE',
+] as const;
+
+type EventCompletionEvidenceRefType = (typeof eventCompletionEvidenceRefTypes)[number];
+
+type EventCompletionEvidenceRef = {
+  type: EventCompletionEvidenceRefType;
+  label: string | null;
+  url: string | null;
+  referenceId: string | null;
+};
+
+const normalizeEventCompletionEvidenceRefs = (
+  value: unknown,
+): EventCompletionEvidenceRef[] | undefined => {
+  if (value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value) || value.length > 20) {
+    return undefined;
+  }
+
+  const refs: EventCompletionEvidenceRef[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      return undefined;
+    }
+    const record = item as Record<string, unknown>;
+    if (
+      !Object.keys(record).every((key) => ['type', 'label', 'url', 'referenceId'].includes(key))
+    ) {
+      return undefined;
+    }
+    const rawType = typeof record.type === 'string' ? record.type.trim().toUpperCase() : '';
+    if (!eventCompletionEvidenceRefTypes.includes(rawType as EventCompletionEvidenceRefType)) {
+      return undefined;
+    }
+    const type = rawType as EventCompletionEvidenceRefType;
+    let label: string | null = null;
+    if (record.label !== undefined && record.label !== null) {
+      const normalizedLabel = toBoundedRequiredText(
+        record.label,
+        EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH,
+      );
+      if (!normalizedLabel) {
+        return undefined;
+      }
+      label = normalizedLabel;
+    }
+
+    if (type === 'URL') {
+      const url = toBoundedRequiredText(record.url, EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH);
+      if (!url) {
+        return undefined;
+      }
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          return undefined;
+        }
+        const serializedUrl = parsed.toString();
+        if (serializedUrl.length > EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH) {
+          return undefined;
+        }
+        refs.push({ type, label: label ?? null, url: serializedUrl, referenceId: null });
+      } catch {
+        return undefined;
+      }
+      continue;
+    }
+
+    if (record.url !== undefined && record.url !== null) {
+      return undefined;
+    }
+
+    const referenceId = toBoundedRequiredText(
+      record.referenceId,
+      EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH,
+    );
+    if (!referenceId) {
+      return undefined;
+    }
+    refs.push({ type, label: label ?? null, url: null, referenceId });
+  }
+
+  return refs;
 };
 
 const hasOnlyKeys = (body: Record<string, unknown>, allowedKeys: string[]): boolean => {
@@ -2099,6 +2237,8 @@ const toEventDetail = (record: EventRecord) => ({
   plannedAt: record.plannedAt ?? null,
   confirmedAt: record.confirmedAt ?? null,
   completedAt: record.completedAt ?? null,
+  completedByActorId: record.completedByActorId ?? null,
+  completionEvidence: record.completionEvidence ?? null,
   cancelledAt: record.cancelledAt ?? null,
   cancellationReason: record.cancellationReason ?? null,
   lastRescheduledAt: record.lastRescheduledAt ?? null,
@@ -5504,9 +5644,20 @@ export const wave6Handlers = [
   http.post('*/admin/events/:eventId/complete', async ({ params, request }) => {
     const body = await parseJsonBody(request);
     const scopeFailure = rejectEventScopeLeakage(request, body);
-    const bodyFailure = rejectUnsupportedBody(body, []);
+    const bodyFailure = rejectUnsupportedBody(body, ['evidenceNote', 'evidenceRefs']);
     if (scopeFailure || bodyFailure) {
       return scopeFailure ?? bodyFailure;
+    }
+    const evidenceNote = toBoundedRequiredText(
+      body.evidenceNote,
+      EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH,
+    );
+    const evidenceRefs = normalizeEventCompletionEvidenceRefs(body.evidenceRefs);
+    if (!evidenceNote || !evidenceRefs) {
+      return HttpResponse.json(
+        { message: 'event-assignment:validation.completionEvidenceRequired' },
+        { status: 422 },
+      );
     }
 
     const event = readEvent(String(params.eventId));
@@ -5518,8 +5669,16 @@ export const wave6Handlers = [
     }
 
     event.status = 'COMPLETED';
-    event.completedAt = Date.now();
-    event.updatedAt = Date.now();
+    const completedAt = Date.now();
+    event.completedAt = completedAt;
+    event.completedByActorId = 'admin-msw';
+    event.completionEvidence = {
+      completedAt,
+      completedByActorId: 'admin-msw',
+      evidenceNote,
+      evidenceRefs,
+    };
+    event.updatedAt = completedAt;
 
     return HttpResponse.json({ data: toEventDetail(event) });
   }),

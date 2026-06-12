@@ -1807,6 +1807,47 @@ const ManagerEventSummaryCard = ({ event }: { event: ManagerEventSummary }): JSX
       </div>
       <div className="rounded border border-border bg-panel p-4">
         <h3 className="text-sm font-semibold text-text">
+          {t('manager-workspace:events.completionTitle')}
+        </h3>
+        {event.completionEvidence ? (
+          <div className="mt-2 space-y-2 text-sm text-muted">
+            <p>
+              {t('manager-workspace:events.completedAt')}:{' '}
+              {event.completionEvidence.completedAt
+                ? formatVietnamTimestamp(event.completionEvidence.completedAt)
+                : t('manager-workspace:values.notAvailable')}
+            </p>
+            <p>
+              {t('manager-workspace:events.completedBy')}:{' '}
+              {event.completionEvidence.completedByActorId ??
+                t('manager-workspace:values.notAvailable')}
+            </p>
+            <p>
+              {t('manager-workspace:events.evidenceNote')}:{' '}
+              {event.completionEvidence.evidenceNote ?? t('manager-workspace:values.notAvailable')}
+            </p>
+            {event.completionEvidence.evidenceRefs.length > 0 ? (
+              <ul className="space-y-1">
+                {event.completionEvidence.evidenceRefs.map((ref, index) => (
+                  <li key={`${ref.type}-${index}`}>
+                    {ref.label ?? t(`manager-workspace:evidenceRefTypes.${ref.type}`)}:{' '}
+                    {ref.url ?? ref.referenceId ?? t('manager-workspace:values.notAvailable')}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted">
+            {t('manager-workspace:events.noCompletionEvidence')}
+          </p>
+        )}
+        <p className="mt-3 text-sm text-muted">
+          {t('manager-workspace:events.completionBoundaryHelper')}
+        </p>
+      </div>
+      <div className="rounded border border-border bg-panel p-4">
+        <h3 className="text-sm font-semibold text-text">
           {t('manager-workspace:events.bookings')}
         </h3>
         {event.studioBookings.length === 0 ? (

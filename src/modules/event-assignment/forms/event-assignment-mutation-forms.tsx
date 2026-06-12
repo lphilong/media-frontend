@@ -11,15 +11,20 @@ import {
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-import type {
-  EventAssignmentInput,
-  EventAssignmentKind,
-  EventCreatePayload,
-  EventLifecyclePayload,
-  EventReplaceAssignmentsPayload,
-  EventReplacePlatformAccountsPayload,
-  EventReschedulePayload,
-  EventUpdatePayload,
+import {
+  EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH,
+  type EventAssignmentInput,
+  type EventAssignmentKind,
+  type EventCompletionEvidenceRefType,
+  type EventCreatePayload,
+  type EventLifecyclePayload,
+  type EventReplaceAssignmentsPayload,
+  type EventReplacePlatformAccountsPayload,
+  type EventReschedulePayload,
+  type EventUpdatePayload,
 } from '@modules/event-assignment/types/event-assignment.types';
 import {
   loadEmploymentProfileReferenceOptions,
@@ -54,6 +59,10 @@ type EventLifecycleReasonSurfaceProps = BaseSurfaceProps & {
   onSubmit: (payload: EventLifecyclePayload) => Promise<void> | void;
 };
 
+type EventCompletionEvidenceSurfaceProps = BaseSurfaceProps & {
+  onSubmit: (payload: EventLifecyclePayload) => Promise<void> | void;
+};
+
 type EventEditSurfaceProps = BaseSurfaceProps & {
   initialValues: {
     title: string;
@@ -84,6 +93,12 @@ type EventReplacePlatformAccountsSurfaceProps = BaseSurfaceProps & {
 };
 
 const assignmentKindValues = ['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP'] as const;
+const evidenceRefTypeValues = [
+  'URL',
+  'PLATFORM_REFERENCE',
+  'EXTERNAL_REFERENCE',
+  'INTERNAL_REFERENCE',
+] as const satisfies readonly EventCompletionEvidenceRefType[];
 const tokenRegex = /^[A-Za-z0-9_-]+$/;
 
 const toNullableText = (value?: string): string | null => {
@@ -218,6 +233,18 @@ type EventReplaceAssignmentsFormValues = {
   replacementAssignments: EventReplacementAssignmentFormValue[];
 };
 
+type EventCompletionEvidenceRefFormValue = {
+  type: EventCompletionEvidenceRefType;
+  label: string;
+  url: string;
+  referenceId: string;
+};
+
+type EventCompletionEvidenceFormValues = {
+  evidenceNote: string;
+  evidenceRefs: EventCompletionEvidenceRefFormValue[];
+};
+
 const useAssignmentKindOptions = () => {
   const { t } = useTranslation(['event-assignment']);
   return useMemo(
@@ -283,6 +310,86 @@ const createReplacementSchema = (requiredMessage: string, tokenMessage: string) 
       }),
     ),
   });
+
+const createCompletionEvidenceSchema = (
+  requiredMessage: string,
+  urlMessage: string,
+  referenceMessage: string,
+  maxMessage: string,
+) =>
+  z
+    .object({
+      evidenceNote: z
+        .string()
+        .trim()
+        .min(1, requiredMessage)
+        .max(EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH, maxMessage),
+      evidenceRefs: z
+        .array(
+          z.object({
+            type: z.enum(evidenceRefTypeValues),
+            label: z
+              .string()
+              .trim()
+              .max(EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH, maxMessage)
+              .optional(),
+            url: z
+              .string()
+              .trim()
+              .max(EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH, maxMessage)
+              .optional(),
+            referenceId: z
+              .string()
+              .trim()
+              .max(EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH, maxMessage)
+              .optional(),
+          }),
+        )
+        .max(20, maxMessage),
+    })
+    .superRefine((value, context) => {
+      value.evidenceRefs.forEach((ref, index) => {
+        if (ref.type === 'URL') {
+          if (!ref.url) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['evidenceRefs', index, 'url'],
+              message: requiredMessage,
+            });
+            return;
+          }
+
+          try {
+            const parsed = new URL(ref.url);
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+              throw new Error('invalid protocol');
+            }
+            if (parsed.toString().length > EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH) {
+              context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['evidenceRefs', index, 'url'],
+                message: maxMessage,
+              });
+            }
+          } catch {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['evidenceRefs', index, 'url'],
+              message: urlMessage,
+            });
+          }
+          return;
+        }
+
+        if (!ref.referenceId) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['evidenceRefs', index, 'referenceId'],
+            message: referenceMessage,
+          });
+        }
+      });
+    });
 
 export const EventCreateSurface = ({
   onCancel,
@@ -748,6 +855,138 @@ export const EventLifecycleReasonSurface = ({
           label={t('event-assignment:fields.reason')}
           placeholder={t('event-assignment:placeholders.requiredReason')}
         />
+      </ModuleMutationSurface>
+    </FormProvider>
+  );
+};
+
+export const EventCompletionEvidenceSurface = ({
+  onCancel,
+  onSubmit,
+  isPending = false,
+}: EventCompletionEvidenceSurfaceProps): JSX.Element => {
+  const { t } = useTranslation(['event-assignment', 'common']);
+  const form = useForm<EventCompletionEvidenceFormValues>({
+    defaultValues: {
+      evidenceNote: '',
+      evidenceRefs: [],
+    },
+  });
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'evidenceRefs',
+  });
+  const schema = useMemo(
+    () =>
+      createCompletionEvidenceSchema(
+        t('event-assignment:validation.required'),
+        t('event-assignment:validation.invalidEvidenceUrl'),
+        t('event-assignment:validation.evidenceReferenceRequired'),
+        t('event-assignment:validation.required'),
+      ),
+    [t],
+  );
+  const refTypeOptions = useMemo(
+    () =>
+      evidenceRefTypeValues.map((value) => ({
+        value,
+        label: t(`event-assignment:evidence.refTypes.${value}`),
+      })),
+    [t],
+  );
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      applySchemaErrors(form.setError, parsed.error, 'evidenceNote');
+      return;
+    }
+
+    await onSubmit({
+      evidenceNote: parsed.data.evidenceNote,
+      evidenceRefs: parsed.data.evidenceRefs.map((ref) => ({
+        type: ref.type,
+        label: toNullableText(ref.label),
+        url: ref.type === 'URL' ? ref.url : null,
+        referenceId: ref.type === 'URL' ? null : ref.referenceId,
+      })),
+    });
+  });
+
+  return (
+    <FormProvider {...form}>
+      <ModuleMutationSurface
+        title={t('event-assignment:mutations.complete.title')}
+        subtitle={t('event-assignment:mutations.complete.subtitle')}
+        kind="action"
+        submitLabel={t('event-assignment:mutations.complete.submit')}
+        pendingLabel={t('event-assignment:mutations.complete.pending')}
+        cancelLabel={t('common:actions.cancel')}
+        onCancel={onCancel}
+        onSubmit={(event) => void handleSubmit(event)}
+        isPending={isPending}
+      >
+        <TextInputField
+          name="evidenceNote"
+          label={t('event-assignment:fields.evidenceNote')}
+          placeholder={t('event-assignment:placeholders.evidenceNote')}
+        />
+        <div className="space-y-3">
+          {fields.map((field, index) => (
+            <fieldset
+              key={field.id}
+              className="space-y-3 rounded border border-border bg-panel p-3"
+            >
+              <legend className="text-sm font-semibold text-text">
+                {t('event-assignment:evidence.referenceRowLabel', { index: index + 1 })}
+              </legend>
+              <FormGrid columns={2}>
+                <SelectField
+                  name={`evidenceRefs.${index}.type`}
+                  label={t('event-assignment:fields.evidenceRefType')}
+                  options={refTypeOptions}
+                />
+                <TextInputField
+                  name={`evidenceRefs.${index}.label`}
+                  label={t('event-assignment:fields.evidenceRefLabel')}
+                  placeholder={t('event-assignment:placeholders.optional')}
+                />
+                <TextInputField
+                  name={`evidenceRefs.${index}.url`}
+                  label={t('event-assignment:fields.evidenceRefUrl')}
+                  placeholder={t('event-assignment:placeholders.evidenceUrl')}
+                />
+                <TextInputField
+                  name={`evidenceRefs.${index}.referenceId`}
+                  label={t('event-assignment:fields.evidenceRefReferenceId')}
+                  placeholder={t('event-assignment:placeholders.evidenceReferenceId')}
+                />
+              </FormGrid>
+              <button
+                type="button"
+                className="rounded border border-border px-2 py-1 text-xs"
+                onClick={() => remove(index)}
+              >
+                {t('event-assignment:actions.removeEvidenceRef', { index: index + 1 })}
+              </button>
+            </fieldset>
+          ))}
+        </div>
+        {fields.length === 0 ? (
+          <p className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+            {t('event-assignment:evidence.emptyReferences')}
+          </p>
+        ) : null}
+        <button
+          type="button"
+          className="rounded border border-border px-2 py-1 text-xs"
+          onClick={() => append({ type: 'URL', label: '', url: '', referenceId: '' })}
+        >
+          {t('event-assignment:actions.addEvidenceRef')}
+        </button>
+        <p className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+          {t('event-assignment:evidence.boundaryHelper')}
+        </p>
       </ModuleMutationSurface>
     </FormProvider>
   );

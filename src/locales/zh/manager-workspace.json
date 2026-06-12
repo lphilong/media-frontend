@@ -71,6 +71,12 @@
     "RELEASED": "已释放",
     "CANCELLED": "已取消"
   },
+  "evidenceRefTypes": {
+    "URL": "URL",
+    "PLATFORM_REFERENCE": "平台引用",
+    "EXTERNAL_REFERENCE": "外部引用",
+    "INTERNAL_REFERENCE": "内部引用"
+  },
   "readiness": {
     "NO_LINKED_EMPLOYMENT_PROFILE": "未关联雇佣档案",
     "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "雇佣档案未处于有效状态",
@@ -203,6 +209,12 @@
     "backToList": "返回管理活动",
     "owner": "负责人事档案",
     "participants": "参与者",
+    "completionTitle": "完成证据",
+    "completedAt": "完成时间",
+    "completedBy": "完成人",
+    "evidenceNote": "完成备注",
+    "noCompletionEvidence": "尚未记录完成证据。",
+    "completionBoundaryHelper": "此证据是只读运营上下文，不会创建收入、佣金、考勤、工资、付款或支付。",
     "bookings": "资源预订",
     "noBookings": "此活动没有公开的资源预订。",
     "resource": "演播室资源",

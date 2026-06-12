@@ -1,24 +1,28 @@
 import { z } from 'zod';
 
-import type {
-  CursorPagedResponse,
-  EventAssignmentInput,
-  EventAssignmentItem,
-  EventByAssignmentQuery,
-  EventByPlatformQuery,
-  EventByResourceQuery,
-  EventCreatePayload,
-  EventLifecycleAction,
-  EventLifecyclePayload,
-  EventListItem,
-  EventListQuery,
-  EventRecord,
-  EventRelatedListItem,
-  EventReplaceAssignmentsPayload,
-  EventReplacePlatformAccountsPayload,
-  EventReschedulePayload,
-  StudioBooking,
-  EventUpdatePayload,
+import {
+  EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH,
+  type CursorPagedResponse,
+  type EventAssignmentInput,
+  type EventAssignmentItem,
+  type EventByAssignmentQuery,
+  type EventByPlatformQuery,
+  type EventByResourceQuery,
+  type EventCreatePayload,
+  type EventLifecycleAction,
+  type EventLifecyclePayload,
+  type EventListItem,
+  type EventListQuery,
+  type EventRecord,
+  type EventRelatedListItem,
+  type EventReplaceAssignmentsPayload,
+  type EventReplacePlatformAccountsPayload,
+  type EventReschedulePayload,
+  type EventUpdatePayload,
+  type StudioBooking,
 } from '@modules/event-assignment/types/event-assignment.types';
 import { apiRequest } from '@shared/api';
 
@@ -32,6 +36,12 @@ const statusSchema = z.enum([
 ]);
 const studioBookingStatusSchema = z.enum(['HELD', 'CONFIRMED', 'RELEASED', 'CANCELLED']);
 const assignmentKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP']);
+const completionEvidenceRefTypeSchema = z.enum([
+  'URL',
+  'PLATFORM_REFERENCE',
+  'EXTERNAL_REFERENCE',
+  'INTERNAL_REFERENCE',
+]);
 const timestampSchema = z.union([z.number(), z.string()]);
 const referenceSummarySchema = z
   .object({
@@ -45,6 +55,105 @@ const referenceSummarySchema = z
     status: z.string().optional(),
   })
   .strict();
+
+const completionEvidenceRefSchema = z
+  .object({
+    type: completionEvidenceRefTypeSchema,
+    label: z.string().max(EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH).nullable().optional(),
+    url: z.string().max(EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH).nullable().optional(),
+    referenceId: z
+      .string()
+      .max(EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH)
+      .nullable()
+      .optional(),
+  })
+  .strict();
+
+const completionEvidenceSchema = z
+  .object({
+    completedAt: timestampSchema.nullable().optional(),
+    completedByActorId: z.string().nullable().optional(),
+    evidenceNote: z.string().max(EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH).nullable().optional(),
+    evidenceRefs: z.array(completionEvidenceRefSchema),
+  })
+  .strict();
+
+const completionLifecycleRefPayloadSchema = z
+  .object({
+    type: completionEvidenceRefTypeSchema,
+    label: z
+      .string()
+      .trim()
+      .max(EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH)
+      .nullable()
+      .optional(),
+    url: z.string().trim().max(EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH).nullable().optional(),
+    referenceId: z
+      .string()
+      .trim()
+      .max(EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH)
+      .nullable()
+      .optional(),
+  })
+  .strict();
+
+const completionLifecyclePayloadSchema = z
+  .object({
+    evidenceNote: z.string().trim().min(1).max(EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH),
+    evidenceRefs: z.array(completionLifecycleRefPayloadSchema).max(20).optional(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    value.evidenceRefs?.forEach((ref, index) => {
+      if (ref.type === 'URL') {
+        if (!ref.url) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['evidenceRefs', index, 'url'],
+            message: 'URL evidence references require a URL',
+          });
+          return;
+        }
+
+        try {
+          const parsed = new URL(ref.url);
+          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            throw new Error('invalid protocol');
+          }
+          if (parsed.toString().length > EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['evidenceRefs', index, 'url'],
+              message: 'URL evidence references must be bounded',
+            });
+          }
+        } catch {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['evidenceRefs', index, 'url'],
+            message: 'URL evidence references require a valid http(s) URL',
+          });
+        }
+        return;
+      }
+
+      if (ref.url !== undefined && ref.url !== null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['evidenceRefs', index, 'url'],
+          message: 'URL is only supported for URL evidence references',
+        });
+      }
+
+      if (!ref.referenceId) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['evidenceRefs', index, 'referenceId'],
+          message: 'Reference ID is required for this evidence type',
+        });
+      }
+    });
+  });
 
 const listItemSchema = z
   .object({
@@ -73,6 +182,8 @@ const detailSchema = listItemSchema
     plannedAt: timestampSchema.nullable().optional(),
     confirmedAt: timestampSchema.nullable().optional(),
     completedAt: timestampSchema.nullable().optional(),
+    completedByActorId: z.string().nullable().optional(),
+    completionEvidence: completionEvidenceSchema.nullable().optional(),
     cancelledAt: timestampSchema.nullable().optional(),
     cancellationReason: z.string().nullable().optional(),
     lastRescheduledAt: timestampSchema.nullable().optional(),
@@ -264,6 +375,29 @@ const sanitizeReplaceAssignmentsPayload = (
   replacementAssignments: payload.replacementAssignments.map(sanitizeAssignmentInput),
 });
 
+const sanitizeLifecyclePayload = (
+  action: EventLifecycleAction,
+  payload: EventLifecyclePayload,
+): Record<string, unknown> => {
+  if (action === 'cancel') {
+    return { reason: payload.reason };
+  }
+
+  if (action === 'complete') {
+    const parsed = completionLifecyclePayloadSchema.parse({
+      evidenceNote: payload.evidenceNote,
+      evidenceRefs: payload.evidenceRefs ?? [],
+    });
+
+    return {
+      evidenceNote: parsed.evidenceNote,
+      evidenceRefs: parsed.evidenceRefs ?? [],
+    };
+  }
+
+  return {};
+};
+
 export const fetchEvents = async (
   query: EventListQuery,
 ): Promise<CursorPagedResponse<EventListItem>> => {
@@ -409,7 +543,7 @@ export const performEventLifecycleAction = async (
   const response = await apiRequest<unknown>({
     method: 'POST',
     url: `/admin/events/${encodeURIComponent(eventId)}/${action}`,
-    data: action === 'cancel' ? { reason: payload.reason } : {},
+    data: sanitizeLifecyclePayload(action, payload),
   });
 
   return detailResponseSchema.parse(response).data;

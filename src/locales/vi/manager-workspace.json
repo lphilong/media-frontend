@@ -71,6 +71,12 @@
     "RELEASED": "Đã giải phóng",
     "CANCELLED": "Đã hủy"
   },
+  "evidenceRefTypes": {
+    "URL": "URL",
+    "PLATFORM_REFERENCE": "Tham chiếu nền tảng",
+    "EXTERNAL_REFERENCE": "Tham chiếu bên ngoài",
+    "INTERNAL_REFERENCE": "Tham chiếu nội bộ"
+  },
   "readiness": {
     "NO_LINKED_EMPLOYMENT_PROFILE": "Chưa liên kết Hồ sơ nhân sự",
     "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Hồ sơ nhân sự không ở trạng thái hoạt động phù hợp",
@@ -203,6 +209,12 @@
     "backToList": "Quay lại sự kiện được phân công",
     "owner": "Hồ sơ nhân sự phụ trách",
     "participants": "Người tham gia",
+    "completionTitle": "Bằng chứng hoàn thành",
+    "completedAt": "Đã hoàn thành lúc",
+    "completedBy": "Người hoàn thành",
+    "evidenceNote": "Ghi chú hoàn thành",
+    "noCompletionEvidence": "Chưa ghi nhận bằng chứng hoàn thành.",
+    "completionBoundaryHelper": "Bằng chứng này chỉ là thông tin vận hành chỉ đọc và không tự tạo doanh thu, hoa hồng, chấm công, bảng lương, thanh toán hoặc chi trả.",
     "bookings": "Đặt tài nguyên",
     "noBookings": "Chưa có lịch đặt tài nguyên cho sự kiện này.",
     "resource": "Tài nguyên studio",

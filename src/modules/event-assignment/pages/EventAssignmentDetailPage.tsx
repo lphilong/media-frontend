@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { buildEntityDetailHref } from '@app/router/reference-links';
 import { createEventActionRailItems } from '@modules/event-assignment/actions/event-assignment-action-rail';
 import {
+  EventCompletionEvidenceSurface,
   EventEditSurface,
   EventLifecycleReasonSurface,
   EventReplaceAssignmentsSurface,
@@ -29,6 +30,7 @@ import type {
   EventAssignmentInput,
   EventAssignmentItem,
   EventLifecycleAction,
+  EventCompletionEvidenceRef,
 } from '@modules/event-assignment/types/event-assignment.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
@@ -65,6 +67,7 @@ type ActiveSurface =
   | 'reschedule'
   | 'replace-assignments'
   | 'replace-platform-accounts'
+  | 'complete'
   | 'cancel'
   | null;
 
@@ -122,6 +125,9 @@ const formatReferenceList = (
 
   return ids.map((id) => readReferenceDisplay(refsById.get(id), id)).join(', ');
 };
+
+const formatEvidenceRefValue = (ref: EventCompletionEvidenceRef, fallback: string): string =>
+  ref.url ?? ref.referenceId ?? ref.label ?? fallback;
 
 const assignmentToInput = (assignment: EventAssignmentItem): EventAssignmentInput => {
   return {
@@ -224,6 +230,11 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
 
       if (action === 'cancel') {
         setActiveSurface('cancel');
+        return;
+      }
+
+      if (action === 'complete') {
+        setActiveSurface('complete');
         return;
       }
 
@@ -564,6 +575,73 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                 {t('event-assignment:detail.bookingReadOnlyHelper')}
               </p>
             </MetadataSection>
+            <MetadataSection title={t('event-assignment:evidence.title')}>
+              <ReadOnlyFieldGrid
+                fields={[
+                  {
+                    key: 'completed-at',
+                    label: t('event-assignment:fields.completedAt'),
+                    value: record.completionEvidence?.completedAt
+                      ? formatVietnamTimestamp(record.completionEvidence.completedAt)
+                      : '-',
+                  },
+                  {
+                    key: 'completed-by',
+                    label: t('event-assignment:fields.completedBy'),
+                    value: formatNullable(
+                      record.completionEvidence?.completedByActorId ?? record.completedByActorId,
+                    ),
+                  },
+                  {
+                    key: 'evidence-note',
+                    label: t('event-assignment:fields.evidenceNote'),
+                    value: formatNullable(record.completionEvidence?.evidenceNote),
+                  },
+                ]}
+                columns={2}
+              />
+              {record.completionEvidence?.evidenceRefs.length ? (
+                <ul className="mt-3 space-y-2 text-sm">
+                  {record.completionEvidence.evidenceRefs.map((ref, index) => (
+                    <li
+                      key={`${ref.type}-${index}`}
+                      className="rounded border border-border bg-panel px-3 py-2"
+                    >
+                      <span className="font-medium">
+                        {ref.label ?? t(`event-assignment:evidence.refTypes.${ref.type}`)}
+                      </span>
+                      <span className="ml-2 text-muted">
+                        {t(`event-assignment:evidence.refTypes.${ref.type}`)}
+                      </span>
+                      {ref.url ? (
+                        <a
+                          href={ref.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="ml-2 text-accent hover:underline"
+                        >
+                          {ref.url}
+                        </a>
+                      ) : (
+                        <span className="ml-2 text-muted">
+                          {formatEvidenceRefValue(
+                            ref,
+                            t('event-assignment:evidence.referenceUnavailable'),
+                          )}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
+                  {t('event-assignment:evidence.notCompleted')}
+                </p>
+              )}
+              <p className="mt-2 text-sm text-muted">
+                {t('event-assignment:evidence.boundaryHelper')}
+              </p>
+            </MetadataSection>
             <MetadataSection title={t('event-assignment:detail.referencesTitle')}>
               <ReadOnlyFieldGrid
                 fields={[
@@ -652,6 +730,29 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
                     await lifecycleMutation.mutateAsync({
                       eventId: record.id,
                       action: 'cancel',
+                      payload,
+                    });
+                    notifySuccess('event-assignment:feedback.lifecycleUpdated');
+                    setActiveSurface(null);
+                  } catch (error) {
+                    notifyError(error as NormalizedApiError);
+                  }
+                }}
+              />
+            ) : null}
+            {activeSurface === 'complete' ? (
+              <EventCompletionEvidenceSurface
+                isPending={
+                  lifecycleMutation.isPending &&
+                  lifecycleMutation.variables?.eventId === record.id &&
+                  lifecycleMutation.variables?.action === 'complete'
+                }
+                onCancel={() => setActiveSurface(null)}
+                onSubmit={async (payload) => {
+                  try {
+                    await lifecycleMutation.mutateAsync({
+                      eventId: record.id,
+                      action: 'complete',
                       payload,
                     });
                     notifySuccess('event-assignment:feedback.lifecycleUpdated');

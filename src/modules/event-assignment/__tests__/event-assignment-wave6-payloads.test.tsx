@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -12,15 +12,20 @@ import {
 } from '@modules/event-assignment/api/event-assignment.api';
 import { createEventActionRailItems } from '@modules/event-assignment/actions/event-assignment-action-rail';
 import {
+  EventCompletionEvidenceSurface,
   EventCreateSurface,
   EventEditSurface,
   EventReplaceAssignmentsSurface,
   EventReplacePlatformAccountsSurface,
   EventRescheduleSurface,
 } from '@modules/event-assignment/forms/event-assignment-mutation-forms';
-import type {
-  EventAssignmentInput,
-  EventRecord,
+import {
+  EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH,
+  EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH,
+  type EventAssignmentInput,
+  type EventRecord,
 } from '@modules/event-assignment/types/event-assignment.types';
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
@@ -299,6 +304,97 @@ describe('event assignment wave 6 query and payload shaping', () => {
       }),
     );
     expect(apiRequestMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('params');
+
+    await performEventLifecycleAction('event-001', 'complete', {
+      evidenceNote: 'Delivered recap and operational handoff.',
+      evidenceRefs: [
+        {
+          type: 'URL',
+          label: 'Delivery URL',
+          url: 'https://example.com/evidence/event-001',
+        },
+        {
+          type: 'INTERNAL_REFERENCE',
+          label: 'Ops ticket',
+          referenceId: 'OPS-123',
+        },
+      ],
+    });
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/events/event-001/complete',
+        data: {
+          evidenceNote: 'Delivered recap and operational handoff.',
+          evidenceRefs: [
+            {
+              type: 'URL',
+              label: 'Delivery URL',
+              url: 'https://example.com/evidence/event-001',
+            },
+            {
+              type: 'INTERNAL_REFERENCE',
+              label: 'Ops ticket',
+              referenceId: 'OPS-123',
+            },
+          ],
+        },
+      }),
+    );
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('completedAt');
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('completedBy');
+    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('completedByActorId');
+  });
+
+  it('rejects over-limit completion evidence before sending lifecycle API payloads', async () => {
+    apiRequestMock.mockResolvedValue({ data: eventRecord });
+
+    await expect(
+      performEventLifecycleAction('event-001', 'complete', {
+        evidenceNote: 'n'.repeat(EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH + 1),
+      }),
+    ).rejects.toThrow();
+    expect(apiRequestMock).not.toHaveBeenCalled();
+
+    await expect(
+      performEventLifecycleAction('event-001', 'complete', {
+        evidenceNote: 'Delivered recap.',
+        evidenceRefs: [
+          {
+            type: 'URL',
+            url: makeEvidenceUrl(EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH + 1),
+          },
+        ],
+      }),
+    ).rejects.toThrow();
+    expect(apiRequestMock).not.toHaveBeenCalled();
+
+    await expect(
+      performEventLifecycleAction('event-001', 'complete', {
+        evidenceNote: 'Delivered recap.',
+        evidenceRefs: [
+          {
+            type: 'INTERNAL_REFERENCE',
+            referenceId: 'r'.repeat(EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH + 1),
+          },
+        ],
+      }),
+    ).rejects.toThrow();
+    expect(apiRequestMock).not.toHaveBeenCalled();
+
+    await expect(
+      performEventLifecycleAction('event-001', 'complete', {
+        evidenceNote: 'Delivered recap.',
+        evidenceRefs: [
+          {
+            type: 'EXTERNAL_REFERENCE',
+            label: 'l'.repeat(EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH + 1),
+            referenceId: 'EXT-123',
+          },
+        ],
+      }),
+    ).rejects.toThrow();
+    expect(apiRequestMock).not.toHaveBeenCalled();
   });
 
   it('accepts additive Event reference summaries while preserving raw IDs and API serialization', async () => {
@@ -466,6 +562,135 @@ describe('event assignment wave 6 query and payload shaping', () => {
 
     expect(onAssignments).toHaveBeenCalledWith({
       replacementAssignments,
+    });
+  }, 20_000);
+
+  it('requires completion evidence and submits structured references only', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    render(<EventCompletionEvidenceSurface onCancel={() => undefined} onSubmit={onComplete} />);
+
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:mutations.complete.submit') }),
+    );
+    expect(onComplete).not.toHaveBeenCalled();
+    expect(screen.getByText(i18n.t('event-assignment:validation.required'))).toBeInTheDocument();
+
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.evidenceNote')),
+      'Delivered recap package.',
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:actions.addEvidenceRef') }),
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.evidenceRefLabel')),
+      'Ops handoff',
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('event-assignment:fields.evidenceRefUrl')),
+      'https://example.com/evidence/event-001',
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('event-assignment:mutations.complete.submit') }),
+    );
+
+    expect(onComplete).toHaveBeenCalledWith({
+      evidenceNote: 'Delivered recap package.',
+      evidenceRefs: [
+        {
+          type: 'URL',
+          label: 'Ops handoff',
+          url: 'https://example.com/evidence/event-001',
+          referenceId: null,
+        },
+      ],
+    });
+  }, 20_000);
+
+  it('blocks over-limit completion evidence fields before submit', async () => {
+    const submitWithValues = async (values: {
+      evidenceNote: string;
+      ref?: {
+        type?: string;
+        label?: string;
+        url?: string;
+        referenceId?: string;
+      };
+    }) => {
+      const user = userEvent.setup();
+      const onComplete = vi.fn();
+      const view = render(
+        <EventCompletionEvidenceSurface onCancel={() => undefined} onSubmit={onComplete} />,
+      );
+
+      fireEvent.change(screen.getByLabelText(i18n.t('event-assignment:fields.evidenceNote')), {
+        target: { value: values.evidenceNote },
+      });
+
+      if (values.ref) {
+        await user.click(
+          screen.getByRole('button', { name: i18n.t('event-assignment:actions.addEvidenceRef') }),
+        );
+        if (values.ref.type) {
+          await user.selectOptions(
+            screen.getByLabelText(i18n.t('event-assignment:fields.evidenceRefType')),
+            values.ref.type,
+          );
+        }
+        if (values.ref.label !== undefined) {
+          fireEvent.change(
+            screen.getByLabelText(i18n.t('event-assignment:fields.evidenceRefLabel')),
+            { target: { value: values.ref.label } },
+          );
+        }
+        if (values.ref.url !== undefined) {
+          fireEvent.change(
+            screen.getByLabelText(i18n.t('event-assignment:fields.evidenceRefUrl')),
+            {
+              target: { value: values.ref.url },
+            },
+          );
+        }
+        if (values.ref.referenceId !== undefined) {
+          fireEvent.change(
+            screen.getByLabelText(i18n.t('event-assignment:fields.evidenceRefReferenceId')),
+            { target: { value: values.ref.referenceId } },
+          );
+        }
+      }
+
+      await user.click(
+        screen.getByRole('button', { name: i18n.t('event-assignment:mutations.complete.submit') }),
+      );
+
+      expect(onComplete).not.toHaveBeenCalled();
+      view.unmount();
+    };
+
+    await submitWithValues({
+      evidenceNote: 'n'.repeat(EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH + 1),
+    });
+    await submitWithValues({
+      evidenceNote: 'Delivered recap.',
+      ref: {
+        url: makeEvidenceUrl(EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH + 1),
+      },
+    });
+    await submitWithValues({
+      evidenceNote: 'Delivered recap.',
+      ref: {
+        type: 'INTERNAL_REFERENCE',
+        referenceId: 'r'.repeat(EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH + 1),
+      },
+    });
+    await submitWithValues({
+      evidenceNote: 'Delivered recap.',
+      ref: {
+        type: 'EXTERNAL_REFERENCE',
+        label: 'l'.repeat(EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH + 1),
+        referenceId: 'EXT-123',
+      },
     });
   }, 20_000);
 
@@ -777,3 +1002,8 @@ describe('event assignment wave 6 query and payload shaping', () => {
     expect(archivedItems.every((item) => item.disabled)).toBe(true);
   });
 });
+
+const makeEvidenceUrl = (length: number): string => {
+  const prefix = 'https://example.com/';
+  return `${prefix}${'a'.repeat(length - prefix.length)}`;
+};

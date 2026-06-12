@@ -32,7 +32,14 @@
     "reason": "Reason",
     "createdAt": "Created at",
     "updatedAt": "Updated at",
-    "scopeBoundary": "Scope boundary"
+    "scopeBoundary": "Scope boundary",
+    "completedAt": "Completed at",
+    "completedBy": "Completed by",
+    "evidenceNote": "Completion note",
+    "evidenceRefType": "Reference type",
+    "evidenceRefLabel": "Reference label",
+    "evidenceRefUrl": "Reference URL",
+    "evidenceRefReferenceId": "Reference ID"
   },
   "generatedCode": {
     "label": "System code",
@@ -103,7 +110,9 @@
     "complete": "Complete",
     "cancel": "Cancel",
     "archive": "Archive",
-    "historicalArchiveEligible": "Historical completed event can be archived from detail"
+    "historicalArchiveEligible": "Historical completed event can be archived from detail",
+    "addEvidenceRef": "Add evidence reference",
+    "removeEvidenceRef": "Remove evidence reference {{index}}"
   },
   "table": {
     "caption": "Event list",
@@ -124,6 +133,20 @@
     "globalOnly": "Global only",
     "boundaryHelper": "Completing an event does not automatically record revenue, commission, attendance, payroll, or payment.",
     "bookingReadOnlyHelper": "Resource booking is managed as StudioBooking. Deprecated studioResourceIds are shown only as a derived summary."
+  },
+  "evidence": {
+    "title": "Completion evidence",
+    "notCompleted": "No completion evidence has been recorded.",
+    "emptyReferences": "No evidence references are attached.",
+    "referenceRowLabel": "Evidence reference {{index}}",
+    "referenceUnavailable": "Reference unavailable",
+    "boundaryHelper": "This evidence records operational delivery only. It does not automatically create revenue, commission, attendance, payroll, KPI finalization, payment, or payout.",
+    "refTypes": {
+      "URL": "URL",
+      "PLATFORM_REFERENCE": "Platform reference",
+      "EXTERNAL_REFERENCE": "External reference",
+      "INTERNAL_REFERENCE": "Internal reference"
+    }
   },
   "bookings": {
     "resource": "Studio resource",
@@ -201,13 +224,22 @@
       "subtitle": "Cancellation requires an audit reason.",
       "submit": "Cancel event",
       "pending": "Cancelling"
+    },
+    "complete": {
+      "title": "Complete event",
+      "subtitle": "Completion requires operational delivery evidence.",
+      "submit": "Complete event",
+      "pending": "Completing"
     }
   },
   "placeholders": {
     "csvIds": "Comma-separated references",
     "searchReference": "Search by name or code",
     "optional": "Optional",
-    "requiredReason": "Enter the audit reason"
+    "requiredReason": "Enter the audit reason",
+    "evidenceNote": "Summarize the delivered operational outcome",
+    "evidenceUrl": "https://example.com/evidence",
+    "evidenceReferenceId": "Reference, ticket, or platform ID"
   },
   "validation": {
     "required": "This field is required.",
@@ -215,7 +247,10 @@
     "invalidReferenceToken": "Use comma-separated reference tokens.",
     "invalidWindow": "End must be after start.",
     "noScope": "Event Assignment is global-only and cannot accept scope fields.",
-    "rosterUnavailable": "The active assignment roster is not safely available, so replacement is blocked."
+    "rosterUnavailable": "The active assignment roster is not safely available, so replacement is blocked.",
+    "invalidEvidenceUrl": "Enter a valid http(s) URL.",
+    "evidenceReferenceRequired": "Reference ID is required for this evidence type.",
+    "completionEvidenceRequired": "Completion evidence is required."
   },
   "feedback": {
     "created": "Event created.",

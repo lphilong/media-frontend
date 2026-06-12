@@ -11,6 +11,30 @@ export type EventStatus =
 export type EventStatusGroup = 'ACTIVE';
 export type EventAssignmentStatus = 'ACTIVE';
 export type StudioBookingStatus = 'HELD' | 'CONFIRMED' | 'RELEASED' | 'CANCELLED';
+export type EventCompletionEvidenceRefType =
+  | 'URL'
+  | 'PLATFORM_REFERENCE'
+  | 'EXTERNAL_REFERENCE'
+  | 'INTERNAL_REFERENCE';
+
+export const EVENT_COMPLETION_EVIDENCE_NOTE_MAX_LENGTH = 2_000;
+export const EVENT_COMPLETION_EVIDENCE_REF_LABEL_MAX_LENGTH = 160;
+export const EVENT_COMPLETION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH = 512;
+export const EVENT_COMPLETION_EVIDENCE_REF_URL_MAX_LENGTH = 2_048;
+
+export type EventCompletionEvidenceRef = {
+  type: EventCompletionEvidenceRefType;
+  label?: string | null;
+  url?: string | null;
+  referenceId?: string | null;
+};
+
+export type EventCompletionSummary = {
+  completedAt?: number | string | null;
+  completedByActorId?: string | null;
+  evidenceNote?: string | null;
+  evidenceRefs: EventCompletionEvidenceRef[];
+};
 
 export type EventRecord = {
   id: string;
@@ -31,6 +55,8 @@ export type EventRecord = {
   plannedAt?: number | string | null;
   confirmedAt?: number | string | null;
   completedAt?: number | string | null;
+  completedByActorId?: string | null;
+  completionEvidence?: EventCompletionSummary | null;
   cancelledAt?: number | string | null;
   cancellationReason?: string | null;
   lastRescheduledAt?: number | string | null;
@@ -166,6 +192,8 @@ export type EventLifecycleAction = 'plan' | 'confirm' | 'complete' | 'cancel' | 
 
 export type EventLifecyclePayload = {
   reason?: string;
+  evidenceNote?: string;
+  evidenceRefs?: EventCompletionEvidenceRef[];
 };
 
 export type CursorPagedResponse<TData> = {

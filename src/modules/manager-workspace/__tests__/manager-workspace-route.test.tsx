@@ -9,6 +9,7 @@ import { parseKpiAllocationDraftPayloadForTest } from '@modules/kpi/api/kpi.api'
 import {
   parseManagerAvailabilityApplyStatusForTest,
   parseManagerAvailabilityPolicyEvaluationStatusForTest,
+  parseManagerEventForTest,
   parseManagerWorkShiftListForTest,
   parseManagerWorkspaceContextForTest,
 } from '@modules/manager-workspace/api/manager-workspace.api';
@@ -282,12 +283,51 @@ describe('/manager workspace route', () => {
                 eventEndAt: Date.parse('2026-06-15T12:00:00+07:00'),
                 owner: { id: 'ep-owner', displayName: 'Event Owner' },
                 participants: [{ id: 'ep-member', displayName: 'Scoped Member' }],
+                completionEvidence: {
+                  completedAt: Date.parse('2026-06-15T12:30:00+07:00'),
+                  completedByActorId: 'admin-ops',
+                  evidenceNote: 'Delivered manager-visible recap evidence.',
+                  evidenceRefs: [
+                    {
+                      type: 'INTERNAL_REFERENCE',
+                      label: 'Ops ticket',
+                      referenceId: 'OPS-456',
+                    },
+                  ],
+                },
                 studioBookings: [],
               },
             ],
           },
         });
       }),
+      http.get('*/admin/manager-workspace/events/manager-event-test', () =>
+        HttpResponse.json({
+          data: {
+            id: 'manager-event-test',
+            eventCode: 'EVT-MANAGER-001',
+            title: 'Scoped manager event',
+            status: 'COMPLETED',
+            eventStartAt: Date.parse('2026-06-15T09:00:00+07:00'),
+            eventEndAt: Date.parse('2026-06-15T12:00:00+07:00'),
+            owner: { id: 'ep-owner', displayName: 'Event Owner' },
+            participants: [{ id: 'ep-member', displayName: 'Scoped Member' }],
+            completionEvidence: {
+              completedAt: Date.parse('2026-06-15T12:30:00+07:00'),
+              completedByActorId: 'admin-ops',
+              evidenceNote: 'Delivered manager-visible recap evidence.',
+              evidenceRefs: [
+                {
+                  type: 'INTERNAL_REFERENCE',
+                  label: 'Ops ticket',
+                  referenceId: 'OPS-456',
+                },
+              ],
+            },
+            studioBookings: [],
+          },
+        }),
+      ),
       http.all('*/admin/work-shifts*', () => {
         adminWorkShiftCalls += 1;
         return HttpResponse.json({ data: [] });
@@ -322,7 +362,6 @@ describe('/manager workspace route', () => {
     for (const action of ['Create', 'Confirm', 'Cancel', 'Complete', 'Archive']) {
       expect(screen.queryByRole('button', { name: action })).not.toBeInTheDocument();
     }
-
     await user.click(screen.getByTestId('manager-module-groups'));
     expect(await screen.findByTestId('manager-panel-groups')).toBeInTheDocument();
     expect(
@@ -347,6 +386,37 @@ describe('/manager workspace route', () => {
       expect(adminPeopleCalls).toBe(0);
       expect(adminTalentGroupCalls).toBe(0);
     });
+  });
+
+  it('accepts Manager Event completion evidence at the read-only client boundary', () => {
+    const event = parseManagerEventForTest({
+      id: 'manager-event-test',
+      eventCode: 'EVT-MANAGER-001',
+      title: 'Scoped manager event',
+      status: 'COMPLETED',
+      eventStartAt: Date.parse('2026-06-15T09:00:00+07:00'),
+      eventEndAt: Date.parse('2026-06-15T12:00:00+07:00'),
+      owner: { id: 'ep-owner', displayName: 'Event Owner' },
+      participants: [{ id: 'ep-member', displayName: 'Scoped Member' }],
+      completionEvidence: {
+        completedAt: Date.parse('2026-06-15T12:30:00+07:00'),
+        completedByActorId: 'admin-ops',
+        evidenceNote: 'Delivered manager-visible recap evidence.',
+        evidenceRefs: [
+          {
+            type: 'INTERNAL_REFERENCE',
+            label: 'Ops ticket',
+            referenceId: 'OPS-456',
+          },
+        ],
+      },
+      studioBookings: [],
+    });
+
+    expect(event.completionEvidence?.evidenceNote).toBe(
+      'Delivered manager-visible recap evidence.',
+    );
+    expect(event.completionEvidence?.evidenceRefs[0]?.referenceId).toBe('OPS-456');
   });
 
   it('does not replace Self-Service root routing for staff actors', async () => {
