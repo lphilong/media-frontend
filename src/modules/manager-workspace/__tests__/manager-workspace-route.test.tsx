@@ -151,6 +151,55 @@ describe('/manager workspace route', () => {
     expect(mockAuthAdapter.logoutRedirect).toHaveBeenCalledWith('/');
   });
 
+  it('standardizes Manager identity, scope, module status, and disabled-module copy in Vietnamese', async () => {
+    await renderRoute('/manager');
+
+    await act(async () => {
+      await setLocale('vi');
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Không gian quản lý' })).toBeInTheDocument();
+    expect(screen.getAllByText('Mina Manager').length).toBeGreaterThan(0);
+    expect(screen.getByText('Hồ sơ nhân sự · EP-MGR-001')).toBeInTheDocument();
+    expect(screen.getAllByText('Phạm vi được phân công').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('manager-module-overview')).toHaveTextContent('Chỉ đọc');
+    expect(screen.getByTestId('manager-module-kpi')).toHaveTextContent('Có thể thao tác');
+    expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent(
+      'Có thể thao tác',
+    );
+    expect(screen.getByTestId('manager-overview-kpi-card')).toHaveTextContent('Có thể thao tác');
+    for (const moduleId of ['events', 'groups', 'members']) {
+      expect(screen.getByTestId(`manager-module-${moduleId}`)).toHaveTextContent(
+        'Chưa mở trong workspace này',
+      );
+    }
+
+    const bodyText = document.body.textContent ?? '';
+    expect(bodyText).not.toContain('Cần hợp đồng');
+    expect(bodyText).not.toContain('Admin/Ops công bố hoặc phân quyền');
+    expect(bodyText).not.toContain('Dữ liệu sẽ hiển thị khi');
+    expect(bodyText).not.toContain('Danh sach KPI quan ly');
+    expect(bodyText).not.toContain('Kha dung');
+    expect(bodyText).not.toContain('manager-workspace:');
+  });
+
+  it('keeps Manager KPI module and Overview statuses read-only for the same posture', async () => {
+    await renderRoute('/manager', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitDepartmentOwnerContext());
+    });
+
+    expect(await screen.findByTestId('manager-module-kpi')).toHaveTextContent('Read-only');
+    expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent('Read-only');
+    expect(screen.getByTestId('manager-overview-kpi-card')).toHaveTextContent('Read-only');
+    expect(screen.getByTestId('manager-module-kpi')).not.toHaveTextContent('Action available');
+    expect(screen.getByTestId('manager-overview-readiness-card')).not.toHaveTextContent(
+      'Action available',
+    );
+    expect(screen.getByTestId('manager-overview-kpi-card')).not.toHaveTextContent(
+      'Action available',
+    );
+  });
+
   it('renders Staff-like Manager shell modules with Overview active by default', async () => {
     await renderRoute('/manager');
 
@@ -166,6 +215,7 @@ describe('/manager workspace route', () => {
     }
 
     expect(screen.getByRole('tab', { name: /Overview/ })).toHaveTextContent('Selected');
+    expect(screen.getByRole('tab', { name: /Overview/ })).toHaveTextContent('Read-only');
     expect(screen.getByRole('tab', { name: /Managed Work/ })).toHaveAttribute(
       'aria-disabled',
       'true',
@@ -204,7 +254,7 @@ describe('/manager workspace route', () => {
     expect(screen.queryByText('Manager Profile')).not.toBeInTheDocument();
   });
 
-  it('renders unsupported Manager modules as readiness-only panels without Admin data calls', async () => {
+  it('renders unavailable Manager modules without Admin data calls', async () => {
     const user = userEvent.setup();
     let adminWorkShiftCalls = 0;
     let adminEventCalls = 0;
@@ -240,16 +290,24 @@ describe('/manager workspace route', () => {
 
     await user.click(screen.getByTestId('manager-module-events'));
     expect(await screen.findByTestId('manager-panel-events')).toBeInTheDocument();
-    expect(await screen.findByText(/Managed Events is readiness-only/)).toBeInTheDocument();
+    expect(
+      await screen.findByText('This module is not currently available in Manager Workspace.'),
+    ).toBeInTheDocument();
     expect(screen.queryByText('EVT-202605-000005')).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId('manager-module-groups'));
     expect(await screen.findByTestId('manager-panel-groups')).toBeInTheDocument();
-    expect(await screen.findByText(/Managed Groups is readiness-only/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'This module is not currently available in Manager Workspace. Assigned scope summaries remain in Overview.',
+      ),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByTestId('manager-module-members'));
     expect(await screen.findByTestId('manager-panel-members')).toBeInTheDocument();
-    expect(await screen.findByText(/Managed Members is readiness-only/)).toBeInTheDocument();
+    expect(
+      await screen.findByText('This module is not currently available in Manager Workspace.'),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: 'People Operations Hub' }),
     ).not.toBeInTheDocument();
@@ -395,6 +453,19 @@ describe('/manager workspace route', () => {
 
     expect(await screen.findByText('No managed scope assigned')).toBeInTheDocument();
     expect(await screen.findByText('No managed assignments')).toBeInTheDocument();
+    expect(screen.getByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent('Read-only');
+    expect(document.body).not.toHaveTextContent('Action available');
+
+    await act(async () => {
+      await setLocale('vi');
+    });
+
+    expect((await screen.findAllByText('Chưa có phạm vi được phân công')).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent('Chỉ đọc');
+    expect(document.body).not.toHaveTextContent('Có thể thao tác');
   });
 
   it('renders Unit KPI only for OrgUnit-only manager context and queries ORG_UNIT plans', async () => {

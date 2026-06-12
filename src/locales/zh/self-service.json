@@ -2,7 +2,7 @@
   "page": {
     "eyebrow": "员工工作区",
     "title": "Staff Workspace",
-    "subtitle": "Only your own profile, schedule, KPI, Talent Group, and account preferences.",
+    "subtitle": "仅包含你自己的档案、排班、KPI、Talent Group 和账户偏好。",
     "readOnly": "只读基础"
   },
   "navigation": {
@@ -24,7 +24,8 @@
     },
     "work": {
       "title": "我的工作",
-      "summary": "只读查看分配给你自己的班次和活动。"
+      "summary": "只读查看分配给你自己的班次和活动。",
+      "boundary": "正式班次是工作计划，不是考勤或工资。"
     },
     "workShifts": {
       "title": "我的班次",
@@ -32,7 +33,8 @@
     },
     "kpi": {
       "title": "我的 KPI",
-      "summary": "Read-only official KPI for your staff profile or operational assignment."
+      "summary": "你员工档案或运营分配的正式 KPI，只读。",
+      "boundary": "实际结果不会自动决定佣金或工资。"
     },
     "events": {
       "title": "我的活动",
@@ -53,6 +55,7 @@
   "fields": {
     "displayName": "显示名",
     "employeeCode": "员工编号",
+    "profileCode": "员工档案 · {{code}}",
     "employmentStatus": "雇佣状态",
     "accountEmail": "账号邮箱",
     "accountStatus": "账号状态",
@@ -101,7 +104,7 @@
   },
   "kpiStatusSummary": {
     "title": "Actual status summary",
-    "readOnlySource": "Status is based on manager-entered daily actuals. Read-only.",
+    "readOnlySource": "状态基于管理者录入的每日实际值，只读。",
     "expected": "Expected",
     "entered": "Entered",
     "enteredZero": "Entered zero",
@@ -147,7 +150,8 @@
     "comingSoon": "即将推出",
     "readOnly": "只读",
     "preferencesOnly": "仅偏好",
-    "ownDataOnly": "Own data only"
+    "ownDataOnly": "仅本人数据",
+    "scopeLabel": "你的数据"
   },
   "actions": {
     "logout": "退出登录",
@@ -183,15 +187,22 @@
     "vi": "越南语",
     "zh": "中文"
   },
+  "timezoneOptions": {
+    "vietnam": "越南时间",
+    "utc": "协调世界时",
+    "newYork": "纽约时间",
+    "losAngeles": "洛杉矶时间",
+    "configured": "已设置的时区"
+  },
   "values": {
     "notAvailable": "不可用"
   },
   "empty": {
     "kpiCurrentTitle": "No official KPI is published for the current period.",
     "kpiCurrentMessage": "If you believe a KPI allocation is missing, contact your manager or admin.",
-    "kpiCurrentWithPreviousMessage": "Your latest previous KPI is shown below for read-only context. If you believe a current KPI allocation is missing, contact your manager or admin.",
+    "kpiCurrentWithPreviousMessage": "下方显示你最近一期历史 KPI，仅供只读参考。如果你认为当前 KPI 分配缺失，请联系管理者或管理员。",
     "kpiHistoryTitle": "No previous KPI history",
-    "kpiHistoryMessage": "Previous KPI history is not available yet.",
+    "kpiHistoryMessage": "暂时没有历史 KPI。",
     "kpiSelectedHistoryTitle": "No previous KPI for selected period",
     "kpiSelectedHistoryMessage": "Choose another previous period if available.",
     "workShiftsTitle": "暂无班次",

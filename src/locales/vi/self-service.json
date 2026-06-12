@@ -1,62 +1,65 @@
 {
   "page": {
     "eyebrow": "Không gian nhân sự",
-    "title": "Staff Workspace",
-    "subtitle": "Du lieu cua rieng ban: ho so, lich lam viec, KPI, nhom Talent va tuy chon tai khoan.",
+    "title": "Không gian nhân sự",
+    "subtitle": "Hồ sơ, lịch làm việc, KPI, nhóm Talent và tùy chọn tài khoản đăng nhập của bạn.",
     "readOnly": "Nền tảng chỉ đọc"
   },
   "navigation": {
     "label": "Các mục tự phục vụ"
   },
   "overview": {
-    "title": "Tong quan",
-    "summary": "Trang thai san sang va tom tat du lieu cua rieng ban trong Self-Service.",
-    "profileReadiness": "Trang thai ho so",
-    "accountLink": "Lien ket tai khoan",
-    "todayWork": "Tom tat hom nay",
-    "todayWorkValue": "{{workShiftCount}} ca / {{eventCount}} su kien",
-    "preferences": "Ngon ngu / mui gio"
+    "title": "Tổng quan",
+    "summary": "Trạng thái hồ sơ và tóm tắt dữ liệu của bạn.",
+    "profileReadiness": "Trạng thái hồ sơ",
+    "accountLink": "Liên kết tài khoản đăng nhập",
+    "todayWork": "Tóm tắt hôm nay",
+    "todayWorkValue": "{{workShiftCount}} ca / {{eventCount}} sự kiện",
+    "preferences": "Ngôn ngữ / múi giờ"
   },
   "sections": {
     "profile": {
-      "title": "Hồ sơ ",
+      "title": "Hồ sơ nhân sự",
       "summary": "Tóm tắt hồ sơ nhân sự ở chế độ chỉ đọc."
     },
     "work": {
-      "title": "Cong viec cua toi",
-      "summary": "Ca lam va su kien cua rieng ban o che do chi doc."
+      "title": "Lịch làm việc",
+      "summary": "Ca làm và sự kiện của bạn ở chế độ chỉ đọc.",
+      "boundary": "Ca làm chính thức là kế hoạch làm việc, không phải chấm công hoặc bảng lương."
     },
     "workShifts": {
-      "title": "Ca làm ",
-      "summary": "Xem chính thức các ca làm của bạn ở chế độ chỉ đọc."
+      "title": "Ca làm chính thức",
+      "summary": "Xem ca làm chính thức của bạn ở chế độ chỉ đọc."
     },
     "kpi": {
-      "title": "KPI ",
-      "summary": "KPI chinh thuc chi doc cho ho so nhan su hoac don vi van hanh cua ban."
+      "title": "KPI của bạn",
+      "summary": "Kế hoạch KPI, phân bổ KPI, số thực đạt và tiến độ ở chế độ chỉ đọc.",
+      "boundary": "Số thực đạt không tự quyết định hoa hồng hoặc bảng lương."
     },
     "events": {
-      "title": "Sự kiện ",
+      "title": "Sự kiện",
       "summary": "Xem các sự kiện được phân công trực tiếp cho bạn ở chế độ chỉ đọc."
     },
     "talentGroups": {
-      "title": "Nhóm Talent ",
+      "title": "Nhóm Talent",
       "summary": "Xem các nhóm Talent đang hoạt động của bạn ở chế độ chỉ đọc."
     },
     "account": {
-      "title": "Tài khoản",
-      "summary": "Thông tin tài khoản với tùy chọn ngôn ngữ và múi giờ tự phục vụ."
+      "title": "Tài khoản đăng nhập",
+      "summary": "Thông tin tài khoản đăng nhập với tùy chọn ngôn ngữ và múi giờ tự phục vụ."
     },
     "linkedTalent": {
-      "title": "Talent nội bộ liên kết"
+      "title": "Hồ sơ Talent đã liên kết"
     }
   },
   "fields": {
     "displayName": "Tên hiển thị",
     "employeeCode": "Mã nhân sự",
+    "profileCode": "Hồ sơ nhân sự · {{code}}",
     "employmentStatus": "Trạng thái nhân sự",
-    "accountEmail": "Email tài khoản",
-    "accountStatus": "Trạng thái tài khoản",
-    "accountLinkStatus": "Trạng thái liên kết tài khoản",
+    "accountEmail": "Email tài khoản đăng nhập",
+    "accountStatus": "Trạng thái tài khoản đăng nhập",
+    "accountLinkStatus": "Trạng thái liên kết tài khoản đăng nhập",
     "language": "Ngôn ngữ",
     "locale": "Ngôn ngữ",
     "timezone": "Múi giờ",
@@ -81,38 +84,38 @@
     "assignmentStatus": "Trạng thái phân công"
   },
   "kpiFields": {
-    "period": "Ky",
-    "periodMonth": "Thang KPI",
-    "lastUpdatedAt": "Cap nhat",
-    "metric": "Chi so",
-    "target": "Muc tieu chinh thuc",
-    "actual": "Actual / actual hieu luc",
-    "progress": "Tien do"
+    "period": "Kỳ",
+    "periodMonth": "Tháng KPI",
+    "lastUpdatedAt": "Cập nhật",
+    "metric": "Chỉ số",
+    "target": "Mục tiêu chính thức",
+    "actual": "Số thực đạt",
+    "progress": "Tiến độ"
   },
   "kpiSections": {
-    "current": "KPI hien tai",
-    "latestPrevious": "KPI truoc gan nhat",
-    "history": "Lich su KPI truoc"
+    "current": "KPI hiện tại",
+    "latestPrevious": "KPI trước gần nhất",
+    "history": "Lịch sử KPI trước"
   },
   "kpiPeriod": {
-    "current": "Ky hien tai",
-    "previous": "Ky truoc",
-    "notCurrent": "Khong phai KPI hien tai"
+    "current": "Kỳ hiện tại",
+    "previous": "Kỳ trước",
+    "notCurrent": "Không phải KPI hiện tại"
   },
   "kpiStatusSummary": {
-    "title": "Tom tat trang thai actual",
-    "readOnlySource": "Trang thai dua tren actual hang ngay do quan ly nhap. Chi doc.",
-    "expected": "Can nhap",
-    "entered": "Da nhap",
-    "enteredZero": "Da nhap 0",
-    "dueOpen": "Dang mo",
-    "overdue": "Qua han",
-    "excused": "Mien",
-    "notRequired": "Khong bat buoc",
-    "notDue": "Chua den han"
+    "title": "Tóm tắt trạng thái Số thực đạt",
+    "readOnlySource": "Trạng thái dựa trên Số thực đạt hằng ngày do quản lý nhập. Chỉ đọc.",
+    "expected": "Cần nhập",
+    "entered": "Đã nhập",
+    "enteredZero": "Đã nhập 0",
+    "dueOpen": "Đang mở",
+    "overdue": "Quá hạn",
+    "excused": "Miễn",
+    "notRequired": "Không bắt buộc",
+    "notDue": "Chưa đến hạn"
   },
   "kpiHistory": {
-    "selectedPeriodCopy": "Dang hien thi {{count}} ban ghi KPI truoc cho {{periodMonth}}."
+    "selectedPeriodCopy": "Đang hiển thị {{count}} bản ghi KPI trước cho {{periodMonth}}."
   },
   "talentGroupFields": {
     "managers": "Quản lý",
@@ -120,61 +123,62 @@
   },
   "tables": {
     "kpi": "KPI",
-    "workShifts": "Ca làm ",
-    "events": "Sự kiện ",
-    "talentGroups": "Nhóm Talent "
+    "workShifts": "Ca làm chính thức",
+    "events": "Sự kiện",
+    "talentGroups": "Nhóm Talent"
   },
   "kpiStatus": {
-    "OFFICIAL_PUBLISHED": "Official published",
-    "OFFICIAL_FINALIZED": "Official finalized"
+    "OFFICIAL_PUBLISHED": "Đã công bố chính thức",
+    "OFFICIAL_FINALIZED": "Đã chốt chính thức"
   },
   "kpiMetric": {
-    "REVENUE_VND": "Doanh thu van hanh",
-    "CONTENT_OUTPUT_COUNT": "Content output",
-    "LIVE_HOURS": "Live hours",
-    "EVENT_COMPLETION_COUNT": "Event completion",
-    "ONBOARDED_TALENT_COUNT": "Onboarded talent",
-    "TIKTOK_DIAMOND": "So luong TikTok Diamond"
+    "REVENUE_VND": "Doanh thu vận hành",
+    "CONTENT_OUTPUT_COUNT": "Số nội dung hoàn thành",
+    "LIVE_HOURS": "Số giờ phát trực tiếp",
+    "EVENT_COMPLETION_COUNT": "Số sự kiện hoàn thành",
+    "ONBOARDED_TALENT_COUNT": "Số Talent đã tiếp nhận",
+    "TIKTOK_DIAMOND": "Số lượng TikTok Diamond"
   },
   "kpiUnit": {
     "VND": "VND",
-    "COUNT": "count",
-    "HOUR": "hours"
+    "COUNT": "số lượng",
+    "HOUR": "giờ"
   },
   "status": {
     "available": "Có sẵn",
-    "selectedModule": "Dang chon",
+    "selectedModule": "Đang xem",
     "comingSoon": "Sắp có",
     "readOnly": "Chỉ đọc",
-    "preferencesOnly": "Chỉ tùy chọn",
-    "ownDataOnly": "Chi du lieu cua ban"
+    "preferencesOnly": "Chỉ tùy chỉnh",
+    "ownDataOnly": "Dữ liệu của bạn",
+    "scopeLabel": "Dữ liệu của bạn"
   },
   "actions": {
     "logout": "Đăng xuất",
     "savePreferences": "Lưu tùy chọn",
     "saving": "Đang lưu",
     "resetPreferences": "Đặt lại",
-    "loadMore": "Load more",
-    "loadingMore": "Loading more"
+    "loadMore": "Tải thêm",
+    "loadingMore": "Đang tải thêm"
   },
   "events": {
-    "windowCopy": "Showing recent events from the previous {{recentPastDays}} days and upcoming events for the next {{upcomingDays}} days ({{windowStartAt}} to {{windowEndAt}}).",
-    "truncatedCopy": "Some events are not shown because the bounded Stage 1 list limit was reached."
+    "windowCopy": "Hiển thị sự kiện trong {{recentPastDays}} ngày trước và {{upcomingDays}} ngày sắp tới, từ {{windowStartAt}} đến {{windowEndAt}}.",
+    "truncatedCopy": "Một số sự kiện không hiển thị vì danh sách đã đạt giới hạn tải."
   },
   "talentGroups": {
-    "groupsTruncated": "Showing the first {{maxGroups}} active Talent Groups.",
-    "managersTruncated": "Showing the first {{maxManagers}} managers for this group.",
-    "membersTruncated": "Showing the first {{maxMembers}} members for this group."
+    "groupsTruncated": "Hiển thị {{maxGroups}} nhóm Talent đang hoạt động đầu tiên.",
+    "managersTruncated": "Hiển thị {{maxManagers}} quản lý đầu tiên của nhóm này.",
+    "membersTruncated": "Hiển thị {{maxMembers}} thành viên đầu tiên của nhóm này."
   },
   "account": {
-    "preferencesTitle": "Tùy chọn tài khoản",
+    "preferencesTitle": "Tùy chọn tài khoản đăng nhập",
     "preferencesSummary": "Chỉ ngôn ngữ và múi giờ có thể cập nhật tại đây.",
     "preferencesSaved": "Đã lưu tùy chọn.",
     "preferencesSaveError": "Không thể lưu tùy chọn.",
     "unsupportedLocale": "Chọn ngôn ngữ được hỗ trợ.",
     "invalidTimezone": "Chọn múi giờ hợp lệ.",
     "currentTimezone": "Múi giờ hiện tại: {{timezone}}",
-    "securityTitle": "Bảo mật tài khoản",
+    "securityTitle": "Bảo mật tài khoản đăng nhập",
     "passwordInstruction": "Để đổi mật khẩu, hãy liên hệ IT/Admin.",
     "operationsNote": "Với thay đổi email, điện thoại, địa chỉ, pháp lý, hợp đồng hoặc hồ sơ nhân sự, hãy liên hệ đội HR/Admin/IT phụ trách."
   },
@@ -183,23 +187,30 @@
     "vi": "Tiếng Việt",
     "zh": "Tiếng Trung"
   },
+  "timezoneOptions": {
+    "vietnam": "Giờ Việt Nam",
+    "utc": "Giờ Phối hợp Quốc tế",
+    "newYork": "Giờ New York",
+    "losAngeles": "Giờ Los Angeles",
+    "configured": "Múi giờ đã thiết lập"
+  },
   "values": {
     "notAvailable": "Chưa có"
   },
   "empty": {
-    "kpiCurrentTitle": "Chua co KPI chinh thuc duoc publish cho ky hien tai.",
-    "kpiCurrentMessage": "Neu ban cho rang minh thieu phan bo KPI, hay lien he quan ly hoac admin.",
-    "kpiCurrentWithPreviousMessage": "KPI truoc gan nhat duoc hien thi ben duoi de tham khao chi doc. Neu ban cho rang minh thieu phan bo KPI hien tai, hay lien he quan ly hoac admin.",
-    "kpiHistoryTitle": "Chua co lich su KPI truoc",
-    "kpiHistoryMessage": "Chua co lich su KPI truoc.",
-    "kpiSelectedHistoryTitle": "Chua co KPI truoc cho ky da chon",
-    "kpiSelectedHistoryMessage": "Hay chon ky truoc khac neu co.",
-    "workShiftsTitle": "Chưa có ca làm",
-    "workShiftsMessage": "Chưa có ca chính thức nào cho hồ sơ của bạn.",
+    "kpiCurrentTitle": "Chưa có KPI hiện hành được công bố.",
+    "kpiCurrentMessage": "KPI sẽ hiển thị sau khi kế hoạch và phân bổ được công bố cho bạn.",
+    "kpiCurrentWithPreviousMessage": "KPI trước gần nhất được hiển thị bên dưới để tham khảo ở chế độ chỉ đọc. Nếu cho rằng thiếu Phân bổ KPI hiện tại, hãy liên hệ quản lý hoặc Admin.",
+    "kpiHistoryTitle": "Chưa có lịch sử KPI trước",
+    "kpiHistoryMessage": "Chưa có lịch sử KPI trước.",
+    "kpiSelectedHistoryTitle": "Chưa có KPI trước cho kỳ đã chọn",
+    "kpiSelectedHistoryMessage": "Hãy chọn kỳ trước khác nếu có.",
+    "workShiftsTitle": "Chưa có ca làm chính thức.",
+    "workShiftsMessage": "Ca làm chỉ hiển thị sau khi Admin/Ops công bố lịch tháng.",
     "eventsTitle": "Chưa có sự kiện",
     "eventsMessage": "Chưa có sự kiện được phân công trực tiếp cho hồ sơ của bạn.",
     "talentGroupsTitle": "Chưa có nhóm Talent",
-    "talentGroupsMessage": "Chưa có nhóm Talent đang hoạt động cho Talent nội bộ liên kết của bạn."
+    "talentGroupsMessage": "Chưa có nhóm Talent đang hoạt động cho Hồ sơ Talent đã liên kết của bạn."
   },
   "employmentStatus": {
     "ACTIVE": "Đang làm",
@@ -239,7 +250,7 @@
   },
   "workShiftSourceType": {
     "MANUAL": "Thủ công",
-    "ROSTER_GENERATED": "Tạo từ bảng phân ca"
+    "ROSTER_GENERATED": "Tạo từ Lịch tháng"
   },
   "talentGroupStatus": {
     "ACTIVE": "Đang hoạt động"
@@ -249,15 +260,15 @@
     "EXTERNAL": "Bên ngoài"
   },
   "errors": {
-    "kpiTitle": "KPI unavailable",
-    "kpiMessage": "Khong the tai KPI chinh thuc cua ban.",
+    "kpiTitle": "Chưa thể tải KPI",
+    "kpiMessage": "Không thể tải KPI hiện hành của bạn.",
     "currentPersonNotLinkedTitle": "Chưa liên kết Hồ sơ nhân sự",
-    "currentPersonNotLinkedMessage": "Tài khoản đã đăng nhập nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ.",
-    "profileNotOperationalTitle": "Self-Service chưa khả dụng",
-    "profileNotOperationalMessage": "Hồ sơ nhân sự của bạn hiện không đủ điều kiện dùng Self-Service. Liên hệ HR/Admin nếu cần kiểm tra.",
+    "currentPersonNotLinkedMessage": "Tài khoản đăng nhập đã được xác thực nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ.",
+    "profileNotOperationalTitle": "Không gian nhân sự chưa khả dụng",
+    "profileNotOperationalMessage": "Hồ sơ nhân sự của bạn hiện không ở trạng thái hoạt động phù hợp. Liên hệ HR/Admin nếu cần kiểm tra.",
     "profileNotOperationalLabel": "Không đủ điều kiện truy cập",
     "profileNotOperationalHelper": "Quyền truy cập được kiểm tra bởi hệ thống nhân sự. Màn hình này chỉ hiển thị thông báo, không tự sửa dữ liệu.",
-    "currentPersonLoadTitle": "Chưa thể tải tự phục vụ",
+    "currentPersonLoadTitle": "Chưa thể tải không gian nhân sự",
     "currentPersonLoadMessage": "Không thể tải hồ sơ của bạn.",
     "workShiftsTitle": "Chưa thể tải ca làm",
     "workShiftsMessage": "Không thể tải danh sách ca làm của bạn.",

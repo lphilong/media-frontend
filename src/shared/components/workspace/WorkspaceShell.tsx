@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-import { PageContainer, StatusBadge } from '@shared/components/primitives';
+import { PageContainer, StatusBadge, type StatusBadgeTone } from '@shared/components/primitives';
 
 export type WorkspaceModuleItem<ModuleId extends string> = {
   id: ModuleId;
   label: string;
   description: string;
   statusLabel: string;
+  statusTone?: StatusBadgeTone;
   icon: LucideIcon;
   disabled?: boolean;
   disabledReason?: string;
@@ -141,12 +142,17 @@ export const WorkspaceModuleCard = <ModuleId extends string>({
         </span>
         <span className="shrink-0">
           <StatusBadge
-            label={active ? selectedLabel : item.statusLabel}
-            tone={active ? 'neutral' : item.disabled ? 'warning' : 'success'}
+            label={item.statusLabel}
+            tone={item.statusTone ?? (item.disabled ? 'warning' : 'success')}
             uppercase={false}
           />
         </span>
       </span>
+      {active ? (
+        <span className="mt-3 block text-xs font-semibold" data-testid={`${item.id}-active-label`}>
+          {selectedLabel}
+        </span>
+      ) : null}
       {item.disabledReason ? (
         <span
           id={`${item.id}-disabled-reason`}

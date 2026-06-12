@@ -76,7 +76,8 @@
     "muted": "只读"
   },
   "pagination": {
-    "total": "{{count}} 个问题"
+    "total": "{{count}} 个问题",
+    "total_plural": "{{count}} 个问题"
   },
   "severities": {
     "BLOCKER": "需要紧急处理",

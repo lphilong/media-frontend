@@ -19,12 +19,12 @@
     "infoHelper": "Ghi nhận readiness mang tính thông tin, không phải blocker.",
     "employmentTerms": "Điều khoản lương",
     "employmentTermsHelper": "Hồ sơ có vấn đề về điều khoản làm việc / lương.",
-    "accountLogin": "Tài khoản / Self-Service",
+    "accountLogin": "Tài khoản / Không gian nhân sự",
     "accountLoginHelper": "Vấn đề liên kết tài khoản đăng nhập.",
-    "selfService": "Rủi ro Self-Service",
-    "selfServiceHelper": "Hồ sơ có thể không truy cập đúng Self-Service.",
+    "selfService": "Rủi ro Không gian nhân sự",
+    "selfServiceHelper": "Hồ sơ có thể không truy cập đúng Không gian nhân sự.",
     "manager": "Rủi ro sẵn sàng quản lý",
-    "managerHelper": "Assignment quản lý có vấn đề về hồ sơ hoặc tài khoản đăng nhập."
+    "managerHelper": "Phân công quản lý có vấn đề về hồ sơ hoặc tài khoản đăng nhập."
   },
   "filters": {
     "category": "Luồng ảnh hưởng",
@@ -76,7 +76,8 @@
     "muted": "Chỉ đọc"
   },
   "pagination": {
-    "total": "{{count}} vấn đề"
+    "total": "{{count}} vấn đề",
+    "total_plural": "{{count}} vấn đề"
   },
   "severities": {
     "BLOCKER": "Cần xử lý gấp",
@@ -90,19 +91,19 @@
     "ORGUNIT_PARTICIPATION": "Phạm vi vận hành",
     "TALENTGROUP_MEMBER_LINKAGE": "Tình trạng nhóm Talent",
     "MANAGER_ASSIGNMENT_READY": "Sẵn sàng quản lý",
-    "SELF_SERVICE_READY": "Rủi ro Self-Service",
-    "WORKSCHEDULE_READY": "Readiness WorkSchedule",
-    "KPI_READY": "Readiness KPI"
+    "SELF_SERVICE_READY": "Rủi ro Không gian nhân sự",
+    "WORKSCHEDULE_READY": "Sẵn sàng lịch làm việc",
+    "KPI_READY": "Sẵn sàng KPI"
   },
   "entities": {
     "USER": "Tài khoản đăng nhập",
     "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
     "TALENT": "Talent",
-    "ORG_UNIT": "OrgUnit",
-    "TALENT_GROUP": "TalentGroup",
-    "TALENT_GROUP_MEMBER": "Thành viên TalentGroup",
-    "ORG_UNIT_MANAGER_ASSIGNMENT": "Assignment quản lý OrgUnit",
-    "TALENT_GROUP_MANAGER_ASSIGNMENT": "Assignment quản lý TalentGroup"
+    "ORG_UNIT": "Đơn vị tổ chức",
+    "TALENT_GROUP": "Nhóm Talent",
+    "TALENT_GROUP_MEMBER": "Thành viên nhóm Talent",
+    "ORG_UNIT_MANAGER_ASSIGNMENT": "Phân công quản lý đơn vị",
+    "TALENT_GROUP_MANAGER_ASSIGNMENT": "Phân công quản lý nhóm Talent"
   },
   "statuses": {
     "ACTIVE": "Đang hoạt động",
@@ -138,7 +139,7 @@
     "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Quản lý OrgUnit chưa sẵn sàng tài khoản",
     "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Quản lý TalentGroup chưa sẵn sàng hồ sơ",
     "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Quản lý TalentGroup chưa sẵn sàng tài khoản",
-    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Hồ sơ không nên dùng Self-Service"
+    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Hồ sơ không nên dùng Không gian nhân sự"
   },
   "issueDescriptions": {
     "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "Hồ sơ chưa có điều khoản đã duyệt, đang hiệu lực và đủ điều kiện làm nguồn bảng lương.",
@@ -147,7 +148,7 @@
     "EMPLOYMENT_TERMS_MISSING_BASE_SALARY": "Điều khoản hiện tại đang thiếu dữ liệu lương cơ bản hợp lệ.",
     "EMPLOYMENT_TERMS_OVERLAP": "Có nhiều khoảng hiệu lực của điều khoản đã duyệt và đủ điều kiện làm nguồn bảng lương bị chồng lấn.",
     "ACTIVE_USER_WITHOUT_EMPLOYMENT_PROFILE": "Cần rà soát tài khoản đăng nhập có nên liên kết với hồ sơ nhân sự hay không.",
-    "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "Hồ sơ đang giữ assignment quản lý cần có tài khoản đăng nhập active.",
+    "EMPLOYMENT_PROFILE_REQUIRES_LOGIN_BUT_MISSING_ACTIVE_USER": "Hồ sơ đang giữ phân công quản lý cần có tài khoản đăng nhập đang hoạt động.",
     "EMPLOYMENT_PROFILE_LINKED_USER_INACTIVE": "Tài khoản liên kết đang thiếu hoặc không active và cần được rà soát.",
     "EMPLOYMENT_PROFILE_NOT_ACTIVE_FOR_OPERATIONS": "Trạng thái vòng đời hồ sơ chưa đủ điều kiện tham gia vận hành mới.",
     "EMPLOYMENT_PROFILE_MISSING_ORG_UNIT": "Cần gán nhân sự vào đúng OrgUnit vận hành trước khi dùng trong các flow vận hành.",
@@ -164,6 +165,6 @@
     "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Người được gán quản lý OrgUnit chưa có tài khoản admin active.",
     "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Người được gán quản lý TalentGroup chưa có hồ sơ nhân sự sẵn sàng.",
     "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Người được gán quản lý TalentGroup chưa có tài khoản admin active.",
-    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Vòng đời hồ sơ nhân sự liên kết không hợp lệ cho truy cập Self-Service."
+    "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Vòng đời hồ sơ nhân sự liên kết không hợp lệ cho truy cập Không gian nhân sự."
   }
 }

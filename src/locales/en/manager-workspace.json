@@ -1,6 +1,6 @@
 {
   "title": "Manager Workspace",
-  "subtitle": "Assignment-scoped operations for managers.",
+  "subtitle": "Your profile and operations within assigned scopes only.",
   "nav": {
     "label": "Manager workspace navigation",
     "overview": "Overview",
@@ -12,11 +12,11 @@
     "backToKpi": "Back to managed KPI"
   },
   "status": {
-    "readOnlyShell": "Manager scope",
-    "available": "Available",
-    "selectedModule": "Selected",
-    "contractNeeded": "Contract needed",
-    "readinessNeeded": "Readiness needed"
+    "scopeLabel": "Assigned scope",
+    "readOnly": "Read-only",
+    "actionable": "Action available",
+    "unavailable": "Not opened in this workspace",
+    "selectedModule": "Selected"
   },
   "modules": {
     "overview": {
@@ -37,20 +37,20 @@
     "events": {
       "title": "Managed Events",
       "summary": "Event visibility and operations for assigned scopes.",
-      "disabledReason": "Manager Events contracts are not enabled yet.",
-      "readinessMessage": "Managed Events is readiness-only in this batch. No Manager Events route or Admin Event data is exposed here."
+      "disabledReason": "Not opened in this workspace.",
+      "readinessMessage": "This module is not currently available in Manager Workspace."
     },
     "groups": {
       "title": "Managed Groups",
       "summary": "Assigned Org Unit and Talent Group context.",
-      "disabledReason": "Dedicated Manager Groups contracts are not enabled yet.",
-      "readinessMessage": "Managed Groups is readiness-only in this batch. Existing assigned scope summaries remain in Overview; no dedicated Groups module route or setup page is exposed."
+      "disabledReason": "Not opened in this workspace.",
+      "readinessMessage": "This module is not currently available in Manager Workspace. Assigned scope summaries remain in Overview."
     },
     "members": {
       "title": "Managed Members",
       "summary": "Member context for assigned scopes.",
-      "disabledReason": "Manager Members contracts are not enabled yet.",
-      "readinessMessage": "Managed Members is readiness-only in this batch. People Hub and Admin EmploymentProfile data are not exposed as a Manager Members module."
+      "disabledReason": "Not opened in this workspace.",
+      "readinessMessage": "This module is not currently available in Manager Workspace."
     }
   },
   "values": {
@@ -68,14 +68,15 @@
     "readyMessage": "Manager Workspace context is available.",
     "kpiTitle": "KPI readiness",
     "kpiSummary": "Managed KPI visibility is driven by effective assignments.",
-    "unsupportedTitle": "Module readiness",
-    "unsupportedSummary": "These Manager modules need future backend contracts before they can show operational data.",
+    "unsupportedTitle": "Modules not opened",
+    "unsupportedSummary": "These modules are not currently available in Manager Workspace.",
     "profileTitle": "Manager Profile",
     "scopeTitle": "Managed Scope"
   },
   "fields": {
     "displayName": "Display name",
     "employeeCode": "Employee code",
+    "profileCode": "Employment profile · {{code}}",
     "status": "Status"
   },
   "employmentStatus": {
@@ -93,6 +94,7 @@
   "kpi": {
     "title": "My Managed KPI",
     "summary": "Published KPI plans visible through your effective manager assignments.",
+    "boundary": "You only see data within assigned scopes. KPI shown here does not automatically create commission or payroll.",
     "tableLabel": "Managed KPI plans",
     "tabs": {
       "unit": "Unit KPI",
@@ -132,6 +134,7 @@
   "work": {
     "title": "Managed Work",
     "summary": "Published official WorkShifts for active members in your exact managed Org Units and Talent Groups.",
+    "boundary": "You only see data within assigned scopes. Official shifts are work plans, not attendance or payroll.",
     "readOnly": "Read-only manager scope",
     "scopeBadge": "Manager WorkSchedule scope",
     "tabs": {

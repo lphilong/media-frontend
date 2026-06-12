@@ -265,9 +265,9 @@
     },
     "statuses": {
       "PENDING": "Pending",
-      "APPROVED": "Approved",
-      "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
+      "APPROVED": "已批准",
+      "REJECTED": "已拒绝",
+      "CANCELLED": "已取消"
     },
     "fields": {
       "type": "Request type",
@@ -363,146 +363,146 @@
       "CANCELLED": "Cancelled"
     },
     "lineStatuses": {
-      "PENDING": "Pending",
-      "APPROVED": "Approved",
-      "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled",
-      "FAILED_TO_APPLY": "Failed to apply"
+      "PENDING": "待处理",
+      "APPROVED": "已批准",
+      "REJECTED": "已拒绝",
+      "CANCELLED": "已取消",
+      "FAILED_TO_APPLY": "应用失败"
     },
     "lineCounts": {
-      "summary": "{{pending}} pending / {{approved}} approved / {{failedToApply}} failed / {{total}} total"
+      "summary": "{{pending}} 待处理 / {{approved}} 已批准 / {{failedToApply}} 失败 / {{total}} 总计"
     },
     "decisions": {
-      "title": "Selected-line decision",
-      "selectedContext": "{{count}} pending request lines selected.",
-      "helper": "The decision applies only to selected request lines. Approval may apply the shift change after backend checks; rejection or cancellation requires a reason.",
-      "approvalNote": "Approval note (optional)",
-      "reason": "Rejection or cancellation reason"
+      "title": "已选行处理",
+      "selectedContext": "已选择 {{count}} 条待处理请求行。",
+      "helper": "决定只适用于已选择的请求行。批准可能会在后端检查后应用班次变更；拒绝或取消需要填写原因。",
+      "approvalNote": "批准备注（可选）",
+      "reason": "拒绝或取消原因"
     },
     "actions": {
-      "approveSelected": "Approve selected",
-      "rejectSelected": "Reject selected",
-      "cancelSelected": "Cancel selected",
-      "selectLine": "Select line {{lineNo}}"
+      "approveSelected": "批准已选择",
+      "rejectSelected": "拒绝已选择",
+      "cancelSelected": "取消已选择",
+      "selectLine": "选择第 {{lineNo}} 行"
     },
     "table": {
-      "caption": "Request batch lines",
-      "line": "Line",
-      "member": "Member",
-      "request": "Request",
-      "status": "Status",
-      "notes": "Notes"
+      "caption": "请求批次行",
+      "line": "行",
+      "member": "成员",
+      "request": "请求",
+      "status": "状态",
+      "notes": "备注"
     },
     "states": {
-      "emptyTitle": "No request batches",
-      "emptyMessage": "No request batches match the current filters.",
-      "listErrorTitle": "Request queue could not be loaded",
-      "listErrorMessage": "The system rejected or did not return request batch data.",
-      "detailErrorTitle": "Request batch detail could not be loaded",
-      "detailErrorMessage": "The selected request batch could not be loaded."
+      "emptyTitle": "没有请求批次",
+      "emptyMessage": "没有请求批次匹配当前筛选条件。",
+      "listErrorTitle": "无法加载请求队列",
+      "listErrorMessage": "系统拒绝或未返回请求批次数据。",
+      "detailErrorTitle": "无法加载请求批次详情",
+      "detailErrorMessage": "无法加载所选请求批次。"
     }
   },
   "availabilityBatches": {
     "page": {
-      "title": "Availability Planning Queue",
-      "subtitle": "Admin/Ops review for manager-submitted pre-roster availability lines."
+      "title": "可用性规划队列",
+      "subtitle": "Admin/Ops 审核管理者提交的排班前可用性行。"
     },
     "badges": {
-      "global": "Global WorkSchedule"
+      "global": "全局工作排班"
     },
     "copy": {
-      "planning": "Availability is planning input before roster publish, not attendance or payroll evidence.",
-      "approvedNotChanged": "Approved does not mean the schedule has changed.",
-      "applyDraftOnly": "Applied only affects the draft roster.",
-      "publishStillRequired": "Official shifts exist only after publish.",
-      "officialShiftBoundary": "Official shifts are work plans, not attendance or payroll."
+      "planning": "可用性是排班发布前的计划输入，不是考勤或工资依据。",
+      "approvedNotChanged": "已批准不表示排班已经变更。",
+      "applyDraftOnly": "应用只影响草稿排班。",
+      "publishStillRequired": "正式班次只会在发布后生成。",
+      "officialShiftBoundary": "正式班次是工作计划，不是考勤或工资。"
     },
     "filters": {
-      "status": "Status",
-      "all": "All",
-      "periodMonth": "Period month",
-      "targetType": "Target type"
+      "status": "状态",
+      "all": "全部",
+      "periodMonth": "周期月份",
+      "targetType": "目标类型"
     },
     "list": {
-      "title": "Availability batches"
+      "title": "可用性批次"
     },
     "summary": {
-      "pending": "Pending",
-      "approved": "Approved",
-      "rejected": "Rejected",
-      "cancelled": "Cancelled",
-      "policy": "Policy",
-      "approvedNotApplied": "Approved not applied"
+      "pending": "待处理",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "cancelled": "已取消",
+      "policy": "政策",
+      "approvedNotApplied": "已批准，未应用"
     },
     "targetTypes": {
       "ORG_UNIT": "Org Unit",
       "TALENT_GROUP": "Talent Group"
     },
     "statuses": {
-      "PENDING": "Pending review",
-      "PARTIALLY_APPROVED": "Partially approved",
-      "APPROVED": "Approved",
-      "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
+      "PENDING": "待审核",
+      "PARTIALLY_APPROVED": "部分批准",
+      "APPROVED": "已批准",
+      "REJECTED": "已拒绝",
+      "CANCELLED": "已取消"
     },
     "lineStatuses": {
-      "PENDING": "Pending review",
-      "APPROVED": "Approved",
-      "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
+      "PENDING": "待审核",
+      "APPROVED": "已批准",
+      "REJECTED": "已拒绝",
+      "CANCELLED": "已取消"
     },
     "applyStatuses": {
-      "NOT_APPLIED": "Approved, not applied",
-      "ADVISORY_ONLY": "Advisory only",
-      "APPLIED": "Applied to draft roster"
+      "NOT_APPLIED": "已批准，未应用",
+      "ADVISORY_ONLY": "仅提示",
+      "APPLIED": "已应用到草稿排班"
     },
     "policyStatuses": {
-      "NOT_EVALUATED": "Policy not evaluated"
+      "NOT_EVALUATED": "政策未评估"
     },
     "lineCounts": {
-      "summary": "{{pending}} pending / {{approved}} approved / {{cancelled}} cancelled / {{total}} total"
+      "summary": "{{pending}} 待处理 / {{approved}} 已批准 / {{cancelled}} 已取消 / {{total}} 总计"
     },
     "review": {
-      "title": "Review selected pending lines",
-      "selectedContext": "{{count}} availability lines selected for review.",
-      "helper": "Approval changes availability line status only. Reject or cancel needs the current reason field.",
-      "note": "Decision note",
-      "reason": "Reject/cancel reason"
+      "title": "审核已选择的待处理行",
+      "selectedContext": "已选择 {{count}} 条可用性行进行审核。",
+      "helper": "批准只会更改可用性行状态。拒绝或取消需要填写当前原因字段。",
+      "note": "决定备注",
+      "reason": "拒绝/取消原因"
     },
     "apply": {
-      "title": "Apply selected approved lines",
-      "selectedContext": "{{count}} approved lines selected for draft roster apply.",
-      "roster": "Draft Monthly Roster",
-      "selectRoster": "Select draft roster",
-      "note": "Apply note",
-      "resultTitle": "Apply result",
-      "applied": "Applied",
-      "advisory": "Advisory only",
-      "skipped": "Skipped",
-      "failed": "Failed",
+      "title": "应用已选择的批准行",
+      "selectedContext": "已选择 {{count}} 条批准行应用到草稿排班。",
+      "roster": "草稿月度排班",
+      "selectRoster": "选择草稿排班",
+      "note": "应用备注",
+      "resultTitle": "应用结果",
+      "applied": "已应用",
+      "advisory": "仅提示",
+      "skipped": "已跳过",
+      "failed": "失败",
       "outcomes": {
-        "APPLIED": "Applied to draft roster",
-        "ADVISORY_ONLY": "Advisory only",
-        "SKIPPED_ALREADY_APPLIED": "Already applied",
-        "FAILED": "Failed to apply"
+        "APPLIED": "已应用到草稿排班",
+        "ADVISORY_ONLY": "仅提示",
+        "SKIPPED_ALREADY_APPLIED": "已应用",
+        "FAILED": "应用失败"
       }
     },
     "actions": {
-      "approve": "Approve selected",
-      "reject": "Reject selected",
-      "cancel": "Cancel selected",
-      "apply": "Apply to draft roster"
+      "approve": "批准已选择",
+      "reject": "拒绝已选择",
+      "cancel": "取消已选择",
+      "apply": "应用到草稿排班"
     },
     "table": {
-      "review": "Review",
-      "apply": "Apply",
-      "member": "Member",
-      "type": "Type",
-      "date": "Date",
-      "status": "Status",
-      "applyStatus": "Apply status",
-      "policy": "Policy evaluation",
-      "refs": "Roster refs"
+      "review": "审核",
+      "apply": "应用",
+      "member": "成员",
+      "type": "类型",
+      "date": "日期",
+      "status": "状态",
+      "applyStatus": "应用状态",
+      "policy": "政策评估",
+      "refs": "排班引用"
     },
     "types": {
       "UNAVAILABLE_FULL_DAY": "Unavailable full day",
@@ -516,16 +516,16 @@
       "OTHER": "Other"
     },
     "validation": {
-      "reasonRequired": "A reason is required for reject or cancel.",
-      "applySelectionRequired": "Select approved lines and a Draft Monthly Roster."
+      "reasonRequired": "拒绝或取消必须填写原因。",
+      "applySelectionRequired": "请选择已批准行和草稿月度排班。"
     },
     "states": {
-      "loadErrorTitle": "Availability queue could not be loaded",
-      "loadErrorMessage": "The system rejected or did not return availability batch data.",
-      "emptyTitle": "No availability batches found",
-      "emptyMessage": "Adjust filters or wait for manager submissions.",
-      "selectTitle": "Select an availability batch",
-      "selectMessage": "Choose a batch to review submitted availability lines."
+      "loadErrorTitle": "无法加载可用性队列",
+      "loadErrorMessage": "系统拒绝或未返回可用性批次数据。",
+      "emptyTitle": "没有可用性批次",
+      "emptyMessage": "调整筛选条件或等待管理者提交。",
+      "selectTitle": "选择可用性批次",
+      "selectMessage": "选择一个批次来审核已提交的可用性行。"
     }
   },
   "patterns": {
@@ -784,6 +784,10 @@
       "holidayCalendarId": "节假日日历",
       "status": "状态",
       "timezone": "时区",
+      "target": "目标",
+      "targetType": "目标类型",
+      "targetOrgUnitId": "Org Unit 目标",
+      "targetTalentGroupId": "Talent Group 目标",
       "scope": "排班访问范围",
       "description": "描述",
       "externalRef": "外部引用",
@@ -831,6 +835,7 @@
       "rosterCode": "排班代码",
       "rosterMonth": "月份",
       "department": "部门",
+      "target": "目标",
       "workPattern": "工作模式",
       "holidayCalendar": "假期日历",
       "status": "状态",
@@ -848,12 +853,12 @@
       "structuralLock": "此草稿已有例外。请先移除例外，再更改月份、部门、工作模式或假期日历。"
     },
     "appliedAvailability": {
-      "title": "Applied availability",
-      "previewLabel": "Applied availability: {{effect}} - {{type}} / {{taxonomy}} (line {{lineId}})",
+      "title": "已应用可用性",
+      "previewLabel": "已应用可用性：{{effect}} - {{type}} / {{taxonomy}}（行 {{lineId}}）",
       "effects": {
-        "workingToOff": "off due to applied availability",
-        "changeTime": "changed time due to applied availability",
-        "applied": "applied to roster draft"
+        "workingToOff": "因已应用可用性改为休息",
+        "changeTime": "因已应用可用性调整时间",
+        "applied": "已应用到草稿排班"
       }
     },
     "preview": {
@@ -882,6 +887,21 @@
         "workingToOff": "工作日转休息",
         "conflicts": "冲突",
         "blockers": "阻断项"
+      },
+      "excludedMembers": {
+        "title": "被排除成员",
+        "member": "成员",
+        "profile": "已关联员工档案",
+        "reason": "原因"
+      },
+      "exclusionReasons": {
+        "MEMBERSHIP_INACTIVE": "成员关系未启用",
+        "TALENT_NOT_FOUND": "未找到 Talent 记录",
+        "TALENT_INACTIVE": "Talent 未启用",
+        "MISSING_LINKED_EMPLOYMENT_PROFILE": "Talent 未关联员工档案",
+        "EMPLOYMENT_PROFILE_NOT_FOUND": "未找到已关联员工档案",
+        "EMPLOYMENT_PROFILE_INACTIVE": "已关联员工档案未启用",
+        "DUPLICATE_EMPLOYMENT_PROFILE": "员工档案已通过其他成员包含"
       },
       "conflicts": {
         "title": "冲突和阻断项",
@@ -1007,7 +1027,14 @@
       "readiness": {
         "status": "发布就绪状态",
         "ready": "可以发布",
-        "previewFreshness": "预览新鲜度"
+        "previewFreshness": "预览新鲜度",
+        "checklistTitle": "发布就绪检查清单",
+        "checklist": {
+          "previewLoaded": "预览已成功加载",
+          "eligible": "{{count}} 名符合条件的成员",
+          "candidates": "{{count}} 个可发布候选班次",
+          "issues": "{{count}} 个冲突或阻断问题"
+        }
       },
       "disabledReasons": {
         "notDraft": "只有草稿排班可以发布。",
@@ -1220,12 +1247,18 @@
       }
     },
     "copy": {
-      "setupInvariants": "仅选择一个有效的部门 Org Unit，不包含子部门。Global 表示访问权限，不是全公司排班目标。排班面向有效员工，使用全局排班生成 Holiday Calendar，并保持 Asia/Ho_Chi_Minh 时区。"
+      "setupInvariants": "仅选择一个有效的 Org Unit，不包含子部门。全局表示访问权限，不是全公司排班目标。排班面向有效员工，使用全局节假日日历生成排班，并按越南时间显示。"
     },
     "pickers": {
       "departmentSearch": "按名称或代码搜索活动部门",
+      "orgUnitSearch": "按名称或代码搜索启用的 Org Unit",
+      "talentGroupSearch": "按名称或代码搜索启用的 Talent Group",
       "workPatternSearch": "按名称或代码搜索活动工作模式",
       "holidayCalendarSearch": "按名称或代码搜索活动节假日日历"
+    },
+    "targetTypes": {
+      "ORG_UNIT": "Org Unit",
+      "TALENT_GROUP": "Talent Group"
     }
   },
   "operational": {

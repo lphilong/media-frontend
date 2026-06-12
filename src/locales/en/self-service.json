@@ -24,7 +24,8 @@
     },
     "work": {
       "title": "My Work",
-      "summary": "Read-only shifts and events assigned to your own profile."
+      "summary": "Read-only shifts and events assigned to your own profile.",
+      "boundary": "Official shifts are work plans, not attendance or payroll."
     },
     "workShifts": {
       "title": "My Work Shifts",
@@ -32,7 +33,8 @@
     },
     "kpi": {
       "title": "My KPI",
-      "summary": "Read-only official KPI for your current staff or operational assignment."
+      "summary": "Read-only official KPI for your current staff or operational assignment.",
+      "boundary": "Actual results do not automatically determine commission or payroll."
     },
     "events": {
       "title": "My Events",
@@ -53,6 +55,7 @@
   "fields": {
     "displayName": "Display name",
     "employeeCode": "Employee code",
+    "profileCode": "Employment profile · {{code}}",
     "employmentStatus": "Employment status",
     "accountEmail": "Account email",
     "accountStatus": "Account status",
@@ -130,7 +133,8 @@
     "comingSoon": "Coming soon",
     "readOnly": "Read-only",
     "preferencesOnly": "Preferences only",
-    "ownDataOnly": "Own data only"
+    "ownDataOnly": "Own data only",
+    "scopeLabel": "Your data"
   },
   "actions": {
     "logout": "Log out",
@@ -165,6 +169,13 @@
     "en": "English",
     "vi": "Vietnamese",
     "zh": "Chinese"
+  },
+  "timezoneOptions": {
+    "vietnam": "Vietnam time",
+    "utc": "Coordinated Universal Time",
+    "newYork": "New York time",
+    "losAngeles": "Los Angeles time",
+    "configured": "Configured timezone"
   },
   "values": {
     "notAvailable": "Not available"

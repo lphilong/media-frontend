@@ -187,7 +187,7 @@ describe('/self-service route', () => {
     expect(await screen.findByTestId('self-service-overview')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
     expect((await screen.findAllByText('Mina Staff')).length).toBeGreaterThanOrEqual(1);
-    expect((await screen.findAllByText('EP-SELF-001')).length).toBeGreaterThanOrEqual(1);
+    expect(await screen.findByText('Employment profile · EP-SELF-001')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'My Profile' })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'My KPI' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('self-service-account-card')).not.toBeInTheDocument();
@@ -195,6 +195,66 @@ describe('/self-service route', () => {
     expect(screen.queryByText('Creator Mina')).not.toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-employment-profiles')).not.toBeInTheDocument();
+  });
+
+  it('localizes Asia/Saigon in the Vietnamese Overview before switching panels', async () => {
+    await renderRoute('/self-service');
+
+    await act(async () => {
+      await setLocale('vi');
+    });
+
+    const overview = await screen.findByTestId('self-service-overview');
+    expect(within(overview).getByText(/Giờ Việt Nam/)).toBeInTheDocument();
+    expect(overview.textContent ?? '').not.toContain('Asia/Saigon');
+  });
+
+  it('localizes Asia/Ho_Chi_Minh in the Vietnamese Overview before switching panels', async () => {
+    await renderRoute('/self-service', () =>
+      setMockSelfServiceCurrentPerson({
+        employmentProfileId: 'ep-timezone-alias',
+        employeeCode: 'EP-TIMEZONE-ALIAS',
+        displayName: 'Timezone Alias Staff',
+        employmentStatus: 'ACTIVE',
+        accountEmail: 'timezone.alias@example.test',
+        accountStatus: 'ACTIVE',
+        accountLinkStatus: 'LINKED',
+        locale: 'vi',
+        timezone: 'Asia/Ho_Chi_Minh',
+      }),
+    );
+
+    await act(async () => {
+      await setLocale('vi');
+    });
+
+    const overview = await screen.findByTestId('self-service-overview');
+    expect(within(overview).getByText(/Giờ Việt Nam/)).toBeInTheDocument();
+    expect(overview.textContent ?? '').not.toContain('Asia/Ho_Chi_Minh');
+  });
+
+  it('uses neutral copy for an unexpected stored timezone in the Vietnamese Overview', async () => {
+    await renderRoute('/self-service', () =>
+      setMockSelfServiceCurrentPerson({
+        employmentProfileId: 'ep-timezone-unexpected',
+        employeeCode: 'EP-TIMEZONE-UNEXPECTED',
+        displayName: 'Unexpected Timezone Staff',
+        employmentStatus: 'ACTIVE',
+        accountEmail: 'unexpected.timezone@example.test',
+        accountStatus: 'ACTIVE',
+        accountLinkStatus: 'LINKED',
+        locale: 'vi',
+        timezone: 'Pacific/Chatham',
+      }),
+    );
+
+    await act(async () => {
+      await setLocale('vi');
+    });
+
+    const overview = await screen.findByTestId('self-service-overview');
+    expect(within(overview).getByText(/Múi giờ đã thiết lập/)).toBeInTheDocument();
+    expect(overview.textContent ?? '').not.toContain('Pacific/Chatham');
   });
 
   it('uses button module switching instead of anchor-scroll navigation and updates active state', async () => {
@@ -422,6 +482,61 @@ describe('/self-service route', () => {
     expect(screen.queryByRole('heading', { name: 'My Profile' })).not.toBeInTheDocument();
   });
 
+  it('standardizes Self-Service identity, own-data scope, and module semantics in Vietnamese', async () => {
+    const user = userEvent.setup();
+    await renderRoute('/self-service');
+
+    await act(async () => {
+      await setLocale('vi');
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Không gian nhân sự' })).toBeInTheDocument();
+    expect(screen.getAllByText('Mina Staff').length).toBeGreaterThan(0);
+    expect(screen.getByText('Hồ sơ nhân sự · EP-SELF-001')).toBeInTheDocument();
+    expect(screen.getAllByText('Dữ liệu của bạn').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('self-service-nav-profile')).toHaveTextContent('Chỉ đọc');
+    expect(screen.getByTestId('self-service-nav-account')).toHaveTextContent('Chỉ tùy chỉnh');
+    expect(screen.getByTestId('self-service-nav-overview')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+
+    await user.click(screen.getByTestId('self-service-nav-work'));
+    expect(
+      await screen.findByText(
+        'Ca làm chính thức là kế hoạch làm việc, không phải chấm công hoặc bảng lương.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Hiển thị sự kiện trong 30 ngày trước và 90 ngày sắp tới/),
+    ).toBeInTheDocument();
+    expect(document.body.textContent ?? '').not.toContain(
+      'Showing recent events from the previous',
+    );
+
+    await user.click(screen.getByTestId('self-service-nav-kpi'));
+    expect(
+      await screen.findByText('Số thực đạt không tự quyết định hoa hồng hoặc bảng lương.'),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Lịch sử KPI trước')).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('self-service-nav-account'));
+    expect(await screen.findByRole('heading', { name: 'Tài khoản đăng nhập' })).toBeInTheDocument();
+    expect((await screen.findAllByText('Giờ Việt Nam')).length).toBeGreaterThanOrEqual(1);
+    expect(
+      await screen.findByRole('heading', { name: 'Hồ sơ Talent đã liên kết' }),
+    ).toBeInTheDocument();
+    expect(document.body.textContent ?? '').not.toContain('Talent nội bộ liên kết');
+    expect(document.body.textContent ?? '').not.toContain('Asia/Saigon');
+    expect(document.body.textContent ?? '').not.toContain('Asia/Ho_Chi_Minh');
+
+    const bodyText = document.body.textContent ?? '';
+    expect(bodyText).not.toContain('Dang hien thi');
+    expect(bodyText).not.toContain('Actual status summary');
+    expect(bodyText).not.toContain('Previous KPI history');
+    expect(bodyText).not.toContain('self-service:');
+  });
+
   it('renders read-only My Work Shifts from the self-service endpoint only', async () => {
     let adminWorkShiftCalls = 0;
 
@@ -585,7 +700,7 @@ describe('/self-service route', () => {
     await switchSelfServiceModule('work');
 
     expect(await screen.findByTestId('self-service-nav-work')).toHaveTextContent('Selected');
-    expect(await screen.findByTestId('self-service-nav-kpi')).toHaveTextContent('Available');
+    expect(await screen.findByTestId('self-service-nav-kpi')).toHaveTextContent('Read-only');
     expect(await screen.findByRole('heading', { name: 'My Events' })).toBeInTheDocument();
     expect(await screen.findByText('EVT-SELF-TAL')).toBeInTheDocument();
     expect(await screen.findByText('Creator livestream event')).toBeInTheDocument();
@@ -743,7 +858,10 @@ describe('/self-service route', () => {
       expect(adminKpiCalls).toBe(0);
     });
 
-    const bodyText = document.body.textContent ?? '';
+    const bodyText = (document.body.textContent ?? '').replace(
+      'Actual results do not automatically determine commission or payroll.',
+      '',
+    );
     for (const forbidden of [
       'Own DRAFT KPI allocation',
       'Own pending KPI allocation',
@@ -815,7 +933,12 @@ describe('/self-service route', () => {
     expect(screen.getByText('840 count')).toBeInTheDocument();
     expect(screen.queryByText('840 VND')).not.toBeInTheDocument();
     expect(screen.queryByText(/revenue/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/payroll|commission|payout|ledger/i)).not.toBeInTheDocument();
+    expect(
+      (document.body.textContent ?? '').replace(
+        'Actual results do not automatically determine commission or payroll.',
+        '',
+      ),
+    ).not.toMatch(/payroll|commission|payout|ledger/i);
   });
 
   it('strict Self-Service KPI schema rejects unknown metrics and unsafe internals', () => {
@@ -1375,11 +1498,17 @@ describe('/self-service route', () => {
   });
 
   it('renders Account preferences form for locale and timezone only', async () => {
+    const user = userEvent.setup();
     let adminUserCalls = 0;
+    let preferencePatchCalls = 0;
     server.use(
       http.all('*/admin/users*', () => {
         adminUserCalls += 1;
         return HttpResponse.json({ data: [] });
+      }),
+      http.patch('*/self-service/account/preferences', () => {
+        preferencePatchCalls += 1;
+        return HttpResponse.json({ data: {} });
       }),
     );
 
@@ -1394,7 +1523,7 @@ describe('/self-service route', () => {
     expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument();
     expect(await screen.findByText('mina.staff@example.test')).toBeInTheDocument();
     expect((await screen.findAllByText('Linked')).length).toBeGreaterThanOrEqual(1);
-    expect(await screen.findByText('Asia/Saigon')).toBeInTheDocument();
+    expect((await screen.findAllByText('Vietnam time')).length).toBeGreaterThanOrEqual(1);
     expect(
       within(preferencesForm).getByTestId('self-service-account-locale-select'),
     ).toBeInTheDocument();
@@ -1405,6 +1534,11 @@ describe('/self-service route', () => {
       within(preferencesForm).getByTestId('self-service-account-save-preferences'),
     ).toBeDisabled();
     expect(within(preferencesForm).getByRole('button', { name: 'Reset' })).toBeDisabled();
+    expect(document.body.textContent ?? '').not.toContain('Asia/Saigon');
+    expect(document.body.textContent ?? '').not.toContain('Asia/Ho_Chi_Minh');
+    expect(document.body.textContent ?? '').not.toContain('America/New_York');
+    expect(document.body.textContent ?? '').not.toContain('America/Los_Angeles');
+    expect(document.body.textContent ?? '').not.toMatch(/\bUTC\b/);
     expect(
       screen.queryByRole('button', {
         name: /change email|change password|reset password|setup|link|unlink/i,
@@ -1444,8 +1578,17 @@ describe('/self-service route', () => {
       'For email, phone, address, legal, contract, or staff record changes, contact the responsible HR/Admin/IT team.',
     );
 
+    const timezoneSelect = within(preferencesForm).getByTestId(
+      'self-service-account-timezone-select',
+    );
+    await user.selectOptions(timezoneSelect, 'Asia/Ho_Chi_Minh');
+    expect(timezoneSelect).toHaveValue('Asia/Ho_Chi_Minh');
+    await user.click(within(preferencesForm).getByRole('button', { name: 'Reset' }));
+    expect(timezoneSelect).toHaveValue('Asia/Saigon');
+
     await waitFor(() => {
       expect(adminUserCalls).toBe(0);
+      expect(preferencePatchCalls).toBe(0);
     });
   });
 
@@ -1504,7 +1647,8 @@ describe('/self-service route', () => {
       expect(adminUserCalls).toBe(0);
     });
     expect(await screen.findByText('Preferences saved.')).toBeInTheDocument();
-    expect(screen.getByText('Current timezone: Asia/Ho_Chi_Minh')).toBeInTheDocument();
+    expect(screen.getByText('Current timezone: Vietnam time')).toBeInTheDocument();
+    expect(document.body.textContent ?? '').not.toContain('Asia/Ho_Chi_Minh');
   });
 
   it('keeps the shared locale switcher available without admin User API calls', async () => {

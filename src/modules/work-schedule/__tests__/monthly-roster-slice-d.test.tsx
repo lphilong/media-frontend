@@ -154,7 +154,7 @@ describe('monthly roster slice D preview', () => {
                 exceptionDate: '2026-05-13',
                 startLocalTime: '10:00',
                 endLocalTime: '19:00',
-                sourceAvailabilityLineId: 'availability-line-time',
+                sourceAvailabilityLineId: 'availability-line-off',
                 sourceAvailabilityType: 'PREFERRED_TIME',
                 sourceAvailabilityTaxonomyCode: 'SHIFT_CHANGE',
               },
@@ -184,9 +184,18 @@ describe('monthly roster slice D preview', () => {
       name: pt('detail.memberCaption', { member: 'Alice Nguyen' }),
     });
     expect(within(detailTable).getByText(/availability-line-off/)).toBeInTheDocument();
-    expect(within(detailTable).getByText(/availability-line-time/)).toBeInTheDocument();
     expect(within(detailTable).getByText('roster-exception-001')).toBeInTheDocument();
     expect(within(detailTable).getByText('roster-exception-change')).toBeInTheDocument();
+    expect(
+      within(detailTable).getByText(/Lịch rảnh\/bận đã được áp dụng vào lịch nháp/),
+    ).toBeInTheDocument();
+    expect(
+      within(detailTable).getByText(
+        new RegExp(i18n.t('work-schedule:availabilityBatches.types.UNAVAILABLE_FULL_DAY')),
+      ),
+    ).toBeInTheDocument();
+    expect(within(detailTable).queryByText(/Khả dụng đã áp dụng/)).not.toBeInTheDocument();
+    expect(within(detailTable).queryByText(/UNAVAILABLE_FULL_DAY/)).not.toBeInTheDocument();
   });
 
   it('filters member summaries by issues, exceptions, and employee search', async () => {

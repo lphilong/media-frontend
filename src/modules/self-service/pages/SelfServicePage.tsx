@@ -34,11 +34,16 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
-  PageContainer,
   ReadOnlyFieldGrid,
   StatusBadge,
 } from '@shared/components/primitives';
 import { LocaleSwitcher, SessionArea } from '@shared/components/shell';
+import {
+  WorkspaceHeader,
+  WorkspaceModuleSwitcher,
+  WorkspaceShell,
+  type WorkspaceModuleItem,
+} from '@shared/components/workspace';
 import {
   formatBusinessTimestamp,
   formatDecimal,
@@ -49,12 +54,31 @@ const SELF_SERVICE_CURRENT_PERSON_NOT_LINKED = 'SELF_SERVICE_CURRENT_PERSON_NOT_
 const SELF_SERVICE_PROFILE_NOT_OPERATIONAL = 'SELF_SERVICE_PROFILE_NOT_OPERATIONAL';
 const SELF_SERVICE_VALIDATION_ERROR = 'SELF_SERVICE_VALIDATION_ERROR';
 
+const timezoneLabelKeys: Record<string, string> = {
+  'Asia/Saigon': 'self-service:timezoneOptions.vietnam',
+  'Asia/Ho_Chi_Minh': 'self-service:timezoneOptions.vietnam',
+  UTC: 'self-service:timezoneOptions.utc',
+  'America/New_York': 'self-service:timezoneOptions.newYork',
+  'America/Los_Angeles': 'self-service:timezoneOptions.losAngeles',
+};
+
+const getTimezoneDisplayLabel = (
+  timezone: string | null | undefined,
+  translate: (key: string) => string,
+  notAvailable: string,
+): string => {
+  if (!timezone) {
+    return notAvailable;
+  }
+
+  return translate(timezoneLabelKeys[timezone] ?? 'self-service:timezoneOptions.configured');
+};
+
 type NavCard = {
   id: SelfServiceModuleId;
   icon: typeof IdCard;
   titleKey: string;
   summaryKey: string;
-  statusKey: string;
 };
 
 type SelfServiceModuleId = 'overview' | 'profile' | 'work' | 'kpi' | 'talentGroups' | 'account';
@@ -65,42 +89,36 @@ const navCards: NavCard[] = [
     icon: LayoutDashboard,
     titleKey: 'self-service:overview.title',
     summaryKey: 'self-service:overview.summary',
-    statusKey: 'self-service:status.available',
   },
   {
     id: 'profile',
     icon: IdCard,
     titleKey: 'self-service:sections.profile.title',
     summaryKey: 'self-service:sections.profile.summary',
-    statusKey: 'self-service:status.available',
   },
   {
     id: 'work',
     icon: CalendarDays,
     titleKey: 'self-service:sections.work.title',
     summaryKey: 'self-service:sections.work.summary',
-    statusKey: 'self-service:status.available',
   },
   {
     id: 'kpi',
     icon: ChartNoAxesColumnIncreasing,
     titleKey: 'self-service:sections.kpi.title',
     summaryKey: 'self-service:sections.kpi.summary',
-    statusKey: 'self-service:status.available',
   },
   {
     id: 'talentGroups',
     icon: UsersRound,
     titleKey: 'self-service:sections.talentGroups.title',
     summaryKey: 'self-service:sections.talentGroups.summary',
-    statusKey: 'self-service:status.available',
   },
   {
     id: 'account',
     icon: UserCog,
     titleKey: 'self-service:sections.account.title',
     summaryKey: 'self-service:sections.account.summary',
-    statusKey: 'self-service:status.available',
   },
 ];
 
@@ -368,6 +386,13 @@ const AccountPreferencesForm = ({
 
   const normalizedCurrentLocale = currentPerson.locale ?? 'en';
   const normalizedCurrentTimezone = currentPerson.timezone ?? 'Asia/Saigon';
+  const timezoneLabel = (value: string): string =>
+    getTimezoneDisplayLabel(value, (key) => t(key), notAvailable);
+  const currentTimezoneLabel = getTimezoneDisplayLabel(
+    currentPerson.timezone,
+    (key) => t(key),
+    notAvailable,
+  );
   const isDirty = locale !== normalizedCurrentLocale || timezone !== normalizedCurrentTimezone;
   const isSaving = updatePreferences.isPending;
   const preferenceError =
@@ -474,13 +499,13 @@ const AccountPreferencesForm = ({
           >
             {timezoneOptions.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {timezoneLabel(option)}
               </option>
             ))}
           </select>
           <span className="mt-1 block text-xs text-muted">
             {t('self-service:account.currentTimezone', {
-              timezone: currentPerson.timezone ?? notAvailable,
+              timezone: currentTimezoneLabel,
             })}
           </span>
         </div>
@@ -590,6 +615,22 @@ export const SelfServicePage = (): JSX.Element => {
   const notAvailable = t('self-service:values.notAvailable');
   const currentPersonNotLinked = isCurrentPersonNotLinkedError(currentPersonQuery.error);
   const profileNotOperational = isProfileNotOperationalError(currentPersonQuery.error);
+  const moduleItems = useMemo<Array<WorkspaceModuleItem<SelfServiceModuleId>>>(
+    () =>
+      navCards.map((card) => ({
+        id: card.id,
+        icon: card.icon,
+        label: t(card.titleKey),
+        description: t(card.summaryKey),
+        statusLabel: t(
+          card.id === 'account'
+            ? 'self-service:status.preferencesOnly'
+            : 'self-service:status.readOnly',
+        ),
+        statusTone: 'neutral',
+      })),
+    [t],
+  );
 
   useEffect(() => {
     if (!currentPersonQuery.isSuccess) {
@@ -641,88 +682,52 @@ export const SelfServicePage = (): JSX.Element => {
     });
   }, [kpiHistoryPeriodOptions]);
 
-  return (
-    <main className="min-h-screen bg-bg text-text" data-testid="self-service-shell">
-      <header className="border-b border-border bg-panel">
-        <PageContainer className="py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase text-muted">
-                {t('self-service:page.eyebrow')}
-              </p>
-              <h1 className="text-2xl font-semibold text-text">{t('self-service:page.title')}</h1>
-              <p className="text-sm text-muted">{t('self-service:page.subtitle')}</p>
-            </div>
-            <div className="flex flex-col gap-3 md:items-end">
-              <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
-                <div data-testid="self-service-locale-control">
-                  <LocaleSwitcher />
-                </div>
-                <SessionArea />
-              </div>
-              {currentPerson ? (
-                <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
-                  <StatusBadge
-                    label={t(`self-service:employmentStatus.${currentPerson.employmentStatus}`)}
-                    status={currentPerson.employmentStatus}
-                    toneByStatus={statusTone}
-                  />
-                  <span className="rounded border border-border bg-bg px-2 py-1 text-xs font-medium text-text">
-                    {currentPerson.displayName}
-                  </span>
-                  <span className="rounded border border-border bg-bg px-2 py-1 font-mono text-xs text-muted">
-                    {currentPerson.employeeCode}
-                  </span>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </PageContainer>
-      </header>
+  const profileSlot = currentPerson ? (
+    <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+      <StatusBadge label={currentPerson.displayName} tone="info" uppercase={false} />
+      <StatusBadge
+        label={t('self-service:fields.profileCode', { code: currentPerson.employeeCode })}
+        tone="neutral"
+        uppercase={false}
+      />
+      <StatusBadge
+        label={t(`self-service:employmentStatus.${currentPerson.employmentStatus}`)}
+        status={currentPerson.employmentStatus}
+        toneByStatus={statusTone}
+        uppercase={false}
+      />
+      <StatusBadge label={t('self-service:status.scopeLabel')} tone="neutral" uppercase={false} />
+    </div>
+  ) : null;
 
-      <PageContainer className="space-y-5 py-5">
-        <section
-          aria-label={t('self-service:navigation.label')}
-          role="tablist"
-          className="grid gap-3 md:grid-cols-3 xl:grid-cols-6"
-        >
-          {navCards.map((card) => {
-            const Icon = card.icon;
-            const active = activeModule === card.id;
-            return (
-              <button
-                key={card.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                aria-current={active ? 'page' : undefined}
-                onClick={() => setActiveModule(card.id)}
-                className={`rounded border p-3 text-left shadow-sm transition ${
-                  active
-                    ? 'border-text bg-text text-bg'
-                    : 'border-border bg-panel text-text hover:bg-bg'
-                }`}
-                data-testid={`self-service-nav-${card.id}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <Icon
-                    className={`h-5 w-5 ${active ? 'text-bg' : 'text-primary'}`}
-                    aria-hidden="true"
-                  />
-                  <StatusBadge
-                    label={t(active ? 'self-service:status.selectedModule' : card.statusKey)}
-                    tone={active ? 'success' : 'neutral'}
-                    uppercase={false}
-                  />
-                </div>
-                <p className="mt-3 text-sm font-semibold">{t(card.titleKey)}</p>
-                <p className={`mt-1 min-h-10 text-xs ${active ? 'text-bg/80' : 'text-muted'}`}>
-                  {t(card.summaryKey)}
-                </p>
-              </button>
-            );
-          })}
-        </section>
+  return (
+    <WorkspaceShell
+      testId="self-service-shell"
+      header={
+        <WorkspaceHeader
+          title={t('self-service:page.title')}
+          subtitle={t('self-service:page.subtitle')}
+          actions={
+            <>
+              <div data-testid="self-service-locale-control">
+                <LocaleSwitcher />
+              </div>
+              <SessionArea />
+            </>
+          }
+          profile={profileSlot}
+        />
+      }
+    >
+      <>
+        <WorkspaceModuleSwitcher
+          items={moduleItems}
+          activeId={activeModule}
+          label={t('self-service:navigation.label')}
+          selectedLabel={t('self-service:status.selectedModule')}
+          onSelect={setActiveModule}
+          getTestId={(moduleId) => `self-service-nav-${moduleId}`}
+        />
 
         {currentPersonQuery.isLoading && !currentPerson ? <LoadingState lines={6} /> : null}
 
@@ -826,7 +831,7 @@ export const SelfServicePage = (): JSX.Element => {
                 </dt>
                 <dd className="mt-1 text-sm font-medium text-text">
                   {emptyValue(currentPerson.locale, notAvailable)} /{' '}
-                  {emptyValue(currentPerson.timezone, notAvailable)}
+                  {getTimezoneDisplayLabel(currentPerson.timezone, (key) => t(key), notAvailable)}
                 </dd>
               </div>
             </dl>
@@ -846,6 +851,9 @@ export const SelfServicePage = (): JSX.Element => {
               </div>
               <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
             </div>
+            <p className="mb-4 rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+              {t('self-service:sections.kpi.boundary')}
+            </p>
 
             {kpiQuery.isLoading ? (
               <div data-testid="self-service-kpi-loading">
@@ -1321,6 +1329,9 @@ export const SelfServicePage = (): JSX.Element => {
               </div>
               <StatusBadge label={t('self-service:status.readOnly')} tone="neutral" />
             </div>
+            <p className="mb-4 rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+              {t('self-service:sections.work.boundary')}
+            </p>
 
             <div className="mb-4 rounded border border-border bg-bg p-3">
               <div className="mb-4">
@@ -1528,7 +1539,7 @@ export const SelfServicePage = (): JSX.Element => {
             </div>
           </section>
         ) : null}
-      </PageContainer>
-    </main>
+      </>
+    </WorkspaceShell>
   );
 };

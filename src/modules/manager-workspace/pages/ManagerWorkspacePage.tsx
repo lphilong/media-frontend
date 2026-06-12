@@ -125,11 +125,54 @@ const disabledManagerModuleIds: ReadonlySet<ManagerWorkspaceModuleId> = new Set(
   'members',
 ]);
 
+type ManagerModuleStatusKey = 'actionable' | 'readOnly' | 'unavailable';
+
+const hasManagerAssignedScope = (context: ManagerWorkspaceContext): boolean =>
+  !context.readiness.reasons.includes('NO_MANAGED_SCOPE_ASSIGNED') &&
+  (context.scopes.orgUnits.length > 0 || context.scopes.talentGroups.length > 0);
+
+const getManagerKpiStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey => {
+  if (!context.modules.kpi.visible || !hasManagerAssignedScope(context)) {
+    return 'unavailable';
+  }
+
+  const hasKpiMutation = context.scopes.orgUnits.some(
+    (scope) =>
+      scope.role === 'UNIT_MANAGER' &&
+      scope.includeDescendants === false &&
+      (scope.capabilities.kpi.manageAllocation ||
+        scope.capabilities.kpi.enterActual ||
+        scope.capabilities.kpi.correctActual),
+  );
+
+  return hasKpiMutation ? 'actionable' : 'readOnly';
+};
+
+const getManagerWorkStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey =>
+  context.modules.workShifts.visible && hasManagerAssignedScope(context)
+    ? 'actionable'
+    : 'unavailable';
+
+const getManagerOverviewStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey => {
+  const hasActionableModule =
+    getManagerKpiStatusKey(context) === 'actionable' ||
+    getManagerWorkStatusKey(context) === 'actionable';
+
+  if (hasManagerAssignedScope(context) && hasActionableModule) {
+    return 'actionable';
+  }
+
+  return context.readiness.canUseManagerWorkspace ? 'readOnly' : 'unavailable';
+};
+
 const buildManagerWorkspaceModuleItems = (
   context: ManagerWorkspaceContext,
   t: (key: string) => string,
-): Array<WorkspaceModuleItem<ManagerWorkspaceModuleId>> =>
-  managerWorkspaceModules.map((module) => {
+): Array<WorkspaceModuleItem<ManagerWorkspaceModuleId>> => {
+  const kpiStatusKey = getManagerKpiStatusKey(context);
+  const workStatusKey = getManagerWorkStatusKey(context);
+
+  return managerWorkspaceModules.map((module) => {
     const isKpiDisabled = module.id === 'kpi' && !context.modules.kpi.visible;
     const isWorkDisabled = module.id === 'work' && !context.modules.workShifts.visible;
     const isUnsupported = disabledManagerModuleIds.has(module.id);
@@ -145,17 +188,27 @@ const buildManagerWorkspaceModuleItems = (
       description: t(`manager-workspace:modules.${module.id}.summary`),
       statusLabel: t(
         `manager-workspace:status.${
-          isUnsupported
-            ? 'contractNeeded'
-            : isKpiDisabled || isWorkDisabled
-              ? 'readinessNeeded'
-              : 'available'
+          isUnsupported || isKpiDisabled || isWorkDisabled
+            ? 'unavailable'
+            : module.id === 'kpi'
+              ? kpiStatusKey
+              : module.id === 'work'
+                ? workStatusKey
+                : 'readOnly'
         }`,
       ),
+      statusTone:
+        isUnsupported || isKpiDisabled || isWorkDisabled
+          ? 'warning'
+          : (module.id === 'work' && workStatusKey === 'actionable') ||
+              (module.id === 'kpi' && kpiStatusKey === 'actionable')
+            ? 'success'
+            : 'neutral',
       disabled: isUnsupported || isKpiDisabled || isWorkDisabled,
       disabledReason,
     };
   });
+};
 
 const getDisabledModulePanelCopy = (
   moduleId: ManagerWorkspaceModuleId,
@@ -163,7 +216,7 @@ const getDisabledModulePanelCopy = (
 ): { title: string; message: string; badgeLabel: string } => ({
   title: t(`manager-workspace:modules.${moduleId}.title`),
   message: t(`manager-workspace:modules.${moduleId}.readinessMessage`),
-  badgeLabel: t('manager-workspace:status.contractNeeded'),
+  badgeLabel: t('manager-workspace:status.unavailable'),
 });
 
 const KpiPlanTable = ({
@@ -599,8 +652,11 @@ const ManagerKpiSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX
           <h2 className="text-lg font-semibold text-text">{t('manager-workspace:kpi.title')}</h2>
           <p className="text-sm text-muted">{t('manager-workspace:kpi.summary')}</p>
         </div>
-        <StatusBadge label={t('manager-workspace:status.readOnlyShell')} tone="neutral" />
+        <StatusBadge label={t('manager-workspace:status.scopeLabel')} tone="neutral" />
       </div>
+      <p className="mb-4 rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+        {t('manager-workspace:kpi.boundary')}
+      </p>
 
       <div className="mb-4 flex flex-wrap gap-2" role="tablist">
         {enabledTabs.map((tab) => {
@@ -822,6 +878,9 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
         </div>
         <StatusBadge label={t('manager-workspace:work.scopeBadge')} tone="neutral" />
       </div>
+      <p className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
+        {t('manager-workspace:work.boundary')}
+      </p>
 
       <div className="flex flex-wrap gap-2" role="tablist">
         {(['published', 'requests', 'availability'] as const).map((tab) => (
@@ -1364,11 +1423,16 @@ const ManagerWorkspaceOverview = ({
 }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace', 'common']);
   const disabledModules: ManagerWorkspaceModuleId[] = ['events', 'groups', 'members'];
+  const kpiStatusKey = getManagerKpiStatusKey(context);
+  const overviewStatusKey = getManagerOverviewStatusKey(context);
 
   return (
     <div className="space-y-4" data-testid="manager-overview-panel">
       <div className="grid gap-4 lg:grid-cols-3">
-        <section className="rounded border border-border bg-panel p-4 shadow-sm">
+        <section
+          className="rounded border border-border bg-panel p-4 shadow-sm"
+          data-testid="manager-overview-readiness-card"
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-text">
@@ -1379,12 +1443,14 @@ const ManagerWorkspaceOverview = ({
               </p>
             </div>
             <StatusBadge
-              label={t(
-                `manager-workspace:status.${
-                  context.readiness.canUseManagerWorkspace ? 'available' : 'readinessNeeded'
-                }`,
-              )}
-              tone={context.readiness.canUseManagerWorkspace ? 'success' : 'warning'}
+              label={t(`manager-workspace:status.${overviewStatusKey}`)}
+              tone={
+                overviewStatusKey === 'actionable'
+                  ? 'success'
+                  : overviewStatusKey === 'readOnly'
+                    ? 'neutral'
+                    : 'warning'
+              }
               uppercase={false}
             />
           </div>
@@ -1406,19 +1472,24 @@ const ManagerWorkspaceOverview = ({
           )}
         </section>
 
-        <section className="rounded border border-border bg-panel p-4 shadow-sm">
+        <section
+          className="rounded border border-border bg-panel p-4 shadow-sm"
+          data-testid="manager-overview-kpi-card"
+        >
           <h2 className="text-lg font-semibold text-text">
             {t('manager-workspace:overview.kpiTitle')}
           </h2>
           <p className="text-sm text-muted">{t('manager-workspace:overview.kpiSummary')}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <StatusBadge
-              label={t(
-                `manager-workspace:status.${
-                  context.modules.kpi.visible ? 'available' : 'readinessNeeded'
-                }`,
-              )}
-              tone={context.modules.kpi.visible ? 'success' : 'warning'}
+              label={t(`manager-workspace:status.${kpiStatusKey}`)}
+              tone={
+                kpiStatusKey === 'actionable'
+                  ? 'success'
+                  : kpiStatusKey === 'readOnly'
+                    ? 'neutral'
+                    : 'warning'
+              }
               uppercase={false}
             />
             {context.modules.kpi.unitKpiVisible ? (
@@ -1625,6 +1696,15 @@ export const ManagerWorkspacePage = (): JSX.Element => {
   const profileSlot = context?.employmentProfile ? (
     <div className="flex flex-wrap justify-start gap-2 md:justify-end">
       <StatusBadge label={context.employmentProfile.displayName} tone="info" uppercase={false} />
+      {context.employmentProfile.employeeCode ? (
+        <StatusBadge
+          label={t('manager-workspace:fields.profileCode', {
+            code: context.employmentProfile.employeeCode,
+          })}
+          tone="neutral"
+          uppercase={false}
+        />
+      ) : null}
       {context.employmentProfile.employmentStatus ? (
         <StatusBadge
           label={t(
@@ -1635,6 +1715,11 @@ export const ManagerWorkspacePage = (): JSX.Element => {
           uppercase={false}
         />
       ) : null}
+      <StatusBadge
+        label={t('manager-workspace:status.scopeLabel')}
+        tone="neutral"
+        uppercase={false}
+      />
     </div>
   ) : null;
 

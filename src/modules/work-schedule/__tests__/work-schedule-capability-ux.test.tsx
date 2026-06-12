@@ -578,6 +578,7 @@ describe('work schedule capability UX hints', () => {
     expect(
       screen.getByText(i18n.t('work-schedule:availabilityBatches.copy.officialShiftBoundary')),
     ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/\bbackend\b/i);
     expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
     expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
     expect(screen.queryByText(/Trang\s+\d+\s*\/\s*\d+/)).not.toBeInTheDocument();
@@ -595,14 +596,18 @@ describe('work schedule capability UX hints', () => {
     );
     expect(screen.getByText(i18n.t('common:filters.noFiltersApplied'))).toBeInTheDocument();
     expect(
-      (await screen.findAllByText(
-        i18n.t('work-schedule:availabilityBatches.policyStatuses.NOT_EVALUATED'),
-      )).length,
+      (
+        await screen.findAllByText(
+          i18n.t('work-schedule:availabilityBatches.policyStatuses.NOT_EVALUATED'),
+        )
+      ).length,
     ).toBeGreaterThan(0);
     expect(
-      (await screen.findAllByText(
-        i18n.t('work-schedule:availabilityBatches.applyStatuses.NOT_APPLIED'),
-      )).length,
+      (
+        await screen.findAllByText(
+          i18n.t('work-schedule:availabilityBatches.applyStatuses.NOT_APPLIED'),
+        )
+      ).length,
     ).toBeGreaterThan(0);
 
     const approvedRow = (
@@ -753,7 +758,9 @@ describe('work schedule capability UX hints', () => {
       await screen.findByText(i18n.t('work-schedule:monthlyRosters.appliedAvailability.title')),
     ).toBeInTheDocument();
     expect(await screen.findByText('admin-availability-line-applied')).toBeInTheDocument();
-    expect(screen.getByText(/UNAVAILABLE_FULL_DAY/)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('Khả dụng đã áp dụng');
+    expect(document.body).not.toHaveTextContent(/\bbackend\b/i);
+    expect(document.body).not.toHaveTextContent('UNAVAILABLE_FULL_DAY');
   });
 
   it('requires Admin reject and cancel reasons before calling selected-line decision endpoints', async () => {

@@ -4,18 +4,19 @@
   "nav": {
     "label": "管理工作台导航",
     "overview": "概览",
-    "kpi": "我管理的 KPI"
+    "kpi": "我管理的 KPI",
+    "work": "管理工作"
   },
   "actions": {
     "open": "打开",
     "backToKpi": "返回管理 KPI"
   },
   "status": {
-    "readOnlyShell": "管理范围",
-    "available": "可用",
-    "selectedModule": "已选择",
-    "contractNeeded": "需要契约",
-    "readinessNeeded": "需要就绪"
+    "scopeLabel": "已分配范围",
+    "readOnly": "只读",
+    "actionable": "可操作",
+    "unavailable": "此工作区尚未开放",
+    "selectedModule": "已选择"
   },
   "modules": {
     "overview": {
@@ -36,20 +37,20 @@
     "events": {
       "title": "管理活动",
       "summary": "分配范围内的活动可见性和操作。",
-      "disabledReason": "Manager Events 契约尚未启用。",
-      "readinessMessage": "管理活动在本批次仅显示就绪状态。此处不会暴露 Manager Events 路由或 Admin Event 数据。"
+      "disabledReason": "此工作区尚未开放。",
+      "readinessMessage": "此模块目前未在管理工作台开放。"
     },
     "groups": {
       "title": "管理分组",
       "summary": "已分配的 Org Unit 和 Talent Group 上下文。",
-      "disabledReason": "独立 Manager Groups 契约尚未启用。",
-      "readinessMessage": "管理分组在本批次仅显示就绪状态。Overview 保留已分配范围摘要；不会暴露独立 Groups 模块路由或设置页面。"
+      "disabledReason": "此工作区尚未开放。",
+      "readinessMessage": "此模块目前未在管理工作台开放。已分配范围摘要仍显示在概览中。"
     },
     "members": {
       "title": "管理成员",
       "summary": "分配范围内的成员上下文。",
-      "disabledReason": "Manager Members 契约尚未启用。",
-      "readinessMessage": "管理成员在本批次仅显示就绪状态。People Hub 和 Admin EmploymentProfile 数据不会作为 Manager Members 模块暴露。"
+      "disabledReason": "此工作区尚未开放。",
+      "readinessMessage": "此模块目前未在管理工作台开放。"
     }
   },
   "values": {
@@ -67,14 +68,15 @@
     "readyMessage": "Manager Workspace 上下文可用。",
     "kpiTitle": "KPI 就绪状态",
     "kpiSummary": "管理 KPI 可见性由有效分配决定。",
-    "unsupportedTitle": "模块就绪状态",
-    "unsupportedSummary": "这些 Manager 模块需要未来后端契约后才能显示运营数据。",
+    "unsupportedTitle": "尚未开放的模块",
+    "unsupportedSummary": "这些模块目前未在管理工作台开放。",
     "profileTitle": "管理者档案",
     "scopeTitle": "管理范围"
   },
   "fields": {
     "displayName": "显示名称",
     "employeeCode": "员工编号",
+    "profileCode": "员工档案 · {{code}}",
     "status": "状态"
   },
   "employmentStatus": {
@@ -92,6 +94,7 @@
   "kpi": {
     "title": "我管理的 KPI",
     "summary": "通过当前有效管理分配可见的已发布 KPI 计划。",
+    "boundary": "你只能查看已分配范围内的数据。此处 KPI 不会自动生成佣金或工资。",
     "tableLabel": "管理范围内 KPI 计划",
     "tabs": {
       "unit": "单元 KPI",
@@ -131,7 +134,8 @@
   "work": {
     "title": "Managed Work",
     "summary": "Published official WorkShifts for active managed members.",
-    "readOnly": "Read-only manager scope",
+    "boundary": "你只能查看已分配范围内的数据。正式班次是工作计划，不是考勤或工资。",
+    "readOnly": "管理范围只读",
     "scopeBadge": "Manager WorkSchedule scope",
     "tabs": {
       "published": "Published shifts",
@@ -154,9 +158,9 @@
       "ROSTER_GENERATED": "Monthly roster"
     },
     "actionNeeded": {
-      "title": "Action needed",
-      "summary": "Display-only operational cues from existing request and availability batches.",
-      "bounded": "Counts show the loaded results for the selected month, not exact global totals.",
+      "title": "需要处理",
+      "summary": "仅显示来自现有请求和可用性批次的运营提示。",
+      "bounded": "数量显示所选月份已加载的结果，不是全局精确总数。",
       "severity": {
         "INFO": "Info",
         "DUE_SOON": "Due soon",
@@ -175,7 +179,7 @@
       "planning": "Availability is a pre-roster planning signal for Admin/Ops.",
       "noAttendance": "It is not attendance, payroll, paid leave, or unpaid leave evidence.",
       "noAutoApply": "Approved lines are not auto-applied. Admin/Ops must apply them to a Draft Monthly Roster.",
-      "otherAdvisory": "Other availability notes are advisory only.",
+      "otherAdvisory": "其他可用性备注仅作提示。",
       "independentOfShifts": "Availability remains usable even when published shifts are empty or unavailable."
     },
     "fields": {
@@ -207,8 +211,8 @@
       "addLine": "Add availability line",
       "removeLine": "Remove",
       "submit": "Submit availability batch",
-      "cancelBatch": "Cancel pending batch",
-      "cancelLine": "Cancel pending line"
+      "cancelBatch": "取消待处理批次",
+      "cancelLine": "取消待处理行"
     },
     "lineTitle": "Availability line {{index}}",
     "batches": {
@@ -220,10 +224,10 @@
       "member": "Member",
       "type": "Type",
       "date": "Date",
-      "status": "Status",
+      "status": "状态",
       "applyStatus": "Apply status",
       "policy": "Policy evaluation",
-      "actions": "Actions"
+      "actions": "操作"
     },
     "validation": {
       "maxLines": "Add at least one managed member and keep the batch within 50 lines.",
@@ -235,22 +239,22 @@
       "dateOrder": "End date must be the same as or after start date.",
       "preferredTime": "Preferred time lines need a valid start and end time.",
       "cancelReasonRequired": "Cancellation reason is required.",
-      "memberTargetMismatch": "Every availability line must use a member from the selected exact target."
+      "memberTargetMismatch": "每条可用性行都必须使用所选精确目标中的成员。"
     },
     "states": {
       "loading": "Loading availability batches...",
       "emptyBatches": "No availability batches for this month.",
       "selectBatch": "Select an availability batch.",
-      "emptyMembersMessage": "No eligible managed members were returned for the selected exact target.",
+      "emptyMembersMessage": "所选精确目标没有返回符合条件的管理成员。",
       "loadingMembers": "Loading eligible members for the selected target...",
-      "memberLoadError": "Eligible members could not be loaded. Availability submission is blocked."
+      "memberLoadError": "无法加载符合条件的成员。可用性提交已被阻止。"
     }
   },
   "requests": {
     "copy": {
       "approval": "Requests do not change official shifts until Admin/Ops approval.",
       "draftRoster": "Draft roster rows are not requestable.",
-      "cancellation": "Use request cancellation only for pending requests.",
+      "cancellation": "仅对待处理请求使用取消请求。",
       "taxonomy": "Leave/absence policy is not classified in this step. This is schedule change request, not attendance."
     },
     "fields": {
@@ -266,9 +270,9 @@
       "cancellationReason": "Cancellation reason"
     },
     "types": {
-      "CREATE_SHIFT": "Create shift",
+      "CREATE_SHIFT": "创建班次",
       "RESCHEDULE_SHIFT": "Reschedule shift",
-      "CANCEL_SHIFT": "Cancel shift"
+      "CANCEL_SHIFT": "取消班次"
     },
     "statuses": {
       "PENDING": "Pending",
@@ -287,8 +291,8 @@
     "actions": {
       "submit": "Submit batch",
       "removeLine": "Remove line",
-      "cancelBatch": "Cancel batch",
-      "cancelLine": "Cancel line",
+      "cancelBatch": "取消批次",
+      "cancelLine": "取消行",
       "add": {
         "CREATE_SHIFT": "Add create",
         "RESCHEDULE_SHIFT": "Add reschedule",
@@ -300,10 +304,10 @@
     "counts": "{{pending}} pending / {{total}} total",
     "validation": {
       "noLines": "Add at least one request line.",
-      "maxLines": "A batch can contain at most 50 lines.",
+      "maxLines": "一个批次最多包含 50 行。",
       "reason": "Each line reason must be 10-1000 characters.",
       "shiftRequired": "Choose an active official WorkShift for reschedule or cancel.",
-      "windowRequired": "Create and reschedule lines require start and end.",
+      "windowRequired": "创建和改期行需要开始和结束时间。",
       "windowOrder": "Requested end must be after requested start.",
       "lineMonth": "Requested line dates must be inside the selected request month.",
       "periodWindow": "Choose the current month or one of the next two months.",
@@ -338,7 +342,7 @@
   },
   "errors": {
     "workTitle": "Managed Work unavailable",
-    "workMessage": "Managed published shifts could not be loaded.",
+    "workMessage": "无法加载已发布的管理班次。",
     "contextTitle": "管理工作台不可用",
     "contextMessage": "无法加载你的管理工作台上下文。",
     "kpiTitle": "管理 KPI 不可用",

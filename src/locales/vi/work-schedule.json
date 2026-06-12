@@ -78,15 +78,15 @@
   },
   "surfaces": {
     "my": {
-      "title": "My Work Shifts",
+      "title": "Ca làm của tôi",
       "subtitle": "Xem ca làm của chính bạn, không chỉnh sửa."
     },
     "team": {
-      "title": "Team Work Shifts",
+      "title": "Ca làm của nhóm",
       "subtitle": "Xem lịch của thành viên nhóm được quản lý."
     },
     "department": {
-      "title": "Department Work Shifts",
+      "title": "Ca làm theo phòng ban",
       "subtitle": "Xem lịch và bảng ca của phòng ban."
     },
     "globalOps": {
@@ -145,7 +145,7 @@
     "create": {
       "title": "Tạo ca làm",
       "subtitle": "Tạo một ca làm chính thức thủ công cho một ngoại lệ cá nhân.",
-      "exceptionCopy": "Tạo thủ công chỉ dành cho ca ngoại lệ của từng nhân sự. Dùng Monthly Rosters để xếp lịch tháng cho Org Unit hoặc Talent Group.",
+      "exceptionCopy": "Tạo thủ công chỉ dành cho ca ngoại lệ của từng nhân sự. Dùng Lịch tháng để xếp lịch tháng cho Đơn vị tổ chức hoặc Nhóm Talent.",
       "submit": "Tạo",
       "pending": "Đang tạo"
     },
@@ -176,7 +176,7 @@
   },
   "task": {
     "title": "Xếp lịch ca làm",
-    "description": "Tạo một ca làm chính thức thủ công cho ngoại lệ cá nhân. Dùng Monthly Rosters để xếp lịch tháng cho Org Unit hoặc Talent Group.",
+    "description": "Tạo một ca làm chính thức thủ công cho ngoại lệ cá nhân. Dùng Lịch tháng để xếp lịch tháng cho Đơn vị tổ chức hoặc Nhóm Talent.",
     "steps": {
       "details": "Bước 1/2: Thông tin ca",
       "review": "Bước 2/2: Kiểm tra trước khi lưu"
@@ -187,7 +187,7 @@
     "generatedShiftCodeValue": "Sẽ được hệ thống tự tạo sau khi lưu",
     "generatedShiftCodeHelp": "Bạn không cần nhập mã này.",
     "subjectPicker": "Bộ chọn chủ thể",
-    "individualExceptionCopy": "Tạo Official WorkShift thủ công chỉ hỗ trợ một Hồ sơ nhân sự.",
+    "individualExceptionCopy": "Tạo ca làm chính thức thủ công chỉ hỗ trợ một Hồ sơ nhân sự.",
     "resourcesPicker": "Bộ chọn tài nguyên studio",
     "searchPlaceholder": "Tìm bản ghi hiện có",
     "searchResourcesPlaceholder": "Tìm tài nguyên studio",
@@ -197,6 +197,7 @@
     "datetimeHelp": "Chọn ngày và giờ theo giờ Việt Nam. Hãy kiểm tra lại giờ ở bước xem lại trước khi lưu.",
     "scopeLabel": "Phạm vi xếp lịch",
     "employmentScopeHelp": "Hệ thống sẽ kiểm tra quyền cuối cùng khi lưu.",
+    "globalScopeHelp": "Hệ thống kiểm tra quyền xếp lịch toàn hệ thống khi lưu.",
     "noResourcesSelected": "Chưa chọn tài nguyên studio.",
     "removeResource": "Gỡ",
     "additionalInformation": "Thông tin bổ sung",
@@ -255,41 +256,41 @@
     "archive": "Lưu trữ ca làm này?"
   },
   "requests": {
-    "title": "Schedule Requests",
-    "approvalQueue": "Approval Queue",
+    "title": "Yêu cầu đổi lịch",
+    "approvalQueue": "Duyệt yêu cầu đổi lịch",
     "types": {
       "CREATE_SHIFT": "Yêu cầu tạo ca",
       "RESCHEDULE_SHIFT": "Yêu cầu đổi lịch ca",
       "CANCEL_SHIFT": "Yêu cầu hủy ca"
     },
     "statuses": {
-      "PENDING": "Pending",
-      "APPROVED": "Approved",
-      "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
+      "PENDING": "Đang chờ duyệt",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Bị từ chối",
+      "CANCELLED": "Đã hủy"
     },
     "fields": {
-      "type": "Request type",
-      "targetEmploymentProfileId": "Employment Profile",
-      "targetWorkShiftId": "Work Shift",
-      "title": "Title",
-      "startAt": "Start UTC",
-      "endAt": "End UTC",
-      "reason": "Reason",
-      "decisionNote": "Decision note"
+      "type": "Loại yêu cầu",
+      "targetEmploymentProfileId": "Hồ sơ nhân sự",
+      "targetWorkShiftId": "Ca làm",
+      "title": "Tiêu đề",
+      "startAt": "Bắt đầu UTC",
+      "endAt": "Kết thúc UTC",
+      "reason": "Lý do",
+      "decisionNote": "Ghi chú quyết định"
     },
     "actions": {
-      "requestChange": "Request Schedule Change",
-      "approve": "Approve Request",
-      "reject": "Reject Request",
+      "requestChange": "Yêu cầu đổi lịch",
+      "approve": "Phê duyệt yêu cầu",
+      "reject": "Từ chối yêu cầu",
       "cancel": "Hủy yêu cầu"
     },
     "feedback": {
-      "submitted": "Schedule request submitted.",
-      "submitFailed": "Schedule request could not be submitted.",
-      "approved": "Schedule request approved.",
-      "rejected": "Schedule request rejected.",
-      "cancelled": "Schedule request cancelled."
+      "submitted": "Đã gửi yêu cầu đổi lịch.",
+      "submitFailed": "Không gửi được yêu cầu đổi lịch.",
+      "approved": "Đã phê duyệt yêu cầu đổi lịch.",
+      "rejected": "Đã từ chối yêu cầu đổi lịch.",
+      "cancelled": "Đã hủy yêu cầu đổi lịch."
     },
     "confirm": {
       "cancel": "Hủy yêu cầu lịch này?"
@@ -318,13 +319,13 @@
     }
   },
   "rosterNav": {
-    "myShifts": "My Work Shifts",
-    "teamShifts": "Team Work Shifts",
-    "departmentShifts": "Department Work Shifts / Roster",
+    "myShifts": "Ca làm của tôi",
+    "teamShifts": "Ca làm của nhóm",
+    "departmentShifts": "Ca làm / lịch tháng theo phòng ban",
     "globalOps": "Ca làm việc chính thức",
     "label": "Các phần lịch làm việc",
     "workShifts": "Ca làm việc",
-    "requestBatches": "Hàng đợi duyệt yêu cầu",
+    "requestBatches": "Yêu cầu đổi lịch",
     "availabilityBatches": "Duyệt lịch rảnh/bận",
     "monthlyRosters": "Bảng lịch tháng",
     "workPatterns": "Mẫu lịch làm",
@@ -374,7 +375,7 @@
     "decisions": {
       "title": "Phạm vi xử lý",
       "selectedContext": "{{count}} dòng yêu cầu đang được chọn.",
-      "helper": "Quyết định chỉ áp dụng cho các dòng yêu cầu đã chọn. Phê duyệt có thể áp dụng thay đổi ca theo kiểm tra của backend; từ chối hoặc hủy cần lý do.",
+      "helper": "Quyết định chỉ áp dụng cho các dòng yêu cầu đã chọn. Phê duyệt có thể áp dụng thay đổi ca sau khi hệ thống kiểm tra; từ chối hoặc hủy cần lý do.",
       "approvalNote": "Ghi chú duyệt (tùy chọn)",
       "reason": "Lý do từ chối hoặc hủy"
     },
@@ -396,8 +397,8 @@
       "emptyTitle": "Không có yêu cầu đổi lịch",
       "emptyMessage": "Không có dòng nào cần Admin/Ops xử lý theo bộ lọc hiện tại.",
       "listErrorTitle": "Không tải được hàng đợi",
-      "listErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu batch.",
-      "detailErrorTitle": "Không tải được chi tiết batch",
+      "listErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu đợt yêu cầu.",
+      "detailErrorTitle": "Không tải được chi tiết đợt yêu cầu",
       "detailErrorMessage": "Không tải được yêu cầu đổi lịch đã chọn."
     }
   },
@@ -504,9 +505,9 @@
       "refs": "Tham chiếu lịch nháp"
     },
     "types": {
-      "UNAVAILABLE_FULL_DAY": "Không khả dụng cả ngày",
+      "UNAVAILABLE_FULL_DAY": "Bận cả ngày",
       "PREFERRED_TIME": "Giờ mong muốn",
-      "OTHER_AVAILABILITY_NOTE": "Ghi chú khả dụng khác"
+      "OTHER_AVAILABILITY_NOTE": "Ghi chú rảnh/bận khác"
     },
     "taxonomy": {
       "SICK_LEAVE": "Nghỉ ốm",
@@ -519,8 +520,8 @@
       "applySelectionRequired": "Chọn dòng đã duyệt và một lịch nháp."
     },
     "states": {
-      "loadErrorTitle": "Không tải được hàng đợi khả dụng",
-      "loadErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu batch khả dụng.",
+      "loadErrorTitle": "Không tải được hàng đợi lịch rảnh/bận",
+      "loadErrorMessage": "Hệ thống từ chối hoặc không trả về dữ liệu đợt lịch rảnh/bận.",
       "emptyTitle": "Không có lịch rảnh/bận",
       "emptyMessage": "Điều chỉnh bộ lọc hoặc chờ quản lý gửi lịch rảnh/bận.",
       "selectTitle": "Chọn lịch rảnh/bận",
@@ -783,6 +784,10 @@
       "holidayCalendarId": "Lịch nghỉ lễ",
       "status": "Trạng thái",
       "timezone": "Múi giờ",
+      "target": "Mục tiêu lịch",
+      "targetType": "Loại mục tiêu",
+      "targetOrgUnitId": "Mục tiêu Đơn vị tổ chức",
+      "targetTalentGroupId": "Mục tiêu Nhóm Talent",
       "scope": "Phạm vi truy cập bảng lịch",
       "description": "Mô tả",
       "externalRef": "Tham chiếu bên ngoài",
@@ -830,6 +835,7 @@
       "rosterCode": "Mã bảng lịch",
       "rosterMonth": "Tháng",
       "department": "Phòng ban",
+      "target": "Mục tiêu",
       "workPattern": "Mẫu lịch làm",
       "holidayCalendar": "Lịch nghỉ lễ",
       "status": "Trạng thái",
@@ -847,12 +853,12 @@
       "structuralLock": "Bản nháp này đã có ngoại lệ. Gỡ ngoại lệ trước khi đổi tháng, phòng ban, mẫu lịch hoặc lịch nghỉ lễ."
     },
     "appliedAvailability": {
-      "title": "Khả dụng đã áp dụng",
-      "previewLabel": "Khả dụng đã áp dụng: {{effect}} - {{type}} / {{taxonomy}} (dòng {{lineId}})",
+      "title": "Lịch rảnh/bận đã áp dụng",
+      "previewLabel": "Lịch rảnh/bận đã được áp dụng vào lịch nháp: {{effect}} - {{type}} / {{taxonomy}} (dòng {{lineId}})",
       "effects": {
-        "workingToOff": "nghỉ do khả dụng đã áp dụng",
-        "changeTime": "đổi giờ do khả dụng đã áp dụng",
-        "applied": "đã áp dụng vào roster nháp"
+        "workingToOff": "nghỉ do lịch rảnh/bận đã áp dụng",
+        "changeTime": "đổi giờ do lịch rảnh/bận đã áp dụng",
+        "applied": "đã áp dụng vào lịch nháp"
       }
     },
     "preview": {
@@ -881,6 +887,21 @@
         "workingToOff": "Ngày làm chuyển nghỉ",
         "conflicts": "Xung đột",
         "blockers": "Điểm chặn"
+      },
+      "excludedMembers": {
+        "title": "Thành viên bị loại trừ",
+        "member": "Thành viên",
+        "profile": "Hồ sơ nhân sự đã liên kết",
+        "reason": "Lý do"
+      },
+      "exclusionReasons": {
+        "MEMBERSHIP_INACTIVE": "Membership không hoạt động",
+        "TALENT_NOT_FOUND": "Không tìm thấy hồ sơ Talent",
+        "TALENT_INACTIVE": "Hồ sơ Talent không hoạt động",
+        "MISSING_LINKED_EMPLOYMENT_PROFILE": "Talent chưa liên kết Hồ sơ nhân sự",
+        "EMPLOYMENT_PROFILE_NOT_FOUND": "Không tìm thấy Hồ sơ nhân sự đã liên kết",
+        "EMPLOYMENT_PROFILE_INACTIVE": "Hồ sơ nhân sự đã liên kết không hoạt động",
+        "DUPLICATE_EMPLOYMENT_PROFILE": "Hồ sơ nhân sự đã được đưa vào qua thành viên khác"
       },
       "conflicts": {
         "title": "Xung đột và điểm chặn",
@@ -998,7 +1019,7 @@
     "publish": {
       "title": "Rà soát công bố",
       "copy": {
-        "createShifts": "Phát hành tạo WorkShift chính thức cho EmploymentProfile đủ điều kiện.",
+        "createShifts": "Công bố sẽ tạo ca làm chính thức cho Hồ sơ nhân sự đủ điều kiện.",
         "draftPlanningOnly": "Bảng lịch nháp chỉ dùng để lập kế hoạch và không hiển thị cho Quản lý hoặc Nhân viên.",
         "reviewPreview": "Rà soát bản xem trước trước khi công bố.",
         "noUndo": "Không thể hoàn tác công bố từ màn hình này."
@@ -1006,7 +1027,14 @@
       "readiness": {
         "status": "Mức sẵn sàng công bố",
         "ready": "Sẵn sàng công bố",
-        "previewFreshness": "Độ mới của bản xem trước"
+        "previewFreshness": "Độ mới của bản xem trước",
+        "checklistTitle": "Danh sách rà soát trước khi công bố",
+        "checklist": {
+          "previewLoaded": "Bản xem trước đã tải thành công",
+          "eligible": "{{count}} thành viên đủ điều kiện",
+          "candidates": "{{count}} ca dự kiến có thể công bố",
+          "issues": "{{count}} xung đột hoặc điểm chặn"
+        }
       },
       "disabledReasons": {
         "notDraft": "Chỉ bảng phân ca Nháp mới có thể công bố.",
@@ -1136,7 +1164,7 @@
         "status": "Trạng thái",
         "summary": "Tóm tắt",
         "reason": "Lý do hoặc ghi chú",
-        "sourceAvailability": "Nguồn khả dụng",
+        "sourceAvailability": "Nguồn lịch rảnh/bận",
         "createdAt": "Tạo lúc",
         "updatedAt": "Cập nhật",
         "removedAt": "Gỡ lúc",
@@ -1180,7 +1208,7 @@
         "addSpecialShift": "Ca bổ sung lúc {{startLocalTime}} với {{workingMinutes}} phút làm việc"
       },
       "mutations": {
-        "subtitle": "Backend kiểm tra tháng, nhân sự đúng phòng ban, ca chuẩn và xung đột.",
+        "subtitle": "Hệ thống kiểm tra tháng, nhân sự đúng phòng ban, ca chuẩn và xung đột.",
         "add": {
           "title": "Thêm ngoại lệ bảng lịch",
           "submit": "Thêm ngoại lệ"
@@ -1215,16 +1243,22 @@
       },
       "states": {
         "emptyActive": "Chưa có ngoại lệ đang dùng.",
-        "emptyAll": "Backend không trả về ngoại lệ nào."
+        "emptyAll": "Hệ thống không trả về ngoại lệ nào."
       }
     },
     "copy": {
-      "setupInvariants": "Chọn đúng một Org Unit phòng ban đang hoạt động. Không bao gồm phòng ban con. Global là quyền truy cập, không phải mục tiêu bảng lịch toàn công ty. Bảng lịch áp dụng cho nhân sự đang hoạt động, dùng Holiday Calendar toàn cục để tạo bảng lịch và giữ múi giờ Asia/Ho_Chi_Minh."
+      "setupInvariants": "Chọn đúng một Đơn vị tổ chức đang hoạt động. Không bao gồm phòng ban con. Toàn hệ thống là quyền truy cập, không phải mục tiêu lịch tháng toàn công ty. Lịch tháng áp dụng cho nhân sự đang hoạt động, dùng Lịch nghỉ/lễ toàn hệ thống để tạo lịch và hiển thị theo Giờ Việt Nam."
     },
     "pickers": {
       "departmentSearch": "Tìm phòng ban đang hoạt động theo tên hoặc mã",
+      "orgUnitSearch": "Tìm Đơn vị tổ chức đang hoạt động theo tên hoặc mã",
+      "talentGroupSearch": "Tìm Nhóm Talent đang hoạt động theo tên hoặc mã",
       "workPatternSearch": "Tìm mẫu lịch làm đang hoạt động theo tên hoặc mã",
       "holidayCalendarSearch": "Tìm lịch nghỉ lễ đang hoạt động theo tên hoặc mã"
+    },
+    "targetTypes": {
+      "ORG_UNIT": "Đơn vị tổ chức",
+      "TALENT_GROUP": "Nhóm Talent"
     }
   },
   "operational": {
@@ -1242,7 +1276,7 @@
         "NOT_APPLICABLE": "Không áp dụng"
       },
       "types": {
-        "AVAILABILITY_CUTOFF": "Mốc khả dụng D0 - 7",
+        "AVAILABILITY_CUTOFF": "Mốc nhận lịch rảnh/bận D0 - 7",
         "PUBLISH_TARGET": "Mục tiêu công bố D0 - 2",
         "FREEZE_REMINDER": "Nhắc đóng băng D0 - 1"
       },
@@ -1255,13 +1289,13 @@
     },
     "admin": {
       "title": "Cần xử lý",
-      "summary": "Tín hiệu vận hành có giới hạn từ các hợp đồng danh sách WorkSchedule hiện có.",
+      "summary": "Tín hiệu vận hành có giới hạn từ các hợp đồng danh sách lịch làm việc hiện có.",
       "bounded": "Số liệu phản ánh kết quả hàng đợi giới hạn đang được tải; mở từng hàng đợi để xem chi tiết.",
       "cards": {
         "availability": {
-          "label": "Dòng khả dụng đang chờ duyệt",
-          "reason": "Dòng khả dụng của quản lý đang chờ Admin/Ops xem xét.",
-          "cta": "Mở hàng đợi khả dụng"
+          "label": "Dòng lịch rảnh/bận đang chờ duyệt",
+          "reason": "Dòng lịch rảnh/bận của quản lý đang chờ Admin/Ops xem xét.",
+          "cta": "Mở hàng đợi lịch rảnh/bận"
         },
         "requests": {
           "label": "Dòng yêu cầu Flow A đang chờ",

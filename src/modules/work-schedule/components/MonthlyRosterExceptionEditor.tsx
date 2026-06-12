@@ -68,6 +68,20 @@ const summarizeException = (
     .replace('{{workingMinutes}}', String(exception.workingMinutes ?? '-'));
 };
 
+const summarizeAvailabilitySource = (
+  t: (key: string) => string,
+  exception: RosterExceptionRecord,
+): string => {
+  const sourceType = exception.sourceAvailabilityType
+    ? t(`work-schedule:availabilityBatches.types.${exception.sourceAvailabilityType}`)
+    : '-';
+  const sourceTaxonomy = exception.sourceAvailabilityTaxonomyCode
+    ? t(`work-schedule:availabilityBatches.taxonomy.${exception.sourceAvailabilityTaxonomyCode}`)
+    : '-';
+
+  return `${sourceType} / ${sourceTaxonomy}`;
+};
+
 export const MonthlyRosterExceptionEditor = ({
   roster,
   apiError,
@@ -242,8 +256,7 @@ export const MonthlyRosterExceptionEditor = ({
                               {t('work-schedule:monthlyRosters.appliedAvailability.title')}
                             </div>
                             <div className="text-xs text-muted">
-                              {exception.sourceAvailabilityType ?? '-'} /{' '}
-                              {exception.sourceAvailabilityTaxonomyCode ?? '-'}
+                              {summarizeAvailabilitySource(t, exception)}
                             </div>
                             <div className="font-mono text-xs text-muted">
                               {exception.sourceAvailabilityLineId}

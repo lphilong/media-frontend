@@ -1,4 +1,5 @@
 import i18n from 'i18next';
+import { http, HttpResponse } from 'msw';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -10,6 +11,7 @@ import {
   resetIdentityAccessMockData,
   setMockCurrentActorCapabilities,
 } from '@test/msw/identity-access-handlers';
+import { server } from '@test/msw/server';
 import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 
 const renderRoute = (path: string) => {
@@ -110,7 +112,33 @@ describe('event assignment wave 6 surfaces', () => {
     renderRoute('/events?search=NO_MATCH');
 
     expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
-    expect(screen.queryByText(i18n.t('event-assignment:states.emptyTitle'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('event-assignment:states.emptyTitle')),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses operator-facing Vietnamese event load error copy', async () => {
+    setEventCapabilities({
+      roles: ['VIEWER_AUDITOR'],
+      permissions: ['event.read'],
+      scopeGrants: { eventAssignment: ['global'] },
+    });
+    server.use(
+      http.get('*/admin/events', () =>
+        HttpResponse.json({ message: 'event-assignment:states.loadErrorMessage' }, { status: 503 }),
+      ),
+    );
+
+    renderRoute('/events');
+
+    expect(
+      await screen.findByText(
+        i18n.t('event-assignment:states.loadErrorMessage'),
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent('Backend đã từ chối');
   });
 
   it('VIEWER_AUDITOR with global Event scope sees Event read-only', async () => {
@@ -154,11 +182,7 @@ describe('event assignment wave 6 surfaces', () => {
     renderRoute('/events/event-001');
 
     expect(
-      await screen.findByText(
-        i18n.t('event-assignment:actionRail.title'),
-        {},
-        { timeout: 3000 },
-      ),
+      await screen.findByText(i18n.t('event-assignment:actionRail.title'), {}, { timeout: 3000 }),
     ).toBeInTheDocument();
     expect(screen.getByText(i18n.t('event-assignment:detail.boundaryHelper'))).toBeInTheDocument();
     expect(screen.getByText('EVT-202605-000001')).toBeInTheDocument();

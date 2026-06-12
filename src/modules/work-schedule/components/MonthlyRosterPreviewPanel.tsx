@@ -138,11 +138,17 @@ const describeAvailabilitySource = (
       : row.rowKind === 'CHANGE_TIME'
         ? t('work-schedule:monthlyRosters.appliedAvailability.effects.changeTime')
         : t('work-schedule:monthlyRosters.appliedAvailability.effects.applied');
+  const sourceType = exception.sourceAvailabilityType
+    ? t(`work-schedule:availabilityBatches.types.${exception.sourceAvailabilityType}`)
+    : '-';
+  const sourceTaxonomy = exception.sourceAvailabilityTaxonomyCode
+    ? t(`work-schedule:availabilityBatches.taxonomy.${exception.sourceAvailabilityTaxonomyCode}`)
+    : '-';
 
   return t('work-schedule:monthlyRosters.appliedAvailability.previewLabel')
     .replace('{{effect}}', effect)
-    .replace('{{type}}', exception.sourceAvailabilityType ?? '-')
-    .replace('{{taxonomy}}', exception.sourceAvailabilityTaxonomyCode ?? '-')
+    .replace('{{type}}', sourceType)
+    .replace('{{taxonomy}}', sourceTaxonomy)
     .replace('{{lineId}}', exception.sourceAvailabilityLineId);
 };
 
@@ -154,78 +160,92 @@ const MemberDayDetails = ({
   summary: MemberSummary;
   availabilitySourceByExceptionId: Map<string, RosterExceptionRecord>;
   t: (key: string, options?: Record<string, unknown>) => string;
-}): JSX.Element => (
-  <div className="overflow-x-auto rounded border border-border">
-    <table
-      className="min-w-full divide-y divide-border text-left text-sm"
-      aria-label={t('work-schedule:monthlyRosters.preview.detail.memberCaption', {
-        member: summary.memberLabel,
-      })}
-    >
-      <thead className="bg-bg text-xs uppercase text-muted">
-        <tr>
-          <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.date')}</th>
-          <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.time')}</th>
-          <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.kind')}</th>
-          <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.status')}</th>
-          <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.reason')}</th>
-          <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.issues')}</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-border bg-bg">
-        {summary.rows.map((row) => {
-          const availabilitySource = row.sourceExceptionId
-            ? availabilitySourceByExceptionId.get(row.sourceExceptionId)
-            : undefined;
-          const availabilityDescription = describeAvailabilitySource(t, row, availabilitySource);
+}): JSX.Element => {
+  const shownAvailabilityLineIds = new Set<string>();
 
-          return (
-            <tr
-              key={row.previewRowId}
-              className={row.blockers.length > 0 ? 'bg-rose-50' : undefined}
-            >
-              <td className="px-3 py-2">{row.localDate}</td>
-              <td className="px-3 py-2">
-                {row.startLocalTime && row.endLocalTime
-                  ? `${row.startLocalTime} - ${row.endLocalTime}`
-                  : '-'}
-              </td>
-              <td className="px-3 py-2">
-                {t(`work-schedule:monthlyRosters.preview.rowKinds.${row.rowKind}`)}
-              </td>
-              <td className="px-3 py-2">
-                {row.isCandidateShift
-                  ? t('work-schedule:monthlyRosters.preview.rows.candidate')
-                  : t('work-schedule:monthlyRosters.preview.rows.suppressed')}
-              </td>
-              <td className="px-3 py-2">
-                {availabilityDescription ? (
-                  <div className="space-y-1">
-                    <div>{availabilityDescription}</div>
-                    <div className="text-xs text-muted">{row.sourceExceptionId}</div>
-                  </div>
-                ) : (
-                  row.holidayName ??
-                  row.holidayEntryType ??
-                  row.sourceExceptionId ??
-                  t('work-schedule:monthlyRosters.preview.rows.reason.standard')
-                )}
-              </td>
-              <td className="px-3 py-2">
-                {[...row.blockers, ...row.warnings].join(', ') ||
-                  (row.conflicts.length > 0
-                    ? t('work-schedule:monthlyRosters.preview.rows.hasIssues', {
-                        count: row.conflicts.length,
-                      })
-                    : t('work-schedule:monthlyRosters.preview.rows.noIssues'))}
-              </td>
-            </tr>
-          );
+  return (
+    <div className="overflow-x-auto rounded border border-border">
+      <table
+        className="min-w-full divide-y divide-border text-left text-sm"
+        aria-label={t('work-schedule:monthlyRosters.preview.detail.memberCaption', {
+          member: summary.memberLabel,
         })}
-      </tbody>
-    </table>
-  </div>
-);
+      >
+        <thead className="bg-bg text-xs uppercase text-muted">
+          <tr>
+            <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.date')}</th>
+            <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.time')}</th>
+            <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.kind')}</th>
+            <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.status')}</th>
+            <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.reason')}</th>
+            <th className="px-3 py-2">{t('work-schedule:monthlyRosters.preview.table.issues')}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border bg-bg">
+          {summary.rows.map((row) => {
+            const availabilitySource = row.sourceExceptionId
+              ? availabilitySourceByExceptionId.get(row.sourceExceptionId)
+              : undefined;
+            const availabilityLineId = availabilitySource?.sourceAvailabilityLineId;
+            const showAvailabilityDescription =
+              typeof availabilityLineId === 'string' &&
+              !shownAvailabilityLineIds.has(availabilityLineId);
+            if (typeof availabilityLineId === 'string' && showAvailabilityDescription) {
+              shownAvailabilityLineIds.add(availabilityLineId);
+            }
+            const availabilityDescription =
+              showAvailabilityDescription && availabilitySource
+                ? describeAvailabilitySource(t, row, availabilitySource)
+                : null;
+
+            return (
+              <tr
+                key={row.previewRowId}
+                className={row.blockers.length > 0 ? 'bg-rose-50' : undefined}
+              >
+                <td className="px-3 py-2">{row.localDate}</td>
+                <td className="px-3 py-2">
+                  {row.startLocalTime && row.endLocalTime
+                    ? `${row.startLocalTime} - ${row.endLocalTime}`
+                    : '-'}
+                </td>
+                <td className="px-3 py-2">
+                  {t(`work-schedule:monthlyRosters.preview.rowKinds.${row.rowKind}`)}
+                </td>
+                <td className="px-3 py-2">
+                  {row.isCandidateShift
+                    ? t('work-schedule:monthlyRosters.preview.rows.candidate')
+                    : t('work-schedule:monthlyRosters.preview.rows.suppressed')}
+                </td>
+                <td className="px-3 py-2">
+                  {availabilityDescription ? (
+                    <div className="space-y-1">
+                      <div>{availabilityDescription}</div>
+                      <div className="text-xs text-muted">{row.sourceExceptionId}</div>
+                    </div>
+                  ) : (
+                    (row.holidayName ??
+                    row.holidayEntryType ??
+                    row.sourceExceptionId ??
+                    t('work-schedule:monthlyRosters.preview.rows.reason.standard'))
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  {[...row.blockers, ...row.warnings].join(', ') ||
+                    (row.conflicts.length > 0
+                      ? t('work-schedule:monthlyRosters.preview.rows.hasIssues', {
+                          count: row.conflicts.length,
+                        })
+                      : t('work-schedule:monthlyRosters.preview.rows.noIssues'))}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 const ExcludedMembers = ({
   members,

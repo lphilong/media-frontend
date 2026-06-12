@@ -1,4 +1,5 @@
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import i18n from 'i18next';
 import { http, HttpResponse } from 'msw';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -1673,6 +1674,24 @@ describe('KPI MVP UX', () => {
     expect(progressLookupCalled).toBe(false);
     expect(screen.queryByRole('button', { name: 'Approve Allocation' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Publish Allocation' })).not.toBeInTheDocument();
+  });
+
+  it('uses Vietnamese published KPI progress copy without English publish leakage', async () => {
+    await setLocale('vi');
+    mockKpiCapabilities({
+      permissions: ['kpi.read', 'kpi.readProgress', 'kpi.enterActual', 'kpi.correctActual'],
+      scopeGrants: { kpi: ['global', 'managedGroup'] },
+    });
+
+    renderRoute('/kpi/plans/kpi-plan-draft');
+    await screen.findByText('May creator KPI');
+
+    expect(screen.getByText('Chỉ hiển thị kế hoạch KPI đã công bố.')).toBeInTheDocument();
+    expect(screen.getByText('Chỉ hiển thị phân bổ KPI đã công bố.')).toBeInTheDocument();
+    expect(i18n.t('kpi:disabled.finalizePublishedOnly')).toBe(
+      'Chỉ có thể chốt khi kế hoạch KPI đã được công bố.',
+    );
+    expect(document.body).not.toHaveTextContent('đã publish');
   });
 
   it('global plus managed actor saves allocation draft with employment profile targets only on a published KPI plan', async () => {

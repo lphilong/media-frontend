@@ -2,7 +2,7 @@
   "page": {
     "title": "Sự kiện",
     "subtitle": "Quản trị vận hành toàn cục cho sự kiện, phân công và tài nguyên.",
-    "placeholder": "Event Assignment đã được triển khai bằng route thật của Wave 6."
+    "placeholder": "Phân công sự kiện đã được triển khai bằng tuyến màn hình thật."
   },
   "fields": {
     "eventCode": "Mã sự kiện",
@@ -143,7 +143,7 @@
     "emptyTitle": "Không có sự kiện",
     "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo sự kiện.",
     "loadErrorTitle": "Không tải được sự kiện",
-    "loadErrorMessage": "Backend đã từ chối hoặc không trả về dữ liệu sự kiện."
+    "loadErrorMessage": "Hệ thống chưa thể tải dữ liệu phân công sự kiện. Vui lòng kiểm tra phạm vi hoặc thử lại sau."
   },
   "mutations": {
     "create": {
@@ -193,7 +193,7 @@
     "invalidToken": "Dùng token tham chiếu hợp lệ.",
     "invalidReferenceToken": "Dùng các token tham chiếu hợp lệ, cách nhau bằng dấu phẩy.",
     "invalidWindow": "Thời điểm kết thúc phải sau thời điểm bắt đầu.",
-    "noScope": "Event Assignment chỉ dùng phạm vi toàn cục và không nhận trường scope.",
+    "noScope": "Phân công sự kiện chỉ dùng phạm vi toàn hệ thống và không nhận trường phạm vi.",
     "rosterUnavailable": "Danh sách phân công đang hoạt động chưa ở trạng thái an toàn, nên thao tác thay thế bị chặn."
   },
   "feedback": {

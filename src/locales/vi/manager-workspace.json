@@ -1,350 +1,353 @@
 {
-  "title": "Khong gian quan ly",
-  "subtitle": "Tac vu theo phan cong danh cho quan ly.",
+  "title": "Không gian quản lý",
+  "subtitle": "Hồ sơ và tác vụ của bạn trong phạm vi được phân công.",
   "nav": {
-    "label": "Dieu huong khong gian quan ly",
-    "overview": "Tong quan",
-    "kpi": "KPI toi quan ly",
-    "work": "Cong viec quan ly"
+    "label": "Điều hướng không gian quản lý",
+    "overview": "Tổng quan",
+    "kpi": "KPI được phân công",
+    "work": "Lịch làm việc"
   },
   "actions": {
-    "open": "Mo",
-    "backToKpi": "Quay lai KPI quan ly"
+    "open": "Mở",
+    "backToKpi": "Quay lại KPI được phân công"
   },
   "status": {
-    "readOnlyShell": "Pham vi quan ly",
-    "available": "San sang",
-    "selectedModule": "Dang chon",
-    "contractNeeded": "Can hop dong",
-    "readinessNeeded": "Can san sang"
+    "scopeLabel": "Phạm vi được phân công",
+    "readOnly": "Chỉ đọc",
+    "actionable": "Có thể thao tác",
+    "unavailable": "Chưa mở trong workspace này",
+    "selectedModule": "Đang xem"
   },
   "modules": {
     "overview": {
-      "title": "Tong quan",
-      "summary": "Tinh trang san sang, ho so, pham vi va trang thai module quan ly."
+      "title": "Tổng quan",
+      "summary": "Hồ sơ, phạm vi được phân công và trạng thái các khu vực làm việc."
     },
     "kpi": {
-      "title": "KPI quan ly",
-      "summary": "Cac ke hoach KPI da cong bo theo phan cong hieu luc.",
-      "disabledReason": "KPI quan ly hien thi khi co phan cong KPI quan ly hieu luc."
+      "title": "KPI được phân công",
+      "summary": "Kế hoạch KPI đã công bố trong phạm vi được phân công.",
+      "disabledReason": "KPI sẽ hiển thị khi có phân công quản lý KPI đang hiệu lực."
     },
     "work": {
-      "title": "Cong viec quan ly",
-      "summary": "Ca lam viec chinh thuc da cong bo trong pham vi duoc phan cong.",
-      "disabledReason": "Can phan cong hieu luc va quyen doc WorkSchedule.",
-      "readinessMessage": "Chua co pham vi Org Unit hoac Talent Group hieu luc."
+      "title": "Lịch làm việc",
+      "summary": "Ca làm chính thức và yêu cầu lịch trong phạm vi được phân công.",
+      "disabledReason": "Cần phân công đang hiệu lực và quyền xem lịch làm việc.",
+      "readinessMessage": "Chưa có phạm vi lịch làm việc được phân công đang hiệu lực."
     },
     "events": {
-      "title": "Su kien quan ly",
-      "summary": "Hien thi va tac vu su kien cho pham vi duoc phan cong.",
-      "disabledReason": "Hop dong Manager Events chua duoc bat.",
-      "readinessMessage": "Su kien quan ly chi la trang thai san sang trong batch nay. Khong co route Manager Events hoac du lieu Admin Event nao duoc hien thi tai day."
+      "title": "Sự kiện",
+      "summary": "Sự kiện trong phạm vi được phân công.",
+      "disabledReason": "Chưa mở trong workspace này.",
+      "readinessMessage": "Module này chưa được mở cho Không gian quản lý."
     },
     "groups": {
-      "title": "Nhom quan ly",
-      "summary": "Ngu canh Org Unit va Talent Group duoc phan cong.",
-      "disabledReason": "Hop dong Manager Groups rieng chua duoc bat.",
-      "readinessMessage": "Nhom quan ly chi la trang thai san sang trong batch nay. Tong quan van hien thi tom tat pham vi duoc phan cong; khong mo route Groups rieng hoac trang thiet lap."
+      "title": "Nhóm được phân công",
+      "summary": "Đơn vị và nhóm Talent trong phạm vi được phân công.",
+      "disabledReason": "Chưa mở trong workspace này.",
+      "readinessMessage": "Module này chưa được mở cho Không gian quản lý. Phạm vi hiện tại vẫn được tóm tắt tại Tổng quan."
     },
     "members": {
-      "title": "Thanh vien quan ly",
-      "summary": "Ngu canh thanh vien cho pham vi duoc phan cong.",
-      "disabledReason": "Hop dong Manager Members chua duoc bat.",
-      "readinessMessage": "Thanh vien quan ly chi la trang thai san sang trong batch nay. People Hub va du lieu Admin EmploymentProfile khong duoc hien thi nhu module Manager Members."
+      "title": "Thành viên",
+      "summary": "Thành viên trong phạm vi được phân công.",
+      "disabledReason": "Chưa mở trong workspace này.",
+      "readinessMessage": "Module này chưa được mở cho Không gian quản lý."
     }
   },
   "values": {
-    "notAvailable": "Khong co du lieu"
+    "notAvailable": "Chưa có dữ liệu"
   },
   "readiness": {
-    "NO_LINKED_EMPLOYMENT_PROFILE": "Chua lien ket ho so nhan su",
-    "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Ho so nhan su khong o trang thai hop le",
-    "NO_MANAGED_SCOPE_ASSIGNED": "Chua co pham vi quan ly",
-    "MISSING_KPI_MANAGER_CAPABILITY": "Thieu quyen KPI quan ly"
+    "NO_LINKED_EMPLOYMENT_PROFILE": "Chưa liên kết Hồ sơ nhân sự",
+    "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Hồ sơ nhân sự không ở trạng thái hoạt động phù hợp",
+    "NO_MANAGED_SCOPE_ASSIGNED": "Chưa có phạm vi được phân công",
+    "MISSING_KPI_MANAGER_CAPABILITY": "Chưa có quyền KPI quản lý"
   },
   "overview": {
-    "readinessTitle": "Trang thai san sang",
-    "readinessSummary": "Ngu canh quan ly va tinh trang phan cong hien tai.",
-    "readyMessage": "Ngu canh Manager Workspace da san sang.",
-    "kpiTitle": "Trang thai KPI",
-    "kpiSummary": "KPI quan ly hien thi theo phan cong hieu luc.",
-    "unsupportedTitle": "Trang thai module",
-    "unsupportedSummary": "Cac module Manager nay can hop dong backend trong tuong lai truoc khi hien thi du lieu van hanh.",
-    "profileTitle": "Ho so quan ly",
-    "scopeTitle": "Pham vi quan ly"
+    "readinessTitle": "Trạng thái không gian làm việc",
+    "readinessSummary": "Hồ sơ người quản lý và tình trạng phân công hiện tại.",
+    "readyMessage": "Không gian quản lý đang khả dụng trong phạm vi được phân công.",
+    "kpiTitle": "Trạng thái KPI",
+    "kpiSummary": "KPI quản lý hiển thị theo phân công đang hiệu lực.",
+    "unsupportedTitle": "Khu vực chưa mở",
+    "unsupportedSummary": "Các module này hiện chưa được mở cho Không gian quản lý.",
+    "profileTitle": "Hồ sơ người quản lý",
+    "scopeTitle": "Phạm vi được phân công"
   },
   "fields": {
-    "displayName": "Ten hien thi",
-    "employeeCode": "Ma nhan vien",
-    "status": "Trang thai"
+    "displayName": "Tên hiển thị",
+    "employeeCode": "Mã nhân sự",
+    "profileCode": "Hồ sơ nhân sự · {{code}}",
+    "status": "Trạng thái"
   },
   "employmentStatus": {
-    "ACTIVE": "Dang hoat dong",
-    "ON_LEAVE": "Dang nghi phep",
-    "SUSPENDED": "Tam ngung",
-    "TERMINATED": "Da nghi viec",
-    "ARCHIVED": "Da luu tru"
+    "ACTIVE": "Đang hoạt động",
+    "ON_LEAVE": "Đang nghỉ phép",
+    "SUSPENDED": "Tạm ngưng",
+    "TERMINATED": "Đã nghỉ việc",
+    "ARCHIVED": "Đã lưu trữ"
   },
   "orgUnitRole": {
-    "DEPARTMENT_OWNER": "Chu quan phong ban",
-    "UNIT_MANAGER": "Quan ly don vi",
-    "UNIT_OPERATOR": "Van hanh don vi"
+    "DEPARTMENT_OWNER": "Chủ quản phòng ban",
+    "UNIT_MANAGER": "Quản lý đơn vị",
+    "UNIT_OPERATOR": "Vận hành đơn vị"
   },
   "kpi": {
-    "title": "KPI toi quan ly",
-    "summary": "Cac ke hoach KPI da cong bo theo phan cong quan ly hieu luc.",
-    "tableLabel": "Danh sach KPI quan ly",
+    "title": "KPI được phân công",
+    "summary": "Kế hoạch KPI đã công bố trong phạm vi được phân công.",
+    "boundary": "Bạn chỉ thấy dữ liệu trong phạm vi được phân công. KPI hiển thị tại đây không tự tạo hoa hồng hoặc bảng lương.",
+    "tableLabel": "Danh sách KPI được phân công",
     "tabs": {
-      "unit": "KPI don vi",
-      "talentGroup": "KPI nhom talent"
+      "unit": "KPI đơn vị",
+      "talentGroup": "KPI nhóm Talent"
     },
     "subject": {
-      "unit": "Don vi",
-      "talentGroup": "Nhom talent"
+      "unit": "Đơn vị",
+      "talentGroup": "Nhóm Talent"
     },
     "fields": {
-      "plan": "Ke hoach",
-      "period": "Ky",
-      "status": "Trang thai",
-      "actions": "Thao tac"
+      "plan": "Kế hoạch",
+      "period": "Kỳ",
+      "status": "Trạng thái",
+      "actions": "Thao tác"
     },
     "detail": {
-      "subject": "Doi tuong",
-      "timezone": "Mui gio",
-      "allocationCount": "Phan bo",
-      "description": "Mo ta",
-      "metricsTableLabel": "Chi tieu KPI quan ly",
-      "metric": "Chi tieu",
-      "target": "Muc tieu",
-      "unit": "Don vi",
-      "allocationSummary": "Tom tat phan bo",
-      "noAllocations": "Chua co dong phan bo hien thi cho ke hoach nay.",
-      "readOnlyPosture": "Phan cong quan ly hien tai cho phep doc KPI nay, nhung khong cho phep thao tac ghi KPI cua Unit Manager.",
-      "talentGroupReadOnlyTitle": "KPI nhom talent chi doc tai day",
-      "talentGroupReadOnlyMessage": "Tac vu KPI nhom talent chua duoc bat trong Manager Workspace o batch nay.",
+      "subject": "Đối tượng",
+      "timezone": "Múi giờ",
+      "allocationCount": "Phân bổ KPI",
+      "description": "Mô tả",
+      "metricsTableLabel": "Chỉ tiêu KPI được phân công",
+      "metric": "Chỉ tiêu",
+      "target": "Mục tiêu",
+      "unit": "Đơn vị",
+      "allocationSummary": "Tóm tắt phân bổ KPI",
+      "noAllocations": "Chưa có dòng phân bổ KPI hiển thị cho kế hoạch này.",
+      "readOnlyPosture": "Phân công hiện tại cho phép xem KPI này nhưng không cho phép thao tác cập nhật.",
+      "talentGroupReadOnlyTitle": "KPI nhóm Talent chỉ đọc",
+      "talentGroupReadOnlyMessage": "Thao tác KPI nhóm Talent chưa được mở trong Không gian quản lý.",
       "units": {
         "VND": "VND",
-        "COUNT": "So luong",
-        "HOUR": "Gio"
+        "COUNT": "Số lượng",
+        "HOUR": "Giờ"
       }
     }
   },
   "work": {
-    "title": "Cong viec quan ly",
-    "summary": "Ca lam viec chinh thuc da cong bo cho thanh vien dang hoat dong trong pham vi quan ly.",
-    "readOnly": "Pham vi quan ly chi doc",
-    "scopeBadge": "Pham vi WorkSchedule quan ly",
+    "title": "Lịch làm việc",
+    "summary": "Ca làm chính thức của thành viên trong phạm vi được phân công.",
+    "boundary": "Bạn chỉ thấy dữ liệu trong phạm vi được phân công. Ca làm chính thức là kế hoạch làm việc, không phải chấm công hoặc bảng lương.",
+    "readOnly": "Chỉ đọc",
+    "scopeBadge": "Phạm vi được phân công",
     "tabs": {
-      "published": "Ca da cong bo",
-      "requests": "Yeu cau",
-      "availability": "Kha dung"
+      "published": "Ca làm chính thức",
+      "requests": "Yêu cầu đổi lịch",
+      "availability": "Lịch rảnh/bận"
     },
-    "month": "Thang",
-    "shiftsShown": "Ca dang hien thi",
-    "membersRepresented": "Thanh vien co ca",
-    "period": "Ky",
-    "tableLabel": "Ca lam viec da cong bo",
-    "dateTime": "Ngay va gio",
-    "member": "Thanh vien",
-    "shift": "Ca lam viec",
-    "source": "Nguon",
-    "active": "Dang hoat dong",
-    "draftNotice": "Roster nhap khong hien thi cho den khi duoc cong bo.",
+    "month": "Tháng",
+    "shiftsShown": "Ca đang hiển thị",
+    "membersRepresented": "Thành viên có ca",
+    "period": "Kỳ",
+    "tableLabel": "Ca làm chính thức",
+    "dateTime": "Ngày và giờ",
+    "member": "Thành viên",
+    "shift": "Ca làm chính thức",
+    "source": "Nguồn",
+    "active": "Đang hiệu lực",
+    "draftNotice": "Lịch tháng nháp không hiển thị cho đến khi được công bố.",
     "sourceTypes": {
-      "MANUAL": "Ngoai le thu cong",
-      "ROSTER_GENERATED": "Roster hang thang"
+      "MANUAL": "Ngoại lệ thủ công",
+      "ROSTER_GENERATED": "Lịch tháng"
     },
     "actionNeeded": {
-      "title": "Can xu ly",
-      "summary": "Tin hieu van hanh chi de hien thi tu cac batch yeu cau va kha dung hien co.",
-      "bounded": "So lieu chi phan anh ket qua da tai cho thang da chon, khong phai tong chinh xac toan he thong.",
+      "title": "Cần xử lý",
+      "summary": "Tín hiệu vận hành chỉ để hiển thị từ các đợt yêu cầu và lịch rảnh/bận hiện có.",
+      "bounded": "Số liệu chỉ phản ánh kết quả đã tải cho tháng đã chọn, không phải tổng chính xác toàn hệ thống.",
       "severity": {
-        "INFO": "Thong tin",
-        "DUE_SOON": "Sap den han",
-        "BLOCKED": "Can sua"
+        "INFO": "Thông tin",
+        "DUE_SOON": "Sắp đến hạn",
+        "BLOCKED": "Cần sửa"
       },
       "cards": {
-        "pendingAvailability": { "label": "Kha dung dang cho", "cta": "Xem muc" },
-        "rejectedAvailability": { "label": "Kha dung bi tu choi", "cta": "Xem muc" },
-        "pendingRequests": { "label": "Yeu cau dang cho", "cta": "Xem muc" },
-        "rejectedRequests": { "label": "Yeu cau bi tu choi hoac loi", "cta": "Xem muc" }
+        "pendingAvailability": { "label": "Lịch rảnh/bận đang chờ", "cta": "Xem mục" },
+        "rejectedAvailability": { "label": "Lịch rảnh/bận bị từ chối", "cta": "Xem mục" },
+        "pendingRequests": { "label": "Yêu cầu đang chờ", "cta": "Xem mục" },
+        "rejectedRequests": { "label": "Yêu cầu bị từ chối hoặc lỗi", "cta": "Xem mục" }
       }
     }
   },
   "availability": {
     "copy": {
-      "planning": "Kha dung la tin hieu lap ke hoach truoc roster cho Admin/Ops.",
-      "noAttendance": "Day khong phai du lieu cham cong, luong, nghi co luong, hay nghi khong luong.",
-      "noAutoApply": "Dong da duyet khong tu dong ap dung. Admin/Ops phai ap dung vao Monthly Roster dang nhap.",
-      "otherAdvisory": "Ghi chu kha dung khac chi mang tinh tham khao.",
-      "independentOfShifts": "Tab Kha dung van dung duoc khi ca da cong bo trong hoac tai that bai."
+      "planning": "Lịch rảnh/bận là tín hiệu lập kế hoạch trước khi công bố Lịch tháng.",
+      "noAttendance": "Đây không phải dữ liệu chấm công, bảng lương, nghỉ có lương hoặc nghỉ không lương.",
+      "noAutoApply": "Dòng đã duyệt không tự động áp dụng. Admin/Ops phải áp dụng vào Lịch tháng nháp.",
+      "otherAdvisory": "Ghi chú lịch rảnh/bận khác chỉ mang tính tham khảo.",
+      "independentOfShifts": "Lịch rảnh/bận vẫn dùng được khi danh sách ca làm chính thức trống hoặc tải thất bại."
     },
     "fields": {
-      "periodMonth": "Thang muc tieu",
-      "target": "Doi tuong roster",
-      "note": "Ghi chu batch",
-      "member": "Thanh vien quan ly",
-      "availabilityType": "Loai kha dung",
-      "taxonomyCode": "Phan loai quan ly",
-      "reason": "Ly do",
-      "dateRangeStart": "Ngay bat dau",
-      "dateRangeEnd": "Ngay ket thuc",
-      "preferredStart": "Gio bat dau mong muon",
-      "preferredEnd": "Gio ket thuc mong muon",
-      "cancelReason": "Ly do huy"
+      "periodMonth": "Tháng mục tiêu",
+      "target": "Đối tượng Lịch tháng",
+      "note": "Ghi chú đợt gửi",
+      "member": "Thành viên được phân công",
+      "availabilityType": "Loại lịch rảnh/bận",
+      "taxonomyCode": "Phân loại quản lý",
+      "reason": "Lý do",
+      "dateRangeStart": "Ngày bắt đầu",
+      "dateRangeEnd": "Ngày kết thúc",
+      "preferredStart": "Giờ bắt đầu mong muốn",
+      "preferredEnd": "Giờ kết thúc mong muốn",
+      "cancelReason": "Lý do hủy"
     },
     "types": {
-      "UNAVAILABLE_FULL_DAY": "Khong kha dung ca ngay",
-      "PREFERRED_TIME": "Gio mong muon",
-      "OTHER_AVAILABILITY_NOTE": "Ghi chu kha dung khac"
+      "UNAVAILABLE_FULL_DAY": "Bận cả ngày",
+      "PREFERRED_TIME": "Giờ mong muốn",
+      "OTHER_AVAILABILITY_NOTE": "Ghi chú lịch rảnh/bận khác"
     },
     "taxonomy": {
-      "SICK_LEAVE": "Nghi om",
-      "AUTHORIZED_LEAVE": "Nghi duoc phep",
-      "SHIFT_CHANGE": "Doi ca",
-      "OTHER": "Khac"
+      "SICK_LEAVE": "Nghỉ ốm",
+      "AUTHORIZED_LEAVE": "Nghỉ được phép",
+      "SHIFT_CHANGE": "Đổi ca",
+      "OTHER": "Khác"
     },
     "actions": {
-      "addLine": "Them dong kha dung",
-      "removeLine": "Xoa",
-      "submit": "Gui batch kha dung",
-      "cancelBatch": "Huy batch dang cho",
-      "cancelLine": "Huy dong dang cho"
+      "addLine": "Thêm dòng lịch rảnh/bận",
+      "removeLine": "Xóa",
+      "submit": "Gửi lịch rảnh/bận",
+      "cancelBatch": "Hủy đợt đang chờ",
+      "cancelLine": "Hủy dòng đang chờ"
     },
-    "lineTitle": "Dong kha dung {{index}}",
+    "lineTitle": "Dòng lịch rảnh/bận {{index}}",
     "batches": {
-      "title": "Batch kha dung cua toi",
-      "lines": "dong",
-      "planningAttention": "Can chu y lap ke hoach"
+      "title": "Các đợt lịch rảnh/bận của tôi",
+      "lines": "dòng",
+      "planningAttention": "Cần chú ý khi lập kế hoạch"
     },
     "table": {
-      "member": "Thanh vien",
-      "type": "Loai",
-      "date": "Ngay",
-      "status": "Trang thai",
-      "applyStatus": "Trang thai ap dung",
-      "policy": "Danh gia chinh sach",
-      "actions": "Thao tac"
+      "member": "Thành viên",
+      "type": "Loại",
+      "date": "Ngày",
+      "status": "Trạng thái",
+      "applyStatus": "Trạng thái áp dụng",
+      "policy": "Đánh giá chính sách",
+      "actions": "Thao tác"
     },
     "validation": {
-      "maxLines": "Them it nhat mot thanh vien quan ly va giu batch trong 50 dong.",
-      "targetRequired": "Chon doi tuong roster.",
-      "lineRequired": "Them it nhat mot dong kha dung.",
-      "memberRequired": "Chon thanh vien quan ly.",
-      "reasonRequired": "Can nhap ly do.",
-      "dateRequired": "Can ngay bat dau va ngay ket thuc.",
-      "dateOrder": "Ngay ket thuc phai bang hoac sau ngay bat dau.",
-      "preferredTime": "Dong gio mong muon can gio bat dau va ket thuc hop le.",
-      "cancelReasonRequired": "Can ly do huy.",
-      "memberTargetMismatch": "Moi dong kha dung phai dung thanh vien thuoc dung muc tieu da chon."
+      "maxLines": "Thêm ít nhất một thành viên và giữ đợt gửi trong giới hạn 50 dòng.",
+      "targetRequired": "Chọn đối tượng Lịch tháng.",
+      "lineRequired": "Thêm ít nhất một dòng lịch rảnh/bận.",
+      "memberRequired": "Chọn thành viên được phân công.",
+      "reasonRequired": "Cần nhập lý do.",
+      "dateRequired": "Cần ngày bắt đầu và ngày kết thúc.",
+      "dateOrder": "Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.",
+      "preferredTime": "Dòng giờ mong muốn cần giờ bắt đầu và kết thúc hợp lệ.",
+      "cancelReasonRequired": "Cần lý do hủy.",
+      "memberTargetMismatch": "Mỗi dòng lịch rảnh/bận phải dùng thành viên thuộc đúng mục tiêu đã chọn."
     },
     "states": {
-      "loading": "Dang tai batch kha dung...",
-      "emptyBatches": "Khong co batch kha dung trong thang nay.",
-      "selectBatch": "Chon mot batch kha dung.",
-      "emptyMembersMessage": "Khong co thanh vien du dieu kien trong dung muc tieu da chon.",
-      "loadingMembers": "Dang tai thanh vien du dieu kien cho muc tieu da chon...",
-      "memberLoadError": "Khong the tai thanh vien du dieu kien. Gui kha dung da bi chan."
+      "loading": "Đang tải các đợt lịch rảnh/bận...",
+      "emptyBatches": "Không có đợt lịch rảnh/bận trong tháng này.",
+      "selectBatch": "Chọn một đợt lịch rảnh/bận.",
+      "emptyMembersMessage": "Không có thành viên đủ điều kiện trong đúng mục tiêu đã chọn.",
+      "loadingMembers": "Đang tải thành viên đủ điều kiện cho mục tiêu đã chọn...",
+      "memberLoadError": "Không thể tải thành viên đủ điều kiện. Không thể gửi lịch rảnh/bận."
     }
   },
   "requests": {
     "copy": {
-      "approval": "Yeu cau khong thay doi ca chinh thuc cho den khi Admin/Ops phe duyet.",
-      "draftRoster": "Dong roster nhap khong the gui yeu cau.",
-      "cancellation": "Chi huy yeu cau dang cho xu ly.",
-      "taxonomy": "Chua phan loai chinh sach nghi/absence trong buoc nay. Day la yeu cau thay doi lich, khong phai cham cong."
+      "approval": "Yêu cầu không thay đổi ca làm chính thức cho đến khi Admin/Ops phê duyệt.",
+      "draftRoster": "Dòng Lịch tháng nháp không thể gửi yêu cầu.",
+      "cancellation": "Chỉ hủy yêu cầu đang chờ xử lý.",
+      "taxonomy": "Chưa phân loại chính sách nghỉ trong bước này. Đây là yêu cầu thay đổi lịch, không phải chấm công."
     },
     "fields": {
-      "periodMonth": "Thang yeu cau",
-      "note": "Ghi chu batch",
-      "type": "Loai yeu cau",
-      "member": "Thanh vien quan ly",
-      "workShift": "WorkShift chinh thuc dang hoat dong",
-      "title": "Tieu de yeu cau",
-      "start": "Bat dau yeu cau",
-      "end": "Ket thuc yeu cau",
-      "reason": "Ly do",
-      "cancellationReason": "Ly do huy"
+      "periodMonth": "Tháng yêu cầu",
+      "note": "Ghi chú đợt gửi",
+      "type": "Loại yêu cầu",
+      "member": "Thành viên được phân công",
+      "workShift": "Ca làm chính thức đang hiệu lực",
+      "title": "Tiêu đề yêu cầu",
+      "start": "Bắt đầu yêu cầu",
+      "end": "Kết thúc yêu cầu",
+      "reason": "Lý do",
+      "cancellationReason": "Lý do hủy"
     },
     "types": {
-      "CREATE_SHIFT": "Tao ca",
-      "RESCHEDULE_SHIFT": "Doi lich ca",
-      "CANCEL_SHIFT": "Huy ca"
+      "CREATE_SHIFT": "Tạo ca",
+      "RESCHEDULE_SHIFT": "Đổi lịch ca",
+      "CANCEL_SHIFT": "Hủy ca"
     },
     "statuses": {
-      "PENDING": "Dang cho",
-      "PARTIALLY_APPROVED": "Phe duyet mot phan",
-      "APPROVED": "Da phe duyet",
-      "REJECTED": "Da tu choi",
-      "CANCELLED": "Da huy"
+      "PENDING": "Đang chờ",
+      "PARTIALLY_APPROVED": "Phê duyệt một phần",
+      "APPROVED": "Đã phê duyệt",
+      "REJECTED": "Đã từ chối",
+      "CANCELLED": "Đã hủy"
     },
     "lineStatuses": {
-      "PENDING": "Dang cho",
-      "APPROVED": "Da phe duyet",
-      "REJECTED": "Da tu choi",
-      "CANCELLED": "Da huy",
-      "FAILED_TO_APPLY": "Ap dung that bai"
+      "PENDING": "Đang chờ",
+      "APPROVED": "Đã phê duyệt",
+      "REJECTED": "Đã từ chối",
+      "CANCELLED": "Đã hủy",
+      "FAILED_TO_APPLY": "Áp dụng thất bại"
     },
     "actions": {
-      "submit": "Gui batch",
-      "removeLine": "Xoa dong",
-      "cancelBatch": "Huy batch",
-      "cancelLine": "Huy dong",
+      "submit": "Gửi yêu cầu",
+      "removeLine": "Xóa dòng",
+      "cancelBatch": "Hủy đợt yêu cầu",
+      "cancelLine": "Hủy dòng",
       "add": {
-        "CREATE_SHIFT": "Them tao ca",
-        "RESCHEDULE_SHIFT": "Them doi lich",
-        "CANCEL_SHIFT": "Them huy ca"
+        "CREATE_SHIFT": "Thêm yêu cầu tạo ca",
+        "RESCHEDULE_SHIFT": "Thêm yêu cầu đổi lịch",
+        "CANCEL_SHIFT": "Thêm yêu cầu hủy ca"
       }
     },
-    "lineTitle": "Dong yeu cau {{lineNo}}",
-    "ownBatches": "Batch yeu cau cua toi",
-    "counts": "{{pending}} dang cho / {{total}} tong",
+    "lineTitle": "Dòng yêu cầu {{lineNo}}",
+    "ownBatches": "Các đợt yêu cầu của tôi",
+    "counts": "{{pending}} đang chờ / {{total}} tổng cộng",
     "validation": {
-      "noLines": "Them it nhat mot dong yeu cau.",
-      "maxLines": "Mot batch toi da 50 dong.",
-      "reason": "Ly do moi dong phai co 10-1000 ky tu.",
-      "shiftRequired": "Chon WorkShift chinh thuc dang hoat dong cho doi lich hoac huy.",
-      "windowRequired": "Tao ca va doi lich can thoi gian bat dau va ket thuc.",
-      "windowOrder": "Thoi gian ket thuc phai sau thoi gian bat dau.",
-      "lineMonth": "Ngay cua dong yeu cau phai nam trong thang da chon.",
-      "periodWindow": "Chon thang hien tai hoac mot trong hai thang tiep theo.",
-      "duplicate": "Xoa dong yeu cau trung lap truoc khi gui."
+      "noLines": "Thêm ít nhất một dòng yêu cầu.",
+      "maxLines": "Một đợt yêu cầu có tối đa 50 dòng.",
+      "reason": "Lý do của mỗi dòng phải có 10-1000 ký tự.",
+      "shiftRequired": "Chọn ca làm chính thức đang hiệu lực để đổi lịch hoặc hủy.",
+      "windowRequired": "Tạo ca và đổi lịch cần thời gian bắt đầu và kết thúc.",
+      "windowOrder": "Thời gian kết thúc phải sau thời gian bắt đầu.",
+      "lineMonth": "Ngày của dòng yêu cầu phải nằm trong tháng đã chọn.",
+      "periodWindow": "Chọn tháng hiện tại hoặc một trong hai tháng tiếp theo.",
+      "duplicate": "Xóa dòng yêu cầu trùng lặp trước khi gửi."
     },
     "feedback": {
-      "submitFailed": "Khong gui duoc batch yeu cau."
+      "submitFailed": "Không gửi được đợt yêu cầu."
     },
     "empty": {
-      "noMembersTitle": "Chua co thanh vien quan ly",
-      "noMembersMessage": "Composer can du lieu thanh vien an toan tu ca dang hoat dong da cong bo.",
-      "noBatchesTitle": "Chua co batch yeu cau",
-      "noBatchesMessage": "Batch yeu cau da gui trong thang nay se hien thi tai day."
+      "noMembersTitle": "Chưa có thành viên được phân công",
+      "noMembersMessage": "Biểu mẫu cần dữ liệu thành viên phù hợp từ ca làm chính thức đang hiệu lực.",
+      "noBatchesTitle": "Chưa có đợt yêu cầu",
+      "noBatchesMessage": "Các đợt yêu cầu đã gửi trong tháng này sẽ hiển thị tại đây."
     }
   },
   "empty": {
-    "noProfileTitle": "Chua lien ket ho so",
-    "noProfileMessage": "Tai khoan da dang nhap nhung chua lien ket voi Employment Profile san sang cho quan ly.",
-    "noAssignmentsTitle": "Chua co phan cong quan ly",
-    "noAssignmentsMessage": "Chua co phan cong Org Unit hoac Talent Group dang hieu luc cho ho so cua ban.",
-    "kpiTitle": "Chua co KPI quan ly",
-    "kpiMessage": "KPI don vi va KPI nhom talent chi hien thi khi co phan cong hieu luc.",
-    "kpiListTitle": "Chua co KPI da cong bo",
-    "kpiListMessage": "Chua co ke hoach KPI da cong bo trong pham vi quan ly nay.",
-    "kpiDetailUnavailableTitle": "Khong xem duoc ke hoach KPI",
-    "kpiDetailUnavailableMessage": "Ke hoach KPI nay khong nam trong phan cong quan ly hien tai cua ban.",
-    "workReadinessTitle": "Chua xem duoc cong viec quan ly",
-    "workReadinessMessage": "Chua co pham vi WorkSchedule quan ly hieu luc.",
-    "workTitle": "Chua co ca da cong bo",
-    "workMessage": "Khong co ca chinh thuc dang hoat dong trong thang da chon. Roster nhap chi hien thi sau khi cong bo.",
-    "workNoMembersMessage": "Phan cong hien tai khong co thanh vien dang hoat dong du dieu kien."
+    "noProfileTitle": "Chưa liên kết Hồ sơ nhân sự",
+    "noProfileMessage": "Tài khoản đã đăng nhập nhưng chưa liên kết với Hồ sơ nhân sự phù hợp cho Không gian quản lý.",
+    "noAssignmentsTitle": "Chưa có phạm vi được phân công",
+    "noAssignmentsMessage": "Chưa có phân công đơn vị hoặc nhóm Talent đang hiệu lực cho hồ sơ của bạn.",
+    "kpiTitle": "Chưa có KPI được phân công",
+    "kpiMessage": "KPI đơn vị và KPI nhóm Talent chỉ hiển thị khi có phân công đang hiệu lực.",
+    "kpiListTitle": "Chưa có Kế hoạch KPI đã công bố",
+    "kpiListMessage": "Chưa có Kế hoạch KPI đã công bố trong phạm vi được phân công.",
+    "kpiDetailUnavailableTitle": "Không xem được Kế hoạch KPI",
+    "kpiDetailUnavailableMessage": "Kế hoạch KPI này không nằm trong phạm vi được phân công hiện tại của bạn.",
+    "workReadinessTitle": "Chưa xem được Lịch làm việc",
+    "workReadinessMessage": "Chưa có phạm vi Lịch làm việc được phân công đang hiệu lực.",
+    "workTitle": "Chưa có ca làm chính thức",
+    "workMessage": "Không có ca làm chính thức đang hiệu lực trong tháng đã chọn. Lịch tháng nháp chỉ hiển thị sau khi công bố.",
+    "workNoMembersMessage": "Phân công hiện tại không có thành viên đang hoạt động đủ điều kiện."
   },
   "errors": {
-    "contextTitle": "Khong tai duoc khong gian quan ly",
-    "contextMessage": "Khong tai duoc ngu canh khong gian quan ly cua ban.",
-    "kpiTitle": "Khong tai duoc KPI quan ly",
-    "kpiMessage": "Khong tai duoc cac ke hoach KPI quan ly.",
-    "kpiDetailTitle": "Khong tai duoc chi tiet KPI quan ly",
-    "kpiDetailMessage": "Khong tai duoc ke hoach KPI da chon.",
-    "workTitle": "Khong tai duoc cong viec quan ly",
-    "workMessage": "Khong tai duoc cac ca lam viec da cong bo."
+    "contextTitle": "Không tải được Không gian quản lý",
+    "contextMessage": "Không tải được thông tin Không gian quản lý của bạn.",
+    "kpiTitle": "Không tải được KPI được phân công",
+    "kpiMessage": "Không tải được các Kế hoạch KPI trong phạm vi được phân công.",
+    "kpiDetailTitle": "Không tải được chi tiết KPI",
+    "kpiDetailMessage": "Không tải được Kế hoạch KPI đã chọn.",
+    "workTitle": "Không tải được Lịch làm việc",
+    "workMessage": "Không tải được các ca làm chính thức."
   }
 }
