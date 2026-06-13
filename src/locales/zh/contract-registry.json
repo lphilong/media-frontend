@@ -196,6 +196,7 @@
     "searchReference": "按名称或代码搜索"
   },
   "validation": {
+    "maxLength": "最多 {{max}} 个字符。",
     "required": "此字段为必填。",
     "invalidToken": "请输入有效引用 token。",
     "invalidDate": "使用 YYYY-MM-DD 格式。",
@@ -218,6 +219,166 @@
     "reopenDraft": "将此合同重新打开为草稿？",
     "activate": "启用此合同？",
     "archive": "归档此合同？"
+  },
+  "obligations": {
+    "eventEvidenceReadRestricted": "缺少专用证据读取权限，无法查看事件证据。",
+    "historyTitle": "义务状态历史",
+    "sectionTitle": "义务 / 证据",
+    "listTitle": "合同义务",
+    "unavailable": "此合同不支持在合同登记中管理商业义务。",
+    "noAccess": "你没有查看合同义务的权限。",
+    "directRefsTitle": "直接证据引用",
+    "eventEvidenceTitle": "事件证据链接",
+    "errors": {
+      "loadTitle": "无法加载合同义务"
+    },
+    "helpers": {
+      "completedEventSelection": "从已完成事件中明确选择。后端校验已保存的完成证据。",
+      "reopen": "重新打开会将被拒绝的义务恢复为开放状态，以修正证据和交付。",
+      "boundary": "义务管理仅适用于已启用且受支持的商业/法律合同。每个操作仍由后端授权校验。",
+      "acceptance": "义务验收不会创建收入、佣金、付款、薪资、税务/会计或文件存储。",
+      "review": "义务验收不会创建收入、佣金、付款、薪资、税务/会计或文件存储。",
+      "linkEvent": "仅链接证据。不会自动交付、验收或创建收入。",
+      "delivery": "交付义务不是验收。验收是单独步骤。",
+      "snapshot": "链接时捕获的证据快照"
+    },
+    "actions": {
+      "detail": "查看详情",
+      "reopen": "重新打开义务",
+      "create": "创建草稿义务",
+      "edit": "编辑义务",
+      "save": "保存",
+      "open": "打开义务",
+      "deliver": "标记已交付",
+      "linkEvent": "链接事件证据",
+      "accept": "验收",
+      "reject": "拒绝",
+      "cancel": "取消义务",
+      "archive": "归档义务",
+      "removeLink": "移除链接",
+      "remove-link": "移除链接"
+    },
+    "forms": {
+      "reopenTitle": "重新打开义务",
+      "createTitle": "创建草稿义务",
+      "editTitle": "编辑义务元数据",
+      "metadataSubtitle": "仅更新义务元数据。合同类型和分类不可在此修改。",
+      "deliverTitle": "标记义务已交付",
+      "linkEventTitle": "链接事件证据",
+      "acceptTitle": "验收义务",
+      "rejectTitle": "拒绝义务",
+      "cancelTitle": "取消义务",
+      "archiveTitle": "归档义务",
+      "remove-linkTitle": "移除事件证据链接",
+      "reasonSubtitle": "审计需要填写有界原因。",
+      "pending": "保存中"
+    },
+    "fields": {
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "eventUpdatedAt": "事件快照更新时间",
+      "deliveredBy": "交付人",
+      "reviewedBy": "验收人",
+      "rejectionReason": "拒绝原因",
+      "actionActor": "操作人",
+      "latestWorkflowContext": "最新交付 / 审核",
+      "technicalReference": "技术引用",
+      "identity": "义务",
+      "type": "类型",
+      "status": "状态",
+      "title": "标题",
+      "description": "描述",
+      "evidencePolicy": "证据策略",
+      "dueDate": "到期日",
+      "responsibleOwner": "负责方上下文",
+      "reason": "原因",
+      "reviewNote": "验收备注",
+      "eventId": "已完成事件 ID",
+      "linkReason": "链接原因",
+      "deliveryNote": "交付备注",
+      "eventEvidenceLinks": "事件证据链接",
+      "directRefType": "直接引用类型",
+      "directRefLabel": "直接引用标签",
+      "directRefUrl": "URL",
+      "directRefReferenceId": "引用 ID",
+      "deliveredAt": "最近交付",
+      "reviewedAt": "最近验收",
+      "eventSnapshot": "事件快照",
+      "linkStatus": "链接状态",
+      "completedAt": "完成时间",
+      "completedBy": "完成人",
+      "linkedAt": "链接时间",
+      "linkedBy": "链接人",
+      "removedAt": "移除时间"
+    },
+    "placeholders": {
+      "searchCompletedEvent": "搜索已完成事件编码或标题"
+    },
+    "values": {
+      "displayUnavailable": "无显示标签",
+      "created": "已创建",
+      "selectedForDelivery": "已选用于最近交付"
+    },
+    "eventStatuses": {
+      "COMPLETED": "已完成"
+    },
+    "types": {
+      "DELIVERABLE": "交付物",
+      "SERVICE_MILESTONE": "服务里程碑",
+      "REPORTING": "报告",
+      "OTHER": "其他"
+    },
+    "statuses": {
+      "DRAFT": "草稿",
+      "OPEN": "开放",
+      "DELIVERED": "已交付",
+      "ACCEPTED": "已验收",
+      "REJECTED": "已拒绝",
+      "CANCELLED": "已取消",
+      "ARCHIVED": "已归档"
+    },
+    "evidencePolicies": {
+      "OPTIONAL": "证据可选",
+      "REQUIRED": "必须提供证据"
+    },
+    "evidenceRefTypes": {
+      "URL": "URL",
+      "PLATFORM_REFERENCE": "平台引用",
+      "EXTERNAL_REFERENCE": "外部引用",
+      "INTERNAL_REFERENCE": "内部引用"
+    },
+    "linkStatuses": {
+      "ACTIVE": "有效",
+      "REMOVED": "已移除"
+    },
+    "linkActions": {
+      "LINKED": "已链接",
+      "REMOVED": "已移除"
+    },
+    "empty": {
+      "noObligations": "此合同尚未创建义务。",
+      "noEventEvidence": "此义务尚无事件证据链接。",
+      "noActiveEventEvidence": "没有可用于交付的有效事件证据链接。",
+      "noDirectRefs": "尚未记录直接证据引用。"
+    },
+    "validation": {
+      "requiredEvidence": "必需证据至少需要一个直接引用或一个有效事件证据链接。",
+      "urlRequired": "URL 类型证据必须填写 URL。",
+      "referenceRequired": "此证据类型必须填写引用 ID。"
+    },
+    "feedback": {
+      "reopened": "合同义务已重新打开以便修正。",
+      "created": "合同义务已创建。",
+      "updated": "合同义务已更新。",
+      "opened": "合同义务已打开。",
+      "delivered": "合同义务已标记为已交付。",
+      "accepted": "合同义务已验收。",
+      "rejected": "合同义务已拒绝。",
+      "cancelled": "合同义务已取消。",
+      "archived": "合同义务已归档。",
+      "eventLinked": "事件证据已链接。",
+      "eventRemoved": "事件证据链接已移除。"
+    }
   },
   "actionRail": {
     "title": "合同操作"

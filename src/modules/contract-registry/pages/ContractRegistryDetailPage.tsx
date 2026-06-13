@@ -13,6 +13,7 @@ import {
   readContractBoundaryLabel,
   readContractKindLabel,
 } from '@modules/contract-registry/components/contract-boundary';
+import { ContractObligationEvidenceSection } from '@modules/contract-registry/components/ContractObligationEvidenceSection';
 import {
   ContractAssignOwnerSurface,
   ContractDateActionSurface,
@@ -473,6 +474,7 @@ export const ContractRegistryDetailPage = (): JSX.Element => {
                 columns={2}
               />
             </MetadataSection>
+            <ContractObligationEvidenceSection record={record} />
             {activeSurface === 'draft-core' ? (
               <ContractDraftCoreSurface
                 initialValues={record}

@@ -196,6 +196,7 @@
     "searchReference": "Tìm theo tên hoặc mã"
   },
   "validation": {
+    "maxLength": "Tối đa {{max}} ký tự.",
     "required": "Trường này là bắt buộc.",
     "invalidToken": "Nhập token tham chiếu hợp lệ.",
     "invalidDate": "Dùng định dạng YYYY-MM-DD.",
@@ -218,6 +219,166 @@
     "reopenDraft": "Mở lại hợp đồng này ở trạng thái nháp?",
     "activate": "Kích hoạt hợp đồng này?",
     "archive": "Lưu trữ hợp đồng này?"
+  },
+  "obligations": {
+    "eventEvidenceReadRestricted": "Không thể xem bằng chứng sự kiện vì thiếu quyền đọc bằng chứng chuyên biệt.",
+    "historyTitle": "Lịch sử trạng thái nghĩa vụ",
+    "sectionTitle": "Nghĩa vụ / Bằng chứng",
+    "listTitle": "Nghĩa vụ hợp đồng",
+    "unavailable": "Hợp đồng này không hỗ trợ quản lý nghĩa vụ thương mại trong Contract Registry.",
+    "noAccess": "Bạn không có quyền xem nghĩa vụ hợp đồng.",
+    "directRefsTitle": "Tham chiếu bằng chứng trực tiếp",
+    "eventEvidenceTitle": "Liên kết bằng chứng sự kiện",
+    "errors": {
+      "loadTitle": "Không tải được nghĩa vụ hợp đồng"
+    },
+    "helpers": {
+      "completedEventSelection": "Chọn rõ ràng từ các Sự kiện đã hoàn tất. Backend kiểm tra điều kiện có bằng chứng hoàn tất đã lưu.",
+      "reopen": "Mở lại đưa nghĩa vụ bị từ chối về trạng thái đang mở để sửa bằng chứng và giao nộp.",
+      "boundary": "Quản lý nghĩa vụ chỉ khả dụng cho hợp đồng thương mại/pháp lý đang hoạt động và được hỗ trợ. Backend vẫn kiểm tra quyền cho từng thao tác.",
+      "acceptance": "Nghiệm thu nghĩa vụ không tạo doanh thu, hoa hồng, thanh toán, bảng lương, thuế/kế toán hoặc lưu trữ tệp.",
+      "review": "Nghiệm thu nghĩa vụ không tạo doanh thu, hoa hồng, thanh toán, bảng lương, thuế/kế toán hoặc lưu trữ tệp.",
+      "linkEvent": "Chỉ liên kết bằng chứng. Không tự giao nộp, nghiệm thu hoặc tạo doanh thu.",
+      "delivery": "Giao nộp nghĩa vụ không phải nghiệm thu. Nghiệm thu là bước riêng.",
+      "snapshot": "Ảnh chụp bằng chứng tại thời điểm liên kết"
+    },
+    "actions": {
+      "detail": "Xem chi tiết",
+      "reopen": "Mở lại nghĩa vụ",
+      "create": "Tạo nghĩa vụ nháp",
+      "edit": "Sửa nghĩa vụ",
+      "save": "Lưu",
+      "open": "Mở nghĩa vụ",
+      "deliver": "Đánh dấu đã giao nộp",
+      "linkEvent": "Liên kết bằng chứng sự kiện",
+      "accept": "Nghiệm thu",
+      "reject": "Từ chối",
+      "cancel": "Hủy nghĩa vụ",
+      "archive": "Lưu trữ nghĩa vụ",
+      "removeLink": "Gỡ liên kết",
+      "remove-link": "Gỡ liên kết"
+    },
+    "forms": {
+      "reopenTitle": "Mở lại nghĩa vụ",
+      "createTitle": "Tạo nghĩa vụ nháp",
+      "editTitle": "Sửa metadata nghĩa vụ",
+      "metadataSubtitle": "Chỉ cập nhật metadata nghĩa vụ. Không sửa loại hợp đồng hoặc phân loại tại đây.",
+      "deliverTitle": "Đánh dấu nghĩa vụ đã giao nộp",
+      "linkEventTitle": "Liên kết bằng chứng sự kiện",
+      "acceptTitle": "Nghiệm thu nghĩa vụ",
+      "rejectTitle": "Từ chối nghĩa vụ",
+      "cancelTitle": "Hủy nghĩa vụ",
+      "archiveTitle": "Lưu trữ nghĩa vụ",
+      "remove-linkTitle": "Gỡ liên kết bằng chứng sự kiện",
+      "reasonSubtitle": "Cần nhập lý do có giới hạn để phục vụ kiểm toán.",
+      "pending": "Đang lưu"
+    },
+    "fields": {
+      "createdAt": "Thời điểm tạo",
+      "updatedAt": "Thời điểm cập nhật",
+      "eventUpdatedAt": "Thời điểm cập nhật trong ảnh chụp Sự kiện",
+      "deliveredBy": "Giao nộp bởi",
+      "reviewedBy": "Nghiệm thu bởi",
+      "rejectionReason": "Lý do từ chối",
+      "actionActor": "Người thực hiện",
+      "latestWorkflowContext": "Giao nộp / nghiệm thu gần nhất",
+      "technicalReference": "Tham chiếu kỹ thuật",
+      "identity": "Nghĩa vụ",
+      "type": "Loại",
+      "status": "Trạng thái",
+      "title": "Tiêu đề",
+      "description": "Mô tả",
+      "evidencePolicy": "Chính sách bằng chứng",
+      "dueDate": "Ngày đến hạn",
+      "responsibleOwner": "Ngữ cảnh phụ trách",
+      "reason": "Lý do",
+      "reviewNote": "Ghi chú nghiệm thu",
+      "eventId": "ID Sự kiện đã hoàn tất",
+      "linkReason": "Lý do liên kết",
+      "deliveryNote": "Ghi chú giao nộp",
+      "eventEvidenceLinks": "Liên kết bằng chứng sự kiện",
+      "directRefType": "Loại tham chiếu trực tiếp",
+      "directRefLabel": "Nhãn tham chiếu trực tiếp",
+      "directRefUrl": "URL",
+      "directRefReferenceId": "ID tham chiếu",
+      "deliveredAt": "Lần giao nộp gần nhất",
+      "reviewedAt": "Lần nghiệm thu gần nhất",
+      "eventSnapshot": "Ảnh chụp sự kiện",
+      "linkStatus": "Trạng thái liên kết",
+      "completedAt": "Hoàn tất lúc",
+      "completedBy": "Hoàn tất bởi",
+      "linkedAt": "Liên kết lúc",
+      "linkedBy": "Liên kết bởi",
+      "removedAt": "Gỡ lúc"
+    },
+    "placeholders": {
+      "searchCompletedEvent": "Tìm mã hoặc tiêu đề Sự kiện đã hoàn tất"
+    },
+    "values": {
+      "displayUnavailable": "Không có nhãn hiển thị",
+      "created": "Đã tạo",
+      "selectedForDelivery": "Đã chọn cho lần giao nộp gần nhất"
+    },
+    "eventStatuses": {
+      "COMPLETED": "Đã hoàn tất"
+    },
+    "types": {
+      "DELIVERABLE": "Hạng mục giao nộp",
+      "SERVICE_MILESTONE": "Mốc dịch vụ",
+      "REPORTING": "Báo cáo",
+      "OTHER": "Khác"
+    },
+    "statuses": {
+      "DRAFT": "Nháp",
+      "OPEN": "Đang mở",
+      "DELIVERED": "Đã giao nộp",
+      "ACCEPTED": "Đã nghiệm thu",
+      "REJECTED": "Đã từ chối",
+      "CANCELLED": "Đã hủy",
+      "ARCHIVED": "Đã lưu trữ"
+    },
+    "evidencePolicies": {
+      "OPTIONAL": "Bằng chứng tùy chọn",
+      "REQUIRED": "Bắt buộc có bằng chứng"
+    },
+    "evidenceRefTypes": {
+      "URL": "URL",
+      "PLATFORM_REFERENCE": "Tham chiếu nền tảng",
+      "EXTERNAL_REFERENCE": "Tham chiếu bên ngoài",
+      "INTERNAL_REFERENCE": "Tham chiếu nội bộ"
+    },
+    "linkStatuses": {
+      "ACTIVE": "Đang hiệu lực",
+      "REMOVED": "Đã gỡ"
+    },
+    "linkActions": {
+      "LINKED": "Đã liên kết",
+      "REMOVED": "Đã gỡ"
+    },
+    "empty": {
+      "noObligations": "Chưa có nghĩa vụ nào cho hợp đồng này.",
+      "noEventEvidence": "Chưa có liên kết bằng chứng sự kiện cho nghĩa vụ này.",
+      "noActiveEventEvidence": "Không có liên kết bằng chứng sự kiện đang hiệu lực để chọn khi giao nộp.",
+      "noDirectRefs": "Chưa ghi nhận tham chiếu bằng chứng trực tiếp."
+    },
+    "validation": {
+      "requiredEvidence": "Nghĩa vụ bắt buộc bằng chứng cần ít nhất một tham chiếu trực tiếp hoặc một liên kết bằng chứng sự kiện đang hiệu lực.",
+      "urlRequired": "Cần nhập URL cho bằng chứng dạng URL.",
+      "referenceRequired": "Cần nhập ID tham chiếu cho loại bằng chứng này."
+    },
+    "feedback": {
+      "reopened": "Đã mở lại nghĩa vụ để hiệu chỉnh.",
+      "created": "Đã tạo nghĩa vụ hợp đồng.",
+      "updated": "Đã cập nhật nghĩa vụ hợp đồng.",
+      "opened": "Đã mở nghĩa vụ hợp đồng.",
+      "delivered": "Đã đánh dấu nghĩa vụ là đã giao nộp.",
+      "accepted": "Đã nghiệm thu nghĩa vụ hợp đồng.",
+      "rejected": "Đã từ chối nghĩa vụ hợp đồng.",
+      "cancelled": "Đã hủy nghĩa vụ hợp đồng.",
+      "archived": "Đã lưu trữ nghĩa vụ hợp đồng.",
+      "eventLinked": "Đã liên kết bằng chứng sự kiện.",
+      "eventRemoved": "Đã gỡ liên kết bằng chứng sự kiện."
+    }
   },
   "actionRail": {
     "title": "Hành động hợp đồng"

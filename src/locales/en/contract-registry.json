@@ -196,6 +196,7 @@
     "searchReference": "Search by name or code"
   },
   "validation": {
+    "maxLength": "Must be at most {{max}} characters.",
     "required": "This field is required.",
     "invalidToken": "Use a valid reference token.",
     "invalidDate": "Use YYYY-MM-DD.",
@@ -218,6 +219,166 @@
     "reopenDraft": "Reopen this contract as draft?",
     "activate": "Activate this contract?",
     "archive": "Archive this contract?"
+  },
+  "obligations": {
+    "eventEvidenceReadRestricted": "Event evidence is unavailable because the dedicated evidence read permission is missing.",
+    "historyTitle": "Obligation status history",
+    "sectionTitle": "Obligations / Evidence",
+    "listTitle": "Contract obligations",
+    "unavailable": "This contract does not support commercial obligation management in Contract Registry.",
+    "noAccess": "You do not have permission to view contract obligations.",
+    "directRefsTitle": "Direct evidence references",
+    "eventEvidenceTitle": "Event evidence links",
+    "errors": {
+      "loadTitle": "Contract obligations could not be loaded"
+    },
+    "helpers": {
+      "completedEventSelection": "Select explicitly from completed Events. Eligibility for persisted completion evidence is enforced by the backend.",
+      "reopen": "Reopening moves a rejected obligation back to open for evidence and delivery correction.",
+      "boundary": "Obligation management is available only for active supported commercial/legal contracts. Backend authorization is enforced for every action.",
+      "acceptance": "Obligation acceptance does not create revenue, commission, payment, payroll, tax/accounting, or file storage.",
+      "review": "Obligation acceptance does not create revenue, commission, payment, payroll, tax/accounting, or file storage.",
+      "linkEvent": "This only links evidence. It does not deliver, accept, or create revenue.",
+      "delivery": "Delivering an obligation is not acceptance. Acceptance is a separate step.",
+      "snapshot": "Evidence snapshot captured at link time"
+    },
+    "actions": {
+      "detail": "View detail",
+      "reopen": "Reopen obligation",
+      "create": "Create draft obligation",
+      "edit": "Edit obligation",
+      "save": "Save",
+      "open": "Open obligation",
+      "deliver": "Mark delivered",
+      "linkEvent": "Link Event evidence",
+      "accept": "Accept",
+      "reject": "Reject",
+      "cancel": "Cancel obligation",
+      "archive": "Archive obligation",
+      "removeLink": "Remove link",
+      "remove-link": "Remove link"
+    },
+    "forms": {
+      "reopenTitle": "Reopen obligation",
+      "createTitle": "Create draft obligation",
+      "editTitle": "Edit obligation metadata",
+      "metadataSubtitle": "Update obligation metadata only. Contract kind and classification are not editable here.",
+      "deliverTitle": "Mark obligation delivered",
+      "linkEventTitle": "Link Event evidence",
+      "acceptTitle": "Accept obligation",
+      "rejectTitle": "Reject obligation",
+      "cancelTitle": "Cancel obligation",
+      "archiveTitle": "Archive obligation",
+      "remove-linkTitle": "Remove Event evidence link",
+      "reasonSubtitle": "A bounded reason is required for audit.",
+      "pending": "Saving"
+    },
+    "fields": {
+      "createdAt": "Created at",
+      "updatedAt": "Updated at",
+      "eventUpdatedAt": "Event snapshot updated at",
+      "deliveredBy": "Delivered by",
+      "reviewedBy": "Reviewed by",
+      "rejectionReason": "Rejection reason",
+      "actionActor": "Action actor",
+      "latestWorkflowContext": "Latest delivery / review",
+      "technicalReference": "Technical reference",
+      "identity": "Obligation",
+      "type": "Type",
+      "status": "Status",
+      "title": "Title",
+      "description": "Description",
+      "evidencePolicy": "Evidence policy",
+      "dueDate": "Due date",
+      "responsibleOwner": "Responsible owner context",
+      "reason": "Reason",
+      "reviewNote": "Review note",
+      "eventId": "Completed Event ID",
+      "linkReason": "Link reason",
+      "deliveryNote": "Delivery note",
+      "eventEvidenceLinks": "Event evidence links",
+      "directRefType": "Direct reference type",
+      "directRefLabel": "Direct reference label",
+      "directRefUrl": "URL",
+      "directRefReferenceId": "Reference ID",
+      "deliveredAt": "Latest delivery",
+      "reviewedAt": "Latest review",
+      "eventSnapshot": "Event snapshot",
+      "linkStatus": "Link status",
+      "completedAt": "Completed at",
+      "completedBy": "Completed by",
+      "linkedAt": "Linked at",
+      "linkedBy": "Linked by",
+      "removedAt": "Removed at"
+    },
+    "placeholders": {
+      "searchCompletedEvent": "Search completed Event code or title"
+    },
+    "values": {
+      "displayUnavailable": "Display label unavailable",
+      "created": "Created",
+      "selectedForDelivery": "Selected for latest delivery"
+    },
+    "eventStatuses": {
+      "COMPLETED": "Completed"
+    },
+    "types": {
+      "DELIVERABLE": "Deliverable",
+      "SERVICE_MILESTONE": "Service milestone",
+      "REPORTING": "Reporting",
+      "OTHER": "Other"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "OPEN": "Open",
+      "DELIVERED": "Delivered",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled",
+      "ARCHIVED": "Archived"
+    },
+    "evidencePolicies": {
+      "OPTIONAL": "Optional evidence",
+      "REQUIRED": "Evidence required"
+    },
+    "evidenceRefTypes": {
+      "URL": "URL",
+      "PLATFORM_REFERENCE": "Platform reference",
+      "EXTERNAL_REFERENCE": "External reference",
+      "INTERNAL_REFERENCE": "Internal reference"
+    },
+    "linkStatuses": {
+      "ACTIVE": "Active",
+      "REMOVED": "Removed"
+    },
+    "linkActions": {
+      "LINKED": "Linked",
+      "REMOVED": "Removed"
+    },
+    "empty": {
+      "noObligations": "No obligations have been created for this contract.",
+      "noEventEvidence": "No Event evidence links are recorded for this obligation.",
+      "noActiveEventEvidence": "No active Event evidence links are available for delivery.",
+      "noDirectRefs": "No direct evidence references recorded."
+    },
+    "validation": {
+      "requiredEvidence": "Required evidence needs at least one direct reference or one active Event evidence link.",
+      "urlRequired": "URL is required for URL evidence.",
+      "referenceRequired": "Reference ID is required for this evidence type."
+    },
+    "feedback": {
+      "reopened": "Contract obligation reopened for correction.",
+      "created": "Contract obligation created.",
+      "updated": "Contract obligation updated.",
+      "opened": "Contract obligation opened.",
+      "delivered": "Contract obligation marked delivered.",
+      "accepted": "Contract obligation accepted.",
+      "rejected": "Contract obligation rejected.",
+      "cancelled": "Contract obligation cancelled.",
+      "archived": "Contract obligation archived.",
+      "eventLinked": "Event evidence linked.",
+      "eventRemoved": "Event evidence link removed."
+    }
   },
   "actionRail": {
     "title": "Contract actions"

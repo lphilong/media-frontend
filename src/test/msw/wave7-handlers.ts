@@ -27,8 +27,8 @@ type ContractBoundaryMetadata = {
   directRevenueSourceEligible: false;
   directCommissionSourceEligible: false;
   payrollSourceEligible: false;
-  obligationAcceptanceImplemented: false;
-  eventEvidenceLinkImplemented: false;
+  obligationAcceptanceImplemented: boolean;
+  eventEvidenceLinkImplemented: boolean;
 };
 
 type ReferenceSummary = {
@@ -57,6 +57,105 @@ type ContractRecord = {
   fileDisplayName: string | null;
   description: string | null;
   externalRef: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type ContractObligationStatus =
+  | 'DRAFT'
+  | 'OPEN'
+  | 'DELIVERED'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'ARCHIVED';
+type ContractObligationType = 'DELIVERABLE' | 'SERVICE_MILESTONE' | 'REPORTING' | 'OTHER';
+type ContractObligationEvidencePolicy = 'OPTIONAL' | 'REQUIRED';
+type ContractEvidenceRefType =
+  | 'URL'
+  | 'PLATFORM_REFERENCE'
+  | 'EXTERNAL_REFERENCE'
+  | 'INTERNAL_REFERENCE';
+type ContractObligationEventEvidenceLinkStatus = 'ACTIVE' | 'REMOVED';
+
+type ContractEvidenceRef = {
+  type: ContractEvidenceRefType;
+  label: string;
+  url: string | null;
+  referenceId: string | null;
+};
+
+type ContractObligation = {
+  id: string;
+  contractRecordId: string;
+  code: string;
+  obligationType: ContractObligationType;
+  title: string;
+  description: string | null;
+  status: ContractObligationStatus;
+  evidencePolicy: ContractObligationEvidencePolicy;
+  dueDate: number | null;
+  periodStartDate: number | null;
+  periodEndDate: number | null;
+  responsibleOwnerEmploymentProfileId: string;
+  latestDeliveryNote: string | null;
+  latestDeliveredAt: number | null;
+  latestDeliveredBy: string | null;
+  latestEvidenceRefs: ContractEvidenceRef[];
+  latestEventEvidenceLinkIds: string[];
+  latestReviewNote: string | null;
+  latestReviewedAt: number | null;
+  latestReviewedBy: string | null;
+  latestRejectionReason: string | null;
+  statusTransitions: Array<{
+    fromStatus: ContractObligationStatus | null;
+    toStatus: ContractObligationStatus;
+    reason: string | null;
+    actorId: string;
+    happenedAt: number;
+  }>;
+  boundaryMetadata: {
+    commercialLegalRegistry: boolean;
+    obligationAcceptanceImplemented: boolean;
+    eventEvidenceLinkImplemented: boolean;
+    noRevenueSideEffect: true;
+    noCommissionSideEffect: true;
+    noPayrollSideEffect: true;
+    noPaymentSideEffect: true;
+    noTaxAccountingSideEffect: true;
+    noFileStorageSideEffect: true;
+  };
+  createdAt: number;
+  updatedAt: number;
+};
+
+type ContractObligationEventEvidenceLink = {
+  id: string;
+  obligationId: string;
+  eventId: string;
+  status: ContractObligationEventEvidenceLinkStatus;
+  snapshot: {
+    eventId: string;
+    eventCode: string;
+    eventTitle: string;
+    eventStatus: 'COMPLETED';
+    eventUpdatedAt: number;
+    eventCompletedAt: number;
+    eventCompletedBy: string;
+    completionEvidenceNote: string;
+    completionEvidenceRefs: ContractEvidenceRef[];
+  };
+  linkReason: string;
+  linkedAt: number;
+  linkedBy: string;
+  removeReason: string | null;
+  removedAt: number | null;
+  removedBy: string | null;
+  boundaryMetadata: {
+    snapshotImmutable: true;
+    activeLinkCanSatisfyDelivery: boolean;
+    removedLinkCanSatisfyDelivery: boolean;
+  };
   createdAt: number;
   updatedAt: number;
 };
@@ -153,6 +252,276 @@ const initialContracts: ContractRecord[] = [
 
 let contracts = initialContracts.map((record) => ({ ...record }));
 
+const obligationBoundaryMetadata: ContractObligation['boundaryMetadata'] = {
+  commercialLegalRegistry: true,
+  obligationAcceptanceImplemented: true,
+  eventEvidenceLinkImplemented: true,
+  noRevenueSideEffect: true,
+  noCommissionSideEffect: true,
+  noPayrollSideEffect: true,
+  noPaymentSideEffect: true,
+  noTaxAccountingSideEffect: true,
+  noFileStorageSideEffect: true,
+};
+
+const initialObligations: ContractObligation[] = [
+  {
+    id: 'obligation-rejected-001',
+    contractRecordId: 'contract-record-active',
+    code: 'OBL-2026-000004',
+    obligationType: 'DELIVERABLE',
+    title: 'Rejected evidence correction',
+    description: 'Rejected obligation ready to reopen for evidence correction.',
+    status: 'REJECTED',
+    evidencePolicy: 'REQUIRED',
+    dueDate: now + day,
+    periodStartDate: null,
+    periodEndDate: null,
+    responsibleOwnerEmploymentProfileId: 'employment-profile-without-display-000004',
+    latestDeliveryNote: 'Initial delivery requires correction.',
+    latestDeliveredAt: now - day,
+    latestDeliveredBy: 'admin-user-002',
+    latestEvidenceRefs: [],
+    latestEventEvidenceLinkIds: [],
+    latestReviewNote: null,
+    latestReviewedAt: now - day / 2,
+    latestReviewedBy: 'admin-user-003',
+    latestRejectionReason: 'Evidence reference was incomplete.',
+    statusTransitions: [
+      {
+        fromStatus: 'DELIVERED',
+        toStatus: 'REJECTED',
+        reason: 'Evidence reference was incomplete.',
+        actorId: 'admin-user-003',
+        happenedAt: now - day / 2,
+      },
+    ],
+    boundaryMetadata: obligationBoundaryMetadata,
+    createdAt: now - day * 5,
+    updatedAt: now - day / 2,
+  },
+  {
+    id: 'obligation-draft-001',
+    contractRecordId: 'contract-record-active',
+    code: 'OBL-2026-000001',
+    obligationType: 'DELIVERABLE',
+    title: 'Kịch bản nội dung',
+    description: 'Bản nháp kịch bản chiến dịch cần mở trước khi giao nộp.',
+    status: 'DRAFT',
+    evidencePolicy: 'OPTIONAL',
+    dueDate: now + day * 5,
+    periodStartDate: null,
+    periodEndDate: null,
+    responsibleOwnerEmploymentProfileId: 'ep-002',
+    latestDeliveryNote: null,
+    latestDeliveredAt: null,
+    latestDeliveredBy: null,
+    latestEvidenceRefs: [],
+    latestEventEvidenceLinkIds: [],
+    latestReviewNote: null,
+    latestReviewedAt: null,
+    latestReviewedBy: null,
+    latestRejectionReason: null,
+    statusTransitions: [
+      {
+        fromStatus: null,
+        toStatus: 'DRAFT',
+        reason: 'Initial draft obligation',
+        actorId: 'admin-user-001',
+        happenedAt: now - day * 4,
+      },
+    ],
+    boundaryMetadata: obligationBoundaryMetadata,
+    createdAt: now - day * 4,
+    updatedAt: now - day * 4,
+  },
+  {
+    id: 'obligation-open-required',
+    contractRecordId: 'contract-record-active',
+    code: 'OBL-2026-000002',
+    obligationType: 'SERVICE_MILESTONE',
+    title: 'Nghiệm thu bằng chứng livestream',
+    description: 'Nghĩa vụ yêu cầu bằng chứng từ Event đã hoàn tất hoặc tham chiếu trực tiếp.',
+    status: 'OPEN',
+    evidencePolicy: 'REQUIRED',
+    dueDate: now + day * 2,
+    periodStartDate: null,
+    periodEndDate: null,
+    responsibleOwnerEmploymentProfileId: 'ep-002',
+    latestDeliveryNote: null,
+    latestDeliveredAt: null,
+    latestDeliveredBy: null,
+    latestEvidenceRefs: [],
+    latestEventEvidenceLinkIds: [],
+    latestReviewNote: null,
+    latestReviewedAt: null,
+    latestReviewedBy: null,
+    latestRejectionReason: null,
+    statusTransitions: [
+      {
+        fromStatus: 'DRAFT',
+        toStatus: 'OPEN',
+        reason: 'Opened for delivery',
+        actorId: 'admin-user-001',
+        happenedAt: now - day,
+      },
+    ],
+    boundaryMetadata: obligationBoundaryMetadata,
+    createdAt: now - day * 3,
+    updatedAt: now - day,
+  },
+  {
+    id: 'obligation-delivered-001',
+    contractRecordId: 'contract-record-active',
+    code: 'OBL-2026-000003',
+    obligationType: 'REPORTING',
+    title: 'Báo cáo tổng kết chiến dịch',
+    description: 'Đang chờ nghiệm thu rõ ràng.',
+    status: 'DELIVERED',
+    evidencePolicy: 'REQUIRED',
+    dueDate: now - day,
+    periodStartDate: null,
+    periodEndDate: null,
+    responsibleOwnerEmploymentProfileId: 'ep-002',
+    latestDeliveryNote: 'Báo cáo đã gửi cho pháp lý rà soát.',
+    latestDeliveredAt: now - day / 2,
+    latestDeliveredBy: 'admin-user-002',
+    latestEvidenceRefs: [
+      {
+        type: 'URL',
+        label: 'Báo cáo tổng kết',
+        url: 'https://example.test/campaign-report',
+        referenceId: null,
+      },
+    ],
+    latestEventEvidenceLinkIds: ['event-evidence-link-delivered-001'],
+    latestReviewNote: null,
+    latestReviewedAt: null,
+    latestReviewedBy: null,
+    latestRejectionReason: null,
+    statusTransitions: [
+      {
+        fromStatus: 'OPEN',
+        toStatus: 'DELIVERED',
+        reason: 'Delivered with direct evidence',
+        actorId: 'admin-user-002',
+        happenedAt: now - day / 2,
+      },
+    ],
+    boundaryMetadata: obligationBoundaryMetadata,
+    createdAt: now - day * 6,
+    updatedAt: now - day / 2,
+  },
+];
+
+const eventSnapshotFixture = {
+  eventId: 'event-completed-001',
+  eventCode: 'EVT-2026-000001',
+  eventTitle: 'Livestream ra mắt chiến dịch',
+  eventStatus: 'COMPLETED' as const,
+  eventUpdatedAt: now - day / 3,
+  eventCompletedAt: now - day / 3,
+  eventCompletedBy: 'admin-user-002',
+  completionEvidenceNote: 'Ảnh chụp bằng chứng hoàn tất Event tại thời điểm liên kết.',
+  completionEvidenceRefs: [
+    {
+      type: 'URL' as const,
+      label: 'Biên bản hoàn tất Event',
+      url: 'https://example.test/event-evidence',
+      referenceId: null,
+    },
+  ],
+};
+
+const initialEventEvidenceLinks: ContractObligationEventEvidenceLink[] = [
+  {
+    id: 'event-evidence-link-delivered-001',
+    obligationId: 'obligation-delivered-001',
+    eventId: 'event-completed-delivered',
+    status: 'ACTIVE',
+    snapshot: {
+      ...eventSnapshotFixture,
+      eventId: 'event-completed-delivered',
+      eventCode: 'EVT-2026-000055',
+      eventTitle: 'Delivered obligation evidence Event',
+    },
+    linkReason: 'Selected as supporting evidence for delivery.',
+    linkedAt: now - day,
+    linkedBy: 'admin-user-002',
+    removeReason: null,
+    removedAt: null,
+    removedBy: null,
+    boundaryMetadata: {
+      snapshotImmutable: true,
+      activeLinkCanSatisfyDelivery: true,
+      removedLinkCanSatisfyDelivery: false,
+    },
+    createdAt: now - day,
+    updatedAt: now - day,
+  },
+  {
+    id: 'event-evidence-link-active-001',
+    obligationId: 'obligation-open-required',
+    eventId: 'event-completed-001',
+    status: 'ACTIVE',
+    snapshot: eventSnapshotFixture,
+    linkReason: 'Bằng chứng Event hoàn tất liên quan trực tiếp đến nghĩa vụ.',
+    linkedAt: now - day / 4,
+    linkedBy: 'admin-user-actor-000001',
+    removeReason: null,
+    removedAt: null,
+    removedBy: null,
+    boundaryMetadata: {
+      snapshotImmutable: true,
+      activeLinkCanSatisfyDelivery: true,
+      removedLinkCanSatisfyDelivery: false,
+    },
+    createdAt: now - day / 4,
+    updatedAt: now - day / 4,
+  },
+  {
+    id: 'event-evidence-link-removed-001',
+    obligationId: 'obligation-open-required',
+    eventId: 'event-completed-removed',
+    status: 'REMOVED',
+    snapshot: {
+      ...eventSnapshotFixture,
+      eventId: 'event-completed-removed',
+      eventCode: 'EVT-2026-000099',
+      eventTitle: 'Event bằng chứng đã gỡ',
+    },
+    linkReason: 'Liên kết ban đầu để kiểm tra lịch sử.',
+    linkedAt: now - day,
+    linkedBy: 'admin-user-actor-000001',
+    removeReason: 'Không còn phù hợp với nghĩa vụ này.',
+    removedAt: now - day / 2,
+    removedBy: 'admin-user-actor-000001',
+    boundaryMetadata: {
+      snapshotImmutable: true,
+      activeLinkCanSatisfyDelivery: false,
+      removedLinkCanSatisfyDelivery: false,
+    },
+    createdAt: now - day,
+    updatedAt: now - day / 2,
+  },
+];
+
+let obligationSeed = 3;
+let eventEvidenceLinkSeed = 3;
+let obligations = initialObligations.map((record) => ({
+  ...record,
+  latestEvidenceRefs: record.latestEvidenceRefs.map((ref) => ({ ...ref })),
+  latestEventEvidenceLinkIds: [...record.latestEventEvidenceLinkIds],
+  statusTransitions: record.statusTransitions.map((transition) => ({ ...transition })),
+}));
+let eventEvidenceLinks = initialEventEvidenceLinks.map((record) => ({
+  ...record,
+  snapshot: {
+    ...record.snapshot,
+    completionEvidenceRefs: record.snapshot.completionEvidenceRefs.map((ref) => ({ ...ref })),
+  },
+}));
+
 const employmentProfileRefs = new Map<string, ReferenceSummary>([
   ['ep-001', { id: 'ep-001', code: 'EMP-001', name: 'Alice Nguyen', status: 'ACTIVE' }],
   ['ep-002', { id: 'ep-002', code: 'EMP-002', name: 'Bao Tran', status: 'ACTIVE' }],
@@ -165,6 +534,21 @@ const talentRefs = new Map<string, ReferenceSummary>([
 export const resetWave7MockData = (): void => {
   contractSeed = initialContractSeed;
   contracts = initialContracts.map((record) => ({ ...record }));
+  obligationSeed = 3;
+  eventEvidenceLinkSeed = 2;
+  obligations = initialObligations.map((record) => ({
+    ...record,
+    latestEvidenceRefs: record.latestEvidenceRefs.map((ref) => ({ ...ref })),
+    latestEventEvidenceLinkIds: [...record.latestEventEvidenceLinkIds],
+    statusTransitions: record.statusTransitions.map((transition) => ({ ...transition })),
+  }));
+  eventEvidenceLinks = initialEventEvidenceLinks.map((record) => ({
+    ...record,
+    snapshot: {
+      ...record.snapshot,
+      completionEvidenceRefs: record.snapshot.completionEvidenceRefs.map((ref) => ({ ...ref })),
+    },
+  }));
 };
 
 const parseJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
@@ -357,8 +741,8 @@ const toBoundaryMetadata = (contractKind: ContractKind): ContractBoundaryMetadat
     directRevenueSourceEligible: false,
     directCommissionSourceEligible: false,
     payrollSourceEligible: false,
-    obligationAcceptanceImplemented: false,
-    eventEvidenceLinkImplemented: false,
+    obligationAcceptanceImplemented: commercialLegal,
+    eventEvidenceLinkImplemented: commercialLegal,
   };
 };
 
@@ -450,6 +834,201 @@ const contractKindMatchesLinkedKind = (
 
 const findContract = (contractRecordId: string): ContractRecord | undefined =>
   contracts.find((record) => record.id === contractRecordId);
+
+const findObligation = (obligationId: string): ContractObligation | undefined =>
+  obligations.find((record) => record.id === obligationId);
+
+const findEventEvidenceLink = (linkId: string): ContractObligationEventEvidenceLink | undefined =>
+  eventEvidenceLinks.find((record) => record.id === linkId);
+
+const isSupportedActiveContract = (record: ContractRecord): boolean =>
+  record.status === 'ACTIVE' &&
+  (record.contractKind === 'TALENT_SERVICE' || record.contractKind === 'TALENT_MANAGEMENT');
+
+const rejectUnsupportedContractContext = (contractRecordId: string): Response | undefined => {
+  const contract = findContract(contractRecordId);
+  if (!contract) {
+    return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+  }
+  if (!isSupportedActiveContract(contract)) {
+    return HttpResponse.json(
+      { message: 'contract-registry:obligations.unavailable' },
+      { status: 422 },
+    );
+  }
+  return undefined;
+};
+
+const toNullableString = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+
+const toObligationDetail = (record: ContractObligation) => ({
+  id: record.id,
+  code: record.code,
+  contractRecordId: record.contractRecordId,
+  obligationType: record.obligationType,
+  title: record.title,
+  description: record.description,
+  dueDate: record.dueDate,
+  responsibleOwnerEmploymentProfileId: record.responsibleOwnerEmploymentProfileId,
+  evidencePolicy: record.evidencePolicy,
+  status: record.status,
+  latestDeliveryNote: record.latestDeliveryNote,
+  latestEvidenceRefs: record.latestEvidenceRefs.map((ref) => ({ ...ref })),
+  latestEventEvidenceLinkIds: [...record.latestEventEvidenceLinkIds],
+  latestDeliveredByActorId: record.latestDeliveredBy,
+  latestDeliveredAt: record.latestDeliveredAt,
+  latestReviewedByActorId: record.latestReviewedBy,
+  latestReviewedAt: record.latestReviewedAt,
+  acceptedByActorId: record.status === 'ACCEPTED' ? record.latestReviewedBy : null,
+  acceptedAt: record.status === 'ACCEPTED' ? record.latestReviewedAt : null,
+  rejectedByActorId: record.status === 'REJECTED' ? record.latestReviewedBy : null,
+  rejectedAt: record.status === 'REJECTED' ? record.latestReviewedAt : null,
+  rejectionReason: record.latestRejectionReason,
+  statusHistory: record.statusTransitions.map((transition) => ({
+    fromStatus: transition.fromStatus,
+    toStatus: transition.toStatus,
+    actorId: transition.actorId,
+    occurredAt: transition.happenedAt,
+    reason: transition.reason,
+  })),
+  createdByActorId: 'admin-user-001',
+  createdAt: record.createdAt,
+  updatedByActorId: 'admin-user-001',
+  updatedAt: record.updatedAt,
+  boundaryMetadata: {
+    activeSupportedCommercialLegalContractRequired: true,
+    legacyEmploymentContractAllowed: false,
+    unsupportedContractKindAllowed: false,
+    responsibleOwnerGrantsAuthority: false,
+    eventEvidenceLinkImplemented: true,
+    eventCompletionMutatesObligation: false,
+    acceptanceCreatesRevenue: false,
+    acceptanceCreatesCommission: false,
+    acceptanceCreatesPayroll: false,
+    acceptanceCreatesPayment: false,
+    acceptanceCreatesTaxOrAccounting: false,
+    fileStorageImplemented: false,
+  },
+});
+
+const toEventEvidenceLinkDetail = (record: ContractObligationEventEvidenceLink) => {
+  const obligation = findObligation(record.obligationId);
+  return {
+    id: record.id,
+    contractObligationId: record.obligationId,
+    contractRecordId: obligation?.contractRecordId ?? 'contract-record-active',
+    eventId: record.eventId,
+    status: record.status,
+    linkedByActorId: record.linkedBy,
+    linkedAt: record.linkedAt,
+    linkReason: record.linkReason,
+    removedByActorId: record.removedBy,
+    removedAt: record.removedAt,
+    removeReason: record.removeReason,
+    snapshot: {
+      eventId: record.snapshot.eventId,
+      eventCode: record.snapshot.eventCode,
+      eventTitle: record.snapshot.eventTitle,
+      eventStatus: record.snapshot.eventStatus,
+      eventUpdatedAt: record.snapshot.eventUpdatedAt,
+      eventCompletedAt: record.snapshot.eventCompletedAt,
+      eventCompletedByActorId: record.snapshot.eventCompletedBy,
+      completionEvidenceNote: record.snapshot.completionEvidenceNote,
+      completionEvidenceRefs: record.snapshot.completionEvidenceRefs.map((ref) => ({ ...ref })),
+    },
+    actionHistory: [
+      {
+        action: 'LINKED' as const,
+        actorId: record.linkedBy,
+        occurredAt: record.linkedAt,
+        reason: record.linkReason,
+      },
+      ...(record.status === 'REMOVED' && record.removedAt && record.removeReason
+        ? [
+            {
+              action: 'REMOVED' as const,
+              actorId: record.removedBy ?? 'admin-user-001',
+              occurredAt: record.removedAt,
+              reason: record.removeReason,
+            },
+          ]
+        : []),
+    ],
+    createdByActorId: record.linkedBy,
+    createdAt: record.createdAt,
+    updatedByActorId: record.removedBy ?? record.linkedBy,
+    updatedAt: record.updatedAt,
+    boundaryMetadata: {
+      linkTarget: 'CONTRACT_OBLIGATION' as const,
+      supportingEvidenceOnly: true as const,
+      historicalSnapshot: true as const,
+      linkMutatesEvent: false as const,
+      linkMutatesObligationStatus: false as const,
+      deliveryRemainsExplicit: true as const,
+      acceptanceCreated: false as const,
+      revenueCreated: false as const,
+      commissionCreated: false as const,
+      payrollCreated: false as const,
+      paymentCreated: false as const,
+      taxOrAccountingCreated: false as const,
+      fileStorageCreated: false as const,
+      inferredEventContractMatching: false as const,
+    },
+  };
+};
+
+const appendObligationTransition = (
+  record: ContractObligation,
+  toStatus: ContractObligationStatus,
+  reason: string | null,
+): void => {
+  record.statusTransitions.push({
+    fromStatus: record.status,
+    toStatus,
+    reason,
+    actorId: 'admin-user-001',
+    happenedAt: Date.now(),
+  });
+  record.status = toStatus;
+  record.updatedAt = Date.now();
+};
+
+const parseEvidenceRefs = (value: unknown): ContractEvidenceRef[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item): ContractEvidenceRef | undefined => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return undefined;
+      }
+      const entry = item as Record<string, unknown>;
+      const type = entry.type as ContractEvidenceRefType;
+      if (
+        !['URL', 'PLATFORM_REFERENCE', 'EXTERNAL_REFERENCE', 'INTERNAL_REFERENCE'].includes(type)
+      ) {
+        return undefined;
+      }
+      const label = toNullableString(entry.label);
+      if (!label) {
+        return undefined;
+      }
+      return {
+        type,
+        label,
+        url: type === 'URL' ? toNullableString(entry.url) : null,
+        referenceId: type === 'URL' ? null : toNullableString(entry.referenceId),
+      };
+    })
+    .filter((item): item is ContractEvidenceRef => Boolean(item));
+};
+
+const activeLinksForObligation = (obligationId: string): ContractObligationEventEvidenceLink[] =>
+  eventEvidenceLinks.filter(
+    (link) => link.obligationId === obligationId && link.status === 'ACTIVE',
+  );
 
 const rejectInvalidTransition = (): Response =>
   HttpResponse.json({ message: 'errors:validation.conflict' }, { status: 409 });
@@ -626,6 +1205,461 @@ export const wave7Handlers = [
     contracts.unshift(next);
     return HttpResponse.json({ data: toDetail(next) });
   }),
+  http.get('*/admin/contract-records/:contractRecordId/obligations', ({ params }) => {
+    const unsupported = rejectUnsupportedContractContext(String(params.contractRecordId));
+    if (unsupported) {
+      return unsupported;
+    }
+    return HttpResponse.json({
+      data: obligations
+        .filter((record) => record.contractRecordId === String(params.contractRecordId))
+        .map(toObligationDetail),
+    });
+  }),
+  http.post(
+    '*/admin/contract-records/:contractRecordId/obligations',
+    async ({ params, request }) => {
+      const contractRecordId = String(params.contractRecordId);
+      const unsupported = rejectUnsupportedContractContext(contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      const body = await parseJsonBody(request);
+      const reasonFailure = rejectUnsupportedBody(
+        body,
+        new Set([
+          'obligationType',
+          'title',
+          'description',
+          'dueDate',
+          'periodStartDate',
+          'periodEndDate',
+          'responsibleOwnerEmploymentProfileId',
+          'evidencePolicy',
+        ]),
+      );
+      if (reasonFailure) {
+        return reasonFailure;
+      }
+      const title = toNullableString(body.title);
+      const responsibleOwnerEmploymentProfileId = toNullableString(
+        body.responsibleOwnerEmploymentProfileId,
+      );
+      const obligationType = body.obligationType as ContractObligationType;
+      const evidencePolicy = body.evidencePolicy as ContractObligationEvidencePolicy;
+      if (
+        !title ||
+        !responsibleOwnerEmploymentProfileId ||
+        !['DELIVERABLE', 'SERVICE_MILESTONE', 'REPORTING', 'OTHER'].includes(obligationType) ||
+        !['OPTIONAL', 'REQUIRED'].includes(evidencePolicy)
+      ) {
+        return HttpResponse.json(
+          { message: 'contract-registry:validation.required' },
+          { status: 422 },
+        );
+      }
+      obligationSeed += 1;
+      const createdAt = Date.now();
+      const next: ContractObligation = {
+        id: `obligation-${obligationSeed}`,
+        contractRecordId,
+        code: generatedFixtureYearCode('OBL', createdAt, obligationSeed),
+        obligationType,
+        title,
+        description: toNullableString(body.description),
+        status: 'DRAFT',
+        evidencePolicy,
+        dueDate:
+          typeof body.dueDate === 'string' && body.dueDate
+            ? inputDateToTimestamp(body.dueDate)
+            : null,
+        periodStartDate: null,
+        periodEndDate: null,
+        responsibleOwnerEmploymentProfileId,
+        latestDeliveryNote: null,
+        latestDeliveredAt: null,
+        latestDeliveredBy: null,
+        latestEvidenceRefs: [],
+        latestEventEvidenceLinkIds: [],
+        latestReviewNote: null,
+        latestReviewedAt: null,
+        latestReviewedBy: null,
+        latestRejectionReason: null,
+        statusTransitions: [
+          {
+            fromStatus: null,
+            toStatus: 'DRAFT',
+            reason: 'Created by admin',
+            actorId: 'admin-user-001',
+            happenedAt: createdAt,
+          },
+        ],
+        boundaryMetadata: obligationBoundaryMetadata,
+        createdAt,
+        updatedAt: createdAt,
+      };
+      obligations.unshift(next);
+      return HttpResponse.json({ data: toObligationDetail(next) });
+    },
+  ),
+  http.get('*/admin/contract-records/obligations/:obligationId', ({ params }) => {
+    const obligation = findObligation(String(params.obligationId));
+    if (!obligation) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    return HttpResponse.json({ data: toObligationDetail(obligation) });
+  }),
+  http.patch('*/admin/contract-records/obligations/:obligationId', async ({ params, request }) => {
+    const obligation = findObligation(String(params.obligationId));
+    if (!obligation) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+    if (unsupported) {
+      return unsupported;
+    }
+    if (obligation.status !== 'DRAFT' && obligation.status !== 'OPEN') {
+      return rejectInvalidTransition();
+    }
+    const body = await parseJsonBody(request);
+    const bodyFailure = rejectUnsupportedBody(
+      body,
+      new Set([
+        'obligationType',
+        'title',
+        'description',
+        'dueDate',
+        'periodStartDate',
+        'periodEndDate',
+        'responsibleOwnerEmploymentProfileId',
+        'evidencePolicy',
+      ]),
+    );
+    if (bodyFailure) {
+      return bodyFailure;
+    }
+    const title = toNullableString(body.title);
+    const responsibleOwnerEmploymentProfileId = toNullableString(
+      body.responsibleOwnerEmploymentProfileId,
+    );
+    if (!title || !responsibleOwnerEmploymentProfileId) {
+      return HttpResponse.json(
+        { message: 'contract-registry:validation.required' },
+        { status: 422 },
+      );
+    }
+    obligation.title = title;
+    obligation.description = toNullableString(body.description);
+    obligation.obligationType = body.obligationType as ContractObligationType;
+    obligation.evidencePolicy = body.evidencePolicy as ContractObligationEvidencePolicy;
+    obligation.dueDate =
+      typeof body.dueDate === 'string' && body.dueDate ? inputDateToTimestamp(body.dueDate) : null;
+    obligation.responsibleOwnerEmploymentProfileId = responsibleOwnerEmploymentProfileId;
+    obligation.updatedAt = Date.now();
+    return HttpResponse.json({ data: toObligationDetail(obligation) });
+  }),
+  http.post('*/admin/contract-records/obligations/:obligationId/open', async ({ params }) => {
+    const obligation = findObligation(String(params.obligationId));
+    if (!obligation) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+    if (unsupported) {
+      return unsupported;
+    }
+    if (obligation.status !== 'DRAFT') {
+      return rejectInvalidTransition();
+    }
+    appendObligationTransition(obligation, 'OPEN', 'Opened by admin');
+    return HttpResponse.json({ data: toObligationDetail(obligation) });
+  }),
+  http.post(
+    '*/admin/contract-records/obligations/:obligationId/reopen',
+    async ({ params, request }) => {
+      const obligation = findObligation(String(params.obligationId));
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      if (obligation.status !== 'REJECTED') {
+        return rejectInvalidTransition();
+      }
+      const body = await parseJsonBody(request);
+      const reason = toNullableString(body.reason);
+      if (!reason || reason.length > 1_000) {
+        return HttpResponse.json(
+          { message: 'contract-registry:validation.required' },
+          { status: 422 },
+        );
+      }
+      appendObligationTransition(obligation, 'OPEN', reason);
+      return HttpResponse.json({ data: toObligationDetail(obligation) });
+    },
+  ),
+  http.post(
+    '*/admin/contract-records/obligations/:obligationId/deliver',
+    async ({ params, request }) => {
+      const obligation = findObligation(String(params.obligationId));
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      if (obligation.status !== 'OPEN') {
+        return rejectInvalidTransition();
+      }
+      const body = await parseJsonBody(request);
+      const refs = parseEvidenceRefs(body.evidenceRefs);
+      const selectedLinkIds = Array.isArray(body.eventEvidenceLinkIds)
+        ? body.eventEvidenceLinkIds.filter((id): id is string => typeof id === 'string')
+        : [];
+      const validActiveIds = new Set(
+        activeLinksForObligation(obligation.id).map((link) => link.id),
+      );
+      if (selectedLinkIds.some((id) => !validActiveIds.has(id))) {
+        return HttpResponse.json({ message: 'errors:validation.conflict' }, { status: 409 });
+      }
+      if (
+        obligation.evidencePolicy === 'REQUIRED' &&
+        refs.length === 0 &&
+        selectedLinkIds.length === 0
+      ) {
+        return HttpResponse.json(
+          { message: 'contract-registry:obligations.validation.requiredEvidence' },
+          { status: 422 },
+        );
+      }
+      obligation.latestDeliveryNote = toNullableString(body.deliveryNote);
+      obligation.latestDeliveredAt = Date.now();
+      obligation.latestDeliveredBy = 'admin-user-001';
+      obligation.latestEvidenceRefs = refs;
+      obligation.latestEventEvidenceLinkIds = selectedLinkIds;
+      appendObligationTransition(obligation, 'DELIVERED', 'Marked delivered by admin');
+      return HttpResponse.json({ data: toObligationDetail(obligation) });
+    },
+  ),
+  http.post(
+    '*/admin/contract-records/obligations/:obligationId/accept',
+    async ({ params, request }) => {
+      const obligation = findObligation(String(params.obligationId));
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      if (obligation.status !== 'DELIVERED') {
+        return rejectInvalidTransition();
+      }
+      const body = await parseJsonBody(request);
+      obligation.latestReviewNote = toNullableString(body.reviewNote);
+      obligation.latestReviewedAt = Date.now();
+      obligation.latestReviewedBy = 'admin-user-001';
+      appendObligationTransition(obligation, 'ACCEPTED', 'Accepted by admin');
+      return HttpResponse.json({ data: toObligationDetail(obligation) });
+    },
+  ),
+  http.post(
+    '*/admin/contract-records/obligations/:obligationId/reject',
+    async ({ params, request }) => {
+      const obligation = findObligation(String(params.obligationId));
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      if (obligation.status !== 'DELIVERED') {
+        return rejectInvalidTransition();
+      }
+      const body = await parseJsonBody(request);
+      const reason = toNullableString(body.reason);
+      if (!reason) {
+        return HttpResponse.json(
+          { message: 'contract-registry:validation.required' },
+          { status: 422 },
+        );
+      }
+      obligation.latestRejectionReason = reason;
+      obligation.latestReviewedAt = Date.now();
+      obligation.latestReviewedBy = 'admin-user-001';
+      appendObligationTransition(obligation, 'REJECTED', reason);
+      return HttpResponse.json({ data: toObligationDetail(obligation) });
+    },
+  ),
+  http.post(
+    '*/admin/contract-records/obligations/:obligationId/cancel',
+    async ({ params, request }) => {
+      const obligation = findObligation(String(params.obligationId));
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      if (obligation.status !== 'DRAFT' && obligation.status !== 'OPEN') {
+        return rejectInvalidTransition();
+      }
+      const body = await parseJsonBody(request);
+      const reason = toNullableString(body.reason);
+      if (!reason) {
+        return HttpResponse.json(
+          { message: 'contract-registry:validation.required' },
+          { status: 422 },
+        );
+      }
+      appendObligationTransition(obligation, 'CANCELLED', reason);
+      return HttpResponse.json({ data: toObligationDetail(obligation) });
+    },
+  ),
+  http.post(
+    '*/admin/contract-records/obligations/:obligationId/archive',
+    async ({ params, request }) => {
+      const obligation = findObligation(String(params.obligationId));
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      if (obligation.status !== 'ACCEPTED' && obligation.status !== 'CANCELLED') {
+        return rejectInvalidTransition();
+      }
+      const body = await parseJsonBody(request);
+      const reason = toNullableString(body.reason);
+      appendObligationTransition(obligation, 'ARCHIVED', reason);
+      return HttpResponse.json({ data: toObligationDetail(obligation) });
+    },
+  ),
+  http.get(
+    '*/admin/contract-records/obligations/:obligationId/event-evidence-links',
+    ({ params }) => {
+      const obligation = findObligation(String(params.obligationId));
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      return HttpResponse.json({
+        data: eventEvidenceLinks
+          .filter((link) => link.obligationId === obligation.id)
+          .map(toEventEvidenceLinkDetail),
+      });
+    },
+  ),
+  http.post(
+    '*/admin/contract-records/obligations/:obligationId/event-evidence-links',
+    async ({ params, request }) => {
+      const obligation = findObligation(String(params.obligationId));
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      if (obligation.status !== 'OPEN') {
+        return rejectInvalidTransition();
+      }
+      const body = await parseJsonBody(request);
+      const eventId = toNullableString(body.eventId);
+      const linkReason = toNullableString(body.linkReason);
+      if (!eventId || !linkReason || !eventId.startsWith('event-completed')) {
+        return HttpResponse.json(
+          { message: 'contract-registry:validation.required' },
+          { status: 422 },
+        );
+      }
+      if (
+        eventEvidenceLinks.some(
+          (link) =>
+            link.obligationId === obligation.id &&
+            link.eventId === eventId &&
+            link.status === 'ACTIVE',
+        )
+      ) {
+        return HttpResponse.json({ message: 'errors:validation.conflict' }, { status: 409 });
+      }
+      eventEvidenceLinkSeed += 1;
+      const createdAt = Date.now();
+      const next: ContractObligationEventEvidenceLink = {
+        id: `event-evidence-link-${eventEvidenceLinkSeed}`,
+        obligationId: obligation.id,
+        eventId,
+        status: 'ACTIVE',
+        snapshot: {
+          ...eventSnapshotFixture,
+          eventId,
+          eventCode: eventId === 'event-completed-001' ? 'EVT-2026-000001' : 'EVT-2026-000777',
+        },
+        linkReason,
+        linkedAt: createdAt,
+        linkedBy: 'admin-user-001',
+        removeReason: null,
+        removedAt: null,
+        removedBy: null,
+        boundaryMetadata: {
+          snapshotImmutable: true,
+          activeLinkCanSatisfyDelivery: true,
+          removedLinkCanSatisfyDelivery: false,
+        },
+        createdAt,
+        updatedAt: createdAt,
+      };
+      eventEvidenceLinks.unshift(next);
+      return HttpResponse.json({ data: toEventEvidenceLinkDetail(next) });
+    },
+  ),
+  http.post(
+    '*/admin/contract-records/obligations/event-evidence-links/:linkId/remove',
+    async ({ params, request }) => {
+      const link = findEventEvidenceLink(String(params.linkId));
+      if (!link) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const obligation = findObligation(link.obligationId);
+      if (!obligation) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      const unsupported = rejectUnsupportedContractContext(obligation.contractRecordId);
+      if (unsupported) {
+        return unsupported;
+      }
+      if (obligation.status !== 'OPEN' || link.status !== 'ACTIVE') {
+        return rejectInvalidTransition();
+      }
+      const body = await parseJsonBody(request);
+      const removeReason = toNullableString(body.removeReason);
+      if (!removeReason) {
+        return HttpResponse.json(
+          { message: 'contract-registry:validation.required' },
+          { status: 422 },
+        );
+      }
+      link.status = 'REMOVED';
+      link.removeReason = removeReason;
+      link.removedAt = Date.now();
+      link.removedBy = 'admin-user-001';
+      link.boundaryMetadata = {
+        snapshotImmutable: true,
+        activeLinkCanSatisfyDelivery: false,
+        removedLinkCanSatisfyDelivery: false,
+      };
+      link.updatedAt = Date.now();
+      return HttpResponse.json({ data: toEventEvidenceLinkDetail(link) });
+    },
+  ),
   http.get('*/admin/contract-records/:contractRecordId', ({ params }) => {
     const record = findContract(String(params.contractRecordId));
     if (!record) {

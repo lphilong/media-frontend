@@ -1,15 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  acceptContractObligation,
+  archiveContractObligation,
   assignContractOwner,
+  cancelContractObligation,
   createContractRecord,
+  createContractObligation,
+  deliverContractObligation,
   expireContractRecord,
+  fetchContractObligationEventEvidenceLinks,
+  fetchContractObligationDetail,
+  fetchContractObligations,
   fetchContractRecordDetail,
   fetchContractRecords,
   fetchContractRecordsByLinkedEntity,
   fetchContractRecordsByOwner,
+  linkContractObligationEventEvidence,
+  performContractObligationOpen,
   performContractLifecycleAction,
+  rejectContractObligation,
+  reopenContractObligation,
+  removeContractObligationEventEvidence,
   terminateContractRecord,
+  updateContractObligation,
   updateContractDraftCore,
   updateContractFileReference,
 } from '@modules/contract-registry/api/contract-registry.api';
@@ -23,6 +37,13 @@ import type {
   ContractFileReferencePayload,
   ContractFlatListQuery,
   ContractLifecycleAction,
+  ContractObligationAcceptPayload,
+  ContractObligationArchivePayload,
+  ContractObligationDeliverPayload,
+  ContractObligationEventEvidenceLinkPayload,
+  ContractObligationEventEvidenceRemovePayload,
+  ContractObligationPayload,
+  ContractObligationReasonPayload,
   ContractTerminatePayload,
 } from '@modules/contract-registry/types/contract-registry.types';
 import {
@@ -52,6 +73,12 @@ export const contractRegistryQueryKeys = {
   byOwner: (query: ContractByOwnerQuery) =>
     ['contract-registry', 'by-owner', toByOwnerQueryToken(query)] as const,
   detail: (contractRecordId: string) => ['contract-registry', 'detail', contractRecordId] as const,
+  obligations: (contractRecordId: string) =>
+    ['contract-registry', 'obligations', contractRecordId] as const,
+  obligationDetail: (obligationId: string) =>
+    ['contract-registry', 'obligation-detail', obligationId] as const,
+  eventEvidenceLinks: (obligationId: string) =>
+    ['contract-registry', 'event-evidence-links', obligationId] as const,
 };
 
 export const useContractRecordFlatList = (
@@ -94,6 +121,42 @@ export const useContractRecordDetail = (contractRecordId?: string) => {
       : [...CONTRACT_REGISTRY_QUERY_ROOT, 'detail'],
     queryFn: () => fetchContractRecordDetail(contractRecordId ?? ''),
     enabled: Boolean(contractRecordId),
+  });
+};
+
+export const useContractObligations = (
+  contractRecordId?: string,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: contractRecordId
+      ? contractRegistryQueryKeys.obligations(contractRecordId)
+      : [...CONTRACT_REGISTRY_QUERY_ROOT, 'obligations'],
+    queryFn: () => fetchContractObligations(contractRecordId ?? ''),
+    enabled: Boolean(contractRecordId) && (options?.enabled ?? true),
+  });
+};
+
+export const useContractObligationDetail = (obligationId?: string) => {
+  return useQuery({
+    queryKey: obligationId
+      ? contractRegistryQueryKeys.obligationDetail(obligationId)
+      : [...CONTRACT_REGISTRY_QUERY_ROOT, 'obligation-detail'],
+    queryFn: () => fetchContractObligationDetail(obligationId ?? ''),
+    enabled: Boolean(obligationId),
+  });
+};
+
+export const useContractObligationEventEvidenceLinks = (
+  obligationId?: string,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: obligationId
+      ? contractRegistryQueryKeys.eventEvidenceLinks(obligationId)
+      : [...CONTRACT_REGISTRY_QUERY_ROOT, 'event-evidence-links'],
+    queryFn: () => fetchContractObligationEventEvidenceLinks(obligationId ?? ''),
+    enabled: Boolean(obligationId) && (options?.enabled ?? true),
   });
 };
 
@@ -210,6 +273,188 @@ export const useContractLifecycleMutation = () => {
       contractRecordId: string;
       action: ContractLifecycleAction;
     }) => performContractLifecycleAction(contractRecordId, action),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useCreateContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      contractRecordId,
+      payload,
+    }: {
+      contractRecordId: string;
+      payload: ContractObligationPayload;
+    }) => createContractObligation(contractRecordId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useUpdateContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      obligationId,
+      payload,
+    }: {
+      obligationId: string;
+      payload: ContractObligationPayload;
+    }) => updateContractObligation(obligationId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useOpenContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ obligationId }: { obligationId: string }) =>
+      performContractObligationOpen(obligationId),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useDeliverContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      obligationId,
+      payload,
+    }: {
+      obligationId: string;
+      payload: ContractObligationDeliverPayload;
+    }) => deliverContractObligation(obligationId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useAcceptContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      obligationId,
+      payload,
+    }: {
+      obligationId: string;
+      payload: ContractObligationAcceptPayload;
+    }) => acceptContractObligation(obligationId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useRejectContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      obligationId,
+      payload,
+    }: {
+      obligationId: string;
+      payload: ContractObligationReasonPayload;
+    }) => rejectContractObligation(obligationId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useReopenContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      obligationId,
+      payload,
+    }: {
+      obligationId: string;
+      payload: ContractObligationReasonPayload;
+    }) => reopenContractObligation(obligationId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useCancelContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      obligationId,
+      payload,
+    }: {
+      obligationId: string;
+      payload: ContractObligationReasonPayload;
+    }) => cancelContractObligation(obligationId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useArchiveContractObligationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      obligationId,
+      payload,
+    }: {
+      obligationId: string;
+      payload: ContractObligationArchivePayload;
+    }) => archiveContractObligation(obligationId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useLinkContractObligationEventEvidenceMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      obligationId,
+      payload,
+    }: {
+      obligationId: string;
+      payload: ContractObligationEventEvidenceLinkPayload;
+    }) => linkContractObligationEventEvidence(obligationId, payload),
+    onSuccess: async () => {
+      await invalidateContractRegistryQueries(queryClient);
+    },
+  });
+};
+
+export const useRemoveContractObligationEventEvidenceMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      linkId,
+      payload,
+    }: {
+      linkId: string;
+      payload: ContractObligationEventEvidenceRemovePayload;
+    }) => removeContractObligationEventEvidence(linkId, payload),
     onSuccess: async () => {
       await invalidateContractRegistryQueries(queryClient);
     },

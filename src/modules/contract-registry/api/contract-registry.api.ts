@@ -13,9 +13,29 @@ import type {
   ContractFlatListQuery,
   ContractLifecycleAction,
   ContractListItem,
+  ContractObligation,
+  ContractObligationAcceptPayload,
+  ContractObligationArchivePayload,
+  ContractObligationDeliverPayload,
+  ContractObligationEventEvidenceLink,
+  ContractObligationEventEvidenceLinkPayload,
+  ContractObligationEventEvidenceRemovePayload,
+  ContractObligationPayload,
+  ContractObligationReasonPayload,
   ContractRecord,
   ContractTerminatePayload,
   CursorPagedResponse,
+} from '@modules/contract-registry/types/contract-registry.types';
+import {
+  CONTRACT_OBLIGATION_DELIVERY_NOTE_MAX_LENGTH,
+  CONTRACT_OBLIGATION_DESCRIPTION_MAX_LENGTH,
+  CONTRACT_OBLIGATION_EVIDENCE_REF_LABEL_MAX_LENGTH,
+  CONTRACT_OBLIGATION_EVIDENCE_REF_MAX_COUNT,
+  CONTRACT_OBLIGATION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH,
+  CONTRACT_OBLIGATION_EVIDENCE_REF_URL_MAX_LENGTH,
+  CONTRACT_OBLIGATION_EVENT_EVIDENCE_REASON_MAX_LENGTH,
+  CONTRACT_OBLIGATION_REASON_MAX_LENGTH,
+  CONTRACT_OBLIGATION_TITLE_MAX_LENGTH,
 } from '@modules/contract-registry/types/contract-registry.types';
 import { apiRequest } from '@shared/api';
 
@@ -45,8 +65,185 @@ const boundaryMetadataSchema = z
     directRevenueSourceEligible: z.literal(false),
     directCommissionSourceEligible: z.literal(false),
     payrollSourceEligible: z.literal(false),
-    obligationAcceptanceImplemented: z.literal(false),
-    eventEvidenceLinkImplemented: z.literal(false),
+    obligationAcceptanceImplemented: z.boolean(),
+    eventEvidenceLinkImplemented: z.boolean(),
+  })
+  .strict();
+const obligationTypeSchema = z.enum(['DELIVERABLE', 'SERVICE_MILESTONE', 'REPORTING', 'OTHER']);
+const obligationStatusSchema = z.enum([
+  'DRAFT',
+  'OPEN',
+  'DELIVERED',
+  'ACCEPTED',
+  'REJECTED',
+  'CANCELLED',
+  'ARCHIVED',
+]);
+const obligationEvidencePolicySchema = z.enum(['OPTIONAL', 'REQUIRED']);
+const evidenceRefTypeSchema = z.enum([
+  'URL',
+  'PLATFORM_REFERENCE',
+  'EXTERNAL_REFERENCE',
+  'INTERNAL_REFERENCE',
+]);
+const obligationEvidenceRefSchema = z
+  .object({
+    type: evidenceRefTypeSchema,
+    label: z.string().trim().min(1).max(CONTRACT_OBLIGATION_EVIDENCE_REF_LABEL_MAX_LENGTH),
+    url: z.string().max(CONTRACT_OBLIGATION_EVIDENCE_REF_URL_MAX_LENGTH).nullable(),
+    referenceId: z
+      .string()
+      .max(CONTRACT_OBLIGATION_EVIDENCE_REF_REFERENCE_ID_MAX_LENGTH)
+      .nullable(),
+  })
+  .strict()
+  .superRefine((ref, context) => {
+    if (ref.type === 'URL') {
+      if (!ref.url || ref.referenceId) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'URL evidence references require a URL and no reference ID',
+        });
+        return;
+      }
+      try {
+        const parsed = new URL(ref.url);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          throw new Error('invalid protocol');
+        }
+      } catch {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['url'],
+          message: 'URL evidence references require a valid http(s) URL',
+        });
+      }
+      return;
+    }
+
+    if (!ref.referenceId || ref.url) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Non-URL evidence references require a reference ID and no URL',
+      });
+    }
+  });
+const obligationBoundaryMetadataSchema = z
+  .object({
+    activeSupportedCommercialLegalContractRequired: z.literal(true),
+    legacyEmploymentContractAllowed: z.literal(false),
+    unsupportedContractKindAllowed: z.literal(false),
+    responsibleOwnerGrantsAuthority: z.literal(false),
+    eventEvidenceLinkImplemented: z.literal(true),
+    eventCompletionMutatesObligation: z.literal(false),
+    acceptanceCreatesRevenue: z.literal(false),
+    acceptanceCreatesCommission: z.literal(false),
+    acceptanceCreatesPayroll: z.literal(false),
+    acceptanceCreatesPayment: z.literal(false),
+    acceptanceCreatesTaxOrAccounting: z.literal(false),
+    fileStorageImplemented: z.literal(false),
+  })
+  .strict();
+const obligationStatusTransitionSchema = z
+  .object({
+    fromStatus: obligationStatusSchema.nullable(),
+    toStatus: obligationStatusSchema,
+    actorId: z.string().trim().min(1),
+    occurredAt: timestampSchema,
+    reason: z.string().nullable(),
+  })
+  .strict();
+const obligationSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    code: z.string().trim().min(1),
+    contractRecordId: z.string().trim().min(1),
+    obligationType: obligationTypeSchema,
+    title: z.string().trim().min(1),
+    description: z.string().nullable(),
+    dueDate: timestampSchema.nullable(),
+    responsibleOwnerEmploymentProfileId: z.string().trim().min(1),
+    evidencePolicy: obligationEvidencePolicySchema,
+    status: obligationStatusSchema,
+    latestDeliveryNote: z.string().nullable(),
+    latestEvidenceRefs: z.array(obligationEvidenceRefSchema),
+    latestEventEvidenceLinkIds: z.array(z.string().trim().min(1)),
+    latestDeliveredByActorId: z.string().nullable(),
+    latestDeliveredAt: timestampSchema.nullable(),
+    latestReviewedByActorId: z.string().nullable(),
+    latestReviewedAt: timestampSchema.nullable(),
+    acceptedByActorId: z.string().nullable(),
+    acceptedAt: timestampSchema.nullable(),
+    rejectedByActorId: z.string().nullable(),
+    rejectedAt: timestampSchema.nullable(),
+    rejectionReason: z.string().nullable(),
+    statusHistory: z.array(obligationStatusTransitionSchema),
+    createdByActorId: z.string().trim().min(1),
+    createdAt: timestampSchema,
+    updatedByActorId: z.string().trim().min(1),
+    updatedAt: timestampSchema,
+    boundaryMetadata: obligationBoundaryMetadataSchema,
+  })
+  .strict();
+const eventEvidenceLinkBoundaryMetadataSchema = z
+  .object({
+    linkTarget: z.literal('CONTRACT_OBLIGATION'),
+    supportingEvidenceOnly: z.literal(true),
+    historicalSnapshot: z.literal(true),
+    linkMutatesEvent: z.literal(false),
+    linkMutatesObligationStatus: z.literal(false),
+    deliveryRemainsExplicit: z.literal(true),
+    acceptanceCreated: z.literal(false),
+    revenueCreated: z.literal(false),
+    commissionCreated: z.literal(false),
+    payrollCreated: z.literal(false),
+    paymentCreated: z.literal(false),
+    taxOrAccountingCreated: z.literal(false),
+    fileStorageCreated: z.literal(false),
+    inferredEventContractMatching: z.literal(false),
+  })
+  .strict();
+const eventEvidenceLinkSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    contractObligationId: z.string().trim().min(1),
+    contractRecordId: z.string().trim().min(1),
+    eventId: z.string().trim().min(1),
+    status: z.enum(['ACTIVE', 'REMOVED']),
+    linkedByActorId: z.string().trim().min(1),
+    linkedAt: timestampSchema,
+    linkReason: z.string().trim().min(1),
+    removedByActorId: z.string().nullable(),
+    removedAt: timestampSchema.nullable(),
+    removeReason: z.string().nullable(),
+    snapshot: z
+      .object({
+        eventId: z.string().trim().min(1),
+        eventCode: z.string().trim().min(1),
+        eventTitle: z.string().trim().min(1),
+        eventStatus: z.string().trim().min(1),
+        eventUpdatedAt: timestampSchema,
+        eventCompletedAt: timestampSchema,
+        eventCompletedByActorId: z.string().trim().min(1),
+        completionEvidenceNote: z.string(),
+        completionEvidenceRefs: z.array(obligationEvidenceRefSchema),
+      })
+      .strict(),
+    actionHistory: z.array(
+      z
+        .object({
+          action: z.enum(['LINKED', 'REMOVED']),
+          actorId: z.string().trim().min(1),
+          occurredAt: timestampSchema,
+          reason: z.string().trim().min(1),
+        })
+        .strict(),
+    ),
+    createdByActorId: z.string().trim().min(1),
+    createdAt: timestampSchema,
+    updatedByActorId: z.string().trim().min(1),
+    updatedAt: timestampSchema,
+    boundaryMetadata: eventEvidenceLinkBoundaryMetadataSchema,
   })
   .strict();
 const referenceSummarySchema = z
@@ -145,6 +342,75 @@ const byOwnerResponseSchema = z
   .object({ data: z.array(byOwnerItemSchema), meta: cursorMetaSchema })
   .strict();
 const detailResponseSchema = z.object({ data: detailSchema }).strict();
+const obligationListResponseSchema = z
+  .object({ data: z.array(obligationSchema), meta: cursorMetaSchema })
+  .strict();
+const obligationDetailResponseSchema = z.object({ data: obligationSchema }).strict();
+const eventEvidenceLinkListResponseSchema = z
+  .object({ data: z.array(eventEvidenceLinkSchema), meta: cursorMetaSchema })
+  .strict();
+const eventEvidenceLinkDetailResponseSchema = z
+  .object({ data: eventEvidenceLinkSchema })
+  .strict();
+const obligationPayloadSchema = z
+  .object({
+    obligationType: obligationTypeSchema,
+    title: z.string().trim().min(1).max(CONTRACT_OBLIGATION_TITLE_MAX_LENGTH),
+    description: z.string().max(CONTRACT_OBLIGATION_DESCRIPTION_MAX_LENGTH).nullable(),
+    dueDate: z.string().date().nullable(),
+    responsibleOwnerEmploymentProfileId: z.string().trim().min(1),
+    evidencePolicy: obligationEvidencePolicySchema,
+  })
+  .strict();
+const obligationOpenPayloadSchema = z.object({}).strict();
+const obligationReasonPayloadSchema = z
+  .object({
+    reason: z.string().trim().min(1).max(CONTRACT_OBLIGATION_REASON_MAX_LENGTH),
+  })
+  .strict();
+const obligationArchivePayloadSchema = z
+  .object({
+    reason: z.string().trim().max(CONTRACT_OBLIGATION_REASON_MAX_LENGTH).nullable(),
+  })
+  .strict();
+const obligationAcceptPayloadSchema = z
+  .object({
+    reviewNote: z.string().trim().max(CONTRACT_OBLIGATION_REASON_MAX_LENGTH).nullable(),
+  })
+  .strict();
+const obligationDeliverPayloadSchema = z
+  .object({
+    deliveryNote: z.string().trim().max(CONTRACT_OBLIGATION_DELIVERY_NOTE_MAX_LENGTH).nullable(),
+    evidenceRefs: z
+      .array(obligationEvidenceRefSchema)
+      .max(CONTRACT_OBLIGATION_EVIDENCE_REF_MAX_COUNT),
+    eventEvidenceLinkIds: z
+      .array(z.string().trim().min(1))
+      .max(CONTRACT_OBLIGATION_EVIDENCE_REF_MAX_COUNT)
+      .refine((ids) => new Set(ids).size === ids.length, {
+        message: 'Event evidence link IDs must be unique',
+      }),
+  })
+  .strict();
+const eventEvidenceLinkPayloadSchema = z
+  .object({
+    eventId: z.string().trim().min(1),
+    linkReason: z
+      .string()
+      .trim()
+      .min(1)
+      .max(CONTRACT_OBLIGATION_EVENT_EVIDENCE_REASON_MAX_LENGTH),
+  })
+  .strict();
+const eventEvidenceRemovePayloadSchema = z
+  .object({
+    removeReason: z
+      .string()
+      .trim()
+      .min(1)
+      .max(CONTRACT_OBLIGATION_EVENT_EVIDENCE_REASON_MAX_LENGTH),
+  })
+  .strict();
 const createPayloadSchema = z
   .object({
     contractCode: z.string().optional(),
@@ -414,4 +680,204 @@ export const performContractLifecycleAction = async (
   });
 
   return detailResponseSchema.parse(response).data;
+};
+
+export const fetchContractObligations = async (
+  contractRecordId: string,
+): Promise<CursorPagedResponse<ContractObligation>> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/contract-records/${encodeURIComponent(contractRecordId)}/obligations`,
+  });
+
+  return obligationListResponseSchema.parse(response);
+};
+
+export const fetchContractObligationDetail = async (
+  obligationId: string,
+): Promise<ContractObligation> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}`,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const createContractObligation = async (
+  contractRecordId: string,
+  payload: ContractObligationPayload,
+): Promise<ContractObligation> => {
+  const parsed = obligationPayloadSchema.parse(payload);
+  const response = await apiRequest<unknown, ContractObligationPayload>({
+    method: 'POST',
+    url: `/admin/contract-records/${encodeURIComponent(contractRecordId)}/obligations`,
+    data: parsed,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const updateContractObligation = async (
+  obligationId: string,
+  payload: ContractObligationPayload,
+): Promise<ContractObligation> => {
+  const parsed = obligationPayloadSchema.parse(payload);
+  const response = await apiRequest<unknown, ContractObligationPayload>({
+    method: 'PATCH',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}`,
+    data: parsed,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const performContractObligationOpen = async (
+  obligationId: string,
+): Promise<ContractObligation> => {
+  const payload = obligationOpenPayloadSchema.parse({});
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}/open`,
+    data: payload,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const reopenContractObligation = async (
+  obligationId: string,
+  payload: ContractObligationReasonPayload,
+): Promise<ContractObligation> => {
+  const parsed = obligationReasonPayloadSchema.parse(payload);
+  const response = await apiRequest<unknown, ContractObligationReasonPayload>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}/reopen`,
+    data: parsed,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const deliverContractObligation = async (
+  obligationId: string,
+  payload: ContractObligationDeliverPayload,
+): Promise<ContractObligation> => {
+  const parsed = obligationDeliverPayloadSchema.parse({
+    deliveryNote: payload.deliveryNote ?? null,
+    evidenceRefs: payload.evidenceRefs ?? [],
+    eventEvidenceLinkIds: payload.eventEvidenceLinkIds ?? [],
+  });
+  const response = await apiRequest<unknown, ContractObligationDeliverPayload>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}/deliver`,
+    data: parsed,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const acceptContractObligation = async (
+  obligationId: string,
+  payload: ContractObligationAcceptPayload,
+): Promise<ContractObligation> => {
+  const parsed = obligationAcceptPayloadSchema.parse({
+    reviewNote: payload.reviewNote ?? null,
+  });
+  const response = await apiRequest<unknown, ContractObligationAcceptPayload>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}/accept`,
+    data: parsed,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const rejectContractObligation = async (
+  obligationId: string,
+  payload: ContractObligationReasonPayload,
+): Promise<ContractObligation> => {
+  const parsed = obligationReasonPayloadSchema.parse(payload);
+  const response = await apiRequest<unknown, ContractObligationReasonPayload>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}/reject`,
+    data: parsed,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const cancelContractObligation = async (
+  obligationId: string,
+  payload: ContractObligationReasonPayload,
+): Promise<ContractObligation> => {
+  const parsed = obligationReasonPayloadSchema.parse(payload);
+  const response = await apiRequest<unknown, ContractObligationReasonPayload>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}/cancel`,
+    data: parsed,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const archiveContractObligation = async (
+  obligationId: string,
+  payload: ContractObligationArchivePayload,
+): Promise<ContractObligation> => {
+  const parsed = obligationArchivePayloadSchema.parse({
+    reason: payload.reason ?? null,
+  });
+  const response = await apiRequest<unknown, ContractObligationArchivePayload>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(obligationId)}/archive`,
+    data: parsed,
+  });
+
+  return obligationDetailResponseSchema.parse(response).data;
+};
+
+export const fetchContractObligationEventEvidenceLinks = async (
+  obligationId: string,
+): Promise<CursorPagedResponse<ContractObligationEventEvidenceLink>> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(
+      obligationId,
+    )}/event-evidence-links`,
+  });
+
+  return eventEvidenceLinkListResponseSchema.parse(response);
+};
+
+export const linkContractObligationEventEvidence = async (
+  obligationId: string,
+  payload: ContractObligationEventEvidenceLinkPayload,
+): Promise<ContractObligationEventEvidenceLink> => {
+  const parsed = eventEvidenceLinkPayloadSchema.parse(payload);
+  const response = await apiRequest<unknown, ContractObligationEventEvidenceLinkPayload>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/${encodeURIComponent(
+      obligationId,
+    )}/event-evidence-links`,
+    data: parsed,
+  });
+
+  return eventEvidenceLinkDetailResponseSchema.parse(response).data;
+};
+
+export const removeContractObligationEventEvidence = async (
+  linkId: string,
+  payload: ContractObligationEventEvidenceRemovePayload,
+): Promise<ContractObligationEventEvidenceLink> => {
+  const parsed = eventEvidenceRemovePayloadSchema.parse(payload);
+  const response = await apiRequest<unknown, ContractObligationEventEvidenceRemovePayload>({
+    method: 'POST',
+    url: `/admin/contract-records/obligations/event-evidence-links/${encodeURIComponent(
+      linkId,
+    )}/remove`,
+    data: parsed,
+  });
+
+  return eventEvidenceLinkDetailResponseSchema.parse(response).data;
 };
