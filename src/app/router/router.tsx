@@ -542,6 +542,14 @@ export const appRoutes: RouteObject[] = [
     ),
   },
   {
+    path: APP_PATHS.managerRevenueSource,
+    element: (
+      <RequireAuth>
+        <LazyManagerWorkspaceElement />
+      </RequireAuth>
+    ),
+  },
+  {
     path: APP_PATHS.managerEvents,
     element: (
       <RequireAuth>

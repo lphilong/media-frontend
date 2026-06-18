@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
+import { PlatformEarningBatchesPanel } from '@modules/revenue-ledger/components/PlatformEarningBatchesPanel';
 import { RevenueEntryCreateSurface } from '@modules/revenue-ledger/forms/revenue-ledger-mutation-forms';
 import {
   useCreateRevenueEntryMutation,
@@ -962,6 +963,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
             emptyMessage={t('revenue-ledger:states.emptyMessage')}
             caption={t('revenue-ledger:table.caption')}
           />
+          {routeMode === 'flat' ? <PlatformEarningBatchesPanel /> : null}
         </div>
       }
       pager={

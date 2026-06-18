@@ -35,6 +35,12 @@
       "disabledReason": "Cần phân công đang hiệu lực và quyền xem lịch làm việc.",
       "readinessMessage": "Chưa có phạm vi lịch làm việc được phân công đang hiệu lực."
     },
+    "revenue": {
+      "title": "D\u1eef li\u1ec7u ngu\u1ed3n h\u1eb1ng ng\u00e0y",
+      "summary": "G\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n n\u1ec1n t\u1ea3ng cho Nh\u00f3m Talent \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng.",
+      "disabledReason": "C\u1ea7n ph\u00e2n c\u00f4ng Nh\u00f3m Talent \u0111ang hi\u1ec7u l\u1ef1c v\u00e0 quy\u1ec1n g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n.",
+      "readinessMessage": "Ch\u01b0a th\u1ec3 g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n cho \u0111\u1ebfn khi Finance m\u1edf ph\u1ea1m vi Nh\u00f3m Talent \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng."
+    },
     "events": {
       "title": "Sự kiện",
       "summary": "Sự kiện chỉ đọc trong phạm vi được phân công.",
@@ -220,6 +226,51 @@
     "resource": "Tài nguyên studio",
     "bookingStatus": "Trạng thái đặt",
     "bookingWindow": "Khung đặt"
+  },
+  "revenue": {
+    "title": "D\u1eef li\u1ec7u ngu\u1ed3n h\u1eb1ng ng\u00e0y",
+    "boundaryHelper": "Qu\u1ea3n l\u00fd ch\u1ec9 g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n trong ph\u1ea1m vi \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng. Finance r\u00e0 so\u00e1t v\u00e0 t\u1ea1o B\u1ea3n ghi doanh thu ch\u00ednh th\u1ee9c. Vi\u1ec7c qu\u1ea3n l\u00fd g\u1eedi ngu\u1ed3n kh\u00f4ng ph\u1ea3i ph\u00ea duy\u1ec7t doanh thu v\u00e0 kh\u00f4ng t\u1ea1o hoa h\u1ed3ng, thanh to\u00e1n, b\u1ea3ng l\u01b0\u01a1ng, thu\u1ebf ho\u1eb7c h\u1ea1ch to\u00e1n.",
+    "noScopeTitle": "Ch\u01b0a g\u1eedi \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u ngu\u1ed3n",
+    "noScopeMessage": "Ch\u01b0a c\u00f3 ph\u1ea1m vi Nh\u00f3m Talent \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng cho vi\u1ec7c g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n.",
+    "loadErrorTitle": "Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c ph\u1ea1m vi ngu\u1ed3n",
+    "loadErrorMessage": "Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c ph\u1ea1m vi g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng.",
+    "noEligibleAccountTitle": "Ch\u01b0a c\u00f3 t\u00e0i kho\u1ea3n n\u1ec1n t\u1ea3ng ph\u00f9 h\u1ee3p",
+    "noEligibleAccountMessage": "Nh\u00f3m Talent \u0111\u00e3 ch\u1ecdn ch\u01b0a c\u00f3 t\u00e0i kho\u1ea3n livestream \u0111ang ho\u1ea1t \u0111\u1ed9ng v\u00e0 b\u1eadt ki\u1ebfm ti\u1ec1n.",
+    "createBatchTitle": "T\u1ea1o batch ngu\u1ed3n nh\u00e1p",
+    "ownBatches": "Batch ngu\u1ed3n c\u1ee7a t\u00f4i",
+    "fields": {
+      "talentGroup": "Nh\u00f3m Talent",
+      "platformAccount": "T\u00e0i kho\u1ea3n n\u1ec1n t\u1ea3ng",
+      "periodMonth": "Th\u00e1ng",
+      "sourceDateFrom": "T\u1eeb ng\u00e0y ngu\u1ed3n",
+      "sourceDateTo": "\u0110\u1ebfn ng\u00e0y ngu\u1ed3n",
+      "sourceDate": "Ng\u00e0y ngu\u1ed3n",
+      "member": "Th\u00e0nh vi\u00ean",
+      "rawQuantity": "Kim c\u01b0\u01a1ng h\u1eb1ng ng\u00e0y",
+      "externalSourceRef": "Tham chi\u1ebfu ngu\u1ed3n",
+      "actions": "Thao t\u00e1c"
+    },
+    "statuses": {
+      "DRAFT": "Nh\u00e1p",
+      "SUBMITTED": "\u0110\u00e3 g\u1eedi",
+      "UNDER_REVIEW": "\u0110ang r\u00e0 so\u00e1t",
+      "APPROVED": "\u0110\u00e3 duy\u1ec7t",
+      "REJECTED": "B\u1ecb t\u1eeb ch\u1ed1i",
+      "VOIDED": "\u0110\u00e3 h\u1ee7y hi\u1ec7u l\u1ef1c",
+      "ARCHIVED": "\u0110\u00e3 l\u01b0u tr\u1eef"
+    },
+    "actions": {
+      "createBatch": "T\u1ea1o batch nh\u00e1p",
+      "addLine": "Th\u00eam d\u00f2ng ngu\u1ed3n",
+      "updateLine": "C\u1eadp nh\u1eadt d\u00f2ng",
+      "editLine": "S\u1eeda d\u00f2ng",
+      "submitBatch": "G\u1eedi cho Finance"
+    },
+    "feedback": {
+      "batchCreated": "\u0110\u00e3 t\u1ea1o batch ngu\u1ed3n nh\u00e1p.",
+      "lineSaved": "\u0110\u00e3 l\u01b0u d\u00f2ng ngu\u1ed3n.",
+      "batchSubmitted": "\u0110\u00e3 g\u1eedi batch ngu\u1ed3n cho Finance."
+    }
   },
   "availability": {
     "copy": {

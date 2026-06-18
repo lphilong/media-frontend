@@ -20,6 +20,7 @@ const MANAGER_AVAILABILITY_MEMBERS_QUERY_KEY = [
   'availability-members',
 ] as const;
 const MANAGER_EVENTS_QUERY_KEY = ['manager-workspace', 'events'] as const;
+const MANAGER_REVENUE_QUERY_KEY = ['manager-workspace', 'revenue-source'] as const;
 
 const referenceNameSchema = z
   .object({
@@ -79,6 +80,19 @@ const eventsModuleSchema = z.union([
     .object({
       visible: z.literal(false),
       reason: z.enum(['NO_MANAGED_SCOPE_ASSIGNED', 'MISSING_EVENT_READ_CAPABILITY']),
+    })
+    .strict(),
+]);
+
+const revenueSourceModuleSchema = z.union([
+  z.object({ visible: z.literal(true) }).strict(),
+  z
+    .object({
+      visible: z.literal(false),
+      reason: z.enum([
+        'NO_MANAGED_SCOPE_ASSIGNED',
+        'MISSING_REVENUE_SOURCE_SUBMIT_CAPABILITY',
+      ]),
     })
     .strict(),
 ]);
@@ -193,6 +207,7 @@ export const managerWorkspaceContextSchema = z
           .strict(),
         workShifts: workShiftsModuleSchema,
         events: eventsModuleSchema,
+        revenueSource: revenueSourceModuleSchema,
         members: disabledModuleSchema,
       })
       .strict(),
@@ -210,6 +225,156 @@ export type ManagerWorkspaceOrgUnitScope = ManagerWorkspaceContext['scopes']['or
 export type ManagerWorkspaceTalentGroupScope =
   ManagerWorkspaceContext['scopes']['talentGroups'][number];
 export type ManagerEventSummary = z.infer<typeof managerEventSchema>;
+
+const managerPlatformEarningStatusSchema = z.enum([
+  'DRAFT',
+  'SUBMITTED',
+  'UNDER_REVIEW',
+  'APPROVED',
+  'REJECTED',
+  'VOIDED',
+  'ARCHIVED',
+]);
+
+const managerPlatformEarningMemberSchema = z
+  .object({
+    employmentProfileId: z.string().trim().min(1),
+    talentId: z.string().trim().min(1),
+    displayName: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1).optional(),
+    talentGroupId: z.string().trim().min(1),
+  })
+  .strict();
+
+const managerPlatformEarningScopeSchema = z
+  .object({
+    talentGroups: z.array(
+      z
+        .object({
+          talentGroupId: z.string().trim().min(1),
+          members: z.array(managerPlatformEarningMemberSchema),
+        })
+        .strict(),
+    ),
+    platformAccounts: z.array(
+      z
+        .object({
+          id: z.string().trim().min(1),
+          accountCode: z.string().trim().min(1),
+          displayName: z.string().trim().min(1),
+          platform: z.string().trim().min(1),
+          handle: z.string().nullable(),
+          ownerTalentGroupId: z.string().trim().min(1),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+const managerPlatformEarningBatchSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    batchCode: z.string().trim().min(1),
+    platform: z.string().trim().min(1),
+    platformAccountId: z.string().trim().min(1),
+    talentGroupId: z.string().trim().min(1),
+    sourceType: z.literal('TIKTOK_LIVESTREAM_DIAMOND'),
+    sourceUnit: z.literal('DIAMOND'),
+    periodMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+    sourceDateFrom: z.number().int(),
+    sourceDateTo: z.number().int(),
+    status: managerPlatformEarningStatusSchema,
+    sourceLineCount: z.number().int().nonnegative(),
+    rawQuantityTotal: z.number(),
+    submittedAt: z.number().int().nullable(),
+    rejectedAt: z.number().int().nullable(),
+    rejectionReason: z.string().nullable(),
+    voidedAt: z.number().int().nullable(),
+    voidReason: z.string().nullable(),
+    approvedAt: z.number().int().nullable(),
+    revenueEntryLinked: z.boolean(),
+    createdAt: z.number().int(),
+    updatedAt: z.number().int(),
+  })
+  .strict();
+
+const managerPlatformEarningLineSchema = z
+  .object({
+    id: z.string().trim().min(1),
+    batchId: z.string().trim().min(1),
+    sourceDate: z.number().int(),
+    memberEmploymentProfileId: z.string().trim().min(1),
+    memberTalentId: z.string().trim().min(1),
+    rawQuantity: z.number(),
+    externalSourceRef: z.string().nullable(),
+    notes: z.string().nullable(),
+    createdAt: z.number().int(),
+    updatedAt: z.number().int(),
+  })
+  .strict();
+
+const managerPlatformEarningScopeResponseSchema = z
+  .object({ data: managerPlatformEarningScopeSchema })
+  .strict();
+const managerPlatformEarningBatchListResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(managerPlatformEarningBatchSchema),
+        nextCursor: z
+          .union([z.string().trim().min(1), z.null()])
+          .optional()
+          .transform((value) => value ?? undefined),
+      })
+      .strict(),
+  })
+  .strict();
+const managerPlatformEarningBatchResponseSchema = z
+  .object({ data: managerPlatformEarningBatchSchema })
+  .strict();
+const managerPlatformEarningLineListResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(managerPlatformEarningLineSchema),
+        nextCursor: z
+          .union([z.string().trim().min(1), z.null()])
+          .optional()
+          .transform((value) => value ?? undefined),
+      })
+      .strict(),
+  })
+  .strict();
+const managerPlatformEarningLineResponseSchema = z
+  .object({ data: managerPlatformEarningLineSchema })
+  .strict();
+
+export type ManagerPlatformEarningStatus = z.infer<typeof managerPlatformEarningStatusSchema>;
+export type ManagerPlatformEarningScope = z.infer<typeof managerPlatformEarningScopeSchema>;
+export type ManagerPlatformEarningBatch = z.infer<typeof managerPlatformEarningBatchSchema>;
+export type ManagerPlatformEarningLine = z.infer<typeof managerPlatformEarningLineSchema>;
+export type ManagerPlatformEarningBatchList = z.infer<
+  typeof managerPlatformEarningBatchListResponseSchema
+>['data'];
+
+export type ManagerPlatformEarningBatchPayload = {
+  platform: string;
+  platformAccountId: string;
+  talentGroupId: string;
+  sourceType: 'TIKTOK_LIVESTREAM_DIAMOND';
+  periodMonth: string;
+  sourceDateFrom: number;
+  sourceDateTo: number;
+};
+
+export type ManagerPlatformEarningLinePayload = {
+  sourceDate?: number;
+  memberTalentId?: string;
+  memberEmploymentProfileId?: string;
+  rawQuantity?: number;
+  externalSourceRef?: string | null;
+  notes?: string | null;
+};
 
 export const parseManagerEventForTest = (value: unknown): ManagerEventSummary =>
   managerEventSchema.parse(value);
@@ -268,6 +433,163 @@ export const useManagerEventDetail = (eventId?: string, options?: { enabled?: bo
       : [...MANAGER_EVENTS_QUERY_KEY, 'detail'],
     queryFn: () => fetchManagerEventDetail(eventId ?? ''),
     enabled: Boolean(eventId) && (options?.enabled ?? true),
+    retry: false,
+  });
+
+export const fetchManagerPlatformEarningScope = async (): Promise<ManagerPlatformEarningScope> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/manager-workspace/revenue/platform-earning-scope',
+  });
+
+  return managerPlatformEarningScopeResponseSchema.parse(response).data;
+};
+
+export const fetchManagerPlatformEarningBatches = async (
+  query: { talentGroupId?: string; status?: ManagerPlatformEarningStatus; cursor?: string } = {},
+): Promise<ManagerPlatformEarningBatchList> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/manager-workspace/revenue/platform-earning-batches',
+    params: Object.fromEntries(
+      Object.entries({ ...query, limit: 20 }).filter(
+        ([, value]) => value !== undefined && value !== '',
+      ),
+    ),
+  });
+
+  return managerPlatformEarningBatchListResponseSchema.parse(response).data;
+};
+
+export const fetchManagerPlatformEarningBatchDetail = async (
+  batchId: string,
+): Promise<ManagerPlatformEarningBatch> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/manager-workspace/revenue/platform-earning-batches/${encodeURIComponent(batchId)}`,
+  });
+
+  return managerPlatformEarningBatchResponseSchema.parse(response).data;
+};
+
+export const fetchManagerPlatformEarningLines = async (
+  batchId: string,
+): Promise<ManagerPlatformEarningLine[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/manager-workspace/revenue/platform-earning-batches/${encodeURIComponent(
+      batchId,
+    )}/source-lines`,
+    params: { limit: 50 },
+  });
+
+  return managerPlatformEarningLineListResponseSchema.parse(response).data.items;
+};
+
+export const createManagerPlatformEarningBatch = async (
+  payload: ManagerPlatformEarningBatchPayload,
+): Promise<ManagerPlatformEarningBatch> => {
+  const response = await apiRequest<unknown, ManagerPlatformEarningBatchPayload>({
+    method: 'POST',
+    url: '/admin/manager-workspace/revenue/platform-earning-batches',
+    data: payload,
+  });
+
+  return managerPlatformEarningBatchResponseSchema.parse(response).data;
+};
+
+export const addManagerPlatformEarningLine = async (
+  batchId: string,
+  payload: Required<Pick<ManagerPlatformEarningLinePayload, 'sourceDate' | 'memberTalentId' | 'memberEmploymentProfileId' | 'rawQuantity'>> &
+    Pick<ManagerPlatformEarningLinePayload, 'externalSourceRef' | 'notes'>,
+): Promise<ManagerPlatformEarningLine> => {
+  const response = await apiRequest<unknown, typeof payload>({
+    method: 'POST',
+    url: `/admin/manager-workspace/revenue/platform-earning-batches/${encodeURIComponent(
+      batchId,
+    )}/source-lines`,
+    data: payload,
+  });
+
+  return managerPlatformEarningLineResponseSchema.parse(response).data;
+};
+
+export const updateManagerPlatformEarningLine = async (
+  batchId: string,
+  lineId: string,
+  payload: ManagerPlatformEarningLinePayload,
+): Promise<ManagerPlatformEarningLine> => {
+  const response = await apiRequest<unknown, ManagerPlatformEarningLinePayload>({
+    method: 'PATCH',
+    url: `/admin/manager-workspace/revenue/platform-earning-batches/${encodeURIComponent(
+      batchId,
+    )}/source-lines/${encodeURIComponent(lineId)}`,
+    data: Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== undefined),
+    ) as ManagerPlatformEarningLinePayload,
+  });
+
+  return managerPlatformEarningLineResponseSchema.parse(response).data;
+};
+
+export const submitManagerPlatformEarningBatch = async (
+  batchId: string,
+): Promise<ManagerPlatformEarningBatch> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/manager-workspace/revenue/platform-earning-batches/${encodeURIComponent(
+      batchId,
+    )}/submit`,
+    data: {},
+  });
+
+  return managerPlatformEarningBatchResponseSchema.parse(response).data;
+};
+
+export const useManagerPlatformEarningScope = (enabled: boolean) =>
+  useQuery({
+    queryKey: [...MANAGER_REVENUE_QUERY_KEY, 'scope'],
+    queryFn: fetchManagerPlatformEarningScope,
+    enabled,
+    retry: false,
+  });
+
+export const useManagerPlatformEarningBatches = (
+  query: { talentGroupId?: string; status?: ManagerPlatformEarningStatus; cursor?: string },
+  enabled: boolean,
+) =>
+  useQuery({
+    queryKey: [
+      ...MANAGER_REVENUE_QUERY_KEY,
+      'batches',
+      query.talentGroupId ?? 'none',
+      query.status ?? 'all',
+      query.cursor ?? 'first',
+    ],
+    queryFn: () => fetchManagerPlatformEarningBatches(query),
+    enabled,
+    retry: false,
+  });
+
+export const useManagerPlatformEarningBatchDetail = (
+  batchId: string | undefined,
+  enabled: boolean,
+) =>
+  useQuery({
+    queryKey: [...MANAGER_REVENUE_QUERY_KEY, 'batch', batchId ?? 'none'],
+    queryFn: () => fetchManagerPlatformEarningBatchDetail(batchId ?? ''),
+    enabled: Boolean(batchId) && enabled,
+    retry: false,
+  });
+
+export const useManagerPlatformEarningLines = (
+  batchId: string | undefined,
+  enabled: boolean,
+) =>
+  useQuery({
+    queryKey: [...MANAGER_REVENUE_QUERY_KEY, 'lines', batchId ?? 'none'],
+    queryFn: () => fetchManagerPlatformEarningLines(batchId ?? ''),
+    enabled: Boolean(batchId) && enabled,
     retry: false,
   });
 
@@ -955,6 +1277,10 @@ const invalidateManagerAvailabilityBatches = async (
   await queryClient.invalidateQueries({ queryKey: MANAGER_AVAILABILITY_BATCHES_QUERY_KEY });
 };
 
+const invalidateManagerRevenueSource = async (queryClient: ReturnType<typeof useQueryClient>) => {
+  await queryClient.invalidateQueries({ queryKey: MANAGER_REVENUE_QUERY_KEY });
+};
+
 export const useSubmitManagerRequestBatchMutation = () => {
   const queryClient = useQueryClient();
 
@@ -1010,6 +1336,71 @@ export const useSubmitManagerAvailabilityBatchMutation = () => {
   });
 };
 
+export const useCreateManagerPlatformEarningBatchMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ payload }: { payload: ManagerPlatformEarningBatchPayload }) =>
+      createManagerPlatformEarningBatch(payload),
+    onSuccess: async () => {
+      await invalidateManagerRevenueSource(queryClient);
+    },
+  });
+};
+
+export const useAddManagerPlatformEarningLineMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: Required<
+        Pick<
+          ManagerPlatformEarningLinePayload,
+          'sourceDate' | 'memberTalentId' | 'memberEmploymentProfileId' | 'rawQuantity'
+        >
+      > &
+        Pick<ManagerPlatformEarningLinePayload, 'externalSourceRef' | 'notes'>;
+    }) => addManagerPlatformEarningLine(batchId, payload),
+    onSuccess: async () => {
+      await invalidateManagerRevenueSource(queryClient);
+    },
+  });
+};
+
+export const useUpdateManagerPlatformEarningLineMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      batchId,
+      lineId,
+      payload,
+    }: {
+      batchId: string;
+      lineId: string;
+      payload: ManagerPlatformEarningLinePayload;
+    }) => updateManagerPlatformEarningLine(batchId, lineId, payload),
+    onSuccess: async () => {
+      await invalidateManagerRevenueSource(queryClient);
+    },
+  });
+};
+
+export const useSubmitManagerPlatformEarningBatchMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ batchId }: { batchId: string }) => submitManagerPlatformEarningBatch(batchId),
+    onSuccess: async () => {
+      await invalidateManagerRevenueSource(queryClient);
+    },
+  });
+};
+
 export const useCancelManagerAvailabilityBatchMutation = () => {
   const queryClient = useQueryClient();
 
@@ -1043,6 +1434,9 @@ export const useCancelManagerAvailabilityLineMutation = () => {
 
 export const parseManagerWorkspaceContextForTest = (response: unknown): ManagerWorkspaceContext =>
   managerWorkspaceContextResponseSchema.parse(response).data;
+
+export const parseManagerPlatformEarningBatchListForTest = (response: unknown) =>
+  managerPlatformEarningBatchListResponseSchema.parse(response).data;
 
 export const parseManagerWorkShiftListForTest = (response: unknown): ManagerWorkShiftList =>
   managerWorkShiftListResponseSchema.parse(response).data;

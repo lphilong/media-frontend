@@ -1,3 +1,11 @@
+import {
+  managerWorkspaceTalentGroupOnlyContext,
+  resetManagerWorkspaceMockData,
+  setMockManagerPlatformAccountEligible,
+  setMockManagerWorkspaceContext,
+} from './manager-workspace-handlers';
+import { resetWave8MockData } from './wave8-handlers';
+
 const requestJson = async (
   path: string,
   body?: Record<string, unknown>,
@@ -78,5 +86,76 @@ describe('wave 8 MSW commercial guards', () => {
         reconciliationReference: 'BANK-1',
       },
     });
+  });
+
+  it('mirrors Platform Earning cursor, lifecycle gates, subject guard, and duplicate entry conflict', async () => {
+    resetWave8MockData();
+
+    const list = await fetch(
+      'http://localhost/admin/revenue-ledger/platform-earning-batches?limit=100',
+    );
+    expect(list.status).toBe(200);
+    await expect(list.json()).resolves.toMatchObject({ meta: { nextCursor: null } });
+
+    const missingSubject = await requestJson(
+      '/admin/revenue-ledger/platform-earning-batches/platform-batch-approved/create-revenue-entry',
+      {},
+    );
+    expect(missingSubject.status).toBe(422);
+
+    const created = await requestJson(
+      '/admin/revenue-ledger/platform-earning-batches/platform-batch-approved/create-revenue-entry',
+      { subjectTalentId: 'talent-002' },
+    );
+    expect(created.status).toBe(200);
+
+    const duplicate = await requestJson(
+      '/admin/revenue-ledger/platform-earning-batches/platform-batch-approved/create-revenue-entry',
+      { subjectTalentId: 'talent-002' },
+    );
+    expect(duplicate.status).toBe(409);
+
+    const archiveApproved = await requestJson(
+      '/admin/revenue-ledger/platform-earning-batches/platform-batch-approved/archive',
+    );
+    expect(archiveApproved.status).toBe(200);
+
+    resetWave8MockData();
+    const submitDraft = await requestJson(
+      '/admin/revenue-ledger/platform-earning-batches/platform-batch-draft/submit',
+    );
+    expect(submitDraft.status).toBe(200);
+    const rejectSubmitted = await requestJson(
+      '/admin/revenue-ledger/platform-earning-batches/platform-batch-draft/reject',
+      { reason: 'Source mismatch' },
+    );
+    expect(rejectSubmitted.status).toBe(200);
+    const voidRejected = await requestJson(
+      '/admin/revenue-ledger/platform-earning-batches/platform-batch-draft/void',
+      { reason: 'Rejected batches cannot be voided' },
+    );
+    expect(voidRejected.status).toBe(409);
+  });
+
+  it('mirrors Manager Workspace revenue fail-closed platform eligibility and null cursor', async () => {
+    resetManagerWorkspaceMockData();
+    setMockManagerWorkspaceContext(managerWorkspaceTalentGroupOnlyContext());
+
+    const list = await fetch(
+      'http://localhost/admin/manager-workspace/revenue/platform-earning-batches?limit=100',
+    );
+    expect(list.status).toBe(200);
+    await expect(list.json()).resolves.toMatchObject({ data: { nextCursor: null } });
+
+    setMockManagerPlatformAccountEligible(false);
+    const detail = await fetch(
+      'http://localhost/admin/manager-workspace/revenue/platform-earning-batches/manager-platform-batch-001',
+    );
+    expect(detail.status).toBe(403);
+
+    const submit = await requestJson(
+      '/admin/manager-workspace/revenue/platform-earning-batches/manager-platform-batch-001/submit',
+    );
+    expect(submit.status).toBe(403);
   });
 });

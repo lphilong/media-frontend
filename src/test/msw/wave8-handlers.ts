@@ -4,6 +4,10 @@ import {
   generatedFixtureMonthCode,
   providedOrGeneratedFixtureCode,
 } from '@test/msw/generated-code-fixtures';
+import type {
+  PlatformEarningBatch,
+  PlatformEarningLine,
+} from '@modules/revenue-ledger/types/revenue-ledger.types';
 
 type TalentKpiStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
 type RevenueEntryStatus = 'DRAFT' | 'FINALIZED' | 'RECONCILED' | 'VOIDED' | 'ARCHIVED';
@@ -68,7 +72,7 @@ type RevenueEntryRecord = {
   attributionPlatformAccountRef?: ReferenceSummary | null;
   attributionEventRef?: ReferenceSummary | null;
   revenueKind: RevenueKind;
-  entrySource: 'MANUAL';
+  entrySource: 'MANUAL' | 'PLATFORM_EARNING_BATCH';
   status: RevenueEntryStatus;
   currencyCode: string;
   recognizedAmount: number;
@@ -300,11 +304,278 @@ const initialRevenueEntries: RevenueEntryRecord[] = [
   },
 ];
 
+const initialPlatformEarningBatches: PlatformEarningBatch[] = [
+  {
+    id: 'platform-batch-approved',
+    batchCode: 'PEB-202604-000001',
+    platform: 'TIKTOK',
+    platformAccountId: 'platform-001',
+    talentGroupId: 'group-001',
+    sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
+    sourceUnit: 'DIAMOND',
+    periodMonth: '2026-04',
+    sourceDateFrom: Date.parse('2026-04-01T00:00:00.000Z'),
+    sourceDateTo: Date.parse('2026-04-30T00:00:00.000Z'),
+    status: 'APPROVED',
+    sourceLineCount: 2,
+    rawQuantityTotal: 2400,
+    conversionSnapshot: {
+      sourceUnit: 'DIAMOND',
+      rawQuantity: 2400,
+      targetCurrency: 'VND',
+      appliedRate: 100,
+      rateType: 'FINANCE_APPROVED',
+      rateEffectiveFrom: null,
+      rateEffectiveTo: null,
+      grossConvertedAmount: 240000,
+      ruleRef: 'fixture-conversion',
+      appliedByActorId: 'finance-approver',
+      appliedAt: now - 40_000,
+      sourceNote: null,
+    },
+    platformCutSnapshot: {
+      platformCutRate: 0.3,
+      companyShareRate: 0.7,
+      grossConvertedAmount: 240000,
+      platformCutAmount: 72000,
+      companyNetAmount: 168000,
+      targetCurrency: 'VND',
+      ruleRef: 'fixture-platform-cut',
+      appliedByActorId: 'finance-approver',
+      appliedAt: now - 40_000,
+      sourceNote: null,
+    },
+    companyNetAmount: 168000,
+    commissionableBasisAmount: 168000,
+    submittedByActorId: 'manager-1',
+    submittedAt: now - 50_000,
+    reviewedByActorId: 'finance-reviewer',
+    reviewedAt: now - 45_000,
+    approvedByActorId: 'finance-approver',
+    approvedAt: now - 40_000,
+    rejectedByActorId: null,
+    rejectedAt: null,
+    rejectionReason: null,
+    voidedByActorId: null,
+    voidedAt: null,
+    voidReason: null,
+    archivedByActorId: null,
+    archivedAt: null,
+    sourceFingerprint: 'fixture-approved-fingerprint',
+    revenueEntryId: null,
+    revenueEntryCreatedByActorId: null,
+    revenueEntryCreatedAt: null,
+    createdByActorId: 'manager-1',
+    createdAt: now - 60_000,
+    updatedAt: now - 40_000,
+  },
+  {
+    id: 'platform-batch-review',
+    batchCode: 'PEB-202604-000002',
+    platform: 'TIKTOK',
+    platformAccountId: 'platform-001',
+    talentGroupId: 'group-001',
+    sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
+    sourceUnit: 'DIAMOND',
+    periodMonth: '2026-04',
+    sourceDateFrom: Date.parse('2026-04-15T00:00:00.000Z'),
+    sourceDateTo: Date.parse('2026-04-16T00:00:00.000Z'),
+    status: 'UNDER_REVIEW',
+    sourceLineCount: 1,
+    rawQuantityTotal: 900,
+    conversionSnapshot: null,
+    platformCutSnapshot: null,
+    companyNetAmount: null,
+    commissionableBasisAmount: null,
+    submittedByActorId: 'manager-1',
+    submittedAt: now - 30_000,
+    reviewedByActorId: 'finance-reviewer',
+    reviewedAt: now - 25_000,
+    approvedByActorId: null,
+    approvedAt: null,
+    rejectedByActorId: null,
+    rejectedAt: null,
+    rejectionReason: null,
+    voidedByActorId: null,
+    voidedAt: null,
+    voidReason: null,
+    archivedByActorId: null,
+    archivedAt: null,
+    sourceFingerprint: 'fixture-review-fingerprint',
+    revenueEntryId: null,
+    revenueEntryCreatedByActorId: null,
+    revenueEntryCreatedAt: null,
+    createdByActorId: 'manager-1',
+    createdAt: now - 35_000,
+    updatedAt: now - 25_000,
+  },
+  {
+    id: 'platform-batch-draft',
+    batchCode: 'PEB-202604-000003',
+    platform: 'TIKTOK',
+    platformAccountId: 'platform-001',
+    talentGroupId: 'group-001',
+    sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
+    sourceUnit: 'DIAMOND',
+    periodMonth: '2026-04',
+    sourceDateFrom: Date.parse('2026-04-20T00:00:00.000Z'),
+    sourceDateTo: Date.parse('2026-04-20T00:00:00.000Z'),
+    status: 'DRAFT',
+    sourceLineCount: 1,
+    rawQuantityTotal: 500,
+    conversionSnapshot: null,
+    platformCutSnapshot: null,
+    companyNetAmount: null,
+    commissionableBasisAmount: null,
+    submittedByActorId: null,
+    submittedAt: null,
+    reviewedByActorId: null,
+    reviewedAt: null,
+    approvedByActorId: null,
+    approvedAt: null,
+    rejectedByActorId: null,
+    rejectedAt: null,
+    rejectionReason: null,
+    voidedByActorId: null,
+    voidedAt: null,
+    voidReason: null,
+    archivedByActorId: null,
+    archivedAt: null,
+    sourceFingerprint: 'fixture-draft-fingerprint',
+    revenueEntryId: null,
+    revenueEntryCreatedByActorId: null,
+    revenueEntryCreatedAt: null,
+    createdByActorId: 'manager-1',
+    createdAt: now - 20_000,
+    updatedAt: now - 20_000,
+  },
+];
+
+const initialPlatformEarningLines: Record<string, PlatformEarningLine[]> = {
+  'platform-batch-approved': [
+    {
+      id: 'platform-line-approved-1',
+      batchId: 'platform-batch-approved',
+      batchStatus: 'APPROVED',
+      sourceDate: Date.parse('2026-04-10T00:00:00.000Z'),
+      periodMonth: '2026-04',
+      platform: 'TIKTOK',
+      platformAccountId: 'platform-001',
+      talentGroupId: 'group-001',
+      memberTalentId: 'talent-001',
+      memberEmploymentProfileId: 'ep-group-member',
+      eventId: null,
+      sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
+      sourceUnit: 'DIAMOND',
+      rawQuantity: 1200,
+      externalSourceRef: 'TT-APR-10',
+      notes: null,
+      duplicateDetectionKey: 'fixture-approved-1',
+      correctionOfLineId: null,
+      replacementLineId: null,
+      enteredByActorId: 'manager-1',
+      enteredAt: now - 60_000,
+      submittedByActorId: 'manager-1',
+      submittedAt: now - 50_000,
+      createdAt: now - 60_000,
+      updatedAt: now - 40_000,
+    },
+    {
+      id: 'platform-line-approved-2',
+      batchId: 'platform-batch-approved',
+      batchStatus: 'APPROVED',
+      sourceDate: Date.parse('2026-04-11T00:00:00.000Z'),
+      periodMonth: '2026-04',
+      platform: 'TIKTOK',
+      platformAccountId: 'platform-001',
+      talentGroupId: 'group-001',
+      memberTalentId: 'talent-002',
+      memberEmploymentProfileId: 'ep-group-member-2',
+      eventId: null,
+      sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
+      sourceUnit: 'DIAMOND',
+      rawQuantity: 1200,
+      externalSourceRef: 'TT-APR-11',
+      notes: null,
+      duplicateDetectionKey: 'fixture-approved-2',
+      correctionOfLineId: null,
+      replacementLineId: null,
+      enteredByActorId: 'manager-1',
+      enteredAt: now - 60_000,
+      submittedByActorId: 'manager-1',
+      submittedAt: now - 50_000,
+      createdAt: now - 60_000,
+      updatedAt: now - 40_000,
+    },
+  ],
+  'platform-batch-review': [
+    {
+      id: 'platform-line-review-1',
+      batchId: 'platform-batch-review',
+      batchStatus: 'UNDER_REVIEW',
+      sourceDate: Date.parse('2026-04-15T00:00:00.000Z'),
+      periodMonth: '2026-04',
+      platform: 'TIKTOK',
+      platformAccountId: 'platform-001',
+      talentGroupId: 'group-001',
+      memberTalentId: 'talent-001',
+      memberEmploymentProfileId: 'ep-group-member',
+      eventId: null,
+      sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
+      sourceUnit: 'DIAMOND',
+      rawQuantity: 900,
+      externalSourceRef: 'TT-APR-15',
+      notes: null,
+      duplicateDetectionKey: 'fixture-review-1',
+      correctionOfLineId: null,
+      replacementLineId: null,
+      enteredByActorId: 'manager-1',
+      enteredAt: now - 35_000,
+      submittedByActorId: 'manager-1',
+      submittedAt: now - 30_000,
+      createdAt: now - 35_000,
+      updatedAt: now - 25_000,
+    },
+  ],
+  'platform-batch-draft': [
+    {
+      id: 'platform-line-draft-1',
+      batchId: 'platform-batch-draft',
+      batchStatus: 'DRAFT',
+      sourceDate: Date.parse('2026-04-20T00:00:00.000Z'),
+      periodMonth: '2026-04',
+      platform: 'TIKTOK',
+      platformAccountId: 'platform-001',
+      talentGroupId: 'group-001',
+      memberTalentId: 'talent-001',
+      memberEmploymentProfileId: 'ep-group-member',
+      eventId: null,
+      sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
+      sourceUnit: 'DIAMOND',
+      rawQuantity: 500,
+      externalSourceRef: 'TT-APR-20',
+      notes: null,
+      duplicateDetectionKey: 'fixture-draft-1',
+      correctionOfLineId: null,
+      replacementLineId: null,
+      enteredByActorId: 'manager-1',
+      enteredAt: now - 20_000,
+      submittedByActorId: null,
+      submittedAt: null,
+      createdAt: now - 20_000,
+      updatedAt: now - 20_000,
+    },
+  ],
+};
+
 let talentKpiSeed = 100;
 let revenueSeed = 100;
+let platformEarningRevenueSeed = 100;
 let talentKpiRecords: TalentKpiRecord[] = [];
 let talentKpiMetrics: Record<string, TalentKpiMetricRecord[]> = {};
 let revenueEntries: RevenueEntryRecord[] = [];
+let platformEarningBatches: PlatformEarningBatch[] = [];
+let platformEarningLines: Record<string, PlatformEarningLine[]> = {};
 
 const cloneTalentKpis = (): TalentKpiRecord[] =>
   initialTalentKpiRecords.map((record) => ({ ...record }));
@@ -320,12 +591,26 @@ const cloneTalentKpiMetrics = (): Record<string, TalentKpiMetricRecord[]> =>
 const cloneRevenueEntries = (): RevenueEntryRecord[] =>
   initialRevenueEntries.map((record) => ({ ...record }));
 
+const clonePlatformEarningBatches = (): PlatformEarningBatch[] =>
+  initialPlatformEarningBatches.map((record) => ({ ...record }));
+
+const clonePlatformEarningLines = (): Record<string, PlatformEarningLine[]> =>
+  Object.fromEntries(
+    Object.entries(initialPlatformEarningLines).map(([id, lines]) => [
+      id,
+      lines.map((line) => ({ ...line })),
+    ]),
+  );
+
 export const resetWave8MockData = (): void => {
   talentKpiSeed = 100;
   revenueSeed = 100;
+  platformEarningRevenueSeed = 100;
   talentKpiRecords = cloneTalentKpis();
   talentKpiMetrics = cloneTalentKpiMetrics();
   revenueEntries = cloneRevenueEntries();
+  platformEarningBatches = clonePlatformEarningBatches();
+  platformEarningLines = clonePlatformEarningLines();
 };
 
 resetWave8MockData();
@@ -342,7 +627,7 @@ const parsePositiveInt = (value: string | null | undefined): number | undefined 
 const paginate = <TData>(
   items: TData[],
   searchParams: URLSearchParams,
-): { data: TData[]; meta?: { nextCursor?: string } } => {
+): { data: TData[]; meta: { nextCursor: string | null } } => {
   const limitParam = parsePositiveInt(searchParams.get('limit'));
   const limit = Math.min(limitParam ?? 20, 100);
   const cursorParam = parsePositiveInt(searchParams.get('cursor'));
@@ -350,11 +635,11 @@ const paginate = <TData>(
   const start = Math.min(cursor, items.length);
   const end = Math.min(start + limit, items.length);
   const data = items.slice(start, end);
-  const nextCursor = end < items.length ? String(end) : undefined;
+  const nextCursor = end < items.length ? String(end) : null;
 
   return {
     data,
-    meta: nextCursor ? { nextCursor } : undefined,
+    meta: { nextCursor },
   };
 };
 
@@ -601,6 +886,42 @@ const readTalentKpi = (id: string): TalentKpiRecord | undefined =>
 const readRevenueEntry = (id: string): RevenueEntryRecord | undefined =>
   revenueEntries.find((item) => item.id === id);
 
+const readPlatformEarningBatch = (id: string): PlatformEarningBatch | undefined =>
+  platformEarningBatches.find((item) => item.id === id);
+
+const filterPlatformEarningBatches = (
+  records: PlatformEarningBatch[],
+  searchParams: URLSearchParams,
+) => {
+  let rows = [...records];
+  const status = searchParams.get('status');
+  const periodMonth = searchParams.get('periodMonth');
+  const platform = searchParams.get('platform');
+  const platformAccountId = searchParams.get('platformAccountId');
+  const talentGroupId = searchParams.get('talentGroupId');
+  const sourceType = searchParams.get('sourceType');
+  const createdBeforeAt = readNumberParam(searchParams, 'createdBeforeAt');
+
+  if (status) rows = rows.filter((item) => item.status === status);
+  if (periodMonth) rows = rows.filter((item) => item.periodMonth === periodMonth);
+  if (platform) rows = rows.filter((item) => item.platform === platform);
+  if (platformAccountId)
+    rows = rows.filter((item) => item.platformAccountId === platformAccountId);
+  if (talentGroupId) rows = rows.filter((item) => item.talentGroupId === talentGroupId);
+  if (sourceType) rows = rows.filter((item) => item.sourceType === sourceType);
+  if (createdBeforeAt !== undefined) rows = rows.filter((item) => item.createdAt < createdBeforeAt);
+
+  return rows.sort((left, right) => right.createdAt - left.createdAt || left.id.localeCompare(right.id));
+};
+
+const updatePlatformBatchLineStatuses = (batch: PlatformEarningBatch): void => {
+  platformEarningLines[batch.id] = (platformEarningLines[batch.id] ?? []).map((line) => ({
+    ...line,
+    batchStatus: batch.status,
+    updatedAt: batch.updatedAt,
+  }));
+};
+
 const toTalentKpiListItem = (record: TalentKpiRecord) => ({
   id: record.id,
   kpiRecordCode: record.kpiRecordCode,
@@ -824,6 +1145,28 @@ const revenueFlatKeys = [
 const revenueByTalentKeys = talentKpiByTalentKeys;
 const revenueByPlatformKeys = talentKpiByPlatformKeys;
 const revenueByEventKeys = talentKpiByEventKeys;
+const platformEarningBatchKeys = [
+  'status',
+  'platform',
+  'platformAccountId',
+  'talentGroupId',
+  'sourceType',
+  'periodMonth',
+  'createdBeforeAt',
+  'limit',
+  'cursor',
+] as const;
+const platformEarningLineKeys = [
+  'batchId',
+  'status',
+  'platform',
+  'platformAccountId',
+  'talentGroupId',
+  'memberTalentId',
+  'periodMonth',
+  'limit',
+  'cursor',
+] as const;
 
 export const wave8Handlers = [
   http.get('*/admin/talent-kpi-records', ({ request }) => {
@@ -1012,6 +1355,286 @@ export const wave8Handlers = [
       return HttpResponse.json({ data: toTalentKpiDetail(record) });
     },
   ),
+
+  http.get('*/admin/revenue-ledger/platform-earning-batches', ({ request }) => {
+    const url = new URL(request.url);
+    const unsupported = rejectUnsupportedQuery(url.searchParams, platformEarningBatchKeys);
+    if (unsupported) return unsupported;
+    return HttpResponse.json(
+      paginate(filterPlatformEarningBatches(platformEarningBatches, url.searchParams), url.searchParams),
+    );
+  }),
+  http.get(
+    '*/admin/revenue-ledger/platform-earning-batches/:batchId/source-lines',
+    ({ params, request }) => {
+      const url = new URL(request.url);
+      const unsupported = rejectUnsupportedQuery(url.searchParams, platformEarningLineKeys);
+      if (unsupported) return unsupported;
+      const batch = readPlatformEarningBatch(String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      return HttpResponse.json(
+        paginate(platformEarningLines[batch.id] ?? [], url.searchParams),
+      );
+    },
+  ),
+  http.post(
+    '*/admin/revenue-ledger/platform-earning-batches/:batchId/submit',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, []);
+      if (unsupported) return unsupported;
+      const batch = readPlatformEarningBatch(String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (batch.status !== 'DRAFT') {
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      }
+      batch.status = 'SUBMITTED';
+      batch.submittedAt = Date.now();
+      batch.updatedAt = Date.now();
+      updatePlatformBatchLineStatuses(batch);
+      return HttpResponse.json({ data: batch });
+    },
+  ),
+  http.post(
+    '*/admin/revenue-ledger/platform-earning-batches/:batchId/start-review',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, []);
+      if (unsupported) return unsupported;
+      const batch = readPlatformEarningBatch(String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (batch.status !== 'SUBMITTED') {
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      }
+      batch.status = 'UNDER_REVIEW';
+      batch.reviewedAt = Date.now();
+      batch.updatedAt = Date.now();
+      updatePlatformBatchLineStatuses(batch);
+      return HttpResponse.json({ data: batch });
+    },
+  ),
+  http.post(
+    '*/admin/revenue-ledger/platform-earning-batches/:batchId/approve',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, [
+        'targetCurrency',
+        'appliedRate',
+        'rateType',
+        'rateEffectiveFrom',
+        'rateEffectiveTo',
+        'platformCutRate',
+        'companyShareRate',
+        'conversionRuleRef',
+        'platformCutRuleRef',
+        'sourceNote',
+      ]);
+      if (unsupported) return unsupported;
+      const batch = readPlatformEarningBatch(String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (batch.status !== 'UNDER_REVIEW') {
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      }
+      const appliedRate = Number(body.appliedRate);
+      const platformCutRate = Number(body.platformCutRate);
+      const convertedGrossAmount = batch.rawQuantityTotal * appliedRate;
+      const platformCutAmount = convertedGrossAmount * platformCutRate;
+      const companyGrossShareAmount = convertedGrossAmount - platformCutAmount;
+      batch.status = 'APPROVED';
+      batch.approvedAt = Date.now();
+      batch.updatedAt = Date.now();
+      batch.conversionSnapshot = {
+        sourceUnit: 'DIAMOND',
+        rawQuantity: batch.rawQuantityTotal,
+        targetCurrency: String(body.targetCurrency ?? 'VND'),
+        appliedRate,
+        rateType: String(body.rateType ?? 'FINANCE_APPROVED'),
+        rateEffectiveFrom: (body.rateEffectiveFrom as number | null | undefined) ?? null,
+        rateEffectiveTo: (body.rateEffectiveTo as number | null | undefined) ?? null,
+        grossConvertedAmount: convertedGrossAmount,
+        ruleRef: (body.conversionRuleRef as string | null | undefined) ?? null,
+        appliedByActorId: 'finance-approver',
+        appliedAt: batch.approvedAt,
+        sourceNote: (body.sourceNote as string | null | undefined) ?? null,
+      };
+      batch.platformCutSnapshot = {
+        platformCutRate,
+        companyShareRate: 1 - platformCutRate,
+        grossConvertedAmount: convertedGrossAmount,
+        platformCutAmount,
+        companyNetAmount: companyGrossShareAmount,
+        targetCurrency: String(body.targetCurrency ?? 'VND'),
+        ruleRef: (body.platformCutRuleRef as string | null | undefined) ?? null,
+        appliedByActorId: 'finance-approver',
+        appliedAt: batch.approvedAt,
+        sourceNote: (body.sourceNote as string | null | undefined) ?? null,
+      };
+      batch.approvedByActorId = 'finance-approver';
+      batch.companyNetAmount = companyGrossShareAmount;
+      batch.commissionableBasisAmount = companyGrossShareAmount;
+      updatePlatformBatchLineStatuses(batch);
+      return HttpResponse.json({ data: batch });
+    },
+  ),
+  http.post(
+    '*/admin/revenue-ledger/platform-earning-batches/:batchId/reject',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, ['reason']);
+      if (unsupported) return unsupported;
+      const batch = readPlatformEarningBatch(String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (batch.status !== 'SUBMITTED' && batch.status !== 'UNDER_REVIEW') {
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      }
+      batch.status = 'REJECTED';
+      batch.rejectedByActorId = 'finance-reviewer';
+      batch.rejectedAt = Date.now();
+      batch.rejectionReason = String(body.reason ?? 'Rejected by Finance');
+      batch.updatedAt = Date.now();
+      updatePlatformBatchLineStatuses(batch);
+      return HttpResponse.json({ data: batch });
+    },
+  ),
+  http.post(
+    '*/admin/revenue-ledger/platform-earning-batches/:batchId/void',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, ['reason']);
+      if (unsupported) return unsupported;
+      const batch = readPlatformEarningBatch(String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (!['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED'].includes(batch.status)) {
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      }
+      batch.status = 'VOIDED';
+      batch.voidedByActorId = 'finance-voider';
+      batch.voidedAt = Date.now();
+      batch.voidReason = String(body.reason ?? 'Voided by Finance');
+      batch.updatedAt = Date.now();
+      updatePlatformBatchLineStatuses(batch);
+      return HttpResponse.json({ data: batch });
+    },
+  ),
+  http.post(
+    '*/admin/revenue-ledger/platform-earning-batches/:batchId/archive',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, []);
+      if (unsupported) return unsupported;
+      const batch = readPlatformEarningBatch(String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (!['REJECTED', 'VOIDED', 'APPROVED'].includes(batch.status)) {
+        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
+      }
+      batch.status = 'ARCHIVED';
+      batch.archivedByActorId = 'finance-reviewer';
+      batch.archivedAt = Date.now();
+      batch.updatedAt = Date.now();
+      updatePlatformBatchLineStatuses(batch);
+      return HttpResponse.json({ data: batch });
+    },
+  ),
+  http.post(
+    '*/admin/revenue-ledger/platform-earning-batches/:batchId/create-revenue-entry',
+    async ({ params, request }) => {
+      const body = await parseJsonBody(request);
+      const unsupported = rejectUnsupportedBody(body, [
+        'revenueEntryCode',
+        'title',
+        'subjectTalentId',
+        'recognizedAt',
+        'description',
+        'externalRef',
+      ]);
+      if (unsupported) return unsupported;
+      const batch = readPlatformEarningBatch(String(params.batchId));
+      if (!batch) {
+        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+      }
+      if (batch.status !== 'APPROVED') {
+        return HttpResponse.json({ message: 'Only approved batches can create revenue entry' }, { status: 409 });
+      }
+      if (batch.revenueEntryId) {
+        return HttpResponse.json({ message: 'Revenue entry already exists for batch' }, { status: 409 });
+      }
+      const memberTalentIds = [
+        ...new Set(
+          (platformEarningLines[batch.id] ?? [])
+            .map((line) => line.memberTalentId)
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ];
+      const requestedSubjectTalentId =
+        typeof body.subjectTalentId === 'string' ? body.subjectTalentId.trim() : '';
+      if (memberTalentIds.length !== 1 && !requestedSubjectTalentId) {
+        return HttpResponse.json(
+          { message: 'subjectTalentId is required for a multi-member batch' },
+          { status: 422 },
+        );
+      }
+      if (requestedSubjectTalentId && !memberTalentIds.includes(requestedSubjectTalentId)) {
+        return HttpResponse.json(
+          { message: 'subjectTalentId must belong to the approved batch' },
+          { status: 422 },
+        );
+      }
+      platformEarningRevenueSeed += 1;
+      const id = `revenue-entry-platform-${platformEarningRevenueSeed}`;
+      const record: RevenueEntryRecord = {
+        id,
+        revenueEntryCode: providedOrGeneratedFixtureCode(
+          body.revenueEntryCode,
+          generatedFixtureMonthCode('REV', body.recognizedAt ?? batch.approvedAt, platformEarningRevenueSeed),
+        ),
+        title: String(body.title ?? batch.batchCode),
+        subjectTalentId: requestedSubjectTalentId || memberTalentIds[0],
+        attributionPlatformAccountId: batch.platformAccountId,
+        attributionEventId: null,
+        revenueKind: 'PLATFORM_LIVESTREAM',
+        entrySource: 'PLATFORM_EARNING_BATCH',
+        status: 'DRAFT',
+        currencyCode: batch.conversionSnapshot?.targetCurrency ?? 'VND',
+        recognizedAmount: batch.companyNetAmount ?? 0,
+        recognizedAt: Number(body.recognizedAt ?? batch.approvedAt ?? Date.now()),
+        finalizedAt: null,
+        reconciledAt: null,
+        voidedAt: null,
+        reconciliationReference: null,
+        description: (body.description as string | null | undefined) ?? null,
+        externalRef: (body.externalRef as string | null | undefined) ?? null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      revenueEntries.push(record);
+      batch.revenueEntryId = id;
+      batch.revenueEntryCreatedByActorId = 'finance-creator';
+      batch.revenueEntryCreatedAt = record.createdAt;
+      batch.updatedAt = Date.now();
+      return HttpResponse.json({ data: toRevenueEntryDetail(record) });
+    },
+  ),
+  http.get('*/admin/revenue-ledger/platform-earning-batches/:batchId', ({ params }) => {
+    const batch = readPlatformEarningBatch(String(params.batchId));
+    if (!batch) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+    return HttpResponse.json({ data: batch });
+  }),
 
   http.get('*/admin/revenue-entries', ({ request }) => {
     const url = new URL(request.url);

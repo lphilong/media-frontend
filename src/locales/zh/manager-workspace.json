@@ -35,6 +35,12 @@
       "disabledReason": "Manager Work 契约尚未启用。",
       "readinessMessage": "管理工作在本批次仅显示就绪状态。此处不会暴露 WorkSchedule Manager 路由或 Admin WorkSchedule 数据。"
     },
+    "revenue": {
+      "title": "\u6bcf\u65e5\u5e73\u53f0\u6765\u6e90",
+      "summary": "\u5728\u5df2\u5206\u914d Talent Group \u8303\u56f4\u5185\u63d0\u4ea4\u5e73\u53f0\u6765\u6e90\u6570\u636e\u3002",
+      "disabledReason": "\u6bcf\u65e5\u5e73\u53f0\u6765\u6e90\u9700\u8981\u6709\u6548 Talent Group \u5206\u914d\u548c\u6765\u6e90\u63d0\u4ea4\u6743\u9650\u3002",
+      "readinessMessage": "Finance \u4e3a\u5df2\u5206\u914d Talent Group \u542f\u7528\u6765\u6e90\u63d0\u4ea4\u524d\uff0c\u6b64\u529f\u80fd\u4e0d\u53ef\u7528\u3002"
+    },
     "events": {
       "title": "管理活动",
       "summary": "分配范围内的活动可见性和操作。",
@@ -220,6 +226,51 @@
     "resource": "演播室资源",
     "bookingStatus": "预订状态",
     "bookingWindow": "预订时间"
+  },
+  "revenue": {
+    "title": "\u6bcf\u65e5\u5e73\u53f0\u6765\u6e90",
+    "boundaryHelper": "\u7ba1\u7406\u8005\u53ea\u80fd\u5728\u5df2\u5206\u914d\u8303\u56f4\u5185\u63d0\u4ea4\u6765\u6e90\u6570\u636e\u3002Finance \u8d1f\u8d23\u5ba1\u6838\u5e76\u521b\u5efa\u6b63\u5f0f Revenue Entry\u3002\u7ba1\u7406\u8005\u63d0\u4ea4\u4e0d\u7b49\u4e8e\u6536\u5165\u5ba1\u6279\uff0c\u4e5f\u4e0d\u4f1a\u521b\u5efa\u4f63\u91d1\u3001\u4ed8\u6b3e\u3001\u5de5\u8d44\u3001\u7a0e\u52a1\u6216\u4f1a\u8ba1\u8bb0\u5f55\u3002",
+    "noScopeTitle": "\u6bcf\u65e5\u6765\u6e90\u4e0d\u53ef\u7528",
+    "noScopeMessage": "\u5f53\u524d\u6ca1\u6709\u53ef\u7528\u7684 Talent Group \u6765\u6e90\u63d0\u4ea4\u8303\u56f4\u3002",
+    "loadErrorTitle": "\u6765\u6e90\u8303\u56f4\u4e0d\u53ef\u7528",
+    "loadErrorMessage": "\u65e0\u6cd5\u52a0\u8f7d\u5df2\u5206\u914d\u7684\u6765\u6e90\u63d0\u4ea4\u8303\u56f4\u3002",
+    "noEligibleAccountTitle": "\u6ca1\u6709\u7b26\u5408\u6761\u4ef6\u7684\u5e73\u53f0\u8d26\u53f7",
+    "noEligibleAccountMessage": "\u6240\u9009 Talent Group \u672a\u914d\u7f6e\u6709\u6548\u7684\u5df2\u5f00\u542f\u53d8\u73b0\u76f4\u64ad\u5e73\u53f0\u8d26\u53f7\u3002",
+    "createBatchTitle": "\u521b\u5efa\u6765\u6e90\u8349\u7a3f\u6279\u6b21",
+    "ownBatches": "\u6211\u7684\u6765\u6e90\u6279\u6b21",
+    "fields": {
+      "talentGroup": "Talent Group",
+      "platformAccount": "\u5e73\u53f0\u8d26\u53f7",
+      "periodMonth": "\u6708\u4efd",
+      "sourceDateFrom": "\u6765\u6e90\u5f00\u59cb\u65e5",
+      "sourceDateTo": "\u6765\u6e90\u7ed3\u675f\u65e5",
+      "sourceDate": "\u6765\u6e90\u65e5\u671f",
+      "member": "\u6210\u5458",
+      "rawQuantity": "\u6bcf\u65e5\u94bb\u77f3",
+      "externalSourceRef": "\u6765\u6e90\u5f15\u7528",
+      "actions": "\u64cd\u4f5c"
+    },
+    "statuses": {
+      "DRAFT": "\u8349\u7a3f",
+      "SUBMITTED": "\u5df2\u63d0\u4ea4",
+      "UNDER_REVIEW": "\u5ba1\u6838\u4e2d",
+      "APPROVED": "\u5df2\u6279\u51c6",
+      "REJECTED": "\u5df2\u62d2\u7edd",
+      "VOIDED": "\u5df2\u4f5c\u5e9f",
+      "ARCHIVED": "\u5df2\u5f52\u6863"
+    },
+    "actions": {
+      "createBatch": "\u521b\u5efa\u8349\u7a3f\u6279\u6b21",
+      "addLine": "\u6dfb\u52a0\u6765\u6e90\u884c",
+      "updateLine": "\u66f4\u65b0\u884c",
+      "editLine": "\u7f16\u8f91\u884c",
+      "submitBatch": "\u63d0\u4ea4\u7ed9 Finance"
+    },
+    "feedback": {
+      "batchCreated": "\u6765\u6e90\u8349\u7a3f\u6279\u6b21\u5df2\u521b\u5efa\u3002",
+      "lineSaved": "\u6765\u6e90\u884c\u5df2\u4fdd\u5b58\u3002",
+      "batchSubmitted": "\u6765\u6e90\u6279\u6b21\u5df2\u63d0\u4ea4\u7ed9 Finance\u3002"
+    }
   },
   "availability": {
     "copy": {

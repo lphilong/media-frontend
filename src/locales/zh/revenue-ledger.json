@@ -46,7 +46,93 @@
     "EVENT_OPERATIONAL": "活动运营"
   },
   "entrySources": {
-    "MANUAL": "手动"
+    "MANUAL": "手动",
+    "PLATFORM_EARNING_BATCH": "平台收入批次"
+  },
+  "platformEarnings": {
+    "title": "平台收入批次",
+    "reviewBadge": "Finance 来源审核",
+    "boundaryHelper": "来源数据在 Finance 审批并明确创建 Revenue Entry 前不是正式收入。Revenue Entry 不会创建佣金、付款、工资、税务或会计记录。",
+    "filters": {
+      "status": "状态",
+      "allStatuses": "所有状态",
+      "periodMonth": "月份"
+    },
+    "statuses": {
+      "DRAFT": "草稿",
+      "SUBMITTED": "已提交",
+      "UNDER_REVIEW": "审核中",
+      "APPROVED": "已批准",
+      "REJECTED": "已拒绝",
+      "VOIDED": "已作废",
+      "ARCHIVED": "已归档"
+    },
+    "fields": {
+      "batchCode": "批次编码",
+      "periodMonth": "月份",
+      "platform": "平台",
+      "platformAccountId": "平台账号",
+      "talentGroupId": "Talent Group",
+      "status": "状态",
+      "rawQuantityTotal": "每日钻石",
+      "sourceLineCount": "平台来源行",
+      "companyNetAmount": "公司净额",
+      "commissionableBasisAmount": "佣金基础",
+      "revenueEntry": "运营收入记录",
+      "actions": "操作"
+    },
+    "lines": {
+      "sourceDate": "来源日期",
+      "member": "成员",
+      "rawQuantity": "每日钻石",
+      "externalSourceRef": "来源引用"
+    },
+    "snapshots": {
+      "conversion": "折算快照",
+      "platformCut": "平台扣留和公司份额",
+      "traceability": "来源追踪"
+    },
+    "actions": {
+      "submit": "提交",
+      "startReview": "开始审核",
+      "approve": "批准",
+      "reject": "拒绝",
+      "void": "作废",
+      "archive": "归档",
+      "createRevenueEntry": "创建收入记录"
+    },
+    "approval": {
+      "targetCurrency": "目标币种",
+      "appliedRate": "适用汇率",
+      "platformCutRate": "平台扣留比例",
+      "companyShareRate": "公司份额比例",
+      "rateType": "汇率类型"
+    },
+    "prompts": {
+      "rejectReason": "输入拒绝原因",
+      "voidReason": "输入作废原因"
+    },
+    "reason": {
+      "rejectLabel": "拒绝原因",
+      "voidLabel": "作废原因"
+    },
+    "revenueEntry": {
+      "subjectTalent": "收入归属 Talent",
+      "selectSubject": "选择批次成员 Talent",
+      "subjectHelper": "此批次包含多个成员 Talent。请选择 Revenue Entry 的归属 Talent。"
+    },
+    "validation": {
+      "reasonRequired": "必须填写原因。",
+      "subjectTalentRequired": "创建 Revenue Entry 前请选择归属 Talent。"
+    },
+    "feedback": {
+      "updated": "平台收入批次已更新。",
+      "revenueEntryCreated": "已从批准批次创建收入记录。"
+    },
+    "states": {
+      "loadErrorTitle": "无法加载平台收入批次",
+      "loadErrorMessage": "无法加载平台收入批次。"
+    }
   },
   "fields": {
     "revenueEntryCode": "收入记录编码",
@@ -131,7 +217,7 @@
     "attributionTitle": "归因",
     "lifecycleTitle": "生命周期",
     "freeTextTitle": "备注",
-    "boundaryHelper": "已记录收入不代表款项已收取。"
+    "boundaryHelper": "Revenue Entry 不会创建佣金、付款、工资、税务或会计记录。"
   },
   "related": {
     "navigationTitle": "关联商业记录",

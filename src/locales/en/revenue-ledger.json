@@ -46,7 +46,93 @@
     "EVENT_OPERATIONAL": "Event operational"
   },
   "entrySources": {
-    "MANUAL": "Manual"
+    "MANUAL": "Manual",
+    "PLATFORM_EARNING_BATCH": "Platform earning batch"
+  },
+  "platformEarnings": {
+    "title": "Platform earning batches",
+    "reviewBadge": "Finance source review",
+    "boundaryHelper": "Source data is not official revenue until Finance approval and explicit Revenue Entry creation. A Revenue Entry does not create commission, payment, payroll, tax, or accounting.",
+    "filters": {
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "periodMonth": "Month"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "SUBMITTED": "Submitted",
+      "UNDER_REVIEW": "Under review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "VOIDED": "Voided",
+      "ARCHIVED": "Archived"
+    },
+    "fields": {
+      "batchCode": "Batch code",
+      "periodMonth": "Month",
+      "platform": "Platform",
+      "platformAccountId": "Platform account",
+      "talentGroupId": "Talent group",
+      "status": "Status",
+      "rawQuantityTotal": "Daily diamonds",
+      "sourceLineCount": "Source lines",
+      "companyNetAmount": "Company net",
+      "commissionableBasisAmount": "Commissionable basis",
+      "revenueEntry": "Revenue entry",
+      "actions": "Actions"
+    },
+    "lines": {
+      "sourceDate": "Source date",
+      "member": "Member",
+      "rawQuantity": "Daily diamonds",
+      "externalSourceRef": "Source reference"
+    },
+    "snapshots": {
+      "conversion": "Conversion snapshot",
+      "platformCut": "Platform cut and company share",
+      "traceability": "Source traceability"
+    },
+    "actions": {
+      "submit": "Submit",
+      "startReview": "Start review",
+      "approve": "Approve",
+      "reject": "Reject",
+      "void": "Void",
+      "archive": "Archive",
+      "createRevenueEntry": "Create revenue entry"
+    },
+    "approval": {
+      "targetCurrency": "Target currency",
+      "appliedRate": "Applied rate",
+      "platformCutRate": "Platform cut rate",
+      "companyShareRate": "Company share rate",
+      "rateType": "Rate type"
+    },
+    "prompts": {
+      "rejectReason": "Enter rejection reason",
+      "voidReason": "Enter void reason"
+    },
+    "reason": {
+      "rejectLabel": "Rejection reason",
+      "voidLabel": "Void reason"
+    },
+    "revenueEntry": {
+      "subjectTalent": "Subject Talent",
+      "selectSubject": "Select a batch member Talent",
+      "subjectHelper": "This batch contains multiple member Talents. Select the Talent that will own the Revenue Entry."
+    },
+    "validation": {
+      "reasonRequired": "A reason is required.",
+      "subjectTalentRequired": "Select the subject Talent before creating the Revenue Entry."
+    },
+    "feedback": {
+      "updated": "Platform earning batch updated.",
+      "revenueEntryCreated": "Revenue entry created from approved batch."
+    },
+    "states": {
+      "loadErrorTitle": "Unable to load platform earning batches",
+      "loadErrorMessage": "Platform earning batches could not be loaded."
+    }
   },
   "fields": {
     "revenueEntryCode": "Revenue entry code",
@@ -131,7 +217,7 @@
     "attributionTitle": "Attribution",
     "lifecycleTitle": "Lifecycle",
     "freeTextTitle": "Notes",
-    "boundaryHelper": "Recorded revenue does not mean cash has been collected."
+    "boundaryHelper": "A Revenue Entry does not create commission, payment, payroll, tax, or accounting."
   },
   "related": {
     "navigationTitle": "Related commercial records",

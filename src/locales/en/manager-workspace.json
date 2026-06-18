@@ -35,6 +35,12 @@
       "disabledReason": "Managed Work requires an effective assignment and WorkSchedule read capability.",
       "readinessMessage": "Managed Work is unavailable until an effective Org Unit or Talent Group assignment is available."
     },
+    "revenue": {
+      "title": "Daily Platform Source",
+      "summary": "Submit daily platform source data for assigned Talent Groups.",
+      "disabledReason": "Daily Platform Source requires an effective Talent Group assignment and source submission capability.",
+      "readinessMessage": "Daily Platform Source is unavailable until Finance enables source submission for an assigned Talent Group."
+    },
     "events": {
       "title": "Managed Events",
       "summary": "Read-only events within your assigned scopes.",
@@ -220,6 +226,51 @@
     "resource": "Studio resource",
     "bookingStatus": "Booking status",
     "bookingWindow": "Booking window"
+  },
+  "revenue": {
+    "title": "Daily platform source",
+    "boundaryHelper": "Managers only submit source data within assigned scope. Finance reviews and creates official Revenue Entries. Manager submission is not revenue approval and does not create commission, payment, payroll, tax, or accounting.",
+    "noScopeTitle": "Daily source unavailable",
+    "noScopeMessage": "No assigned Talent Group source submission scope is available.",
+    "loadErrorTitle": "Source scope unavailable",
+    "loadErrorMessage": "Assigned source submission scope could not be loaded.",
+    "noEligibleAccountTitle": "No eligible platform account",
+    "noEligibleAccountMessage": "No active monetized livestream platform account is configured for the selected Talent Group.",
+    "createBatchTitle": "Create draft source batch",
+    "ownBatches": "My source batches",
+    "fields": {
+      "talentGroup": "Talent Group",
+      "platformAccount": "Platform account",
+      "periodMonth": "Month",
+      "sourceDateFrom": "Source date from",
+      "sourceDateTo": "Source date to",
+      "sourceDate": "Source date",
+      "member": "Member",
+      "rawQuantity": "Daily diamonds",
+      "externalSourceRef": "Source reference",
+      "actions": "Actions"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "SUBMITTED": "Submitted",
+      "UNDER_REVIEW": "Under review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "VOIDED": "Voided",
+      "ARCHIVED": "Archived"
+    },
+    "actions": {
+      "createBatch": "Create draft batch",
+      "addLine": "Add source line",
+      "updateLine": "Update line",
+      "editLine": "Edit line",
+      "submitBatch": "Submit to Finance"
+    },
+    "feedback": {
+      "batchCreated": "Draft source batch created.",
+      "lineSaved": "Source line saved.",
+      "batchSubmitted": "Source batch submitted to Finance."
+    }
   },
   "availability": {
     "copy": {

@@ -10,6 +10,7 @@ export const APP_PATHS = {
   manager: '/manager',
   managerKpi: '/manager/kpi',
   managerWorkShifts: '/manager/work-shifts',
+  managerRevenueSource: '/manager/revenue-source',
   managerEvents: '/manager/events',
   managerEventDetailPattern: '/manager/events/:eventId',
   managerEventDetail: (eventId: string) => joinDetailPath('/manager/events', eventId),

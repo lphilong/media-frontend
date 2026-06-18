@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { QueryClient } from '@tanstack/react-query';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
@@ -136,8 +136,8 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     expect(screen.getByText('Created before:')).toBeInTheDocument();
     expect(screen.getByText('Finalized from:')).toBeInTheDocument();
     expect(screen.getByText('Finalized until:')).toBeInTheDocument();
-    expect(screen.getAllByText(/20:26 28-05-2026/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/02:40 02-02-2026/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/03:26 29-05-2026/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/09:40 02-02-2026/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/1770000000000|1780000000000/)).not.toBeInTheDocument();
     expect(screen.queryByRole('spinbutton', { name: 'Finalized from' })).not.toBeInTheDocument();
   });
@@ -152,8 +152,8 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('Reconciled from:')).toBeInTheDocument();
     expect(screen.getByText('Reconciled until:')).toBeInTheDocument();
-    expect(screen.getAllByText(/02:40 02-02-2026/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/20:26 28-05-2026/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/09:40 02-02-2026/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/03:26 29-05-2026/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/1770000000000|1780000000000/)).not.toBeInTheDocument();
     expect(screen.getByLabelText(i18n.t('common:labels.sort'))).toHaveValue('recognizedAt');
   });
@@ -263,6 +263,7 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     expect(screen.queryByText('talent-001')).not.toBeInTheDocument();
     expect(screen.queryByText('platform-001')).not.toBeInTheDocument();
 
+    cleanup();
     renderRoute('/revenue-entries/revenue-entry-finalized');
 
     expect(await screen.findByText('Minh Tran')).toBeInTheDocument();

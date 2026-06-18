@@ -46,7 +46,93 @@
     "EVENT_OPERATIONAL": "Doanh thu vận hành sự kiện"
   },
   "entrySources": {
-    "MANUAL": "Thủ công"
+    "MANUAL": "Thủ công",
+    "PLATFORM_EARNING_BATCH": "Batch doanh thu nền tảng"
+  },
+  "platformEarnings": {
+    "title": "Batch doanh thu nền tảng",
+    "reviewBadge": "Finance rà soát nguồn",
+    "boundaryHelper": "Dữ liệu nguồn chưa phải doanh thu chính thức cho đến khi Finance duyệt và tạo Bản ghi doanh thu. Bản ghi doanh thu không tạo hoa hồng, thanh toán, bảng lương, thuế hoặc hạch toán.",
+    "filters": {
+      "status": "Trạng thái",
+      "allStatuses": "Tất cả trạng thái",
+      "periodMonth": "Tháng"
+    },
+    "statuses": {
+      "DRAFT": "Nháp",
+      "SUBMITTED": "Đã gửi",
+      "UNDER_REVIEW": "Đang rà soát",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Bị từ chối",
+      "VOIDED": "Đã hủy hiệu lực",
+      "ARCHIVED": "Đã lưu trữ"
+    },
+    "fields": {
+      "batchCode": "Mã batch",
+      "periodMonth": "Tháng",
+      "platform": "Nền tảng",
+      "platformAccountId": "Tài khoản nền tảng",
+      "talentGroupId": "Nhóm Talent",
+      "status": "Trạng thái",
+      "rawQuantityTotal": "Kim cương hằng ngày",
+      "sourceLineCount": "Dòng nguồn nền tảng",
+      "companyNetAmount": "Phần công ty thực nhận",
+      "commissionableBasisAmount": "Cơ sở tính hoa hồng",
+      "revenueEntry": "Bút toán doanh thu vận hành",
+      "actions": "Thao tác"
+    },
+    "lines": {
+      "sourceDate": "Ngày nguồn",
+      "member": "Thành viên",
+      "rawQuantity": "Kim cương hằng ngày",
+      "externalSourceRef": "Tham chiếu nguồn"
+    },
+    "snapshots": {
+      "conversion": "Snapshot quy đổi",
+      "platformCut": "Phần nền tảng giữ lại và phần công ty",
+      "traceability": "Truy vết dữ liệu nguồn"
+    },
+    "actions": {
+      "submit": "Gửi",
+      "startReview": "Bắt đầu rà soát",
+      "approve": "Duyệt",
+      "reject": "Từ chối",
+      "void": "Hủy hiệu lực",
+      "archive": "Lưu trữ",
+      "createRevenueEntry": "Tạo bút toán doanh thu"
+    },
+    "approval": {
+      "targetCurrency": "Tiền tệ quy đổi",
+      "appliedRate": "Tỷ giá áp dụng",
+      "platformCutRate": "Tỷ lệ nền tảng giữ lại",
+      "companyShareRate": "Tỷ lệ phần công ty",
+      "rateType": "Loại tỷ giá"
+    },
+    "prompts": {
+      "rejectReason": "Nhập lý do từ chối",
+      "voidReason": "Nhập lý do hủy hiệu lực"
+    },
+    "reason": {
+      "rejectLabel": "Lý do từ chối",
+      "voidLabel": "Lý do hủy hiệu lực"
+    },
+    "revenueEntry": {
+      "subjectTalent": "Talent ghi nhận",
+      "selectSubject": "Chọn Talent thành viên trong batch",
+      "subjectHelper": "Batch có nhiều Talent thành viên. Hãy chọn Talent đứng tên Bản ghi doanh thu."
+    },
+    "validation": {
+      "reasonRequired": "Bắt buộc nhập lý do.",
+      "subjectTalentRequired": "Hãy chọn Talent ghi nhận trước khi tạo Bản ghi doanh thu."
+    },
+    "feedback": {
+      "updated": "Đã cập nhật batch doanh thu nền tảng.",
+      "revenueEntryCreated": "Đã tạo bút toán doanh thu từ batch đã duyệt."
+    },
+    "states": {
+      "loadErrorTitle": "Không tải được batch doanh thu nền tảng",
+      "loadErrorMessage": "Không tải được batch doanh thu nền tảng."
+    }
   },
   "fields": {
     "revenueEntryCode": "Mã bút toán doanh thu",
@@ -131,7 +217,7 @@
     "attributionTitle": "Ghi nhận",
     "lifecycleTitle": "Vòng đời",
     "freeTextTitle": "Ghi chú",
-    "boundaryHelper": "Đã ghi nhận doanh thu không có nghĩa là đã thu tiền."
+    "boundaryHelper": "Bản ghi doanh thu không tạo hoa hồng, thanh toán, bảng lương, thuế hoặc hạch toán."
   },
   "related": {
     "navigationTitle": "Bản ghi thương mại liên quan",

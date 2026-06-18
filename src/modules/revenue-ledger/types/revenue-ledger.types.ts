@@ -1,8 +1,18 @@
 export type RevenueEntryStatus = 'DRAFT' | 'FINALIZED' | 'RECONCILED' | 'VOIDED' | 'ARCHIVED';
 export type RevenueKind = 'PLATFORM_LIVESTREAM' | 'PLATFORM_CONTENT' | 'EVENT_OPERATIONAL';
-export type RevenueEntrySource = 'MANUAL';
+export type RevenueEntrySource = 'MANUAL' | 'PLATFORM_EARNING_BATCH';
 export type RevenueLedgerSortBy = 'recognizedAt' | 'revenueEntryCode' | 'createdAt';
 export type SortDirection = 'asc' | 'desc';
+export type PlatformEarningBatchStatus =
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'UNDER_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'VOIDED'
+  | 'ARCHIVED';
+export type PlatformEarningSourceType = 'TIKTOK_LIVESTREAM_DIAMOND';
+export type PlatformEarningSourceUnit = 'DIAMOND';
 
 export type ReferenceSummary = {
   id: string;
@@ -29,18 +39,219 @@ export const revenueKindValues: RevenueKind[] = [
   'EVENT_OPERATIONAL',
 ];
 
+export const platformEarningBatchStatusValues: PlatformEarningBatchStatus[] = [
+  'DRAFT',
+  'SUBMITTED',
+  'UNDER_REVIEW',
+  'APPROVED',
+  'REJECTED',
+  'VOIDED',
+  'ARCHIVED',
+];
+
+export const platformEarningSourceTypeValues: PlatformEarningSourceType[] = [
+  'TIKTOK_LIVESTREAM_DIAMOND',
+];
+
+export type RevenueSourceSummarySnapshot = {
+  sourceKind: 'PLATFORM_EARNING_BATCH';
+  sourceType: PlatformEarningSourceType;
+  sourceBatchIds: string[];
+  sourceSummaryRef: string;
+  sourceLineCount: number;
+  periodMonth: string;
+  sourceDateFrom: number;
+  sourceDateTo: number;
+  platform: string;
+  platformAccountId: string;
+  talentGroupId: string | null;
+  memberTalentIds: string[];
+  memberEmploymentProfileIds: string[];
+  eventIds: string[];
+  sourceUnit: PlatformEarningSourceUnit;
+  rawQuantityTotal: number;
+  sourceFingerprint: string | null;
+  approvedAt: number;
+  approvedByActorId: string;
+};
+
+export type RevenueConversionSnapshot = {
+  sourceUnit: PlatformEarningSourceUnit;
+  rawQuantity: number;
+  targetCurrency: string;
+  appliedRate: number;
+  rateType: string;
+  rateEffectiveFrom: number | null;
+  rateEffectiveTo: number | null;
+  grossConvertedAmount: number;
+  ruleRef: string | null;
+  appliedByActorId: string;
+  appliedAt: number;
+  sourceNote: string | null;
+};
+
+export type RevenuePlatformCutSnapshot = {
+  platformCutRate: number;
+  companyShareRate: number;
+  grossConvertedAmount: number;
+  platformCutAmount: number;
+  companyNetAmount: number;
+  targetCurrency: string;
+  ruleRef: string | null;
+  appliedByActorId: string;
+  appliedAt: number;
+  sourceNote: string | null;
+};
+
+export type RevenueCommissionableBasisSnapshot = {
+  basisType: 'COMPANY_NET';
+  amount: number;
+  currencyCode: string;
+  appliedByActorId: string;
+  appliedAt: number;
+  sourceNote: string | null;
+};
+
+export type PlatformEarningBatch = {
+  id: string;
+  batchCode: string;
+  platform: string;
+  platformAccountId: string;
+  talentGroupId: string | null;
+  sourceType: PlatformEarningSourceType;
+  sourceUnit: PlatformEarningSourceUnit;
+  periodMonth: string;
+  sourceDateFrom: number;
+  sourceDateTo: number;
+  status: PlatformEarningBatchStatus;
+  sourceLineCount: number;
+  rawQuantityTotal: number;
+  conversionSnapshot: RevenueConversionSnapshot | null;
+  platformCutSnapshot: RevenuePlatformCutSnapshot | null;
+  companyNetAmount: number | null;
+  commissionableBasisAmount: number | null;
+  submittedByActorId: string | null;
+  submittedAt: number | null;
+  reviewedByActorId: string | null;
+  reviewedAt: number | null;
+  approvedByActorId: string | null;
+  approvedAt: number | null;
+  rejectedByActorId: string | null;
+  rejectedAt: number | null;
+  rejectionReason: string | null;
+  voidedByActorId: string | null;
+  voidedAt: number | null;
+  voidReason: string | null;
+  archivedByActorId: string | null;
+  archivedAt: number | null;
+  sourceFingerprint: string | null;
+  revenueEntryId: string | null;
+  revenueEntryCreatedByActorId: string | null;
+  revenueEntryCreatedAt: number | null;
+  createdByActorId: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type PlatformEarningLine = {
+  id: string;
+  batchId: string;
+  batchStatus: PlatformEarningBatchStatus;
+  sourceDate: number;
+  periodMonth: string;
+  platform: string;
+  platformAccountId: string;
+  talentGroupId: string | null;
+  memberTalentId: string | null;
+  memberEmploymentProfileId: string | null;
+  eventId: string | null;
+  sourceType: PlatformEarningSourceType;
+  sourceUnit: PlatformEarningSourceUnit;
+  rawQuantity: number;
+  externalSourceRef: string | null;
+  notes: string | null;
+  duplicateDetectionKey: string;
+  correctionOfLineId: string | null;
+  replacementLineId: string | null;
+  enteredByActorId: string;
+  enteredAt: number;
+  submittedByActorId: string | null;
+  submittedAt: number | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type PlatformEarningBatchQuery = {
+  status?: PlatformEarningBatchStatus;
+  platform?: string;
+  platformAccountId?: string;
+  talentGroupId?: string;
+  sourceType?: PlatformEarningSourceType;
+  periodMonth?: string;
+  createdBeforeAt?: number;
+  limit?: number;
+  cursor?: string;
+};
+
+export type PlatformEarningLineQuery = {
+  batchId?: string;
+  status?: PlatformEarningBatchStatus;
+  platform?: string;
+  platformAccountId?: string;
+  talentGroupId?: string;
+  memberTalentId?: string;
+  periodMonth?: string;
+  limit?: number;
+  cursor?: string;
+};
+
+export type PlatformEarningApprovePayload = {
+  targetCurrency: string;
+  appliedRate: number;
+  rateType?: string | null;
+  rateEffectiveFrom?: number | null;
+  rateEffectiveTo?: number | null;
+  platformCutRate: number;
+  companyShareRate?: number | null;
+  conversionRuleRef?: string | null;
+  platformCutRuleRef?: string | null;
+  sourceNote?: string | null;
+};
+
+export type PlatformEarningReasonPayload = {
+  reason: string;
+};
+
+export type CreateRevenueEntryFromPlatformEarningPayload = {
+  revenueEntryCode?: string | null;
+  title?: string | null;
+  subjectTalentId?: string | null;
+  recognizedAt?: number | null;
+  description?: string | null;
+  externalRef?: string | null;
+};
+
 export type RevenueEntryRecord = {
   id: string;
   revenueEntryCode: string;
   title: string;
   subjectTalentId: string;
   attributionPlatformAccountId?: string | null;
+  attributionTalentGroupId?: string | null;
+  attributionEmploymentProfileId?: string | null;
   attributionEventId?: string | null;
   subjectTalentRef?: ReferenceSummary | null;
   attributionPlatformAccountRef?: ReferenceSummary | null;
   attributionEventRef?: ReferenceSummary | null;
   revenueKind: RevenueKind;
   entrySource: RevenueEntrySource;
+  sourceBatchIds?: string[];
+  sourceSummaryRef?: string | null;
+  sourceLineCount?: number | null;
+  sourceSummarySnapshot?: RevenueSourceSummarySnapshot | null;
+  conversionSnapshot?: RevenueConversionSnapshot | null;
+  platformCutSnapshot?: RevenuePlatformCutSnapshot | null;
+  commissionableBasisSnapshot?: RevenueCommissionableBasisSnapshot | null;
   status: RevenueEntryStatus;
   currencyCode: string;
   recognizedAmount: number;
