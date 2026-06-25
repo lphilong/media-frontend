@@ -1,4 +1,10 @@
 {
+  "tabs": {
+    "templates": "Mẫu vai trò",
+    "bundles": "Gói vai trò",
+    "assignments": "Gán quyền",
+    "userAccess": "Quyền theo người dùng"
+  },
   "page": {
     "title": "角色",
     "subtitle": "管理权限模板、分配规则和角色拥有的用户分配。",
@@ -51,6 +57,30 @@
     "templateVersion": "模板版本",
     "templateAppliedAt": "模板应用时间",
     "permissionsRemainExplicit": "权限仍为明确权限，模板元数据不具权威性。"
+  },
+  "permissionGroups": {
+    "summaryItem": "{{group}}（{{count}} 项能力）",
+    "role": "角色管理",
+    "user": "用户账号运营",
+    "orgUnit": "组织结构",
+    "employmentProfile": "人事档案",
+    "employmentTerms": "雇佣条款",
+    "talent": "Talent 档案",
+    "talentGroup": "Talent 分组",
+    "platformAccount": "平台账号",
+    "studioResource": "Studio 资源",
+    "event": "活动运营",
+    "eventAssignment": "活动分配",
+    "workSchedule": "排班",
+    "contractRegistry": "合同档案",
+    "contractObligation": "合同义务",
+    "talentKpi": "Talent KPI",
+    "kpi": "KPI 运营",
+    "revenueLedger": "收入台账",
+    "commissionRule": "佣金规则",
+    "commissionSettlement": "佣金结算",
+    "dashboardLite": "总览",
+    "other": "其他业务能力"
   },
   "scopePicker": {
     "assignmentScopes": "分配范围",
@@ -210,6 +240,66 @@
     "loadErrorTitle": "无法加载角色",
     "loadErrorMessage": "无法加载角色界面。",
     "permissionMatrixUnavailable": "权限矩阵不可用。"
+  },
+  "templateCatalog": {
+    "title": "角色模板目录",
+    "subtitle": "后端提供的模板；模板元数据不是运行时权限来源。",
+    "loadErrorTitle": "无法加载角色模板",
+    "loadErrorMessage": "无法加载角色模板目录。",
+    "emptyTitle": "没有角色模板",
+    "emptyMessage": "后端未返回可用角色模板。",
+    "roleGroup": "角色组",
+    "requiredContext": "所需 Account Context",
+    "capabilitySummary": "能力组",
+    "capabilityCount": "{{count}} 项能力",
+    "sensitiveWarning": "此模板包含后端敏感警告。"
+  },
+  "bundles": {
+    "code": "包代码",
+    "status": "状态",
+    "recommendedContext": "推荐 Account Context",
+    "childRoles": "子角色",
+    "recommendedScope": "推荐范围",
+    "supportMode": "支持模式",
+    "readOnlySupport": "此屏幕只读",
+    "scopeCount": "{{count}} 个推荐范围",
+    "sensitiveWarning": "此包包含后端敏感警告。",
+    "loadErrorTitle": "无法加载角色包",
+    "loadErrorMessage": "无法加载角色包目录。",
+    "emptyTitle": "没有角色包",
+    "emptyMessage": "后端未返回可用角色包。"
+  },
+  "assignmentTab": {
+    "unavailableTitle": "按用户分配权限流程不可用",
+    "unavailableMessage": "此屏幕不会创建前端分配权限。本次修复范围内未开放按用户分配流程，角色详情中的分配和撤销保持只读。"
+  },
+  "userAccess": {
+    "selectorTitle": "选择用户",
+    "selectorSubtitle": "按用户从后端查看有效访问权限。",
+    "userResource": "用户",
+    "noUserResults": "未找到匹配用户。",
+    "emptyTitle": "尚未选择用户",
+    "emptyMessage": "选择用户以查看 Account Context、workspace 和有效访问权限。",
+    "loadErrorTitle": "无法加载用户权限",
+    "loadErrorMessage": "无法加载该用户的有效访问权限。",
+    "summaryTitle": "访问摘要",
+    "user": "用户",
+    "accountContexts": "Account Context",
+    "primaryWorkspace": "主 workspace",
+    "eligibleWorkspaces": "可用 workspace",
+    "ownData": "本人数据",
+    "managerResponsibilities": "管理职责",
+    "available": "可用",
+    "unavailable": "不可用",
+    "noPrimaryWorkspace": "无",
+    "rolesTitle": "有效角色",
+    "sensitive": "敏感",
+    "scopeCount": "{{count}} 个结构化范围",
+    "noAssignmentsTitle": "没有有效角色",
+    "noAssignmentsMessage": "后端未返回有效角色分配记录。",
+    "capabilitiesTitle": "业务能力组",
+    "businessCapabilityGroups": "能力组",
+    "sourceTrace": "Source trace"
   },
   "assignments": {
     "title": "角色分配",

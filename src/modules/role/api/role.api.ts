@@ -16,7 +16,9 @@ import type {
   RoleCreateFromTemplatePayload,
   RoleCreatePayload,
   RoleDetailRecord,
+  EffectiveAccessRecord,
   JsonPlainValue,
+  RoleBundleListItem,
   RoleLifecycleAction,
   RoleLifecyclePayload,
   RoleListItem,
@@ -29,6 +31,7 @@ import type {
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
 import { apiRequest, type NormalizedApiError } from '@shared/api';
+import { accountContextSchema, workspaceAvailabilitySchema } from '@shared/auth/current-actor-capabilities';
 
 const roleStateSchema = z.enum(roleStateValues);
 const roleAssignmentStateSchema = z.enum(roleAssignmentStateValues);
@@ -248,6 +251,102 @@ const roleTemplatePreviewResponseSchema = z
   })
   .strict();
 
+const roleBundleSchema = z
+  .object({
+    code: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    description: z.string(),
+    businessPurpose: z.string(),
+    status: z.enum(['ACTIVE', 'INACTIVE']),
+    version: z.string().trim().min(1),
+    childRoles: z.array(z.string().trim().min(1)),
+    recommendedAccountContext: accountContextSchema,
+    recommendedScopes: z.array(z.string().trim().min(1)),
+    sensitiveWarning: z.string().nullable(),
+    sensitive: z.boolean(),
+    createdAt: z.string().trim().min(1),
+    updatedAt: z.string().trim().min(1),
+  })
+  .strict();
+
+const roleBundleListResponseSchema = z
+  .object({
+    data: z.array(roleBundleSchema),
+  })
+  .strict();
+
+const effectiveAccessAssignmentSchema = z
+  .object({
+    assignmentId: z.string().trim().min(1),
+    roleId: z.string().trim().min(1),
+    roleCode: z.string().nullable(),
+    roleName: z.string().nullable(),
+    structuredScopeGrants: z.array(z.record(z.unknown())),
+    scopeFingerprint: z.string(),
+    reason: z.string().nullable(),
+    assignedBy: z.string().nullable(),
+    assignedAt: z.union([z.number(), z.string()]),
+    effectiveAt: z.union([z.number(), z.string()]).nullable(),
+    expiresAt: z.union([z.number(), z.string()]).nullable(),
+    reviewAt: z.union([z.number(), z.string()]).nullable(),
+    origin: z.enum(['DIRECT', 'BUNDLE', 'LEGACY']),
+    bundleOrigin: z.record(z.unknown()).nullable(),
+    sensitiveOrGlobal: z.boolean(),
+  })
+  .strict();
+
+const effectiveAccessSchema = z
+  .object({
+    readOnly: z.boolean(),
+    sourceTruth: z.boolean(),
+    user: z
+      .object({
+        id: z.string().trim().min(1),
+        displayName: z.string().nullable(),
+        email: z.string().nullable(),
+        accountStatus: z.string(),
+      })
+      .strict(),
+    accountContextSignals: z
+      .object({
+        canonicalAccountContextImplemented: z.boolean(),
+        canonicalSource: z.literal('ACCOUNT_CONTEXT'),
+        accountContexts: z.array(accountContextSchema),
+        legacyActorKind: z.string().optional(),
+        compatibilityContexts: z.array(z.string()),
+        grantsAuthorityByItself: z.boolean(),
+      })
+      .strict(),
+    workspaceAvailability: workspaceAvailabilitySchema,
+    activeRoleAssignments: z.array(effectiveAccessAssignmentSchema),
+    roles: z.array(
+      z
+        .object({
+          id: z.string().trim().min(1),
+          code: z.string().trim().min(1),
+          name: z.string().trim().min(1),
+        })
+        .strict(),
+    ),
+    permissions: z.array(z.string()),
+    permissionSourceTrace: z.array(z.record(z.unknown())),
+    businessResponsibilitySupport: z
+      .object({
+        status: z.string(),
+        claims: z.array(z.record(z.unknown())),
+        note: z.string(),
+      })
+      .strict(),
+    generatedAt: z.string().trim().min(1),
+  })
+  .strict();
+
+const effectiveAccessResponseSchema = z
+  .object({
+    data: effectiveAccessSchema,
+  })
+  .strict();
+
 const sanitizeRoleListQuery = (
   query: RoleListQuery,
 ): Record<string, string | number | undefined> => ({
@@ -311,6 +410,24 @@ export const fetchRoleTemplates = async (): Promise<RoleTemplateListItem[]> => {
   });
 
   return roleTemplateListResponseSchema.parse(response).data;
+};
+
+export const fetchRoleBundles = async (): Promise<RoleBundleListItem[]> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/role-bundles',
+  });
+
+  return roleBundleListResponseSchema.parse(response).data;
+};
+
+export const fetchEffectiveAccess = async (userId: string): Promise<EffectiveAccessRecord> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/effective-access/users/${encodeURIComponent(userId)}`,
+  });
+
+  return effectiveAccessResponseSchema.parse(response).data;
 };
 
 export const previewRoleTemplate = async (templateCode: string): Promise<RoleTemplatePreview> => {

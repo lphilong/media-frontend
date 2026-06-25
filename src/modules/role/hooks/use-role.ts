@@ -4,6 +4,8 @@ import {
   assignRoleToUser,
   createRole,
   createRoleFromTemplate,
+  fetchEffectiveAccess,
+  fetchRoleBundles,
   fetchRoleAssignments,
   fetchRoleDetail,
   fetchRolePermissionMatrix,
@@ -49,6 +51,8 @@ export const roleQueryKeys = {
   list: (query: RoleListQuery) => ['role', 'list', toListQueryToken(query)] as const,
   detail: (roleId: string) => ['role', 'detail', roleId] as const,
   templates: () => ['role', 'templates'] as const,
+  bundles: () => ['role', 'bundles'] as const,
+  effectiveAccess: (userId: string) => ['role', 'effective-access', userId] as const,
   templatePreview: (templateCode: string) => ['role', 'template-preview', templateCode] as const,
   assignments: (roleId: string, query: RoleAssignmentListQuery) =>
     ['role', 'assignments', roleId, toAssignmentListQueryToken(query)] as const,
@@ -74,6 +78,21 @@ export const useRoleTemplates = () => {
   return useQuery({
     queryKey: roleQueryKeys.templates(),
     queryFn: fetchRoleTemplates,
+  });
+};
+
+export const useRoleBundles = () => {
+  return useQuery({
+    queryKey: roleQueryKeys.bundles(),
+    queryFn: fetchRoleBundles,
+  });
+};
+
+export const useEffectiveAccess = (userId?: string) => {
+  return useQuery({
+    queryKey: userId ? roleQueryKeys.effectiveAccess(userId) : [...ROLE_QUERY_ROOT, 'effective-access'],
+    queryFn: () => fetchEffectiveAccess(userId ?? ''),
+    enabled: Boolean(userId),
   });
 };
 

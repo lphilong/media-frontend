@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 
 import { canAccessModule, type ModuleAccessModuleId } from '@app/router/module-access';
-import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
+import { hasWorkspace, useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { LoadingState, PageContainer, PermissionDeniedState } from '@shared/components/primitives';
 
 type ModuleAccessGuardProps = PropsWithChildren<{
@@ -19,7 +19,11 @@ export const ModuleAccessGuard = ({ children, moduleId }: ModuleAccessGuardProps
     );
   }
 
-  if (capabilitiesQuery.isError || !canAccessModule(capabilitiesQuery.data, moduleId)) {
+  if (
+    capabilitiesQuery.isError ||
+    !hasWorkspace(capabilitiesQuery.data, 'ADMIN_CONSOLE') ||
+    !canAccessModule(capabilitiesQuery.data, moduleId)
+  ) {
     return (
       <PageContainer>
         <PermissionDeniedState />

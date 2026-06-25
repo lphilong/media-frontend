@@ -11,11 +11,19 @@ import {
   useCreateRoleFromTemplateMutation,
   useCreateRoleMutation,
   useRoleLifecycleMutation,
+  useEffectiveAccess,
+  useRoleBundles,
   useRoleList,
   useRoleTemplates,
 } from '@modules/role/hooks/use-role';
 import { createRoleListColumns } from '@modules/role/tables/role-columns';
-import type { RoleLifecycleAction, RoleListQuery } from '@modules/role/types/role.types';
+import type {
+  EffectiveAccessRecord,
+  RoleTemplateListItem,
+  RoleBundleListItem,
+  RoleLifecycleAction,
+  RoleListQuery,
+} from '@modules/role/types/role.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
   canShowAction,
@@ -27,14 +35,21 @@ import {
   type AppliedFilterChipItem,
   AdminTableShell,
   CursorPager,
+  EmptyState,
   ErrorState,
   FilterToolbar,
   LoadingState,
+  MetadataSection,
   PermissionDeniedState,
+  ReadOnlyFieldGrid,
+  ReferenceChip,
+  StatusBadge,
   SearchBoxSeam,
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
+import { AsyncReferencePicker } from '@shared/components/reference';
+import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   createCursorStack,
@@ -44,6 +59,15 @@ import {
   serializeScreenQueryParams,
   useRouteQueryState,
 } from '@shared/query';
+
+type RoleScreenTab = 'templates' | 'bundles' | 'assignments' | 'user-access';
+
+const roleScreenTabs: Array<{ id: RoleScreenTab; labelKey: string }> = [
+  { id: 'templates', labelKey: 'role:tabs.templates' },
+  { id: 'bundles', labelKey: 'role:tabs.bundles' },
+  { id: 'assignments', labelKey: 'role:tabs.assignments' },
+  { id: 'user-access', labelKey: 'role:tabs.userAccess' },
+];
 
 const readErrorMessage = (
   t: (key: string) => string,
@@ -78,8 +102,12 @@ export const RoleListPage = (): JSX.Element => {
   const { t } = useTranslation(['role', 'common', 'errors']);
   const navigate = useNavigate();
   const { query, patchQuery } = useRouteQueryState(roleFlatListQueryConfig);
+  const [activeTab, setActiveTab] = useState<RoleScreenTab>('templates');
+  const [effectiveAccessUserId, setEffectiveAccessUserId] = useState<string | undefined>();
   const listQueryResult = useRoleList(query);
   const roleTemplatesQuery = useRoleTemplates();
+  const roleBundlesQuery = useRoleBundles();
+  const effectiveAccessQuery = useEffectiveAccess(effectiveAccessUserId);
   const capabilitiesQuery = useCurrentActorCapabilities();
   const createMutation = useCreateRoleMutation();
   const createFromTemplateMutation = useCreateRoleFromTemplateMutation();
@@ -126,7 +154,7 @@ export const RoleListPage = (): JSX.Element => {
     [capabilitiesQuery.data],
   );
 
-  const pageActions = canCreateRole ? (
+  const pageActions = activeTab === 'templates' && canCreateRole ? (
     <button
       type="button"
       onClick={() => setIsCreateOpen((current) => !current)}
@@ -228,6 +256,10 @@ export const RoleListPage = (): JSX.Element => {
 
   const listError = listQueryResult.error as NormalizedApiError | null;
   const shellState = useMemo(() => {
+    if (activeTab !== 'templates') {
+      return 'ready' as const;
+    }
+
     if (listQueryResult.isPending) {
       return 'loading' as const;
     }
@@ -241,7 +273,7 @@ export const RoleListPage = (): JSX.Element => {
     }
 
     return 'ready' as const;
-  }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
+  }, [activeTab, listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
   const clearRoleFilters = useCallback(() => {
     patchQuery({
@@ -276,7 +308,21 @@ export const RoleListPage = (): JSX.Element => {
 
   return (
     <ModuleListScreenShell
+      banner={
+        <RoleScreenTabs
+          tabs={roleScreenTabs.map((tab) => ({
+            ...tab,
+            label: t(tab.labelKey),
+          }))}
+          activeTab={activeTab}
+          onChange={(nextTab) => {
+            setActiveTab(nextTab);
+            setIsCreateOpen(false);
+          }}
+        />
+      }
       filterBar={
+        activeTab === 'templates' ? (
         <FilterToolbar
           searchSlot={
             <SearchBoxSeam
@@ -317,9 +363,11 @@ export const RoleListPage = (): JSX.Element => {
             </select>
           </label>
         </FilterToolbar>
+        ) : null
       }
       interactionSection={
-        <>
+        activeTab === 'templates' ? (
+          <>
           {canCreateRole && isCreateOpen ? (
             <RoleCreateSurface
               isPending={createMutation.isPending || createFromTemplateMutation.isPending}
@@ -331,21 +379,49 @@ export const RoleListPage = (): JSX.Element => {
               isTemplateCatalogLoading={roleTemplatesQuery.isLoading}
             />
           ) : null}
-        </>
+          </>
+        ) : null
       }
       tableSection={
-        <div className="space-y-4">
-          <AdminTableShell
-            data={listQueryResult.data?.data ?? []}
-            columns={columns}
-            isLoading={listQueryResult.isFetching && !listQueryResult.data}
-            emptyTitle={t('role:statesView.emptyTitle')}
-            emptyMessage={t('role:statesView.emptyMessage')}
-            caption={t('role:table.caption')}
+        activeTab === 'templates' ? (
+          <div className="space-y-4">
+            <RoleTemplateCatalogPanel
+              templates={roleTemplatesQuery.data ?? []}
+              isLoading={roleTemplatesQuery.isLoading}
+              error={roleTemplatesQuery.error as NormalizedApiError | null}
+              onRetry={() => void roleTemplatesQuery.refetch()}
+            />
+            <AdminTableShell
+              data={listQueryResult.data?.data ?? []}
+              columns={columns}
+              isLoading={listQueryResult.isFetching && !listQueryResult.data}
+              emptyTitle={t('role:statesView.emptyTitle')}
+              emptyMessage={t('role:statesView.emptyMessage')}
+              caption={t('role:table.caption')}
+            />
+          </div>
+        ) : activeTab === 'bundles' ? (
+          <RoleBundleTab
+            bundles={roleBundlesQuery.data ?? []}
+            isLoading={roleBundlesQuery.isLoading}
+            error={roleBundlesQuery.error as NormalizedApiError | null}
+            onRetry={() => void roleBundlesQuery.refetch()}
           />
-        </div>
+        ) : activeTab === 'assignments' ? (
+          <RoleAssignmentUnavailableTab />
+        ) : (
+          <RoleUserAccessTab
+            userId={effectiveAccessUserId}
+            onUserChange={setEffectiveAccessUserId}
+            access={effectiveAccessQuery.data}
+            isLoading={effectiveAccessQuery.isLoading}
+            error={effectiveAccessQuery.error as NormalizedApiError | null}
+            onRetry={() => void effectiveAccessQuery.refetch()}
+          />
+        )
       }
       pager={
+        activeTab === 'templates' ? (
         <CursorPager
           canGoBack={canGoBack}
           canGoNext={canGoNext}
@@ -354,6 +430,7 @@ export const RoleListPage = (): JSX.Element => {
           onNext={onNext}
           onPrevious={onPrevious}
         />
+        ) : null
       }
       state={shellState}
       loadingState={<LoadingState lines={8} />}
@@ -368,4 +445,479 @@ export const RoleListPage = (): JSX.Element => {
       }
     />
   );
+};
+
+type RoleScreenTabsProps = {
+  tabs: Array<{ id: RoleScreenTab; label: string }>;
+  activeTab: RoleScreenTab;
+  onChange: (tab: RoleScreenTab) => void;
+};
+
+const RoleScreenTabs = ({ tabs, activeTab, onChange }: RoleScreenTabsProps): JSX.Element => (
+  <div className="rounded border border-border bg-panel p-1" role="tablist">
+    <div className="grid gap-1 md:grid-cols-4">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          role="tab"
+          aria-selected={tab.id === activeTab}
+          onClick={() => onChange(tab.id)}
+          className={`rounded px-3 py-2 text-sm font-medium ${
+            tab.id === activeTab
+              ? 'bg-accent text-white'
+              : 'text-muted hover:bg-bg hover:text-text'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+const RoleTemplateCatalogPanel = ({
+  templates,
+  isLoading,
+  error,
+  onRetry,
+}: {
+  templates: RoleTemplateListItem[];
+  isLoading: boolean;
+  error: NormalizedApiError | null;
+  onRetry: () => void;
+}): JSX.Element => {
+  const { t } = useTranslation(['role', 'common']);
+
+  if (isLoading) {
+    return <LoadingState lines={4} />;
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        title={t('role:templateCatalog.loadErrorTitle')}
+        message={readErrorMessage(t, error, 'role:templateCatalog.loadErrorMessage')}
+        actionLabel={t('common:actions.retry')}
+        onRetry={onRetry}
+      />
+    );
+  }
+
+  if (templates.length === 0) {
+    return (
+      <EmptyState
+        variant="inline"
+        title={t('role:templateCatalog.emptyTitle')}
+        message={t('role:templateCatalog.emptyMessage')}
+      />
+    );
+  }
+
+  return (
+    <MetadataSection
+      title={t('role:templateCatalog.title')}
+      subtitle={t('role:templateCatalog.subtitle')}
+    >
+      <div className="grid gap-3 lg:grid-cols-2">
+        {templates.map((template) => (
+          <div key={template.code} className="rounded border border-border bg-bg p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-text">{template.name}</p>
+                <p className="text-xs text-muted">{template.code}</p>
+              </div>
+              <StatusBadge status={template.status} family="readiness" />
+            </div>
+            <ReadOnlyFieldGrid
+              columns={3}
+              fields={[
+                {
+                  key: 'group',
+                  label: t('role:templateCatalog.roleGroup'),
+                  value: template.category || '-',
+                },
+                {
+                  key: 'context',
+                  label: t('role:templateCatalog.requiredContext'),
+                  value: formatAccountContextLabel(readTemplateAccountContext(template.code)),
+                },
+                {
+                  key: 'capabilities',
+                  label: t('role:templateCatalog.capabilitySummary'),
+                  value: t('role:templateCatalog.capabilityCount', {
+                    count: template.permissionCount,
+                  }),
+                },
+              ]}
+            />
+            {template.warnings.length > 0 ? (
+              <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                {t('role:templateCatalog.sensitiveWarning')}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </MetadataSection>
+  );
+};
+
+const RoleBundleTab = ({
+  bundles,
+  isLoading,
+  error,
+  onRetry,
+}: {
+  bundles: RoleBundleListItem[];
+  isLoading: boolean;
+  error: NormalizedApiError | null;
+  onRetry: () => void;
+}): JSX.Element => {
+  const { t } = useTranslation(['role', 'common']);
+
+  if (isLoading) {
+    return <LoadingState lines={5} />;
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        title={t('role:bundles.loadErrorTitle')}
+        message={readErrorMessage(t, error, 'role:bundles.loadErrorMessage')}
+        actionLabel={t('common:actions.retry')}
+        onRetry={onRetry}
+      />
+    );
+  }
+
+  if (bundles.length === 0) {
+    return <EmptyState title={t('role:bundles.emptyTitle')} message={t('role:bundles.emptyMessage')} />;
+  }
+
+  return (
+    <div className="grid gap-3">
+      {bundles.map((bundle) => (
+        <MetadataSection key={bundle.code} title={bundle.name} subtitle={bundle.businessPurpose}>
+          <div className="space-y-3">
+            <ReadOnlyFieldGrid
+              columns={3}
+              fields={[
+                { key: 'code', label: t('role:bundles.code'), value: bundle.code },
+                {
+                  key: 'status',
+                  label: t('role:bundles.status'),
+                  value: (
+                    <StatusBadge
+                      status={bundle.status}
+                      tone={bundle.status === 'ACTIVE' ? 'success' : 'muted'}
+                    />
+                  ),
+                },
+                {
+                  key: 'context',
+                  label: t('role:bundles.recommendedContext'),
+                  value: formatAccountContextLabel(bundle.recommendedAccountContext),
+                },
+                {
+                  key: 'roles',
+                  label: t('role:bundles.childRoles'),
+                  value: (
+                    <div className="flex flex-wrap gap-1">
+                      {bundle.childRoles.map((roleCode) => (
+                        <ReferenceChip key={roleCode} label={formatRoleCodeLabel(roleCode)} />
+                      ))}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'scope',
+                  label: t('role:bundles.recommendedScope'),
+                  value: t('role:bundles.scopeCount', {
+                    count: bundle.recommendedScopes.length,
+                  }),
+                },
+                {
+                  key: 'mode',
+                  label: t('role:bundles.supportMode'),
+                  value: t('role:bundles.readOnlySupport'),
+                },
+              ]}
+            />
+            {bundle.sensitive || bundle.sensitiveWarning ? (
+              <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                {bundle.sensitiveWarning ?? t('role:bundles.sensitiveWarning')}
+              </p>
+            ) : null}
+          </div>
+        </MetadataSection>
+      ))}
+    </div>
+  );
+};
+
+const RoleAssignmentUnavailableTab = (): JSX.Element => {
+  const { t } = useTranslation('role');
+
+  return (
+    <EmptyState
+      title={t('assignmentTab.unavailableTitle')}
+      message={t('assignmentTab.unavailableMessage')}
+    />
+  );
+};
+
+const RoleUserAccessTab = ({
+  userId,
+  onUserChange,
+  access,
+  isLoading,
+  error,
+  onRetry,
+}: {
+  userId?: string;
+  onUserChange: (userId?: string) => void;
+  access?: EffectiveAccessRecord;
+  isLoading: boolean;
+  error: NormalizedApiError | null;
+  onRetry: () => void;
+}): JSX.Element => {
+  const { t } = useTranslation(['role', 'common']);
+
+  return (
+    <div className="space-y-4">
+      <MetadataSection
+        title={t('role:userAccess.selectorTitle')}
+        subtitle={t('role:userAccess.selectorSubtitle')}
+      >
+        <AsyncReferencePicker
+          pickerId="role-effective-access-user"
+          value={userId}
+          onChange={onUserChange}
+          loadOptions={loadUserReferenceOptions}
+          placeholder={t('role:placeholders.userSearch')}
+          resourceLabel={t('role:userAccess.userResource')}
+          emptySlot={<p className="text-xs text-muted">{t('role:userAccess.noUserResults')}</p>}
+        />
+      </MetadataSection>
+
+      {!userId ? (
+        <EmptyState
+          variant="inline"
+          title={t('role:userAccess.emptyTitle')}
+          message={t('role:userAccess.emptyMessage')}
+        />
+      ) : isLoading ? (
+        <LoadingState lines={5} />
+      ) : error ? (
+        <ErrorState
+          title={t('role:userAccess.loadErrorTitle')}
+          message={readErrorMessage(t, error, 'role:userAccess.loadErrorMessage')}
+          actionLabel={t('common:actions.retry')}
+          onRetry={onRetry}
+        />
+      ) : access ? (
+        <RoleEffectiveAccessSummary access={access} />
+      ) : null}
+    </div>
+  );
+};
+
+const RoleEffectiveAccessSummary = ({
+  access,
+}: {
+  access: EffectiveAccessRecord;
+}): JSX.Element => {
+  const { t } = useTranslation('role');
+  const availableWorkspaces = access.workspaceAvailability.availableWorkspaces
+    .filter((workspace) => workspace.available)
+    .map((workspace) => workspace.context);
+
+  return (
+    <div className="space-y-4">
+      <MetadataSection title={t('userAccess.summaryTitle')}>
+        <ReadOnlyFieldGrid
+          columns={3}
+          fields={[
+            {
+              key: 'user',
+              label: t('userAccess.user'),
+              value: access.user.displayName ?? access.user.email ?? access.user.id,
+            },
+            {
+              key: 'accountContexts',
+              label: t('userAccess.accountContexts'),
+              value: formatAccountContextList(access.accountContextSignals.accountContexts),
+            },
+            {
+              key: 'primaryWorkspace',
+              label: t('userAccess.primaryWorkspace'),
+              value: access.workspaceAvailability.primaryWorkspace
+                ? formatAccountContextLabel(access.workspaceAvailability.primaryWorkspace)
+                : t('userAccess.noPrimaryWorkspace'),
+            },
+            {
+              key: 'eligibleWorkspaces',
+              label: t('userAccess.eligibleWorkspaces'),
+              value: formatAccountContextList(availableWorkspaces),
+            },
+            {
+              key: 'ownData',
+              label: t('userAccess.ownData'),
+              value: access.workspaceAvailability.ownDataAvailable
+                ? t('userAccess.available')
+                : t('userAccess.unavailable'),
+            },
+            {
+              key: 'managerData',
+              label: t('userAccess.managerResponsibilities'),
+              value: access.workspaceAvailability.managerResponsibilitiesAvailable
+                ? t('userAccess.available')
+                : t('userAccess.unavailable'),
+            },
+          ]}
+        />
+      </MetadataSection>
+
+      <MetadataSection title={t('userAccess.rolesTitle')}>
+        {access.activeRoleAssignments.length > 0 ? (
+          <div className="space-y-2">
+            {access.activeRoleAssignments.map((assignment) => (
+              <div
+                key={assignment.assignmentId}
+                className="rounded border border-border bg-bg px-3 py-2 text-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-text">
+                    {assignment.roleName ?? formatRoleCodeLabel(assignment.roleCode ?? '')}
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    <StatusBadge label={formatAssignmentOrigin(assignment.origin)} tone="info" />
+                    {assignment.sensitiveOrGlobal ? (
+                      <StatusBadge label={t('userAccess.sensitive')} tone="warning" />
+                    ) : null}
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  {t('userAccess.scopeCount', {
+                    count: assignment.structuredScopeGrants.length,
+                  })}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            variant="inline"
+            title={t('userAccess.noAssignmentsTitle')}
+            message={t('userAccess.noAssignmentsMessage')}
+          />
+        )}
+      </MetadataSection>
+
+      <MetadataSection title={t('userAccess.capabilitiesTitle')}>
+        <ReadOnlyFieldGrid
+          columns={2}
+          fields={[
+            {
+              key: 'groups',
+              label: t('userAccess.businessCapabilityGroups'),
+              value: formatCapabilityGroupSummary(access.permissions),
+            },
+            {
+              key: 'trace',
+              label: t('userAccess.sourceTrace'),
+              value: access.workspaceAvailability.effectiveAccessTraceAvailable
+                ? t('userAccess.available')
+                : t('userAccess.unavailable'),
+            },
+          ]}
+        />
+      </MetadataSection>
+    </div>
+  );
+};
+
+const roleCodeLabels: Record<string, string> = {
+  ADMIN_FULL: 'Admin Full',
+  HR_OPERATIONS: 'HR Operations',
+  TEAM_MANAGER: 'Team Manager',
+  PRODUCTION_OPS: 'Production Ops',
+  COMMERCIAL_FINANCE: 'Commercial Finance',
+  TALENT_STAFF_SELF: 'Staff Console',
+  VIEWER_AUDITOR: 'Auditor Read Only',
+};
+
+const templateAccountContextByCode: Record<string, 'ADMIN_CONSOLE' | 'MANAGER_CONSOLE' | 'STAFF_CONSOLE'> = {
+  ADMIN_FULL: 'ADMIN_CONSOLE',
+  HR_OPERATIONS: 'ADMIN_CONSOLE',
+  PRODUCTION_OPS: 'ADMIN_CONSOLE',
+  COMMERCIAL_FINANCE: 'ADMIN_CONSOLE',
+  VIEWER_AUDITOR: 'ADMIN_CONSOLE',
+  TEAM_MANAGER: 'MANAGER_CONSOLE',
+  TALENT_STAFF_SELF: 'STAFF_CONSOLE',
+};
+
+const capabilityGroupLabels: Record<string, string> = {
+  role: 'Vai trò',
+  user: 'Người dùng',
+  workSchedule: 'Lịch làm việc',
+  eventAssignment: 'Sự kiện',
+  kpi: 'KPI',
+  dashboardLite: 'Bảng điều hành',
+  contractRegistry: 'Hợp đồng',
+  talentKpi: 'Talent KPI',
+  revenueLedger: 'Doanh thu',
+  commission: 'Hoa hồng',
+};
+
+const readTemplateAccountContext = (
+  templateCode: string,
+): 'ADMIN_CONSOLE' | 'MANAGER_CONSOLE' | 'STAFF_CONSOLE' =>
+  templateAccountContextByCode[templateCode] ?? 'STAFF_CONSOLE';
+
+const formatRoleCodeLabel = (roleCode: string): string => roleCodeLabels[roleCode] ?? roleCode;
+
+const formatAssignmentOrigin = (origin: EffectiveAccessRecord['activeRoleAssignments'][number]['origin']): string => {
+  if (origin === 'BUNDLE') {
+    return 'Gói vai trò';
+  }
+
+  if (origin === 'LEGACY') {
+    return 'Tương thích';
+  }
+
+  return 'Gán trực tiếp';
+};
+
+const formatAccountContextLabel = (context: string): string => {
+  switch (context) {
+    case 'ADMIN_CONSOLE':
+      return 'Admin Console';
+    case 'MANAGER_CONSOLE':
+      return 'Manager Console';
+    case 'STAFF_CONSOLE':
+      return 'Staff Console';
+    default:
+      return context;
+  }
+};
+
+const formatAccountContextList = (contexts: string[]): string =>
+  contexts.length > 0 ? contexts.map(formatAccountContextLabel).join(', ') : '-';
+
+const formatCapabilityGroupSummary = (permissions: string[]): string => {
+  if (permissions.length === 0) {
+    return '-';
+  }
+
+  const counts = permissions.reduce<Record<string, number>>((accumulator, permission) => {
+    const group = permission.split(/[.:]/u)[0] || 'other';
+    accumulator[group] = (accumulator[group] ?? 0) + 1;
+    return accumulator;
+  }, {});
+
+  return Object.entries(counts)
+    .map(([group, count]) => `${capabilityGroupLabels[group] ?? 'Nhóm nghiệp vụ khác'} (${count})`)
+    .join(', ');
 };

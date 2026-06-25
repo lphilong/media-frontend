@@ -13,6 +13,7 @@ type RoleTemplateCode =
   | 'TALENT_STAFF_SELF'
   | 'VIEWER_AUDITOR';
 type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
+type AccountContext = 'STAFF_CONSOLE' | 'MANAGER_CONSOLE' | 'ADMIN_CONSOLE';
 
 type RoleAssignmentScopeGrants = {
   workSchedule?: Array<'self' | 'team' | 'department' | 'global'>;
@@ -40,6 +41,8 @@ type UserRecord = {
   id: string;
   accountStatus: UserStatus;
   actorKind: UserActorKind;
+  accountContexts?: AccountContext[];
+  workspaceAvailability?: WorkspaceAvailabilityRecord;
   authLinkage: {
     provider: 'auth0';
     subject: string;
@@ -117,6 +120,22 @@ type RoleTemplateRecord = {
   status: RoleTemplateStatus;
 };
 
+type RoleBundleRecord = {
+  code: string;
+  name: string;
+  description: string;
+  businessPurpose: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  version: string;
+  childRoles: RoleTemplateCode[];
+  recommendedAccountContext: AccountContext;
+  recommendedScopes: string[];
+  sensitiveWarning: string | null;
+  sensitive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type CurrentActorCapabilitiesRecord = {
   id: string;
   type: 'admin' | 'staff';
@@ -125,7 +144,24 @@ type CurrentActorCapabilitiesRecord = {
   roles: string[];
   permissions: string[];
   scopeGrants: RoleAssignmentScopeGrants;
+  accountContexts?: AccountContext[];
+  workspaceAvailability?: WorkspaceAvailabilityRecord;
   generatedAt: string;
+};
+
+type WorkspaceAvailabilityRecord = {
+  primaryWorkspace: AccountContext | null;
+  availableWorkspaces: Array<{
+    context: AccountContext;
+    available: boolean;
+    source: 'ACCOUNT_CONTEXT';
+    reasonCodes: string[];
+    trace: Array<Record<string, unknown>>;
+  }>;
+  ownDataAvailable: boolean;
+  managerResponsibilitiesAvailable: boolean;
+  effectiveAccessTraceAvailable: boolean;
+  sourceTrace: Array<Record<string, unknown>>;
 };
 
 const now = Date.parse('2026-04-22T00:00:00.000Z');
@@ -279,6 +315,7 @@ const initialUsers: UserRecord[] = [
     id: 'user-admin',
     accountStatus: 'ACTIVE',
     actorKind: 'ADMIN',
+    accountContexts: ['ADMIN_CONSOLE'],
     authLinkage: { provider: 'auth0', subject: 'auth0|admin', status: 'LINKED' },
     contextAccess: { contexts: [{ context: 'ADMIN' }] },
     profile: { displayName: 'Admin User', email: 'admin@example.test', phone: null },
@@ -293,6 +330,7 @@ const initialUsers: UserRecord[] = [
     id: 'user-staff',
     accountStatus: 'PENDING',
     actorKind: 'STAFF',
+    accountContexts: ['STAFF_CONSOLE'],
     authLinkage: { provider: 'auth0', subject: 'auth0|staff', status: 'PENDING' },
     contextAccess: { contexts: [{ context: 'ADMIN' }] },
     profile: { displayName: 'Staff User', email: 'staff@example.test', phone: '0900000000' },
@@ -307,6 +345,7 @@ const initialUsers: UserRecord[] = [
     id: 'user-archived',
     accountStatus: 'ARCHIVED',
     actorKind: 'STAFF',
+    accountContexts: [],
     authLinkage: { provider: 'auth0', subject: 'auth0|archived', status: 'LINKED' },
     contextAccess: { contexts: [{ context: 'ADMIN' }] },
     profile: { displayName: 'Archived User', email: 'archived@example.test', phone: null },
@@ -645,6 +684,54 @@ const roleTemplates: RoleTemplateRecord[] = [
   },
 ];
 
+const roleBundles: RoleBundleRecord[] = [
+  {
+    code: 'ADMIN_OPERATIONS',
+    name: 'Admin Operations',
+    description: 'Preset for administrative operators.',
+    businessPurpose: 'Quản trị hệ thống và vận hành nhân sự.',
+    status: 'ACTIVE',
+    version: templateVersion,
+    childRoles: ['ADMIN_FULL', 'HR_OPERATIONS'],
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    recommendedScopes: ['global-admin'],
+    sensitiveWarning: 'Contains global administrative capability groups.',
+    sensitive: true,
+    createdAt: '2026-05-20T00:00:00.000Z',
+    updatedAt: '2026-05-20T00:00:00.000Z',
+  },
+  {
+    code: 'MANAGER_OPERATIONS',
+    name: 'Manager Operations',
+    description: 'Preset for team managers.',
+    businessPurpose: 'Quản lý nhóm, lịch làm việc và KPI nhóm.',
+    status: 'ACTIVE',
+    version: templateVersion,
+    childRoles: ['TEAM_MANAGER'],
+    recommendedAccountContext: 'MANAGER_CONSOLE',
+    recommendedScopes: ['managed-team'],
+    sensitiveWarning: null,
+    sensitive: false,
+    createdAt: '2026-05-20T00:00:00.000Z',
+    updatedAt: '2026-05-20T00:00:00.000Z',
+  },
+  {
+    code: 'STAFF_SELF_SERVICE',
+    name: 'Staff Self Service',
+    description: 'Preset for staff self-service.',
+    businessPurpose: 'Nhân viên xem dữ liệu cá nhân và KPI cá nhân.',
+    status: 'ACTIVE',
+    version: templateVersion,
+    childRoles: ['TALENT_STAFF_SELF'],
+    recommendedAccountContext: 'STAFF_CONSOLE',
+    recommendedScopes: ['self'],
+    sensitiveWarning: null,
+    sensitive: false,
+    createdAt: '2026-05-20T00:00:00.000Z',
+    updatedAt: '2026-05-20T00:00:00.000Z',
+  },
+];
+
 const initialRoles: RoleRecord[] = [
   {
     id: 'role-admin',
@@ -729,6 +816,8 @@ const defaultCurrentActorCapabilities: CurrentActorCapabilitiesRecord = {
     dashboardLite: ['global'],
     workSchedule: ['self', 'team', 'department', 'global'],
   },
+  accountContexts: ['ADMIN_CONSOLE'],
+  workspaceAvailability: buildWorkspaceAvailability(['ADMIN_CONSOLE']),
   generatedAt: '2026-05-20T00:00:00.000Z',
 };
 
@@ -742,6 +831,10 @@ let users = initialUsers.map((record) => ({
   preferences: { ...record.preferences },
   authLinkage: { ...record.authLinkage },
   contextAccess: { contexts: [...record.contextAccess.contexts] },
+  ...(record.accountContexts ? { accountContexts: [...record.accountContexts] } : {}),
+  ...(record.workspaceAvailability
+    ? { workspaceAvailability: cloneWorkspaceAvailability(record.workspaceAvailability) }
+    : {}),
 }));
 let roles = initialRoles.map((record) => ({
   ...record,
@@ -760,6 +853,10 @@ export const resetIdentityAccessMockData = (): void => {
     preferences: { ...record.preferences },
     authLinkage: { ...record.authLinkage },
     contextAccess: { contexts: [...record.contextAccess.contexts] },
+    ...(record.accountContexts ? { accountContexts: [...record.accountContexts] } : {}),
+    ...(record.workspaceAvailability
+      ? { workspaceAvailability: cloneWorkspaceAvailability(record.workspaceAvailability) }
+      : {}),
   }));
   roles = initialRoles.map((record) => ({
     ...record,
@@ -782,10 +879,24 @@ export const setMockCurrentActorCapabilities = (
 function cloneCurrentActorCapabilities(
   record: CurrentActorCapabilitiesRecord,
 ): CurrentActorCapabilitiesRecord {
+  const {
+    accountContexts: sourceAccountContexts,
+    workspaceAvailability: sourceWorkspaceAvailability,
+    ...rest
+  } = record;
+  const accountContexts = sourceAccountContexts ? [...sourceAccountContexts] : undefined;
+  const workspaceAvailability = sourceWorkspaceAvailability
+    ? cloneWorkspaceAvailability(sourceWorkspaceAvailability)
+    : accountContexts
+      ? buildWorkspaceAvailability(accountContexts)
+      : undefined;
+
   return {
-    ...record,
+    ...rest,
     roles: [...record.roles],
     permissions: [...record.permissions],
+    ...(accountContexts ? { accountContexts } : {}),
+    ...(workspaceAvailability ? { workspaceAvailability } : {}),
     scopeGrants: {
       ...(record.scopeGrants.workSchedule
         ? { workSchedule: [...record.scopeGrants.workSchedule] }
@@ -806,6 +917,57 @@ function cloneCurrentActorCapabilities(
         ? { dashboardLite: [...record.scopeGrants.dashboardLite] }
         : {}),
     },
+  };
+}
+
+function buildWorkspaceAvailability(accountContexts: AccountContext[]): WorkspaceAvailabilityRecord {
+  const uniqueContexts = Array.from(new Set(accountContexts));
+  const primaryWorkspace =
+    (['ADMIN_CONSOLE', 'MANAGER_CONSOLE', 'STAFF_CONSOLE'] as const).find((context) =>
+      uniqueContexts.includes(context),
+    ) ?? null;
+
+  return {
+    primaryWorkspace,
+    availableWorkspaces: (['STAFF_CONSOLE', 'MANAGER_CONSOLE', 'ADMIN_CONSOLE'] as const).map(
+      (context) => {
+        const available = uniqueContexts.includes(context);
+        return {
+          context,
+          available,
+          source: 'ACCOUNT_CONTEXT',
+          reasonCodes: available ? ['ACCOUNT_CONTEXT_ACTIVE'] : ['ACCOUNT_CONTEXT_MISSING'],
+          trace: [{ source: 'ACCOUNT_CONTEXT', context, matched: available }],
+        };
+      },
+    ),
+    ownDataAvailable: uniqueContexts.includes('STAFF_CONSOLE'),
+    managerResponsibilitiesAvailable: uniqueContexts.includes('MANAGER_CONSOLE'),
+    effectiveAccessTraceAvailable: true,
+    sourceTrace: [
+      {
+        source: 'ACCOUNT_CONTEXT',
+        accountContexts: uniqueContexts,
+        primaryWorkspace,
+      },
+    ],
+  };
+}
+
+function cloneWorkspaceAvailability(
+  record: WorkspaceAvailabilityRecord,
+): WorkspaceAvailabilityRecord {
+  return {
+    primaryWorkspace: record.primaryWorkspace,
+    availableWorkspaces: record.availableWorkspaces.map((entry) => ({
+      ...entry,
+      reasonCodes: [...entry.reasonCodes],
+      trace: entry.trace.map((trace) => ({ ...trace })),
+    })),
+    ownDataAvailable: record.ownDataAvailable,
+    managerResponsibilitiesAvailable: record.managerResponsibilitiesAvailable,
+    effectiveAccessTraceAvailable: record.effectiveAccessTraceAvailable,
+    sourceTrace: record.sourceTrace.map((trace) => ({ ...trace })),
   };
 }
 
@@ -953,6 +1115,83 @@ const toRoleTemplateListItem = (template: RoleTemplateRecord) => ({
 const readRoleTemplate = (templateCode: string): RoleTemplateRecord | undefined =>
   roleTemplates.find((template) => template.code === templateCode.trim().toUpperCase());
 
+const readAssignedAccountContexts = (user: UserRecord): AccountContext[] => {
+  return user.accountContexts ? [...user.accountContexts] : [];
+};
+
+const toEffectiveAccessRecord = (user: UserRecord) => {
+  const activeAssignments = assignments.filter(
+    (assignment) => assignment.userId === user.id && assignment.state === 'ACTIVE',
+  );
+  const assignedRoles = activeAssignments
+    .map((assignment) => readRole(assignment.roleId))
+    .filter((role): role is RoleRecord => Boolean(role));
+  const accountContexts = readAssignedAccountContexts(user);
+  const permissions = Array.from(
+    new Set(assignedRoles.flatMap((role) => role.permissions.map((permission) => permission.code))),
+  );
+
+  return {
+    readOnly: true,
+    sourceTruth: true,
+    user: {
+      id: user.id,
+      displayName: user.profile.displayName,
+      email: user.profile.email,
+      accountStatus: user.accountStatus,
+    },
+    accountContextSignals: {
+      canonicalAccountContextImplemented: true,
+      canonicalSource: 'ACCOUNT_CONTEXT',
+      accountContexts,
+      legacyActorKind: user.actorKind,
+      compatibilityContexts: [],
+      grantsAuthorityByItself: false,
+    },
+    workspaceAvailability: user.workspaceAvailability
+      ? cloneWorkspaceAvailability(user.workspaceAvailability)
+      : buildWorkspaceAvailability(accountContexts),
+    activeRoleAssignments: activeAssignments.map((assignment) => {
+      const role = readRole(assignment.roleId);
+      const scopeModules = assignment.scopeGrants ? Object.keys(assignment.scopeGrants) : [];
+
+      return {
+        assignmentId: assignment.assignmentId,
+        roleId: assignment.roleId,
+        roleCode: role?.code ?? null,
+        roleName: role?.name ?? null,
+        structuredScopeGrants: scopeModules.map((module) => ({ module })),
+        scopeFingerprint: scopeModules.length > 0 ? scopeModules.join('|') : 'none',
+        reason: assignment.reason,
+        assignedBy: 'mock-admin',
+        assignedAt: assignment.effectiveAt,
+        effectiveAt: assignment.effectiveAt,
+        expiresAt: null,
+        reviewAt: null,
+        origin: 'DIRECT',
+        bundleOrigin: null,
+        sensitiveOrGlobal: Boolean(
+          assignment.scopeGrants &&
+            Object.values(assignment.scopeGrants).some((scopes) => scopes?.includes('global')),
+        ),
+      };
+    }),
+    roles: assignedRoles.map((role) => ({
+      id: role.id,
+      code: role.code,
+      name: role.name,
+    })),
+    permissions,
+    permissionSourceTrace: [],
+    businessResponsibilitySupport: {
+      status: 'NOT_IMPLEMENTED',
+      claims: [],
+      note: 'MSW read model for frontend effective-access display.',
+    },
+    generatedAt: '2026-05-20T00:00:00.000Z',
+  };
+};
+
 const readManualRoleCode = (value: unknown): string | undefined => {
   if (typeof value === 'string' && value.trim().length > 0) {
     return value.trim().toUpperCase();
@@ -1007,6 +1246,10 @@ export const identityAccessHandlers = [
     return HttpResponse.json({ data: roleTemplates.map(toRoleTemplateListItem) });
   }),
 
+  http.get('*/admin/role-bundles', () => {
+    return HttpResponse.json({ data: roleBundles });
+  }),
+
   http.post('*/admin/role-templates/:templateCode/preview', ({ params }) => {
     const template = readRoleTemplate(String(params.templateCode));
     if (!template) {
@@ -1027,6 +1270,15 @@ export const identityAccessHandlers = [
           .map((entry) => entry.note),
       },
     });
+  }),
+
+  http.get('*/admin/effective-access/users/:userId', ({ params }) => {
+    const record = readUser(String(params.userId));
+    if (!record) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    return HttpResponse.json({ data: toEffectiveAccessRecord(record) });
   }),
 
   http.get('*/admin/users', ({ request }) => {

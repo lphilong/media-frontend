@@ -1,28 +1,40 @@
 import i18n from 'i18next';
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { appRoutes } from '@app/router/router';
 import { setLocale } from '@shared/i18n/i18n';
-import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
+import {
+  getMockCurrentActorCapabilities,
+  resetIdentityAccessMockData,
+  setMockCurrentActorCapabilities,
+} from '@test/msw/identity-access-handlers';
 import { renderAppWithProviders } from '@test/render-app-route';
 
 type MockCapabilities = Parameters<typeof setMockCurrentActorCapabilities>[0];
 
 const makeCapabilities = (
-  overrides: Partial<Pick<MockCapabilities, 'permissions' | 'roles' | 'scopeGrants'>>,
+  overrides: Partial<
+    Pick<MockCapabilities, 'permissions' | 'roles' | 'scopeGrants' | 'type' | 'accountContexts'>
+    & Pick<MockCapabilities, 'workspaceAvailability'>
+  >,
 ): MockCapabilities => ({
   id: 'route-sidebar-permissions-user',
-  type: 'admin',
+  type: overrides.type ?? 'admin',
   context: 'ADMIN',
   isActive: true,
   roles: overrides.roles ?? [],
   permissions: overrides.permissions ?? [],
   scopeGrants: overrides.scopeGrants ?? {},
+  accountContexts: overrides.accountContexts ?? ['ADMIN_CONSOLE'],
+  ...(overrides.workspaceAvailability
+    ? { workspaceAvailability: overrides.workspaceAvailability }
+    : {}),
   generatedAt: '2026-05-24T00:00:00.000Z',
 });
 
 const renderRoute = async (path: string, capabilities: MockCapabilities): Promise<void> => {
+  cleanup();
   await setLocale('en');
   setMockCurrentActorCapabilities(capabilities);
 
@@ -35,7 +47,247 @@ const renderRoute = async (path: string, capabilities: MockCapabilities): Promis
   });
 };
 
+const workspaceWaitOptions = { timeout: 5000 };
+
 describe('route and sidebar permission model', () => {
+  afterEach(() => {
+    cleanup();
+    resetIdentityAccessMockData();
+  });
+
+  it('keeps MSW workspace availability fail-closed unless Account Context is explicit', () => {
+    setMockCurrentActorCapabilities({
+      id: 'admin-without-account-contexts',
+      type: 'admin',
+      context: 'ADMIN',
+      isActive: true,
+      roles: ['ADMIN_FULL'],
+      permissions: ['dashboardLite.read'],
+      scopeGrants: { dashboardLite: ['global'] },
+      generatedAt: '2026-05-24T00:00:00.000Z',
+    });
+    expect(getMockCurrentActorCapabilities().accountContexts).toBeUndefined();
+    expect(getMockCurrentActorCapabilities().workspaceAvailability).toBeUndefined();
+
+    setMockCurrentActorCapabilities({
+      id: 'staff-without-account-contexts',
+      type: 'staff',
+      context: 'ADMIN',
+      isActive: true,
+      roles: ['TALENT_STAFF_SELF'],
+      permissions: ['workSchedule.read'],
+      scopeGrants: { workSchedule: ['self'] },
+      generatedAt: '2026-05-24T00:00:00.000Z',
+    });
+    expect(getMockCurrentActorCapabilities().accountContexts).toBeUndefined();
+    expect(getMockCurrentActorCapabilities().workspaceAvailability).toBeUndefined();
+
+    setMockCurrentActorCapabilities({
+      id: 'manager-with-explicit-account-context',
+      type: 'staff',
+      context: 'ADMIN',
+      isActive: true,
+      roles: ['TEAM_MANAGER'],
+      permissions: ['kpi.read'],
+      scopeGrants: { kpi: ['managedGroup'] },
+      accountContexts: ['MANAGER_CONSOLE'],
+      generatedAt: '2026-05-24T00:00:00.000Z',
+    });
+    expect(getMockCurrentActorCapabilities().workspaceAvailability?.primaryWorkspace).toBe(
+      'MANAGER_CONSOLE',
+    );
+  });
+
+  it('preserves explicit backend-shaped workspace availability in MSW', () => {
+    setMockCurrentActorCapabilities({
+      id: 'explicit-workspace-user',
+      type: 'admin',
+      context: 'ADMIN',
+      isActive: true,
+      roles: ['ADMIN_FULL'],
+      permissions: ['dashboardLite.read'],
+      scopeGrants: { dashboardLite: ['global'] },
+      workspaceAvailability: {
+        primaryWorkspace: 'STAFF_CONSOLE',
+        availableWorkspaces: [
+          {
+            context: 'STAFF_CONSOLE',
+            available: true,
+            source: 'ACCOUNT_CONTEXT',
+            reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+            trace: [{ source: 'ACCOUNT_CONTEXT', context: 'STAFF_CONSOLE', matched: true }],
+          },
+          {
+            context: 'MANAGER_CONSOLE',
+            available: false,
+            source: 'ACCOUNT_CONTEXT',
+            reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+            trace: [{ source: 'ACCOUNT_CONTEXT', context: 'MANAGER_CONSOLE', matched: false }],
+          },
+          {
+            context: 'ADMIN_CONSOLE',
+            available: false,
+            source: 'ACCOUNT_CONTEXT',
+            reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+            trace: [{ source: 'ACCOUNT_CONTEXT', context: 'ADMIN_CONSOLE', matched: false }],
+          },
+        ],
+        ownDataAvailable: true,
+        managerResponsibilitiesAvailable: false,
+        effectiveAccessTraceAvailable: true,
+        sourceTrace: [
+          {
+            source: 'ACCOUNT_CONTEXT',
+            accountContexts: ['STAFF_CONSOLE'],
+            primaryWorkspace: 'STAFF_CONSOLE',
+          },
+        ],
+      },
+      generatedAt: '2026-05-24T00:00:00.000Z',
+    });
+
+    const capabilities = getMockCurrentActorCapabilities();
+    expect(capabilities.accountContexts).toBeUndefined();
+    expect(capabilities.workspaceAvailability?.primaryWorkspace).toBe('STAFF_CONSOLE');
+    expect(capabilities.workspaceAvailability?.availableWorkspaces).toHaveLength(3);
+  });
+
+  it('uses backend primaryWorkspace for root landing across Admin, Manager, Staff, and no workspace', async () => {
+    await renderRoute(
+      '/',
+      makeCapabilities({
+        permissions: ['dashboardLite.read'],
+        scopeGrants: { dashboardLite: ['global'] },
+        accountContexts: ['ADMIN_CONSOLE'],
+      }),
+    );
+    expect(await screen.findByTestId('admin-shell-main')).toBeInTheDocument();
+
+    await renderRoute(
+      '/',
+      makeCapabilities({
+        permissions: ['dashboardLite.read', 'kpi.read', 'kpi.readProgress'],
+        scopeGrants: { dashboardLite: ['global'], kpi: ['managedGroup'] },
+        accountContexts: ['ADMIN_CONSOLE', 'MANAGER_CONSOLE'],
+        workspaceAvailability: {
+          primaryWorkspace: 'MANAGER_CONSOLE',
+          availableWorkspaces: [
+            {
+              context: 'STAFF_CONSOLE',
+              available: false,
+              source: 'ACCOUNT_CONTEXT',
+              reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+              trace: [],
+            },
+            {
+              context: 'MANAGER_CONSOLE',
+              available: true,
+              source: 'ACCOUNT_CONTEXT',
+              reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+              trace: [],
+            },
+            {
+              context: 'ADMIN_CONSOLE',
+              available: true,
+              source: 'ACCOUNT_CONTEXT',
+              reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+              trace: [],
+            },
+          ],
+          ownDataAvailable: false,
+          managerResponsibilitiesAvailable: true,
+          effectiveAccessTraceAvailable: true,
+          sourceTrace: [],
+        },
+      }),
+    );
+    expect(
+      await screen.findByTestId('manager-workspace-shell', {}, workspaceWaitOptions),
+    ).toBeInTheDocument();
+
+    await renderRoute(
+      '/',
+      makeCapabilities({
+        permissions: ['dashboardLite.read', 'kpi.read', 'kpi.readProgress'],
+        scopeGrants: { dashboardLite: ['global'], kpi: ['managedGroup'] },
+        accountContexts: ['MANAGER_CONSOLE', 'ADMIN_CONSOLE'],
+      }),
+    );
+    expect(await screen.findByTestId('admin-shell-main')).toBeInTheDocument();
+
+    await renderRoute(
+      '/',
+      makeCapabilities({
+        permissions: ['dashboardLite.read', 'kpi.read', 'kpi.readProgress'],
+        scopeGrants: { dashboardLite: ['global'], kpi: ['managedGroup'] },
+        accountContexts: ['MANAGER_CONSOLE'],
+      }),
+    );
+    expect(
+      await screen.findByTestId('manager-workspace-shell', {}, workspaceWaitOptions),
+    ).toBeInTheDocument();
+
+    await renderRoute(
+      '/',
+      makeCapabilities({
+        type: 'staff',
+        permissions: ['workSchedule.read'],
+        scopeGrants: { workSchedule: ['self'] },
+        accountContexts: ['STAFF_CONSOLE'],
+      }),
+    );
+    expect(
+      await screen.findByTestId('self-service-shell', {}, workspaceWaitOptions),
+    ).toBeInTheDocument();
+
+    await renderRoute(
+      '/',
+      makeCapabilities({
+        type: 'staff',
+        permissions: ['dashboardLite.read', 'workSchedule.read'],
+        scopeGrants: { dashboardLite: ['global'], workSchedule: ['self'] },
+        accountContexts: [],
+      }),
+    );
+    expect(await screen.findByText('Không có workspace khả dụng')).toBeInTheDocument();
+  });
+
+  it('does not use actor type or permissions to grant workspace entry without backend availability', async () => {
+    await renderRoute(
+      '/dashboard',
+      makeCapabilities({
+        type: 'admin',
+        permissions: ['dashboardLite.read'],
+        scopeGrants: { dashboardLite: ['global'] },
+        accountContexts: [],
+      }),
+    );
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-dashboard')).not.toBeInTheDocument();
+
+    await renderRoute(
+      '/self-service',
+      makeCapabilities({
+        type: 'staff',
+        permissions: ['workSchedule.read'],
+        scopeGrants: { workSchedule: ['self'] },
+        accountContexts: [],
+      }),
+    );
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+
+    await renderRoute(
+      '/manager',
+      makeCapabilities({
+        type: 'staff',
+        permissions: ['kpi.read', 'kpi.readProgress'],
+        scopeGrants: { kpi: ['managedGroup'] },
+        accountContexts: ['MANAGER_CONSOLE'],
+      }),
+    );
+    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+  });
+
   it('preserves admin root landing to the dashboard shell', async () => {
     await renderRoute(
       '/',
@@ -234,6 +486,7 @@ describe('route and sidebar permission model', () => {
         scopeGrants: {
           kpi: ['managedGroup'],
         },
+        accountContexts: ['MANAGER_CONSOLE'],
       }),
     );
 

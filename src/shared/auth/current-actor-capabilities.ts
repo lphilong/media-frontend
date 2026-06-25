@@ -137,6 +137,32 @@ export const PERMISSIONS = {
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS] | string;
 
+export const ACCOUNT_CONTEXTS = ['STAFF_CONSOLE', 'MANAGER_CONSOLE', 'ADMIN_CONSOLE'] as const;
+export type AccountContext = (typeof ACCOUNT_CONTEXTS)[number];
+
+export const accountContextSchema = z.enum(ACCOUNT_CONTEXTS);
+
+export const workspaceAvailabilityEntrySchema = z
+  .object({
+    context: accountContextSchema,
+    available: z.boolean(),
+    source: z.literal('ACCOUNT_CONTEXT'),
+    reasonCodes: z.array(z.string().trim().min(1)),
+    trace: z.array(z.record(z.unknown())),
+  })
+  .strict();
+
+export const workspaceAvailabilitySchema = z
+  .object({
+    primaryWorkspace: accountContextSchema.nullable(),
+    availableWorkspaces: z.array(workspaceAvailabilityEntrySchema),
+    ownDataAvailable: z.boolean(),
+    managerResponsibilitiesAvailable: z.boolean(),
+    effectiveAccessTraceAvailable: z.boolean(),
+    sourceTrace: z.array(z.record(z.unknown())),
+  })
+  .strict();
+
 const scopeGrantsSchema = z
   .object({
     workSchedule: z.array(z.enum(['self', 'team', 'department', 'global'])).optional(),
@@ -159,6 +185,8 @@ export const currentActorCapabilitiesSchema = z
     roles: z.array(z.string().trim().min(1)).optional(),
     permissions: z.array(z.string().trim().min(1)),
     scopeGrants: scopeGrantsSchema,
+    accountContexts: z.array(accountContextSchema).optional(),
+    workspaceAvailability: workspaceAvailabilitySchema.optional(),
     generatedAt: z.string().trim().min(1).optional(),
   })
   .strict();
@@ -260,6 +288,37 @@ export const hasEventAssignmentReadScope = (
 ): boolean =>
   hasScopeGrant(capabilities, 'eventAssignment', 'global') ||
   hasScopeGrant(capabilities, 'eventAssignment', 'managedGroup');
+
+export const isWorkspaceAvailabilityUsable = (
+  capabilities: CurrentActorCapabilities | undefined,
+): boolean => Boolean(capabilities?.workspaceAvailability);
+
+export const hasWorkspace = (
+  capabilities: CurrentActorCapabilities | undefined,
+  workspace: AccountContext,
+): boolean =>
+  Boolean(
+    capabilities?.workspaceAvailability?.availableWorkspaces.some(
+      (entry) =>
+        entry.context === workspace &&
+        entry.available &&
+        entry.source === 'ACCOUNT_CONTEXT',
+    ),
+  );
+
+export const getPrimaryWorkspace = (
+  capabilities: CurrentActorCapabilities | undefined,
+): AccountContext | null => {
+  const primaryWorkspace = capabilities?.workspaceAvailability?.primaryWorkspace ?? null;
+  return primaryWorkspace && hasWorkspace(capabilities, primaryWorkspace) ? primaryWorkspace : null;
+};
+
+export const getAvailableWorkspaces = (
+  capabilities: CurrentActorCapabilities | undefined,
+): AccountContext[] =>
+  capabilities?.workspaceAvailability?.availableWorkspaces
+    .filter((entry) => entry.available && entry.source === 'ACCOUNT_CONTEXT')
+    .map((entry) => entry.context) ?? [];
 
 export const canUseAction = (
   capabilities: CurrentActorCapabilities | undefined,

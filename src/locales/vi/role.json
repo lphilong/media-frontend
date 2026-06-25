@@ -1,4 +1,10 @@
 {
+  "tabs": {
+    "templates": "Mẫu vai trò",
+    "bundles": "Gói vai trò",
+    "assignments": "Gán quyền",
+    "userAccess": "Quyền theo người dùng"
+  },
   "page": {
     "title": "Vai trò",
     "subtitle": "Quản trị mẫu quyền, quy tắc gán và các bản ghi gán người dùng do Vai trò sở hữu.",
@@ -51,6 +57,30 @@
     "templateVersion": "Phiên bản mẫu",
     "templateAppliedAt": "Thời điểm áp dụng mẫu",
     "permissionsRemainExplicit": "Quyền vẫn là quyền rõ ràng và metadata mẫu không có tính thẩm quyền."
+  },
+  "permissionGroups": {
+    "summaryItem": "{{group}} ({{count}} năng lực)",
+    "role": "Quản trị vai trò",
+    "user": "Vận hành tài khoản",
+    "orgUnit": "Cơ cấu tổ chức",
+    "employmentProfile": "Hồ sơ nhân sự",
+    "employmentTerms": "Điều khoản nhân sự",
+    "talent": "Hồ sơ Talent",
+    "talentGroup": "Nhóm Talent",
+    "platformAccount": "Tài khoản nền tảng",
+    "studioResource": "Nguồn lực studio",
+    "event": "Vận hành sự kiện",
+    "eventAssignment": "Gán sự kiện",
+    "workSchedule": "Lịch làm việc",
+    "contractRegistry": "Hồ sơ hợp đồng",
+    "contractObligation": "Nghĩa vụ hợp đồng",
+    "talentKpi": "KPI Talent",
+    "kpi": "Vận hành KPI",
+    "revenueLedger": "Sổ doanh thu",
+    "commissionRule": "Quy tắc hoa hồng",
+    "commissionSettlement": "Quyết toán hoa hồng",
+    "dashboardLite": "Tổng quan",
+    "other": "Năng lực nghiệp vụ khác"
   },
   "scopePicker": {
     "assignmentScopes": "Phạm vi gán",
@@ -210,6 +240,66 @@
     "loadErrorTitle": "Không tải được vai trò",
     "loadErrorMessage": "Không thể tải dữ liệu vai trò.",
     "permissionMatrixUnavailable": "Ma trận quyền không khả dụng."
+  },
+  "templateCatalog": {
+    "title": "Danh mục mẫu vai trò",
+    "subtitle": "Mẫu do backend cung cấp; metadata mẫu không tự cấp thẩm quyền runtime.",
+    "loadErrorTitle": "Không tải được mẫu vai trò",
+    "loadErrorMessage": "Không thể tải danh mục mẫu vai trò.",
+    "emptyTitle": "Chưa có mẫu vai trò",
+    "emptyMessage": "Backend chưa trả về mẫu vai trò khả dụng.",
+    "roleGroup": "Nhóm vai trò",
+    "requiredContext": "Account Context yêu cầu",
+    "capabilitySummary": "Nhóm năng lực",
+    "capabilityCount": "{{count}} năng lực",
+    "sensitiveWarning": "Mẫu này có cảnh báo nhạy cảm từ backend."
+  },
+  "bundles": {
+    "code": "Mã gói",
+    "status": "Trạng thái",
+    "recommendedContext": "Account Context khuyến nghị",
+    "childRoles": "Vai trò con",
+    "recommendedScope": "Phạm vi khuyến nghị",
+    "supportMode": "Mức hỗ trợ",
+    "readOnlySupport": "Chỉ xem trong màn hình này",
+    "scopeCount": "{{count}} phạm vi khuyến nghị",
+    "sensitiveWarning": "Gói này có cảnh báo nhạy cảm từ backend.",
+    "loadErrorTitle": "Không tải được gói vai trò",
+    "loadErrorMessage": "Không thể tải danh mục gói vai trò.",
+    "emptyTitle": "Chưa có gói vai trò",
+    "emptyMessage": "Backend chưa trả về gói vai trò khả dụng."
+  },
+  "assignmentTab": {
+    "unavailableTitle": "Luồng gán quyền theo người dùng chưa khả dụng",
+    "unavailableMessage": "Màn hình này không tạo thẩm quyền gán quyền frontend. Luồng gán theo người dùng chưa mở trong phạm vi sửa này, và chi tiết vai trò chỉ đọc đối với gán hoặc thu hồi."
+  },
+  "userAccess": {
+    "selectorTitle": "Chọn người dùng",
+    "selectorSubtitle": "Tra cứu quyền hiệu lực từ backend theo từng người dùng.",
+    "userResource": "người dùng",
+    "noUserResults": "Không tìm thấy người dùng phù hợp.",
+    "emptyTitle": "Chưa chọn người dùng",
+    "emptyMessage": "Chọn một người dùng để xem Account Context, workspace và quyền hiệu lực.",
+    "loadErrorTitle": "Không tải được quyền theo người dùng",
+    "loadErrorMessage": "Không thể tải quyền hiệu lực của người dùng.",
+    "summaryTitle": "Tóm tắt truy cập",
+    "user": "Người dùng",
+    "accountContexts": "Account Context",
+    "primaryWorkspace": "Workspace chính",
+    "eligibleWorkspaces": "Workspace khả dụng",
+    "ownData": "Dữ liệu cá nhân",
+    "managerResponsibilities": "Trách nhiệm quản lý",
+    "available": "Khả dụng",
+    "unavailable": "Không khả dụng",
+    "noPrimaryWorkspace": "Không có",
+    "rolesTitle": "Vai trò đang hiệu lực",
+    "sensitive": "Nhạy cảm",
+    "scopeCount": "{{count}} phạm vi có cấu trúc",
+    "noAssignmentsTitle": "Không có vai trò hiệu lực",
+    "noAssignmentsMessage": "Backend không trả về bản ghi gán vai trò đang hiệu lực.",
+    "capabilitiesTitle": "Nhóm năng lực nghiệp vụ",
+    "businessCapabilityGroups": "Nhóm năng lực",
+    "sourceTrace": "Source trace"
   },
   "assignments": {
     "title": "Gán vai trò",

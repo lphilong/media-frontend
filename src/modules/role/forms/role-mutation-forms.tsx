@@ -15,6 +15,7 @@ import {
   roleDelegationBandValues,
   roleMaxDelegatableBandValues,
 } from '@modules/role/constants/role.constants';
+import { formatPermissionCapabilityItems } from '@modules/role/utils/permission-labels';
 import type {
   JsonPlainValue,
   RoleAssignmentRule,
@@ -37,7 +38,6 @@ import type {
   KpiAssignmentScope,
 } from '@modules/role/types/role.types';
 import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
-import type { ReferenceOption } from '@shared/components/reference';
 import {
   CheckboxField,
   FormGrid,
@@ -196,15 +196,6 @@ const workScheduleScopeValues: WorkScheduleAssignmentScope[] = [
 ];
 const eventAssignmentScopeValues: EventAssignmentScope[] = ['managedGroup', 'global'];
 const kpiScopeValues: KpiAssignmentScope[] = ['global', 'managedGroup', 'self'];
-const adminConsoleRoleCodes = [
-  'ADMIN_FULL',
-  'HR_OPERATIONS',
-  'TEAM_MANAGER',
-  'PRODUCTION_OPS',
-  'COMMERCIAL_FINANCE',
-  'VIEWER_AUDITOR',
-] as const;
-const selfServiceRoleCodes = ['TALENT_STAFF_SELF'] as const;
 
 const toTitle = (value: string): string => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 
@@ -665,6 +656,8 @@ const RoleTemplatePreviewPanel = ({
     );
   }
 
+  const permissionCapabilityItems = formatPermissionCapabilityItems(preview.permissions, t);
+
   return (
     <div className="space-y-3 rounded border border-border bg-bg p-3">
       <div>
@@ -672,9 +665,9 @@ const RoleTemplatePreviewPanel = ({
         <p className="text-xs text-muted">{t('templates.generatedPermissionsHelp')}</p>
         <div className="mt-2 max-h-44 overflow-auto rounded border border-border bg-panel p-2">
           <ul className="grid gap-1 text-xs md:grid-cols-2">
-            {preview.permissions.map((permission) => (
-              <li key={permission.code} className="font-mono text-text">
-                {permission.code}
+            {permissionCapabilityItems.map((item) => (
+              <li key={item} className="text-text">
+                {item}
               </li>
             ))}
           </ul>
@@ -914,14 +907,9 @@ export const RoleAssignUserSurface = ({
   onCancel,
   onSubmit,
   recommendedScopeGrants,
-  roleCode,
-  templateCode,
   isPending = false,
 }: RoleAssignUserSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['role', 'common']);
-  const [selectedUserActorKind, setSelectedUserActorKind] = useState<'ADMIN' | 'STAFF' | null>(
-    null,
-  );
   const form = useForm<RoleAssignUserFormValues>({
     defaultValues: {
       userId: '',
@@ -930,32 +918,7 @@ export const RoleAssignUserSurface = ({
     },
   });
 
-  const governingRoleCode = templateCode ?? roleCode;
-  const actorKindMismatch =
-    (adminConsoleRoleCodes.includes(governingRoleCode as (typeof adminConsoleRoleCodes)[number]) &&
-      selectedUserActorKind === 'STAFF') ||
-    (selfServiceRoleCodes.includes(governingRoleCode as (typeof selfServiceRoleCodes)[number]) &&
-      selectedUserActorKind === 'ADMIN');
-  const actorKindMismatchMessage =
-    selectedUserActorKind && actorKindMismatch
-      ? t(
-          adminConsoleRoleCodes.includes(
-            governingRoleCode as (typeof adminConsoleRoleCodes)[number],
-          )
-            ? 'role:validation.adminRoleRequiresAdminActor'
-            : 'role:validation.selfRoleRequiresStaffActor',
-        )
-      : undefined;
-
   const handleSubmit = form.handleSubmit(async (values) => {
-    if (actorKindMismatch) {
-      form.setError('userId', {
-        type: 'validate',
-        message: actorKindMismatchMessage,
-      });
-      return;
-    }
-
     const userId = values.userId.trim();
     if (!userId) {
       form.setError('userId', {
@@ -1005,17 +968,6 @@ export const RoleAssignUserSurface = ({
         onCancel={onCancel}
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
-        isLocked={actorKindMismatch}
-        lockedNotice={
-          actorKindMismatchMessage ? (
-            <div
-              role="alert"
-              className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
-            >
-              {actorKindMismatchMessage}
-            </div>
-          ) : undefined
-        }
       >
         <FormGrid columns={2}>
           <ReferencePickerField
@@ -1025,9 +977,6 @@ export const RoleAssignUserSurface = ({
             loadOptions={loadUserReferenceOptions}
             helperText={t('role:referenceHelp.userId')}
             placeholder={t('role:placeholders.userSearch')}
-            onSelectedOptionChange={(option: ReferenceOption | undefined) => {
-              setSelectedUserActorKind(option?.meta?.actorKind ?? null);
-            }}
           />
           <TextInputField name="reason" label={t('role:fields.reason')} />
         </FormGrid>

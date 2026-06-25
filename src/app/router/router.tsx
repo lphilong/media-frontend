@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate, useParams, type RouteObject } from 'reac
 import { RequireAuth } from '@app/guards/RequireAuth';
 import { AdminShellLayout } from '@app/layouts/AdminShellLayout';
 import { ModuleAccessGuard } from '@app/router/ModuleAccessGuard';
+import { WorkspaceAccessGuard } from '@app/router/WorkspaceAccessGuard';
 import {
   createStubCommissionBranchRoute,
   createStubModuleBranchRoute,
@@ -20,15 +21,21 @@ import {
   NotFoundPage,
   RouteErrorPage,
 } from '@app/router/system-pages';
-import type { NormalizedApiError } from '@shared/api';
 import {
+  getPrimaryWorkspace,
+  hasWorkspace,
   hasAnyPermission,
   hasScopeGrant,
   PERMISSIONS,
   type CurrentActorCapabilities,
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
-import { LoadingState, ModulePlaceholderPage, PageContainer } from '@shared/components/primitives';
+import {
+  ErrorState,
+  LoadingState,
+  ModulePlaceholderPage,
+  PageContainer,
+} from '@shared/components/primitives';
 
 type LazyModuleRoute = ComponentType<Record<string, never>>;
 
@@ -280,12 +287,6 @@ const RouteLoadingFallback = (): JSX.Element => (
   </PageContainer>
 );
 
-const isForbiddenCapabilitiesError = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  'status' in error &&
-  (error as Partial<NormalizedApiError>).status === 403;
-
 function RootLandingRedirect(): JSX.Element {
   const capabilitiesQuery = useCurrentActorCapabilities();
   const capabilities = capabilitiesQuery.data;
@@ -294,25 +295,36 @@ function RootLandingRedirect(): JSX.Element {
     return <RouteLoadingFallback />;
   }
 
-  if (
-    capabilities?.type === 'staff' ||
-    (capabilitiesQuery.isError && isForbiddenCapabilitiesError(capabilitiesQuery.error))
-  ) {
+  if (capabilitiesQuery.isError || !capabilities) {
+    return <NoWorkspaceAvailableState />;
+  }
+
+  const primaryWorkspace = getPrimaryWorkspace(capabilities);
+  if (primaryWorkspace === 'ADMIN_CONSOLE') {
+    if (canAccessModule(capabilities, 'dashboard')) {
+      return <Navigate to={APP_PATHS.dashboard} replace />;
+    }
+    return <Navigate to={APP_PATHS.forbidden} replace />;
+  }
+  if (primaryWorkspace === 'MANAGER_CONSOLE') {
+    return <Navigate to={APP_PATHS.manager} replace />;
+  }
+  if (primaryWorkspace === 'STAFF_CONSOLE') {
     return <Navigate to={APP_PATHS.selfService} replace />;
   }
 
-  if (canAccessModule(capabilities, 'dashboard')) {
-    return <Navigate to={APP_PATHS.dashboard} replace />;
-  }
+  return <NoWorkspaceAvailableState />;
+}
 
-  if (
-    hasScopeGrant(capabilities, 'kpi', 'managedGroup') &&
-    hasAnyPermission(capabilities, [PERMISSIONS.KPI_READ, PERMISSIONS.KPI_READ_PROGRESS])
-  ) {
-    return <Navigate to={APP_PATHS.manager} replace />;
-  }
-
-  return <Navigate to={APP_PATHS.forbidden} replace />;
+function NoWorkspaceAvailableState(): JSX.Element {
+  return (
+    <PageContainer>
+      <ErrorState
+        title="Không có workspace khả dụng"
+        message="Tài khoản chưa có Account Context hợp lệ để vào Admin, Manager hoặc Staff Console."
+      />
+    </PageContainer>
+  );
 }
 
 const withModuleAccess = (moduleId: ModuleAccessModuleId, element: JSX.Element): JSX.Element => (
@@ -320,6 +332,8 @@ const withModuleAccess = (moduleId: ModuleAccessModuleId, element: JSX.Element):
 );
 
 const isManagerOnlyKpiActor = (capabilities: CurrentActorCapabilities | undefined): boolean =>
+  !hasWorkspace(capabilities, 'ADMIN_CONSOLE') &&
+  hasWorkspace(capabilities, 'MANAGER_CONSOLE') &&
   !hasScopeGrant(capabilities, 'kpi', 'global') &&
   hasScopeGrant(capabilities, 'kpi', 'managedGroup') &&
   hasAnyPermission(capabilities, [PERMISSIONS.KPI_READ, PERMISSIONS.KPI_READ_PROGRESS]);
@@ -513,7 +527,9 @@ export const appRoutes: RouteObject[] = [
     path: APP_PATHS.selfService,
     element: (
       <RequireAuth>
-        <LazySelfServiceElement />
+        <WorkspaceAccessGuard workspace="STAFF_CONSOLE">
+          <LazySelfServiceElement />
+        </WorkspaceAccessGuard>
       </RequireAuth>
     ),
   },
@@ -521,7 +537,9 @@ export const appRoutes: RouteObject[] = [
     path: APP_PATHS.manager,
     element: (
       <RequireAuth>
-        <LazyManagerWorkspaceElement />
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
       </RequireAuth>
     ),
   },
@@ -529,7 +547,9 @@ export const appRoutes: RouteObject[] = [
     path: APP_PATHS.managerKpi,
     element: (
       <RequireAuth>
-        <LazyManagerWorkspaceElement />
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
       </RequireAuth>
     ),
   },
@@ -537,7 +557,9 @@ export const appRoutes: RouteObject[] = [
     path: APP_PATHS.managerWorkShifts,
     element: (
       <RequireAuth>
-        <LazyManagerWorkspaceElement />
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
       </RequireAuth>
     ),
   },
@@ -545,7 +567,9 @@ export const appRoutes: RouteObject[] = [
     path: APP_PATHS.managerRevenueSource,
     element: (
       <RequireAuth>
-        <LazyManagerWorkspaceElement />
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
       </RequireAuth>
     ),
   },
@@ -553,7 +577,9 @@ export const appRoutes: RouteObject[] = [
     path: APP_PATHS.managerEvents,
     element: (
       <RequireAuth>
-        <LazyManagerWorkspaceElement />
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
       </RequireAuth>
     ),
   },
@@ -561,7 +587,9 @@ export const appRoutes: RouteObject[] = [
     path: APP_PATHS.managerEventDetailPattern,
     element: (
       <RequireAuth>
-        <LazyManagerWorkspaceElement />
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
       </RequireAuth>
     ),
   },
@@ -569,7 +597,9 @@ export const appRoutes: RouteObject[] = [
     path: APP_PATHS.managerKpiPlanDetailPattern,
     element: (
       <RequireAuth>
-        <LazyManagerWorkspaceElement />
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
       </RequireAuth>
     ),
   },

@@ -31,6 +31,8 @@ export type RoleTemplateCode =
   | 'VIEWER_AUDITOR';
 
 export type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
+export type RoleBundleStatus = 'ACTIVE' | 'INACTIVE';
+export type RecommendedAccountContext = 'STAFF_CONSOLE' | 'MANAGER_CONSOLE' | 'ADMIN_CONSOLE';
 
 export type RoleTemplateScopePlanEntry = {
   module: string;
@@ -52,6 +54,22 @@ export type RoleTemplateListItem = {
   warnings: string[];
   implementationNotes: string[];
   status: RoleTemplateStatus;
+};
+
+export type RoleBundleListItem = {
+  code: string;
+  name: string;
+  description: string;
+  businessPurpose: string;
+  status: RoleBundleStatus;
+  version: string;
+  childRoles: string[];
+  recommendedAccountContext: RecommendedAccountContext;
+  recommendedScopes: string[];
+  sensitiveWarning: string | null;
+  sensitive: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type RoleTemplatePreview = {
@@ -142,6 +160,69 @@ export type RolePermissionMatrix = {
   permissions: RolePermission[];
   delegationBand: RoleDelegationBand;
   maxDelegatableBand: RoleMaxDelegatableBand;
+};
+
+export type EffectiveAccessWorkspaceAvailability = {
+  primaryWorkspace: RecommendedAccountContext | null;
+  availableWorkspaces: Array<{
+    context: RecommendedAccountContext;
+    available: boolean;
+    source: 'ACCOUNT_CONTEXT';
+    reasonCodes: string[];
+    trace: Array<Record<string, unknown>>;
+  }>;
+  ownDataAvailable: boolean;
+  managerResponsibilitiesAvailable: boolean;
+  effectiveAccessTraceAvailable: boolean;
+  sourceTrace: Array<Record<string, unknown>>;
+};
+
+export type EffectiveAccessRoleAssignment = {
+  assignmentId: string;
+  roleId: string;
+  roleCode: string | null;
+  roleName: string | null;
+  structuredScopeGrants: Array<Record<string, unknown>>;
+  scopeFingerprint: string;
+  reason: string | null;
+  assignedBy: string | null;
+  assignedAt: number | string;
+  effectiveAt: number | string | null;
+  expiresAt: number | string | null;
+  reviewAt: number | string | null;
+  origin: 'DIRECT' | 'BUNDLE' | 'LEGACY';
+  bundleOrigin: Record<string, unknown> | null;
+  sensitiveOrGlobal: boolean;
+};
+
+export type EffectiveAccessRecord = {
+  readOnly: boolean;
+  sourceTruth: boolean;
+  user: {
+    id: string;
+    displayName: string | null;
+    email: string | null;
+    accountStatus: string;
+  };
+  accountContextSignals: {
+    canonicalAccountContextImplemented: boolean;
+    canonicalSource: 'ACCOUNT_CONTEXT';
+    accountContexts: RecommendedAccountContext[];
+    legacyActorKind?: string;
+    compatibilityContexts: string[];
+    grantsAuthorityByItself: boolean;
+  };
+  workspaceAvailability: EffectiveAccessWorkspaceAvailability;
+  activeRoleAssignments: EffectiveAccessRoleAssignment[];
+  roles: Array<{ id: string; code: string; name: string }>;
+  permissions: string[];
+  permissionSourceTrace: Array<Record<string, unknown>>;
+  businessResponsibilitySupport: {
+    status: string;
+    claims: Array<Record<string, unknown>>;
+    note: string;
+  };
+  generatedAt: string;
 };
 
 export type RoleListQuery = {

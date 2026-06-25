@@ -18,7 +18,7 @@ import {
   type ShellNavigationItem,
 } from '@app/router/module-definitions';
 import { canAccessModule } from '@app/router/module-access';
-import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
+import { hasWorkspace, useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 
 const navGroupOrder: NavGroup[] = [
   'overview',
@@ -57,10 +57,13 @@ export const SidebarNav = ({ collapsed }: SidebarNavProps): JSX.Element => {
     }
 
     if (!item.moduleId) {
-      return true;
+      return hasWorkspace(capabilitiesQuery.data, 'ADMIN_CONSOLE');
     }
 
-    return canAccessModule(capabilitiesQuery.data, item.moduleId);
+    return (
+      hasWorkspace(capabilitiesQuery.data, 'ADMIN_CONSOLE') &&
+      canAccessModule(capabilitiesQuery.data, item.moduleId)
+    );
   };
 
   const visibleChildren = (item: ShellNavigationItem): ShellNavigationItem[] =>

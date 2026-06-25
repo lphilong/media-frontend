@@ -7,11 +7,14 @@ import {
   canUseAction,
   currentActorCapabilitiesSchema,
   fetchCurrentActorCapabilities,
+  getAvailableWorkspaces,
+  getPrimaryWorkspace,
   hasAllPermissions,
   hasAnyPermission,
   hasAnyScopeGrant,
   hasPermission,
   hasScopeGrant,
+  hasWorkspace,
   PERMISSIONS,
   useCurrentActorCapabilities,
   type CurrentActorCapabilities,
@@ -34,6 +37,43 @@ const capabilitiesPayload: CurrentActorCapabilities = {
     eventAssignment: ['managedGroup'],
     kpi: ['managedGroup', 'self'],
     workSchedule: ['self', 'team'],
+  },
+  accountContexts: ['MANAGER_CONSOLE', 'STAFF_CONSOLE'],
+  workspaceAvailability: {
+    primaryWorkspace: 'MANAGER_CONSOLE',
+    availableWorkspaces: [
+      {
+        context: 'STAFF_CONSOLE',
+        available: true,
+        source: 'ACCOUNT_CONTEXT',
+        reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+        trace: [{ source: 'ACCOUNT_CONTEXT', context: 'STAFF_CONSOLE', matched: true }],
+      },
+      {
+        context: 'MANAGER_CONSOLE',
+        available: true,
+        source: 'ACCOUNT_CONTEXT',
+        reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+        trace: [{ source: 'ACCOUNT_CONTEXT', context: 'MANAGER_CONSOLE', matched: true }],
+      },
+      {
+        context: 'ADMIN_CONSOLE',
+        available: false,
+        source: 'ACCOUNT_CONTEXT',
+        reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+        trace: [{ source: 'ACCOUNT_CONTEXT', context: 'ADMIN_CONSOLE', matched: false }],
+      },
+    ],
+    ownDataAvailable: true,
+    managerResponsibilitiesAvailable: true,
+    effectiveAccessTraceAvailable: true,
+    sourceTrace: [
+      {
+        source: 'ACCOUNT_CONTEXT',
+        accountContexts: ['MANAGER_CONSOLE', 'STAFF_CONSOLE'],
+        primaryWorkspace: 'MANAGER_CONSOLE',
+      },
+    ],
   },
   generatedAt: '2026-05-20T00:00:00.000Z',
 };
@@ -66,6 +106,7 @@ describe('current actor capabilities', () => {
     expect(parsed.scopeGrants.revenueLedger).toEqual(['global']);
     expect(parsed.scopeGrants.eventAssignment).toEqual(['managedGroup']);
     expect(parsed.scopeGrants.kpi).toEqual(['managedGroup', 'self']);
+    expect(parsed.workspaceAvailability?.primaryWorkspace).toBe('MANAGER_CONSOLE');
     expect(() =>
       currentActorCapabilitiesSchema.parse({
         ...capabilitiesPayload,
@@ -109,6 +150,24 @@ describe('current actor capabilities', () => {
         scope: { module: 'commission', value: 'global' },
       }),
     ).toEqual({ allowed: false, reason: 'missing-scope' });
+  });
+
+  it('uses backend workspace availability and fails closed without it', () => {
+    expect(getPrimaryWorkspace(capabilitiesPayload)).toBe('MANAGER_CONSOLE');
+    expect(getAvailableWorkspaces(capabilitiesPayload)).toEqual([
+      'STAFF_CONSOLE',
+      'MANAGER_CONSOLE',
+    ]);
+    expect(hasWorkspace(capabilitiesPayload, 'MANAGER_CONSOLE')).toBe(true);
+    expect(hasWorkspace(capabilitiesPayload, 'ADMIN_CONSOLE')).toBe(false);
+    expect(
+      getPrimaryWorkspace({
+        ...capabilitiesPayload,
+        type: 'admin',
+        accountContexts: undefined,
+        workspaceAvailability: undefined,
+      }),
+    ).toBeNull();
   });
 
   it('hides capability-hidden actions before preserving local disabled state', () => {

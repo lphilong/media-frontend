@@ -7,27 +7,22 @@ import { RoleBoundaryNotice } from '@modules/role/components/RoleBoundaryNotice'
 import { roleAssignmentStateValues } from '@modules/role/constants/role.constants';
 import {
   RoleAssignmentRulesSurface,
-  RoleAssignUserSurface,
   RoleEditSurface,
   RoleLifecycleReasonSurface,
   RolePermissionsSurface,
-  RoleRevokeAssignmentSurface,
 } from '@modules/role/forms/role-mutation-forms';
 import {
   useRoleAssignmentRuleReplacementMutation,
   useRoleAssignments,
-  useRoleAssignToUserMutation,
   useRoleDetail,
   useRoleLifecycleMutation,
   useRolePermissionMatrix,
   useRolePermissionReplacementMutation,
-  useRoleRevokeAssignmentMutation,
-  useRoleTemplates,
   useUpdateRoleMutation,
 } from '@modules/role/hooks/use-role';
 import { createRoleAssignmentColumns } from '@modules/role/tables/role-columns';
+import { formatPermissionCapabilitySummary } from '@modules/role/utils/permission-labels';
 import type {
-  RoleAssignmentItem,
   RoleAssignmentListQuery,
   RoleLifecycleAction,
   RoleTemplateCode,
@@ -52,7 +47,6 @@ import {
 import {
   formatCreatedDate,
   formatBusinessTimestamp,
-  readReferenceDisplay,
 } from '@shared/formatting/formatters';
 import {
   applyActionCapabilityHints,
@@ -76,10 +70,8 @@ type ActiveMutationSurface =
   | 'edit'
   | 'permissions'
   | 'assignment-rules'
-  | 'assign-to-user'
   | 'deactivate'
   | 'archive'
-  | 'revoke-assignment'
   | null;
 
 const statusToneMap = {
@@ -108,9 +100,6 @@ const readErrorMessage = (
 const formatOptionalTimestamp = (value?: number | string | null): string =>
   value === null || value === undefined ? '-' : formatBusinessTimestamp(value);
 
-const readPermissionCodes = (permissions: Array<{ code: string }>): string =>
-  permissions.length === 0 ? '-' : permissions.map((permission) => permission.code).join(', ');
-
 const roleTemplateDisplayNames: Record<RoleTemplateCode, string> = {
   ADMIN_FULL: 'Admin Full',
   HR_OPERATIONS: 'HR Operations',
@@ -132,19 +121,15 @@ export const RoleDetailPage = (): JSX.Element => {
   const detailQuery = useRoleDetail(roleId);
   const assignmentsQuery = useRoleAssignments(roleId, query);
   const permissionMatrixQuery = useRolePermissionMatrix(roleId);
-  const roleTemplatesQuery = useRoleTemplates();
   const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateRoleMutation();
   const lifecycleMutation = useRoleLifecycleMutation();
   const permissionsMutation = useRolePermissionReplacementMutation();
   const assignmentRulesMutation = useRoleAssignmentRuleReplacementMutation();
-  const assignToUserMutation = useRoleAssignToUserMutation();
-  const revokeAssignmentMutation = useRoleRevokeAssignmentMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [activeSurface, setActiveSurface] = useState<ActiveMutationSurface>(null);
-  const [selectedAssignment, setSelectedAssignment] = useState<RoleAssignmentItem | null>(null);
   const [, setCursorStack] = useState(createCursorStack);
   const { containerRef: mutationPanelRef } = useScrollToPanel(activeSurface);
 
@@ -172,7 +157,6 @@ export const RoleDetailPage = (): JSX.Element => {
 
   useEffect(() => {
     setActiveSurface(null);
-    setSelectedAssignment(null);
   }, [roleId]);
 
   useEffect(() => {
@@ -329,48 +313,6 @@ export const RoleDetailPage = (): JSX.Element => {
     }
   };
 
-  const onAssignToUserSubmit = async (
-    payload: Parameters<typeof assignToUserMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!record) {
-      return;
-    }
-
-    try {
-      const assignment = await assignToUserMutation.mutateAsync({ roleId: record.id, payload });
-      notifySuccess('role:feedback.assignedToUserDetailed', {
-        role: readReferenceDisplay(assignment.roleRef, record.name || record.code),
-        user:
-          assignment.userRef?.displayName?.trim() ||
-          readReferenceDisplay(assignment.userRef, payload.userId),
-      });
-      setActiveSurface(null);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
-  const onRevokeAssignmentSubmit = async (
-    payload: Parameters<typeof revokeAssignmentMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!record || !selectedAssignment) {
-      return;
-    }
-
-    try {
-      await revokeAssignmentMutation.mutateAsync({
-        roleId: record.id,
-        assignmentId: selectedAssignment.assignmentId,
-        payload,
-      });
-      notifySuccess('role:feedback.assignmentRevoked');
-      setSelectedAssignment(null);
-      setActiveSurface(null);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
   const actionItems = useMemo(() => {
     if (!record) {
       return [];
@@ -381,7 +323,6 @@ export const RoleDetailPage = (): JSX.Element => {
         onEdit: () => setActiveSurface('edit'),
         onPermissions: () => setActiveSurface('permissions'),
         onAssignmentRules: () => setActiveSurface('assignment-rules'),
-        onAssignToUser: () => setActiveSurface('assign-to-user'),
         onLifecycleAction,
         isLifecyclePending: (action) =>
           lifecycleMutation.isPending &&
@@ -414,15 +355,6 @@ export const RoleDetailPage = (): JSX.Element => {
             isError: capabilitiesQuery.isError,
           },
           { permission: PERMISSIONS.ROLE_ASSIGNMENT_RULE_SET },
-          capabilityCopy,
-        ),
-        'assign-to-user': createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          { permission: PERMISSIONS.ROLE_ASSIGN_TO_USER },
           capabilityCopy,
         ),
         activate: createActionCapabilityHint(
@@ -470,50 +402,13 @@ export const RoleDetailPage = (): JSX.Element => {
     () =>
       createRoleAssignmentColumns(t, {
         roleState: record?.state,
-        canRevokeAssignment: !createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          { permission: PERMISSIONS.ROLE_REVOKE_FROM_USER },
-          capabilityCopy,
-        ).disabled,
-        revokeDisabledReason: createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          { permission: PERMISSIONS.ROLE_REVOKE_FROM_USER },
-          capabilityCopy,
-        ).disabledReason,
-        onRevokeAssignment: (assignment) => {
-          setSelectedAssignment(assignment);
-          setActiveSurface('revoke-assignment');
-        },
-        isActionPending: (assignmentId) =>
-          revokeAssignmentMutation.isPending &&
-          revokeAssignmentMutation.variables?.assignmentId === assignmentId,
+        canRevokeAssignment: false,
+        onRevokeAssignment: () => undefined,
       }),
-    [
-      capabilityCopy,
-      capabilitiesQuery.data,
-      capabilitiesQuery.isError,
-      capabilitiesQuery.isLoading,
-      record?.state,
-      revokeAssignmentMutation.isPending,
-      revokeAssignmentMutation.variables,
-      t,
-    ],
+    [record?.state, t],
   );
 
   const matrix = permissionMatrixQuery.data;
-  const recommendedScopeGrants = record?.templateCode
-    ? roleTemplatesQuery.data?.find((template) => template.code === record.templateCode)
-        ?.recommendedScopeGrants
-    : undefined;
-
   return (
     <ModuleDetailScreenShell
       statusBadge={
@@ -600,7 +495,7 @@ export const RoleDetailPage = (): JSX.Element => {
                   {
                     key: 'permissions',
                     label: t('role:fields.permissions'),
-                    value: readPermissionCodes(record.permissions),
+                    value: formatPermissionCapabilitySummary(record.permissions, t),
                   },
                   {
                     key: 'assignmentRules',
@@ -658,7 +553,7 @@ export const RoleDetailPage = (): JSX.Element => {
                     {
                       key: 'matrix-permissions',
                       label: t('role:fields.permissions'),
-                      value: readPermissionCodes(matrix.permissions),
+                      value: formatPermissionCapabilitySummary(matrix.permissions, t),
                     },
                   ]}
                   columns={2}
@@ -700,16 +595,6 @@ export const RoleDetailPage = (): JSX.Element => {
                 onSubmit={onAssignmentRulesSubmit}
               />
             ) : null}
-            {activeSurface === 'assign-to-user' ? (
-              <RoleAssignUserSurface
-                isPending={assignToUserMutation.isPending}
-                recommendedScopeGrants={recommendedScopeGrants}
-                roleCode={record.code}
-                templateCode={record.templateCode}
-                onCancel={() => setActiveSurface(null)}
-                onSubmit={onAssignToUserSubmit}
-              />
-            ) : null}
             {activeSurface === 'deactivate' ? (
               <RoleLifecycleReasonSurface
                 action="deactivate"
@@ -724,17 +609,6 @@ export const RoleDetailPage = (): JSX.Element => {
                 isPending={lifecycleMutation.isPending}
                 onCancel={() => setActiveSurface(null)}
                 onSubmit={(payload) => onLifecycleReasonSubmit('archive', payload)}
-              />
-            ) : null}
-            {activeSurface === 'revoke-assignment' && selectedAssignment ? (
-              <RoleRevokeAssignmentSurface
-                assignmentId={selectedAssignment.assignmentId}
-                isPending={revokeAssignmentMutation.isPending}
-                onCancel={() => {
-                  setSelectedAssignment(null);
-                  setActiveSurface(null);
-                }}
-                onSubmit={onRevokeAssignmentSubmit}
               />
             ) : null}
           </div>

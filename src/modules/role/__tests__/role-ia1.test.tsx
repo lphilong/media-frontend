@@ -38,6 +38,47 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByText(/credential|token|password|session/i)).not.toBeInTheDocument();
   });
 
+  it('renders the AUTH-4B Role tabs under a single Vai trò sidebar entry', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/roles');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('role:page.title') }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('tab', { name: i18n.t('role:tabs.templates') }),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByTestId('nav-link-roles')).toHaveLength(1));
+    expect(screen.queryByTestId('nav-link-role-templates')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-role-bundles')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-role-assignments')).not.toBeInTheDocument();
+
+    expect(screen.getByRole('tab', { name: i18n.t('role:tabs.bundles') })).toBeInTheDocument();
+    expect(
+      screen.getByRole('tab', { name: i18n.t('role:tabs.assignments') }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('tab', { name: i18n.t('role:tabs.userAccess') }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/role:view/u)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: i18n.t('role:tabs.bundles') }));
+    expect(await screen.findByText('ADMIN_OPERATIONS')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }))
+      .not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: i18n.t('role:tabs.assignments') }));
+    expect(await screen.findByText(i18n.t('role:assignmentTab.unavailableTitle')))
+      .toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: i18n.t('role:tabs.userAccess') }));
+    expect(await screen.findByText(i18n.t('role:userAccess.emptyTitle'))).toBeInTheDocument();
+  });
+
   it('renders Role detail, permission matrix, and Role-owned assignments only', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/roles/role-admin?state=ACTIVE&scope=global');
@@ -49,7 +90,8 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText(/Admin Full \(ADMIN_FULL\)/)).toBeInTheDocument();
     expect(screen.getByText(/Work Schedule: Self, Team/)).toBeInTheDocument();
     expect(screen.getByText(/Dashboard Lite: Global/)).toBeInTheDocument();
-    expect(screen.getAllByText(/role:view/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Quản trị vai trò/u).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/role:view/u)).not.toBeInTheDocument();
     expect(screen.queryByText('assignment-1')).not.toBeInTheDocument();
 
     const userLink = await screen.findByRole(
@@ -61,6 +103,12 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByText('user-admin')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /grant scope/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /rename permission/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('role:actions.revokeAssignment') }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /set auth0 linkage/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /user lifecycle/i })).not.toBeInTheDocument();
   });
@@ -78,6 +126,37 @@ describe('role IA-1 surfaces', () => {
             roles: ['role-admin'],
             permissions: ['role:view', 'role:assignment:view'],
             scopeGrants: {},
+            accountContexts: ['ADMIN_CONSOLE'],
+            workspaceAvailability: {
+              primaryWorkspace: 'ADMIN_CONSOLE',
+              availableWorkspaces: [
+                {
+                  context: 'STAFF_CONSOLE',
+                  available: false,
+                  source: 'ACCOUNT_CONTEXT',
+                  reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+                  trace: [],
+                },
+                {
+                  context: 'MANAGER_CONSOLE',
+                  available: false,
+                  source: 'ACCOUNT_CONTEXT',
+                  reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+                  trace: [],
+                },
+                {
+                  context: 'ADMIN_CONSOLE',
+                  available: true,
+                  source: 'ACCOUNT_CONTEXT',
+                  reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+                  trace: [],
+                },
+              ],
+              ownDataAvailable: false,
+              managerResponsibilitiesAvailable: false,
+              effectiveAccessTraceAvailable: true,
+              sourceTrace: [],
+            },
             generatedAt: '2026-05-20T00:00:00.000Z',
           },
         }),
@@ -115,165 +194,24 @@ describe('role IA-1 surfaces', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('supports Role-owned assignment revocation from the assignment list', async () => {
+  it('does not expose Role detail as the primary assignment or revoke workflow', async () => {
     await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
     renderRoute('/roles/role-admin');
 
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
-    const assignmentRow = (await screen.findByRole('link', { name: /Admin User/u })).closest('tr');
-    expect(assignmentRow).not.toBeNull();
-    if (!assignmentRow) {
-      return;
-    }
-
-    await user.click(
-      within(assignmentRow).getByRole('button', {
-        name: i18n.t('role:actions.revokeAssignment'),
-      }),
-    );
-
-    const revokeHeading = await screen.findByRole('heading', {
-      name: i18n.t('role:mutations.revokeAssignment.title'),
-    });
-    const revokeSurface = revokeHeading.closest('section');
-    expect(revokeSurface).not.toBeNull();
-    if (!revokeSurface) {
-      return;
-    }
-
-    await user.type(within(revokeSurface).getByLabelText(i18n.t('role:fields.reason')), 'IA test');
-    await user.click(
-      within(revokeSurface).getByRole('button', {
-        name: i18n.t('role:mutations.revokeAssignment.submit'),
-      }),
-    );
-
-    await waitFor(
-      () => {
-        const refreshedRow = screen.getByRole('link', { name: /Admin User/u }).closest('tr');
-        expect(refreshedRow).not.toBeNull();
-        if (!refreshedRow) {
-          return;
-        }
-
-        expect(
-          within(refreshedRow).getByText(i18n.t('role:assignmentStates.REVOKED')),
-        ).toBeInTheDocument();
-      },
-      { timeout: 3000 },
-    );
-  }, 15_000);
-
-  it('shows recommended scope grants and applies KPI scope values on assignment', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    renderRoute('/roles/role-admin');
-
-    await user.click(
-      await screen.findByRole('button', { name: i18n.t('role:actions.assignToUser') }),
-    );
-
-    expect(screen.getByText(i18n.t('role:scopePicker.recommendedScopes'))).toBeInTheDocument();
-    expect(screen.getAllByText(/kpi\.global/u).length).toBeGreaterThan(0);
-    expect(screen.getByLabelText(`KPI: ${i18n.t('role:scopePicker.scopes.global')}`)).toBeChecked();
-
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('role:scopePicker.applyRecommendedScopes'),
-      }),
-    );
-
-    expect(screen.getByLabelText(`KPI: ${i18n.t('role:scopePicker.scopes.global')}`)).toBeChecked();
-  });
-
-  it('assigns a compatible user and shows a clear success toast', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    renderRoute('/roles/role-admin');
-
-    await user.click(
-      await screen.findByRole('button', { name: i18n.t('role:actions.assignToUser') }),
-    );
-    await user.type(screen.getByPlaceholderText(i18n.t('role:placeholders.userSearch')), 'Admin');
-    await user.click(screen.getByRole('button', { name: i18n.t('common:actions.search') }));
-    await user.click(await screen.findByRole('button', { name: /Admin User/u }));
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
-    );
-
+    expect(await screen.findByRole('link', { name: /Admin User/u })).toBeInTheDocument();
     expect(
-      await screen.findByText(
-        i18n.t('role:feedback.assignedToUserDetailed', {
-          role: 'Admin role',
-          user: 'Admin User',
-        }),
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/Zod|assignmentId|schema|unrecognized/i)).not.toBeInTheDocument();
-  });
-
-  it('shows concise feedback when assignment response is not recognized', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    server.use(
-      http.post('*/admin/roles/:roleId/assignments', () =>
-        HttpResponse.json({
-          data: {
-            id: 'role-admin',
-            code: 'ADMIN',
-            name: 'Admin role',
-            description: null,
-            state: 'ACTIVE',
-            permissions: [{ code: 'role:view' }],
-            delegationBand: 'LIMITED',
-            maxDelegatableBand: 'NONE',
-            assignmentRules: [],
-            updatedAt: Date.now(),
-            activatedAt: Date.now(),
-            archivedAt: null,
-          },
-        }),
-      ),
-    );
-    renderRoute('/roles/role-admin');
-
-    await user.click(
-      await screen.findByRole('button', { name: i18n.t('role:actions.assignToUser') }),
-    );
-    await user.type(screen.getByPlaceholderText(i18n.t('role:placeholders.userSearch')), 'Admin');
-    await user.click(screen.getByRole('button', { name: i18n.t('common:actions.search') }));
-    await user.click(await screen.findByRole('button', { name: /Admin User/u }));
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
-    );
-
-    expect(
-      await screen.findByText(i18n.t('role:feedback.assignmentResponseInvalid')),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Zod|assignmentId|schema|unrecognized_keys/i),
+      screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
     ).not.toBeInTheDocument();
-  });
-
-  it('warns and disables assignment when role and user actor kind mismatch', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    renderRoute('/roles/role-admin');
-
-    await user.click(
-      await screen.findByRole('button', { name: i18n.t('role:actions.assignToUser') }),
-    );
-    await user.type(screen.getByPlaceholderText(i18n.t('role:placeholders.userSearch')), 'Staff');
-    await user.click(screen.getByRole('button', { name: i18n.t('common:actions.search') }));
-    await user.click(await screen.findByRole('button', { name: /Staff User/u }));
-
     expect(
-      await screen.findByText(i18n.t('role:validation.adminRoleRequiresAdminActor')),
-    ).toBeInTheDocument();
+      screen.queryByRole('button', { name: i18n.t('role:actions.revokeAssignment') }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
-    ).toBeDisabled();
+      screen.queryByRole('heading', { name: i18n.t('role:mutations.assignToUser.title') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: i18n.t('role:mutations.revokeAssignment.title') }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows Custom fallback when template metadata is absent', async () => {
@@ -302,8 +240,8 @@ describe('role IA-1 surfaces', () => {
       screen.getByRole('button', { name: i18n.t('role:actions.replaceAssignmentRules') }),
     ).toBeDisabled();
     expect(
-      screen.getByRole('button', { name: i18n.t('role:actions.assignToUser') }),
-    ).toBeDisabled();
+      screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: i18n.t('role:actions.activate') })).toBeDisabled();
     expect(screen.getByRole('button', { name: i18n.t('role:actions.deactivate') })).toBeDisabled();
     expect(screen.getByRole('button', { name: i18n.t('role:actions.archive') })).toBeDisabled();

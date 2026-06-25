@@ -1,4 +1,10 @@
 {
+  "tabs": {
+    "templates": "Mẫu vai trò",
+    "bundles": "Gói vai trò",
+    "assignments": "Gán quyền",
+    "userAccess": "Quyền theo người dùng"
+  },
   "page": {
     "title": "Roles",
     "subtitle": "Admin-only permission templates, assignment rules, and Role-owned user assignments.",
@@ -51,6 +57,30 @@
     "templateVersion": "Template version",
     "templateAppliedAt": "Template applied",
     "permissionsRemainExplicit": "Permissions remain explicit and template metadata is non-authoritative."
+  },
+  "permissionGroups": {
+    "summaryItem": "{{group}} ({{count}} capabilities)",
+    "role": "Role administration",
+    "user": "User account operations",
+    "orgUnit": "Organization structure",
+    "employmentProfile": "Personnel profile",
+    "employmentTerms": "Employment terms",
+    "talent": "Talent profile",
+    "talentGroup": "Talent group",
+    "platformAccount": "Platform account",
+    "studioResource": "Studio resource",
+    "event": "Event operations",
+    "eventAssignment": "Event assignment",
+    "workSchedule": "Work schedule",
+    "contractRegistry": "Contract registry",
+    "contractObligation": "Contract obligation",
+    "talentKpi": "Talent KPI",
+    "kpi": "KPI operations",
+    "revenueLedger": "Revenue ledger",
+    "commissionRule": "Commission rule",
+    "commissionSettlement": "Commission settlement",
+    "dashboardLite": "Overview dashboard",
+    "other": "Other business capability"
   },
   "scopePicker": {
     "assignmentScopes": "Assignment scopes",
@@ -210,6 +240,66 @@
     "loadErrorTitle": "Unable to load roles",
     "loadErrorMessage": "The role surface could not be loaded.",
     "permissionMatrixUnavailable": "Permission matrix is unavailable."
+  },
+  "templateCatalog": {
+    "title": "Role template catalog",
+    "subtitle": "Backend-provided templates; template metadata is not runtime authority.",
+    "loadErrorTitle": "Unable to load role templates",
+    "loadErrorMessage": "The role template catalog could not be loaded.",
+    "emptyTitle": "No role templates",
+    "emptyMessage": "The backend did not return available role templates.",
+    "roleGroup": "Role group",
+    "requiredContext": "Required Account Context",
+    "capabilitySummary": "Capability groups",
+    "capabilityCount": "{{count}} capabilities",
+    "sensitiveWarning": "This template has a backend sensitive warning."
+  },
+  "bundles": {
+    "code": "Bundle code",
+    "status": "Status",
+    "recommendedContext": "Recommended Account Context",
+    "childRoles": "Child roles",
+    "recommendedScope": "Recommended scope",
+    "supportMode": "Support mode",
+    "readOnlySupport": "Read-only on this screen",
+    "scopeCount": "{{count}} recommended scopes",
+    "sensitiveWarning": "This bundle has a backend sensitive warning.",
+    "loadErrorTitle": "Unable to load role bundles",
+    "loadErrorMessage": "The role bundle catalog could not be loaded.",
+    "emptyTitle": "No role bundles",
+    "emptyMessage": "The backend did not return available role bundles."
+  },
+  "assignmentTab": {
+    "unavailableTitle": "User-first assignment flow is not available",
+    "unavailableMessage": "This screen does not create frontend assignment authority. User-first assignment is unavailable in this repair scope, and Role detail is read-only for assignment and revocation."
+  },
+  "userAccess": {
+    "selectorTitle": "Select user",
+    "selectorSubtitle": "Review effective access from the backend for one user.",
+    "userResource": "user",
+    "noUserResults": "No matching users found.",
+    "emptyTitle": "No user selected",
+    "emptyMessage": "Select a user to review Account Context, workspace, and effective access.",
+    "loadErrorTitle": "Unable to load user access",
+    "loadErrorMessage": "The user's effective access could not be loaded.",
+    "summaryTitle": "Access summary",
+    "user": "User",
+    "accountContexts": "Account Contexts",
+    "primaryWorkspace": "Primary workspace",
+    "eligibleWorkspaces": "Eligible workspaces",
+    "ownData": "Own data",
+    "managerResponsibilities": "Manager responsibilities",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "noPrimaryWorkspace": "None",
+    "rolesTitle": "Effective roles",
+    "sensitive": "Sensitive",
+    "scopeCount": "{{count}} structured scopes",
+    "noAssignmentsTitle": "No effective roles",
+    "noAssignmentsMessage": "The backend did not return active role assignments.",
+    "capabilitiesTitle": "Business capability groups",
+    "businessCapabilityGroups": "Capability groups",
+    "sourceTrace": "Source trace"
   },
   "assignments": {
     "title": "Role assignments",

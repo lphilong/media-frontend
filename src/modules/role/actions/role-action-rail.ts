@@ -7,7 +7,6 @@ type RoleActionRailHandlers = {
   onEdit: () => void;
   onPermissions: () => void;
   onAssignmentRules: () => void;
-  onAssignToUser: () => void;
   onLifecycleAction: (action: RoleLifecycleAction) => void;
   isLifecyclePending?: (action: RoleLifecycleAction) => boolean;
 };
@@ -19,8 +18,6 @@ const canActivate = (record: RoleDetailRecord): boolean =>
 const canDeactivate = (record: RoleDetailRecord): boolean => record.state === 'ACTIVE';
 const canArchive = (record: RoleDetailRecord): boolean =>
   record.state === 'DRAFT' || record.state === 'INACTIVE';
-const canAssign = (record: RoleDetailRecord): boolean => record.state === 'ACTIVE';
-
 export const createRoleActionRailItems = (
   t: TFunction,
   record: RoleDetailRecord,
@@ -46,13 +43,6 @@ export const createRoleActionRailItems = (
     disabled: !canMutatePolicy(record),
     disabledReason: !canMutatePolicy(record) ? t('common:capabilities.invalidStatus') : undefined,
     onClick: canMutatePolicy(record) ? handlers.onAssignmentRules : undefined,
-  },
-  {
-    id: 'assign-to-user',
-    label: t('role:actions.assignToUser'),
-    disabled: !canAssign(record),
-    disabledReason: !canAssign(record) ? t('common:capabilities.invalidStatus') : undefined,
-    onClick: canAssign(record) ? handlers.onAssignToUser : undefined,
   },
   {
     id: 'activate',

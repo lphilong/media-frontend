@@ -602,7 +602,15 @@ describe('role IA-1 query and payload shaping', () => {
     expect(
       await screen.findByText(i18n.t('role:templates.generatedPermissions')),
     ).toBeInTheDocument();
-    expect(screen.getByText('workSchedule.read')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        i18n.t('role:permissionGroups.summaryItem', {
+          group: i18n.t('role:permissionGroups.workSchedule'),
+          count: 1,
+        }),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('workSchedule.read')).not.toBeInTheDocument();
     expect(screen.getByText('Scope plans are preview-only.')).toBeInTheDocument();
     expect(screen.getByText(/Preview-only scope plan/u)).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('role:fields.name')), 'Team Manager Copy');
