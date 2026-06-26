@@ -300,15 +300,18 @@ let userSeed = initialUserSeed;
 let roleSeed = initialRoleSeed;
 let assignmentSeed = initialAssignmentSeed;
 
-const adminConsoleRoleCodes = [
-  'ADMIN_FULL',
-  'HR_OPERATIONS',
-  'TEAM_MANAGER',
-  'PRODUCTION_OPS',
-  'COMMERCIAL_FINANCE',
-  'VIEWER_AUDITOR',
-] as const;
-const selfServiceRoleCodes = ['TALENT_STAFF_SELF'] as const;
+const requiredAccountContextByRoleCode: Partial<Record<RoleTemplateCode, AccountContext>> = {
+  ADMIN_FULL: 'ADMIN_CONSOLE',
+  HR_OPERATIONS: 'ADMIN_CONSOLE',
+  TEAM_MANAGER: 'MANAGER_CONSOLE',
+  PRODUCTION_OPS: 'ADMIN_CONSOLE',
+  COMMERCIAL_FINANCE: 'ADMIN_CONSOLE',
+  TALENT_STAFF_SELF: 'STAFF_CONSOLE',
+  VIEWER_AUDITOR: 'ADMIN_CONSOLE',
+};
+
+const isAdminConsoleRoleCode = (code: string): boolean =>
+  requiredAccountContextByRoleCode[code as RoleTemplateCode] === 'ADMIN_CONSOLE';
 
 const initialUsers: UserRecord[] = [
   {
@@ -1477,9 +1480,7 @@ export const identityAccessHandlers = [
         .map((assignment) => readRole(assignment.roleId))
         .filter((role): role is RoleRecord => Boolean(role))
         .map((role) => role.templateCode ?? role.code)
-        .filter((code) =>
-          adminConsoleRoleCodes.includes(code as (typeof adminConsoleRoleCodes)[number]),
-        );
+        .filter((code) => isAdminConsoleRoleCode(code));
       if (activeAdminRoleCodes.length > 0) {
         return HttpResponse.json(
           {
@@ -1609,21 +1610,14 @@ export const identityAccessHandlers = [
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }
     const governingRoleCode = role.templateCode ?? role.code;
+    const requiredAccountContext =
+      requiredAccountContextByRoleCode[governingRoleCode as RoleTemplateCode];
     if (
-      adminConsoleRoleCodes.includes(governingRoleCode as (typeof adminConsoleRoleCodes)[number]) &&
-      targetUser.actorKind !== 'ADMIN'
+      requiredAccountContext &&
+      !readAssignedAccountContexts(targetUser).includes(requiredAccountContext)
     ) {
       return HttpResponse.json(
-        { message: `${governingRoleCode} requires an admin console account.` },
-        { status: 422 },
-      );
-    }
-    if (
-      selfServiceRoleCodes.includes(governingRoleCode as (typeof selfServiceRoleCodes)[number]) &&
-      targetUser.actorKind !== 'STAFF'
-    ) {
-      return HttpResponse.json(
-        { message: `${governingRoleCode} requires a self-service staff account.` },
+        { message: `${governingRoleCode} requires ${requiredAccountContext} account context.` },
         { status: 422 },
       );
     }
