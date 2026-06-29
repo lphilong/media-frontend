@@ -28,7 +28,6 @@ type TalentRecord = {
   displayShortName: string | null;
   talentOrigin: TalentOrigin;
   operationalStatus: TalentOperationalStatus;
-  managerEmploymentProfileId: string | null;
   linkedEmploymentProfileId: string | null;
   commercialParticipationStatus: TalentCommercialParticipationStatus;
   livestreamEligible: boolean;
@@ -41,8 +40,8 @@ type TalentRecord = {
 
 type TalentGroupStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 type TalentGroupMembershipStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
-type TalentGroupManagerAssignmentStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
-type TalentGroupManagerRole = 'OWNER' | 'MANAGER' | 'ASSISTANT';
+type TalentGroupResponsibilityAssignmentStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
+type TalentGroupResponsibilityRole = 'OWNER' | 'MANAGER' | 'ASSISTANT';
 
 type TalentGroupRecord = {
   id: string;
@@ -69,14 +68,14 @@ type TalentGroupMembershipRecord = {
   updatedAt: number;
 };
 
-type TalentGroupManagerAssignmentRecord = {
+type TalentGroupResponsibilityAssignmentRecord = {
   id: string;
   groupId: string;
-  managerEmploymentProfileId: string;
-  role: TalentGroupManagerRole;
+  responsibleEmploymentProfileId: string;
+  role: TalentGroupResponsibilityRole;
   effectiveFrom: number;
   effectiveTo: number | null;
-  status: TalentGroupManagerAssignmentStatus;
+  status: TalentGroupResponsibilityAssignmentStatus;
   isPrimary: boolean;
   createdAt: number;
   updatedAt: number;
@@ -86,12 +85,10 @@ const now = Date.parse('2026-04-22T00:00:00.000Z');
 const initialTalentSeed = 1000;
 const initialGroupSeed = 1000;
 const initialMembershipSeed = 2000;
-const initialManagerAssignmentSeed = 3000;
 
 let talentSeed = initialTalentSeed;
 let groupSeed = initialGroupSeed;
 let membershipSeed = initialMembershipSeed;
-let managerAssignmentSeed = initialManagerAssignmentSeed;
 
 const initialTalents: TalentRecord[] = [
   {
@@ -102,7 +99,6 @@ const initialTalents: TalentRecord[] = [
     displayShortName: 'Stale Internal Short',
     talentOrigin: 'INTERNAL',
     operationalStatus: 'ACTIVE',
-    managerEmploymentProfileId: 'ep-001',
     linkedEmploymentProfileId: 'ep-002',
     commercialParticipationStatus: 'ELIGIBLE',
     livestreamEligible: true,
@@ -120,7 +116,6 @@ const initialTalents: TalentRecord[] = [
     displayShortName: null,
     talentOrigin: 'EXTERNAL',
     operationalStatus: 'SUSPENDED',
-    managerEmploymentProfileId: 'ep-001',
     linkedEmploymentProfileId: null,
     commercialParticipationStatus: 'BLOCKED',
     livestreamEligible: false,
@@ -138,7 +133,6 @@ const initialTalents: TalentRecord[] = [
     displayShortName: 'Stale Internal Chau Short',
     talentOrigin: 'INTERNAL',
     operationalStatus: 'INACTIVE',
-    managerEmploymentProfileId: null,
     linkedEmploymentProfileId: 'ep-003',
     commercialParticipationStatus: 'RESTRICTED',
     livestreamEligible: true,
@@ -156,7 +150,6 @@ const initialTalents: TalentRecord[] = [
     displayShortName: null,
     talentOrigin: 'EXTERNAL',
     operationalStatus: 'ARCHIVED',
-    managerEmploymentProfileId: null,
     linkedEmploymentProfileId: null,
     commercialParticipationStatus: 'BLOCKED',
     livestreamEligible: false,
@@ -265,11 +258,11 @@ const initialMemberships: TalentGroupMembershipRecord[] = [
   },
 ];
 
-const initialManagerAssignments: TalentGroupManagerAssignmentRecord[] = [
+const initialResponsibilityAssignments: TalentGroupResponsibilityAssignmentRecord[] = [
   {
-    id: 'manager-assignment-001',
+    id: 'responsibility-talent-group-001',
     groupId: 'group-001',
-    managerEmploymentProfileId: 'ep-001',
+    responsibleEmploymentProfileId: 'ep-001',
     role: 'MANAGER',
     effectiveFrom: now - 4_000,
     effectiveTo: null,
@@ -285,7 +278,7 @@ let talentGroups: TalentGroupRecord[] = initialTalentGroups.map((record) => ({ .
 let memberships: TalentGroupMembershipRecord[] = initialMemberships.map((record) => ({
   ...record,
 }));
-let managerAssignments: TalentGroupManagerAssignmentRecord[] = initialManagerAssignments.map(
+let responsibilityAssignments: TalentGroupResponsibilityAssignmentRecord[] = initialResponsibilityAssignments.map(
   (record) => ({ ...record }),
 );
 
@@ -352,13 +345,6 @@ const readGroup = (groupId: string): TalentGroupRecord | undefined =>
   talentGroups.find((item) => item.id === groupId);
 const readMembership = (membershipId: string): TalentGroupMembershipRecord | undefined =>
   memberships.find((item) => item.id === membershipId);
-const readManagerAssignment = (
-  assignmentId: string,
-): TalentGroupManagerAssignmentRecord | undefined =>
-  managerAssignments.find((item) => item.id === assignmentId);
-
-const actorEmploymentProfileIds = new Map<string, string>([['user-team-manager', 'ep-001']]);
-
 const getManagedGroupScopeIds = (): Set<string> | null => {
   const capabilities = getMockCurrentActorCapabilities();
   const kpiScopes = capabilities.scopeGrants.kpi ?? [];
@@ -367,16 +353,10 @@ const getManagedGroupScopeIds = (): Set<string> | null => {
     return null;
   }
 
-  const employmentProfileId = actorEmploymentProfileIds.get(capabilities.id);
-  if (!employmentProfileId) {
-    return new Set();
-  }
-
   return new Set(
-    managerAssignments
+    responsibilityAssignments
       .filter(
         (assignment) =>
-          assignment.managerEmploymentProfileId === employmentProfileId &&
           assignment.status === 'ACTIVE' &&
           assignment.effectiveFrom <= Date.now() &&
           (assignment.effectiveTo === null || assignment.effectiveTo >= Date.now()),
@@ -432,13 +412,6 @@ const employmentProfileRefs = new Map<string, ReferenceSummary>([
 const toEmploymentProfileRef = (employmentProfileId: string | null): ReferenceSummary | null =>
   employmentProfileId ? (employmentProfileRefs.get(employmentProfileId) ?? null) : null;
 
-const toGroupRef = (groupId: string): ReferenceSummary | null => {
-  const group = readGroup(groupId);
-  return group
-    ? { id: group.id, code: group.groupCode, name: group.name, status: group.status }
-    : null;
-};
-
 const toTalentRef = (talentId: string): ReferenceSummary | null => {
   const talent = readTalent(talentId);
   const displayName = readTalentDisplayName(talent);
@@ -487,8 +460,6 @@ const toTalentListItem = (record: TalentRecord) => {
     displayShortName: record.displayShortName,
     talentOrigin: record.talentOrigin,
     operationalStatus: record.operationalStatus,
-    managerEmploymentProfileId: record.managerEmploymentProfileId,
-    managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
     linkedEmploymentProfileId: record.linkedEmploymentProfileId,
     linkedEmploymentProfileRef: toEmploymentProfileRef(record.linkedEmploymentProfileId),
     commercialParticipationStatus: record.commercialParticipationStatus,
@@ -542,22 +513,6 @@ const toMembershipItem = (record: TalentGroupMembershipRecord) => {
     updatedAt: record.updatedAt,
   };
 };
-
-const toManagerAssignmentItem = (record: TalentGroupManagerAssignmentRecord) => ({
-  id: record.id,
-  groupId: record.groupId,
-  managerEmploymentProfileId: record.managerEmploymentProfileId,
-  role: record.role,
-  effectiveFrom: record.effectiveFrom,
-  effectiveTo: record.effectiveTo,
-  status: record.status,
-  isPrimary: record.isPrimary,
-  createdAt: record.createdAt,
-  updatedAt: record.updatedAt,
-  groupRef: toGroupRef(record.groupId),
-  managerRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
-  managerHasLinkedAdminUser: record.managerEmploymentProfileId === 'ep-001',
-});
 
 const toByTalentItem = (group: TalentGroupRecord, membership: TalentGroupMembershipRecord) => {
   return {
@@ -685,18 +640,17 @@ const cloneTalents = (): TalentRecord[] => initialTalents.map((record) => ({ ...
 const cloneGroups = (): TalentGroupRecord[] => initialTalentGroups.map((record) => ({ ...record }));
 const cloneMemberships = (): TalentGroupMembershipRecord[] =>
   initialMemberships.map((record) => ({ ...record }));
-const cloneManagerAssignments = (): TalentGroupManagerAssignmentRecord[] =>
-  initialManagerAssignments.map((record) => ({ ...record }));
+const cloneResponsibilityAssignments = (): TalentGroupResponsibilityAssignmentRecord[] =>
+  initialResponsibilityAssignments.map((record) => ({ ...record }));
 
 export const resetWave4MockData = (): void => {
   talentSeed = initialTalentSeed;
   groupSeed = initialGroupSeed;
   membershipSeed = initialMembershipSeed;
-  managerAssignmentSeed = initialManagerAssignmentSeed;
   talents = cloneTalents();
   talentGroups = cloneGroups();
   memberships = cloneMemberships();
-  managerAssignments = cloneManagerAssignments();
+  responsibilityAssignments = cloneResponsibilityAssignments();
 };
 
 export const wave4Handlers = [
@@ -706,7 +660,6 @@ export const wave4Handlers = [
 
     const operationalStatus = searchParams.get('operationalStatus');
     const talentOrigin = searchParams.get('talentOrigin');
-    const managerEmploymentProfileId = searchParams.get('managerEmploymentProfileId');
     const hasLinkedEmploymentProfile = parseBooleanParam(
       searchParams.get('hasLinkedEmploymentProfile'),
     );
@@ -738,10 +691,6 @@ export const wave4Handlers = [
 
     if (talentOrigin) {
       rows = rows.filter((item) => item.talentOrigin === talentOrigin);
-    }
-
-    if (managerEmploymentProfileId) {
-      rows = rows.filter((item) => item.managerEmploymentProfileId === managerEmploymentProfileId);
     }
 
     if (hasLinkedEmploymentProfile !== undefined) {
@@ -851,10 +800,6 @@ export const wave4Handlers = [
           : String(body.displayShortName),
       talentOrigin,
       operationalStatus: 'ACTIVE',
-      managerEmploymentProfileId:
-        body.managerEmploymentProfileId === null || body.managerEmploymentProfileId === undefined
-          ? null
-          : String(body.managerEmploymentProfileId),
       linkedEmploymentProfileId,
       commercialParticipationStatus,
       livestreamEligible,
@@ -920,29 +865,6 @@ export const wave4Handlers = [
     }
     if ('profileSummary' in body) {
       talent.profileSummary = body.profileSummary === null ? null : String(body.profileSummary);
-    }
-    talent.updatedAt = Date.now();
-
-    return HttpResponse.json({
-      data: toTalentDetail(talent),
-    });
-  }),
-
-  http.post('*/admin/talents/:talentId/manager-assignment', async ({ params, request }) => {
-    const talent = readTalent(String(params.talentId));
-    if (!talent) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-
-    const body = await parseJsonBody(request);
-    if (
-      body.newManagerEmploymentProfileId === null ||
-      body.newManagerEmploymentProfileId === '' ||
-      body.newManagerEmploymentProfileId === undefined
-    ) {
-      talent.managerEmploymentProfileId = null;
-    } else {
-      talent.managerEmploymentProfileId = String(body.newManagerEmploymentProfileId);
     }
     talent.updatedAt = Date.now();
 
@@ -1240,26 +1162,6 @@ export const wave4Handlers = [
     return HttpResponse.json(paged);
   }),
 
-  http.get('*/admin/talent-groups/:groupId/manager-assignments', ({ params }) => {
-    const groupId = String(params.groupId);
-    const denied = denyUnmanagedGroup(groupId);
-    if (denied) {
-      return denied;
-    }
-
-    const group = readGroup(groupId);
-    if (!group) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-
-    const rows = managerAssignments
-      .filter((assignment) => assignment.groupId === group.id && assignment.status === 'ACTIVE')
-      .sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary))
-      .map(toManagerAssignmentItem);
-
-    return HttpResponse.json({ data: rows });
-  }),
-
   http.patch('*/admin/talent-groups/:groupId', async ({ params, request }) => {
     const group = readGroup(String(params.groupId));
     if (!group) {
@@ -1399,83 +1301,6 @@ export const wave4Handlers = [
       data: toMembershipItem(nextMembership),
     });
   }),
-
-  http.post('*/admin/talent-groups/:groupId/manager-assignments', async ({ params, request }) => {
-    const group = readGroup(String(params.groupId));
-    if (!group) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    if (group.status !== 'ACTIVE') {
-      return HttpResponse.json(
-        { message: 'talent-group:validation.groupMustBeActive' },
-        { status: 422 },
-      );
-    }
-
-    const body = await parseJsonBody(request);
-    const managerEmploymentProfileId = String(body.managerEmploymentProfileId ?? '');
-    const managerRef = toEmploymentProfileRef(managerEmploymentProfileId);
-    if (!managerRef || managerRef.status !== 'ACTIVE') {
-      return HttpResponse.json(
-        { message: 'talent-group:validation.managerEmploymentProfileInvalid' },
-        { status: 422 },
-      );
-    }
-    if (
-      managerAssignments.some(
-        (assignment) =>
-          assignment.groupId === group.id &&
-          assignment.managerEmploymentProfileId === managerEmploymentProfileId &&
-          assignment.status === 'ACTIVE',
-      )
-    ) {
-      return HttpResponse.json(
-        { message: 'talent-group:validation.managerAssignmentDuplicate' },
-        { status: 409 },
-      );
-    }
-
-    managerAssignmentSeed += 1;
-    const nextAssignment: TalentGroupManagerAssignmentRecord = {
-      id: `manager-assignment-${managerAssignmentSeed}`,
-      groupId: group.id,
-      managerEmploymentProfileId,
-      role: 'MANAGER',
-      effectiveFrom: Date.now(),
-      effectiveTo: null,
-      status: 'ACTIVE',
-      isPrimary: !managerAssignments.some(
-        (assignment) => assignment.groupId === group.id && assignment.status === 'ACTIVE',
-      ),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    managerAssignments.push(nextAssignment);
-
-    return HttpResponse.json({ data: toManagerAssignmentItem(nextAssignment) });
-  }),
-
-  http.post(
-    '*/admin/talent-groups/:groupId/manager-assignments/:assignmentId/revoke',
-    ({ params }) => {
-      const group = readGroup(String(params.groupId));
-      const assignment = readManagerAssignment(String(params.assignmentId));
-      if (!group || !assignment || assignment.groupId !== group.id) {
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      }
-      if (assignment.status !== 'ACTIVE') {
-        return HttpResponse.json(
-          { message: 'talent-group:validation.managerAssignmentInactive' },
-          { status: 422 },
-        );
-      }
-      assignment.status = 'INACTIVE';
-      assignment.effectiveTo = Date.now();
-      assignment.updatedAt = Date.now();
-
-      return HttpResponse.json({ data: toManagerAssignmentItem(assignment) });
-    },
-  ),
 
   http.patch('*/admin/talent-groups/members/:membershipId/lineup', async ({ params, request }) => {
     const membership = readMembership(String(params.membershipId));

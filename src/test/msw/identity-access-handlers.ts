@@ -5,13 +5,31 @@ type UserActorKind = 'ADMIN' | 'STAFF';
 type RoleState = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 type RoleAssignmentState = 'ACTIVE' | 'REVOKED';
 type RoleTemplateCode =
-  | 'ADMIN_FULL'
+  | 'OWNER_ADMIN'
+  | 'ACCESS_ADMIN'
   | 'HR_OPERATIONS'
-  | 'TEAM_MANAGER'
+  | 'HR_TERMS_APPROVER'
   | 'PRODUCTION_OPS'
-  | 'COMMERCIAL_FINANCE'
-  | 'TALENT_STAFF_SELF'
-  | 'VIEWER_AUDITOR';
+  | 'PLATFORM_CHANNEL_OPS'
+  | 'CREATIVE_VISUAL_LEAD'
+  | 'CONTENT_OPS'
+  | 'TALENT_GROUP_MANAGER'
+  | 'ORG_UNIT_MANAGER'
+  | 'KPI_OPERATIONS'
+  | 'COMMERCIAL_CONTRACT_OPS'
+  | 'REVENUE_FINANCE_OPS'
+  | 'REVENUE_APPROVER'
+  | 'REVENUE_RECONCILER'
+  | 'COMMISSION_OPS'
+  | 'COMMISSION_APPROVER'
+  | 'ATTENDANCE_OPS'
+  | 'LEAVE_REVIEWER'
+  | 'ATTENDANCE_APPROVER'
+  | 'MONTHLY_CLOSE_OWNER'
+  | 'PAYROLL_DRAFT_OPS'
+  | 'PAYROLL_DRAFT_APPROVER'
+  | 'VIEWER_AUDITOR'
+  | 'STAFF_CONSOLE_USER';
 type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
 type AccountContext = 'STAFF_CONSOLE' | 'MANAGER_CONSOLE' | 'ADMIN_CONSOLE';
 
@@ -113,6 +131,7 @@ type RoleTemplateRecord = {
   description: string;
   category: string;
   permissions: Array<{ code: string }>;
+  recommendedAccountContext: AccountContext;
   recommendedScopeGrants: RoleAssignmentScopeGrants;
   scopePlan: RoleTemplateScopePlanEntry[];
   warnings: string[];
@@ -127,7 +146,7 @@ type RoleBundleRecord = {
   businessPurpose: string;
   status: 'ACTIVE' | 'INACTIVE';
   version: string;
-  childRoles: RoleTemplateCode[];
+  childRoles: string[];
   recommendedAccountContext: AccountContext;
   recommendedScopes: string[];
   sensitiveWarning: string | null;
@@ -301,13 +320,31 @@ let roleSeed = initialRoleSeed;
 let assignmentSeed = initialAssignmentSeed;
 
 const requiredAccountContextByRoleCode: Partial<Record<RoleTemplateCode, AccountContext>> = {
-  ADMIN_FULL: 'ADMIN_CONSOLE',
+  OWNER_ADMIN: 'ADMIN_CONSOLE',
+  ACCESS_ADMIN: 'ADMIN_CONSOLE',
   HR_OPERATIONS: 'ADMIN_CONSOLE',
-  TEAM_MANAGER: 'MANAGER_CONSOLE',
+  HR_TERMS_APPROVER: 'ADMIN_CONSOLE',
   PRODUCTION_OPS: 'ADMIN_CONSOLE',
-  COMMERCIAL_FINANCE: 'ADMIN_CONSOLE',
-  TALENT_STAFF_SELF: 'STAFF_CONSOLE',
+  PLATFORM_CHANNEL_OPS: 'ADMIN_CONSOLE',
+  CREATIVE_VISUAL_LEAD: 'ADMIN_CONSOLE',
+  CONTENT_OPS: 'ADMIN_CONSOLE',
+  TALENT_GROUP_MANAGER: 'MANAGER_CONSOLE',
+  ORG_UNIT_MANAGER: 'MANAGER_CONSOLE',
+  KPI_OPERATIONS: 'ADMIN_CONSOLE',
+  COMMERCIAL_CONTRACT_OPS: 'ADMIN_CONSOLE',
+  REVENUE_FINANCE_OPS: 'ADMIN_CONSOLE',
+  REVENUE_APPROVER: 'ADMIN_CONSOLE',
+  REVENUE_RECONCILER: 'ADMIN_CONSOLE',
+  COMMISSION_OPS: 'ADMIN_CONSOLE',
+  COMMISSION_APPROVER: 'ADMIN_CONSOLE',
+  ATTENDANCE_OPS: 'ADMIN_CONSOLE',
+  LEAVE_REVIEWER: 'ADMIN_CONSOLE',
+  ATTENDANCE_APPROVER: 'ADMIN_CONSOLE',
+  MONTHLY_CLOSE_OWNER: 'ADMIN_CONSOLE',
+  PAYROLL_DRAFT_OPS: 'ADMIN_CONSOLE',
+  PAYROLL_DRAFT_APPROVER: 'ADMIN_CONSOLE',
   VIEWER_AUDITOR: 'ADMIN_CONSOLE',
+  STAFF_CONSOLE_USER: 'STAFF_CONSOLE',
 };
 
 const isAdminConsoleRoleCode = (code: string): boolean =>
@@ -361,14 +398,54 @@ const initialUsers: UserRecord[] = [
   },
 ];
 
+const createRoleTemplateRecord = ({
+  code,
+  name,
+  category,
+  recommendedAccountContext,
+  permissions = [],
+  status = 'REQUIRES_FUTURE_SCOPE',
+}: {
+  code: RoleTemplateCode;
+  name: string;
+  category: string;
+  recommendedAccountContext: AccountContext;
+  permissions?: string[];
+  status?: RoleTemplateStatus;
+}): RoleTemplateRecord => ({
+  code,
+  version: templateVersion,
+  name,
+  description: `${name} preset.`,
+  category,
+  permissions: permissionRecords(permissions),
+  recommendedAccountContext,
+  recommendedScopeGrants: {},
+  scopePlan: [
+    {
+      module: name,
+      scopes: ['target'],
+      status,
+      note: 'MSW target catalog fixture; runtime enforcement remains source-backed.',
+    },
+  ],
+  warnings:
+    permissions.length > 0
+      ? []
+      : ['No source permission keys exist for this target role yet in the MSW fixture.'],
+  implementationNotes: ['Aligned with AUTH-4C target role catalog.'],
+  status,
+});
+
 const roleTemplates: RoleTemplateRecord[] = [
   {
-    code: 'ADMIN_FULL',
+    code: 'OWNER_ADMIN',
     version: templateVersion,
-    name: 'Admin Full',
-    description: 'Full explicit permission preset for administrative operators.',
+    name: 'Owner Admin',
+    description: 'Owner-controlled full administration preset.',
     category: 'ADMINISTRATION',
     permissions: permissionRecords(adminFullPermissionCodes),
+    recommendedAccountContext: 'ADMIN_CONSOLE',
     recommendedScopeGrants: {
       workSchedule: ['global'],
       eventAssignment: ['global'],
@@ -444,6 +521,7 @@ const roleTemplates: RoleTemplateRecord[] = [
       'kpi.read',
       'kpi.readProgress',
     ]),
+    recommendedAccountContext: 'ADMIN_CONSOLE',
     recommendedScopeGrants: {
       workSchedule: ['department'],
       kpi: ['global'],
@@ -463,9 +541,9 @@ const roleTemplates: RoleTemplateRecord[] = [
     status: 'REQUIRES_FUTURE_SCOPE',
   },
   {
-    code: 'TEAM_MANAGER',
+    code: 'TALENT_GROUP_MANAGER',
     version: templateVersion,
-    name: 'Team Manager',
+    name: 'Talent Group Manager',
     description:
       'Conservative team operations preset for schedules, assignments, and KPI management.',
     category: 'MANAGEMENT',
@@ -486,6 +564,7 @@ const roleTemplates: RoleTemplateRecord[] = [
       'kpi.enterActual',
       'kpi.correctActual',
     ]),
+    recommendedAccountContext: 'MANAGER_CONSOLE',
     recommendedScopeGrants: {
       workSchedule: ['self', 'team'],
       eventAssignment: ['managedGroup'],
@@ -535,6 +614,7 @@ const roleTemplates: RoleTemplateRecord[] = [
       'workSchedule.manageLifecycle',
       'platformAccount.read',
     ]),
+    recommendedAccountContext: 'ADMIN_CONSOLE',
     recommendedScopeGrants: {
       workSchedule: ['global'],
       eventAssignment: ['global'],
@@ -552,9 +632,9 @@ const roleTemplates: RoleTemplateRecord[] = [
     status: 'REQUIRES_FUTURE_SCOPE',
   },
   {
-    code: 'COMMERCIAL_FINANCE',
+    code: 'REVENUE_FINANCE_OPS',
     version: templateVersion,
-    name: 'Commercial Finance',
+    name: 'Revenue Finance Ops',
     description:
       'Commercial finance preset for revenue, commission, settlement, contract, and dashboard workflows.',
     category: 'FINANCE',
@@ -586,6 +666,7 @@ const roleTemplates: RoleTemplateRecord[] = [
       'kpi.readProgress',
       'dashboardLite.read',
     ]),
+    recommendedAccountContext: 'ADMIN_CONSOLE',
     recommendedScopeGrants: {
       contractRegistry: ['global'],
       kpi: ['global'],
@@ -606,9 +687,9 @@ const roleTemplates: RoleTemplateRecord[] = [
     status: 'REQUIRES_FUTURE_SCOPE',
   },
   {
-    code: 'TALENT_STAFF_SELF',
+    code: 'STAFF_CONSOLE_USER',
     version: templateVersion,
-    name: 'Talent Staff Self',
+    name: 'Staff Console User',
     description: 'Read-only self-intended baseline for talent-facing staff access.',
     category: 'SELF_SERVICE',
     permissions: permissionRecords([
@@ -619,6 +700,7 @@ const roleTemplates: RoleTemplateRecord[] = [
       'employmentProfile.read',
       'talent.read',
     ]),
+    recommendedAccountContext: 'STAFF_CONSOLE',
     recommendedScopeGrants: {
       workSchedule: ['self'],
       kpi: ['self'],
@@ -663,6 +745,7 @@ const roleTemplates: RoleTemplateRecord[] = [
       'revenueLedger.read',
       'dashboardLite.read',
     ]),
+    recommendedAccountContext: 'ADMIN_CONSOLE',
     recommendedScopeGrants: {
       workSchedule: ['global'],
       eventAssignment: ['global'],
@@ -685,49 +768,220 @@ const roleTemplates: RoleTemplateRecord[] = [
     implementationNotes: ['Uses current read-only permission examples.'],
     status: 'REQUIRES_FUTURE_SCOPE',
   },
+  createRoleTemplateRecord({
+    code: 'ACCESS_ADMIN',
+    name: 'Access Admin',
+    category: 'ACCESS_GOVERNANCE',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['user:view', 'user:create', 'user:edit', 'role:list', 'role:view', 'role:create', 'role:update', 'role:assign_to_user'],
+    status: 'READY',
+  }),
+  createRoleTemplateRecord({
+    code: 'HR_TERMS_APPROVER',
+    name: 'HR Terms Approver',
+    category: 'PEOPLE_APPROVAL',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['employmentTerms.read', 'employmentTerms.readSensitive', 'employmentTerms.approve', 'employmentTerms.audit'],
+  }),
+  createRoleTemplateRecord({
+    code: 'PLATFORM_CHANNEL_OPS',
+    name: 'Platform Channel Ops',
+    category: 'PLATFORM',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['platformAccount.read', 'platformAccount.lookup', 'platformAccount.create', 'platformAccount.update', 'platformAccount.manageOwnership', 'platformAccount.manageLifecycle', 'platformAccount.manageCapabilities'],
+  }),
+  createRoleTemplateRecord({
+    code: 'CREATIVE_VISUAL_LEAD',
+    name: 'Creative Visual Lead',
+    category: 'CREATIVE',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['event.read', 'event.lookup', 'studioResource.read', 'studioResource.lookup', 'workSchedule.read', 'talent.read', 'talentGroup.read'],
+  }),
+  createRoleTemplateRecord({
+    code: 'CONTENT_OPS',
+    name: 'Content Ops',
+    category: 'CONTENT',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['event.read', 'event.lookup', 'studioResource.read', 'studioResource.lookup', 'workSchedule.read', 'platformAccount.read', 'platformAccount.lookup'],
+  }),
+  createRoleTemplateRecord({
+    code: 'ORG_UNIT_MANAGER',
+    name: 'Org Unit Manager',
+    category: 'MANAGEMENT',
+    recommendedAccountContext: 'MANAGER_CONSOLE',
+    permissions: ['orgUnit.read', 'employmentProfile.read', 'talent.read', 'workSchedule.read', 'kpi.read', 'kpi.readProgress'],
+  }),
+  createRoleTemplateRecord({
+    code: 'KPI_OPERATIONS',
+    name: 'KPI Operations',
+    category: 'KPI',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['kpi.read', 'kpi.createPlan', 'kpi.updateDraft', 'kpi.publish', 'kpi.manageAllocation', 'kpi.archive', 'kpi.enterActual', 'kpi.correctActual', 'kpi.readProgress', 'kpi.finalize'],
+    status: 'READY',
+  }),
+  createRoleTemplateRecord({
+    code: 'COMMERCIAL_CONTRACT_OPS',
+    name: 'Commercial Contract Ops',
+    category: 'COMMERCIAL',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['contractRegistry.read', 'contractRegistry.lookup', 'contractRegistry.create', 'contractRegistry.update', 'contractObligation.read', 'contractObligation.manageDraft', 'contractObligation.deliver'],
+    status: 'READY',
+  }),
+  createRoleTemplateRecord({
+    code: 'REVENUE_APPROVER',
+    name: 'Revenue Approver',
+    category: 'FINANCE_APPROVAL',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['revenueLedger.read', 'revenueLedger.lookup', 'revenueLedger.manageLifecycle'],
+    status: 'READY',
+  }),
+  createRoleTemplateRecord({
+    code: 'REVENUE_RECONCILER',
+    name: 'Revenue Reconciler',
+    category: 'FINANCE_RECONCILIATION',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['revenueLedger.read', 'revenueLedger.lookup', 'revenueLedger.reconcile', 'dashboardLite.read'],
+    status: 'READY',
+  }),
+  createRoleTemplateRecord({
+    code: 'COMMISSION_OPS',
+    name: 'Commission Ops',
+    category: 'COMMISSION',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['commissionRule.read', 'commissionRule.lookup', 'commissionRule.create', 'commissionRule.update', 'commissionSettlement.read', 'commissionSettlement.create', 'commissionSettlement.update'],
+    status: 'READY',
+  }),
+  createRoleTemplateRecord({
+    code: 'COMMISSION_APPROVER',
+    name: 'Commission Approver',
+    category: 'COMMISSION_APPROVAL',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    permissions: ['commissionSettlement.read', 'commissionSettlement.manageLifecycle'],
+  }),
+  createRoleTemplateRecord({
+    code: 'ATTENDANCE_OPS',
+    name: 'Attendance Ops',
+    category: 'ATTENDANCE',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+  }),
+  createRoleTemplateRecord({
+    code: 'LEAVE_REVIEWER',
+    name: 'Leave Reviewer',
+    category: 'ATTENDANCE_REVIEW',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+  }),
+  createRoleTemplateRecord({
+    code: 'ATTENDANCE_APPROVER',
+    name: 'Attendance Approver',
+    category: 'ATTENDANCE_APPROVAL',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+  }),
+  createRoleTemplateRecord({
+    code: 'MONTHLY_CLOSE_OWNER',
+    name: 'Monthly Close Owner',
+    category: 'MONTHLY_CLOSE',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+  }),
+  createRoleTemplateRecord({
+    code: 'PAYROLL_DRAFT_OPS',
+    name: 'Payroll Draft Ops',
+    category: 'PAYROLL',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+  }),
+  createRoleTemplateRecord({
+    code: 'PAYROLL_DRAFT_APPROVER',
+    name: 'Payroll Draft Approver',
+    category: 'PAYROLL_APPROVAL',
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+  }),
 ];
 
 const roleBundles: RoleBundleRecord[] = [
   {
-    code: 'ADMIN_OPERATIONS',
-    name: 'Admin Operations',
-    description: 'Preset for administrative operators.',
+    code: 'OWNER_ADMIN_BUNDLE',
+    name: 'Owner Admin',
+    description: 'Owner-controlled full administration preset.',
     businessPurpose: 'Quản trị hệ thống và vận hành nhân sự.',
     status: 'ACTIVE',
     version: templateVersion,
-    childRoles: ['ADMIN_FULL', 'HR_OPERATIONS'],
+    childRoles: ['OWNER_ADMIN'],
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    recommendedScopes: ['global-admin'],
+    recommendedScopes: ['global'],
     sensitiveWarning: 'Contains global administrative capability groups.',
     sensitive: true,
     createdAt: '2026-05-20T00:00:00.000Z',
     updatedAt: '2026-05-20T00:00:00.000Z',
   },
   {
-    code: 'MANAGER_OPERATIONS',
-    name: 'Manager Operations',
-    description: 'Preset for team managers.',
+    code: 'TALENT_GROUP_MANAGER_BUNDLE',
+    name: 'Talent Group Manager',
+    description: 'Preset for talent group managers.',
     businessPurpose: 'Quản lý nhóm, lịch làm việc và KPI nhóm.',
     status: 'ACTIVE',
     version: templateVersion,
-    childRoles: ['TEAM_MANAGER'],
+    childRoles: ['TALENT_GROUP_MANAGER'],
     recommendedAccountContext: 'MANAGER_CONSOLE',
-    recommendedScopes: ['managed-team'],
+    recommendedScopes: ['managedTalentGroup'],
     sensitiveWarning: null,
     sensitive: false,
     createdAt: '2026-05-20T00:00:00.000Z',
     updatedAt: '2026-05-20T00:00:00.000Z',
   },
   {
-    code: 'STAFF_SELF_SERVICE',
-    name: 'Staff Self Service',
+    code: 'STAFF_CONSOLE_BUNDLE',
+    name: 'Staff Console',
     description: 'Preset for staff self-service.',
     businessPurpose: 'Nhân viên xem dữ liệu cá nhân và KPI cá nhân.',
     status: 'ACTIVE',
     version: templateVersion,
-    childRoles: ['TALENT_STAFF_SELF'],
+    childRoles: ['STAFF_CONSOLE_USER'],
     recommendedAccountContext: 'STAFF_CONSOLE',
     recommendedScopes: ['self'],
+    sensitiveWarning: null,
+    sensitive: false,
+    createdAt: '2026-05-20T00:00:00.000Z',
+    updatedAt: '2026-05-20T00:00:00.000Z',
+  },
+  {
+    code: 'ACCESS_ADMIN_BUNDLE',
+    name: 'Access Admin',
+    description: 'User and role governance preset.',
+    businessPurpose: 'Access governance operations.',
+    status: 'ACTIVE',
+    version: templateVersion,
+    childRoles: ['ACCESS_ADMIN'],
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    recommendedScopes: ['global'],
+    sensitiveWarning: 'Contains access governance capability groups.',
+    sensitive: true,
+    createdAt: '2026-05-20T00:00:00.000Z',
+    updatedAt: '2026-05-20T00:00:00.000Z',
+  },
+  {
+    code: 'FINANCE_STAFF_BUNDLE',
+    name: 'Finance Staff',
+    description: 'Revenue and commission operations preset.',
+    businessPurpose: 'Finance operations.',
+    status: 'ACTIVE',
+    version: templateVersion,
+    childRoles: ['REVENUE_FINANCE_OPS', 'COMMISSION_OPS'],
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    recommendedScopes: ['financeGlobal', 'financePeriod'],
+    sensitiveWarning: 'Contains finance operations capability groups.',
+    sensitive: true,
+    createdAt: '2026-05-20T00:00:00.000Z',
+    updatedAt: '2026-05-20T00:00:00.000Z',
+  },
+  {
+    code: 'AUDITOR_BUNDLE',
+    name: 'Auditor',
+    description: 'Read-only operational audit preset.',
+    businessPurpose: 'Read-only audit.',
+    status: 'ACTIVE',
+    version: templateVersion,
+    childRoles: ['VIEWER_AUDITOR'],
+    recommendedAccountContext: 'ADMIN_CONSOLE',
+    recommendedScopes: ['global'],
     sensitiveWarning: null,
     sensitive: false,
     createdAt: '2026-05-20T00:00:00.000Z',
@@ -746,7 +1000,7 @@ const initialRoles: RoleRecord[] = [
     delegationBand: 'PRIVILEGED',
     maxDelegatableBand: 'LIMITED',
     assignmentRules: [{ id: 'rule-1', code: 'ALLOW_ADMIN', conditions: null }],
-    templateCode: 'ADMIN_FULL',
+    templateCode: 'OWNER_ADMIN',
     templateVersion,
     templateAppliedAt: now - 9_500,
     createdAt: now - 10_000,
@@ -1108,6 +1362,7 @@ const toRoleTemplateListItem = (template: RoleTemplateRecord) => ({
   description: template.description,
   category: template.category,
   permissionCount: template.permissions.length,
+  recommendedAccountContext: template.recommendedAccountContext,
   recommendedScopeGrants: template.recommendedScopeGrants,
   scopePlan: template.scopePlan,
   warnings: template.warnings,

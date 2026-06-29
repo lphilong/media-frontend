@@ -57,11 +57,17 @@ type OrgUnitRecord = {
 
 type OrgUnitResponsibilityRole = 'DEPARTMENT_OWNER' | 'UNIT_MANAGER' | 'UNIT_OPERATOR';
 type OrgUnitResponsibilityStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
+type ResponsibilitySubjectType = 'TALENT_GROUP' | 'ORG_UNIT' | 'TALENT' | 'EMPLOYMENT_PROFILE';
+type ResponsibilityType =
+  | 'TALENT_GROUP_MANAGER'
+  | 'ORG_UNIT_MANAGER'
+  | 'TALENT_DIRECT_MANAGER'
+  | 'EMPLOYMENT_REPORTING_MANAGER';
 
 type OrgUnitResponsibilityRecord = {
   id: string;
   orgUnitId: string;
-  managerEmploymentProfileId: string;
+  responsibleEmploymentProfileId: string;
   role: OrgUnitResponsibilityRole;
   status: OrgUnitResponsibilityStatus;
   includeDescendants: boolean;
@@ -74,14 +80,6 @@ type OrgUnitResponsibilityRecord = {
 };
 
 const orgUnitResponsibilityRoles = ['DEPARTMENT_OWNER', 'UNIT_MANAGER', 'UNIT_OPERATOR'] as const;
-
-const orgUnitResponsibilityUpdateFields = [
-  'role',
-  'includeDescendants',
-  'effectiveFrom',
-  'effectiveTo',
-  'isPrimary',
-] as const;
 
 type EmploymentStatus = 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED' | 'ARCHIVED';
 type ContractStatus = 'NONE' | 'PENDING_SIGNATURE' | 'ACTIVE' | 'EXPIRED' | 'TERMINATED';
@@ -96,7 +94,7 @@ type EmploymentProfileRecord = {
   titleDescription?: string | null;
   externalRef?: string | null;
   orgUnitId: string;
-  managerEmploymentProfileId?: string | null;
+  responsibleEmploymentProfileId?: string | null;
   recruiterEmploymentProfileId?: string | null;
   hrOwnerEmploymentProfileId?: string | null;
   onboardingOwnerEmploymentProfileId?: string | null;
@@ -224,44 +222,6 @@ const parseCanonicalDateToUtcMidnight = <TFallback extends number | null>(
     : fallback;
 };
 
-const parseRequiredResponsibilityDate = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
-  if (!match) {
-    return null;
-  }
-
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const utcMidnight = Date.UTC(year, month - 1, day);
-  const date = new Date(utcMidnight);
-
-  return date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-    ? utcMidnight
-    : null;
-};
-
-const responsibilityRangesOverlap = (
-  leftFrom: number,
-  leftTo: number | null,
-  rightFrom: number,
-  rightTo: number | null,
-): boolean => {
-  const normalizedLeftTo = leftTo ?? Number.MAX_SAFE_INTEGER;
-  const normalizedRightTo = rightTo ?? Number.MAX_SAFE_INTEGER;
-  return leftFrom <= normalizedRightTo && rightFrom <= normalizedLeftTo;
-};
-
 const initialOrgUnits: OrgUnitRecord[] = [
   {
     id: 'ou-root',
@@ -332,7 +292,6 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     titleDescription: null,
     externalRef: null,
     orgUnitId: 'ou-sales',
-    managerEmploymentProfileId: null,
     recruiterEmploymentProfileId: 'ep-002',
     hrOwnerEmploymentProfileId: 'ep-003',
     onboardingOwnerEmploymentProfileId: 'ep-002',
@@ -357,7 +316,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     titleDescription: null,
     externalRef: null,
     orgUnitId: 'ou-sales',
-    managerEmploymentProfileId: 'ep-001',
+    responsibleEmploymentProfileId: 'ep-001',
     linkedUserId: null,
     employmentStatus: 'ON_LEAVE',
     contractStatus: 'PENDING_SIGNATURE',
@@ -376,7 +335,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     titleDescription: null,
     externalRef: null,
     orgUnitId: 'ou-ops',
-    managerEmploymentProfileId: 'ep-001',
+    responsibleEmploymentProfileId: 'ep-001',
     linkedUserId: 'user-chau',
     employmentStatus: 'SUSPENDED',
     contractStatus: 'ACTIVE',
@@ -395,7 +354,7 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     titleDescription: null,
     externalRef: null,
     orgUnitId: 'ou-ops',
-    managerEmploymentProfileId: 'ep-001',
+    responsibleEmploymentProfileId: 'ep-001',
     linkedUserId: null,
     employmentStatus: 'TERMINATED',
     contractStatus: 'TERMINATED',
@@ -414,7 +373,6 @@ const initialEmploymentProfiles: EmploymentProfileRecord[] = [
     titleDescription: null,
     externalRef: null,
     orgUnitId: 'ou-sales',
-    managerEmploymentProfileId: null,
     linkedUserId: null,
     employmentStatus: 'ARCHIVED',
     contractStatus: 'TERMINATED',
@@ -429,7 +387,7 @@ const initialOrgUnitResponsibilities: OrgUnitResponsibilityRecord[] = [
   {
     id: 'ou-responsibility-owner',
     orgUnitId: 'ou-root',
-    managerEmploymentProfileId: 'ep-001',
+    responsibleEmploymentProfileId: 'ep-001',
     role: 'DEPARTMENT_OWNER',
     status: 'ACTIVE',
     includeDescendants: true,
@@ -443,7 +401,7 @@ const initialOrgUnitResponsibilities: OrgUnitResponsibilityRecord[] = [
   {
     id: 'ou-responsibility-manager',
     orgUnitId: 'ou-root',
-    managerEmploymentProfileId: 'ep-002',
+    responsibleEmploymentProfileId: 'ep-002',
     role: 'UNIT_MANAGER',
     status: 'ACTIVE',
     includeDescendants: false,
@@ -457,7 +415,7 @@ const initialOrgUnitResponsibilities: OrgUnitResponsibilityRecord[] = [
   {
     id: 'ou-responsibility-operator',
     orgUnitId: 'ou-root',
-    managerEmploymentProfileId: 'ep-003',
+    responsibleEmploymentProfileId: 'ep-003',
     role: 'UNIT_OPERATOR',
     status: 'INACTIVE',
     includeDescendants: false,
@@ -606,22 +564,110 @@ const toOrgUnitDetail = (record: OrgUnitRecord) => {
   };
 };
 
-const toOrgUnitResponsibilityDetail = (record: OrgUnitResponsibilityRecord) => {
+const readResponsibilityTypeForSubject = (
+  subjectType: ResponsibilitySubjectType,
+): ResponsibilityType => {
+  switch (subjectType) {
+    case 'TALENT_GROUP':
+      return 'TALENT_GROUP_MANAGER';
+    case 'ORG_UNIT':
+      return 'ORG_UNIT_MANAGER';
+    case 'TALENT':
+      return 'TALENT_DIRECT_MANAGER';
+    case 'EMPLOYMENT_PROFILE':
+      return 'EMPLOYMENT_REPORTING_MANAGER';
+    default:
+      return 'ORG_UNIT_MANAGER';
+  }
+};
+
+const toResponsibilityAssignment = (
+  record: OrgUnitResponsibilityRecord,
+) => {
+  const status = record.status === 'REMOVED' ? 'REVOKED' : record.status;
+
   return {
     id: record.id,
-    orgUnitId: record.orgUnitId,
-    managerEmploymentProfileId: record.managerEmploymentProfileId,
-    role: record.role,
-    status: record.status,
+    subjectType: 'ORG_UNIT',
+    subjectId: record.orgUnitId,
+    responsibleEmploymentProfileId: record.responsibleEmploymentProfileId,
+    responsibilityType: 'ORG_UNIT_MANAGER',
+    responsibilityRole: record.role,
     includeDescendants: record.includeDescendants,
-    effectiveFrom: record.effectiveFrom,
-    effectiveTo: record.effectiveTo,
+    actionMask: record.actionMask,
     isPrimary: record.isPrimary,
+    status,
+    effectiveAt: record.effectiveFrom,
+    expiresAt: record.effectiveTo,
+    revokedAt: status === 'REVOKED' ? record.updatedAt : null,
+    reason: null,
+    createdBy: 'system',
     createdAt: record.createdAt,
+    updatedBy: 'system',
     updatedAt: record.updatedAt,
-    orgUnitRef: toOrgUnitRef(record.orgUnitId),
-    managerRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
+    revokedBy: null,
+    revokedReason: null,
+    reviewNeeded: false,
+    reviewReason: null,
+    subjectRef: toOrgUnitRef(record.orgUnitId),
+    responsibleEmploymentProfileRef: toEmploymentProfileRef(record.responsibleEmploymentProfileId),
   };
+};
+
+const readResponsibilityAssignments = (
+  subjectType?: string | null,
+  subjectId?: string | null,
+) => {
+  if (
+    (!subjectType || subjectType === 'TALENT_GROUP') &&
+    (!subjectId || subjectId === 'group-001')
+  ) {
+    const groupAssignment = {
+      id: 'responsibility-talent-group-001',
+      subjectType: 'TALENT_GROUP',
+      subjectId: 'group-001',
+      responsibleEmploymentProfileId: 'ep-001',
+      responsibilityType: 'TALENT_GROUP_MANAGER',
+      responsibilityRole: 'GROUP_MANAGER',
+      includeDescendants: null,
+      actionMask: [],
+      isPrimary: true,
+      status: 'ACTIVE',
+      effectiveAt: Date.UTC(2026, 0, 1),
+      expiresAt: null,
+      revokedAt: null,
+      reason: null,
+      createdBy: 'system',
+      createdAt: now - 1_500,
+      updatedBy: 'system',
+      updatedAt: now - 1_500,
+      revokedBy: null,
+      revokedReason: null,
+      reviewNeeded: false,
+      reviewReason: null,
+      subjectRef: { id: 'group-001', code: 'TG-000001', name: 'A Team', status: 'ACTIVE' },
+      responsibleEmploymentProfileRef: toEmploymentProfileRef('ep-001'),
+    };
+
+    if (subjectType === 'TALENT_GROUP') {
+      return [groupAssignment];
+    }
+
+    return [
+      groupAssignment,
+      ...orgUnitResponsibilities
+        .filter((item) => !subjectId || item.orgUnitId === subjectId)
+        .map((item) => toResponsibilityAssignment(item)),
+    ];
+  }
+
+  if (subjectType && subjectType !== 'ORG_UNIT') {
+    return [];
+  }
+
+  return orgUnitResponsibilities
+    .filter((item) => !subjectId || item.orgUnitId === subjectId)
+    .map((item) => toResponsibilityAssignment(item));
 };
 
 const toEmploymentListItem = (record: EmploymentProfileRecord) => {
@@ -634,8 +680,6 @@ const toEmploymentListItem = (record: EmploymentProfileRecord) => {
     jobTitle: record.jobTitle,
     orgUnitId: record.orgUnitId,
     orgUnitRef: toOrgUnitRef(record.orgUnitId),
-    managerEmploymentProfileId: record.managerEmploymentProfileId ?? null,
-    managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
     recruiterEmploymentProfileId: record.recruiterEmploymentProfileId ?? null,
     recruiterEmploymentProfileRef: toEmploymentProfileRef(record.recruiterEmploymentProfileId),
     hrOwnerEmploymentProfileId: record.hrOwnerEmploymentProfileId ?? null,
@@ -668,8 +712,6 @@ const toEmploymentDetail = (record: EmploymentProfileRecord) => {
     externalRef: record.externalRef ?? null,
     orgUnitId: record.orgUnitId,
     orgUnitRef: toOrgUnitRef(record.orgUnitId),
-    managerEmploymentProfileId: record.managerEmploymentProfileId ?? null,
-    managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
     recruiterEmploymentProfileId: record.recruiterEmploymentProfileId ?? null,
     recruiterEmploymentProfileRef: toEmploymentProfileRef(record.recruiterEmploymentProfileId),
     hrOwnerEmploymentProfileId: record.hrOwnerEmploymentProfileId ?? null,
@@ -702,8 +744,6 @@ const toDirectReportItem = (record: EmploymentProfileRecord) => {
     contractStatus: record.contractStatus,
     orgUnitId: record.orgUnitId,
     orgUnitRef: toOrgUnitRef(record.orgUnitId),
-    managerEmploymentProfileId: record.managerEmploymentProfileId ?? null,
-    managerEmploymentProfileRef: toEmploymentProfileRef(record.managerEmploymentProfileId),
   };
 };
 
@@ -1016,6 +1056,114 @@ export const handlers = [
       },
     });
   }),
+  http.get('*/admin/responsibilities', ({ request }) => {
+    const url = new URL(request.url);
+    const subjectType = url.searchParams.get('subjectType');
+    const subjectId = url.searchParams.get('subjectId');
+    const active = parseBooleanParam(url.searchParams.get('active'));
+    const responsibleEmploymentProfileId = url.searchParams.get('responsibleEmploymentProfileId');
+
+    let rows = readResponsibilityAssignments(subjectType, subjectId);
+    if (active) {
+      rows = rows.filter((item) => item.status === 'ACTIVE');
+    }
+    if (responsibleEmploymentProfileId) {
+      rows = rows.filter(
+        (item) => item.responsibleEmploymentProfileId === responsibleEmploymentProfileId,
+      );
+    }
+
+    return HttpResponse.json({ data: rows });
+  }),
+  http.get('*/admin/responsibilities/summary/:subjectType/:subjectId', ({ params }) => {
+    const rows = readResponsibilityAssignments(
+      String(params.subjectType),
+      String(params.subjectId),
+    ).filter((item) => item.status === 'ACTIVE');
+
+    return HttpResponse.json({
+      data: rows,
+      meta: {
+        inherited: [],
+      },
+    });
+  }),
+  http.post('*/admin/responsibilities', async ({ request }) => {
+    const body = await parseJsonBody(request);
+    const subjectType = String(body.subjectType ?? '') as ResponsibilitySubjectType;
+    const subjectId = String(body.subjectId ?? '');
+    const responsibleEmploymentProfileId = String(body.responsibleEmploymentProfileId ?? '');
+
+    if (subjectType !== 'ORG_UNIT') {
+      return HttpResponse.json({
+        data: {
+          id: `responsibility-${Date.now()}`,
+          subjectType,
+          subjectId,
+          responsibleEmploymentProfileId,
+          responsibilityType: readResponsibilityTypeForSubject(subjectType),
+          responsibilityRole:
+            typeof body.responsibilityRole === 'string' ? body.responsibilityRole : null,
+          includeDescendants:
+            typeof body.includeDescendants === 'boolean' ? body.includeDescendants : null,
+          actionMask: [],
+          isPrimary: body.isPrimary !== false,
+          status: 'ACTIVE',
+          effectiveAt: body.effectiveAt ?? Date.now(),
+          expiresAt: body.expiresAt ?? null,
+          revokedAt: null,
+          reason: typeof body.reason === 'string' ? body.reason : null,
+          createdBy: 'user-admin',
+          createdAt: Date.now(),
+          updatedBy: 'user-admin',
+          updatedAt: Date.now(),
+          revokedBy: null,
+          revokedReason: null,
+          reviewNeeded: false,
+          reviewReason: null,
+          subjectRef: null,
+          responsibleEmploymentProfileRef: toEmploymentProfileRef(responsibleEmploymentProfileId),
+        },
+      });
+    }
+
+    const assignment: OrgUnitResponsibilityRecord = {
+      id: `ou-responsibility-${orgUnitResponsibilities.length + 1}`,
+      orgUnitId: subjectId,
+      responsibleEmploymentProfileId: responsibleEmploymentProfileId,
+      role:
+        typeof body.responsibilityRole === 'string' &&
+        orgUnitResponsibilityRoles.includes(body.responsibilityRole as OrgUnitResponsibilityRole)
+          ? (body.responsibilityRole as OrgUnitResponsibilityRole)
+          : 'UNIT_MANAGER',
+      status: 'ACTIVE',
+      includeDescendants:
+        typeof body.includeDescendants === 'boolean' ? body.includeDescendants : false,
+      actionMask: [],
+      effectiveFrom: Date.now(),
+      effectiveTo: null,
+      isPrimary: body.isPrimary !== false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    orgUnitResponsibilities.push(assignment);
+
+    return HttpResponse.json({ data: toResponsibilityAssignment(assignment) });
+  }),
+  http.post('*/admin/responsibilities/:assignmentId/revoke', ({ params }) => {
+    const assignment = orgUnitResponsibilities.find(
+      (item) => item.id === String(params.assignmentId),
+    );
+    if (!assignment) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    assignment.status = 'INACTIVE';
+    assignment.effectiveTo = Date.now();
+    assignment.updatedAt = Date.now();
+
+    return HttpResponse.json({ data: toResponsibilityAssignment(assignment) });
+  }),
   http.get('*/admin/org-units', ({ request }) => {
     const url = new URL(request.url);
     const searchParams = url.searchParams;
@@ -1099,200 +1247,6 @@ export const handlers = [
     const paged = paginate(rows.map(toOrgUnitChildItem), url.searchParams);
 
     return HttpResponse.json(paged);
-  }),
-  http.get('*/admin/org-units/:orgUnitId/responsibilities', ({ params }) => {
-    const orgUnitId = String(params.orgUnitId);
-    const orgUnit = readOrgUnit(orgUnitId);
-    if (!orgUnit) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-
-    return HttpResponse.json({
-      data: orgUnitResponsibilities
-        .filter((item) => item.orgUnitId === orgUnitId)
-        .map(toOrgUnitResponsibilityDetail),
-    });
-  }),
-  http.post('*/admin/org-units/:orgUnitId/responsibilities', async ({ params, request }) => {
-    const orgUnitId = String(params.orgUnitId);
-    const orgUnit = readOrgUnit(orgUnitId);
-    if (!orgUnit) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    if (orgUnit.status !== 'ACTIVE') {
-      return HttpResponse.json({ message: 'org-unit:validation.inactiveOrgUnit' }, { status: 409 });
-    }
-
-    const body = await parseJsonBody(request);
-    const managerEmploymentProfileId =
-      typeof body.managerEmploymentProfileId === 'string'
-        ? body.managerEmploymentProfileId.trim()
-        : '';
-    const manager = readEmploymentProfile(managerEmploymentProfileId);
-    if (!manager || !['ACTIVE', 'ON_LEAVE'].includes(manager.employmentStatus)) {
-      return HttpResponse.json(
-        { message: 'org-unit:validation.managerEmploymentProfileInvalid' },
-        { status: 422 },
-      );
-    }
-
-    const role = String(body.role ?? '') as OrgUnitResponsibilityRole;
-    if (!orgUnitResponsibilityRoles.includes(role)) {
-      return HttpResponse.json({ message: 'org-unit:validation.invalidRole' }, { status: 422 });
-    }
-
-    const effectiveFrom = parseCanonicalDateToUtcMidnight(body.effectiveFrom, Date.now());
-    const effectiveTo = parseCanonicalDateToUtcMidnight(body.effectiveTo, null);
-    if (effectiveTo !== null && effectiveTo < effectiveFrom) {
-      return HttpResponse.json(
-        { message: 'org-unit:validation.invalidEffectiveRange' },
-        { status: 422 },
-      );
-    }
-
-    const duplicate = orgUnitResponsibilities.some(
-      (item) =>
-        item.orgUnitId === orgUnitId &&
-        item.managerEmploymentProfileId === managerEmploymentProfileId &&
-        item.role === role &&
-        item.status === 'ACTIVE',
-    );
-    if (duplicate) {
-      return HttpResponse.json(
-        { message: 'org-unit:validation.duplicateResponsibility' },
-        { status: 409 },
-      );
-    }
-
-    const nextRecord: OrgUnitResponsibilityRecord = {
-      id: `ou-responsibility-${orgUnitResponsibilities.length + 1}`,
-      orgUnitId,
-      managerEmploymentProfileId,
-      role,
-      status: 'ACTIVE',
-      includeDescendants: Boolean(body.includeDescendants),
-      actionMask: [],
-      effectiveFrom,
-      effectiveTo,
-      isPrimary: Boolean(body.isPrimary),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    orgUnitResponsibilities.push(nextRecord);
-
-    return HttpResponse.json({ data: toOrgUnitResponsibilityDetail(nextRecord) });
-  }),
-  http.patch(
-    '*/admin/org-units/:orgUnitId/responsibilities/:assignmentId',
-    async ({ params, request }) => {
-      const orgUnitId = String(params.orgUnitId);
-      const assignment = orgUnitResponsibilities.find(
-        (item) => item.id === String(params.assignmentId) && item.orgUnitId === orgUnitId,
-      );
-      if (!assignment) {
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      }
-      if (assignment.status !== 'ACTIVE') {
-        return HttpResponse.json(
-          { message: 'org-unit:validation.inactiveResponsibility' },
-          { status: 409 },
-        );
-      }
-
-      const body = await parseJsonBody(request);
-      const unexpectedFields = Object.keys(body).filter(
-        (field) =>
-          !orgUnitResponsibilityUpdateFields.includes(
-            field as (typeof orgUnitResponsibilityUpdateFields)[number],
-          ),
-      );
-      if (unexpectedFields.length > 0) {
-        return HttpResponse.json(
-          { message: 'org-unit:validation.unsupportedResponsibilityField' },
-          { status: 422 },
-        );
-      }
-
-      const role = body.role ? (String(body.role) as OrgUnitResponsibilityRole) : assignment.role;
-      if (!orgUnitResponsibilityRoles.includes(role)) {
-        return HttpResponse.json({ message: 'org-unit:validation.invalidRole' }, { status: 422 });
-      }
-
-      const effectiveFrom =
-        body.effectiveFrom === undefined
-          ? assignment.effectiveFrom
-          : parseRequiredResponsibilityDate(body.effectiveFrom);
-      const effectiveTo =
-        body.effectiveTo === undefined
-          ? assignment.effectiveTo
-          : body.effectiveTo === null
-            ? null
-            : parseRequiredResponsibilityDate(body.effectiveTo);
-      if (
-        effectiveFrom === null ||
-        (body.effectiveTo !== undefined && body.effectiveTo !== null && effectiveTo === null)
-      ) {
-        return HttpResponse.json(
-          { message: 'org-unit:validation.invalidEffectiveRange' },
-          { status: 422 },
-        );
-      }
-      if (effectiveTo !== null && effectiveTo < effectiveFrom) {
-        return HttpResponse.json(
-          { message: 'org-unit:validation.invalidEffectiveRange' },
-          { status: 422 },
-        );
-      }
-
-      const duplicate = orgUnitResponsibilities.some(
-        (item) =>
-          item.id !== assignment.id &&
-          item.orgUnitId === orgUnitId &&
-          item.managerEmploymentProfileId === assignment.managerEmploymentProfileId &&
-          item.role === role &&
-          item.status === 'ACTIVE' &&
-          responsibilityRangesOverlap(
-            item.effectiveFrom,
-            item.effectiveTo,
-            effectiveFrom,
-            effectiveTo,
-          ),
-      );
-      if (duplicate) {
-        return HttpResponse.json(
-          { message: 'org-unit:validation.duplicateResponsibility' },
-          { status: 409 },
-        );
-      }
-
-      assignment.role = role;
-      assignment.effectiveFrom = effectiveFrom;
-      assignment.effectiveTo = effectiveTo;
-      if (typeof body.includeDescendants === 'boolean') {
-        assignment.includeDescendants = body.includeDescendants;
-      }
-      if (typeof body.isPrimary === 'boolean') {
-        assignment.isPrimary = body.isPrimary;
-      }
-      assignment.updatedAt = Date.now();
-
-      return HttpResponse.json({ data: toOrgUnitResponsibilityDetail(assignment) });
-    },
-  ),
-  http.delete('*/admin/org-units/:orgUnitId/responsibilities/:assignmentId', ({ params }) => {
-    const orgUnitId = String(params.orgUnitId);
-    const assignment = orgUnitResponsibilities.find(
-      (item) => item.id === String(params.assignmentId) && item.orgUnitId === orgUnitId,
-    );
-    if (!assignment) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-
-    assignment.status = 'INACTIVE';
-    assignment.effectiveTo = Date.now();
-    assignment.updatedAt = Date.now();
-
-    return HttpResponse.json({ data: toOrgUnitResponsibilityDetail(assignment) });
   }),
   http.get('*/admin/org-units/:orgUnitId', ({ params }) => {
     const orgUnit = readOrgUnit(String(params.orgUnitId));
@@ -1391,7 +1345,6 @@ export const handlers = [
     const contractStatus = searchParams.get('contractStatus');
     const employmentKind = searchParams.get('employmentKind');
     const orgUnitId = searchParams.get('orgUnitId');
-    const managerEmploymentProfileId = searchParams.get('managerEmploymentProfileId');
     const hasLinkedUser = parseBooleanParam(searchParams.get('hasLinkedUser'));
     const search = searchParams.get('search');
 
@@ -1413,10 +1366,6 @@ export const handlers = [
 
     if (orgUnitId) {
       rows = rows.filter((item) => item.orgUnitId === orgUnitId);
-    }
-
-    if (managerEmploymentProfileId) {
-      rows = rows.filter((item) => item.managerEmploymentProfileId === managerEmploymentProfileId);
     }
 
     if (hasLinkedUser !== undefined) {
@@ -1462,10 +1411,6 @@ export const handlers = [
       titleDescription: (body.titleDescription as string | null | undefined) ?? null,
       externalRef: (body.externalRef as string | null | undefined) ?? null,
       orgUnitId: String(body.orgUnitId ?? 'ou-root'),
-      managerEmploymentProfileId:
-        typeof body.managerEmploymentProfileId === 'string'
-          ? body.managerEmploymentProfileId
-          : null,
       recruiterEmploymentProfileId:
         typeof body.recruiterEmploymentProfileId === 'string'
           ? body.recruiterEmploymentProfileId
@@ -1515,7 +1460,7 @@ export const handlers = [
       const rows = employmentProfiles
         .filter(
           (item) =>
-            item.managerEmploymentProfileId === employmentProfileId &&
+            item.responsibleEmploymentProfileId === employmentProfileId &&
             item.employmentStatus !== 'ARCHIVED',
         )
         .sort((left, right) => {
@@ -1607,30 +1552,6 @@ export const handlers = [
       const body = await parseJsonBody(request);
       if (typeof body.newOrgUnitId === 'string') {
         profile.orgUnitId = body.newOrgUnitId;
-      }
-      profile.updatedAt = Date.now();
-
-      return HttpResponse.json({
-        data: toEmploymentDetail(profile),
-      });
-    },
-  ),
-  http.post(
-    '*/admin/employment-profiles/:employmentProfileId/manager-assignment',
-    async ({ params, request }) => {
-      const profile = readEmploymentProfile(String(params.employmentProfileId));
-      if (!profile) {
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      }
-
-      const body = await parseJsonBody(request);
-      if (
-        body.newManagerEmploymentProfileId === null ||
-        body.newManagerEmploymentProfileId === ''
-      ) {
-        profile.managerEmploymentProfileId = null;
-      } else if (typeof body.newManagerEmploymentProfileId === 'string') {
-        profile.managerEmploymentProfileId = body.newManagerEmploymentProfileId;
       }
       profile.updatedAt = Date.now();
 

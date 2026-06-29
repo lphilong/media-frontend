@@ -80,6 +80,11 @@ const modulePageMap: Record<string, LazyExoticComponent<LazyModuleRoute>> = {
       default: module.TalentGroupListPage,
     })),
   ),
+  responsibility: lazy(() =>
+    import('@modules/responsibility/pages/ResponsibilityAssignmentPage').then((module) => ({
+      default: module.ResponsibilityAssignmentPage,
+    })),
+  ),
   'platform-account': lazy(() =>
     import('@modules/platform-account/pages/PlatformAccountListPage').then((module) => ({
       default: module.PlatformAccountListPage,

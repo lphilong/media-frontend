@@ -13,7 +13,6 @@ const talentListItem = {
   displayShortName: null,
   talentOrigin: 'INTERNAL',
   operationalStatus: 'ACTIVE',
-  managerEmploymentProfileId: null,
   linkedEmploymentProfileId: null,
   commercialParticipationStatus: 'ELIGIBLE',
   livestreamEligible: true,

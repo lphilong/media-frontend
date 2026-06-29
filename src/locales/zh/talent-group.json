@@ -13,7 +13,6 @@
     "description": "描述",
     "externalRef": "外部引用",
     "talentId": "艺人",
-    "managerEmploymentProfileId": "经理",
     "reason": "原因",
     "lineupOrder": "阵容顺序",
     "newLineupOrder": "新阵容顺序",
@@ -26,12 +25,10 @@
   },
   "placeholders": {
     "optional": "可选",
-    "talentSearch": "按姓名或编码搜索艺人",
-    "managerSearch": "按姓名或编码搜索员工档案"
+    "talentSearch": "按姓名或编码搜索艺人"
   },
   "referenceHelp": {
-    "talentId": "选择要添加到此组的艺人。",
-    "managerEmploymentProfileId": "选择管理此组的员工档案。"
+    "talentId": "选择要添加到此组的艺人。"
   },
   "help": {
     "displayOrder": "数字越小越靠前。像 10、20、30 这样的间隔便于以后在现有项目之间插入新项目。例如：使用 15 可将项目放在 10 和 20 之间。"
@@ -66,11 +63,6 @@
     "ACTIVE": "启用",
     "INACTIVE": "停用",
     "REMOVED": "已移除"
-  },
-  "managerRoles": {
-    "OWNER": "负责人",
-    "MANAGER": "经理",
-    "ASSISTANT": "助理"
   },
   "actions": {
     "create": "新建艺人组",
@@ -147,12 +139,6 @@
       "subtitle": "更新成员阵容顺序。",
       "submit": "更新",
       "pending": "更新中..."
-    },
-    "assignManager": {
-      "title": "分配经理",
-      "subtitle": "将员工档案分配为组经理",
-      "submit": "分配",
-      "pending": "正在分配..."
     }
   },
   "validation": {
@@ -160,11 +146,7 @@
     "invalidToken": "值只能使用支持的标记字符。",
     "invalidReferenceToken": "引用 ID 包含不支持的字符。",
     "invalidDisplayOrder": "排序优先级必须是大于或等于 0 的整数。",
-    "invalidLineupOrder": "阵容顺序必须是大于或等于 0 的整数。",
-    "groupMustBeActive": "经理分配需要启用的组。",
-    "managerEmploymentProfileInvalid": "请选择启用的员工档案。",
-    "managerAssignmentDuplicate": "此经理已启用分配到该组。",
-    "managerAssignmentInactive": "此经理分配已不再启用。"
+    "invalidLineupOrder": "阵容顺序必须是大于或等于 0 的整数。"
   },
   "feedback": {
     "created": "艺人组已创建。",
@@ -172,9 +154,7 @@
     "memberAdded": "成员已添加。",
     "lineupUpdated": "阵容已更新。",
     "lifecycleUpdated": "组生命周期已更新。",
-    "membershipLifecycleUpdated": "成员生命周期已更新。",
-    "managerAssigned": "经理已分配。",
-    "managerRevoked": "经理分配已撤销。"
+    "membershipLifecycleUpdated": "成员生命周期已更新。"
   },
   "confirm": {
     "activate": "启用此组？",
@@ -182,17 +162,12 @@
     "archive": "归档此组？",
     "deactivateMember": "停用此成员？",
     "reactivateMember": "重新启用此成员？",
-    "removeMember": "移除此成员？",
-    "revokeManager": "撤销此经理分配？"
+    "removeMember": "移除此成员？"
   },
   "managers": {
-    "title": "经理",
-    "assign": "分配经理",
-    "revoke": "撤销经理",
-    "primary": "主要",
-    "emptyTitle": "没有启用的经理",
-    "emptyMessage": "此组当前没有启用的经理分配。",
-    "noLinkedAdminUser": "此员工档案未关联启用的管理员用户。"
+    "title": "责任",
+    "emptyTitle": "没有启用的责任",
+    "emptyMessage": "此组没有启用的责任分配。"
   },
   "actionRail": {
     "title": "艺人组操作"

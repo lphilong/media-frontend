@@ -1,0 +1,100 @@
+{
+  "page": {
+    "title": "Phân công quản lý",
+    "subtitle": "Trung tâm gán trách nhiệm quản lý cho nhóm Talent, đơn vị, Talent và hồ sơ nhân sự.",
+    "placeholder": "Chưa có giao diện phân công quản lý."
+  },
+  "subjects": {
+    "TALENT_GROUP": "Nhóm Talent",
+    "ORG_UNIT": "Đơn vị tổ chức",
+    "TALENT": "Talent",
+    "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự"
+  },
+  "types": {
+    "TALENT_GROUP_MANAGER": "Quản lý nhóm Talent",
+    "ORG_UNIT_MANAGER": "Người phụ trách đơn vị",
+    "TALENT_DIRECT_MANAGER": "Quản lý trực tiếp Talent",
+    "EMPLOYMENT_REPORTING_MANAGER": "Quản lý báo cáo HR"
+  },
+  "roles": {
+    "GROUP_OWNER": "Chủ sở hữu nhóm",
+    "GROUP_MANAGER": "Quản lý nhóm",
+    "GROUP_OPERATOR": "Vận hành nhóm",
+    "DEPARTMENT_OWNER": "Chủ sở hữu đơn vị",
+    "UNIT_MANAGER": "Người phụ trách đơn vị",
+    "UNIT_OPERATOR": "Vận hành đơn vị",
+    "DIRECT_EXCEPTION": "Gán trực tiếp",
+    "HR_REPORTING": "Báo cáo HR"
+  },
+  "statuses": {
+    "ACTIVE": "Đang hiệu lực",
+    "INACTIVE": "Ngưng hiệu lực",
+    "REVOKED": "Đã thu hồi"
+  },
+  "form": {
+    "subjectType": "Loại đối tượng",
+    "subject": "Đối tượng được quản lý",
+    "subjectSearch": "Tìm đối tượng",
+    "responsible": "Hồ sơ nhân sự phụ trách",
+    "responsibleSearch": "Tìm hồ sơ nhân sự",
+    "role": "Vai trò trách nhiệm",
+    "rolePlaceholder": "Ví dụ: Người phụ trách đơn vị",
+    "effectiveAt": "Hiệu lực từ",
+    "expiresAt": "Hiệu lực đến",
+    "isPrimary": "Phân công chính",
+    "includeDescendants": "Áp dụng đơn vị con",
+    "reason": "Lý do",
+    "reasonPlaceholder": "Ghi chú nghiệp vụ",
+    "helper": "Màn hình này chỉ gán trách nhiệm quản lý, không cấp quyền truy cập.",
+    "permissionHint": "Tài khoản hiện tại không có quyền gán trách nhiệm cho loại đối tượng đang chọn."
+  },
+  "actions": {
+    "create": "Gán trách nhiệm",
+    "creating": "Đang gán...",
+    "revoke": "Thu hồi",
+    "clearSubject": "Bỏ lọc đối tượng"
+  },
+  "feedback": {
+    "created": "Đã gán trách nhiệm quản lý.",
+    "revoked": "Đã thu hồi trách nhiệm quản lý."
+  },
+  "confirm": {
+    "revoke": "Thu hồi phân công quản lý này?",
+    "revokeReason": "Thu hồi từ trung tâm phân công quản lý"
+  },
+  "list": {
+    "title": "Danh sách phân công",
+    "subtitle": "Hiá»ƒn thá»‹ cÃ¡c phÃ¢n cÃ´ng trÃ¡ch nhiá»‡m quáº£n lÃ½ trung tÃ¢m Ä‘ang hiá»‡u lá»±c.",
+    "emptyTitle": "Chưa có phân công",
+    "emptyMessage": "Chọn đối tượng và hồ sơ phụ trách để tạo phân công trung tâm.",
+    "loadErrorTitle": "Không tải được phân công",
+    "loadErrorMessage": "Vui lòng thử lại."
+  },
+  "table": {
+    "caption": "Phân công trách nhiệm quản lý",
+    "subject": "Đối tượng",
+    "responsible": "Người phụ trách",
+    "type": "Trách nhiệm",
+    "effective": "Hiệu lực",
+    "state": "Trạng thái",
+    "readOnly": "Chỉ đọc"
+  },
+  "summary": {
+    "title": "Trách nhiệm quản lý",
+    "subtitle": "Tóm tắt chỉ đọc từ trung tâm phân công quản lý.",
+    "openCentral": "Phân công quản lý",
+    "loadFailed": "Không tải được trách nhiệm quản lý.",
+    "emptyTitle": "Chưa có trách nhiệm trực tiếp",
+    "emptyMessage": "Thực hiện thay đổi tại trung tâm phân công quản lý.",
+    "inheritedTitle": "Trách nhiệm từ nhóm hoặc đơn vị",
+    "effectiveRange": "{{from}} - {{to}}",
+    "openEnded": "Không giới hạn",
+    "primary": "Chính",
+    "descendants": "Bao gồm cấp dưới",
+    "reviewNeeded": "Cần rà soát",
+    "inheritedBadge": "Từ nhóm hoặc đơn vị",
+    "inheritedFromGroup": "Kế thừa từ nhóm",
+    "inheritedFromOrgUnit": "Kế thừa từ đơn vị",
+    "directAssignment": "Gán trực tiếp"
+  }
+}

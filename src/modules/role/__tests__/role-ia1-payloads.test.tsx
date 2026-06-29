@@ -95,7 +95,7 @@ const roleDetail: RoleDetailRecord = {
   delegationBand: 'PRIVILEGED',
   maxDelegatableBand: 'LIMITED',
   assignmentRules: [{ id: 'rule-1', code: 'ALLOW_ADMIN', conditions: null }],
-  templateCode: 'ADMIN_FULL',
+  templateCode: 'OWNER_ADMIN',
   templateVersion: '2026-05-20',
   templateAppliedAt: 2,
   createdAt: 1,
@@ -128,12 +128,13 @@ const roleAssignment: RoleAssignmentItem = {
 
 const roleTemplateCatalog: RoleTemplateListItem[] = [
   {
-    code: 'TEAM_MANAGER',
-    version: '2026-05-20',
-    name: 'Team Manager',
+    code: 'TALENT_GROUP_MANAGER',
+    version: '2026-06-26',
+    name: 'Talent Group Manager',
     description: 'Team operations preset',
     category: 'MANAGEMENT',
     permissionCount: 15,
+    recommendedAccountContext: 'MANAGER_CONSOLE',
     recommendedScopeGrants: {
       workSchedule: ['self', 'team'],
       eventAssignment: ['managedGroup'],
@@ -493,11 +494,11 @@ describe('role IA-1 query and payload shaping', () => {
     );
 
     apiRequestMock.mockResolvedValueOnce({ data: roleTemplatePreview });
-    await expect(previewRoleTemplate('TEAM_MANAGER')).resolves.toEqual(roleTemplatePreview);
+    await expect(previewRoleTemplate('TALENT_GROUP_MANAGER')).resolves.toEqual(roleTemplatePreview);
     expect(apiRequestMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'POST',
-        url: '/admin/role-templates/TEAM_MANAGER/preview',
+        url: '/admin/role-templates/TALENT_GROUP_MANAGER/preview',
         data: {},
       }),
     );
@@ -505,7 +506,7 @@ describe('role IA-1 query and payload shaping', () => {
     mockDetailResponse();
     await expect(
       createRoleFromTemplate({
-        templateCode: 'TEAM_MANAGER',
+        templateCode: 'TALENT_GROUP_MANAGER',
         name: 'Team Manager Copy',
         description: null,
       }),
@@ -515,7 +516,7 @@ describe('role IA-1 query and payload shaping', () => {
         method: 'POST',
         url: '/admin/roles/from-template',
         data: {
-          templateCode: 'TEAM_MANAGER',
+          templateCode: 'TALENT_GROUP_MANAGER',
           name: 'Team Manager Copy',
           description: null,
         },
@@ -597,7 +598,7 @@ describe('role IA-1 query and payload shaping', () => {
       within(templateRender.container).getByRole('combobox', {
         name: i18n.t('role:templates.roleTemplate'),
       }),
-      'TEAM_MANAGER',
+      'TALENT_GROUP_MANAGER',
     );
     expect(
       await screen.findByText(i18n.t('role:templates.generatedPermissions')),
@@ -616,7 +617,7 @@ describe('role IA-1 query and payload shaping', () => {
     await user.type(screen.getByLabelText(i18n.t('role:fields.name')), 'Team Manager Copy');
     await user.click(screen.getByRole('button', { name: i18n.t('role:mutations.create.submit') }));
     expect(onCreateFromTemplate).toHaveBeenCalledWith({
-      templateCode: 'TEAM_MANAGER',
+      templateCode: 'TALENT_GROUP_MANAGER',
       name: 'Team Manager Copy',
       description: null,
     });
@@ -688,7 +689,7 @@ describe('role IA-1 query and payload shaping', () => {
         <RoleAssignUserSurface
           onCancel={() => undefined}
           onSubmit={onAssign}
-          roleCode="ADMIN_FULL"
+          roleCode="OWNER_ADMIN"
         />
       </MemoryRouter>,
     );
@@ -708,7 +709,7 @@ describe('role IA-1 query and payload shaping', () => {
         <RoleAssignUserSurface
           onCancel={() => undefined}
           onSubmit={onAssign}
-          roleCode="ADMIN_FULL"
+          roleCode="OWNER_ADMIN"
           recommendedScopeGrants={{
             workSchedule: ['team'],
             eventAssignment: ['managedGroup'],
@@ -782,8 +783,8 @@ describe('role IA-1 query and payload shaping', () => {
         <RoleAssignUserSurface
           onCancel={() => undefined}
           onSubmit={onAssign}
-          roleCode="TEAM_MANAGER"
-          templateCode="TEAM_MANAGER"
+          roleCode="TALENT_GROUP_MANAGER"
+          templateCode="TALENT_GROUP_MANAGER"
           recommendedScopeGrants={{
             workSchedule: ['self', 'team'],
             kpi: ['managedGroup'],
@@ -943,8 +944,8 @@ describe('role IA-1 query and payload shaping', () => {
 
     expect(
       roleCreateFromTemplatePayloadSchema.safeParse({
-        templateCode: 'TEAM_MANAGER',
-        code: 'TEAM_MANAGER_COPY',
+        templateCode: 'TALENT_GROUP_MANAGER',
+        code: 'TALENT_GROUP_MANAGER_COPY',
         name: 'Team Manager Copy',
         description: null,
       }).success,

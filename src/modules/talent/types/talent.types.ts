@@ -21,8 +21,6 @@ export type TalentRecord = {
   displayShortName?: string | null;
   talentOrigin: TalentOrigin;
   operationalStatus: TalentOperationalStatus;
-  managerEmploymentProfileId?: string | null;
-  managerEmploymentProfileRef?: ReferenceSummary | null;
   linkedEmploymentProfileId?: string | null;
   linkedEmploymentProfileRef?: ReferenceSummary | null;
   commercialParticipationStatus: TalentCommercialParticipationStatus;
@@ -37,7 +35,6 @@ export type TalentRecord = {
 export type TalentListQuery = {
   operationalStatus?: TalentOperationalStatus;
   talentOrigin?: TalentOrigin;
-  managerEmploymentProfileId?: string;
   hasLinkedEmploymentProfile?: boolean;
   commercialParticipationStatus?: TalentCommercialParticipationStatus;
   livestreamEligible?: boolean;
@@ -57,7 +54,6 @@ export type TalentCreatePayload = {
   commercialParticipationStatus: TalentCommercialParticipationStatus;
   livestreamEligible: boolean;
   eventEligible: boolean;
-  managerEmploymentProfileId?: string | null;
   linkedEmploymentProfileId?: string | null;
   displayShortName?: string | null;
   externalRef?: string | null;
@@ -70,10 +66,6 @@ export type TalentUpdatePayload = {
   displayShortName?: string | null;
   externalRef?: string | null;
   profileSummary?: string | null;
-};
-
-export type TalentManagerAssignmentPayload = {
-  newManagerEmploymentProfileId: string | null;
 };
 
 export type TalentEmploymentProfileLinkPayload = {

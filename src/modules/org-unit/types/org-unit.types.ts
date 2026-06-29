@@ -1,8 +1,6 @@
 import type { ReferenceSummary } from '@shared/formatting/reference-display';
 
 export type OrgUnitStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
-export type OrgUnitResponsibilityRole = 'DEPARTMENT_OWNER' | 'UNIT_MANAGER' | 'UNIT_OPERATOR';
-export type OrgUnitResponsibilityStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
 
 export type OrgUnitRecord = {
   id: string;
@@ -65,36 +63,6 @@ export type OrgUnitMovePayload = {
 };
 
 export type OrgUnitLifecycleAction = 'activate' | 'deactivate' | 'archive';
-
-export type OrgUnitResponsibilityRecord = {
-  id: string;
-  orgUnitId: string;
-  managerEmploymentProfileId: string;
-  role: OrgUnitResponsibilityRole;
-  status: OrgUnitResponsibilityStatus;
-  includeDescendants: boolean;
-  effectiveFrom: number | string;
-  effectiveTo?: number | string | null;
-  isPrimary: boolean;
-  createdAt: number | string;
-  updatedAt: number | string;
-  orgUnitRef: ReferenceSummary;
-  managerRef: ReferenceSummary;
-};
-
-export type OrgUnitResponsibilityPayload = {
-  managerEmploymentProfileId: string;
-  role: OrgUnitResponsibilityRole;
-  includeDescendants?: boolean;
-  effectiveFrom?: string | number | null;
-  effectiveTo?: string | number | null;
-  isPrimary?: boolean;
-};
-
-export type OrgUnitResponsibilityUpdatePayload = Omit<
-  OrgUnitResponsibilityPayload,
-  'managerEmploymentProfileId'
->;
 
 export type CursorPagedResponse<TData> = {
   data: TData[];

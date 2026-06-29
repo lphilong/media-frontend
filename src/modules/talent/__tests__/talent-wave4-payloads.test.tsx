@@ -8,7 +8,6 @@ import {
   TalentCreateSurface,
   TalentEditSurface,
   TalentEmploymentLinkSurface,
-  TalentManagerAssignmentSurface,
 } from '@modules/talent/forms/talent-mutation-forms';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 
@@ -67,8 +66,12 @@ describe('talent wave 4 mutation payloads', () => {
     renderWithProviders(<TalentCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
     expect(screen.queryByLabelText(i18n.t('talent:fields.talentCode'))).toBeNull();
     expect(screen.getByText(i18n.t('talent:generatedCode.description'))).toBeInTheDocument();
-    await within(await findPicker('talent-manager')).findByText(/EP-000001/);
     await within(await findPicker('talent-linked-employment-profile')).findByText(/EP-000010/);
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some((surface) => surface.getAttribute('data-picker-id') === 'talent-manager'),
+    ).toBe(false);
 
     const originOptions = Array.from(
       screen.getByLabelText(i18n.t('talent:fields.talentOrigin')).querySelectorAll('option'),
@@ -152,32 +155,6 @@ describe('talent wave 4 mutation payloads', () => {
         legalName: 'External Legal',
       }),
     );
-  });
-
-  it('maps manager assignment blank input to an explicit null payload', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    const onSubmit = vi.fn();
-
-    renderWithProviders(
-      <TalentManagerAssignmentSurface
-        currentTalentId="talent-001"
-        currentManagerEmploymentProfileId="ep-001"
-        onCancel={() => undefined}
-        onSubmit={onSubmit}
-      />,
-    );
-
-    await user.click(screen.getByRole('button', { name: i18n.t('talent:actions.clearManager') }));
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('talent:mutations.assignManager.submit'),
-      }),
-    );
-
-    expect(onSubmit).toHaveBeenCalledWith({
-      newManagerEmploymentProfileId: null,
-    });
   });
 
   it('submits the employment-profile link payload with the exact backend key', async () => {

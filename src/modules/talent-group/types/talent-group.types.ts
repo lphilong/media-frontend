@@ -2,8 +2,6 @@ import type { ReferenceSummary } from '@shared/formatting/reference-display';
 
 export type TalentGroupStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 export type TalentGroupMembershipStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
-export type TalentGroupManagerAssignmentStatus = 'ACTIVE' | 'INACTIVE' | 'REMOVED';
-export type TalentGroupManagerRole = 'OWNER' | 'MANAGER' | 'ASSISTANT';
 
 export type TalentGroupRecord = {
   id: string;
@@ -29,22 +27,6 @@ export type TalentGroupMemberRecord = {
   leftAt?: number | string | null;
   createdAt: number | string;
   updatedAt: number | string;
-};
-
-export type TalentGroupManagerAssignmentRecord = {
-  id: string;
-  groupId: string;
-  managerEmploymentProfileId: string;
-  role: TalentGroupManagerRole;
-  effectiveFrom: number | string;
-  effectiveTo?: number | string | null;
-  status: TalentGroupManagerAssignmentStatus;
-  isPrimary: boolean;
-  createdAt: number | string;
-  updatedAt: number | string;
-  groupRef: ReferenceSummary;
-  managerRef: ReferenceSummary;
-  managerHasLinkedAdminUser: boolean;
 };
 
 export type TalentGroupByTalentListItem = {
@@ -114,15 +96,6 @@ export type TalentGroupAddMemberPayload = {
 
 export type TalentGroupUpdateLineupPayload = {
   newLineupOrder: number;
-};
-
-export type TalentGroupAssignManagerPayload = {
-  managerEmploymentProfileId: string;
-  reason?: string | null;
-};
-
-export type TalentGroupRevokeManagerPayload = {
-  reason?: string | null;
 };
 
 export type TalentGroupLifecycleAction = 'activate' | 'deactivate' | 'archive';

@@ -60,15 +60,6 @@ export const createEmploymentProfileListColumns = (
       cell: ({ row }) => readReferenceDisplay(row.original.orgUnitRef, row.original.orgUnitId),
     },
     {
-      accessorKey: 'managerEmploymentProfileId',
-      header: t('employment-profile:table.managerEmploymentProfileId'),
-      cell: ({ row }) =>
-        readReferenceDisplay(
-          row.original.managerEmploymentProfileRef,
-          row.original.managerEmploymentProfileId,
-        ),
-    },
-    {
       accessorKey: 'linkedUserId',
       header: t('employment-profile:table.linkedUserId'),
       cell: ({ row }) =>
@@ -156,15 +147,6 @@ export const createEmploymentDirectReportsColumns = (
       accessorKey: 'orgUnitId',
       header: t('employment-profile:directReportsTable.orgUnitId'),
       cell: ({ row }) => readReferenceDisplay(row.original.orgUnitRef, row.original.orgUnitId),
-    },
-    {
-      accessorKey: 'managerEmploymentProfileId',
-      header: t('employment-profile:directReportsTable.managerEmploymentProfileId'),
-      cell: ({ row }) =>
-        readReferenceDisplay(
-          row.original.managerEmploymentProfileRef,
-          row.original.managerEmploymentProfileId,
-        ),
     },
   ];
 };

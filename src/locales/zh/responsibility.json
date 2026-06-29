@@ -1,0 +1,100 @@
+{
+  "page": {
+    "title": "管理职责",
+    "subtitle": "集中为 Talent 组、组织单元、Talent 和员工档案分配管理职责。",
+    "placeholder": "暂无管理职责界面。"
+  },
+  "subjects": {
+    "TALENT_GROUP": "Talent 组",
+    "ORG_UNIT": "组织单元",
+    "TALENT": "Talent",
+    "EMPLOYMENT_PROFILE": "员工档案"
+  },
+  "types": {
+    "TALENT_GROUP_MANAGER": "Talent 组管理人",
+    "ORG_UNIT_MANAGER": "组织单元负责人",
+    "TALENT_DIRECT_MANAGER": "Talent 直接管理人",
+    "EMPLOYMENT_REPORTING_MANAGER": "HR 汇报管理人"
+  },
+  "roles": {
+    "GROUP_OWNER": "组所有人",
+    "GROUP_MANAGER": "组管理人",
+    "GROUP_OPERATOR": "组运营",
+    "DEPARTMENT_OWNER": "部门所有人",
+    "UNIT_MANAGER": "组织单元负责人",
+    "UNIT_OPERATOR": "组织单元运营",
+    "DIRECT_EXCEPTION": "直接分配",
+    "HR_REPORTING": "HR 汇报"
+  },
+  "statuses": {
+    "ACTIVE": "有效",
+    "INACTIVE": "无效",
+    "REVOKED": "已撤销"
+  },
+  "form": {
+    "subjectType": "对象类型",
+    "subject": "被管理对象",
+    "subjectSearch": "搜索对象",
+    "responsible": "负责的员工档案",
+    "responsibleSearch": "搜索员工档案",
+    "role": "职责角色",
+    "rolePlaceholder": "例如：组织单元负责人",
+    "effectiveAt": "生效开始",
+    "expiresAt": "生效结束",
+    "isPrimary": "主分配",
+    "includeDescendants": "包含下级单元",
+    "reason": "原因",
+    "reasonPlaceholder": "业务说明",
+    "helper": "此界面仅分配业务管理职责，不授予访问权限。",
+    "permissionHint": "当前账号无法为所选对象类型分配职责。"
+  },
+  "actions": {
+    "create": "分配职责",
+    "creating": "正在分配...",
+    "revoke": "撤销",
+    "clearSubject": "清除对象筛选"
+  },
+  "feedback": {
+    "created": "管理职责已分配。",
+    "revoked": "管理职责已撤销。"
+  },
+  "confirm": {
+    "revoke": "撤销此管理职责分配？",
+    "revokeReason": "从中央管理职责界面撤销"
+  },
+  "list": {
+    "title": "分配列表",
+    "subtitle": "Shows active central management responsibility assignments.",
+    "emptyTitle": "无分配",
+    "emptyMessage": "选择对象和负责人员档案以创建中央分配。",
+    "loadErrorTitle": "无法加载分配",
+    "loadErrorMessage": "请重试。"
+  },
+  "table": {
+    "caption": "管理职责分配",
+    "subject": "对象",
+    "responsible": "负责人",
+    "type": "职责",
+    "effective": "生效",
+    "state": "状态",
+    "readOnly": "只读"
+  },
+  "summary": {
+    "title": "管理职责",
+    "subtitle": "来自中央管理职责界面的只读摘要。",
+    "openCentral": "管理职责",
+    "loadFailed": "无法加载管理职责。",
+    "emptyTitle": "无直接职责",
+    "emptyMessage": "请在中央管理职责界面更改。",
+    "inheritedTitle": "来自组或组织单元的职责",
+    "effectiveRange": "{{from}} - {{to}}",
+    "openEnded": "不限期",
+    "primary": "主要",
+    "descendants": "包含下级",
+    "reviewNeeded": "需复核",
+    "inheritedBadge": "来自组或组织单元",
+    "inheritedFromGroup": "继承自组",
+    "inheritedFromOrgUnit": "继承自组织单元",
+    "directAssignment": "直接分配"
+  }
+}

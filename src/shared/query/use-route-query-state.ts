@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import {
@@ -21,6 +21,13 @@ export const useRouteQueryState = <TSchema extends QueryParamSchema>(
   const [searchParams, setSearchParams] = useSearchParams();
 
   const query = useMemo(() => parseQueryParams(searchParams, config), [config, searchParams]);
+
+  useEffect(() => {
+    const normalized = serializeQueryParams(query, config);
+    if (normalized.toString() !== searchParams.toString()) {
+      setSearchParams(normalized, { replace: true });
+    }
+  }, [config, query, searchParams, setSearchParams]);
 
   const patchQuery = useCallback(
     (patch: QueryShape, options?: UseRouteQueryStateOptions) => {

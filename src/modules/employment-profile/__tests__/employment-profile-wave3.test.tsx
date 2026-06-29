@@ -7,7 +7,6 @@ import { appRoutes } from '@app/router/router';
 import {
   EmploymentProfileCreateSurface,
   EmploymentProfileEditSurface,
-  EmploymentProfileManagerAssignmentSurface,
   EmploymentProfileOrgAssignmentSurface,
   EmploymentProfileUserLinkSurface,
 } from '@modules/employment-profile/forms/employment-profile-mutation-forms';
@@ -112,7 +111,7 @@ describe('employment profile wave 3 surfaces', () => {
     expect(await screen.findByText('EP-000002', {}, { timeout: 3000 })).toBeInTheDocument();
     expect((await screen.findAllByText('Bao', {}, { timeout: 3000 })).length).toBeGreaterThan(0);
     expect(await screen.findByText('Sales')).toBeInTheDocument();
-    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    expect(screen.queryByText('managerEmploymentProfileId')).not.toBeInTheDocument();
   });
 
   it('opens Employment Profile create in a drawer without replacing the list', async () => {
@@ -174,7 +173,7 @@ describe('employment profile wave 3 surfaces', () => {
     ).toBeInTheDocument();
   });
 
-  it('uses readable org unit and manager selectors for relationship filters', async () => {
+  it('uses readable org unit selectors and drops the deprecated manager filter', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
     const router = renderRoute(
@@ -186,11 +185,6 @@ describe('employment profile wave 3 surfaces', () => {
     ).toBeInTheDocument();
     expect(
       screen.queryByPlaceholderText(i18n.t('employment-profile:filters.orgUnitIdPlaceholder')),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByPlaceholderText(
-        i18n.t('employment-profile:filters.managerEmploymentProfileIdPlaceholder'),
-      ),
     ).not.toBeInTheDocument();
     expect(
       await screen.findByRole('combobox', {
@@ -208,20 +202,17 @@ describe('employment profile wave 3 surfaces', () => {
         )}`,
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', {
-        name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
-          'employment-profile:filters.managerEmploymentProfileId',
-        )}`,
-      }),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
+      ).toBeNull();
+    });
+    expect(screen.queryByText('managerEmploymentProfileId')).not.toBeInTheDocument();
 
     await openMoreFilters(user);
 
     const orgUnitPicker = await findPicker('employment-profile-filter-org-unit');
-    const managerPicker = await findPicker('employment-profile-filter-manager');
     expect(await within(orgUnitPicker).findAllByText(/OU-SALES/)).not.toHaveLength(0);
-    expect(await within(managerPicker).findAllByText(/Manager Display/)).not.toHaveLength(0);
 
     await user.click(await within(orgUnitPicker).findByRole('button', { name: /OU-SALES/ }));
     await waitFor(() => {
@@ -245,28 +236,6 @@ describe('employment profile wave 3 surfaces', () => {
     await user.click(await within(orgUnitPicker).findByRole('button', { name: /OU-SALES/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).toBe('ou-sales');
-    });
-
-    const managerField = managerPicker.closest('fieldset');
-    expect(managerField).not.toBeNull();
-    if (!managerField) {
-      return;
-    }
-
-    await user.click(
-      within(managerField).getByRole('button', { name: i18n.t('common:actions.clear') }),
-    );
-    await waitFor(() => {
-      expect(
-        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
-      ).toBeNull();
-    });
-
-    await user.click(await within(managerPicker).findByRole('button', { name: /Manager Display/ }));
-    await waitFor(() => {
-      expect(
-        new URLSearchParams(router.state.location.search).get('managerEmploymentProfileId'),
-      ).toBe('ep-manager');
     });
 
     await user.click(screen.getByRole('button', { name: i18n.t('common:filters.clearAll') }));
@@ -391,15 +360,11 @@ describe('employment profile wave 3 surfaces', () => {
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: i18n.t('common:actions.cancel') }));
 
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('employment-profile:actions.assignManager') }),
-    );
     expect(
-      await screen.findByRole('heading', {
-        name: i18n.t('employment-profile:mutations.assignManager.title'),
+      screen.queryByRole('button', {
+        name: i18n.t('employment-profile:actions.assignManager'),
       }),
-    ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: i18n.t('common:actions.cancel') }));
+    ).not.toBeInTheDocument();
 
     const unlinkUserButton = screen.getByRole('button', {
       name: i18n.t('employment-profile:actions.unlinkUser'),
@@ -492,12 +457,11 @@ describe('employment profile wave 3 surfaces', () => {
     );
   }, 15_000);
 
-  it('submits selected org unit, manager, and linked-user references from form surfaces', async () => {
+  it('submits selected org unit and linked-user references from form surfaces', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
     const onCreate = vi.fn();
     const onOrgAssign = vi.fn();
-    const onManagerAssign = vi.fn();
     const onUserLink = vi.fn();
 
     const createRender = renderAppWithProviders(
@@ -530,11 +494,15 @@ describe('employment profile wave 3 surfaces', () => {
       'EXT-EMP',
     );
     await selectPickerOption(user, 'employment-profile-org-unit', /OU-SALES/);
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some((surface) => surface.getAttribute('data-picker-id') === 'employment-profile-manager'),
+    ).toBe(false);
     await user.type(
       screen.getByLabelText(i18n.t('employment-profile:fields.employmentStartDate')),
       '2026-05-12',
     );
-    await selectPickerOption(user, 'employment-profile-manager', /Manager Display/);
     await selectPickerOption(user, 'employment-profile-recruiter', /Manager Display/);
     await selectPickerOption(user, 'employment-profile-hr-owner', /Manager Display/);
     await selectPickerOption(user, 'employment-profile-onboarding-owner', /Manager Display/);
@@ -557,7 +525,6 @@ describe('employment profile wave 3 surfaces', () => {
       expect.objectContaining({
         employmentKind: 'EMPLOYEE',
         orgUnitId: 'ou-sales',
-        managerEmploymentProfileId: 'ep-manager',
         linkedUserId: 'user-admin',
         recruiterEmploymentProfileId: 'ep-manager',
         hrOwnerEmploymentProfileId: 'ep-manager',
@@ -569,6 +536,7 @@ describe('employment profile wave 3 surfaces', () => {
       }),
     );
     expect(onCreate.mock.calls[0][0]).not.toHaveProperty('employeeCode');
+    expect(onCreate.mock.calls[0][0]).not.toHaveProperty('managerEmploymentProfileId');
     createRender.unmount();
 
     const orgAssignRender = renderAppWithProviders(
@@ -588,27 +556,6 @@ describe('employment profile wave 3 surfaces', () => {
     );
     expect(onOrgAssign).toHaveBeenCalledWith({ newOrgUnitId: 'ou-sales' });
     orgAssignRender.unmount();
-
-    const managerRender = renderAppWithProviders(
-      <MemoryRouter>
-        <EmploymentProfileManagerAssignmentSurface
-          currentEmploymentProfileId="ep-current"
-          currentManagerEmploymentProfileId={null}
-          onCancel={() => undefined}
-          onSubmit={onManagerAssign}
-        />
-      </MemoryRouter>,
-    );
-    await selectPickerOption(user, 'employment-profile-new-manager', /Manager Display/);
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('employment-profile:mutations.assignManager.submit'),
-      }),
-    );
-    expect(onManagerAssign).toHaveBeenCalledWith({
-      newManagerEmploymentProfileId: 'ep-manager',
-    });
-    managerRender.unmount();
 
     renderAppWithProviders(
       <MemoryRouter>

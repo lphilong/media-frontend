@@ -44,10 +44,7 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import {
-  formatCreatedDate,
-  formatBusinessTimestamp,
-} from '@shared/formatting/formatters';
+import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
 import {
   applyActionCapabilityHints,
   createActionCapabilityHint,
@@ -100,18 +97,42 @@ const readErrorMessage = (
 const formatOptionalTimestamp = (value?: number | string | null): string =>
   value === null || value === undefined ? '-' : formatBusinessTimestamp(value);
 
-const roleTemplateDisplayNames: Record<RoleTemplateCode, string> = {
-  ADMIN_FULL: 'Admin Full',
+const roleTemplateDisplayNames: Partial<Record<RoleTemplateCode, string>> = {
+  OWNER_ADMIN: 'Owner Admin',
+  ACCESS_ADMIN: 'Access Admin',
   HR_OPERATIONS: 'HR Operations',
-  TEAM_MANAGER: 'Team Manager',
+  HR_TERMS_APPROVER: 'HR Terms Approver',
   PRODUCTION_OPS: 'Production Ops',
-  COMMERCIAL_FINANCE: 'Commercial Finance',
-  TALENT_STAFF_SELF: 'Talent/Staff Self',
-  VIEWER_AUDITOR: 'Viewer/Auditor',
+  PLATFORM_CHANNEL_OPS: 'Platform Channel Ops',
+  CREATIVE_VISUAL_LEAD: 'Creative Visual Lead',
+  CONTENT_OPS: 'Content Ops',
+  TALENT_GROUP_MANAGER: 'Talent Group Manager',
+  ORG_UNIT_MANAGER: 'Org Unit Manager',
+  KPI_OPERATIONS: 'KPI Operations',
+  COMMERCIAL_CONTRACT_OPS: 'Commercial Contract Ops',
+  REVENUE_FINANCE_OPS: 'Revenue Finance Ops',
+  REVENUE_APPROVER: 'Revenue Approver',
+  REVENUE_RECONCILER: 'Revenue Reconciler',
+  COMMISSION_OPS: 'Commission Ops',
+  COMMISSION_APPROVER: 'Commission Approver',
+  ATTENDANCE_OPS: 'Attendance Ops',
+  LEAVE_REVIEWER: 'Leave Reviewer',
+  ATTENDANCE_APPROVER: 'Attendance Approver',
+  MONTHLY_CLOSE_OWNER: 'Monthly Close Owner',
+  PAYROLL_DRAFT_OPS: 'Payroll Draft Ops',
+  PAYROLL_DRAFT_APPROVER: 'Payroll Draft Approver',
+  VIEWER_AUDITOR: 'Viewer Auditor',
+  STAFF_CONSOLE_USER: 'Staff Console User',
+  ADMIN_FULL: 'Legacy Admin Full',
+  TEAM_MANAGER: 'Legacy Team Manager',
+  COMMERCIAL_FINANCE: 'Legacy Commercial Finance',
+  TALENT_STAFF_SELF: 'Legacy Talent/Staff Self',
 };
 
 const readTemplateDisplay = (templateCode?: RoleTemplateCode | null): string =>
-  templateCode ? `${roleTemplateDisplayNames[templateCode]} (${templateCode})` : '-';
+  templateCode
+    ? `${roleTemplateDisplayNames[templateCode] ?? templateCode} (${templateCode})`
+    : '-';
 
 export const RoleDetailPage = (): JSX.Element => {
   const { roleId } = useParams<{ roleId: string }>();
@@ -321,8 +342,6 @@ export const RoleDetailPage = (): JSX.Element => {
     return applyActionCapabilityHints(
       createRoleActionRailItems(t, record, {
         onEdit: () => setActiveSurface('edit'),
-        onPermissions: () => setActiveSurface('permissions'),
-        onAssignmentRules: () => setActiveSurface('assignment-rules'),
         onLifecycleAction,
         isLifecyclePending: (action) =>
           lifecycleMutation.isPending &&
@@ -337,24 +356,6 @@ export const RoleDetailPage = (): JSX.Element => {
             isError: capabilitiesQuery.isError,
           },
           { permission: PERMISSIONS.ROLE_UPDATE },
-          capabilityCopy,
-        ),
-        permissions: createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          { permission: PERMISSIONS.ROLE_PERMISSION_ASSIGN },
-          capabilityCopy,
-        ),
-        'assignment-rules': createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          { permission: PERMISSIONS.ROLE_ASSIGNMENT_RULE_SET },
           capabilityCopy,
         ),
         activate: createActionCapabilityHint(

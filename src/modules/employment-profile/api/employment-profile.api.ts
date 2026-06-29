@@ -11,7 +11,6 @@ import type {
   EmploymentProfileLifecycleAction,
   EmploymentProfileListItem,
   EmploymentProfileListQuery,
-  EmploymentProfileManagerAssignmentPayload,
   EmploymentProfileOrgUnitAssignmentPayload,
   EmploymentProfileRecord,
   EmploymentProfileTerminatePayload,
@@ -93,8 +92,6 @@ const employmentProfileListItemSchema = z
     jobTitle: z.string().trim().min(1),
     orgUnitId: z.string().trim().min(1),
     orgUnitRef: referenceSummarySchema.nullable().optional(),
-    managerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
-    managerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     recruiterEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
     recruiterEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     hrOwnerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
@@ -125,8 +122,6 @@ const employmentProfileDetailSchema = z
     externalRef: z.string().nullable().optional(),
     orgUnitId: z.string().trim().min(1),
     orgUnitRef: referenceSummarySchema.nullable().optional(),
-    managerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
-    managerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     recruiterEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
     recruiterEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     hrOwnerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
@@ -157,8 +152,6 @@ const employmentProfileDirectReportSchema = z
     contractStatus: contractStatusSchema,
     orgUnitId: z.string().trim().min(1),
     orgUnitRef: referenceSummarySchema.nullable().optional(),
-    managerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
-    managerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
   })
   .strict();
 
@@ -211,7 +204,6 @@ const sanitizeListQuery = (
     contractStatus: query.contractStatus,
     employmentKind: query.employmentKind,
     orgUnitId: query.orgUnitId,
-    managerEmploymentProfileId: query.managerEmploymentProfileId,
     hasLinkedUser: query.hasLinkedUser,
     limit: query.limit,
     cursor: query.cursor,
@@ -294,19 +286,6 @@ export const assignEmploymentProfileOrgUnit = async (
   const response = await apiRequest<unknown, EmploymentProfileOrgUnitAssignmentPayload>({
     method: 'POST',
     url: `/admin/employment-profiles/${encodeURIComponent(employmentProfileId)}/org-unit-assignment`,
-    data: payload,
-  });
-
-  return detailResponseSchema.parse(response).data;
-};
-
-export const assignEmploymentProfileManager = async (
-  employmentProfileId: string,
-  payload: EmploymentProfileManagerAssignmentPayload,
-): Promise<EmploymentProfileRecord> => {
-  const response = await apiRequest<unknown, EmploymentProfileManagerAssignmentPayload>({
-    method: 'POST',
-    url: `/admin/employment-profiles/${encodeURIComponent(employmentProfileId)}/manager-assignment`,
     data: payload,
   });
 

@@ -140,7 +140,9 @@ export const RoleListPage = (): JSX.Element => {
     setCursorStack(createCursorStack());
   }, [queryShapeSignature]);
 
-  const canCreateRole = canShowAction(capabilitiesQuery.data, { permission: PERMISSIONS.ROLE_CREATE });
+  const canCreateRole = canShowAction(capabilitiesQuery.data, {
+    permission: PERMISSIONS.ROLE_CREATE,
+  });
   const canShowLifecycleAction = useCallback(
     (action: RoleLifecycleAction) => {
       const permission =
@@ -154,15 +156,16 @@ export const RoleListPage = (): JSX.Element => {
     [capabilitiesQuery.data],
   );
 
-  const pageActions = activeTab === 'templates' && canCreateRole ? (
-    <button
-      type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
-      className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-    >
-      {isCreateOpen ? t('role:actions.closeCreate') : t('role:actions.create')}
-    </button>
-  ) : null;
+  const pageActions =
+    activeTab === 'templates' && canCreateRole ? (
+      <button
+        type="button"
+        onClick={() => setIsCreateOpen((current) => !current)}
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {isCreateOpen ? t('role:actions.closeCreate') : t('role:actions.create')}
+      </button>
+    ) : null;
 
   usePageActions(pageActions);
 
@@ -323,62 +326,62 @@ export const RoleListPage = (): JSX.Element => {
       }
       filterBar={
         activeTab === 'templates' ? (
-        <FilterToolbar
-          searchSlot={
-            <SearchBoxSeam
-              value={query.search ?? ''}
-              placeholder={t('role:filters.searchPlaceholder')}
-              onApply={(value) => patchQuery({ search: value || undefined })}
-            />
-          }
-          appliedFilters={
-            <AppliedFilterChips
-              title={t('common:filters.appliedFilters')}
-              items={appliedFilterChips}
-              clearFilterLabel={t('common:filters.clearFilter')}
-              clearAllLabel={t('common:filters.clearAll')}
-              onClearAll={appliedFilterChips.length > 0 ? clearRoleFilters : undefined}
-            />
-          }
-        >
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('role:filters.state')}
-            </span>
-            <select
-              value={query.state ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  state: (event.target.value || undefined) as RoleListQuery['state'],
-                })
-              }
-            >
-              <option value="">{t('role:filters.allStates')}</option>
-              {roleStateValues.map((state) => (
-                <option key={state} value={state}>
-                  {t(`role:states.${state}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </FilterToolbar>
+          <FilterToolbar
+            searchSlot={
+              <SearchBoxSeam
+                value={query.search ?? ''}
+                placeholder={t('role:filters.searchPlaceholder')}
+                onApply={(value) => patchQuery({ search: value || undefined })}
+              />
+            }
+            appliedFilters={
+              <AppliedFilterChips
+                title={t('common:filters.appliedFilters')}
+                items={appliedFilterChips}
+                clearFilterLabel={t('common:filters.clearFilter')}
+                clearAllLabel={t('common:filters.clearAll')}
+                onClearAll={appliedFilterChips.length > 0 ? clearRoleFilters : undefined}
+              />
+            }
+          >
+            <label className="flex min-w-[180px] flex-col gap-1">
+              <span className="text-xs font-medium uppercase text-muted">
+                {t('role:filters.state')}
+              </span>
+              <select
+                value={query.state ?? ''}
+                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
+                onChange={(event) =>
+                  patchQuery({
+                    state: (event.target.value || undefined) as RoleListQuery['state'],
+                  })
+                }
+              >
+                <option value="">{t('role:filters.allStates')}</option>
+                {roleStateValues.map((state) => (
+                  <option key={state} value={state}>
+                    {t(`role:states.${state}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </FilterToolbar>
         ) : null
       }
       interactionSection={
         activeTab === 'templates' ? (
           <>
-          {canCreateRole && isCreateOpen ? (
-            <RoleCreateSurface
-              isPending={createMutation.isPending || createFromTemplateMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
-              onSubmit={onCreateSubmit}
-              onTemplateSubmit={onCreateFromTemplateSubmit}
-              onPreviewTemplate={previewRoleTemplate}
-              templateCatalog={roleTemplatesQuery.data ?? []}
-              isTemplateCatalogLoading={roleTemplatesQuery.isLoading}
-            />
-          ) : null}
+            {canCreateRole && isCreateOpen ? (
+              <RoleCreateSurface
+                isPending={createMutation.isPending || createFromTemplateMutation.isPending}
+                onCancel={() => setIsCreateOpen(false)}
+                onSubmit={onCreateSubmit}
+                onTemplateSubmit={onCreateFromTemplateSubmit}
+                onPreviewTemplate={previewRoleTemplate}
+                templateCatalog={roleTemplatesQuery.data ?? []}
+                isTemplateCatalogLoading={roleTemplatesQuery.isLoading}
+              />
+            ) : null}
           </>
         ) : null
       }
@@ -422,14 +425,14 @@ export const RoleListPage = (): JSX.Element => {
       }
       pager={
         activeTab === 'templates' ? (
-        <CursorPager
-          canGoBack={canGoBack}
-          canGoNext={canGoNext}
-          displayedCount={listQueryResult.data?.data.length}
-          limit={query.limit ?? 20}
-          onNext={onNext}
-          onPrevious={onPrevious}
-        />
+          <CursorPager
+            canGoBack={canGoBack}
+            canGoNext={canGoNext}
+            displayedCount={listQueryResult.data?.data.length}
+            limit={query.limit ?? 20}
+            onNext={onNext}
+            onPrevious={onPrevious}
+          />
         ) : null
       }
       state={shellState}
@@ -464,9 +467,7 @@ const RoleScreenTabs = ({ tabs, activeTab, onChange }: RoleScreenTabsProps): JSX
           aria-selected={tab.id === activeTab}
           onClick={() => onChange(tab.id)}
           className={`rounded px-3 py-2 text-sm font-medium ${
-            tab.id === activeTab
-              ? 'bg-accent text-white'
-              : 'text-muted hover:bg-bg hover:text-text'
+            tab.id === activeTab ? 'bg-accent text-white' : 'text-muted hover:bg-bg hover:text-text'
           }`}
         >
           {tab.label}
@@ -524,7 +525,7 @@ const RoleTemplateCatalogPanel = ({
           <div key={template.code} className="rounded border border-border bg-bg p-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="font-semibold text-text">{template.name}</p>
+                <p className="font-semibold text-text">{formatRoleCodeLabel(template.code)}</p>
                 <p className="text-xs text-muted">{template.code}</p>
               </div>
               <StatusBadge status={template.status} family="readiness" />
@@ -535,12 +536,12 @@ const RoleTemplateCatalogPanel = ({
                 {
                   key: 'group',
                   label: t('role:templateCatalog.roleGroup'),
-                  value: template.category || '-',
+                  value: formatRoleCategoryLabel(template.category),
                 },
                 {
                   key: 'context',
                   label: t('role:templateCatalog.requiredContext'),
-                  value: formatAccountContextLabel(readTemplateAccountContext(template.code)),
+                  value: formatAccountContextLabel(template.recommendedAccountContext),
                 },
                 {
                   key: 'capabilities',
@@ -592,13 +593,19 @@ const RoleBundleTab = ({
   }
 
   if (bundles.length === 0) {
-    return <EmptyState title={t('role:bundles.emptyTitle')} message={t('role:bundles.emptyMessage')} />;
+    return (
+      <EmptyState title={t('role:bundles.emptyTitle')} message={t('role:bundles.emptyMessage')} />
+    );
   }
 
   return (
     <div className="grid gap-3">
       {bundles.map((bundle) => (
-        <MetadataSection key={bundle.code} title={bundle.name} subtitle={bundle.businessPurpose}>
+        <MetadataSection
+          key={bundle.code}
+          title={formatBundleCodeLabel(bundle.code)}
+          subtitle={formatBundlePurpose(bundle.code, bundle.businessPurpose)}
+        >
           <div className="space-y-3">
             <ReadOnlyFieldGrid
               columns={3}
@@ -646,7 +653,7 @@ const RoleBundleTab = ({
             />
             {bundle.sensitive || bundle.sensitiveWarning ? (
               <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-                {bundle.sensitiveWarning ?? t('role:bundles.sensitiveWarning')}
+                {t('role:bundles.sensitiveWarning')}
               </p>
             ) : null}
           </div>
@@ -660,10 +667,113 @@ const RoleAssignmentUnavailableTab = (): JSX.Element => {
   const { t } = useTranslation('role');
 
   return (
-    <EmptyState
-      title={t('assignmentTab.unavailableTitle')}
-      message={t('assignmentTab.unavailableMessage')}
-    />
+    <div className="space-y-4">
+      <EmptyState
+        title={t('assignmentTab.unavailableTitle')}
+        message={t('assignmentTab.unavailableMessage')}
+      />
+      <MetadataSection
+        title={t('assignmentTab.workflowTitle')}
+        subtitle={t('assignmentTab.workflowSubtitle')}
+      >
+        <ReadOnlyFieldGrid
+          columns={2}
+          fields={[
+            {
+              key: 'department-filter',
+              label: t('assignmentTab.departmentFilterLabel'),
+              value: t('assignmentTab.departmentFilterValue'),
+              description: t('assignmentTab.departmentFilterHelp'),
+            },
+            {
+              key: 'person',
+              label: t('assignmentTab.personLabel'),
+              value: t('assignmentTab.personValue'),
+              description: t('assignmentTab.personHelp'),
+            },
+            {
+              key: 'mode',
+              label: t('assignmentTab.modeLabel'),
+              value: t('assignmentTab.modeValue'),
+              description: t('assignmentTab.modeHelp'),
+            },
+            {
+              key: 'workspace',
+              label: t('assignmentTab.workspaceLabel'),
+              value: t('assignmentTab.workspaceValue'),
+              description: t('assignmentTab.workspaceHelp'),
+            },
+          ]}
+        />
+      </MetadataSection>
+
+      <MetadataSection title={t('assignmentTab.scopeTitle')}>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded border border-border bg-bg px-3 py-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              {t('assignmentTab.talentGroupScopeLabel')}
+            </p>
+            <div className="mt-2 space-y-2 text-sm text-text">
+              <div>
+                <p className="font-medium">{t('assignmentTab.currentManaged')}</p>
+                <p className="text-muted">{t('assignmentTab.currentTalentGroupExample')}</p>
+              </div>
+              <div>
+                <p className="font-medium">{t('assignmentTab.addTalentGroup')}</p>
+                <p className="text-muted">{t('assignmentTab.newTalentGroupExample')}</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded border border-border bg-bg px-3 py-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              {t('assignmentTab.orgUnitScopeLabel')}
+            </p>
+            <div className="mt-2 space-y-2 text-sm text-text">
+              <div>
+                <p className="font-medium">{t('assignmentTab.currentManaged')}</p>
+                <p className="text-muted">{t('assignmentTab.currentOrgUnitExample')}</p>
+              </div>
+              <div>
+                <p className="font-medium">{t('assignmentTab.addOrgUnit')}</p>
+                <p className="text-muted">{t('assignmentTab.newOrgUnitExample')}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MetadataSection>
+
+      <MetadataSection title={t('assignmentTab.previewTitle')}>
+        <div className="space-y-3 text-sm text-text">
+          <p>{t('assignmentTab.reviewRequired')}</p>
+          <p>{t('assignmentTab.previewIntro')}</p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>{t('assignmentTab.previewWorkspaceChange')}</li>
+            <li>{t('assignmentTab.previewScopeChange')}</li>
+            <li>{t('assignmentTab.previewCapabilityChange')}</li>
+          </ul>
+          <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+            {t('assignmentTab.sensitiveWarning')}
+          </p>
+          <label className="block">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted">
+              {t('assignmentTab.reasonLabel')}
+            </span>
+            <textarea
+              className="mt-1 min-h-20 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+              placeholder={t('assignmentTab.reasonPlaceholder')}
+              disabled
+            />
+          </label>
+          <button
+            type="button"
+            disabled
+            className="rounded border border-border px-3 py-2 text-sm font-medium text-muted disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {t('assignmentTab.confirmLabel')}
+          </button>
+        </div>
+      </MetadataSection>
+    </div>
   );
 };
 
@@ -723,11 +833,7 @@ const RoleUserAccessTab = ({
   );
 };
 
-const RoleEffectiveAccessSummary = ({
-  access,
-}: {
-  access: EffectiveAccessRecord;
-}): JSX.Element => {
+const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord }): JSX.Element => {
   const { t } = useTranslation('role');
   const availableWorkspaces = access.workspaceAvailability.availableWorkspaces
     .filter((workspace) => workspace.available)
@@ -789,7 +895,9 @@ const RoleEffectiveAccessSummary = ({
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-text">
-                    {assignment.roleName ?? formatRoleCodeLabel(assignment.roleCode ?? '')}
+                    {assignment.roleCode
+                      ? formatRoleCodeLabel(assignment.roleCode)
+                      : (assignment.roleName ?? '-')}
                   </span>
                   <div className="flex flex-wrap gap-1">
                     <StatusBadge label={formatAssignmentOrigin(assignment.origin)} tone="info" />
@@ -839,28 +947,36 @@ const RoleEffectiveAccessSummary = ({
 };
 
 const roleCodeLabels: Record<string, string> = {
-  ADMIN_FULL: 'Admin Full',
-  HR_OPERATIONS: 'HR Operations',
-  TEAM_MANAGER: 'Team Manager',
-  PRODUCTION_OPS: 'Production Ops',
-  COMMERCIAL_FINANCE: 'Commercial Finance',
-  TALENT_STAFF_SELF: 'Staff Console',
-  VIEWER_AUDITOR: 'Auditor Read Only',
-};
-
-const templateAccountContextByCode: Record<string, 'ADMIN_CONSOLE' | 'MANAGER_CONSOLE' | 'STAFF_CONSOLE'> = {
-  ADMIN_FULL: 'ADMIN_CONSOLE',
-  HR_OPERATIONS: 'ADMIN_CONSOLE',
-  PRODUCTION_OPS: 'ADMIN_CONSOLE',
-  COMMERCIAL_FINANCE: 'ADMIN_CONSOLE',
-  VIEWER_AUDITOR: 'ADMIN_CONSOLE',
-  TEAM_MANAGER: 'MANAGER_CONSOLE',
-  TALENT_STAFF_SELF: 'STAFF_CONSOLE',
+  OWNER_ADMIN: 'Quản trị chủ sở hữu',
+  ACCESS_ADMIN: 'Quản trị phân quyền',
+  HR_OPERATIONS: 'Vận hành nhân sự',
+  HR_TERMS_APPROVER: 'Duyệt điều khoản nhân sự',
+  PRODUCTION_OPS: 'Vận hành sản xuất',
+  PLATFORM_CHANNEL_OPS: 'Vận hành kênh nền tảng',
+  CREATIVE_VISUAL_LEAD: 'Phụ trách hình ảnh sáng tạo',
+  CONTENT_OPS: 'Vận hành nội dung',
+  TALENT_GROUP_MANAGER: 'Quản lý nhóm Talent',
+  ORG_UNIT_MANAGER: 'Quản lý phòng ban',
+  KPI_OPERATIONS: 'Vận hành KPI',
+  COMMERCIAL_CONTRACT_OPS: 'Vận hành hợp đồng thương mại',
+  REVENUE_FINANCE_OPS: 'Vận hành tài chính doanh thu',
+  REVENUE_APPROVER: 'Duyệt doanh thu',
+  REVENUE_RECONCILER: 'Đối soát doanh thu',
+  COMMISSION_OPS: 'Vận hành hoa hồng',
+  COMMISSION_APPROVER: 'Duyệt hoa hồng',
+  ATTENDANCE_OPS: 'Vận hành chấm công',
+  LEAVE_REVIEWER: 'Rà soát nghỉ phép',
+  ATTENDANCE_APPROVER: 'Duyệt chấm công',
+  MONTHLY_CLOSE_OWNER: 'Phụ trách khóa sổ tháng',
+  PAYROLL_DRAFT_OPS: 'Vận hành nháp lương',
+  PAYROLL_DRAFT_APPROVER: 'Duyệt nháp lương',
+  VIEWER_AUDITOR: 'Audit / Chỉ đọc',
+  STAFF_CONSOLE_USER: 'Nhân sự tự xem dữ liệu',
 };
 
 const capabilityGroupLabels: Record<string, string> = {
   role: 'Vai trò',
-  user: 'Người dùng',
+  user: 'Tài khoản đăng nhập',
   workSchedule: 'Lịch làm việc',
   eventAssignment: 'Sự kiện',
   kpi: 'KPI',
@@ -871,20 +987,65 @@ const capabilityGroupLabels: Record<string, string> = {
   commission: 'Hoa hồng',
 };
 
-const readTemplateAccountContext = (
-  templateCode: string,
-): 'ADMIN_CONSOLE' | 'MANAGER_CONSOLE' | 'STAFF_CONSOLE' =>
-  templateAccountContextByCode[templateCode] ?? 'STAFF_CONSOLE';
+const roleCategoryLabels: Record<string, string> = {
+  ADMINISTRATION: 'Quản trị hệ thống',
+  ACCESS: 'Phân quyền',
+  PEOPLE_OPERATIONS: 'Vận hành nhân sự',
+  HR: 'Nhân sự',
+  MANAGEMENT: 'Quản lý theo phạm vi',
+  PRODUCTION: 'Sản xuất',
+  FINANCE: 'Tài chính',
+  COMMERCIAL: 'Thương mại',
+  KPI: 'KPI',
+  AUDIT: 'Audit / Chỉ đọc',
+};
+
+const bundleCodeLabels: Record<string, string> = {
+  OWNER_ADMIN_BUNDLE: 'Quản trị chủ sở hữu',
+  ACCESS_ADMIN_BUNDLE: 'Quản trị phân quyền',
+  TALENT_GROUP_MANAGER_BUNDLE: 'Quản lý nhóm Talent',
+  ORG_UNIT_MANAGER_BUNDLE: 'Quản lý phòng ban',
+  HR_MANAGER_BUNDLE: 'Quản lý HR',
+  HR_STAFF_BUNDLE: 'Vận hành HR',
+  FINANCE_STAFF_BUNDLE: 'Vận hành tài chính',
+  FINANCE_APPROVER_BUNDLE: 'Duyệt doanh thu',
+  STAFF_CONSOLE_BUNDLE: 'Nhân sự tự xem dữ liệu',
+  AUDITOR_BUNDLE: 'Audit / Chỉ đọc',
+};
+
+const bundlePurposeLabels: Record<string, string> = {
+  OWNER_ADMIN_BUNDLE: 'Dành cho chủ sở hữu hoặc người được giao quản trị toàn hệ thống.',
+  ACCESS_ADMIN_BUNDLE: 'Dành cho người phụ trách tài khoản, vai trò và rà soát quyền.',
+  TALENT_GROUP_MANAGER_BUNDLE: 'Dành cho nhân sự quản lý một hoặc nhiều nhóm Talent được chỉ định.',
+  ORG_UNIT_MANAGER_BUNDLE: 'Dành cho nhân sự quản lý phòng ban hoặc đơn vị được chỉ định.',
+  HR_MANAGER_BUNDLE: 'Dành cho người quản lý nghiệp vụ HR.',
+  HR_STAFF_BUNDLE: 'Dành cho nhân sự vận hành hồ sơ và quy trình HR.',
+  FINANCE_STAFF_BUNDLE: 'Dành cho nhân sự vận hành dữ liệu tài chính hiện tại.',
+  FINANCE_APPROVER_BUNDLE: 'Dành cho người được giao duyệt doanh thu.',
+  STAFF_CONSOLE_BUNDLE: 'Dành cho nhân sự tự xem dữ liệu của chính mình.',
+  AUDITOR_BUNDLE: 'Dành cho người rà soát chỉ đọc và theo dõi lịch sử thay đổi.',
+};
+
+const formatRoleCategoryLabel = (category: string): string =>
+  roleCategoryLabels[category] ?? category;
 
 const formatRoleCodeLabel = (roleCode: string): string => roleCodeLabels[roleCode] ?? roleCode;
 
-const formatAssignmentOrigin = (origin: EffectiveAccessRecord['activeRoleAssignments'][number]['origin']): string => {
+const formatBundleCodeLabel = (bundleCode: string): string =>
+  bundleCodeLabels[bundleCode] ?? bundleCode;
+
+const formatBundlePurpose = (bundleCode: string, fallback: string): string =>
+  bundlePurposeLabels[bundleCode] ?? fallback;
+
+const formatAssignmentOrigin = (
+  origin: EffectiveAccessRecord['activeRoleAssignments'][number]['origin'],
+): string => {
   if (origin === 'BUNDLE') {
     return 'Gói vai trò';
   }
 
   if (origin === 'LEGACY') {
-    return 'Tương thích';
+    return 'Dữ liệu cũ để rà soát';
   }
 
   return 'Gán trực tiếp';
@@ -893,11 +1054,11 @@ const formatAssignmentOrigin = (origin: EffectiveAccessRecord['activeRoleAssignm
 const formatAccountContextLabel = (context: string): string => {
   switch (context) {
     case 'ADMIN_CONSOLE':
-      return 'Admin Console';
+      return 'Không gian quản trị';
     case 'MANAGER_CONSOLE':
-      return 'Manager Console';
+      return 'Không gian quản lý';
     case 'STAFF_CONSOLE':
-      return 'Staff Console';
+      return 'Không gian nhân sự';
     default:
       return context;
   }

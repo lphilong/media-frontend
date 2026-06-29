@@ -5,8 +5,6 @@ import type { ActionRailItem } from '@shared/components/primitives';
 
 type RoleActionRailHandlers = {
   onEdit: () => void;
-  onPermissions: () => void;
-  onAssignmentRules: () => void;
   onLifecycleAction: (action: RoleLifecycleAction) => void;
   isLifecyclePending?: (action: RoleLifecycleAction) => boolean;
 };
@@ -29,20 +27,6 @@ export const createRoleActionRailItems = (
     disabled: !canMutatePolicy(record),
     disabledReason: !canMutatePolicy(record) ? t('common:capabilities.invalidStatus') : undefined,
     onClick: canMutatePolicy(record) ? handlers.onEdit : undefined,
-  },
-  {
-    id: 'permissions',
-    label: t('role:actions.replacePermissions'),
-    disabled: !canMutatePolicy(record),
-    disabledReason: !canMutatePolicy(record) ? t('common:capabilities.invalidStatus') : undefined,
-    onClick: canMutatePolicy(record) ? handlers.onPermissions : undefined,
-  },
-  {
-    id: 'assignment-rules',
-    label: t('role:actions.replaceAssignmentRules'),
-    disabled: !canMutatePolicy(record),
-    disabledReason: !canMutatePolicy(record) ? t('common:capabilities.invalidStatus') : undefined,
-    onClick: canMutatePolicy(record) ? handlers.onAssignmentRules : undefined,
   },
   {
     id: 'activate',

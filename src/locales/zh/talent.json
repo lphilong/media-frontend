@@ -14,8 +14,6 @@
     "displayShortName": "显示简称",
     "talentOrigin": "艺人来源",
     "selectTalentOrigin": "选择艺人来源",
-    "managerEmploymentProfileId": "主管",
-    "newManagerEmploymentProfileId": "主管",
     "linkedEmploymentProfileId": "关联员工档案",
     "commercialParticipationStatus": "商业参与状态",
     "newCommercialParticipationStatus": "新商业参与状态",
@@ -32,12 +30,9 @@
   },
   "placeholders": {
     "optional": "可选",
-    "employmentProfileSearch": "按姓名或员工编码搜索员工档案",
-    "clearToUnset": "留空以清除主管分配"
+    "employmentProfileSearch": "按姓名或员工编码搜索员工档案"
   },
   "referenceHelp": {
-    "managerEmploymentProfileId": "选择此艺人的主管员工档案。",
-    "newManagerEmploymentProfileId": "选择主管员工档案，或清除选择以移除主管。",
     "linkedEmploymentProfileId": "选择要关联到此艺人的员工档案。",
     "internalDisplayNameSource": "显示名称来自关联的员工档案。",
     "performanceAlias": "内部人员显示名称来自关联的员工档案。表演别名为可选项，仅用于艺人/表演场景。",
@@ -55,8 +50,6 @@
     "allOperationalStatuses": "所有运营状态",
     "talentOrigin": "艺人来源",
     "allTalentOrigins": "所有艺人来源",
-    "managerEmploymentProfileId": "主管",
-    "managerEmploymentProfileIdPlaceholder": "选择主管",
     "hasLinkedEmploymentProfile": "关联员工档案",
     "allLinkedEmploymentProfileStates": "所有档案关联状态",
     "linkedOnly": "仅已关联",
@@ -97,14 +90,12 @@
     "closeCreate": "关闭新建",
     "open": "打开",
     "edit": "编辑",
-    "assignManager": "分配主管",
     "linkEmploymentProfile": "关联员工档案",
     "updateCommercialParticipation": "更新商业参与",
     "suspend": "暂停",
     "reactivate": "重新启用",
     "deactivate": "停用",
     "archive": "归档",
-    "clearManager": "清除主管",
     "clearLinkedEmploymentProfile": "清除关联档案"
   },
   "table": {
@@ -117,7 +108,6 @@
     "displayShortName": "简称",
     "talentOrigin": "来源",
     "operationalStatus": "状态",
-    "managerEmploymentProfileId": "主管",
     "linkedEmploymentProfileId": "关联档案",
     "commercialParticipationStatus": "商业",
     "livestreamEligible": "可直播",
@@ -155,12 +145,6 @@
       "submit": "保存",
       "pending": "保存中..."
     },
-    "assignManager": {
-      "title": "分配主管",
-      "subtitle": "更新主管关系。",
-      "submit": "分配",
-      "pending": "分配中..."
-    },
     "linkEmploymentProfile": {
       "title": "关联员工档案",
       "subtitle": "将员工档案关联到此艺人。",
@@ -178,13 +162,11 @@
     "required": "此字段为必填。",
     "invalidToken": "值只能使用支持的标记字符。",
     "invalidReferenceToken": "引用 ID 包含不支持的字符。",
-    "blockedCommercialStatus": "阻止商业参与时，两个资格标记都必须为 false。",
-    "managerCannotMatchTalentId": "主管档案不能匹配此艺人 ID。"
+    "blockedCommercialStatus": "阻止商业参与时，两个资格标记都必须为 false。"
   },
   "feedback": {
     "created": "艺人已创建。",
     "updated": "艺人已更新。",
-    "managerAssigned": "主管分配已更新。",
     "employmentProfileLinked": "员工档案已关联。",
     "commercialParticipationUpdated": "商业参与已更新。",
     "lifecycleUpdated": "艺人生命周期已更新。"

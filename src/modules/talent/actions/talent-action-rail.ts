@@ -5,7 +5,6 @@ import type { TalentLifecycleAction, TalentRecord } from '@modules/talent/types/
 
 type TalentActionRailHandlers = {
   onEdit: () => void;
-  onAssignManager: () => void;
   onLinkEmploymentProfile: () => void;
   onUpdateCommercialParticipation: () => void;
   onLifecycleAction: (action: TalentLifecycleAction) => void;
@@ -34,12 +33,6 @@ export const createTalentActionRailItems = (
       label: t('talent:actions.edit'),
       disabled: !canEdit(record),
       onClick: canEdit(record) ? handlers.onEdit : undefined,
-    },
-    {
-      id: 'assign-manager',
-      label: t('talent:actions.assignManager'),
-      disabled: !canRelationshipMutate(record),
-      onClick: canRelationshipMutate(record) ? handlers.onAssignManager : undefined,
     },
     {
       id: 'employment-link',

@@ -18,7 +18,6 @@ import type {
   TalentCommercialParticipationStatus,
   TalentCreatePayload,
   TalentEmploymentProfileLinkPayload,
-  TalentManagerAssignmentPayload,
   TalentOrigin,
   TalentUpdatePayload,
 } from '@modules/talent/types/talent.types';
@@ -53,12 +52,6 @@ type TalentEditSurfaceProps = BaseMutationSurfaceProps & {
     profileSummary?: string | null;
   };
   onSubmit: (payload: TalentUpdatePayload) => Promise<void> | void;
-};
-
-type TalentManagerAssignmentSurfaceProps = BaseMutationSurfaceProps & {
-  currentTalentId: string;
-  currentManagerEmploymentProfileId?: string | null;
-  onSubmit: (payload: TalentManagerAssignmentPayload) => Promise<void> | void;
 };
 
 type TalentEmploymentLinkSurfaceProps = BaseMutationSurfaceProps & {
@@ -130,12 +123,6 @@ const createTalentCreateSchema = (
       ),
       livestreamEligible: z.boolean(),
       eventEligible: z.boolean(),
-      managerEmploymentProfileId: z
-        .string()
-        .trim()
-        .regex(/^[A-Za-z0-9_-]+$/, tokenMessage)
-        .optional()
-        .or(z.literal('')),
       linkedEmploymentProfileId: z
         .string()
         .trim()
@@ -213,32 +200,6 @@ const createTalentEditSchema = (requiredMessage: string, talentOrigin: TalentOri
     });
 };
 
-const createManagerAssignmentSchema = (
-  tokenMessage: string,
-  selfMessage: string,
-  currentTalentId: string,
-) => {
-  return z
-    .object({
-      newManagerEmploymentProfileId: z
-        .string()
-        .trim()
-        .regex(/^[A-Za-z0-9_-]+$/, tokenMessage)
-        .optional()
-        .or(z.literal('')),
-    })
-    .superRefine((value, context) => {
-      const normalized = toOptionalText(value.newManagerEmploymentProfileId);
-      if (normalized && normalized === currentTalentId) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['newManagerEmploymentProfileId'],
-          message: selfMessage,
-        });
-      }
-    });
-};
-
 const createEmploymentLinkSchema = (requiredMessage: string, tokenMessage: string) => {
   return z.object({
     linkedEmploymentProfileId: z
@@ -285,7 +246,6 @@ type TalentCreateFormValues = {
   commercialParticipationStatus: TalentCommercialParticipationStatus;
   livestreamEligible: boolean;
   eventEligible: boolean;
-  managerEmploymentProfileId: string;
   linkedEmploymentProfileId: string;
   displayShortName: string;
   externalRef: string;
@@ -325,7 +285,6 @@ export const TalentCreateSurface = ({
       commercialParticipationStatus: 'ELIGIBLE',
       livestreamEligible: true,
       eventEligible: true,
-      managerEmploymentProfileId: '',
       linkedEmploymentProfileId: '',
       displayShortName: '',
       externalRef: '',
@@ -359,7 +318,6 @@ export const TalentCreateSurface = ({
       commercialParticipationStatus: parsed.data.commercialParticipationStatus,
       livestreamEligible: parsed.data.livestreamEligible,
       eventEligible: parsed.data.eventEligible,
-      managerEmploymentProfileId: toNullableText(parsed.data.managerEmploymentProfileId),
       linkedEmploymentProfileId: toNullableText(parsed.data.linkedEmploymentProfileId),
       displayShortName: toNullableText(parsed.data.displayShortName),
       externalRef: toNullableText(parsed.data.externalRef),
@@ -413,16 +371,6 @@ export const TalentCreateSurface = ({
             name="commercialParticipationStatus"
             label={t('talent:fields.commercialParticipationStatus')}
             options={commercialParticipationOptions}
-          />
-          <ReferencePickerField
-            name="managerEmploymentProfileId"
-            label={t('talent:fields.managerEmploymentProfileId')}
-            pickerId="talent-manager"
-            loadOptions={loadEmploymentProfileReferenceOptions}
-            helperText={t('talent:referenceHelp.managerEmploymentProfileId')}
-            placeholder={t('talent:placeholders.employmentProfileSearch')}
-            clearable
-            clearLabel={t('talent:actions.clearManager')}
           />
           <ReferencePickerField
             name="linkedEmploymentProfileId"
@@ -569,74 +517,6 @@ export const TalentEditSurface = ({
           name="profileSummary"
           label={t('talent:fields.profileSummary')}
           placeholder={t('talent:placeholders.optional')}
-        />
-      </ModuleMutationSurface>
-    </FormProvider>
-  );
-};
-
-type TalentManagerAssignmentFormValues = {
-  newManagerEmploymentProfileId: string;
-};
-
-export const TalentManagerAssignmentSurface = ({
-  currentTalentId,
-  currentManagerEmploymentProfileId,
-  onCancel,
-  onSubmit,
-  isPending = false,
-}: TalentManagerAssignmentSurfaceProps): JSX.Element => {
-  const { t } = useTranslation(['talent', 'common']);
-  const form = useForm<TalentManagerAssignmentFormValues>({
-    defaultValues: {
-      newManagerEmploymentProfileId: currentManagerEmploymentProfileId ?? '',
-    },
-  });
-
-  const schema = useMemo(
-    () =>
-      createManagerAssignmentSchema(
-        t('talent:validation.invalidReferenceToken'),
-        t('talent:validation.managerCannotMatchTalentId'),
-        currentTalentId,
-      ),
-    [currentTalentId, t],
-  );
-
-  const handleSubmit = form.handleSubmit(async (values) => {
-    const parsed = schema.safeParse(values);
-    if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'newManagerEmploymentProfileId');
-      return;
-    }
-
-    await onSubmit({
-      newManagerEmploymentProfileId: toNullableText(parsed.data.newManagerEmploymentProfileId),
-    });
-  });
-
-  return (
-    <FormProvider {...form}>
-      <ModuleMutationSurface
-        title={t('talent:mutations.assignManager.title')}
-        subtitle={t('talent:mutations.assignManager.subtitle')}
-        kind="action"
-        submitLabel={t('talent:mutations.assignManager.submit')}
-        pendingLabel={t('talent:mutations.assignManager.pending')}
-        cancelLabel={t('common:actions.cancel')}
-        onCancel={onCancel}
-        onSubmit={(event) => void handleSubmit(event)}
-        isPending={isPending}
-      >
-        <ReferencePickerField
-          name="newManagerEmploymentProfileId"
-          label={t('talent:fields.newManagerEmploymentProfileId')}
-          pickerId="talent-new-manager"
-          loadOptions={loadEmploymentProfileReferenceOptions}
-          helperText={t('talent:referenceHelp.newManagerEmploymentProfileId')}
-          placeholder={t('talent:placeholders.employmentProfileSearch')}
-          clearable
-          clearLabel={t('talent:actions.clearManager')}
         />
       </ModuleMutationSurface>
     </FormProvider>

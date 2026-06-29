@@ -12,8 +12,6 @@
     "jobTitle": "Job Title",
     "orgUnitId": "Organization Unit",
     "newOrgUnitId": "Organization Unit",
-    "managerEmploymentProfileId": "Manager",
-    "newManagerEmploymentProfileId": "Manager",
     "recruiterEmploymentProfileId": "Recruiter",
     "hrOwnerEmploymentProfileId": "HR Owner",
     "onboardingOwnerEmploymentProfileId": "Onboarding Owner",
@@ -40,14 +38,11 @@
     "orgUnitSearch": "Search org units by name or code",
     "employmentProfileSearch": "Search employment profiles by name or employee code",
     "userSearch": "Search users by name or email",
-    "clearToUnset": "Leave blank to clear manager assignment",
     "selectEmploymentKind": "Select employment kind"
   },
   "referenceHelp": {
     "orgUnitId": "Choose the organization unit this profile belongs to.",
     "newOrgUnitId": "Choose the organization unit this profile should move into.",
-    "managerEmploymentProfileId": "Choose the manager employment profile, or leave unselected when none applies.",
-    "newManagerEmploymentProfileId": "Choose the manager employment profile, or clear the selection to remove the manager.",
     "recruiterEmploymentProfileId": "Choose the employment profile responsible for recruiting.",
     "hrOwnerEmploymentProfileId": "Choose the employment profile responsible for HR ownership.",
     "onboardingOwnerEmploymentProfileId": "Choose the employment profile responsible for onboarding.",
@@ -69,8 +64,6 @@
     "allEmploymentKinds": "All employment kinds",
     "orgUnitId": "Org Unit",
     "orgUnitIdPlaceholder": "Org unit ID",
-    "managerEmploymentProfileId": "Manager",
-    "managerEmploymentProfileIdPlaceholder": "Manager profile ID",
     "hasLinkedUser": "Linked User",
     "allEmploymentStatuses": "All employment statuses",
     "allContractStatuses": "All contract statuses",
@@ -110,7 +103,6 @@
     "open": "Open",
     "edit": "Edit",
     "assignOrgUnit": "Assign Org Unit",
-    "assignManager": "Assign Manager",
     "linkUser": "Link User",
     "unlinkUser": "Unlink User",
     "updateContractStatus": "Update Contract Status",
@@ -120,7 +112,6 @@
     "reactivate": "Reactivate",
     "terminate": "Terminate",
     "archive": "Archive",
-    "clearManager": "Clear manager",
     "clearAttribution": "Clear assignment",
     "clearLinkedUser": "Clear linked user"
   },
@@ -132,7 +123,6 @@
     "employmentKind": "Kind",
     "jobTitle": "Job Title",
     "orgUnitId": "Org Unit",
-    "managerEmploymentProfileId": "Manager",
     "linkedUserId": "Linked User",
     "employmentStatus": "Employment Status",
     "contractStatus": "External labor contract status",
@@ -144,8 +134,7 @@
     "displayName": "Display Name",
     "employmentStatus": "Employment Status",
     "contractStatus": "External labor contract status",
-    "orgUnitId": "Org Unit",
-    "managerEmploymentProfileId": "Manager"
+    "orgUnitId": "Org Unit"
   },
   "directReports": {
     "sortBy": "Sort",
@@ -165,7 +154,6 @@
     "assignmentTitle": "Assignment and Dates",
     "accountTitle": "Account / User Link",
     "hrAttributionTitle": "HR Attribution",
-    "noManager": "No manager assigned",
     "notAssigned": "Not assigned",
     "externalContractHelper": "Labor contracts and legal appendices are stored in the external HR process. This screen records only an operational reference status."
   },
@@ -195,7 +183,7 @@
     "noModuleAccess": "No access",
     "unavailable": "Unavailable",
     "directReportsTitle": "Direct Reports",
-    "reportingTitle": "Manager / Reporting"
+    "reportingTitle": "Responsibility / Reporting"
   },
   "mutations": {
     "create": {
@@ -213,12 +201,6 @@
     "assignOrgUnit": {
       "title": "Assign Org Unit",
       "subtitle": "Move profile into a different org unit",
-      "submit": "Assign",
-      "pending": "Assigning..."
-    },
-    "assignManager": {
-      "title": "Assign Manager",
-      "subtitle": "Update manager relationship",
       "submit": "Assign",
       "pending": "Assigning..."
     },
@@ -247,14 +229,12 @@
     "invalidDate": "Date must be a valid YYYY-MM-DD value.",
     "onboardedBeforeHired": "Onboarded Date must not be before Hired Date.",
     "invalidReferenceToken": "Reference ID contains unsupported characters.",
-    "managerCannotBeSelf": "A profile cannot be its own manager.",
     "contractStatusTransitionNotAllowed": "This contract-status transition is not allowed."
   },
   "feedback": {
     "created": "Employment profile created successfully.",
     "updated": "Employment profile updated successfully.",
     "orgUnitAssigned": "Org unit assignment updated successfully.",
-    "managerAssigned": "Manager assignment updated successfully.",
     "userLinked": "User linked successfully.",
     "userUnlinked": "User unlinked successfully.",
     "contractStatusUpdated": "Contract status updated successfully.",
@@ -301,7 +281,9 @@
       "SUPERSEDED": "Superseded",
       "CANCELLED": "Cancelled"
     },
-    "payFrequencies": { "MONTHLY": "Monthly" },
+    "payFrequencies": {
+      "MONTHLY": "Monthly"
+    },
     "actions": {
       "create": "Create draft",
       "update": "Update draft",
@@ -318,7 +300,9 @@
       "message": "Create a draft when confirmed structured terms are available.",
       "allowances": "No allowances."
     },
-    "form": { "title": "Employment terms draft" },
+    "form": {
+      "title": "Employment terms draft"
+    },
     "validation": {
       "required": "Required fields are missing.",
       "dateRange": "End date must not be before effective date.",

@@ -1,13 +1,13 @@
 {
   "tabs": {
-    "templates": "Mẫu vai trò",
-    "bundles": "Gói vai trò",
-    "assignments": "Gán quyền",
-    "userAccess": "Quyền theo người dùng"
+    "templates": "角色模板",
+    "bundles": "角色包",
+    "assignments": "访问分配",
+    "userAccess": "按用户查看权限"
   },
   "page": {
     "title": "角色",
-    "subtitle": "管理权限模板、分配规则和角色拥有的用户分配。",
+    "subtitle": "管理角色模板、角色包、按用户分配访问权限，并审查当前访问权限。",
     "placeholder": "角色身份/访问实现不可用。"
   },
   "fields": {
@@ -29,12 +29,12 @@
     "reason": "原因"
   },
   "generatedCode": {
-    "label": "后端生成代码",
-    "description": "留空手动代码覆盖，后端会在创建后生成稳定的角色代码。"
+    "label": "系统生成代码",
+    "description": "留空手动代码覆盖，源系统会在创建后生成稳定的角色代码。"
   },
   "help": {
     "name": "显示给管理员的业务角色名称。",
-    "codeOptional": "仅在保留稳定运营角色键时使用。代码是大写后端标识符，不是显示名称。"
+    "codeOptional": "仅在保留稳定运营角色键时使用。代码是大写系统标识符，不是显示名称。"
   },
   "templates": {
     "templateMode": "基于模板的角色",
@@ -51,7 +51,7 @@
     "scopePlan": "范围计划",
     "scopePlanHelp": "仅供预览。分配角色给用户时再选择分配范围。",
     "implementationNotes": "实现说明",
-    "backendAuthority": "后端会验证授权；前端预览不是安全保证。",
+    "backendAuthority": "源系统会验证授权；此预览不是安全保证。",
     "basedOnTemplate": "基于模板",
     "custom": "自定义",
     "templateVersion": "模板版本",
@@ -84,7 +84,7 @@
   },
   "scopePicker": {
     "assignmentScopes": "分配范围",
-    "backendValidation": "分配范围会影响运行时访问。后端会拒绝当前 actor 无权授予的范围。",
+    "backendValidation": "分配范围会影响运行时访问。源系统会拒绝当前操作者无权授予的范围。",
     "recommendedScopes": "推荐范围",
     "recommendedScopesHelp": "推荐范围会从角色模板预填。提交前如需为此用户分配使用不同范围，请进行调整。",
     "applyRecommendedScopes": "应用推荐范围",
@@ -135,7 +135,7 @@
     "open": "打开",
     "create": "新建角色",
     "closeCreate": "关闭新建",
-    "edit": "编辑元数据",
+    "edit": "编辑",
     "replacePermissions": "替换权限",
     "replaceAssignmentRules": "替换分配规则",
     "assignToUser": "分配给用户",
@@ -148,11 +148,11 @@
     "title": "角色操作"
   },
   "detail": {
-    "identityTitle": "角色元数据",
+    "identityTitle": "角色概览",
     "policyTitle": "权限策略",
     "permissionMatrixTitle": "权限矩阵",
     "archivedReadOnly": "已归档角色不可变更。",
-    "boundaryNotice": "角色只授予权限。角色分配和撤销仍由角色拥有，不会修改用户档案、Auth0 链接、生命周期、员工档案或业务记录。"
+    "boundaryNotice": "角色只描述业务能力。角色详情页不是分配或撤销访问权限的位置；在安全的源系统契约可用后，分配必须通过按用户的流程完成。"
   },
   "mutations": {
     "create": {
@@ -181,7 +181,7 @@
     },
     "deactivate": {
       "title": "停用角色",
-      "subtitle": "后端可能因启用分配或治理约束而拒绝。",
+      "subtitle": "源系统可能因启用中的分配或治理约束而拒绝。",
       "submit": "停用角色",
       "pending": "角色停用中"
     },
@@ -219,9 +219,9 @@
     "selfRoleRequiresStaffActor": "此角色需要自助员工账号。"
   },
   "confirm": {
-    "activate": "在后端允许时启用此角色。",
-    "deactivate": "在没有后端阻塞项时停用此角色。",
-    "archive": "在没有后端约束时归档此角色。"
+    "activate": "在源系统允许时启用此角色。",
+    "deactivate": "在没有源系统阻塞项时停用此角色。",
+    "archive": "在没有源系统约束时归档此角色。"
   },
   "feedback": {
     "created": "角色已创建。",
@@ -243,50 +243,84 @@
   },
   "templateCatalog": {
     "title": "角色模板目录",
-    "subtitle": "后端提供的模板；模板元数据不是运行时权限来源。",
+    "subtitle": "源系统提供的模板；模板元数据不是运行时权限来源。",
     "loadErrorTitle": "无法加载角色模板",
     "loadErrorMessage": "无法加载角色模板目录。",
     "emptyTitle": "没有角色模板",
-    "emptyMessage": "后端未返回可用角色模板。",
+    "emptyMessage": "源系统未返回可用角色模板。",
     "roleGroup": "角色组",
-    "requiredContext": "所需 Account Context",
+    "requiredContext": "所需工作区",
     "capabilitySummary": "能力组",
     "capabilityCount": "{{count}} 项能力",
-    "sensitiveWarning": "此模板包含后端敏感警告。"
+    "sensitiveWarning": "此模板包含源系统敏感警告。"
   },
   "bundles": {
     "code": "包代码",
     "status": "状态",
-    "recommendedContext": "推荐 Account Context",
+    "recommendedContext": "所需工作区",
     "childRoles": "子角色",
     "recommendedScope": "推荐范围",
     "supportMode": "支持模式",
     "readOnlySupport": "此屏幕只读",
     "scopeCount": "{{count}} 个推荐范围",
-    "sensitiveWarning": "此包包含后端敏感警告。",
+    "sensitiveWarning": "此包包含源系统敏感警告。",
     "loadErrorTitle": "无法加载角色包",
     "loadErrorMessage": "无法加载角色包目录。",
     "emptyTitle": "没有角色包",
-    "emptyMessage": "后端未返回可用角色包。"
+    "emptyMessage": "源系统未返回可用角色包。"
   },
   "assignmentTab": {
-    "unavailableTitle": "按用户分配权限流程不可用",
-    "unavailableMessage": "此屏幕不会创建前端分配权限。本次修复范围内未开放按用户分配流程，角色详情中的分配和撤销保持只读。"
+    "unavailableTitle": "按用户分配访问权限的流程尚不可用",
+    "unavailableMessage": "此步骤暂不能分配访问权限。你可以查看当前权限，或联系访问权限负责人。",
+    "workflowTitle": "按用户分配访问权限流程",
+    "workflowSubtitle": "以下步骤展示目标产品方向。由于前端尚无安全的源系统契约来记录访问分配，确认按钮保持禁用。",
+    "departmentFilterLabel": "单位 / 部门",
+    "departmentFilterValue": "选择部门以查找人员",
+    "departmentFilterHelp": "仅用于筛选人员。这还不是授予访问权限的范围。",
+    "personLabel": "接收访问权限的人员",
+    "personValue": "选择已关联登录账号的人事档案",
+    "personHelp": "尚未关联登录账号的人员，需要先完成账号关联后才能分配访问权限。",
+    "modeLabel": "访问包或单个角色",
+    "modeValue": "默认按访问包分配",
+    "modeHelp": "单个角色仅用于特殊情况，且仍需填写原因。",
+    "workspaceLabel": "所需工作区",
+    "workspaceValue": "由所选访问包或角色自动确定",
+    "workspaceHelp": "没有手动下拉选择；工作区本身不会授予业务权限。",
+    "scopeTitle": "适用范围",
+    "talentGroupScopeLabel": "管理的 Talent 分组",
+    "orgUnitScopeLabel": "管理的部门",
+    "currentManaged": "当前管理",
+    "addTalentGroup": "分配另一个分组",
+    "addOrgUnit": "分配另一个部门",
+    "currentTalentGroupExample": "Live A 组 - Mai Anh 当前是该组管理员。",
+    "newTalentGroupExample": "Live C 组 - Mai Anh 将被记录为该组管理员。",
+    "currentOrgUnitExample": "生产部门 - Mai Anh 当前是该部门管理员。",
+    "newOrgUnitExample": "内容部门 - Mai Anh 将被记录为该部门管理员。",
+    "previewTitle": "变更摘要",
+    "reviewRequired": "确认前需要复核。",
+    "previewIntro": "确认后：",
+    "previewWorkspaceChange": "如果账号符合条件，该人员可以进入所需工作区。",
+    "previewScopeChange": "如果责任来源允许，该人员会被记录到所选管理范围。",
+    "previewCapabilityChange": "该人员可以在所选访问包或角色的范围内查看并处理工作。",
+    "sensitiveWarning": "敏感访问包或角色需要原因、审计记录和源系统复核策略。",
+    "reasonLabel": "访问分配原因",
+    "reasonPlaceholder": "例如：任命 Mai Anh 自 2026-07 起管理 Live C 组。",
+    "confirmLabel": "确认访问分配"
   },
   "userAccess": {
-    "selectorTitle": "选择用户",
-    "selectorSubtitle": "按用户从后端查看有效访问权限。",
-    "userResource": "用户",
+    "selectorTitle": "选择人员 / 登录账号",
+    "selectorSubtitle": "按已拥有登录账号的人员查看当前访问权限。",
+    "userResource": "人员",
     "noUserResults": "未找到匹配用户。",
     "emptyTitle": "尚未选择用户",
-    "emptyMessage": "选择用户以查看 Account Context、workspace 和有效访问权限。",
+    "emptyMessage": "选择一名人员以查看登录账号、工作区和当前访问权限。",
     "loadErrorTitle": "无法加载用户权限",
     "loadErrorMessage": "无法加载该用户的有效访问权限。",
     "summaryTitle": "访问摘要",
     "user": "用户",
-    "accountContexts": "Account Context",
-    "primaryWorkspace": "主 workspace",
-    "eligibleWorkspaces": "可用 workspace",
+    "accountContexts": "当前工作区",
+    "primaryWorkspace": "主工作区",
+    "eligibleWorkspaces": "可进入的工作区",
     "ownData": "本人数据",
     "managerResponsibilities": "管理职责",
     "available": "可用",
@@ -296,13 +330,13 @@
     "sensitive": "敏感",
     "scopeCount": "{{count}} 个结构化范围",
     "noAssignmentsTitle": "没有有效角色",
-    "noAssignmentsMessage": "后端未返回有效角色分配记录。",
+    "noAssignmentsMessage": "源系统未返回有效角色分配记录。",
     "capabilitiesTitle": "业务能力组",
     "businessCapabilityGroups": "能力组",
-    "sourceTrace": "Source trace"
+    "sourceTrace": "复核追踪"
   },
   "assignments": {
-    "title": "角色分配",
+    "title": "当前与此角色关联的访问权限",
     "caption": "角色分配",
     "assignmentId": "分配ID",
     "userId": "用户",

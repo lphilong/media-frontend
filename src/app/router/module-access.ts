@@ -21,6 +21,7 @@ export type ModuleAccessModuleId =
   | 'employment-profile'
   | 'talent'
   | 'talent-group'
+  | 'responsibility'
   | 'platform-account'
   | 'studio-resource'
   | 'work-schedule'
@@ -113,6 +114,19 @@ export const moduleAccessDefinitions: Readonly<
     id: 'talent-group',
     routePaths: ['/talent-groups'],
     access: { allPermissions: [PERMISSIONS.TALENT_GROUP_READ], excludeSelfServiceOnly: true },
+  },
+  responsibility: {
+    id: 'responsibility',
+    routePaths: ['/responsibilities'],
+    access: {
+      anyPermission: [
+        PERMISSIONS.TALENT_GROUP_READ,
+        PERMISSIONS.ORG_UNIT_READ,
+        PERMISSIONS.TALENT_READ,
+        PERMISSIONS.EMPLOYMENT_PROFILE_READ,
+      ],
+      excludeSelfServiceOnly: true,
+    },
   },
   'platform-account': {
     id: 'platform-account',

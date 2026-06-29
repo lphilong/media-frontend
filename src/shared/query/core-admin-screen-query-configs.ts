@@ -160,7 +160,6 @@ const employmentProfileFlatListSchema = z.object({
   contractStatus: employmentContractStatusSchema,
   employmentKind: enumTokenSchema,
   orgUnitId: idSchema.optional(),
-  managerEmploymentProfileId: idSchema.optional(),
   hasLinkedUser: booleanQuerySchema,
   limit: limitSchema,
   cursor: cursorSchema,
@@ -180,7 +179,6 @@ const employmentProfileDirectReportsSchema = z.object({
 const talentFlatListSchema = z.object({
   operationalStatus: talentOperationalStatusSchema,
   talentOrigin: talentOriginSchema,
-  managerEmploymentProfileId: idSchema.optional(),
   hasLinkedEmploymentProfile: booleanQuerySchema,
   commercialParticipationStatus: talentCommercialParticipationStatusSchema,
   livestreamEligible: booleanQuerySchema,
@@ -276,7 +274,6 @@ export const employmentProfileFlatListQueryConfig = defineScreenQueryConfig({
       'contractStatus',
       'employmentKind',
       'orgUnitId',
-      'managerEmploymentProfileId',
       'hasLinkedUser',
     ],
     archivedByDefault: {
@@ -348,7 +345,6 @@ export const talentFlatListQueryConfig = defineScreenQueryConfig({
     allowedFilterKeys: [
       'operationalStatus',
       'talentOrigin',
-      'managerEmploymentProfileId',
       'hasLinkedEmploymentProfile',
       'commercialParticipationStatus',
       'livestreamEligible',

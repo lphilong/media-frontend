@@ -1,0 +1,100 @@
+{
+  "page": {
+    "title": "Management Responsibility",
+    "subtitle": "Central assignment of management responsibility for talent groups, org units, talents, and employment profiles.",
+    "placeholder": "No management responsibility surface is available."
+  },
+  "subjects": {
+    "TALENT_GROUP": "Talent Group",
+    "ORG_UNIT": "Org Unit",
+    "TALENT": "Talent",
+    "EMPLOYMENT_PROFILE": "Employment Profile"
+  },
+  "types": {
+    "TALENT_GROUP_MANAGER": "Talent Group Manager",
+    "ORG_UNIT_MANAGER": "Unit manager",
+    "TALENT_DIRECT_MANAGER": "Talent direct manager",
+    "EMPLOYMENT_REPORTING_MANAGER": "HR reporting manager"
+  },
+  "roles": {
+    "GROUP_OWNER": "Group owner",
+    "GROUP_MANAGER": "Group manager",
+    "GROUP_OPERATOR": "Group operator",
+    "DEPARTMENT_OWNER": "Department owner",
+    "UNIT_MANAGER": "Unit manager",
+    "UNIT_OPERATOR": "Unit operator",
+    "DIRECT_EXCEPTION": "Direct assignment",
+    "HR_REPORTING": "HR reporting"
+  },
+  "statuses": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "REVOKED": "Revoked"
+  },
+  "form": {
+    "subjectType": "Subject type",
+    "subject": "Managed subject",
+    "subjectSearch": "Search subject",
+    "responsible": "Responsible employment profile",
+    "responsibleSearch": "Search employment profile",
+    "role": "Responsibility role",
+    "rolePlaceholder": "Example: Unit manager",
+    "effectiveAt": "Effective from",
+    "expiresAt": "Effective until",
+    "isPrimary": "Primary assignment",
+    "includeDescendants": "Include child units",
+    "reason": "Reason",
+    "reasonPlaceholder": "Business note",
+    "helper": "This screen assigns business management responsibility only; it does not grant access.",
+    "permissionHint": "Your account cannot assign responsibility for the selected subject type."
+  },
+  "actions": {
+    "create": "Assign responsibility",
+    "creating": "Assigning...",
+    "revoke": "Revoke",
+    "clearSubject": "Clear subject filter"
+  },
+  "feedback": {
+    "created": "Management responsibility assigned.",
+    "revoked": "Management responsibility revoked."
+  },
+  "confirm": {
+    "revoke": "Revoke this management responsibility assignment?",
+    "revokeReason": "Revoked from central management responsibility screen"
+  },
+  "list": {
+    "title": "Assignments",
+    "subtitle": "Shows active central management responsibility assignments.",
+    "emptyTitle": "No assignments",
+    "emptyMessage": "Select a subject and responsible profile to create a central assignment.",
+    "loadErrorTitle": "Assignments could not be loaded",
+    "loadErrorMessage": "Please try again."
+  },
+  "table": {
+    "caption": "Management responsibility assignments",
+    "subject": "Subject",
+    "responsible": "Responsible",
+    "type": "Responsibility",
+    "effective": "Effective",
+    "state": "State",
+    "readOnly": "Read-only"
+  },
+  "summary": {
+    "title": "Management responsibility",
+    "subtitle": "Read-only summary from the central management responsibility screen.",
+    "openCentral": "Management responsibility",
+    "loadFailed": "Management responsibility could not be loaded.",
+    "emptyTitle": "No direct responsibility",
+    "emptyMessage": "Make changes in the central management responsibility screen.",
+    "inheritedTitle": "Responsibilities from groups or org units",
+    "effectiveRange": "{{from}} - {{to}}",
+    "openEnded": "Open-ended",
+    "primary": "Primary",
+    "descendants": "Includes descendants",
+    "reviewNeeded": "Review needed",
+    "inheritedBadge": "From group or org unit",
+    "inheritedFromGroup": "Inherited from group",
+    "inheritedFromOrgUnit": "Inherited from org unit",
+    "directAssignment": "Direct assignment"
+  }
+}

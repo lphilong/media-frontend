@@ -20,6 +20,7 @@ export const I18N_NAMESPACES = [
   'employment-profile',
   'talent',
   'talent-group',
+  'responsibility',
   'platform-account',
   'studio-resource',
   'work-schedule',

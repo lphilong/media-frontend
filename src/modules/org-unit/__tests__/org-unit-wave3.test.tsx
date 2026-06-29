@@ -256,7 +256,7 @@ describe('org unit wave 3 surfaces', () => {
     expect(within(childRow).queryByText('ACTIVE')).not.toBeInTheDocument();
   });
 
-  it('renders Org Unit Responsibilities / Managers with business labels and helper copy', async () => {
+  it('renders Org Unit Responsibilities / Managers as a read-only central summary', async () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/org-units/ou-root');
 
@@ -264,306 +264,50 @@ describe('org unit wave 3 surfaces', () => {
     const section = heading.closest('section') ?? document.body;
 
     expect(
-      within(section).getByText(i18n.t('org-unit:responsibilities.helper')),
+      within(section).getByText(i18n.t('responsibility:summary.subtitle')),
     ).toBeInTheDocument();
     expect(
-      within(section).getByText(
-        textPattern(i18n.t('org-unit:responsibilityRoles.DEPARTMENT_OWNER')),
-      ),
+      within(section).getByText(textPattern(i18n.t('responsibility:roles.DEPARTMENT_OWNER'))),
     ).toBeInTheDocument();
     expect(
-      within(section).getByText(textPattern(i18n.t('org-unit:responsibilityRoles.UNIT_MANAGER'))),
-    ).toBeInTheDocument();
-    expect(
-      within(section).getByText(textPattern(i18n.t('org-unit:responsibilityRoles.UNIT_OPERATOR'))),
-    ).toBeInTheDocument();
-    expect(within(section).queryByText('DEPARTMENT_OWNER')).not.toBeInTheDocument();
-    expect(within(section).queryByText('managerEmploymentProfileId')).not.toBeInTheDocument();
-    expect(within(section).getByText(/EP-000001/)).toBeInTheDocument();
-  });
-
-  it('assigns and revokes Org Unit responsibility from the detail page', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    renderRoute('/org-units/ou-root');
-
-    const heading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
-    const section = heading.closest('section') ?? document.body;
-
-    await user.click(
-      within(section).getByRole('button', { name: i18n.t('org-unit:responsibilities.assign') }),
-    );
-    const assignSurfaceHeading = await screen.findByRole('heading', {
-      name: i18n.t('org-unit:responsibilities.assignTitle'),
-    });
-    const assignSurface = assignSurfaceHeading.closest('section') ?? document.body;
-    expect(
-      within(assignSurface).getByText(i18n.t('org-unit:responsibilities.managerEmploymentProfile')),
-    ).toBeInTheDocument();
-    expect(
-      within(assignSurface).getByLabelText(i18n.t('org-unit:responsibilities.role')),
-    ).toBeInTheDocument();
-    expect(
-      within(assignSurface).getByLabelText(i18n.t('org-unit:responsibilities.includeDescendants')),
-    ).toBeInTheDocument();
-    expect(
-      within(assignSurface).getByLabelText(i18n.t('org-unit:responsibilities.isPrimary')),
-    ).toBeInTheDocument();
-    await waitFor(() => {
-      expect(loadContextualEmploymentProfileReferenceOptions).toHaveBeenCalledWith('', {
-        orgUnitId: 'ou-root',
-        employmentStatuses: ['ACTIVE', 'ON_LEAVE'],
-      });
-    });
-
-    await selectPickerOption(user, 'org-unit-responsibility-manager', /EP-000001/);
-    await user.selectOptions(
-      within(assignSurface).getByLabelText(i18n.t('org-unit:responsibilities.role')),
-      'UNIT_OPERATOR',
-    );
-    await user.click(
-      within(assignSurface).getByLabelText(i18n.t('org-unit:responsibilities.includeDescendants')),
-    );
-    await user.click(
-      within(assignSurface).getByRole('button', {
-        name: i18n.t('org-unit:responsibilities.assign'),
-      }),
-    );
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole('heading', {
-          name: i18n.t('org-unit:responsibilities.assignTitle'),
-        }),
-      ).not.toBeInTheDocument();
-    });
-
-    const updatedHeading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
-    const updatedSection = updatedHeading.closest('section') ?? document.body;
-    expect(
-      within(updatedSection).getAllByText(i18n.t('org-unit:responsibilityRoles.UNIT_OPERATOR'))
+      within(section).getAllByText(textPattern(i18n.t('responsibility:roles.UNIT_MANAGER')))
         .length,
     ).toBeGreaterThan(0);
-
-    const revokeButtonsBefore = within(updatedSection).getAllByRole('button', {
-      name: i18n.t('org-unit:responsibilities.revoke'),
-    });
-    await user.click(revokeButtonsBefore[0]);
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('common:actions.confirmDestructive') }),
-    );
-    await waitFor(() => {
-      const revokeButtonsAfter = within(updatedSection).getAllByRole('button', {
-        name: i18n.t('org-unit:responsibilities.revoke'),
-      });
-      expect(revokeButtonsAfter.length).toBeLessThan(revokeButtonsBefore.length);
-    });
-  });
-
-  it('edits Org Unit responsibility safe metadata without changing manager identity', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    const patchRequests: Array<{ url: string; body: Record<string, unknown> }> = [];
-
-    server.use(
-      http.patch('*/admin/org-units/:orgUnitId/responsibilities/:assignmentId', async (info) => {
-        const body = (await info.request.json()) as Record<string, unknown>;
-        patchRequests.push({ url: info.request.url, body });
-
-        return HttpResponse.json({
-          data: {
-            id: String(info.params.assignmentId),
-            orgUnitId: String(info.params.orgUnitId),
-            managerEmploymentProfileId: 'ep-002',
-            role: body.role,
-            status: 'ACTIVE',
-            includeDescendants: body.includeDescendants,
-            effectiveFrom: Date.UTC(2026, 1, 1),
-            effectiveTo: Date.UTC(2026, 2, 31),
-            isPrimary: body.isPrimary,
-            createdAt: Date.UTC(2026, 0, 1),
-            updatedAt: Date.UTC(2026, 1, 2),
-            orgUnitRef: {
-              id: 'ou-root',
-              code: 'OU-000001',
-              name: 'Head Office',
-              status: 'ACTIVE',
-            },
-            managerRef: {
-              id: 'ep-002',
-              code: 'EP-000002',
-              displayName: 'Bao',
-              name: 'Bao Tran',
-              title: 'Specialist',
-              status: 'ON_LEAVE',
-            },
-          },
-        });
-      }),
-      http.get('*/admin/org-units/:orgUnitId/responsibilities', () =>
-        patchRequests.length > 0
-          ? HttpResponse.json({
-              data: [
-                {
-                  id: 'ou-responsibility-manager',
-                  orgUnitId: 'ou-root',
-                  managerEmploymentProfileId: 'ep-002',
-                  role: 'UNIT_OPERATOR',
-                  status: 'ACTIVE',
-                  includeDescendants: true,
-                  effectiveFrom: Date.UTC(2026, 1, 1),
-                  effectiveTo: Date.UTC(2026, 2, 31),
-                  isPrimary: true,
-                  createdAt: Date.UTC(2026, 0, 1),
-                  updatedAt: Date.UTC(2026, 1, 2),
-                  orgUnitRef: {
-                    id: 'ou-root',
-                    code: 'OU-000001',
-                    name: 'Head Office',
-                    status: 'ACTIVE',
-                  },
-                  managerRef: {
-                    id: 'ep-002',
-                    code: 'EP-000002',
-                    displayName: 'Bao',
-                    name: 'Bao Tran',
-                    title: 'Specialist',
-                    status: 'ON_LEAVE',
-                  },
-                },
-              ],
-            })
-          : HttpResponse.json({
-              data: [
-                {
-                  id: 'ou-responsibility-manager',
-                  orgUnitId: 'ou-root',
-                  managerEmploymentProfileId: 'ep-002',
-                  role: 'UNIT_MANAGER',
-                  status: 'ACTIVE',
-                  includeDescendants: false,
-                  effectiveFrom: Date.UTC(2026, 0, 1),
-                  effectiveTo: null,
-                  isPrimary: false,
-                  createdAt: Date.UTC(2026, 0, 1),
-                  updatedAt: Date.UTC(2026, 0, 1),
-                  orgUnitRef: {
-                    id: 'ou-root',
-                    code: 'OU-000001',
-                    name: 'Head Office',
-                    status: 'ACTIVE',
-                  },
-                  managerRef: {
-                    id: 'ep-002',
-                    code: 'EP-000002',
-                    displayName: 'Bao',
-                    name: 'Bao Tran',
-                    title: 'Specialist',
-                    status: 'ON_LEAVE',
-                  },
-                },
-              ],
-            }),
-      ),
-    );
-
-    renderRoute('/org-units/ou-root');
-
-    const heading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
-    const section = heading.closest('section') ?? document.body;
-    expect(within(section).getByText(/EP-000002/)).toBeInTheDocument();
-
-    await user.click(within(section).getByRole('button', { name: i18n.t('common:actions.edit') }));
-
-    const editSurfaceHeading = await screen.findByRole('heading', {
-      name: i18n.t('org-unit:responsibilities.editTitle'),
-    });
-    const editSurface = editSurfaceHeading.closest('section') ?? document.body;
-
+    expect(within(section).queryByText('DEPARTMENT_OWNER')).not.toBeInTheDocument();
+    expect(within(section).queryByText('managerEmploymentProfileId')).not.toBeInTheDocument();
     expect(
-      within(editSurface).queryByLabelText(
-        i18n.t('org-unit:responsibilities.managerEmploymentProfile'),
-      ),
+      within(section).getByRole('link', { name: i18n.t('responsibility:summary.openCentral') }),
+    ).toHaveAttribute('href', '/responsibilities?subjectType=ORG_UNIT&subjectId=ou-root');
+    expect(
+      within(section).queryByRole('button', { name: i18n.t('org-unit:responsibilities.assign') }),
     ).not.toBeInTheDocument();
-    expect(within(editSurface).queryByText(/EP-000002/)).not.toBeInTheDocument();
-    expect(within(editSurface).queryByText('actionMask')).not.toBeInTheDocument();
-
-    await user.selectOptions(
-      within(editSurface).getByLabelText(i18n.t('org-unit:responsibilities.role')),
-      'UNIT_OPERATOR',
-    );
-    await user.clear(
-      within(editSurface).getByLabelText(i18n.t('org-unit:responsibilities.effectiveFrom')),
-    );
-    await user.type(
-      within(editSurface).getByLabelText(i18n.t('org-unit:responsibilities.effectiveFrom')),
-      '2026-02-01',
-    );
-    await user.clear(
-      within(editSurface).getByLabelText(i18n.t('org-unit:responsibilities.effectiveTo')),
-    );
-    await user.type(
-      within(editSurface).getByLabelText(i18n.t('org-unit:responsibilities.effectiveTo')),
-      '2026-03-31',
-    );
-    await user.click(
-      within(editSurface).getByLabelText(i18n.t('org-unit:responsibilities.includeDescendants')),
-    );
-    await user.click(
-      within(editSurface).getByLabelText(i18n.t('org-unit:responsibilities.isPrimary')),
-    );
-    await user.click(
-      within(editSurface).getByRole('button', { name: i18n.t('org-unit:responsibilities.save') }),
-    );
-
-    await waitFor(() => {
-      expect(patchRequests).toHaveLength(1);
-    });
-    expect(patchRequests[0].url).toContain(
-      '/admin/org-units/ou-root/responsibilities/ou-responsibility-manager',
-    );
-    expect(patchRequests[0].body).toEqual({
-      role: 'UNIT_OPERATOR',
-      includeDescendants: true,
-      effectiveFrom: '2026-02-01',
-      effectiveTo: '2026-03-31',
-      isPrimary: true,
-    });
-    expect(patchRequests[0].body).not.toHaveProperty('managerEmploymentProfileId');
-    expect(patchRequests[0].body).not.toHaveProperty('actionMask');
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole('heading', {
-          name: i18n.t('org-unit:responsibilities.editTitle'),
-        }),
-      ).not.toBeInTheDocument();
-    });
-
-    const refreshedHeading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
-    const refreshedSection = refreshedHeading.closest('section') ?? document.body;
-    expect(within(refreshedSection).getByText(/EP-000002/)).toBeInTheDocument();
     expect(
-      within(refreshedSection).getByText(
-        textPattern(i18n.t('org-unit:responsibilityRoles.UNIT_OPERATOR')),
-      ),
-    ).toBeInTheDocument();
-    expect(
-      within(refreshedSection).getByText(textPattern(i18n.t('org-unit:responsibilities.primary'))),
-    ).toBeInTheDocument();
-    expect(
-      within(refreshedSection).getByText(
-        textPattern(i18n.t('org-unit:responsibilities.descendantsIncluded')),
-      ),
-    ).toBeInTheDocument();
-    expect(within(refreshedSection).queryByText('UNIT_OPERATOR')).not.toBeInTheDocument();
+      within(section).queryByRole('button', { name: i18n.t('org-unit:responsibilities.revoke') }),
+    ).not.toBeInTheDocument();
   });
 
-  it('renders an empty responsibilities state with assign action when permitted', async () => {
+  it('keeps Org Unit responsibility mutation controls out of the detail page', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    renderRoute('/org-units/ou-root');
+
+    const heading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
+    const section = heading.closest('section') ?? document.body;
+
+    expect(
+      within(section).getByRole('link', { name: i18n.t('responsibility:summary.openCentral') }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: i18n.t('org-unit:responsibilities.assignTitle') }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: i18n.t('org-unit:responsibilities.editTitle') }))
+      .not.toBeInTheDocument();
+    expect(loadContextualEmploymentProfileReferenceOptions).not.toHaveBeenCalled();
+  });
+
+  it('renders an empty central responsibility state without local mutation controls', async () => {
     await setLocale(DEFAULT_LOCALE);
     server.use(
-      http.get('*/admin/org-units/:orgUnitId/responsibilities', () =>
-        HttpResponse.json({ data: [] }),
+      http.get('*/admin/responsibilities/summary/:subjectType/:subjectId', () =>
+        HttpResponse.json({ data: [], meta: { inherited: [] } }),
       ),
     );
 
@@ -572,14 +316,14 @@ describe('org unit wave 3 surfaces', () => {
     const heading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
     const section = heading.closest('section') ?? document.body;
     expect(
-      within(section).getAllByText(i18n.t('org-unit:responsibilities.emptyTitle')).length,
+      (await within(section).findAllByText(i18n.t('responsibility:summary.emptyTitle'))).length,
     ).toBeGreaterThan(0);
     expect(
-      within(section).getAllByText(i18n.t('org-unit:responsibilities.emptyMessage')).length,
+      within(section).getAllByText(i18n.t('responsibility:summary.emptyMessage')).length,
     ).toBeGreaterThan(0);
     expect(
-      within(section).getByRole('button', { name: i18n.t('org-unit:responsibilities.assign') }),
-    ).toBeInTheDocument();
+      within(section).queryByRole('button', { name: i18n.t('org-unit:responsibilities.assign') }),
+    ).not.toBeInTheDocument();
     expect(
       within(section).queryByRole('button', { name: i18n.t('org-unit:responsibilities.revoke') }),
     ).not.toBeInTheDocument();
@@ -596,14 +340,35 @@ describe('org unit wave 3 surfaces', () => {
             context: 'ADMIN',
             isActive: true,
             roles: ['role-admin'],
-            permissions: ['orgUnit.read'],
+            permissions: [
+              'orgUnit.read',
+              'employmentProfile.read',
+              'talent.read',
+              'talentGroup.read',
+            ],
             scopeGrants: {},
             generatedAt: '2026-05-20T00:00:00.000Z',
+            workspaceAvailability: {
+              primaryWorkspace: 'ADMIN_CONSOLE',
+              availableWorkspaces: [
+                {
+                  context: 'ADMIN_CONSOLE',
+                  available: true,
+                  source: 'ACCOUNT_CONTEXT',
+                  reasonCodes: [],
+                  trace: [],
+                },
+              ],
+              ownDataAvailable: false,
+              managerResponsibilitiesAvailable: false,
+              effectiveAccessTraceAvailable: false,
+              sourceTrace: [],
+            },
           },
         }),
       ),
-      http.get('*/admin/org-units/:orgUnitId/responsibilities', () =>
-        HttpResponse.json({ data: [] }),
+      http.get('*/admin/responsibilities/summary/:subjectType/:subjectId', () =>
+        HttpResponse.json({ data: [], meta: { inherited: [] } }),
       ),
     );
 
@@ -612,7 +377,7 @@ describe('org unit wave 3 surfaces', () => {
     const heading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
     const section = heading.closest('section') ?? document.body;
     expect(
-      within(section).getAllByText(i18n.t('org-unit:responsibilities.emptyTitle')).length,
+      (await within(section).findAllByText(i18n.t('responsibility:summary.emptyTitle'))).length,
     ).toBeGreaterThan(0);
     expect(
       within(section).queryByRole('button', { name: i18n.t('org-unit:responsibilities.assign') }),
@@ -636,9 +401,30 @@ describe('org unit wave 3 surfaces', () => {
             context: 'ADMIN',
             isActive: true,
             roles: ['role-admin'],
-            permissions: ['orgUnit.read'],
+            permissions: [
+              'orgUnit.read',
+              'employmentProfile.read',
+              'talent.read',
+              'talentGroup.read',
+            ],
             scopeGrants: {},
             generatedAt: '2026-05-20T00:00:00.000Z',
+            workspaceAvailability: {
+              primaryWorkspace: 'ADMIN_CONSOLE',
+              availableWorkspaces: [
+                {
+                  context: 'ADMIN_CONSOLE',
+                  available: true,
+                  source: 'ACCOUNT_CONTEXT',
+                  reasonCodes: [],
+                  trace: [],
+                },
+              ],
+              ownDataAvailable: false,
+              managerResponsibilitiesAvailable: false,
+              effectiveAccessTraceAvailable: false,
+              sourceTrace: [],
+            },
           },
         }),
       ),
@@ -649,8 +435,9 @@ describe('org unit wave 3 surfaces', () => {
     const heading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
     const section = heading.closest('section') ?? document.body;
     expect(
-      within(section).getByText(i18n.t('org-unit:responsibilityRoles.UNIT_MANAGER')),
-    ).toBeInTheDocument();
+      (await within(section).findAllByText(textPattern(i18n.t('responsibility:roles.UNIT_MANAGER'))))
+        .length,
+    ).toBeGreaterThan(0);
     expect(
       within(section).queryByRole('button', { name: i18n.t('org-unit:responsibilities.assign') }),
     ).not.toBeInTheDocument();
@@ -670,9 +457,31 @@ describe('org unit wave 3 surfaces', () => {
             context: 'ADMIN',
             isActive: true,
             roles: ['role-admin'],
-            permissions: ['orgUnit.read', 'orgUnit.manageLifecycle'],
+            permissions: [
+              'orgUnit.read',
+              'orgUnit.manageLifecycle',
+              'employmentProfile.read',
+              'talent.read',
+              'talentGroup.read',
+            ],
             scopeGrants: {},
             generatedAt: '2026-05-20T00:00:00.000Z',
+            workspaceAvailability: {
+              primaryWorkspace: 'ADMIN_CONSOLE',
+              availableWorkspaces: [
+                {
+                  context: 'ADMIN_CONSOLE',
+                  available: true,
+                  source: 'ACCOUNT_CONTEXT',
+                  reasonCodes: [],
+                  trace: [],
+                },
+              ],
+              ownDataAvailable: false,
+              managerResponsibilitiesAvailable: false,
+              effectiveAccessTraceAvailable: false,
+              sourceTrace: [],
+            },
           },
         }),
       ),

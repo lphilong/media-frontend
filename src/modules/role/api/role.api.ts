@@ -56,14 +56,44 @@ const permissionSchema = z
   })
   .strict();
 
-const roleTemplateCodeSchema = z.enum([
-  'ADMIN_FULL',
+const activeRoleTemplateCodeSchema = z.enum([
+  'OWNER_ADMIN',
+  'ACCESS_ADMIN',
   'HR_OPERATIONS',
-  'TEAM_MANAGER',
+  'HR_TERMS_APPROVER',
   'PRODUCTION_OPS',
+  'PLATFORM_CHANNEL_OPS',
+  'CREATIVE_VISUAL_LEAD',
+  'CONTENT_OPS',
+  'TALENT_GROUP_MANAGER',
+  'ORG_UNIT_MANAGER',
+  'KPI_OPERATIONS',
+  'COMMERCIAL_CONTRACT_OPS',
+  'REVENUE_FINANCE_OPS',
+  'REVENUE_APPROVER',
+  'REVENUE_RECONCILER',
+  'COMMISSION_OPS',
+  'COMMISSION_APPROVER',
+  'ATTENDANCE_OPS',
+  'LEAVE_REVIEWER',
+  'ATTENDANCE_APPROVER',
+  'MONTHLY_CLOSE_OWNER',
+  'PAYROLL_DRAFT_OPS',
+  'PAYROLL_DRAFT_APPROVER',
+  'VIEWER_AUDITOR',
+  'STAFF_CONSOLE_USER',
+]);
+
+const legacyRoleTemplateCodeSchema = z.enum([
+  'ADMIN_FULL',
+  'TEAM_MANAGER',
   'COMMERCIAL_FINANCE',
   'TALENT_STAFF_SELF',
-  'VIEWER_AUDITOR',
+]);
+
+const roleTemplateCodeSchema = z.union([
+  activeRoleTemplateCodeSchema,
+  legacyRoleTemplateCodeSchema,
 ]);
 
 const roleTemplateStatusSchema = z.enum(['READY', 'PREVIEW_ONLY', 'REQUIRES_FUTURE_SCOPE']);
@@ -97,13 +127,14 @@ export const roleAssignmentScopeGrantsSchema = z
 
 export const roleTemplateSchema = z
   .object({
-    code: roleTemplateCodeSchema,
+    code: activeRoleTemplateCodeSchema,
     version: z.string().trim().min(1),
     name: z.string().trim().min(1),
     description: z.string(),
     category: z.string().trim().min(1),
     permissionCount: z.number().int().nonnegative(),
     permissions: z.array(permissionSchema).optional(),
+    recommendedAccountContext: accountContextSchema,
     recommendedScopeGrants: roleAssignmentScopeGrantsSchema,
     scopePlan: z.array(roleTemplateScopePlanEntrySchema),
     warnings: z.array(z.string()),

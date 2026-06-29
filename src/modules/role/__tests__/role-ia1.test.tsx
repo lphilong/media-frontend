@@ -55,22 +55,20 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByTestId('nav-link-role-assignments')).not.toBeInTheDocument();
 
     expect(screen.getByRole('tab', { name: i18n.t('role:tabs.bundles') })).toBeInTheDocument();
-    expect(
-      screen.getByRole('tab', { name: i18n.t('role:tabs.assignments') }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('tab', { name: i18n.t('role:tabs.userAccess') }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: i18n.t('role:tabs.assignments') })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: i18n.t('role:tabs.userAccess') })).toBeInTheDocument();
     expect(screen.queryByText(/role:view/u)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: i18n.t('role:tabs.bundles') }));
-    expect(await screen.findByText('ADMIN_OPERATIONS')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }))
-      .not.toBeInTheDocument();
+    expect(await screen.findByText('OWNER_ADMIN_BUNDLE')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: i18n.t('role:tabs.assignments') }));
-    expect(await screen.findByText(i18n.t('role:assignmentTab.unavailableTitle')))
-      .toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('role:assignmentTab.unavailableTitle')),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
     ).not.toBeInTheDocument();
@@ -87,18 +85,16 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText('Admin role')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:detail.permissionMatrixTitle'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:templates.basedOnTemplate'))).toBeInTheDocument();
-    expect(screen.getByText(/Admin Full \(ADMIN_FULL\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Work Schedule: Self, Team/)).toBeInTheDocument();
-    expect(screen.getByText(/Dashboard Lite: Global/)).toBeInTheDocument();
+    expect(screen.getByText(/Owner Admin \(OWNER_ADMIN\)/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Lịch làm việc: Dữ liệu của chính nhân sự này, Nhóm đang phụ trách/u),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Tổng quan vận hành: Toàn bộ phạm vi được phép/u)).toBeInTheDocument();
     expect(screen.getAllByText(/Quản trị vai trò/u).length).toBeGreaterThan(0);
     expect(screen.queryByText(/role:view/u)).not.toBeInTheDocument();
     expect(screen.queryByText('assignment-1')).not.toBeInTheDocument();
 
-    const userLink = await screen.findByRole(
-      'link',
-      { name: /Admin User/u },
-      { timeout: 3000 },
-    );
+    const userLink = await screen.findByRole('link', { name: /Admin User/u }, { timeout: 3000 });
     expect(userLink).toHaveAttribute('href', '/users/user-admin');
     expect(screen.queryByText('user-admin')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /grant scope/i })).not.toBeInTheDocument();
@@ -234,11 +230,11 @@ describe('role IA-1 surfaces', () => {
       screen.getByRole('button', { name: i18n.t('role:actions.edit') }),
     ).toHaveAccessibleDescription(i18n.t('common:capabilities.invalidStatus'));
     expect(
-      screen.getByRole('button', { name: i18n.t('role:actions.replacePermissions') }),
-    ).toBeDisabled();
+      screen.queryByRole('button', { name: i18n.t('role:actions.replacePermissions') }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: i18n.t('role:actions.replaceAssignmentRules') }),
-    ).toBeDisabled();
+      screen.queryByRole('button', { name: i18n.t('role:actions.replaceAssignmentRules') }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
     ).not.toBeInTheDocument();
@@ -270,7 +266,7 @@ describe('role MSW create code behavior', () => {
   it('rejects duplicate manual Role code on create-from-template', async () => {
     await expect(
       createRoleFromTemplate({
-        templateCode: 'TEAM_MANAGER',
+        templateCode: 'TALENT_GROUP_MANAGER',
         name: 'Duplicate template code',
         code: 'ops',
         description: null,

@@ -74,6 +74,7 @@ const managerCapabilities = (overrides: Partial<MockCapabilities> = {}): MockCap
   scopeGrants: {
     kpi: ['managedGroup'],
   },
+  accountContexts: ['MANAGER_CONSOLE'],
   generatedAt: '2026-06-04T00:00:00.000Z',
   ...overrides,
 });
@@ -96,6 +97,7 @@ const staffCapabilities = (): MockCapabilities => ({
     workSchedule: ['self'],
     kpi: ['self'],
   },
+  accountContexts: ['STAFF_CONSOLE'],
   generatedAt: '2026-06-04T00:00:00.000Z',
 });
 
@@ -438,6 +440,7 @@ describe('/manager workspace route', () => {
             dashboardLite: ['global'],
             kpi: ['managedGroup'],
           },
+          accountContexts: ['ADMIN_CONSOLE'],
         }),
       );
     });
@@ -528,6 +531,7 @@ describe('/manager workspace route', () => {
           scopeGrants: {
             kpi: ['global', 'managedGroup'],
           },
+          accountContexts: ['ADMIN_CONSOLE'],
         }),
       );
     });

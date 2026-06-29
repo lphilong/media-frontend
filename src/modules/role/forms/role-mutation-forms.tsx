@@ -168,13 +168,31 @@ const parsePermissionText = (text: string): string[] => {
 };
 
 const templateCodeFallbackLabels: Record<string, string> = {
-  ADMIN_FULL: 'Admin Full',
+  OWNER_ADMIN: 'Owner Admin',
+  ACCESS_ADMIN: 'Access Admin',
   HR_OPERATIONS: 'HR Operations',
-  TEAM_MANAGER: 'Team Manager',
+  HR_TERMS_APPROVER: 'HR Terms Approver',
   PRODUCTION_OPS: 'Production Ops',
-  COMMERCIAL_FINANCE: 'Commercial Finance',
-  TALENT_STAFF_SELF: 'Talent/Staff Self',
-  VIEWER_AUDITOR: 'Viewer/Auditor',
+  PLATFORM_CHANNEL_OPS: 'Platform Channel Ops',
+  CREATIVE_VISUAL_LEAD: 'Creative Visual Lead',
+  CONTENT_OPS: 'Content Ops',
+  TALENT_GROUP_MANAGER: 'Talent Group Manager',
+  ORG_UNIT_MANAGER: 'Org Unit Manager',
+  KPI_OPERATIONS: 'KPI Operations',
+  COMMERCIAL_CONTRACT_OPS: 'Commercial Contract Ops',
+  REVENUE_FINANCE_OPS: 'Revenue Finance Ops',
+  REVENUE_APPROVER: 'Revenue Approver',
+  REVENUE_RECONCILER: 'Revenue Reconciler',
+  COMMISSION_OPS: 'Commission Ops',
+  COMMISSION_APPROVER: 'Commission Approver',
+  ATTENDANCE_OPS: 'Attendance Ops',
+  LEAVE_REVIEWER: 'Leave Reviewer',
+  ATTENDANCE_APPROVER: 'Attendance Approver',
+  MONTHLY_CLOSE_OWNER: 'Monthly Close Owner',
+  PAYROLL_DRAFT_OPS: 'Payroll Draft Ops',
+  PAYROLL_DRAFT_APPROVER: 'Payroll Draft Approver',
+  VIEWER_AUDITOR: 'Viewer Auditor',
+  STAFF_CONSOLE_USER: 'Staff Console User',
 };
 
 const scopeModuleLabels = {

@@ -42,6 +42,8 @@ export const APP_PATHS = {
   talentGroupDetailPattern: '/talent-groups/:groupId',
   talentGroupDetail: (groupId: string) => joinDetailPath('/talent-groups', groupId),
 
+  responsibilities: '/responsibilities',
+
   platformAccounts: '/platform-accounts',
   platformAccountDetailPattern: '/platform-accounts/:platformAccountId',
   platformAccountDetail: (platformAccountId: string) =>

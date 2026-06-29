@@ -71,7 +71,6 @@ describe('Employment Profile API contract compatibility', () => {
             titleDescription: null,
             externalRef: null,
             orgUnitId: 'ou-sales',
-            managerEmploymentProfileId: null,
             recruiterEmploymentProfileId: 'ep-recruiter',
             recruiterEmploymentProfileRef: {
               id: 'ep-recruiter',
@@ -139,7 +138,6 @@ describe('Employment Profile API contract compatibility', () => {
             titleDescription: null,
             externalRef: null,
             orgUnitId: 'ou-sales',
-            managerEmploymentProfileId: null,
             linkedUserId: null,
             employmentStatus: 'ACTIVE',
             contractStatus: 'ACTIVE',

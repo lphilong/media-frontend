@@ -8,15 +8,20 @@ import {
   TalentGroupCreateSurface,
   TalentGroupEditSurface,
 } from '@modules/talent-group/forms/talent-group-mutation-forms';
-import {
-  fetchTalentGroupManagerAssignments,
-  fetchTalentGroupsByTalent,
-} from '@modules/talent-group/api/talent-group.api';
+import { fetchResponsibilitySummary } from '@modules/responsibility/api/responsibility.api';
+import { fetchTalentGroupsByTalent } from '@modules/talent-group/api/talent-group.api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
-import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
+import {
+  resetIdentityAccessMockData,
+  setMockCurrentActorCapabilities,
+} from '@test/msw/identity-access-handlers';
 import { renderAppWithProviders } from '@test/render-app-route';
 
 type RouteEntry = string | { pathname: string; search?: string; state?: unknown };
+
+afterEach(() => {
+  resetIdentityAccessMockData();
+});
 
 const renderRoute = (path: RouteEntry) => {
   const router = createMemoryRouter(appRoutes, {
@@ -57,7 +62,7 @@ const openMoreFilters = async (user: ReturnType<typeof userEvent.setup>): Promis
 };
 
 describe('talent-group wave 4 surfaces', () => {
-  it('renders TEAM_MANAGER scoped TalentGroup list rows from backend-filtered MSW data', async () => {
+  it('does not grant TalentGroup list access from management responsibility alone', async () => {
     await setLocale(DEFAULT_LOCALE);
     setMockCurrentActorCapabilities({
       id: 'user-team-manager',
@@ -78,11 +83,8 @@ describe('talent-group wave 4 surfaces', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('talent-group:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('TG-000001', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.getByText('A Team')).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.queryByText('TG-000002')).not.toBeInTheDocument();
-    });
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('TG-000001')).not.toBeInTheDocument();
   });
 
   it('renders an error state for TEAM_MANAGER unmanaged TalentGroup detail', async () => {
@@ -302,15 +304,16 @@ describe('talent-group wave 4 surfaces', () => {
     expect(item?.id).not.toBe(item?.groupCode);
   });
 
-  it('parses manager assignment DTOs with strict safe fields', async () => {
-    const assignments = await fetchTalentGroupManagerAssignments('group-001');
-    expect(assignments[0]).toMatchObject({
-      id: 'manager-assignment-001',
-      groupId: 'group-001',
-      managerEmploymentProfileId: 'ep-001',
-      managerHasLinkedAdminUser: true,
+  it('parses central responsibility summaries with strict safe fields', async () => {
+    const summary = await fetchResponsibilitySummary('TALENT_GROUP', 'group-001');
+    expect(summary.items[0]).toMatchObject({
+      subjectType: 'TALENT_GROUP',
+      subjectId: 'group-001',
+      responsibleEmploymentProfileId: 'ep-001',
+      responsibilityType: 'TALENT_GROUP_MANAGER',
     });
-    expect(assignments[0]).not.toHaveProperty('authSubject');
+    expect(summary.items[0]).not.toHaveProperty('authSubject');
+    expect(summary.items[0]).not.toHaveProperty('managerEmploymentProfileId');
   });
 
   it('renders detail roster/links and status gating for group lifecycle', async () => {
@@ -320,8 +323,6 @@ describe('talent-group wave 4 surfaces', () => {
     expect(await screen.findByText(i18n.t('talent-group:actionRail.title'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('talent-group:fields.displayOrder'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('talent-group:help.displayOrder'))).toBeInTheDocument();
-    expect(await screen.findByText('Bao')).toBeInTheDocument();
-    expect(screen.getByText('BaoStar')).toBeInTheDocument();
     expect(screen.queryByText('Stale Internal Legal')).not.toBeInTheDocument();
     expect(screen.queryByText('Stale Internal Short')).not.toBeInTheDocument();
     expect(screen.queryByText('talent-003')).not.toBeInTheDocument();
@@ -342,54 +343,22 @@ describe('talent-group wave 4 surfaces', () => {
     expect(relatedLinks.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('renders and revokes group manager assignments from the detail page', async () => {
+  it('renders central responsibilities from the detail page without local manager actions', async () => {
     await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
     renderRoute('/talent-groups/group-001');
 
     expect(await screen.findByText(i18n.t('talent-group:managers.title'))).toBeInTheDocument();
     expect(await screen.findByText('Alice')).toBeInTheDocument();
-    expect(screen.getByText(/EP-000001/)).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: i18n.t('talent-group:managers.revoke') }));
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('common:actions.confirmDestructive') }),
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText(i18n.t('talent-group:managers.emptyTitle'))).toBeInTheDocument();
-    });
-  });
-
-  it('assigns a group manager using the employment profile lookup', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    renderRoute('/talent-groups/group-001');
-
-    expect(await screen.findByText('Alice')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: i18n.t('talent-group:managers.revoke') }));
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('common:actions.confirmDestructive') }),
-    );
-    expect(await screen.findByText(i18n.t('talent-group:managers.emptyTitle'))).toBeInTheDocument();
     expect(screen.queryByText('managerEmploymentProfileId')).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: i18n.t('talent-group:managers.assign') }));
     expect(
-      await screen.findByRole('heading', {
-        name: i18n.t('talent-group:mutations.assignManager.title'),
-      }),
-    ).toBeInTheDocument();
-
-    const picker = await findPicker('talent-group-manager-employment-profile');
-    await user.click(await within(picker).findByRole('button', { name: /EP-000001/ }));
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('talent-group:mutations.assignManager.submit'),
-      }),
-    );
-
-    expect(await screen.findByText('Alice')).toBeInTheDocument();
+      screen
+        .getAllByRole('link', { name: i18n.t('responsibility:summary.openCentral') })
+        .some(
+          (link) =>
+            link.getAttribute('href') ===
+            '/responsibilities?subjectType=TALENT_GROUP&subjectId=group-001',
+        ),
+    ).toBe(true);
   });
 
   it('keeps Talent Group sort priority visible in create/edit surfaces without changing values', async () => {

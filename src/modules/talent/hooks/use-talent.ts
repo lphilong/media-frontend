@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  assignTalentManager,
   createTalent,
   fetchTalentDetail,
   fetchTalents,
@@ -16,7 +15,6 @@ import type {
   TalentEmploymentProfileLinkPayload,
   TalentLifecycleAction,
   TalentListQuery,
-  TalentManagerAssignmentPayload,
   TalentUpdatePayload,
 } from '@modules/talent/types/talent.types';
 import { serializeScreenQueryParams, talentFlatListQueryConfig } from '@shared/query';
@@ -71,23 +69,6 @@ export const useUpdateTalentMutation = () => {
   return useMutation({
     mutationFn: ({ talentId, payload }: { talentId: string; payload: TalentUpdatePayload }) =>
       updateTalent(talentId, payload),
-    onSuccess: async () => {
-      await invalidateTalentModuleQueries(queryClient);
-    },
-  });
-};
-
-export const useTalentManagerAssignmentMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      talentId,
-      payload,
-    }: {
-      talentId: string;
-      payload: TalentManagerAssignmentPayload;
-    }) => assignTalentManager(talentId, payload),
     onSuccess: async () => {
       await invalidateTalentModuleQueries(queryClient);
     },

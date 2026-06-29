@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  assignEmploymentProfileManager,
   assignEmploymentProfileOrgUnit,
   createEmploymentProfile,
   fetchEmploymentProfileDetail,
@@ -20,7 +19,6 @@ import type {
   EmploymentProfileDirectReportsQuery,
   EmploymentProfileLifecycleAction,
   EmploymentProfileListQuery,
-  EmploymentProfileManagerAssignmentPayload,
   EmploymentProfileOrgUnitAssignmentPayload,
   EmploymentProfileTerminatePayload,
   EmploymentProfileUpdatePayload,
@@ -140,23 +138,6 @@ export const useEmploymentProfileOrgAssignmentMutation = () => {
       employmentProfileId: string;
       payload: EmploymentProfileOrgUnitAssignmentPayload;
     }) => assignEmploymentProfileOrgUnit(employmentProfileId, payload),
-    onSuccess: async () => {
-      await invalidateEmploymentProfileModuleQueries(queryClient);
-    },
-  });
-};
-
-export const useEmploymentProfileManagerAssignmentMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      employmentProfileId,
-      payload,
-    }: {
-      employmentProfileId: string;
-      payload: EmploymentProfileManagerAssignmentPayload;
-    }) => assignEmploymentProfileManager(employmentProfileId, payload),
     onSuccess: async () => {
       await invalidateEmploymentProfileModuleQueries(queryClient);
     },

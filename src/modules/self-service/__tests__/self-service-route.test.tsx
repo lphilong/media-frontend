@@ -63,6 +63,7 @@ const staffCapabilities = (): MockCapabilities => ({
     workSchedule: ['self'],
     kpi: ['self'],
   },
+  accountContexts: ['STAFF_CONSOLE'],
   generatedAt: '2026-05-24T00:00:00.000Z',
 });
 
@@ -162,6 +163,15 @@ const makeSelfServiceKpiItem = (
 
 describe('/self-service route', () => {
   it('routes staff actors from root landing into the self-service shell', async () => {
+    await renderRoute('/');
+
+    expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
+  });
+
+  it('fails closed from root landing when workspace availability is denied', async () => {
     server.use(
       http.get('*/admin/me/capabilities', () =>
         HttpResponse.json(
@@ -173,10 +183,8 @@ describe('/self-service route', () => {
 
     await renderRoute('/');
 
-    expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
-    expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
+    expect((await screen.findAllByText(/workspace/i)).length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
   });
 
   it('renders staff shell with Overview as the default active panel outside the admin sidebar', async () => {
@@ -393,15 +401,6 @@ describe('/self-service route', () => {
   });
 
   it('lands staff actors on the self-service blocked state without redirect loops', async () => {
-    server.use(
-      http.get('*/admin/me/capabilities', () =>
-        HttpResponse.json(
-          { error: { code: 'FORBIDDEN', message: 'Permission denied' } },
-          { status: 403 },
-        ),
-      ),
-    );
-
     await renderRoute('/', () => setMockSelfServiceProfileNotOperational());
 
     expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();

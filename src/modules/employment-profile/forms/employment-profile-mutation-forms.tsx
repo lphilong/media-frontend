@@ -13,7 +13,6 @@ import type {
   EmploymentContractStatus,
   EmploymentProfileContractStatusPayload,
   EmploymentProfileCreatePayload,
-  EmploymentProfileManagerAssignmentPayload,
   EmploymentProfileOrgUnitAssignmentPayload,
   EmploymentProfileTerminatePayload,
   EmploymentProfileUpdatePayload,
@@ -66,12 +65,6 @@ type EmploymentProfileOrgAssignmentSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: EmploymentProfileOrgUnitAssignmentPayload) => Promise<void> | void;
 };
 
-type EmploymentProfileManagerAssignmentSurfaceProps = BaseMutationSurfaceProps & {
-  currentEmploymentProfileId: string;
-  currentManagerEmploymentProfileId?: string | null;
-  onSubmit: (payload: EmploymentProfileManagerAssignmentPayload) => Promise<void> | void;
-};
-
 type EmploymentProfileUserLinkSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: EmploymentProfileUserLinkPayload) => Promise<void> | void;
 };
@@ -84,11 +77,6 @@ type EmploymentProfileContractStatusSurfaceProps = BaseMutationSurfaceProps & {
 
 type EmploymentProfileTerminateSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: EmploymentProfileTerminatePayload) => Promise<void> | void;
-};
-
-const toOptionalText = (value?: string): string | undefined => {
-  const trimmed = value?.trim();
-  return trimmed && trimmed.length > 0 ? trimmed : undefined;
 };
 
 const toNullableText = (value?: string): string | null => {
@@ -183,7 +171,6 @@ const createEmploymentCreateSchema = (
       orgUnitId: z.string().trim().min(1, requiredMessage),
       contractStatus: z.enum(['NONE', 'PENDING_SIGNATURE', 'ACTIVE', 'EXPIRED', 'TERMINATED']),
       employmentStartDate: z.string().trim().refine(isCanonicalDate, dateMessage),
-      managerEmploymentProfileId: z.string().trim().optional(),
       linkedUserId: z.string().trim().optional(),
       recruiterEmploymentProfileId: z.string().trim().optional(),
       hrOwnerEmploymentProfileId: z.string().trim().optional(),
@@ -228,32 +215,6 @@ const createOrgAssignmentSchema = (requiredMessage: string) => {
   return z.object({
     newOrgUnitId: z.string().trim().min(1, requiredMessage),
   });
-};
-
-const createManagerAssignmentSchema = (
-  tokenMessage: string,
-  selfMessage: string,
-  currentId: string,
-) => {
-  return z
-    .object({
-      newManagerEmploymentProfileId: z
-        .string()
-        .trim()
-        .regex(/^[A-Za-z0-9_-]+$/, tokenMessage)
-        .optional()
-        .or(z.literal('')),
-    })
-    .superRefine((value, context) => {
-      const normalized = toOptionalText(value.newManagerEmploymentProfileId);
-      if (normalized && normalized === currentId) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['newManagerEmploymentProfileId'],
-          message: selfMessage,
-        });
-      }
-    });
 };
 
 const createUserLinkSchema = (requiredMessage: string, tokenMessage: string) => {
@@ -301,7 +262,6 @@ type EmploymentProfileCreateFormValues = {
   orgUnitId: string;
   contractStatus: EmploymentContractStatus;
   employmentStartDate: string;
-  managerEmploymentProfileId: string;
   linkedUserId: string;
   recruiterEmploymentProfileId: string;
   hrOwnerEmploymentProfileId: string;
@@ -329,7 +289,6 @@ export const EmploymentProfileCreateSurface = ({
       orgUnitId: '',
       contractStatus: 'NONE',
       employmentStartDate: '',
-      managerEmploymentProfileId: '',
       linkedUserId: '',
       recruiterEmploymentProfileId: '',
       hrOwnerEmploymentProfileId: '',
@@ -367,7 +326,6 @@ export const EmploymentProfileCreateSurface = ({
       orgUnitId: parsed.data.orgUnitId,
       contractStatus: parsed.data.contractStatus,
       employmentStartDate: parsed.data.employmentStartDate,
-      managerEmploymentProfileId: toNullableText(parsed.data.managerEmploymentProfileId),
       linkedUserId: toNullableText(parsed.data.linkedUserId),
       recruiterEmploymentProfileId: toNullableText(parsed.data.recruiterEmploymentProfileId),
       hrOwnerEmploymentProfileId: toNullableText(parsed.data.hrOwnerEmploymentProfileId),
@@ -434,16 +392,6 @@ export const EmploymentProfileCreateSurface = ({
             name="employmentStartDate"
             label={t('employment-profile:fields.employmentStartDate')}
             type="date"
-          />
-          <ReferencePickerField
-            name="managerEmploymentProfileId"
-            label={t('employment-profile:fields.managerEmploymentProfileId')}
-            pickerId="employment-profile-manager"
-            loadOptions={loadEmploymentProfileReferenceOptions}
-            helperText={t('employment-profile:referenceHelp.managerEmploymentProfileId')}
-            placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
-            clearable
-            clearLabel={t('employment-profile:actions.clearManager')}
           />
           <ReferencePickerField
             name="linkedUserId"
@@ -750,74 +698,6 @@ export const EmploymentProfileOrgAssignmentSurface = ({
           loadOptions={loadOrgUnitReferenceOptions}
           helperText={t('employment-profile:referenceHelp.newOrgUnitId')}
           placeholder={t('employment-profile:placeholders.orgUnitSearch')}
-        />
-      </ModuleMutationSurface>
-    </FormProvider>
-  );
-};
-
-type EmploymentProfileManagerAssignmentFormValues = {
-  newManagerEmploymentProfileId: string;
-};
-
-export const EmploymentProfileManagerAssignmentSurface = ({
-  currentEmploymentProfileId,
-  currentManagerEmploymentProfileId,
-  onCancel,
-  onSubmit,
-  isPending = false,
-}: EmploymentProfileManagerAssignmentSurfaceProps): JSX.Element => {
-  const { t } = useTranslation(['employment-profile', 'common']);
-  const form = useForm<EmploymentProfileManagerAssignmentFormValues>({
-    defaultValues: {
-      newManagerEmploymentProfileId: currentManagerEmploymentProfileId ?? '',
-    },
-  });
-
-  const schema = useMemo(
-    () =>
-      createManagerAssignmentSchema(
-        t('employment-profile:validation.invalidReferenceToken'),
-        t('employment-profile:validation.managerCannotBeSelf'),
-        currentEmploymentProfileId,
-      ),
-    [currentEmploymentProfileId, t],
-  );
-
-  const handleSubmit = form.handleSubmit(async (values) => {
-    const parsed = schema.safeParse(values);
-    if (!parsed.success) {
-      applySchemaErrors(form.setError, parsed.error, 'newManagerEmploymentProfileId');
-      return;
-    }
-
-    await onSubmit({
-      newManagerEmploymentProfileId: toNullableText(parsed.data.newManagerEmploymentProfileId),
-    });
-  });
-
-  return (
-    <FormProvider {...form}>
-      <ModuleMutationSurface
-        title={t('employment-profile:mutations.assignManager.title')}
-        subtitle={t('employment-profile:mutations.assignManager.subtitle')}
-        kind="action"
-        submitLabel={t('employment-profile:mutations.assignManager.submit')}
-        pendingLabel={t('employment-profile:mutations.assignManager.pending')}
-        cancelLabel={t('common:actions.cancel')}
-        onCancel={onCancel}
-        onSubmit={(event) => void handleSubmit(event)}
-        isPending={isPending}
-      >
-        <ReferencePickerField
-          name="newManagerEmploymentProfileId"
-          label={t('employment-profile:fields.newManagerEmploymentProfileId')}
-          pickerId="employment-profile-new-manager"
-          loadOptions={loadEmploymentProfileReferenceOptions}
-          helperText={t('employment-profile:referenceHelp.newManagerEmploymentProfileId')}
-          placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
-          clearable
-          clearLabel={t('employment-profile:actions.clearManager')}
         />
       </ModuleMutationSurface>
     </FormProvider>

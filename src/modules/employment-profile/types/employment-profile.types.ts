@@ -20,8 +20,6 @@ export type EmploymentProfileRecord = {
   externalRef?: string | null;
   orgUnitId: string;
   orgUnitRef?: ReferenceSummary | null;
-  managerEmploymentProfileId?: string | null;
-  managerEmploymentProfileRef?: ReferenceSummary | null;
   recruiterEmploymentProfileId?: string | null;
   recruiterEmploymentProfileRef?: ReferenceSummary | null;
   hrOwnerEmploymentProfileId?: string | null;
@@ -55,8 +53,6 @@ export type EmploymentProfileDirectReport = {
   contractStatus: EmploymentContractStatus;
   orgUnitId: string;
   orgUnitRef?: ReferenceSummary | null;
-  managerEmploymentProfileId?: string | null;
-  managerEmploymentProfileRef?: ReferenceSummary | null;
 };
 
 export type EmploymentProfileListQuery = {
@@ -64,7 +60,6 @@ export type EmploymentProfileListQuery = {
   contractStatus?: EmploymentContractStatus;
   employmentKind?: string;
   orgUnitId?: string;
-  managerEmploymentProfileId?: string;
   hasLinkedUser?: boolean;
   search?: string;
   sortBy?: 'employeeCode' | 'displayName' | 'legalName' | 'createdAt';
@@ -96,7 +91,6 @@ export type EmploymentProfileCreatePayload = {
   orgUnitId: string;
   contractStatus: EmploymentContractStatus;
   employmentStartDate: string;
-  managerEmploymentProfileId?: string | null;
   linkedUserId?: string | null;
   recruiterEmploymentProfileId?: string | null;
   hrOwnerEmploymentProfileId?: string | null;
@@ -125,10 +119,6 @@ export type EmploymentProfileUpdatePayload = {
 
 export type EmploymentProfileOrgUnitAssignmentPayload = {
   newOrgUnitId: string;
-};
-
-export type EmploymentProfileManagerAssignmentPayload = {
-  newManagerEmploymentProfileId: string | null;
 };
 
 export type EmploymentProfileUserLinkPayload = {

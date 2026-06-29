@@ -2,7 +2,6 @@ import type { TFunction } from 'i18next';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { StatusBadge } from '@shared/components/primitives';
-import { readReferenceDisplay } from '@shared/formatting/formatters';
 import type {
   TalentCommercialParticipationStatus,
   TalentLifecycleAction,
@@ -79,15 +78,6 @@ export const createTalentListColumns = (
           toneByStatus={operationalStatusToneMap}
         />
       ),
-    },
-    {
-      accessorKey: 'managerEmploymentProfileId',
-      header: t('talent:table.managerEmploymentProfileId'),
-      cell: ({ row }) =>
-        readReferenceDisplay(
-          row.original.managerEmploymentProfileRef,
-          row.original.managerEmploymentProfileId,
-        ),
     },
     {
       accessorKey: 'commercialParticipationStatus',

@@ -32,10 +32,7 @@ import {
 } from '@shared/components/primitives';
 import { useMutationFeedback } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
-import {
-  loadEmploymentProfileReferenceOptions,
-  loadOrgUnitReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadOrgUnitReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import {
   createCursorStack,
   employmentProfileFlatListQueryConfig,
@@ -268,7 +265,6 @@ export const EmploymentProfileListPage = (): JSX.Element => {
     query.contractStatus,
     query.employmentKind,
     query.orgUnitId,
-    query.managerEmploymentProfileId,
     query.hasLinkedUser,
   ].filter((value) => value !== undefined && value !== '').length;
   const clearEmploymentProfileFilters = useCallback(() => {
@@ -278,7 +274,6 @@ export const EmploymentProfileListPage = (): JSX.Element => {
       contractStatus: undefined,
       employmentKind: undefined,
       orgUnitId: undefined,
-      managerEmploymentProfileId: undefined,
       hasLinkedUser: undefined,
     });
   }, [patchQuery]);
@@ -289,14 +284,6 @@ export const EmploymentProfileListPage = (): JSX.Element => {
         (listQueryResult.data?.data ?? []).map((record) => record.orgUnitRef),
       ),
     [listQueryResult.data?.data, query.orgUnitId],
-  );
-  const managerFilterLabel = useMemo(
-    () =>
-      readReferenceDisplayForId(
-        query.managerEmploymentProfileId,
-        (listQueryResult.data?.data ?? []).map((record) => record.managerEmploymentProfileRef),
-      ),
-    [listQueryResult.data?.data, query.managerEmploymentProfileId],
   );
   const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
     const items: AppliedFilterChipItem[] = [];
@@ -346,15 +333,6 @@ export const EmploymentProfileListPage = (): JSX.Element => {
       });
     }
 
-    if (query.managerEmploymentProfileId) {
-      items.push({
-        id: 'manager',
-        label: t('employment-profile:filters.managerEmploymentProfileId'),
-        value: filterOptionLabels.manager ?? managerFilterLabel,
-        onClear: () => patchQuery({ managerEmploymentProfileId: undefined }),
-      });
-    }
-
     if (query.hasLinkedUser !== undefined) {
       items.push({
         id: 'linked-user',
@@ -368,16 +346,13 @@ export const EmploymentProfileListPage = (): JSX.Element => {
 
     return items;
   }, [
-    filterOptionLabels.manager,
     filterOptionLabels.orgUnit,
-    managerFilterLabel,
     orgUnitFilterLabel,
     patchQuery,
     query.contractStatus,
     query.employmentKind,
     query.employmentStatus,
     query.hasLinkedUser,
-    query.managerEmploymentProfileId,
     query.orgUnitId,
     query.search,
     t,
@@ -491,21 +466,6 @@ export const EmploymentProfileListPage = (): JSX.Element => {
                 onChange={(nextId) =>
                   patchQuery({
                     orgUnitId: nextId,
-                  })
-                }
-              />
-              <ReferenceFilterField
-                label={t('employment-profile:filters.managerEmploymentProfileId')}
-                pickerId="employment-profile-filter-manager"
-                value={query.managerEmploymentProfileId}
-                loadOptions={loadEmploymentProfileReferenceOptions}
-                placeholder={t('employment-profile:placeholders.employmentProfileSearch')}
-                clearLabel={t('common:actions.clear')}
-                className="min-w-[240px]"
-                onSelectedOptionChange={(option) => rememberFilterOption('manager', option)}
-                onChange={(nextId) =>
-                  patchQuery({
-                    managerEmploymentProfileId: nextId,
                   })
                 }
               />

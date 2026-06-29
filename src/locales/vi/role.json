@@ -7,7 +7,7 @@
   },
   "page": {
     "title": "Vai trò",
-    "subtitle": "Quản trị mẫu quyền, quy tắc gán và các bản ghi gán người dùng do Vai trò sở hữu.",
+    "subtitle": "Quản trị mẫu vai trò, gói vai trò, gán quyền theo người dùng và rà soát quyền hiện có.",
     "placeholder": "Luồng định danh và truy cập của Vai trò chưa khả dụng."
   },
   "fields": {
@@ -29,12 +29,12 @@
     "reason": "Lý do"
   },
   "generatedCode": {
-    "label": "Mã do backend sinh",
-    "description": "Để trống ghi đè mã thủ công, backend sẽ sinh mã vai trò ổn định sau khi tạo."
+    "label": "Mã do hệ thống sinh",
+    "description": "Để trống ghi đè mã thủ công, hệ thống nguồn sẽ sinh mã vai trò ổn định sau khi tạo."
   },
   "help": {
     "name": "Tên vai trò nghiệp vụ hiển thị cho quản trị viên.",
-    "codeOptional": "Chỉ dùng khi cần giữ khóa vai trò vận hành ổn định. Mã là định danh backend viết hoa, không phải tên hiển thị."
+    "codeOptional": "Chỉ dùng khi cần giữ khóa vai trò vận hành ổn định. Mã là định danh hệ thống viết hoa, không phải tên hiển thị."
   },
   "templates": {
     "templateMode": "Mẫu vai trò",
@@ -51,7 +51,7 @@
     "scopePlan": "Kế hoạch phạm vi",
     "scopePlanHelp": "Chỉ xem trước. Phạm vi gán được chọn khi gán vai trò cho người dùng.",
     "implementationNotes": "Ghi chú triển khai",
-    "backendAuthority": "Backend xác thực ủy quyền; bản xem trước frontend không phải bảo đảm bảo mật.",
+    "backendAuthority": "Hệ thống nguồn xác thực ủy quyền; bản xem trước không phải bảo đảm bảo mật.",
     "basedOnTemplate": "Dựa trên mẫu",
     "custom": "Tùy chỉnh",
     "templateVersion": "Phiên bản mẫu",
@@ -84,7 +84,7 @@
   },
   "scopePicker": {
     "assignmentScopes": "Phạm vi gán",
-    "backendValidation": "Gán phạm vi ảnh hưởng quyền truy cập khi chạy. Backend từ chối phạm vi actor hiện tại không được phép cấp.",
+    "backendValidation": "Gán phạm vi ảnh hưởng quyền truy cập khi chạy. Hệ thống nguồn từ chối phạm vi người thao tác hiện tại không được phép cấp.",
     "recommendedScopes": "Phạm vi được khuyến nghị",
     "recommendedScopesHelp": "Phạm vi khuyến nghị được điền sẵn từ mẫu vai trò. Hãy điều chỉnh trước khi gửi nếu bản ghi gán này cần phạm vi khác.",
     "applyRecommendedScopes": "Áp dụng phạm vi khuyến nghị",
@@ -135,7 +135,7 @@
     "open": "Mở",
     "create": "Tạo vai trò",
     "closeCreate": "Đóng tạo mới",
-    "edit": "Chỉnh sửa metadata",
+    "edit": "Chỉnh sửa",
     "replacePermissions": "Thay thế quyền",
     "replaceAssignmentRules": "Thay thế quy tắc gán",
     "assignToUser": "Gán cho người dùng",
@@ -148,11 +148,11 @@
     "title": "Hành động vai trò"
   },
   "detail": {
-    "identityTitle": "Metadata vai trò",
+    "identityTitle": "Tổng quan vai trò",
     "policyTitle": "Chính sách quyền",
     "permissionMatrixTitle": "Ma trận quyền",
     "archivedReadOnly": "Vai trò đã lưu trữ không thể chỉnh sửa.",
-    "boundaryNotice": "Vai trò chỉ cấp quyền. Việc gán và thu hồi vai trò vẫn do Vai trò sở hữu, không chỉnh sửa hồ sơ người dùng, liên kết Auth0, vòng đời người dùng, hồ sơ nhân sự hoặc bản ghi nghiệp vụ."
+    "boundaryNotice": "Vai trò chỉ mô tả quyền nghiệp vụ. Chi tiết vai trò không phải nơi gán hoặc thu hồi quyền; thao tác gán quyền phải đi qua luồng theo người dùng khi có hợp đồng nguồn an toàn."
   },
   "mutations": {
     "create": {
@@ -181,7 +181,7 @@
     },
     "deactivate": {
       "title": "Vô hiệu hóa vai trò",
-      "subtitle": "Các bản ghi gán đang hoạt động hoặc ràng buộc quản trị có thể khiến backend từ chối thao tác.",
+      "subtitle": "Các bản ghi gán đang hoạt động hoặc ràng buộc quản trị có thể khiến hệ thống nguồn từ chối thao tác.",
       "submit": "Vô hiệu hóa vai trò",
       "pending": "Đang vô hiệu hóa vai trò"
     },
@@ -219,9 +219,9 @@
     "selfRoleRequiresStaffActor": "Vai trò này yêu cầu tài khoản nhân viên tự phục vụ."
   },
   "confirm": {
-    "activate": "Kích hoạt vai trò này nếu backend cho phép?",
-    "deactivate": "Vô hiệu hóa vai trò này nếu không có ràng buộc từ backend?",
-    "archive": "Lưu trữ vai trò này nếu không có ràng buộc từ backend?"
+    "activate": "Kích hoạt vai trò này nếu hệ thống nguồn cho phép?",
+    "deactivate": "Vô hiệu hóa vai trò này nếu không có ràng buộc từ hệ thống nguồn?",
+    "archive": "Lưu trữ vai trò này nếu không có ràng buộc từ hệ thống nguồn?"
   },
   "feedback": {
     "created": "Đã tạo vai trò.",
@@ -243,50 +243,84 @@
   },
   "templateCatalog": {
     "title": "Danh mục mẫu vai trò",
-    "subtitle": "Mẫu do backend cung cấp; metadata mẫu không tự cấp thẩm quyền runtime.",
+    "subtitle": "Mẫu do hệ thống nguồn cung cấp; metadata mẫu không tự cấp thẩm quyền runtime.",
     "loadErrorTitle": "Không tải được mẫu vai trò",
     "loadErrorMessage": "Không thể tải danh mục mẫu vai trò.",
     "emptyTitle": "Chưa có mẫu vai trò",
-    "emptyMessage": "Backend chưa trả về mẫu vai trò khả dụng.",
+    "emptyMessage": "Hệ thống nguồn chưa trả về mẫu vai trò khả dụng.",
     "roleGroup": "Nhóm vai trò",
-    "requiredContext": "Account Context yêu cầu",
+    "requiredContext": "Không gian làm việc cần có",
     "capabilitySummary": "Nhóm năng lực",
     "capabilityCount": "{{count}} năng lực",
-    "sensitiveWarning": "Mẫu này có cảnh báo nhạy cảm từ backend."
+    "sensitiveWarning": "Mẫu này có cảnh báo nhạy cảm từ hệ thống nguồn."
   },
   "bundles": {
     "code": "Mã gói",
     "status": "Trạng thái",
-    "recommendedContext": "Account Context khuyến nghị",
+    "recommendedContext": "Không gian làm việc cần có",
     "childRoles": "Vai trò con",
     "recommendedScope": "Phạm vi khuyến nghị",
     "supportMode": "Mức hỗ trợ",
     "readOnlySupport": "Chỉ xem trong màn hình này",
     "scopeCount": "{{count}} phạm vi khuyến nghị",
-    "sensitiveWarning": "Gói này có cảnh báo nhạy cảm từ backend.",
+    "sensitiveWarning": "Gói này có cảnh báo nhạy cảm từ hệ thống nguồn.",
     "loadErrorTitle": "Không tải được gói vai trò",
     "loadErrorMessage": "Không thể tải danh mục gói vai trò.",
     "emptyTitle": "Chưa có gói vai trò",
-    "emptyMessage": "Backend chưa trả về gói vai trò khả dụng."
+    "emptyMessage": "Hệ thống nguồn chưa trả về gói vai trò khả dụng."
   },
   "assignmentTab": {
     "unavailableTitle": "Luồng gán quyền theo người dùng chưa khả dụng",
-    "unavailableMessage": "Màn hình này không tạo thẩm quyền gán quyền frontend. Luồng gán theo người dùng chưa mở trong phạm vi sửa này, và chi tiết vai trò chỉ đọc đối với gán hoặc thu hồi."
+    "unavailableMessage": "Chưa thể gán quyền trong bước này. Bạn có thể xem quyền hiện có hoặc liên hệ người phụ trách phân quyền.",
+    "workflowTitle": "Luồng gán quyền theo người dùng",
+    "workflowSubtitle": "Các bước dưới đây thể hiện hướng sản phẩm cuối cùng. Nút xác nhận đang tắt vì frontend chưa có hợp đồng nguồn an toàn để ghi nhận gán quyền.",
+    "departmentFilterLabel": "Đơn vị / Phòng ban",
+    "departmentFilterValue": "Chọn phòng ban để tìm nhân sự",
+    "departmentFilterHelp": "Dùng để lọc danh sách nhân sự. Đây chưa phải phạm vi cấp quyền.",
+    "personLabel": "Nhân sự nhận quyền",
+    "personValue": "Chọn hồ sơ nhân sự có tài khoản đăng nhập đã liên kết",
+    "personHelp": "Nhân sự chưa có tài khoản đăng nhập cần được liên kết tài khoản trước khi gán quyền.",
+    "modeLabel": "Gói quyền hoặc vai trò riêng lẻ",
+    "modeValue": "Mặc định gán theo gói quyền",
+    "modeHelp": "Vai trò riêng lẻ chỉ dùng cho trường hợp đặc biệt và vẫn cần lý do.",
+    "workspaceLabel": "Không gian làm việc cần có",
+    "workspaceValue": "Tự xác định từ gói quyền hoặc vai trò đã chọn",
+    "workspaceHelp": "Không có dropdown thủ công; không gian làm việc không tự cấp thẩm quyền nghiệp vụ.",
+    "scopeTitle": "Phạm vi áp dụng",
+    "talentGroupScopeLabel": "Nhóm Talent được quản lý",
+    "orgUnitScopeLabel": "Phòng ban được quản lý",
+    "currentManaged": "Đang quản lý",
+    "addTalentGroup": "Giao thêm nhóm mới",
+    "addOrgUnit": "Giao thêm phòng ban mới",
+    "currentTalentGroupExample": "Nhóm Live A - Mai Anh đang là người quản lý nhóm này.",
+    "newTalentGroupExample": "Nhóm Live C - Mai Anh sẽ được ghi nhận là người quản lý nhóm này.",
+    "currentOrgUnitExample": "Phòng Sản xuất - Mai Anh đang là người quản lý phòng ban này.",
+    "newOrgUnitExample": "Phòng Content - Mai Anh sẽ được ghi nhận là người quản lý phòng ban này.",
+    "previewTitle": "Tóm tắt thay đổi",
+    "reviewRequired": "Cần rà soát trước khi xác nhận.",
+    "previewIntro": "Sau khi xác nhận:",
+    "previewWorkspaceChange": "Nhân sự có thể vào không gian làm việc cần có nếu tài khoản đủ điều kiện.",
+    "previewScopeChange": "Nhân sự được ghi nhận phạm vi quản lý đã chọn nếu nguồn trách nhiệm cho phép.",
+    "previewCapabilityChange": "Nhân sự có thể xem và xử lý công việc trong phạm vi theo gói quyền hoặc vai trò đã chọn.",
+    "sensitiveWarning": "Gói hoặc vai trò nhạy cảm cần lý do, audit và chính sách rà soát từ hệ thống nguồn.",
+    "reasonLabel": "Lý do gán quyền",
+    "reasonPlaceholder": "Ví dụ: Bổ nhiệm Mai Anh quản lý Nhóm Live C từ tháng 07-2026.",
+    "confirmLabel": "Xác nhận gán quyền"
   },
   "userAccess": {
-    "selectorTitle": "Chọn người dùng",
-    "selectorSubtitle": "Tra cứu quyền hiệu lực từ backend theo từng người dùng.",
-    "userResource": "người dùng",
+    "selectorTitle": "Chọn nhân sự / tài khoản đăng nhập",
+    "selectorSubtitle": "Tra cứu quyền hiện có theo từng nhân sự có tài khoản đăng nhập.",
+    "userResource": "nhân sự",
     "noUserResults": "Không tìm thấy người dùng phù hợp.",
     "emptyTitle": "Chưa chọn người dùng",
-    "emptyMessage": "Chọn một người dùng để xem Account Context, workspace và quyền hiệu lực.",
+    "emptyMessage": "Chọn một nhân sự để xem tài khoản đăng nhập, không gian làm việc và quyền hiện có.",
     "loadErrorTitle": "Không tải được quyền theo người dùng",
     "loadErrorMessage": "Không thể tải quyền hiệu lực của người dùng.",
     "summaryTitle": "Tóm tắt truy cập",
     "user": "Người dùng",
-    "accountContexts": "Account Context",
-    "primaryWorkspace": "Workspace chính",
-    "eligibleWorkspaces": "Workspace khả dụng",
+    "accountContexts": "Không gian làm việc hiện có",
+    "primaryWorkspace": "Không gian ưu tiên",
+    "eligibleWorkspaces": "Không gian có thể vào",
     "ownData": "Dữ liệu cá nhân",
     "managerResponsibilities": "Trách nhiệm quản lý",
     "available": "Khả dụng",
@@ -296,13 +330,13 @@
     "sensitive": "Nhạy cảm",
     "scopeCount": "{{count}} phạm vi có cấu trúc",
     "noAssignmentsTitle": "Không có vai trò hiệu lực",
-    "noAssignmentsMessage": "Backend không trả về bản ghi gán vai trò đang hiệu lực.",
+    "noAssignmentsMessage": "Hệ thống nguồn không trả về bản ghi gán vai trò đang hiệu lực.",
     "capabilitiesTitle": "Nhóm năng lực nghiệp vụ",
     "businessCapabilityGroups": "Nhóm năng lực",
-    "sourceTrace": "Source trace"
+    "sourceTrace": "Dấu vết kiểm tra"
   },
   "assignments": {
-    "title": "Gán vai trò",
+    "title": "Quyền đang gắn với vai trò này",
     "caption": "Danh sách gán vai trò",
     "assignmentId": "ID bản ghi gán",
     "userId": "Người dùng",

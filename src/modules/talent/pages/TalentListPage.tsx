@@ -38,8 +38,6 @@ import {
   useModalHost,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
-import { loadEmploymentProfileReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import {
   createCursorStack,
   moveNextCursor,
@@ -111,7 +109,6 @@ export const TalentListPage = (): JSX.Element => {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
-  const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(() => {
@@ -297,35 +294,18 @@ export const TalentListPage = (): JSX.Element => {
     return 'ready' as const;
   }, [listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
 
-  const rememberFilterOption = useCallback((key: string, option: ReferenceOption | undefined) => {
-    setFilterOptionLabels((current) => {
-      if (option?.label) {
-        return current[key] === option.label ? current : { ...current, [key]: option.label };
-      }
-
-      if (!(key in current)) {
-        return current;
-      }
-
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-  }, []);
   const moreFilterCount = [
     query.talentOrigin,
-    query.managerEmploymentProfileId,
     query.hasLinkedEmploymentProfile,
     query.commercialParticipationStatus,
     query.livestreamEligible,
     query.eventEligible,
-  ].filter((value) => value !== undefined && value !== '').length;
+  ].filter((value) => value !== undefined).length;
   const clearTalentFilters = useCallback(() => {
     patchQuery({
       search: undefined,
       operationalStatus: undefined,
       talentOrigin: undefined,
-      managerEmploymentProfileId: undefined,
       hasLinkedEmploymentProfile: undefined,
       commercialParticipationStatus: undefined,
       livestreamEligible: undefined,
@@ -359,15 +339,6 @@ export const TalentListPage = (): JSX.Element => {
         label: t('talent:filters.talentOrigin'),
         value: t(`talent:origins.${query.talentOrigin}`),
         onClear: () => patchQuery({ talentOrigin: undefined }),
-      });
-    }
-
-    if (query.managerEmploymentProfileId) {
-      items.push({
-        id: 'manager',
-        label: t('talent:filters.managerEmploymentProfileId'),
-        value: filterOptionLabels.manager ?? query.managerEmploymentProfileId,
-        onClear: () => patchQuery({ managerEmploymentProfileId: undefined }),
       });
     }
 
@@ -411,13 +382,11 @@ export const TalentListPage = (): JSX.Element => {
 
     return items;
   }, [
-    filterOptionLabels.manager,
     patchQuery,
     query.commercialParticipationStatus,
     query.eventEligible,
     query.hasLinkedEmploymentProfile,
     query.livestreamEligible,
-    query.managerEmploymentProfileId,
     query.operationalStatus,
     query.search,
     query.talentOrigin,
@@ -497,21 +466,6 @@ export const TalentListPage = (): JSX.Element => {
                   ))}
                 </select>
               </label>
-              <ReferenceFilterField
-                label={t('talent:filters.managerEmploymentProfileId')}
-                pickerId="talent-filter-manager"
-                value={query.managerEmploymentProfileId}
-                loadOptions={loadEmploymentProfileReferenceOptions}
-                placeholder={t('talent:placeholders.employmentProfileSearch')}
-                clearLabel={t('common:actions.clear')}
-                className="min-w-[240px]"
-                onSelectedOptionChange={(option) => rememberFilterOption('manager', option)}
-                onChange={(nextId) =>
-                  patchQuery({
-                    managerEmploymentProfileId: nextId,
-                  })
-                }
-              />
               <label className="flex min-w-[180px] flex-col gap-1">
                 <span className="text-xs font-medium uppercase text-muted">
                   {t('talent:filters.hasLinkedEmploymentProfile')}

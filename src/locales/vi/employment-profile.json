@@ -12,8 +12,6 @@
     "jobTitle": "Chức danh",
     "orgUnitId": "Đơn vị tổ chức",
     "newOrgUnitId": "Đơn vị tổ chức",
-    "managerEmploymentProfileId": "Quản lý",
-    "newManagerEmploymentProfileId": "Quản lý",
     "recruiterEmploymentProfileId": "Phụ trách tuyển dụng",
     "hrOwnerEmploymentProfileId": "Phụ trách HR",
     "onboardingOwnerEmploymentProfileId": "Phụ trách onboarding",
@@ -40,14 +38,11 @@
     "orgUnitSearch": "Tìm đơn vị tổ chức theo tên hoặc mã",
     "employmentProfileSearch": "Tìm hồ sơ nhân sự theo tên hoặc mã nhân viên",
     "userSearch": "Tìm người dùng theo tên hoặc email",
-    "clearToUnset": "Để trống để xóa quản lý đang gán",
     "selectEmploymentKind": "Chọn loại nhân sự"
   },
   "referenceHelp": {
     "orgUnitId": "Chọn đơn vị tổ chức của hồ sơ này.",
     "newOrgUnitId": "Chọn đơn vị tổ chức mới cho hồ sơ này.",
-    "managerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc để chưa chọn nếu không có.",
-    "newManagerEmploymentProfileId": "Chọn hồ sơ nhân sự quản lý, hoặc xóa lựa chọn để bỏ quản lý.",
     "recruiterEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách tuyển dụng.",
     "hrOwnerEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách HR.",
     "onboardingOwnerEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách onboarding.",
@@ -69,8 +64,6 @@
     "allEmploymentKinds": "Tất cả loại nhân sự",
     "orgUnitId": "Đơn vị tổ chức",
     "orgUnitIdPlaceholder": "Chọn đơn vị tổ chức",
-    "managerEmploymentProfileId": "Quản lý",
-    "managerEmploymentProfileIdPlaceholder": "Chọn quản lý",
     "hasLinkedUser": "Trạng thái liên kết người dùng",
     "allEmploymentStatuses": "Tất cả trạng thái nhân sự",
     "allContractStatuses": "Tất cả trạng thái hợp đồng",
@@ -110,7 +103,6 @@
     "open": "Mở",
     "edit": "Chỉnh sửa",
     "assignOrgUnit": "Gán đơn vị tổ chức",
-    "assignManager": "Gán quản lý",
     "linkUser": "Liên kết người dùng",
     "unlinkUser": "Bỏ liên kết người dùng",
     "updateContractStatus": "Cập nhật trạng thái hợp đồng",
@@ -120,7 +112,6 @@
     "reactivate": "Kích hoạt lại",
     "terminate": "Kết thúc",
     "archive": "Lưu trữ",
-    "clearManager": "Xóa quản lý",
     "clearAttribution": "Xóa phân công",
     "clearLinkedUser": "Xóa người dùng liên kết"
   },
@@ -132,7 +123,6 @@
     "employmentKind": "Loại",
     "jobTitle": "Chức danh",
     "orgUnitId": "Đơn vị tổ chức",
-    "managerEmploymentProfileId": "Quản lý",
     "linkedUserId": "Người dùng liên kết",
     "employmentStatus": "Trạng thái nhân sự",
     "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
@@ -144,8 +134,7 @@
     "displayName": "Tên hiển thị",
     "employmentStatus": "Trạng thái nhân sự",
     "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
-    "orgUnitId": "Đơn vị tổ chức",
-    "managerEmploymentProfileId": "Quản lý"
+    "orgUnitId": "Đơn vị tổ chức"
   },
   "directReports": {
     "sortBy": "Sắp xếp",
@@ -165,7 +154,6 @@
     "assignmentTitle": "Phân công và mốc thời gian",
     "accountTitle": "Liên kết tài khoản / người dùng",
     "hrAttributionTitle": "Phân công HR",
-    "noManager": "Chưa gán quản lý",
     "notAssigned": "Chưa phân công",
     "externalContractHelper": "HĐLĐ và phụ lục pháp lý được lưu theo quy trình HR ngoài hệ thống. Màn này chỉ ghi nhận trạng thái tham chiếu để vận hành."
   },
@@ -195,7 +183,7 @@
     "noModuleAccess": "Không có quyền truy cập",
     "unavailable": "Không khả dụng",
     "directReportsTitle": "Cấp dưới trực tiếp",
-    "reportingTitle": "Quản lý / Báo cáo"
+    "reportingTitle": "Trach nhiem / Bao cao"
   },
   "mutations": {
     "create": {
@@ -213,12 +201,6 @@
     "assignOrgUnit": {
       "title": "Gán đơn vị tổ chức",
       "subtitle": "Chuyển hồ sơ sang một đơn vị tổ chức khác.",
-      "submit": "Gán",
-      "pending": "Đang gán..."
-    },
-    "assignManager": {
-      "title": "Gán quản lý",
-      "subtitle": "Cập nhật quan hệ quản lý cho hồ sơ này.",
       "submit": "Gán",
       "pending": "Đang gán..."
     },
@@ -247,14 +229,12 @@
     "invalidDate": "Ngày phải có định dạng YYYY-MM-DD hợp lệ.",
     "onboardedBeforeHired": "Ngày onboarding không được trước ngày tuyển dụng.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
-    "managerCannotBeSelf": "Một hồ sơ không thể tự làm quản lý của chính nó.",
     "contractStatusTransitionNotAllowed": "Không hỗ trợ chuyển trạng thái hợp đồng này."
   },
   "feedback": {
     "created": "Đã tạo hồ sơ nhân sự.",
     "updated": "Đã cập nhật hồ sơ nhân sự.",
     "orgUnitAssigned": "Đã cập nhật đơn vị tổ chức.",
-    "managerAssigned": "Đã cập nhật quản lý.",
     "userLinked": "Đã liên kết người dùng.",
     "userUnlinked": "Đã bỏ liên kết người dùng.",
     "contractStatusUpdated": "Đã cập nhật trạng thái hợp đồng.",
@@ -301,7 +281,9 @@
       "SUPERSEDED": "Đã được thay thế",
       "CANCELLED": "Đã hủy"
     },
-    "payFrequencies": { "MONTHLY": "Hàng tháng" },
+    "payFrequencies": {
+      "MONTHLY": "Hàng tháng"
+    },
     "actions": {
       "create": "Tạo bản nháp",
       "update": "Cập nhật bản nháp",
@@ -318,7 +300,9 @@
       "message": "Tạo bản nháp khi có điều khoản có cấu trúc đã được xác nhận.",
       "allowances": "Không có phụ cấp."
     },
-    "form": { "title": "Bản nháp điều khoản làm việc / lương" },
+    "form": {
+      "title": "Bản nháp điều khoản làm việc / lương"
+    },
     "validation": {
       "required": "Thiếu trường bắt buộc.",
       "dateRange": "Ngày hết hiệu lực không được trước ngày hiệu lực.",

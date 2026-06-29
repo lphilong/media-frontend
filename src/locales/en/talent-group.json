@@ -13,7 +13,6 @@
     "description": "Description",
     "externalRef": "External Reference",
     "talentId": "Talent",
-    "managerEmploymentProfileId": "Manager",
     "reason": "Reason",
     "lineupOrder": "Lineup Order",
     "newLineupOrder": "New Lineup Order",
@@ -26,12 +25,10 @@
   },
   "placeholders": {
     "optional": "Optional",
-    "talentSearch": "Search talents by name or code",
-    "managerSearch": "Search employment profiles by name or code"
+    "talentSearch": "Search talents by name or code"
   },
   "referenceHelp": {
-    "talentId": "Choose the talent to add to this group.",
-    "managerEmploymentProfileId": "Choose the employment profile that manages this group."
+    "talentId": "Choose the talent to add to this group."
   },
   "help": {
     "displayOrder": "Lower numbers appear first. Gaps like 10, 20, 30 make it easier to insert new items between existing ones. Example: use 15 to place an item between 10 and 20."
@@ -66,11 +63,6 @@
     "ACTIVE": "Active",
     "INACTIVE": "Inactive",
     "REMOVED": "Removed"
-  },
-  "managerRoles": {
-    "OWNER": "Owner",
-    "MANAGER": "Manager",
-    "ASSISTANT": "Assistant"
   },
   "actions": {
     "create": "Create Talent Group",
@@ -147,12 +139,6 @@
       "subtitle": "Update a member lineup order",
       "submit": "Update",
       "pending": "Updating..."
-    },
-    "assignManager": {
-      "title": "Assign Manager",
-      "subtitle": "Assign an employment profile as a group manager",
-      "submit": "Assign",
-      "pending": "Assigning..."
     }
   },
   "validation": {
@@ -160,11 +146,7 @@
     "invalidToken": "Value must use supported token characters.",
     "invalidReferenceToken": "Reference ID contains unsupported characters.",
     "invalidDisplayOrder": "Sort priority must be an integer greater than or equal to 0.",
-    "invalidLineupOrder": "Lineup order must be an integer greater than or equal to 0.",
-    "groupMustBeActive": "Manager assignment requires an active group.",
-    "managerEmploymentProfileInvalid": "Choose an active employment profile.",
-    "managerAssignmentDuplicate": "This manager is already actively assigned to the group.",
-    "managerAssignmentInactive": "This manager assignment is no longer active."
+    "invalidLineupOrder": "Lineup order must be an integer greater than or equal to 0."
   },
   "feedback": {
     "created": "Talent group created successfully.",
@@ -172,9 +154,7 @@
     "memberAdded": "Member added successfully.",
     "lineupUpdated": "Lineup updated successfully.",
     "lifecycleUpdated": "Group lifecycle updated successfully.",
-    "membershipLifecycleUpdated": "Membership lifecycle updated successfully.",
-    "managerAssigned": "Manager assigned successfully.",
-    "managerRevoked": "Manager assignment revoked successfully."
+    "membershipLifecycleUpdated": "Membership lifecycle updated successfully."
   },
   "confirm": {
     "activate": "Activate this group?",
@@ -182,17 +162,12 @@
     "archive": "Archive this group?",
     "deactivateMember": "Deactivate this member?",
     "reactivateMember": "Reactivate this member?",
-    "removeMember": "Remove this member?",
-    "revokeManager": "Revoke this manager assignment?"
+    "removeMember": "Remove this member?"
   },
   "managers": {
-    "title": "Managers",
-    "assign": "Assign Manager",
-    "revoke": "Revoke Manager",
-    "primary": "Primary",
-    "emptyTitle": "No active managers",
-    "emptyMessage": "This group has no active manager assignments.",
-    "noLinkedAdminUser": "This employment profile is not linked to an active admin user."
+    "title": "Responsibilities",
+    "emptyTitle": "No active responsibilities",
+    "emptyMessage": "This group has no active responsibility assignments."
   },
   "actionRail": {
     "title": "Talent Group Actions"

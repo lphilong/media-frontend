@@ -52,14 +52,14 @@ const readLifecycleActions = (record: RoleListItem): RoleLifecycleAction[] => {
 };
 
 const scopeModuleLabels: Record<keyof RoleAssignmentScopeGrants, string> = {
-  workSchedule: 'Work Schedule',
-  eventAssignment: 'Event Assignment',
-  contractRegistry: 'Contract Registry',
+  workSchedule: 'Lịch làm việc',
+  eventAssignment: 'Phân công sự kiện',
+  contractRegistry: 'Hồ sơ hợp đồng',
   talentKpi: 'Talent KPI',
-  kpi: 'KPI',
-  revenueLedger: 'Revenue Ledger',
-  commission: 'Commission',
-  dashboardLite: 'Dashboard Lite',
+  kpi: 'Vận hành KPI',
+  revenueLedger: 'Dữ liệu doanh thu',
+  commission: 'Hoa hồng',
+  dashboardLite: 'Tổng quan vận hành',
 };
 
 const scopeOrder: Array<keyof RoleAssignmentScopeGrants> = [
@@ -73,7 +73,15 @@ const scopeOrder: Array<keyof RoleAssignmentScopeGrants> = [
   'dashboardLite',
 ];
 
-const toScopeLabel = (value: string): string => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+const scopeValueLabels: Record<string, string> = {
+  self: 'Dữ liệu của chính nhân sự này',
+  team: 'Nhóm đang phụ trách',
+  department: 'Phòng ban',
+  managedGroup: 'Nhóm Talent được quản lý',
+  global: 'Toàn bộ phạm vi được phép',
+};
+
+const toScopeLabel = (value: string): string => scopeValueLabels[value] ?? value;
 
 export const formatAssignmentScopeSummary = (
   scopeGrants?: RoleAssignmentScopeGrants | null,
@@ -85,11 +93,7 @@ export const formatAssignmentScopeSummary = (
   const entries = scopeOrder.flatMap((module) => {
     const scopes = scopeGrants[module] ?? [];
     return scopes.length > 0
-      ? [
-          `${scopeModuleLabels[module]}: ${scopes
-            .map((scope) => (module === 'kpi' ? `kpi.${scope}` : toScopeLabel(scope)))
-            .join(', ')}`,
-        ]
+      ? [`${scopeModuleLabels[module]}: ${scopes.map((scope) => toScopeLabel(scope)).join(', ')}`]
       : [];
   });
 
@@ -239,9 +243,7 @@ export const createRoleAssignmentColumns = (
       }
 
       const canRevoke = handlers.roleState === 'ACTIVE' && assignment.state === 'ACTIVE';
-      const disabledReason = !canRevoke
-        ? t('common:capabilities.invalidStatus')
-        : undefined;
+      const disabledReason = !canRevoke ? t('common:capabilities.invalidStatus') : undefined;
       const reasonId = `role-assignment-${assignment.assignmentId}-revoke-disabled-reason`;
 
       return (
@@ -249,9 +251,7 @@ export const createRoleAssignmentColumns = (
           <button
             type="button"
             className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={
-              !canRevoke || handlers.isActionPending?.(assignment.assignmentId)
-            }
+            disabled={!canRevoke || handlers.isActionPending?.(assignment.assignmentId)}
             aria-describedby={disabledReason ? reasonId : undefined}
             title={disabledReason}
             onClick={() => handlers.onRevokeAssignment(assignment)}

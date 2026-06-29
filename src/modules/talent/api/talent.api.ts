@@ -15,7 +15,6 @@ import type {
   TalentLifecycleAction,
   TalentOrigin,
   TalentListQuery,
-  TalentManagerAssignmentPayload,
   TalentRecord,
   TalentUpdatePayload,
 } from '@modules/talent/types/talent.types';
@@ -47,8 +46,6 @@ const listTalentSchema = z
     displayShortName: z.string().nullable().optional(),
     talentOrigin: talentOriginSchema,
     operationalStatus: talentOperationalStatusSchema,
-    managerEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
-    managerEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     linkedEmploymentProfileId: z.string().trim().min(1).nullable().optional(),
     linkedEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     commercialParticipationStatus: talentCommercialParticipationStatusSchema,
@@ -92,7 +89,6 @@ const sanitizeListQuery = (
   return {
     operationalStatus: query.operationalStatus,
     talentOrigin: query.talentOrigin,
-    managerEmploymentProfileId: query.managerEmploymentProfileId,
     hasLinkedEmploymentProfile: query.hasLinkedEmploymentProfile,
     commercialParticipationStatus: query.commercialParticipationStatus,
     livestreamEligible: query.livestreamEligible,
@@ -159,19 +155,6 @@ export const updateTalent = async (
   const response = await apiRequest<unknown, TalentUpdatePayload>({
     method: 'PATCH',
     url: `/admin/talents/${encodeURIComponent(talentId)}`,
-    data: payload,
-  });
-
-  return detailResponseSchema.parse(response).data;
-};
-
-export const assignTalentManager = async (
-  talentId: string,
-  payload: TalentManagerAssignmentPayload,
-): Promise<TalentRecord> => {
-  const response = await apiRequest<unknown, TalentManagerAssignmentPayload>({
-    method: 'POST',
-    url: `/admin/talents/${encodeURIComponent(talentId)}/manager-assignment`,
     data: payload,
   });
 

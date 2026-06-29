@@ -14,8 +14,6 @@
     "displayShortName": "Display Short Name",
     "talentOrigin": "Talent Origin",
     "selectTalentOrigin": "Select a talent origin",
-    "managerEmploymentProfileId": "Manager",
-    "newManagerEmploymentProfileId": "Manager",
     "linkedEmploymentProfileId": "Linked Employment Profile",
     "commercialParticipationStatus": "Commercial Participation Status",
     "newCommercialParticipationStatus": "New Commercial Participation Status",
@@ -32,12 +30,9 @@
   },
   "placeholders": {
     "optional": "Optional",
-    "employmentProfileSearch": "Search employment profiles by name or employee code",
-    "clearToUnset": "Leave blank to clear manager assignment"
+    "employmentProfileSearch": "Search employment profiles by name or employee code"
   },
   "referenceHelp": {
-    "managerEmploymentProfileId": "Choose the manager employment profile for this talent.",
-    "newManagerEmploymentProfileId": "Choose the manager employment profile, or clear the selection to remove the manager.",
     "linkedEmploymentProfileId": "Choose the employment profile to link to this talent.",
     "internalDisplayNameSource": "Display name comes from the linked Employment Profile.",
     "performanceAlias": "Internal person display comes from the linked Employment Profile. Performance Alias is optional and used only in talent/performance contexts.",
@@ -55,8 +50,6 @@
     "allOperationalStatuses": "All operational statuses",
     "talentOrigin": "Talent Origin",
     "allTalentOrigins": "All talent origins",
-    "managerEmploymentProfileId": "Manager",
-    "managerEmploymentProfileIdPlaceholder": "Manager profile ID",
     "hasLinkedEmploymentProfile": "Linked Employment Profile",
     "allLinkedEmploymentProfileStates": "All linked-profile states",
     "linkedOnly": "Linked only",
@@ -97,14 +90,12 @@
     "closeCreate": "Close Create",
     "open": "Open",
     "edit": "Edit",
-    "assignManager": "Assign Manager",
     "linkEmploymentProfile": "Link Employment Profile",
     "updateCommercialParticipation": "Update Commercial Participation",
     "suspend": "Suspend",
     "reactivate": "Reactivate",
     "deactivate": "Deactivate",
     "archive": "Archive",
-    "clearManager": "Clear manager",
     "clearLinkedEmploymentProfile": "Clear linked profile"
   },
   "table": {
@@ -117,7 +108,6 @@
     "displayShortName": "Short Name",
     "talentOrigin": "Origin",
     "operationalStatus": "Status",
-    "managerEmploymentProfileId": "Manager",
     "linkedEmploymentProfileId": "Linked Profile",
     "commercialParticipationStatus": "Commercial",
     "livestreamEligible": "Livestream Eligible",
@@ -155,12 +145,6 @@
       "submit": "Save",
       "pending": "Saving..."
     },
-    "assignManager": {
-      "title": "Assign Manager",
-      "subtitle": "Update manager relationship",
-      "submit": "Assign",
-      "pending": "Assigning..."
-    },
     "linkEmploymentProfile": {
       "title": "Link Employment Profile",
       "subtitle": "Attach an employment profile to this talent",
@@ -178,13 +162,11 @@
     "required": "This field is required.",
     "invalidToken": "Value must use supported token characters.",
     "invalidReferenceToken": "Reference ID contains unsupported characters.",
-    "blockedCommercialStatus": "Blocked participation requires both eligibility flags to be false.",
-    "managerCannotMatchTalentId": "Manager profile cannot match this talent ID."
+    "blockedCommercialStatus": "Blocked participation requires both eligibility flags to be false."
   },
   "feedback": {
     "created": "Talent created successfully.",
     "updated": "Talent updated successfully.",
-    "managerAssigned": "Manager assignment updated successfully.",
     "employmentProfileLinked": "Employment profile linked successfully.",
     "commercialParticipationUpdated": "Commercial participation updated successfully.",
     "lifecycleUpdated": "Talent lifecycle updated successfully."

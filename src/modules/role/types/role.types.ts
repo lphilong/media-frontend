@@ -21,14 +21,40 @@ export type RolePermission = {
   code: string;
 };
 
-export type RoleTemplateCode =
-  | 'ADMIN_FULL'
+export type ActiveRoleTemplateCode =
+  | 'OWNER_ADMIN'
+  | 'ACCESS_ADMIN'
   | 'HR_OPERATIONS'
-  | 'TEAM_MANAGER'
+  | 'HR_TERMS_APPROVER'
   | 'PRODUCTION_OPS'
+  | 'PLATFORM_CHANNEL_OPS'
+  | 'CREATIVE_VISUAL_LEAD'
+  | 'CONTENT_OPS'
+  | 'TALENT_GROUP_MANAGER'
+  | 'ORG_UNIT_MANAGER'
+  | 'KPI_OPERATIONS'
+  | 'COMMERCIAL_CONTRACT_OPS'
+  | 'REVENUE_FINANCE_OPS'
+  | 'REVENUE_APPROVER'
+  | 'REVENUE_RECONCILER'
+  | 'COMMISSION_OPS'
+  | 'COMMISSION_APPROVER'
+  | 'ATTENDANCE_OPS'
+  | 'LEAVE_REVIEWER'
+  | 'ATTENDANCE_APPROVER'
+  | 'MONTHLY_CLOSE_OWNER'
+  | 'PAYROLL_DRAFT_OPS'
+  | 'PAYROLL_DRAFT_APPROVER'
+  | 'VIEWER_AUDITOR'
+  | 'STAFF_CONSOLE_USER';
+
+export type LegacyRoleTemplateCode =
+  | 'ADMIN_FULL'
+  | 'TEAM_MANAGER'
   | 'COMMERCIAL_FINANCE'
-  | 'TALENT_STAFF_SELF'
-  | 'VIEWER_AUDITOR';
+  | 'TALENT_STAFF_SELF';
+
+export type RoleTemplateCode = ActiveRoleTemplateCode | LegacyRoleTemplateCode;
 
 export type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
 export type RoleBundleStatus = 'ACTIVE' | 'INACTIVE';
@@ -42,13 +68,14 @@ export type RoleTemplateScopePlanEntry = {
 };
 
 export type RoleTemplateListItem = {
-  code: RoleTemplateCode;
+  code: ActiveRoleTemplateCode;
   version: string;
   name: string;
   description: string;
   category: string;
   permissionCount: number;
   permissions?: RolePermission[];
+  recommendedAccountContext: RecommendedAccountContext;
   recommendedScopeGrants: RoleAssignmentScopeGrants;
   scopePlan: RoleTemplateScopePlanEntry[];
   warnings: string[];
@@ -274,7 +301,7 @@ export type RoleAssignToUserPayload = {
 };
 
 export type RoleCreateFromTemplatePayload = {
-  templateCode: RoleTemplateCode;
+  templateCode: ActiveRoleTemplateCode;
   code?: string;
   name: string;
   description?: string | null;

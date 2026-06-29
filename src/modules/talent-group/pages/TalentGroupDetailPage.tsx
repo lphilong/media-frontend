@@ -10,27 +10,23 @@ import {
 } from '@app/router/reference-links';
 import { createTalentGroupActionRailItems } from '@modules/talent-group/actions/talent-group-action-rail';
 import {
-  TalentGroupAssignManagerSurface,
   TalentGroupAddMemberSurface,
   TalentGroupEditSurface,
   TalentGroupUpdateLineupSurface,
 } from '@modules/talent-group/forms/talent-group-mutation-forms';
 import {
   useTalentGroupAddMemberMutation,
-  useTalentGroupAssignManagerMutation,
   useTalentGroupDetail,
   useTalentGroupLifecycleMutation,
-  useTalentGroupManagerAssignments,
   useTalentGroupMembershipLifecycleMutation,
   useTalentGroupMembers,
-  useTalentGroupRevokeManagerMutation,
   useTalentGroupUpdateLineupMutation,
   useUpdateTalentGroupMutation,
 } from '@modules/talent-group/hooks/use-talent-group';
+import { ResponsibilitySummarySection } from '@modules/responsibility/components/ResponsibilitySummarySection';
 import { createTalentGroupMemberColumns } from '@modules/talent-group/tables/talent-group-columns';
 import type {
   TalentGroupLifecycleAction,
-  TalentGroupManagerAssignmentRecord,
   TalentGroupMemberRecord,
   TalentGroupMembershipLifecycleAction,
 } from '@modules/talent-group/types/talent-group.types';
@@ -63,7 +59,7 @@ import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/f
 import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
-type ActiveMutationSurface = 'edit' | 'add-member' | 'assign-manager' | 'update-lineup' | null;
+type ActiveMutationSurface = 'edit' | 'add-member' | 'update-lineup' | null;
 
 const statusToneMap = {
   ACTIVE: 'success',
@@ -115,11 +111,6 @@ const readMembershipLifecycleConfirmKey = (
   }
 };
 
-const readReferenceLabel = (
-  ref: TalentGroupManagerAssignmentRecord['managerRef'],
-  fallback: string,
-): string => ref.displayName ?? ref.name ?? ref.code ?? fallback;
-
 export const TalentGroupDetailPage = (): JSX.Element => {
   const { groupId } = useParams<{ groupId: string }>();
   const { t } = useTranslation(['talent-group', 'common', 'errors']);
@@ -145,11 +136,8 @@ export const TalentGroupDetailPage = (): JSX.Element => {
     cursor: membersCursor,
     limit: 20,
   });
-  const managerAssignmentsQuery = useTalentGroupManagerAssignments(groupId);
   const updateMutation = useUpdateTalentGroupMutation();
   const addMemberMutation = useTalentGroupAddMemberMutation();
-  const assignManagerMutation = useTalentGroupAssignManagerMutation();
-  const revokeManagerMutation = useTalentGroupRevokeManagerMutation();
   const updateLineupMutation = useTalentGroupUpdateLineupMutation();
   const lifecycleMutation = useTalentGroupLifecycleMutation();
   const membershipLifecycleMutation = useTalentGroupMembershipLifecycleMutation();
@@ -290,52 +278,6 @@ export const TalentGroupDetailPage = (): JSX.Element => {
     }
   };
 
-  const onAssignManagerSubmit = async (
-    payload: Parameters<typeof assignManagerMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!record) {
-      return;
-    }
-
-    try {
-      await assignManagerMutation.mutateAsync({
-        groupId: record.id,
-        payload,
-      });
-      notifySuccess('talent-group:feedback.managerAssigned');
-      setActiveSurface(null);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
-  const onRevokeManagerAssignment = useCallback(
-    async (assignment: TalentGroupManagerAssignmentRecord) => {
-      if (!record) {
-        return;
-      }
-
-      const confirmed = await requestDestructiveConfirm({
-        description: t('talent-group:confirm.revokeManager'),
-      });
-      if (!confirmed) {
-        return;
-      }
-
-      try {
-        await revokeManagerMutation.mutateAsync({
-          groupId: record.id,
-          assignmentId: assignment.id,
-          payload: {},
-        });
-        notifySuccess('talent-group:feedback.managerRevoked');
-      } catch (error) {
-        notifyError(error as NormalizedApiError);
-      }
-    },
-    [notifyError, notifySuccess, record, requestDestructiveConfirm, revokeManagerMutation, t],
-  );
-
   const onUpdateLineupSubmit = async (
     payload: Parameters<typeof updateLineupMutation.mutateAsync>[0]['payload'],
   ) => {
@@ -440,9 +382,6 @@ export const TalentGroupDetailPage = (): JSX.Element => {
     t,
   ]);
 
-  const canManageManagers = canShowAction(capabilitiesQuery.data, {
-    permission: PERMISSIONS.TALENT_GROUP_UPDATE,
-  });
   const canManageMembership = canShowAction(capabilitiesQuery.data, {
     permission: PERMISSIONS.TALENT_GROUP_MANAGE_MEMBERSHIP,
   });
@@ -588,13 +527,6 @@ export const TalentGroupDetailPage = (): JSX.Element => {
                 onSubmit={onAddMemberSubmit}
               />
             ) : null}
-            {activeSurface === 'assign-manager' ? (
-              <TalentGroupAssignManagerSurface
-                isPending={assignManagerMutation.isPending}
-                onCancel={() => setActiveSurface(null)}
-                onSubmit={onAssignManagerSubmit}
-              />
-            ) : null}
             {activeSurface === 'update-lineup' && selectedMembership ? (
               <TalentGroupUpdateLineupSurface
                 initialLineupOrder={selectedMembership.lineupOrder}
@@ -612,76 +544,11 @@ export const TalentGroupDetailPage = (): JSX.Element => {
       relatedSection={
         record ? (
           <div className="space-y-4">
-            <RelatedSectionShell title={t('talent-group:managers.title')}>
-              <div className="space-y-3">
-                <div className="flex justify-end">
-                  {canManageManagers && record.status === 'ACTIVE' ? (
-                    <button
-                      type="button"
-                      className="rounded border border-border px-3 py-2 text-sm font-medium text-fg hover:bg-bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={() => setActiveSurface('assign-manager')}
-                      disabled={assignManagerMutation.isPending}
-                    >
-                      {t('talent-group:managers.assign')}
-                    </button>
-                  ) : null}
-                </div>
-                {managerAssignmentsQuery.isPending ? (
-                  <LoadingState lines={3} />
-                ) : managerAssignmentsQuery.data && managerAssignmentsQuery.data.length > 0 ? (
-                  <div className="divide-y divide-border rounded border border-border">
-                    {managerAssignmentsQuery.data.map((assignment) => (
-                      <div
-                        key={assignment.id}
-                        className="flex flex-col gap-3 px-3 py-3 md:flex-row md:items-center md:justify-between"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-fg">
-                            {readReferenceLabel(
-                              assignment.managerRef,
-                              assignment.managerEmploymentProfileId,
-                            )}
-                          </p>
-                          <p className="mt-1 text-xs text-muted">
-                            {assignment.managerRef.code ?? assignment.managerEmploymentProfileId}
-                            {' - '}
-                            {t(`talent-group:managerRoles.${assignment.role}`)}
-                            {assignment.isPrimary ? ` - ${t('talent-group:managers.primary')}` : ''}
-                          </p>
-                          {!assignment.managerHasLinkedAdminUser ? (
-                            <p className="mt-2 text-xs text-muted">
-                              {t('talent-group:managers.noLinkedAdminUser')}
-                            </p>
-                          ) : null}
-                        </div>
-                        {canManageManagers ? (
-                          <button
-                            type="button"
-                            className="self-start rounded border border-danger px-3 py-2 text-sm font-medium text-danger hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60 md:self-center"
-                            disabled={
-                              revokeManagerMutation.isPending &&
-                              revokeManagerMutation.variables?.assignmentId === assignment.id
-                            }
-                            onClick={() => void onRevokeManagerAssignment(assignment)}
-                          >
-                            {t('talent-group:managers.revoke')}
-                          </button>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded border border-border px-3 py-4">
-                    <p className="text-sm font-medium text-fg">
-                      {t('talent-group:managers.emptyTitle')}
-                    </p>
-                    <p className="mt-1 text-sm text-muted">
-                      {t('talent-group:managers.emptyMessage')}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </RelatedSectionShell>
+            <ResponsibilitySummarySection
+              subjectType="TALENT_GROUP"
+              subjectId={record.id}
+              title={t('talent-group:managers.title')}
+            />
             <RelatedSectionShell title={t('talent-group:related.navigationTitle')}>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="rounded border border-border bg-bg px-3 py-2">

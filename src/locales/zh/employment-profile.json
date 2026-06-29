@@ -12,8 +12,6 @@
     "jobTitle": "职位",
     "orgUnitId": "组织单元",
     "newOrgUnitId": "组织单元",
-    "managerEmploymentProfileId": "主管",
-    "newManagerEmploymentProfileId": "主管",
     "recruiterEmploymentProfileId": "招聘负责人",
     "hrOwnerEmploymentProfileId": "HR 负责人",
     "onboardingOwnerEmploymentProfileId": "入职负责人",
@@ -40,14 +38,11 @@
     "orgUnitSearch": "按名称或编码搜索组织单元",
     "employmentProfileSearch": "按姓名或员工编码搜索员工档案",
     "userSearch": "按姓名或邮箱搜索用户",
-    "clearToUnset": "留空以清除主管分配",
     "selectEmploymentKind": "选择用工类型"
   },
   "referenceHelp": {
     "orgUnitId": "选择此档案所属的组织单元。",
     "newOrgUnitId": "选择此档案要调入的组织单元。",
-    "managerEmploymentProfileId": "选择主管员工档案；无主管时可不选择。",
-    "newManagerEmploymentProfileId": "选择主管员工档案，或清除选择以移除主管。",
     "recruiterEmploymentProfileId": "选择负责招聘的员工档案。",
     "hrOwnerEmploymentProfileId": "选择负责人力资源归属的员工档案。",
     "onboardingOwnerEmploymentProfileId": "选择负责入职的员工档案。",
@@ -69,8 +64,6 @@
     "allEmploymentKinds": "所有用工类型",
     "orgUnitId": "组织单元",
     "orgUnitIdPlaceholder": "选择组织单元",
-    "managerEmploymentProfileId": "主管",
-    "managerEmploymentProfileIdPlaceholder": "选择主管",
     "hasLinkedUser": "已关联用户",
     "allEmploymentStatuses": "所有员工状态",
     "allContractStatuses": "所有合同状态",
@@ -110,7 +103,6 @@
     "open": "打开",
     "edit": "编辑",
     "assignOrgUnit": "分配组织单元",
-    "assignManager": "分配主管",
     "linkUser": "关联用户",
     "unlinkUser": "解除用户关联",
     "updateContractStatus": "更新合同状态",
@@ -120,7 +112,6 @@
     "reactivate": "重新启用",
     "terminate": "终止",
     "archive": "归档",
-    "clearManager": "清除主管",
     "clearAttribution": "清除分配",
     "clearLinkedUser": "清除关联用户"
   },
@@ -132,7 +123,6 @@
     "employmentKind": "类型",
     "jobTitle": "职位",
     "orgUnitId": "组织单元",
-    "managerEmploymentProfileId": "主管",
     "linkedUserId": "已关联用户",
     "employmentStatus": "员工状态",
     "contractStatus": "系统外劳动合同状态",
@@ -144,8 +134,7 @@
     "displayName": "显示名称",
     "employmentStatus": "员工状态",
     "contractStatus": "系统外劳动合同状态",
-    "orgUnitId": "组织单元",
-    "managerEmploymentProfileId": "主管"
+    "orgUnitId": "组织单元"
   },
   "directReports": {
     "sortBy": "排序",
@@ -165,7 +154,6 @@
     "summaryTitle": "档案摘要",
     "assignmentTitle": "分配和日期",
     "hrAttributionTitle": "HR 归属",
-    "noManager": "未分配主管",
     "notAssigned": "未分配",
     "externalContractHelper": "劳动合同及法律附件由系统外 HR 流程保存。此页面仅记录运营参考状态。"
   },
@@ -187,7 +175,7 @@
     "noRelatedTalentContext": "无相关人才上下文",
     "noPublishedKpiSummary": "无已发布 KPI 摘要",
     "noModuleAccess": "无访问权限",
-    "reportingTitle": "主管 / 汇报关系",
+    "reportingTitle": "责任 / 汇报",
     "navigationTitle": "关联导航",
     "workShifts": "按主体查看工作班次",
     "events": "按分配查看活动",
@@ -216,12 +204,6 @@
       "submit": "分配",
       "pending": "分配中..."
     },
-    "assignManager": {
-      "title": "分配主管",
-      "subtitle": "更新主管关系",
-      "submit": "分配",
-      "pending": "分配中..."
-    },
     "linkUser": {
       "title": "关联用户",
       "subtitle": "将用户账号关联到此档案",
@@ -247,14 +229,12 @@
     "invalidDate": "日期必须是有效的 YYYY-MM-DD 值。",
     "onboardedBeforeHired": "入职日期不能早于录用日期。",
     "invalidReferenceToken": "引用 ID 包含不支持的字符。",
-    "managerCannotBeSelf": "档案不能将自己设为主管。",
     "contractStatusTransitionNotAllowed": "不支持此合同状态转换。"
   },
   "feedback": {
     "created": "员工档案已创建。",
     "updated": "员工档案已更新。",
     "orgUnitAssigned": "组织单元分配已更新。",
-    "managerAssigned": "主管分配已更新。",
     "userLinked": "用户已关联。",
     "userUnlinked": "用户已取消关联。",
     "contractStatusUpdated": "合同状态已更新。",
@@ -301,7 +281,9 @@
       "SUPERSEDED": "已替代",
       "CANCELLED": "已取消"
     },
-    "payFrequencies": { "MONTHLY": "每月" },
+    "payFrequencies": {
+      "MONTHLY": "每月"
+    },
     "actions": {
       "create": "创建草稿",
       "update": "更新草稿",
@@ -318,7 +300,9 @@
       "message": "有已确认的结构化条款时创建草稿。",
       "allowances": "没有津贴。"
     },
-    "form": { "title": "工作条款草稿" },
+    "form": {
+      "title": "工作条款草稿"
+    },
     "validation": {
       "required": "缺少必填字段。",
       "dateRange": "结束日期不能早于生效日期。",

@@ -9,7 +9,6 @@ import type {
 type ActionSurfaceHandlers = {
   onEdit: () => void;
   onAssignOrgUnit: () => void;
-  onAssignManager: () => void;
   onLinkUser: () => void;
   onContractStatus: () => void;
   canUpdateContractStatus?: boolean;
@@ -63,12 +62,6 @@ export const createEmploymentProfileActionRailItems = (
       label: t('employment-profile:actions.assignOrgUnit'),
       disabled: !canAssign(record),
       onClick: canAssign(record) ? handlers.onAssignOrgUnit : undefined,
-    },
-    {
-      id: 'assign-manager',
-      label: t('employment-profile:actions.assignManager'),
-      disabled: !canAssign(record),
-      onClick: canAssign(record) ? handlers.onAssignManager : undefined,
     },
     {
       id: 'link-user',

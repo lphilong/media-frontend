@@ -16,7 +16,6 @@ import { EmploymentTermsSection } from '@modules/employment-terms/components/Emp
 import {
   EmploymentProfileContractStatusSurface,
   EmploymentProfileEditSurface,
-  EmploymentProfileManagerAssignmentSurface,
   EmploymentProfileOrgAssignmentSurface,
   EmploymentProfileTerminateSurface,
   EmploymentProfileUserLinkSurface,
@@ -26,13 +25,13 @@ import {
   useEmploymentProfileDetail,
   useEmploymentProfileDirectReports,
   useEmploymentProfileLifecycleMutation,
-  useEmploymentProfileManagerAssignmentMutation,
   useEmploymentProfileOrgAssignmentMutation,
   useEmploymentProfileTerminateMutation,
   useUpdateEmploymentProfileMutation,
   useEmploymentProfileUserLinkMutation,
   useEmploymentProfileUserUnlinkMutation,
 } from '@modules/employment-profile/hooks/use-employment-profile';
+import { ResponsibilitySummarySection } from '@modules/responsibility/components/ResponsibilitySummarySection';
 import { createEmploymentDirectReportsColumns } from '@modules/employment-profile/tables/employment-profile-columns';
 import type {
   EmploymentContractStatus,
@@ -73,7 +72,6 @@ import { ModuleDetailScreenShell } from '@shared/modules';
 type ActiveMutationSurface =
   | 'edit'
   | 'assign-org-unit'
-  | 'assign-manager'
   | 'link-user'
   | 'contract-status'
   | 'terminate'
@@ -218,7 +216,6 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
 
   const updateMutation = useUpdateEmploymentProfileMutation();
   const assignOrgMutation = useEmploymentProfileOrgAssignmentMutation();
-  const assignManagerMutation = useEmploymentProfileManagerAssignmentMutation();
   const linkUserMutation = useEmploymentProfileUserLinkMutation();
   const unlinkUserMutation = useEmploymentProfileUserUnlinkMutation();
   const contractStatusMutation = useEmploymentProfileContractStatusMutation();
@@ -371,25 +368,6 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
     }
   };
 
-  const onAssignManagerSubmit = async (
-    payload: Parameters<typeof assignManagerMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!record) {
-      return;
-    }
-
-    try {
-      await assignManagerMutation.mutateAsync({
-        employmentProfileId: record.id,
-        payload,
-      });
-      notifySuccess('employment-profile:feedback.managerAssigned');
-      setActiveSurface(null);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
   const onLinkUserSubmit = async (
     payload: Parameters<typeof linkUserMutation.mutateAsync>[0]['payload'],
   ) => {
@@ -447,9 +425,6 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
     }
   };
 
-  const relatedManagerHref = record?.managerEmploymentProfileId
-    ? buildEntityDetailHref('employmentProfile', record.managerEmploymentProfileId)
-    : undefined;
   const relatedRecruiterHref = record?.recruiterEmploymentProfileId
     ? buildEntityDetailHref('employmentProfile', record.recruiterEmploymentProfileId)
     : undefined;
@@ -520,7 +495,6 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
       createEmploymentProfileActionRailItems(t, record, {
         onEdit: () => setActiveSurface('edit'),
         onAssignOrgUnit: () => setActiveSurface('assign-org-unit'),
-        onAssignManager: () => setActiveSurface('assign-manager'),
         onLinkUser: () => setActiveSurface('link-user'),
         onContractStatus: () => setActiveSurface('contract-status'),
         onTerminate: () => setActiveSurface('terminate'),
@@ -549,15 +523,6 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
             isError: capabilitiesQuery.isError,
           },
           { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_ORG_ASSIGNMENT },
-          capabilityCopy,
-        ),
-        'assign-manager': createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          { permission: PERMISSIONS.EMPLOYMENT_PROFILE_MANAGE_MANAGER_ASSIGNMENT },
           capabilityCopy,
         ),
         'link-user': createActionCapabilityHint(
@@ -736,21 +701,6 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                     />
                   ) : (
                     t('employment-profile:detail.notAssigned')
-                  ),
-                },
-                {
-                  key: 'manager',
-                  label: t('employment-profile:fields.managerEmploymentProfileId'),
-                  value: record.managerEmploymentProfileId ? (
-                    <ReferenceChip
-                      label={readReferenceDisplay(
-                        record.managerEmploymentProfileRef,
-                        record.managerEmploymentProfileId,
-                      )}
-                      to={relatedManagerHref}
-                    />
-                  ) : (
-                    t('employment-profile:detail.noManager')
                   ),
                 },
                 {
@@ -965,15 +915,6 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                 onSubmit={onAssignOrgSubmit}
               />
             ) : null}
-            {activeSurface === 'assign-manager' ? (
-              <EmploymentProfileManagerAssignmentSurface
-                currentEmploymentProfileId={record.id}
-                currentManagerEmploymentProfileId={record.managerEmploymentProfileId}
-                isPending={assignManagerMutation.isPending}
-                onCancel={() => setActiveSurface(null)}
-                onSubmit={onAssignManagerSubmit}
-              />
-            ) : null}
             {activeSurface === 'link-user' ? (
               <EmploymentProfileUserLinkSurface
                 isPending={linkUserMutation.isPending}
@@ -1075,28 +1016,12 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                 />
               </div>
             </RelatedSectionShell>
+            <ResponsibilitySummarySection
+              subjectType="EMPLOYMENT_PROFILE"
+              subjectId={record.id}
+            />
             <RelatedSectionShell title={t('employment-profile:related.reportingTitle')}>
               <div className="space-y-3">
-                <ReadOnlyFieldGrid
-                  fields={[
-                    {
-                      key: 'reporting-manager',
-                      label: t('employment-profile:fields.managerEmploymentProfileId'),
-                      value: record.managerEmploymentProfileId ? (
-                        <ReferenceChip
-                          label={readReferenceDisplay(
-                            record.managerEmploymentProfileRef,
-                            record.managerEmploymentProfileId,
-                          )}
-                          to={relatedManagerHref}
-                        />
-                      ) : (
-                        t('employment-profile:detail.noManager')
-                      ),
-                    },
-                  ]}
-                  columns={1}
-                />
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="text-xs uppercase text-muted" htmlFor="direct-reports-sort-by">
                     {t('employment-profile:directReports.sortBy')}

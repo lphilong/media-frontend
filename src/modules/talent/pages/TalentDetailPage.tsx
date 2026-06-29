@@ -18,16 +18,15 @@ import {
   TalentCommercialParticipationSurface,
   TalentEditSurface,
   TalentEmploymentLinkSurface,
-  TalentManagerAssignmentSurface,
 } from '@modules/talent/forms/talent-mutation-forms';
 import {
   useTalentCommercialParticipationMutation,
   useTalentDetail,
   useTalentEmploymentLinkMutation,
   useTalentLifecycleMutation,
-  useTalentManagerAssignmentMutation,
   useUpdateTalentMutation,
 } from '@modules/talent/hooks/use-talent';
+import { ResponsibilitySummarySection } from '@modules/responsibility/components/ResponsibilitySummarySection';
 import type {
   TalentCommercialParticipationStatus,
   TalentLifecycleAction,
@@ -68,7 +67,6 @@ import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveMutationSurface =
   | 'edit'
-  | 'assign-manager'
   | 'link-employment-profile'
   | 'commercial-participation'
   | null;
@@ -124,7 +122,6 @@ export const TalentDetailPage = (): JSX.Element => {
   const detailQuery = useTalentDetail(talentId);
   const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateTalentMutation();
-  const managerAssignmentMutation = useTalentManagerAssignmentMutation();
   const employmentLinkMutation = useTalentEmploymentLinkMutation();
   const commercialMutation = useTalentCommercialParticipationMutation();
   const lifecycleMutation = useTalentLifecycleMutation();
@@ -212,25 +209,6 @@ export const TalentDetailPage = (): JSX.Element => {
     }
   };
 
-  const onAssignManagerSubmit = async (
-    payload: Parameters<typeof managerAssignmentMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!record) {
-      return;
-    }
-
-    try {
-      await managerAssignmentMutation.mutateAsync({
-        talentId: record.id,
-        payload,
-      });
-      notifySuccess('talent:feedback.managerAssigned');
-      setActiveSurface(null);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
   const onEmploymentLinkSubmit = async (
     payload: Parameters<typeof employmentLinkMutation.mutateAsync>[0]['payload'],
   ) => {
@@ -269,9 +247,6 @@ export const TalentDetailPage = (): JSX.Element => {
     }
   };
 
-  const relatedManagerHref = record?.managerEmploymentProfileId
-    ? buildEntityDetailHref('employmentProfile', record.managerEmploymentProfileId)
-    : undefined;
   const relatedEmploymentProfileHref = record?.linkedEmploymentProfileId
     ? buildEntityDetailHref('employmentProfile', record.linkedEmploymentProfileId)
     : undefined;
@@ -306,7 +281,6 @@ export const TalentDetailPage = (): JSX.Element => {
     return applyActionCapabilityHints(
       createTalentActionRailItems(t, record, {
         onEdit: () => setActiveSurface('edit'),
-        onAssignManager: () => setActiveSurface('assign-manager'),
         onLinkEmploymentProfile: () => setActiveSurface('link-employment-profile'),
         onUpdateCommercialParticipation: () => setActiveSurface('commercial-participation'),
         onLifecycleAction,
@@ -323,15 +297,6 @@ export const TalentDetailPage = (): JSX.Element => {
             isError: capabilitiesQuery.isError,
           },
           { permission: PERMISSIONS.TALENT_UPDATE },
-          capabilityCopy,
-        ),
-        'assign-manager': createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          { permission: PERMISSIONS.TALENT_MANAGE_MANAGER },
           capabilityCopy,
         ),
         'employment-link': createActionCapabilityHint(
@@ -468,21 +433,6 @@ export const TalentDetailPage = (): JSX.Element => {
             <ReadOnlyFieldGrid
               fields={[
                 {
-                  key: 'manager-employment-profile-id',
-                  label: t('talent:fields.managerEmploymentProfileId'),
-                  value: record.managerEmploymentProfileId ? (
-                    <ReferenceChip
-                      label={readReferenceDisplay(
-                        record.managerEmploymentProfileRef,
-                        record.managerEmploymentProfileId,
-                      )}
-                      to={relatedManagerHref}
-                    />
-                  ) : (
-                    '-'
-                  ),
-                },
-                {
                   key: 'linked-employment-profile-id',
                   label: t('talent:fields.linkedEmploymentProfileId'),
                   value: record.linkedEmploymentProfileId ? (
@@ -554,15 +504,6 @@ export const TalentDetailPage = (): JSX.Element => {
                 onSubmit={onEditSubmit}
               />
             ) : null}
-            {activeSurface === 'assign-manager' ? (
-              <TalentManagerAssignmentSurface
-                currentTalentId={record.id}
-                currentManagerEmploymentProfileId={record.managerEmploymentProfileId}
-                isPending={managerAssignmentMutation.isPending}
-                onCancel={() => setActiveSurface(null)}
-                onSubmit={onAssignManagerSubmit}
-              />
-            ) : null}
             {activeSurface === 'link-employment-profile' ? (
               <TalentEmploymentLinkSurface
                 currentLinkedEmploymentProfileId={record.linkedEmploymentProfileId}
@@ -588,8 +529,13 @@ export const TalentDetailPage = (): JSX.Element => {
       }
       relatedSection={
         record ? (
-          <RelatedSectionShell title={t('talent:related.navigationTitle')}>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="space-y-4">
+            <ResponsibilitySummarySection
+              subjectType="TALENT"
+              subjectId={record.id}
+            />
+            <RelatedSectionShell title={t('talent:related.navigationTitle')}>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="rounded border border-border bg-bg px-3 py-2">
                 <p className="text-xs font-medium uppercase text-muted">
                   {t('talent:related.talentGroups')}
@@ -710,8 +656,9 @@ export const TalentDetailPage = (): JSX.Element => {
                   <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
                 )}
               </div>
-            </div>
-          </RelatedSectionShell>
+              </div>
+            </RelatedSectionShell>
+          </div>
         ) : undefined
       }
       actionRail={<ActionRail title={t('talent:actionRail.title')} items={actionItems} />}
