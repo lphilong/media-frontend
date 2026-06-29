@@ -1,8 +1,8 @@
 {
   "page": {
     "title": "KPI",
-    "subtitle": "Quản lý KPI.",
-    "placeholder": "Mô-đun KPI"
+    "subtitle": "Quản lý kế hoạch, phân bổ và tiến độ KPI.",
+    "placeholder": "Màn hình KPI"
   },
   "detail": {
     "pageTitle": "KPI",
@@ -11,8 +11,8 @@
   "tabs": {
     "label": "Chế độ xem KPI",
     "management": "Quản lý KPI",
-    "group": "KPI nhóm ",
-    "my": "KPI ",
+    "group": "KPI nhóm",
+    "my": "KPI cá nhân",
     "myClosed": "KPI cá nhân."
   },
   "adminWorkspace": {
@@ -23,7 +23,7 @@
   },
   "list": {
     "title": "Kế hoạch KPI",
-    "boundedDisclosure": "Danh sách đang hiển thị trong giới hạn kết quả backend hiện tại. Màn này không có tổng số trang."
+    "boundedDisclosure": "Danh sách đang hiển thị trong giới hạn kết quả hiện tại. Màn hình này không có tổng số trang."
   },
   "allocationQueue": {
     "title": "Hàng đợi phê duyệt phân bổ KPI",
@@ -43,14 +43,14 @@
   },
   "fields": {
     "group": "Nhóm",
-    "allocationId": "ID phân bổ",
-    "planId": "ID kế hoạch",
+    "allocationId": "Mã phân bổ",
+    "planId": "Mã kế hoạch",
     "planCode": "Mã kế hoạch",
     "title": "Tiêu đề",
     "description": "Mô tả",
     "subject": "Đối tượng",
     "subjectType": "Loại đối tượng",
-    "subjectId": "ID đối tượng",
+    "subjectId": "Mã đối tượng",
     "groupId": "Nhóm Talent",
     "targetGroup": "Nhóm mục tiêu",
     "targetOrgUnit": "Đơn vị vận hành công ty",
@@ -60,7 +60,7 @@
     "member": "Thành viên",
     "employeeCode": "Mã nhân viên",
     "managedMember": "Thành viên quản lý",
-    "employmentProfileId": "ID hồ sơ nhân sự",
+    "employmentProfileId": "Mã hồ sơ nhân sự",
     "note": "Ghi chú",
     "approvalNote": "Ghi chú phê duyệt",
     "rejectionReason": "Lý do từ chối",
@@ -84,23 +84,23 @@
     "allSubjectTypes": "Tất cả loại đối tượng",
     "allMetrics": "Tất cả chỉ số",
     "subjectPlaceholder": "Tìm theo tên hoặc mã",
-    "talentGroupSubjectPlaceholder": "Tìm nhóm media/talent",
-    "orgUnitSubjectPlaceholder": "Tìm đơn vị vận hành công ty",
+    "talentGroupSubjectPlaceholder": "Tìm nhóm Talent",
+    "orgUnitSubjectPlaceholder": "Tìm đơn vị tổ chức",
     "managedMemberPlaceholder": "Tìm thành viên quản lý"
   },
   "subjectTypes": {
     "TALENT": "Talent",
-    "TALENT_GROUP": "Talent Group",
+    "TALENT_GROUP": "Nhóm Talent",
     "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
-    "ORG_UNIT": "Org Unit"
+    "ORG_UNIT": "Đơn vị tổ chức"
   },
   "metricCodes": {
-    "REVENUE_VND": "Doanh thu VND",
-    "CONTENT_OUTPUT_COUNT": "Số lượng nội dung",
-    "LIVE_HOURS": "Giờ live",
+    "REVENUE_VND": "Doanh thu",
+    "CONTENT_OUTPUT_COUNT": "Số nội dung hoàn thành",
+    "LIVE_HOURS": "Số giờ livestream",
     "EVENT_COMPLETION_COUNT": "Số sự kiện hoàn thành",
-    "ONBOARDED_TALENT_COUNT": "Talent đã onboarding",
-    "TIKTOK_DIAMOND": "TikTok Diamond"
+    "ONBOARDED_TALENT_COUNT": "Số Talent đã tiếp nhận",
+    "TIKTOK_DIAMOND": "Số TikTok Diamond"
   },
   "statuses": {
     "DRAFT": "Nháp",
@@ -109,7 +109,7 @@
     "ARCHIVED": "Đã lưu trữ"
   },
   "sections": {
-    "lifecycle": "Vòng đời",
+    "lifecycle": "Trạng thái",
     "targetMetrics": "Chỉ số mục tiêu",
     "allocations": "Phân bổ",
     "progress": "Tiến độ KPI"
@@ -130,20 +130,20 @@
     "approved": "Đã duyệt",
     "published": "Đã công bố",
     "rejected": "Đã từ chối",
-    "legacyActive": "Active cũ",
+    "legacyActive": "Trạng thái hoạt động cũ",
     "closed": "Đã đóng",
     "cancelled": "Đã hủy",
     "officialPublished": "Đã công bố chính thức"
   },
   "allocationStatuses": {
     "NONE": "Chưa có phân bổ",
-    "MIXED": "Mix",
+    "MIXED": "Hỗn hợp",
     "DRAFT": "Phân bổ nháp",
     "PENDING_APPROVAL": "Chờ phê duyệt",
     "APPROVED": "Đã phê duyệt",
     "PUBLISHED": "Đã công bố",
     "REJECTED": "Bị từ chối",
-    "ACTIVE": "ACTIVE cũ",
+    "ACTIVE": "Trạng thái hoạt động cũ",
     "CLOSED": "Đã đóng",
     "CANCELLED": "Đã hủy"
   },
@@ -193,7 +193,7 @@
   },
   "actualWorkspace": {
     "title": "Không gian số thực đạt",
-    "policy": "Có thể nhập trực tiếp từ D 00:00 đến D+1 10:00, Giờ Việt Nam, tính cả hai mốc. Mỗi mục được sửa trực tiếp tối đa 3 lần.",
+    "policy": "Có thể nhập trực tiếp từ 00:00 ngày D đến 10:00 ngày D+1 theo giờ Việt Nam, tính cả hai mốc. Mỗi mục được sửa trực tiếp tối đa 3 lần.",
     "boundaryHelper": "Số thực đạt không tự quyết định doanh thu, hoa hồng hoặc bảng lương.",
     "revenueTarget": "Mục tiêu doanh thu",
     "revenueActual": "Doanh thu thực đạt",
@@ -227,9 +227,9 @@
     },
     "loadMore": "Tải thêm",
     "loadingMore": "Đang tải thêm...",
-    "cursorDisclosure": "Đã tải {{count}} dòng. Nếu còn dữ liệu, hệ thống tải thêm bằng con trỏ backend với giới hạn {{limit}} dòng mỗi lần.",
-    "missingSignal": "Tín hiệu thiếu có giới hạn",
-    "limitedMissingSignal": "tín hiệu theo ngày có giới hạn",
+    "cursorDisclosure": "Đã tải {{count}} dòng. Nếu còn dữ liệu, hệ thống sẽ tải thêm theo từng lượt với giới hạn {{limit}} dòng mỗi lần.",
+    "missingSignal": "Tín hiệu thiếu dữ liệu",
+    "limitedMissingSignal": "tín hiệu thiếu theo ngày",
     "statusSummary": "Tóm tắt trạng thái số thực đạt",
     "supportingMetrics": "Chỉ số hỗ trợ",
     "closingState": "Trạng thái đóng kỳ",
@@ -244,17 +244,17 @@
     }
   },
   "orgUnitOperations": {
-    "title": "Vận hành Org Unit",
-    "context": "Org Unit được gán",
+    "title": "Vận hành đơn vị tổ chức",
+    "context": "Đơn vị tổ chức được gán",
     "writePosture": "Trạng thái thao tác",
     "writeAvailable": "Có thể thao tác ghi theo quyền quản lý",
     "readOnly": "Chỉ đọc với người dùng hoặc trạng thái kế hoạch này",
-    "allocations": "Phân bổ Org Unit",
-    "allocationReadOnly": "Dòng phân bổ dùng hợp đồng Org Unit. Chỉnh sửa nháp chỉ giới hạn trong thành viên EmploymentProfile được quản lý.",
-    "noAllocations": "Chưa có phân bổ Org Unit đã công bố cho kế hoạch này.",
+    "allocations": "Phân bổ theo đơn vị tổ chức",
+    "allocationReadOnly": "Dòng phân bổ theo đơn vị tổ chức chỉ cho phép sửa nháp trong phạm vi các hồ sơ nhân sự được quản lý.",
+    "noAllocations": "Chưa có phân bổ đơn vị tổ chức đã công bố cho kế hoạch này.",
     "managedMemberPicker": "Danh sách thành viên quản lý",
     "progressActuals": "Tiến độ và số thực đạt",
-    "draftReadOnly": "Chỉ thao tác sau khi KPI Org Unit đã công bố.",
+    "draftReadOnly": "Chỉ thao tác sau khi KPI đơn vị tổ chức đã công bố.",
     "noActualChanges": "Không có ô số thực đạt nào thay đổi để lưu.",
     "finalResult": "Kết quả vận hành cuối cùng"
   },
@@ -262,7 +262,7 @@
     "title": "Kết quả đã chốt",
     "captured": "Được ghi nhận khi KPI được chốt.",
     "readOnly": "Chỉ đọc sau khi chốt. Số thực đạt, điều chỉnh, miễn trừ và phân bổ không thể thay đổi. Chốt kết quả KPI không tự tạo doanh thu, hoa hồng hoặc bảng lương.",
-    "unavailable": "Không có ảnh chụp kết quả cuối cùng cho kế hoạch đã chốt này.",
+    "unavailable": "Chưa có kết quả cuối cùng được ghi nhận cho kế hoạch đã chốt này.",
     "status": "Trạng thái chốt",
     "closed": "Đã đóng",
     "targetMismatch": "Chênh lệch mục tiêu",
@@ -283,7 +283,7 @@
     "target": "Mục tiêu",
     "actual": "Thực đạt",
     "percent": "Tiến độ",
-    "memberBreakdown": "Chi tiết thành viên",
+    "memberBreakdown": "Chi tiết theo thành viên",
     "actualEntryCount": "Số thực đạt",
     "missingEntryCount": "Số thiếu",
     "officialPosture": "Trạng thái chính thức",
@@ -333,7 +333,7 @@
     "duplicateMetric": "Mỗi chỉ số KPI chỉ được chọn một lần.",
     "allocationMismatch": "Tổng phân bổ phải bằng mục tiêu kế hoạch trước khi công bố.",
     "allocationMemberRequired": "Cần ít nhất một thành viên phân bổ.",
-    "employmentProfileRequired": "Bắt buộc có ID hồ sơ nhân sự.",
+    "employmentProfileRequired": "Bắt buộc chọn hồ sơ nhân sự.",
     "invalidActualDate": "Dùng YYYY-MM-DD.",
     "duplicateConflict": "Số thực đạt đã tồn tại với giá trị khác. Hãy sửa hoặc điều chỉnh.",
     "reasonRequired": "Bắt buộc nhập lý do điều chỉnh.",
@@ -398,8 +398,8 @@
     "noManagedMembers": "Không có thành viên quản lý phù hợp cho kế hoạch này.",
     "progressUnavailable": "Không có dữ liệu tiến độ cho kế hoạch hoặc người dùng này.",
     "memberProgressEmpty": "Chưa có tiến độ thành viên đã công bố.",
-    "orgUnitProgressEmpty": "Chưa có dòng tiến độ Org Unit chính thức.",
+    "orgUnitProgressEmpty": "Chưa có dòng tiến độ đơn vị tổ chức chính thức.",
     "orgUnitProgressNeedsPublishedAllocation": "Tiến độ và dòng số thực đạt chỉ có sau khi phân bổ được công bố.",
-    "orgUnitActualGridEmpty": "Không có dòng số thực đạt Org Unit chính thức cho ngày đã chọn."
+    "orgUnitActualGridEmpty": "Không có dòng số thực đạt đơn vị tổ chức chính thức cho ngày đã chọn."
   }
 }

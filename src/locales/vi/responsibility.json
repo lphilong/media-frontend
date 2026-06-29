@@ -1,7 +1,7 @@
 {
   "page": {
     "title": "Phân công quản lý",
-    "subtitle": "Trung tâm gán trách nhiệm quản lý cho nhóm Talent, đơn vị, Talent và hồ sơ nhân sự.",
+    "subtitle": "Trung tâm gán trách nhiệm quản lý cho nhóm Talent, đơn vị tổ chức, Talent và hồ sơ nhân sự.",
     "placeholder": "Chưa có giao diện phân công quản lý."
   },
   "subjects": {
@@ -12,23 +12,23 @@
   },
   "types": {
     "TALENT_GROUP_MANAGER": "Quản lý nhóm Talent",
-    "ORG_UNIT_MANAGER": "Người phụ trách đơn vị",
+    "ORG_UNIT_MANAGER": "Quản lý đơn vị tổ chức",
     "TALENT_DIRECT_MANAGER": "Quản lý trực tiếp Talent",
-    "EMPLOYMENT_REPORTING_MANAGER": "Quản lý báo cáo HR"
+    "EMPLOYMENT_REPORTING_MANAGER": "Quản lý báo cáo nhân sự"
   },
   "roles": {
-    "GROUP_OWNER": "Chủ sở hữu nhóm",
+    "GROUP_OWNER": "Phụ trách chính nhóm",
     "GROUP_MANAGER": "Quản lý nhóm",
-    "GROUP_OPERATOR": "Vận hành nhóm",
-    "DEPARTMENT_OWNER": "Chủ sở hữu đơn vị",
-    "UNIT_MANAGER": "Người phụ trách đơn vị",
-    "UNIT_OPERATOR": "Vận hành đơn vị",
-    "DIRECT_EXCEPTION": "Gán trực tiếp",
-    "HR_REPORTING": "Báo cáo HR"
+    "GROUP_OPERATOR": "Điều phối nhóm",
+    "DEPARTMENT_OWNER": "Phụ trách chính đơn vị",
+    "UNIT_MANAGER": "Quản lý đơn vị",
+    "UNIT_OPERATOR": "Điều phối đơn vị",
+    "DIRECT_EXCEPTION": "Phân công trực tiếp",
+    "HR_REPORTING": "Báo cáo nhân sự"
   },
   "statuses": {
     "ACTIVE": "Đang hiệu lực",
-    "INACTIVE": "Ngưng hiệu lực",
+    "INACTIVE": "Không còn hiệu lực",
     "REVOKED": "Đã thu hồi"
   },
   "form": {
@@ -41,15 +41,15 @@
     "rolePlaceholder": "Ví dụ: Người phụ trách đơn vị",
     "effectiveAt": "Hiệu lực từ",
     "expiresAt": "Hiệu lực đến",
-    "isPrimary": "Phân công chính",
-    "includeDescendants": "Áp dụng đơn vị con",
+    "isPrimary": "Trách nhiệm chính",
+    "includeDescendants": "Áp dụng cho đơn vị con",
     "reason": "Lý do",
-    "reasonPlaceholder": "Ghi chú nghiệp vụ",
-    "helper": "Màn hình này chỉ gán trách nhiệm quản lý, không cấp quyền truy cập.",
+    "reasonPlaceholder": "Ghi chú nghiệp vụ hoặc lý do phân công",
+    "helper": "Màn hình này chỉ gán trách nhiệm quản lý và không thay thế gán vai trò.",
     "permissionHint": "Tài khoản hiện tại không có quyền gán trách nhiệm cho loại đối tượng đang chọn."
   },
   "actions": {
-    "create": "Gán trách nhiệm",
+    "create": "Gán trách nhiệm quản lý",
     "creating": "Đang gán...",
     "revoke": "Thu hồi",
     "clearSubject": "Bỏ lọc đối tượng"
@@ -64,17 +64,17 @@
   },
   "list": {
     "title": "Danh sách phân công",
-    "subtitle": "Hiển thị các phân công trách nhiệm quản lý",
+    "subtitle": "Hiển thị các trách nhiệm quản lý đã được phân công.",
     "emptyTitle": "Chưa có phân công",
-    "emptyMessage": "Chọn đối tượng và hồ sơ phụ trách để tạo phân công trung tâm.",
+    "emptyMessage": "Chọn đối tượng và hồ sơ phụ trách để tạo phân công quản lý.",
     "loadErrorTitle": "Không tải được phân công",
     "loadErrorMessage": "Vui lòng thử lại."
   },
   "table": {
-    "caption": "Phân công trách nhiệm quản lý",
+    "caption": "Danh sách trách nhiệm quản lý",
     "subject": "Đối tượng",
     "responsible": "Người phụ trách",
-    "type": "Trách nhiệm",
+    "type": "Loại trách nhiệm",
     "effective": "Hiệu lực",
     "state": "Trạng thái",
     "readOnly": "Chỉ đọc"
@@ -82,19 +82,19 @@
   "summary": {
     "title": "Trách nhiệm quản lý",
     "subtitle": "Tóm tắt chỉ đọc từ trung tâm phân công quản lý.",
-    "openCentral": "Phân công quản lý",
+    "openCentral": "Mở trung tâm phân công",
     "loadFailed": "Không tải được trách nhiệm quản lý.",
     "emptyTitle": "Chưa có trách nhiệm trực tiếp",
     "emptyMessage": "Thực hiện thay đổi tại trung tâm phân công quản lý.",
-    "inheritedTitle": "Trách nhiệm từ nhóm hoặc đơn vị",
-    "effectiveRange": "{{from}} - {{to}}",
+    "inheritedTitle": "Trách nhiệm kế thừa từ nhóm hoặc đơn vị",
+    "effectiveRange": "{{from}} đến {{to}}",
     "openEnded": "Không giới hạn",
     "primary": "Chính",
     "descendants": "Bao gồm cấp dưới",
     "reviewNeeded": "Cần rà soát",
-    "inheritedBadge": "Từ nhóm hoặc đơn vị",
+    "inheritedBadge": "Kế thừa",
     "inheritedFromGroup": "Kế thừa từ nhóm",
     "inheritedFromOrgUnit": "Kế thừa từ đơn vị",
-    "directAssignment": "Gán trực tiếp"
+    "directAssignment": "Trách nhiệm trực tiếp"
   }
 }

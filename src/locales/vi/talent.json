@@ -1,16 +1,16 @@
 {
   "page": {
     "title": "Talent",
-    "subtitle": "Quản lý định danh, phân công và thời hạn Talent.",
-    "placeholder": "Luồng nghiệp vụ Talent chưa được triển khai."
+    "subtitle": "Quản lý hồ sơ Talent, liên kết nhân sự và trạng thái tham gia thương mại.",
+    "placeholder": "Tính năng quản lý Talent chưa khả dụng đầy đủ."
   },
   "fields": {
-    "displayName": "Ten hien thi",
-    "performanceAlias": "Bi danh bieu dien",
-    "externalProfileName": "Ten ho so Talent ben ngoai",
+    "displayName": "Tên hiển thị",
+    "performanceAlias": "Bí danh biểu diễn",
+    "externalProfileName": "Tên hồ sơ Talent bên ngoài",
     "talentCode": "Mã Talent",
     "stageName": "Nghệ danh",
-    "legalName": "Họ và tên",
+    "legalName": "Họ và tên pháp lý",
     "displayShortName": "Tên ngắn hiển thị",
     "talentOrigin": "Nguồn Talent",
     "selectTalentOrigin": "Chọn nguồn Talent",
@@ -26,7 +26,7 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã Talent sẽ được tạo tự động"
+    "description": "Mã Talent sẽ được hệ thống tự tạo sau khi lưu."
   },
   "placeholders": {
     "optional": "Không bắt buộc",
@@ -34,9 +34,9 @@
   },
   "referenceHelp": {
     "linkedEmploymentProfileId": "Chọn hồ sơ nhân sự cần liên kết với Talent này.",
-    "internalDisplayNameSource": "Ten hien thi lay tu ho so nhan su lien ket.",
-    "performanceAlias": "Ten hien thi noi bo lay tu ho so nhan su lien ket. Bi danh bieu dien la tuy chon va chi dung trong ngu canh Talent/bieu dien.",
-    "externalStageName": "Talent ben ngoai tu quan ly nghe danh bieu dien nay."
+    "internalDisplayNameSource": "Tên hiển thị lấy từ hồ sơ nhân sự đã liên kết.",
+    "performanceAlias": "Tên hiển thị nội bộ lấy từ hồ sơ nhân sự liên kết. Bí danh biểu diễn là thông tin tùy chọn và chỉ dùng trong ngữ cảnh Talent/biểu diễn.",
+    "externalStageName": "Talent bên ngoài được quản lý bằng nghệ danh biểu diễn này."
   },
   "states": {
     "emptyTitle": "Không tìm thấy Talent",
@@ -77,7 +77,7 @@
   },
   "statuses": {
     "ACTIVE": "Hoạt động",
-    "SUSPENDED": "Đã tạm ngưng",
+    "SUSPENDED": "Tạm ngưng",
     "INACTIVE": "Không hoạt động",
     "ARCHIVED": "Đã lưu trữ"
   },
@@ -96,15 +96,15 @@
     "reactivate": "Kích hoạt lại",
     "deactivate": "Vô hiệu hóa",
     "archive": "Lưu trữ",
-    "clearLinkedEmploymentProfile": "Xóa hồ sơ liên kết"
+    "clearLinkedEmploymentProfile": "Gỡ liên kết hồ sơ nhân sự"
   },
   "table": {
-    "displayName": "Ten hien thi",
-    "performanceAlias": "Bi danh bieu dien",
+    "displayName": "Tên hiển thị",
+    "performanceAlias": "Bí danh biểu diễn",
     "caption": "Danh sách Talent",
     "talentCode": "Mã Talent",
     "stageName": "Nghệ danh",
-    "legalName": "Tên pháp lý",
+    "legalName": "Họ và tên pháp lý",
     "displayShortName": "Tên ngắn",
     "talentOrigin": "Nguồn",
     "operationalStatus": "Trạng thái",
@@ -128,7 +128,7 @@
     "talentKpi": "KPI Talent",
     "revenueLedger": "Sổ doanh thu",
     "commissionSettlements": "Quyết toán hoa hồng",
-    "contractRegistry": "Sổ hợp đồng",
+    "contractRegistry": "Hồ sơ hợp đồng",
     "openFilteredList": "Mở danh sách đã lọc",
     "unavailable": "Không khả dụng"
   },
@@ -153,26 +153,26 @@
     },
     "commercialParticipation": {
       "title": "Cập nhật tham gia thương mại",
-      "subtitle": "Cập nhật trạng thái tham gia thương mại và các cờ đủ điều kiện.",
+      "subtitle": "Cập nhật trạng thái tham gia thương mại và điều kiện tham gia livestream/sự kiện.",
       "submit": "Cập nhật",
       "pending": "Đang cập nhật..."
     }
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
+    "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
-    "blockedCommercialStatus": "Khi chặn tham gia thương mại, cả hai cờ đủ điều kiện phải là false."
+    "blockedCommercialStatus": "Khi Talent bị chặn tham gia thương mại, cả điều kiện livestream và điều kiện sự kiện phải tắt."
   },
   "feedback": {
     "created": "Đã tạo Talent.",
     "updated": "Đã cập nhật Talent.",
     "employmentProfileLinked": "Đã liên kết hồ sơ nhân sự.",
     "commercialParticipationUpdated": "Đã cập nhật tham gia thương mại.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời Talent."
+    "lifecycleUpdated": "Đã cập nhật trạng thái Talent."
   },
   "confirm": {
-    "suspend": "Đình chỉ Talent này?",
+    "suspend": "Tạm ngưng Talent này?",
     "reactivate": "Kích hoạt lại Talent này?",
     "deactivate": "Vô hiệu hóa Talent này?",
     "archive": "Lưu trữ Talent này?"

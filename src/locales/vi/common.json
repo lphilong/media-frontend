@@ -7,7 +7,7 @@
     "breadcrumb": "Điều hướng trang",
     "detail": "Chi tiết",
     "recordId": "Mã bản ghi",
-    "waveState": "Trạng thái wave",
+    "waveState": "Trạng thái triển khai",
     "search": "Tìm kiếm",
     "sort": "Sắp xếp",
     "sortDefault": "Mặc định",
@@ -29,7 +29,7 @@
     "go": "Tới",
     "pageSize": "Số dòng mỗi trang",
     "cursorShowingLimit": "Đang hiển thị tối đa {{count}} dòng",
-    "cursorDisclosure": "Danh sách dùng phân trang theo lượt tải, không có tổng số trang.",
+    "cursorDisclosure": "Danh sách tải dữ liệu theo từng lượt và không hiển thị tổng số trang.",
     "totalRows": "Tổng số dòng: {{count}}",
     "noPrevious": "Không có trang trước",
     "noNext": "Không có trang tiếp theo"
@@ -47,11 +47,11 @@
     "next": "Tiếp",
     "cancel": "Hủy",
     "confirm": "Xác nhận",
-    "confirmDestructive": "Xác nhận",
+    "confirmDestructive": "Xác nhận hành động",
     "close": "Đóng",
     "clear": "Xóa",
     "search": "Tìm",
-    "stubAction": "Hành động này sẽ có ở wave sau",
+    "stubAction": "Hành động này chưa khả dụng",
     "toggleSidebar": "Thu gọn thanh bên",
     "login": "Đăng nhập",
     "logout": "Đăng xuất"
@@ -62,7 +62,7 @@
   "semanticStates": {
     "loading": {
       "title": "Đang tải dữ liệu",
-      "message": "Danh sách đang được cập nhật."
+      "message": "Danh sách đang tải dữ liệu mới nhất."
     },
     "no-data": {
       "title": "Chưa có dữ liệu",
@@ -85,7 +85,7 @@
       "message": "Admin cần liên kết tài khoản đăng nhập với hồ sơ nhân sự trước khi dữ liệu cá nhân hiển thị."
     },
     "blocked-profile": {
-      "title": "Hồ sơ nhân sự chưa hoạt động",
+      "title": "Hồ sơ nhân sự chưa sẵn sàng vận hành",
       "message": "Dữ liệu chỉ hiển thị khi hồ sơ nhân sự ở trạng thái được phép vận hành."
     },
     "service-error": {
@@ -94,37 +94,37 @@
     },
     "bounded-results": {
       "title": "Kết quả đang hiển thị theo lượt tải",
-      "message": "Danh sách này không có tổng số trang; dùng Trước/Tiếp để xem lượt dữ liệu kế tiếp."
+      "message": "Danh sách này không có tổng số trang; dùng Trước/Tiếp để xem các lượt dữ liệu đã tải."
     }
   },
   "capabilities": {
     "missingPermission": "Bạn không có quyền thực hiện hành động này.",
     "missingScope": "Phân quyền vai trò của bạn không bao gồm phạm vi cần thiết.",
     "invalidStatus": "Hành động này không khả dụng với trạng thái hiện tại của bản ghi.",
-    "notWired": "Hành động này chưa được kết nối.",
+    "notWired": "Hành động này chưa khả dụng.",
     "checkingPermissions": "Đang kiểm tra quyền.",
-    "backendEnforced": "Backend vẫn kiểm soát quyền khi bạn gửi thao tác."
+    "backendEnforced": "Hệ thống vẫn kiểm tra quyền khi bạn gửi thao tác."
   },
   "auth": {
     "loginTitle": "Đăng nhập quản trị",
-    "loginSubtitle": "Lớp xác thực nền tảng đã sẵn sàng cho Auth0"
+    "loginSubtitle": "Đăng nhập bằng Auth0 đã sẵn sàng."
   },
   "session": {
     "placeholderUser": "Phiên quản trị",
     "statusActive": "Hoạt động"
   },
   "placeholders": {
-    "foundationOnlyTitle": "Trang này mới ở mức khung nền tảng",
-    "waveStubSubtitle": "Chưa được triển khai trong wave này",
-    "waveStubState": "Chỉ là khung chờ",
+    "foundationOnlyTitle": "Trang này mới có khung cơ bản",
+    "waveStubSubtitle": "Chưa khả dụng trong giai đoạn này",
+    "waveStubState": "Khung chờ",
     "listSectionTitle": "Khu vực danh sách",
     "detailSummaryTitle": "Tổng quan bản ghi",
-    "detailMetadataTitle": "Khu vực metadata",
+    "detailMetadataTitle": "Thông tin bản ghi",
     "relatedSectionTitle": "Liên kết liên quan",
-    "relatedSectionSubtitle": "Khung related-view cho wave tiếp theo",
-    "relatedSectionMessage": "Chưa có hành vi danh sách liên quan trong wave này.",
+    "relatedSectionSubtitle": "Khu vực liên quan đã được chuẩn bị cho các tính năng sau",
+    "relatedSectionMessage": "Danh sách liên quan chưa khả dụng trong giai đoạn này.",
     "actionRailTitle": "Hành động",
-    "actionRailPlaceholder": "Hành động chi tiết chưa được triển khai."
+    "actionRailPlaceholder": "Hành động chi tiết chưa khả dụng."
   },
   "dialogs": {
     "destructive": {

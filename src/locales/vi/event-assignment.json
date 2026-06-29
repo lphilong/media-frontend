@@ -1,8 +1,8 @@
 {
   "page": {
     "title": "Sự kiện",
-    "subtitle": "Quản trị vận hành toàn cục cho sự kiện, phân công và đặt tài nguyên.",
-    "placeholder": "Phân công sự kiện đã được triển khai bằng tuyến màn hình thật."
+    "subtitle": "Quản lý sự kiện, phân công người tham gia và đặt tài nguyên.",
+    "placeholder": "Màn hình phân công sự kiện hiện đã khả dụng."
   },
   "fields": {
     "eventCode": "Mã sự kiện",
@@ -10,17 +10,17 @@
     "status": "Trạng thái",
     "assignmentKind": "Loại phân công",
     "assignmentKindIndexed": "Loại phân công {{index}}",
-    "assignmentId": "Phân công",
-    "assignment": "Phân công",
-    "assignmentIdIndexed": "Phân công {{index}}",
-    "assignmentIndexed": "Phân công {{index}}",
+    "assignmentId": "Đối tượng phân công",
+    "assignment": "Đối tượng phân công",
+    "assignmentIdIndexed": "Đối tượng phân công {{index}}",
+    "assignmentIndexed": "Đối tượng phân công {{index}}",
     "ownerEmploymentProfileId": "Hồ sơ nhân sự phụ trách",
     "eventStartAt": "Bắt đầu sự kiện, Giờ Việt Nam",
     "eventEndAt": "Kết thúc sự kiện, Giờ Việt Nam",
     "newEventStartAt": "Bắt đầu mới, Giờ Việt Nam",
     "newEventEndAt": "Kết thúc mới, Giờ Việt Nam",
     "studioResourceIds": "Tài nguyên studio",
-    "derivedStudioResourceIds": "Tài nguyên studio (tóm tắt từ lịch đặt)",
+    "derivedStudioResourceIds": "Tài nguyên studio từ lịch đặt",
     "studioResources": "Tài nguyên studio",
     "studioResource": "Tài nguyên studio",
     "platformAccountIds": "Tài khoản nền tảng",
@@ -32,13 +32,13 @@
     "reason": "Lý do",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
-    "scopeBoundary": "Ranh giới phạm vi",
+    "scopeBoundary": "Phạm vi truy cập",
     "completedAt": "Đã hoàn thành lúc",
     "completedBy": "Người hoàn thành",
     "evidenceNote": "Ghi chú hoàn thành",
-    "evidenceRefType": "Loại nguồn tham chiếu",
-    "evidenceRefLabel": "Nhãn nguồn tham chiếu",
-    "evidenceRefUrl": "URL tham chiếu",
+    "evidenceRefType": "Loại tham chiếu bằng chứng",
+    "evidenceRefLabel": "Nhãn tham chiếu bằng chứng",
+    "evidenceRefUrl": "Đường dẫn tham chiếu",
     "evidenceRefReferenceId": "Mã tham chiếu"
   },
   "generatedCode": {
@@ -56,11 +56,11 @@
   "bookingStatuses": {
     "HELD": "Tạm giữ",
     "CONFIRMED": "Đã xác nhận",
-    "RELEASED": "Đã giải phóng",
+    "RELEASED": "Đã trả tài nguyên",
     "CANCELLED": "Đã hủy"
   },
   "assignmentStatuses": {
-    "ACTIVE": "Hoạt động"
+    "ACTIVE": "Đang hoạt động"
   },
   "assignmentKinds": {
     "EMPLOYMENT_PROFILE": "Hồ sơ nhân sự",
@@ -73,13 +73,13 @@
     "createdAt": "Thời điểm tạo"
   },
   "filters": {
-    "searchPlaceholder": "Tìm đúng mã sự kiện hoặc tiền tố tiêu đề",
+    "searchPlaceholder": "Tìm theo mã sự kiện hoặc tiêu đề",
     "status": "Trạng thái",
-    "allStatuses": "Tất cả trạng thái hiện hành",
+    "allStatuses": "Tất cả trạng thái chưa lưu trữ",
     "assignmentKind": "Loại phân công",
     "allAssignmentKinds": "Tất cả loại phân công",
-    "assignmentId": "Chủ thể phân công",
-    "assignmentIdPlaceholder": "Chọn chủ thể phân công",
+    "assignmentId": "Đối tượng phân công",
+    "assignmentIdPlaceholder": "Chọn đối tượng phân công",
     "studioResourceId": "Tài nguyên studio",
     "studioResourceIdPlaceholder": "Chọn tài nguyên studio",
     "platformAccountId": "Tài khoản nền tảng",
@@ -88,7 +88,7 @@
     "windowEndAt": "Kết thúc khung thời gian, Giờ Việt Nam"
   },
   "relatedModes": {
-    "by-assignment": "Sự kiện liên quan theo phân công",
+    "by-assignment": "Sự kiện liên quan theo đối tượng phân công",
     "by-resource": "Sự kiện liên quan theo tài nguyên studio",
     "by-platform": "Sự kiện liên quan theo tài khoản nền tảng"
   },
@@ -96,7 +96,7 @@
     "create": "Tạo sự kiện",
     "closeCreate": "Đóng tạo mới",
     "open": "Mở chi tiết",
-    "openSubject": "Mở chủ thể",
+    "openSubject": "Mở đối tượng",
     "edit": "Chỉnh sửa",
     "reschedule": "Đổi lịch",
     "replaceAssignments": "Thay phân công",
@@ -132,7 +132,7 @@
     "referencesTitle": "Tham chiếu tài nguyên và nền tảng",
     "globalOnly": "Chỉ dùng phạm vi toàn cục",
     "boundaryHelper": "Sự kiện hoàn thành không tự ghi nhận doanh thu, hoa hồng, chấm công, bảng lương hoặc thanh toán.",
-    "bookingReadOnlyHelper": "Đặt tài nguyên được quản lý bằng StudioBooking. studioResourceIds đã lỗi thời chỉ hiển thị như tóm tắt dẫn xuất."
+    "bookingReadOnlyHelper": "Lịch đặt tài nguyên được quản lý riêng. Danh sách tài nguyên studio cũ chỉ dùng để tham khảo."
   },
   "evidence": {
     "title": "Bằng chứng hoàn thành",
@@ -151,10 +151,10 @@
   "bookings": {
     "resource": "Tài nguyên studio",
     "status": "Trạng thái đặt",
-    "window": "Khung đặt",
+    "window": "Khung thời gian đặt",
     "conflict": "Xung đột",
-    "confirmedConflict": "Trùng lịch đã xác nhận sẽ bị chặn",
-    "heldReview": "Tạm giữ cần xử lý",
+    "confirmedConflict": "Trùng lịch đã xác nhận sẽ bị chặn.",
+    "heldReview": "Lịch tạm giữ cần được rà soát.",
     "noConflict": "Không có xung đột được trả về",
     "emptyMessage": "Chưa có lịch đặt tài nguyên cho sự kiện này.",
     "loadErrorTitle": "Không tải được lịch đặt",
@@ -171,13 +171,13 @@
     "caption": "Danh sách phân công đang hoạt động của sự kiện",
     "emptyTitle": "Không có phân công đang hoạt động",
     "emptyMessage": "Danh sách phân công của sự kiện đang trống.",
-    "emptyReplacementSet": "Bộ thay thế đang trống. Thêm phân công trước khi gửi nếu sự kiện cần phân công đang hoạt động.",
+    "emptyReplacementSet": "Danh sách thay thế đang trống. Thêm phân công trước khi gửi nếu sự kiện cần phân công.",
     "emptyPlatformAccountSet": "Chưa chọn tài khoản nền tảng.",
     "replacementRowLabel": "Phân công thay thế {{index}}",
     "loadErrorTitle": "Không tải được phân công",
     "loadErrorMessage": "Danh sách phân công đang hoạt động chưa sẵn sàng.",
     "assignmentKind": "Loại phân công",
-    "subjectId": "Chủ thể",
+    "subjectId": "Đối tượng",
     "assignmentStatus": "Trạng thái",
     "createdAt": "Thời điểm tạo",
     "actions": "Hành động"
@@ -191,7 +191,7 @@
   "mutations": {
     "create": {
       "title": "Tạo sự kiện",
-      "subtitle": "Tạo một sự kiện toàn cục với chủ event là hồ sơ nhân sự và ít nhất một phân công.",
+      "subtitle": "Tạo sự kiện toàn cục với hồ sơ nhân sự phụ trách và ít nhất một phân công.",
       "submit": "Tạo",
       "pending": "Đang tạo"
     },
@@ -209,19 +209,19 @@
     },
     "replaceAssignments": {
       "title": "Thay phân công",
-      "subtitle": "Gửi toàn bộ bộ phân công thay thế.",
+      "subtitle": "Gửi toàn bộ danh sách phân công thay thế.",
       "submit": "Thay phân công",
       "pending": "Đang thay"
     },
     "replacePlatformAccounts": {
       "title": "Thay tài khoản nền tảng",
-      "subtitle": "Gửi toàn bộ bộ tài khoản nền tảng thay thế.",
+      "subtitle": "Gửi toàn bộ danh sách tài khoản nền tảng thay thế.",
       "submit": "Thay tài khoản nền tảng",
       "pending": "Đang thay"
     },
     "cancel": {
       "title": "Hủy sự kiện",
-      "subtitle": "Hủy sự kiện cần lý do audit.",
+      "subtitle": "Cần nhập lý do khi hủy sự kiện.",
       "submit": "Hủy sự kiện",
       "pending": "Đang hủy"
     },
@@ -236,19 +236,19 @@
     "csvIds": "Các tham chiếu cách nhau bằng dấu phẩy",
     "searchReference": "Tìm theo tên hoặc mã",
     "optional": "Không bắt buộc",
-    "requiredReason": "Nhập lý do audit",
+    "requiredReason": "Nhập lý do",
     "evidenceNote": "Tóm tắt kết quả bàn giao đã thực hiện",
     "evidenceUrl": "https://example.com/bang-chung",
-    "evidenceReferenceId": "Mã ticket, nền tảng hoặc tham chiếu"
+    "evidenceReferenceId": "Mã tham chiếu, mã nền tảng hoặc mã nội bộ"
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidToken": "Dùng token tham chiếu hợp lệ.",
-    "invalidReferenceToken": "Dùng các token tham chiếu hợp lệ, cách nhau bằng dấu phẩy.",
+    "invalidToken": "Dùng mã tham chiếu hợp lệ.",
+    "invalidReferenceToken": "Dùng các mã tham chiếu hợp lệ, cách nhau bằng dấu phẩy.",
     "invalidWindow": "Thời điểm kết thúc phải sau thời điểm bắt đầu.",
-    "noScope": "Phân công sự kiện chỉ dùng phạm vi toàn hệ thống và không nhận trường phạm vi.",
-    "rosterUnavailable": "Danh sách phân công đang hoạt động chưa ở trạng thái an toàn, nên thao tác thay thế bị chặn.",
-    "invalidEvidenceUrl": "Nhập URL http(s) hợp lệ.",
+    "noScope": "Phân công sự kiện chỉ dùng phạm vi toàn hệ thống và không nhận thêm phạm vi riêng.",
+    "rosterUnavailable": "Danh sách phân công đang hoạt động chưa sẵn sàng, nên thao tác thay thế bị chặn.",
+    "invalidEvidenceUrl": "Nhập đường dẫn bắt đầu bằng http hoặc https.",
     "evidenceReferenceRequired": "Cần mã tham chiếu cho loại bằng chứng này.",
     "completionEvidenceRequired": "Cần bằng chứng hoàn thành."
   },
@@ -258,7 +258,7 @@
     "rescheduled": "Đã đổi lịch sự kiện.",
     "assignmentsReplaced": "Đã thay phân công của sự kiện.",
     "platformAccountsReplaced": "Đã thay tài khoản nền tảng của sự kiện.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời sự kiện."
+    "lifecycleUpdated": "Đã cập nhật trạng thái sự kiện."
   },
   "confirm": {
     "plan": "Lên kế hoạch sự kiện này?",

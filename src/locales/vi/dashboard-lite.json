@@ -1,38 +1,38 @@
 {
   "page": {
     "title": "Bảng điều khiển",
-    "subtitle": "Ảnh chụp vận hành"
+    "subtitle": "Tổng quan vận hành"
   },
   "actions": {
     "refreshing": "Đang làm mới…"
   },
   "meta": {
-    "title": "Thông tin ảnh chụp",
-    "generatedAt": "Thời điểm tạo (UTC)",
+    "title": "Thông tin tổng quan",
+    "generatedAt": "Thời điểm tạo dữ liệu (UTC)",
     "lastUpdated": "Cập nhật lần cuối",
     "autoRefreshHelper": "Tự động làm mới mỗi 10 phút.",
     "businessDate": "Ngày nghiệp vụ"
   },
   "sectionNav": {
-    "label": "C\u00e1c ph\u1ea7n b\u1ea3ng \u0111i\u1ec1u khi\u1ec3n"
+    "label": "Các phần của bảng điều khiển"
   },
   "severityBadges": {
-    "needsReview": "C\u1ea7n xem x\u00e9t",
-    "pending": "Ch\u1edd x\u1eed l\u00fd",
-    "finalized": "\u0110\u00e3 ch\u1ed1t",
-    "active": "\u0110ang ho\u1ea1t \u0111\u1ed9ng",
-    "upcoming": "S\u1eafp t\u1edbi"
+    "needsReview": "Cần rà soát",
+    "pending": "Chờ xử lý",
+    "finalized": "Đã chốt",
+    "active": "Đang hoạt động",
+    "upcoming": "Sắp tới"
   },
   "groups": {
-    "needsReview": "Cần xem xét",
+    "needsReview": "Cần rà soát",
     "workInProgress": "Đang xử lý",
     "finalizedResults": "Kết quả đã chốt",
-    "upcomingDates": "Ngày sắp tới"
+    "upcomingDates": "Mốc sắp tới"
   },
   "groupDescriptions": {
-    "needsReview": "Các mục có thể cần theo dõi.",
+    "needsReview": "Các mục có thể cần theo dõi hoặc xử lý.",
     "workInProgress": "Bản ghi đã lưu nhưng chưa chốt.",
-    "finalizedResults": "Số liệu đã hoàn tất hoặc đang hoạt động trong kỳ báo cáo hiện tại.",
+    "finalizedResults": "Bản ghi đã hoàn tất hoặc số liệu đang hiệu lực trong kỳ báo cáo hiện tại.",
     "upcomingDates": "Sự kiện và hợp đồng gần ngày nghiệp vụ hiện tại."
   },
   "metrics": {
@@ -62,7 +62,7 @@
     "draftSettlementCount": "Bản ghi quyết toán đã lưu nhưng chưa chốt.",
     "finalizedSettlementAmount30d": "Giá trị quyết toán đã chốt trong kỳ báo cáo.",
     "activeCommissionRuleCount": "Quy tắc hoa hồng hiện đang hoạt động.",
-    "expiringContractCount30d": "Hợp đồng đang hoạt động có ngày kết thúc trong cửa sổ hết hạn của bảng điều khiển.",
+    "expiringContractCount30d": "Hợp đồng đang hoạt động có ngày kết thúc trong 30 ngày tới.",
     "staleTalentKpiDraftCount": "Bản nháp có thể cần xem xét vì đã mở quá lâu.",
     "staleRevenueDraftCount": "Bản nháp có thể cần xem xét vì đã mở quá lâu.",
     "staleSettlementDraftCount": "Bản nháp có thể cần xem xét vì đã mở quá lâu."
@@ -73,6 +73,6 @@
     "refreshingInline": "Đang làm mới…",
     "refreshErrorInline": "Không thể làm mới bảng điều khiển. Đang hiển thị dữ liệu đã tải gần nhất.",
     "emptyTitle": "Không có dữ liệu ảnh chụp",
-    "emptyMessage": "Backend chưa trả về dữ liệu ảnh chụp bảng điều khiển."
+    "emptyMessage": "Hệ thống chưa trả về dữ liệu cho bảng điều khiển."
   }
 }

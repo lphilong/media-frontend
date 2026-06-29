@@ -2,28 +2,28 @@
   "page": {
     "title": "Hồ sơ nhân sự",
     "subtitle": "Quản lý định danh nhân sự, phân công và vòng đời.",
-    "placeholder": "Luồng nghiệp vụ hồ sơ nhân sự chưa được triển khai chủ đích."
+    "placeholder": "Màn hình hồ sơ nhân sự hiện chưa khả dụng đầy đủ."
   },
   "fields": {
-    "employeeCode": "Mã nhân viên",
-    "legalName": "Tên pháp lý",
+    "employeeCode": "Mã nhân sự",
+    "legalName": "Họ và tên pháp lý",
     "displayName": "Tên hiển thị",
-    "employmentKind": "Loại nhân sự",
+    "employmentKind": "Loại hợp tác",
     "jobTitle": "Chức danh",
     "orgUnitId": "Đơn vị tổ chức",
     "newOrgUnitId": "Đơn vị tổ chức",
-    "recruiterEmploymentProfileId": "Phụ trách tuyển dụng",
-    "hrOwnerEmploymentProfileId": "Phụ trách HR",
-    "onboardingOwnerEmploymentProfileId": "Phụ trách onboarding",
-    "sourcedByEmploymentProfileId": "Nguồn giới thiệu",
-    "linkedUserId": "Người dùng liên kết",
+    "recruiterEmploymentProfileId": "Người phụ trách tuyển dụng",
+    "hrOwnerEmploymentProfileId": "Người phụ trách nhân sự",
+    "onboardingOwnerEmploymentProfileId": "Người phụ trách tiếp nhận",
+    "sourcedByEmploymentProfileId": "Người giới thiệu",
+    "linkedUserId": "Tài khoản đăng nhập liên kết",
     "employmentStatus": "Trạng thái nhân sự",
-    "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
-    "newContractStatus": "Trạng thái hợp đồng mới",
+    "contractStatus": "Trạng thái hợp đồng lao động tham chiếu",
+    "newContractStatus": "Trạng thái hợp đồng lao động mới",
     "employmentStartDate": "Ngày bắt đầu làm việc",
     "employmentEndDate": "Ngày kết thúc làm việc",
     "hiredAt": "Ngày tuyển dụng",
-    "onboardedAt": "Ngày onboarding",
+    "onboardedAt": "Ngày tiếp nhận",
     "titleDescription": "Mô tả chức danh",
     "externalRef": "Tham chiếu bên ngoài",
     "createdAt": "Thời điểm tạo",
@@ -31,12 +31,12 @@
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã nhân viên sẽ được tạo tự động"
+    "description": "Mã nhân sự sẽ được hệ thống tự tạo."
   },
   "placeholders": {
     "optional": "Không bắt buộc",
     "orgUnitSearch": "Tìm đơn vị tổ chức theo tên hoặc mã",
-    "employmentProfileSearch": "Tìm hồ sơ nhân sự theo tên hoặc mã nhân viên",
+    "employmentProfileSearch": "Tìm hồ sơ nhân sự theo tên hoặc mã nhân sự",
     "userSearch": "Tìm người dùng theo tên hoặc email",
     "selectEmploymentKind": "Chọn loại nhân sự"
   },
@@ -44,10 +44,10 @@
     "orgUnitId": "Chọn đơn vị tổ chức của hồ sơ này.",
     "newOrgUnitId": "Chọn đơn vị tổ chức mới cho hồ sơ này.",
     "recruiterEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách tuyển dụng.",
-    "hrOwnerEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách HR.",
-    "onboardingOwnerEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách onboarding.",
+    "hrOwnerEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách nhân sự.",
+    "onboardingOwnerEmploymentProfileId": "Chọn hồ sơ nhân sự phụ trách tiếp nhận.",
     "sourcedByEmploymentProfileId": "Chọn hồ sơ nhân sự đã giới thiệu hoặc cung cấp nguồn, nếu có.",
-    "linkedUserId": "Chọn tài khoản người dùng cần liên kết với hồ sơ nhân sự này."
+    "linkedUserId": "Chọn tài khoản đăng nhập cần liên kết với hồ sơ nhân sự này."
   },
   "states": {
     "emptyTitle": "Không tìm thấy hồ sơ nhân sự",
@@ -56,38 +56,38 @@
     "loadErrorMessage": "Không tải được dữ liệu hồ sơ nhân sự."
   },
   "filters": {
-    "searchPlaceholder": "Nhập mã nhân viên",
+    "searchPlaceholder": "Tìm theo mã nhân sự, tên hiển thị hoặc họ tên pháp lý",
     "employmentStatus": "Trạng thái nhân sự",
-    "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
+    "contractStatus": "Trạng thái hợp đồng lao động tham chiếu",
     "employmentKind": "Loại nhân sự",
-    "employmentKindPlaceholder": "Lọc theo token loại nhân sự",
+    "employmentKindPlaceholder": "Lọc theo loại hợp tác",
     "allEmploymentKinds": "Tất cả loại nhân sự",
     "orgUnitId": "Đơn vị tổ chức",
     "orgUnitIdPlaceholder": "Chọn đơn vị tổ chức",
-    "hasLinkedUser": "Trạng thái liên kết người dùng",
+    "hasLinkedUser": "Trạng thái liên kết tài khoản",
     "allEmploymentStatuses": "Tất cả trạng thái nhân sự",
     "allContractStatuses": "Tất cả trạng thái hợp đồng",
-    "allLinkedUserStates": "Tất cả trạng thái liên kết người dùng",
+    "allLinkedUserStates": "Tất cả trạng thái liên kết tài khoản",
     "linkedOnly": "Đã liên kết",
     "unlinkedOnly": "Chưa liên kết"
   },
   "sort": {
-    "employeeCode": "Mã nhân viên",
+    "employeeCode": "Mã nhân sự",
     "displayName": "Tên hiển thị",
     "legalName": "Tên pháp lý",
     "createdAt": "Thời điểm tạo"
   },
   "statuses": {
-    "ACTIVE": "Hoạt động",
+    "ACTIVE": "Đang làm",
     "ON_LEAVE": "Đang nghỉ phép",
-    "SUSPENDED": "Đã tạm ngưng",
-    "TERMINATED": "Đã kết thúc",
+    "SUSPENDED": "Tạm ngưng",
+    "TERMINATED": "Đã nghỉ việc",
     "ARCHIVED": "Đã lưu trữ"
   },
   "contractStatuses": {
     "NONE": "Không có",
     "PENDING_SIGNATURE": "Chờ ký",
-    "ACTIVE": "Hoạt động",
+    "ACTIVE": "Đang hiệu lực",
     "EXPIRED": "Đã hết hạn",
     "TERMINATED": "Đã kết thúc"
   },
@@ -103,43 +103,43 @@
     "open": "Mở",
     "edit": "Chỉnh sửa",
     "assignOrgUnit": "Gán đơn vị tổ chức",
-    "linkUser": "Liên kết người dùng",
-    "unlinkUser": "Bỏ liên kết người dùng",
-    "updateContractStatus": "Cập nhật trạng thái hợp đồng",
-    "place-on-leave": "Đưa vào nghỉ phép",
-    "return-from-leave": "Quay lại sau nghỉ phép",
+    "linkUser": "Liên kết tài khoản đăng nhập",
+    "unlinkUser": "Bỏ liên kết tài khoản đăng nhập",
+    "updateContractStatus": "Cập nhật trạng thái hợp đồng lao động",
+    "place-on-leave": "Đưa vào trạng thái nghỉ phép",
+    "return-from-leave": "Cho quay lại làm việc",
     "suspend": "Tạm ngưng",
     "reactivate": "Kích hoạt lại",
     "terminate": "Kết thúc",
     "archive": "Lưu trữ",
-    "clearAttribution": "Xóa phân công",
-    "clearLinkedUser": "Xóa người dùng liên kết"
+    "clearAttribution": "Xóa phân công phụ trách",
+    "clearLinkedUser": "Xóa tài khoản đăng nhập liên kết"
   },
   "table": {
     "caption": "Danh sách hồ sơ nhân sự",
-    "employeeCode": "Mã nhân viên",
+    "employeeCode": "Mã nhân sự",
     "displayName": "Tên hiển thị",
     "legalName": "Tên pháp lý",
-    "employmentKind": "Loại",
+    "employmentKind": "Loại hợp tác",
     "jobTitle": "Chức danh",
     "orgUnitId": "Đơn vị tổ chức",
-    "linkedUserId": "Người dùng liên kết",
+    "linkedUserId": "Tài khoản liên kết",
     "employmentStatus": "Trạng thái nhân sự",
-    "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
+    "contractStatus": "Trạng thái hợp đồng lao động tham chiếu",
     "createdAt": "Thời điểm tạo",
     "actions": "Hành động"
   },
   "directReportsTable": {
-    "employeeCode": "Mã nhân viên",
+    "employeeCode": "Mã nhân sự",
     "displayName": "Tên hiển thị",
     "employmentStatus": "Trạng thái nhân sự",
-    "contractStatus": "Tình trạng HĐLĐ ngoài hệ thống",
+    "contractStatus": "Trạng thái hợp đồng lao động tham chiếu",
     "orgUnitId": "Đơn vị tổ chức"
   },
   "directReports": {
     "sortBy": "Sắp xếp",
     "sort": {
-      "employeeCode": "Mã nhân viên",
+      "employeeCode": "Mã nhân sự",
       "displayName": "Tên hiển thị"
     },
     "emptyTitle": "Không có cấp dưới trực tiếp",
@@ -147,23 +147,23 @@
     "caption": "Danh sách cấp dưới trực tiếp"
   },
   "detail": {
-    "hubTitle": "People Operations Hub",
+    "hubTitle": "Trung tâm vận hành nhân sự",
     "hubSubtitle": "{{displayName}} - {{employeeCode}}",
-    "overviewTitle": "Overview",
+    "overviewTitle": "Tổng quan",
     "summaryTitle": "Tóm tắt hồ sơ",
-    "assignmentTitle": "Phân công và mốc thời gian",
-    "accountTitle": "Liên kết tài khoản / người dùng",
-    "hrAttributionTitle": "Phân công HR",
+    "assignmentTitle": "Phân công và thời gian làm việc",
+    "accountTitle": "Liên kết tài khoản đăng nhập",
+    "hrAttributionTitle": "Phân công phụ trách nhân sự",
     "notAssigned": "Chưa phân công",
-    "externalContractHelper": "HĐLĐ và phụ lục pháp lý được lưu theo quy trình HR ngoài hệ thống. Màn này chỉ ghi nhận trạng thái tham chiếu để vận hành."
+    "externalContractHelper": "Hợp đồng lao động và phụ lục pháp lý được quản lý theo quy trình nhân sự ngoài hệ thống. Màn hình này chỉ ghi nhận trạng thái tham chiếu để phục vụ vận hành."
   },
   "account": {
-    "linkedUserStatus": "Trạng thái người dùng liên kết",
+    "linkedUserStatus": "Trạng thái tài khoản liên kết",
     "linked": "Đã liên kết",
     "notLinked": "Chưa liên kết",
     "accountStatus": "Trạng thái tài khoản",
     "email": "Email",
-    "noLinkedRecord": "Không có bản ghi liên kết"
+    "noLinkedRecord": "Chưa có tài khoản liên kết"
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",
@@ -171,24 +171,24 @@
     "internalTalent": "Talent nội bộ",
     "talentGroups": "Nhóm Talent",
     "kpi": "KPI",
-    "workShifts": "Ca làm việc theo chủ thể",
-    "events": "Sự kiện theo phân công",
-    "contractsByOwner": "Hợp đồng theo chủ sở hữu",
-    "contractsByLinkedEntity": "Hợp đồng theo thực thể liên kết",
+    "workShifts": "Ca làm việc theo hồ sơ",
+    "events": "Sự kiện được phân công",
+    "contractsByOwner": "Hợp đồng do hồ sơ này phụ trách",
+    "contractsByLinkedEntity": "Hợp đồng liên kết với hồ sơ này",
     "openLinkedRecord": "Mở bản ghi liên kết",
     "openFilteredList": "Mở danh sách đã lọc",
     "noLinkedRecord": "Không có bản ghi liên kết",
     "noRelatedTalentContext": "Không có ngữ cảnh Talent liên quan",
     "noPublishedKpiSummary": "Không có tóm tắt KPI đã công bố",
-    "noModuleAccess": "Không có quyền truy cập",
+    "noModuleAccess": "Không có quyền xem",
     "unavailable": "Không khả dụng",
     "directReportsTitle": "Cấp dưới trực tiếp",
-    "reportingTitle": "Trach nhiem / Bao cao"
+    "reportingTitle": "Trách nhiệm / Báo cáo"
   },
   "mutations": {
     "create": {
       "title": "Tạo hồ sơ nhân sự",
-      "subtitle": "Tạo một bản ghi hồ sơ nhân sự mới.",
+      "subtitle": "Tạo hồ sơ nhân sự mới.",
       "submit": "Tạo",
       "pending": "Đang tạo..."
     },
@@ -201,50 +201,50 @@
     "assignOrgUnit": {
       "title": "Gán đơn vị tổ chức",
       "subtitle": "Chuyển hồ sơ sang một đơn vị tổ chức khác.",
-      "submit": "Gán",
+      "submit": "Cập nhật đơn vị",
       "pending": "Đang gán..."
     },
     "linkUser": {
       "title": "Liên kết người dùng",
-      "subtitle": "Gắn một tài khoản người dùng vào hồ sơ nhân sự này.",
+      "subtitle": "Gắn một tài khoản đăng nhập vào hồ sơ nhân sự này.",
       "submit": "Liên kết",
       "pending": "Đang liên kết..."
     },
     "contractStatus": {
       "title": "Cập nhật trạng thái hợp đồng",
-      "subtitle": "Đổi trạng thái hợp đồng qua hành động chuyên biệt.",
+      "subtitle": "Cập nhật trạng thái hợp đồng lao động tham chiếu.",
       "submit": "Cập nhật",
       "pending": "Đang cập nhật..."
     },
     "terminate": {
       "title": "Kết thúc nhân sự",
-      "subtitle": "Thiết lập ngày kết thúc làm việc qua hành động kết thúc.",
+      "subtitle": "Thiết lập ngày kết thúc làm việc.",
       "submit": "Kết thúc",
       "pending": "Đang kết thúc..."
     }
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
+    "invalidToken": "Giá trị chỉ được dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối.",
     "invalidDate": "Ngày phải có định dạng YYYY-MM-DD hợp lệ.",
     "onboardedBeforeHired": "Ngày onboarding không được trước ngày tuyển dụng.",
-    "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
+    "invalidReferenceToken": "Mã tham chiếu chứa ký tự không được hỗ trợ.",
     "contractStatusTransitionNotAllowed": "Không hỗ trợ chuyển trạng thái hợp đồng này."
   },
   "feedback": {
     "created": "Đã tạo hồ sơ nhân sự.",
     "updated": "Đã cập nhật hồ sơ nhân sự.",
     "orgUnitAssigned": "Đã cập nhật đơn vị tổ chức.",
-    "userLinked": "Đã liên kết người dùng.",
-    "userUnlinked": "Đã bỏ liên kết người dùng.",
-    "contractStatusUpdated": "Đã cập nhật trạng thái hợp đồng.",
+    "userLinked": "Đã liên kết tài khoản đăng nhập.",
+    "userUnlinked": "Đã bỏ liên kết tài khoản đăng nhập.",
+    "contractStatusUpdated": "Đã cập nhật trạng thái hợp đồng lao động.",
     "terminated": "Đã kết thúc hồ sơ nhân sự.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời hồ sơ nhân sự."
+    "lifecycleUpdated": "Đã cập nhật trạng thái hồ sơ nhân sự."
   },
   "confirm": {
-    "unlinkUser": "Bỏ liên kết người dùng khỏi hồ sơ nhân sự này?",
+    "unlinkUser": "Bỏ liên kết tài khoản đăng nhập khỏi hồ sơ nhân sự này?",
     "place-on-leave": "Đưa hồ sơ này vào nghỉ phép?",
-    "return-from-leave": "Đưa hồ sơ này quay lại sau nghỉ phép?",
+    "return-from-leave": "Cho hồ sơ này quay lại làm việc sau nghỉ phép?",
     "suspend": "Tạm ngưng hồ sơ nhân sự này?",
     "reactivate": "Kích hoạt lại hồ sơ nhân sự này?",
     "archive": "Lưu trữ hồ sơ nhân sự này?"
@@ -266,8 +266,8 @@
       "baseSalary": "Lương cơ bản",
       "payFrequency": "Kỳ trả lương",
       "currency": "Tiền tệ",
-      "payrollEligible": "Điều kiện đưa vào nguồn bảng lương",
-      "sourceNote": "Nguồn xác nhận",
+      "payrollEligible": "Trạng thái nguồn bảng lương",
+      "sourceNote": "Ghi chú nguồn xác nhận",
       "updatedAt": "Thời điểm cập nhật",
       "allowances": "Phụ cấp",
       "allowanceType": "Loại phụ cấp",
@@ -278,7 +278,7 @@
       "DRAFT": "Bản nháp",
       "PENDING_APPROVAL": "Chờ duyệt",
       "APPROVED": "Đã duyệt",
-      "SUPERSEDED": "Đã được thay thế",
+      "SUPERSEDED": "Đã thay thế",
       "CANCELLED": "Đã hủy"
     },
     "payFrequencies": {
@@ -297,7 +297,7 @@
     },
     "empty": {
       "title": "Không có điều khoản làm việc / lương",
-      "message": "Tạo bản nháp khi có điều khoản có cấu trúc đã được xác nhận.",
+      "message": "Tạo bản nháp khi có điều khoản làm việc đã được xác nhận.",
       "allowances": "Không có phụ cấp."
     },
     "form": {
@@ -310,7 +310,7 @@
       "currency": "Tiền tệ phải gồm đúng ba chữ cái viết hoa.",
       "allowanceCount": "Hỗ trợ tối đa 20 phụ cấp.",
       "allowanceFields": "Loại và tên phụ cấp là bắt buộc và phải đúng giới hạn.",
-      "sourceNote": "Nguồn xác nhận tối đa 500 ký tự."
+      "sourceNote": "Ghi chú nguồn xác nhận tối đa 500 ký tự."
     },
     "errors": {
       "loadTitle": "Không tải được điều khoản làm việc / lương",

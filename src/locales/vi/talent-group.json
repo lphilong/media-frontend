@@ -1,12 +1,12 @@
 {
   "page": {
     "title": "Nhóm Talent",
-    "subtitle": "Quản lý thành viên và nhóm Talent.",
-    "placeholder": "Luồng nghiệp vụ nhóm Talent chưa được triển khai chủ đích."
+    "subtitle": "Quản lý nhóm Talent và thành viên trong nhóm.",
+    "placeholder": "Tính năng nhóm Talent hiện chưa khả dụng."
   },
   "fields": {
     "groupCode": "Mã nhóm",
-    "name": "Họ và Tên",
+    "name": "Tên nhóm",
     "shortName": "Tên ngắn",
     "status": "Trạng thái",
     "displayOrder": "Ưu tiên sắp xếp",
@@ -14,14 +14,14 @@
     "externalRef": "Tham chiếu bên ngoài",
     "talentId": "Talent",
     "reason": "Lý do",
-    "lineupOrder": "Thứ tự đội hình",
-    "newLineupOrder": "Thứ tự đội hình mới",
+    "lineupOrder": "Thứ tự hiển thị",
+    "newLineupOrder": "Thứ tự hiển thị mới",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã nhóm sẽ được tạo tự động"
+    "description": "Mã nhóm sẽ được hệ thống tự tạo sau khi lưu."
   },
   "placeholders": {
     "optional": "Không bắt buộc",
@@ -31,61 +31,61 @@
     "talentId": "Chọn Talent cần thêm vào nhóm này."
   },
   "help": {
-    "displayOrder": "Số nhỏ hiển thị trước. Khoảng cách như 10, 20, 30 giúp chèn mục mới giữa các mục hiện có dễ hơn. Ví dụ: dùng 15 để đặt một mục giữa 10 và 20."
+    "displayOrder": "Số nhỏ sẽ hiển thị trước. Nên dùng khoảng cách như 10, 20, 30 để dễ chèn thêm mục mới sau này. Ví dụ: dùng 15 để đặt một mục giữa 10 và 20."
   },
   "states": {
     "emptyTitle": "Không tìm thấy nhóm Talent",
-    "emptyMessage": "Thử cập nhật tìm kiếm hoặc bộ lọc.",
+    "emptyMessage": "Điều chỉnh tìm kiếm hoặc bộ lọc.",
     "loadErrorTitle": "Không tải được nhóm Talent",
-    "loadErrorMessage": "Không thể tải dữ liệu nhóm Talent."
+    "loadErrorMessage": "Hệ thống không thể tải dữ liệu nhóm Talent."
   },
   "filters": {
     "searchPlaceholder": "Tìm theo mã nhóm, tên hoặc tên ngắn",
     "status": "Trạng thái",
     "allStatuses": "Tất cả trạng thái",
     "containsTalentId": "Talent",
-    "containsTalentIdPlaceholder": "Talent",
+    "containsTalentIdPlaceholder": "Chọn Talent",
     "talentId": "Talent",
-    "talentIdPlaceholder": "Talent liên quan"
+    "talentIdPlaceholder": "Chọn Talent liên quan"
   },
   "sort": {
     "groupCode": "Mã nhóm",
-    "name": "Tên",
+    "name": "Tên nhóm",
     "createdAt": "Thời điểm tạo",
     "displayOrder": "Ưu tiên sắp xếp"
   },
   "statuses": {
     "ACTIVE": "Hoạt động",
-    "INACTIVE": "Không hoạt động",
+    "INACTIVE": "Tạm ngưng",
     "ARCHIVED": "Đã lưu trữ"
   },
   "membershipStatuses": {
     "ACTIVE": "Hoạt động",
-    "INACTIVE": "Không hoạt động",
+    "INACTIVE": "Tạm ngưng",
     "REMOVED": "Đã xóa khỏi nhóm"
   },
   "actions": {
     "create": "Tạo nhóm Talent",
-    "closeCreate": "Đóng tạo mới",
-    "exitByTalent": "Thoát chế độ theo Talent",
+    "closeCreate": "Đóng form tạo mới",
+    "exitByTalent": "Thoát chế độ xem theo Talent",
     "open": "Mở",
     "edit": "Chỉnh sửa",
     "addMember": "Thêm thành viên",
-    "updateLineup": "Cập nhật thứ tự đội hình",
-    "deactivateMember": "Vô hiệu hóa thành viên",
+    "updateLineup": "Cập nhật thứ tự hiển thị",
+    "deactivateMember": "Tạm ngưng thành viên",
     "reactivateMember": "Kích hoạt lại thành viên",
     "removeMember": "Xóa thành viên",
     "activate": "Kích hoạt",
-    "deactivate": "Vô hiệu hóa",
+    "deactivate": "Tạm ngưng",
     "archive": "Lưu trữ"
   },
   "table": {
     "caption": "Danh sách nhóm Talent",
     "groupCode": "Mã nhóm",
-    "name": "Tên",
+    "name": "Tên nhóm",
     "shortName": "Tên ngắn",
     "status": "Trạng thái",
-    "displayOrder": "Ưu tiên sắp xếp",
+    "displayOrder": "Thứ tự hiển thị",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
     "actions": "Hành động"
@@ -93,15 +93,15 @@
   "membersTable": {
     "caption": "Thành viên nhóm",
     "talentId": "Talent",
-    "membershipStatus": "Trạng thái thành viên",
-    "lineupOrder": "Thứ tự đội hình",
+    "membershipStatus": "Trạng thái trong nhóm",
+    "lineupOrder": "Thứ tự hiển thị",
     "joinedAt": "Thời điểm tham gia",
     "leftAt": "Thời điểm rời nhóm",
     "actions": "Hành động"
   },
   "detail": {
     "summaryTitle": "Tóm tắt nhóm",
-    "metadataTitle": "Metadata nhóm"
+    "metadataTitle": "Thông tin nhóm"
   },
   "related": {
     "byTalentModeLabel": "Theo Talent",
@@ -110,9 +110,9 @@
     "workShifts": "Ca làm việc",
     "events": "Sự kiện",
     "openFilteredList": "Mở danh sách đã lọc",
-    "unavailable": "Không khả dụng",
+    "unavailable": "Chưa khả dụng",
     "membersTitle": "Danh sách thành viên",
-    "membersEmptyTitle": "Không có thành viên đang hoạt động hoặc tạm ngưng",
+    "membersEmptyTitle": "Chưa có thành viên đang hoạt động hoặc tạm ngưng",
     "membersEmptyMessage": "Nhóm này hiện chưa có thành viên hiển thị."
   },
   "mutations": {
@@ -124,7 +124,7 @@
     },
     "edit": {
       "title": "Chỉnh sửa nhóm Talent",
-      "subtitle": "Cập nhật các trường nhóm có thể chỉnh sửa.",
+      "subtitle": "Cập nhật các thông tin nhóm được phép chỉnh sửa.",
       "submit": "Lưu",
       "pending": "Đang lưu..."
     },
@@ -135,7 +135,7 @@
       "pending": "Đang thêm..."
     },
     "updateLineup": {
-      "title": "Cập nhật thứ tự đội hình",
+      "title": "Cập nhật thứ tự hiển thị",
       "subtitle": "Cập nhật thứ tự hiển thị của thành viên trong nhóm.",
       "submit": "Cập nhật",
       "pending": "Đang cập nhật..."
@@ -143,31 +143,31 @@
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidToken": "Giá trị chỉ được dùng các ký tự token được hỗ trợ.",
+    "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
-    "invalidDisplayOrder": "Ưu tiên sắp xếp phải là số nguyên lớn hơn hoặc bằng 0.",
-    "invalidLineupOrder": "Thứ tự đội hình phải là số nguyên lớn hơn hoặc bằng 0."
+    "invalidDisplayOrder": "Thứ tự hiển thị phải là số nguyên lớn hơn hoặc bằng 0.",
+    "invalidLineupOrder": "Thứ tự hiển thị phải là số nguyên lớn hơn hoặc bằng 0."
   },
   "feedback": {
     "created": "Đã tạo nhóm Talent.",
     "updated": "Đã cập nhật nhóm Talent.",
     "memberAdded": "Đã thêm thành viên.",
-    "lineupUpdated": "Đã cập nhật thứ tự đội hình.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời nhóm.",
-    "membershipLifecycleUpdated": "Đã cập nhật vòng đời thành viên."
+    "lineupUpdated": "Đã cập nhật thứ tự hiển thị.",
+    "lifecycleUpdated": "Đã cập nhật trạng thái nhóm.",
+    "membershipLifecycleUpdated": "Đã cập nhật trạng thái thành viên."
   },
   "confirm": {
     "activate": "Kích hoạt nhóm này?",
-    "deactivate": "Vô hiệu hóa nhóm này?",
+    "deactivate": "Tạm ngưng nhóm này?",
     "archive": "Lưu trữ nhóm này?",
-    "deactivateMember": "Vô hiệu hóa thành viên này?",
+    "deactivateMember": "Tạm ngưng thành viên này?",
     "reactivateMember": "Kích hoạt lại thành viên này?",
     "removeMember": "Xóa thành viên này?"
   },
   "managers": {
-    "title": "Trach nhiem",
-    "emptyTitle": "Chua co trach nhiem dang hoat dong",
-    "emptyMessage": "Nhom nay chua co phan cong trach nhiem dang hoat dong."
+    "title": "Trách nhiệm quản lý",
+    "emptyTitle": "Chưa có trách nhiệm đang hoạt động",
+    "emptyMessage": "Nhóm này chưa có phân công trách nhiệm đang hoạt động."
   },
   "actionRail": {
     "title": "Hành động nhóm Talent"

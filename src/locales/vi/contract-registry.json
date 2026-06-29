@@ -2,8 +2,8 @@
   "page": {
     "title": "Sổ hợp đồng",
     "subtitle": "Quản lý hồ sơ hợp đồng thương mại và pháp lý.",
-    "placeholder": "Sổ hợp đồng.",
-    "boundaryHelper": "HĐLĐ và điều khoản nhân sự thuộc hồ sơ nhân sự/HRET, không tạo mới trong Contract Registry."
+    "placeholder": "Sổ hợp đồng",
+    "boundaryHelper": "Hợp đồng lao động và điều khoản nhân sự thuộc khu vực Hồ sơ nhân sự/Điều khoản làm việc, không tạo mới trong Sổ hợp đồng."
   },
   "fields": {
     "contractCode": "Mã hợp đồng",
@@ -11,28 +11,28 @@
     "contractKind": "Loại hợp đồng",
     "linkedEntityKind": "Loại thực thể liên kết",
     "linkedEntityId": "Thực thể liên kết",
-    "ownerEmploymentProfileId": "Hồ sơ nhân sự sở hữu",
-    "newOwnerEmploymentProfileId": "Hồ sơ nhân sự sở hữu mới",
+    "ownerEmploymentProfileId": "Hồ sơ nhân sự phụ trách",
+    "newOwnerEmploymentProfileId": "Hồ sơ nhân sự phụ trách mới",
     "confidentialityTier": "Cấp bảo mật",
     "status": "Trạng thái",
     "effectiveStartDate": "Ngày bắt đầu hiệu lực",
     "effectiveEndDate": "Ngày kết thúc hiệu lực",
     "expiryDate": "Ngày hết hạn",
     "terminationDate": "Ngày kết thúc",
-    "fileReferenceId": "ID tham chiếu tệp",
+    "fileReferenceId": "Mã tham chiếu tệp",
     "fileDisplayName": "Tên hiển thị của tệp",
-    "newFileReferenceId": "ID tham chiếu tệp mới",
+    "newFileReferenceId": "Mã tham chiếu tệp mới",
     "newFileDisplayName": "Tên hiển thị tệp mới",
     "description": "Mô tả",
     "externalRef": "Tham chiếu bên ngoài",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
-    "scopeBoundary": "Ranh giới phạm vi",
-    "boundary": "Ranh giới sổ hợp đồng"
+    "scopeBoundary": "Phạm vi áp dụng",
+    "boundary": "Ranh giới hợp đồng"
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã hợp đồng sẽ được tạo tự động"
+    "description": "Mã hợp đồng sẽ được hệ thống tự tạo sau khi lưu."
   },
   "statuses": {
     "DRAFT": "Nháp",
@@ -43,7 +43,7 @@
     "ARCHIVED": "Đã lưu trữ"
   },
   "contractKinds": {
-    "EMPLOYMENT": "Hồ sơ HĐLĐ cũ",
+    "EMPLOYMENT": "Hợp đồng lao động cũ",
     "TALENT_SERVICE": "Dịch vụ Talent",
     "TALENT_MANAGEMENT": "Quản lý Talent"
   },
@@ -54,7 +54,7 @@
     },
     "LEGACY_EMPLOYMENT_DEPRECATED": {
       "label": "Hồ sơ hợp đồng lao động cũ",
-      "helper": "Chỉ giữ để đọc và tra cứu tương thích. HĐLĐ và điều khoản nhân sự thuộc hồ sơ nhân sự/HRET."
+      "helper": "Chỉ giữ để đọc và tra cứu tương thích. Hợp đồng lao động và điều khoản nhân sự thuộc khu vực Hồ sơ nhân sự/Điều khoản làm việc."
     },
     "UNSUPPORTED_CONTRACT_KIND": {
       "label": "Loại hợp đồng chưa hỗ trợ",
@@ -76,17 +76,17 @@
     "createdAt": "Thời điểm tạo"
   },
   "filters": {
-    "searchPlaceholder": "Nhập mã hợp đồng",
+    "searchPlaceholder": "Tìm theo mã hợp đồng hoặc tiêu đề",
     "status": "Trạng thái",
     "allStatuses": "Tất cả trạng thái",
     "contractKind": "Loại hợp đồng",
     "allContractKinds": "Tất cả loại hợp đồng",
-    "linkedEntityKind": "Loại thực thể liên kết",
-    "allLinkedEntityKinds": "Tất cả loại thực thể liên kết",
-    "linkedEntityId": "Thực thể liên kết",
-    "linkedEntityIdPlaceholder": "Chọn thực thể liên kết",
-    "ownerEmploymentProfileId": "Hồ sơ nhân sự sở hữu",
-    "ownerEmploymentProfileIdPlaceholder": "Chọn hồ sơ nhân sự sở hữu",
+    "linkedEntityKind": "Loại đối tượng liên kết",
+    "allLinkedEntityKinds": "Tất cả loại đối tượng liên kết",
+    "linkedEntityId": "Đối tượng liên kết",
+    "linkedEntityIdPlaceholder": "Chọn đối tượng liên kết",
+    "ownerEmploymentProfileId": "Hồ sơ nhân sự phụ trách",
+    "ownerEmploymentProfileIdPlaceholder": "Chọn hồ sơ nhân sự phụ trách",
     "confidentialityTier": "Cấp bảo mật",
     "allConfidentialityTiers": "Tất cả cấp bảo mật",
     "hasFileReference": "Tham chiếu tệp",
@@ -99,8 +99,8 @@
     "windowEndDate": "Ngày kết thúc khung thời gian"
   },
   "relatedModes": {
-    "by-linked-entity": "Hợp đồng liên quan theo thực thể liên kết",
-    "by-owner": "Hợp đồng liên quan theo chủ sở hữu"
+    "by-linked-entity": "Hợp đồng theo đối tượng liên kết",
+    "by-owner": "Hợp đồng theo người phụ trách"
   },
   "actions": {
     "create": "Tạo hợp đồng",
@@ -124,24 +124,24 @@
     "title": "Tiêu đề",
     "contractKind": "Loại",
     "linkedEntityKind": "Loại liên kết",
-    "linkedEntityId": "Thực thể liên kết",
-    "ownerEmploymentProfileId": "Chủ sở hữu",
+    "linkedEntityId": "Đối tượng liên kết",
+    "ownerEmploymentProfileId": "Người phụ trách",
     "confidentialityTier": "Cấp bảo mật",
     "status": "Trạng thái",
     "effectiveStartDate": "Bắt đầu",
     "effectiveEndDate": "Kết thúc",
     "actions": "Hành động",
-    "boundary": "Ranh giới"
+    "boundary": "Phạm vi"
   },
   "detail": {
     "archivedReadOnly": "Bản ghi hợp đồng đã lưu trữ chỉ đọc.",
     "identityTitle": "Bản ghi hợp đồng",
-    "contractMetadataTitle": "Metadata hợp đồng",
-    "linkedEntityTitle": "Thực thể liên kết và chủ sở hữu",
-    "fileReferenceTitle": "Metadata tham chiếu tệp",
+    "contractMetadataTitle": "Thông tin hợp đồng",
+    "linkedEntityTitle": "Đối tượng liên kết và người phụ trách",
+    "fileReferenceTitle": "Thông tin tham chiếu tệp",
     "freeTextTitle": "Mô tả và tham chiếu bên ngoài",
     "globalOnly": "Chỉ dùng phạm vi toàn cục",
-    "boundaryHelper": "Trạng thái đã ký hoặc hoạt động không tự tạo doanh thu, hoa hồng, bảng lương, thanh toán, chi trả, thuế, kế toán, chấp nhận nghĩa vụ hoặc liên kết bằng chứng Sự kiện."
+    "boundaryHelper": "Trạng thái đã ký hoặc đang hoạt động không tự tạo doanh thu, hoa hồng, bảng lương, thanh toán, chi trả, thuế, kế toán, nghiệm thu nghĩa vụ hoặc liên kết bằng chứng Sự kiện."
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",
@@ -152,30 +152,30 @@
     "emptyTitle": "Không tìm thấy bản ghi hợp đồng",
     "emptyMessage": "Điều chỉnh bộ lọc hoặc tạo bản ghi hợp đồng.",
     "loadErrorTitle": "Không tải được bản ghi hợp đồng",
-    "loadErrorMessage": "Backend đã từ chối yêu cầu hoặc không trả về dữ liệu hợp đồng."
+    "loadErrorMessage": "Hệ thống đã từ chối yêu cầu hoặc chưa trả về dữ liệu hợp đồng."
   },
   "mutations": {
     "create": {
       "title": "Tạo bản ghi hợp đồng",
-      "subtitle": "Chỉ tạo metadata pháp lý và vận hành.",
+      "subtitle": "Chỉ tạo thông tin pháp lý và vận hành. Không tạo doanh thu, thanh toán hoặc bảng lương.",
       "submit": "Tạo",
       "pending": "Đang tạo"
     },
     "draftCore": {
       "title": "Chỉnh sửa nội dung nháp",
-      "subtitle": "Cập nhật metadata nháp được phép sửa. Chủ sở hữu và tham chiếu tệp dùng hành động riêng.",
+      "subtitle": "Cập nhật thông tin nháp được phép sửa. Người phụ trách và tham chiếu tệp dùng hành động riêng.",
       "submit": "Lưu",
       "pending": "Đang lưu"
     },
     "assignOwner": {
-      "title": "Gán chủ sở hữu",
-      "subtitle": "Thay thế hồ sơ nhân sự đang sở hữu hợp đồng.",
-      "submit": "Gán chủ sở hữu",
+      "title": "Gán người phụ trách",
+      "subtitle": "Thay thế hồ sơ nhân sự đang phụ trách hợp đồng.",
+      "submit": "Gán người phụ trách",
       "pending": "Đang gán"
     },
     "fileReference": {
       "title": "Cập nhật tham chiếu tệp",
-      "subtitle": "Chỉ lưu metadata. Đây không phải chức năng tải lên hoặc tải xuống tệp.",
+      "subtitle": "Chỉ lưu thông tin tham chiếu tệp. Đây không phải chức năng tải lên hoặc tải xuống tệp.",
       "submit": "Cập nhật tham chiếu tệp",
       "pending": "Đang cập nhật"
     },
@@ -198,21 +198,21 @@
   "validation": {
     "maxLength": "Tối đa {{max}} ký tự.",
     "required": "Trường này là bắt buộc.",
-    "invalidToken": "Nhập token tham chiếu hợp lệ.",
+    "invalidToken": "Nhập mã tham chiếu hợp lệ.",
     "invalidDate": "Dùng định dạng YYYY-MM-DD.",
     "kindCompatibility": "Loại hợp đồng và loại thực thể liên kết không tương thích.",
     "filePair": "ID tham chiếu tệp và tên hiển thị phải được cung cấp hoặc xóa cùng nhau.",
-    "employmentCreateRejected": "Không thể tạo HĐLĐ trong Contract Registry.",
-    "legacyPromotionRejected": "Không thể chuyển hồ sơ HĐLĐ cũ sang sử dụng thương mại."
+    "employmentCreateRejected": "Không thể tạo hợp đồng lao động trong Sổ hợp đồng.",
+    "legacyPromotionRejected": "Không thể chuyển hồ sơ hợp đồng lao động cũ sang sử dụng thương mại."
   },
   "feedback": {
     "created": "Đã tạo bản ghi hợp đồng.",
     "updated": "Đã cập nhật bản ghi hợp đồng.",
-    "ownerAssigned": "Đã cập nhật chủ sở hữu.",
-    "fileReferenceUpdated": "Đã cập nhật metadata tham chiếu tệp.",
+    "ownerAssigned": "Đã cập nhật người phụ trách.",
+    "fileReferenceUpdated": "Đã cập nhật thông tin tham chiếu tệp.",
     "expired": "Đã đánh dấu hợp đồng hết hạn.",
     "terminated": "Đã kết thúc hợp đồng.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời hợp đồng."
+    "lifecycleUpdated": "Đã cập nhật trạng thái hợp đồng."
   },
   "confirm": {
     "markPendingSignature": "Đánh dấu hợp đồng này là đang chờ ký?",
@@ -225,7 +225,7 @@
     "historyTitle": "Lịch sử trạng thái nghĩa vụ",
     "sectionTitle": "Nghĩa vụ / Bằng chứng",
     "listTitle": "Nghĩa vụ hợp đồng",
-    "unavailable": "Hợp đồng này không hỗ trợ quản lý nghĩa vụ thương mại trong Contract Registry.",
+    "unavailable": "Hợp đồng này không hỗ trợ quản lý nghĩa vụ thương mại trong Sổ hợp đồng.",
     "noAccess": "Bạn không có quyền xem nghĩa vụ hợp đồng.",
     "directRefsTitle": "Tham chiếu bằng chứng trực tiếp",
     "eventEvidenceTitle": "Liên kết bằng chứng sự kiện",
@@ -233,14 +233,14 @@
       "loadTitle": "Không tải được nghĩa vụ hợp đồng"
     },
     "helpers": {
-      "completedEventSelection": "Chọn rõ ràng từ các Sự kiện đã hoàn tất. Backend kiểm tra điều kiện có bằng chứng hoàn tất đã lưu.",
+      "completedEventSelection": "Chỉ chọn từ các Sự kiện đã hoàn tất. Hệ thống kiểm tra điều kiện liên kết bằng chứng hoàn tất.",
       "reopen": "Mở lại đưa nghĩa vụ bị từ chối về trạng thái đang mở để sửa bằng chứng và giao nộp.",
-      "boundary": "Quản lý nghĩa vụ chỉ khả dụng cho hợp đồng thương mại/pháp lý đang hoạt động và được hỗ trợ. Backend vẫn kiểm tra quyền cho từng thao tác.",
+      "boundary": "Quản lý nghĩa vụ chỉ khả dụng cho hợp đồng thương mại/pháp lý đang hoạt động và được hỗ trợ. Hệ thống vẫn kiểm tra quyền cho từng thao tác.",
       "acceptance": "Nghiệm thu nghĩa vụ không tạo doanh thu, hoa hồng, thanh toán, bảng lương, thuế/kế toán hoặc lưu trữ tệp.",
       "review": "Nghiệm thu nghĩa vụ không tạo doanh thu, hoa hồng, thanh toán, bảng lương, thuế/kế toán hoặc lưu trữ tệp.",
       "linkEvent": "Chỉ liên kết bằng chứng. Không tự giao nộp, nghiệm thu hoặc tạo doanh thu.",
       "delivery": "Giao nộp nghĩa vụ không phải nghiệm thu. Nghiệm thu là bước riêng.",
-      "snapshot": "Ảnh chụp bằng chứng tại thời điểm liên kết"
+      "snapshot": "Thông tin bằng chứng được ghi nhận tại thời điểm liên kết."
     },
     "actions": {
       "detail": "Xem chi tiết",
@@ -261,8 +261,8 @@
     "forms": {
       "reopenTitle": "Mở lại nghĩa vụ",
       "createTitle": "Tạo nghĩa vụ nháp",
-      "editTitle": "Sửa metadata nghĩa vụ",
-      "metadataSubtitle": "Chỉ cập nhật metadata nghĩa vụ. Không sửa loại hợp đồng hoặc phân loại tại đây.",
+      "editTitle": "Sửa thông tin nghĩa vụ",
+      "metadataSubtitle": "Chỉ cập nhật thông tin nghĩa vụ. Không sửa loại hợp đồng hoặc phân loại tại đây.",
       "deliverTitle": "Đánh dấu nghĩa vụ đã giao nộp",
       "linkEventTitle": "Liên kết bằng chứng sự kiện",
       "acceptTitle": "Nghiệm thu nghĩa vụ",
@@ -270,19 +270,19 @@
       "cancelTitle": "Hủy nghĩa vụ",
       "archiveTitle": "Lưu trữ nghĩa vụ",
       "remove-linkTitle": "Gỡ liên kết bằng chứng sự kiện",
-      "reasonSubtitle": "Cần nhập lý do có giới hạn để phục vụ kiểm toán.",
+      "reasonSubtitle": "Cần nhập lý do ngắn để phục vụ kiểm tra.",
       "pending": "Đang lưu"
     },
     "fields": {
       "createdAt": "Thời điểm tạo",
       "updatedAt": "Thời điểm cập nhật",
-      "eventUpdatedAt": "Thời điểm cập nhật trong ảnh chụp Sự kiện",
+      "eventUpdatedAt": "Thời điểm cập nhật của Sự kiện khi liên kết",
       "deliveredBy": "Giao nộp bởi",
       "reviewedBy": "Nghiệm thu bởi",
       "rejectionReason": "Lý do từ chối",
       "actionActor": "Người thực hiện",
       "latestWorkflowContext": "Giao nộp / nghiệm thu gần nhất",
-      "technicalReference": "Tham chiếu kỹ thuật",
+      "technicalReference": "Tham chiếu nội bộ",
       "identity": "Nghĩa vụ",
       "type": "Loại",
       "status": "Trạng thái",
@@ -290,20 +290,20 @@
       "description": "Mô tả",
       "evidencePolicy": "Chính sách bằng chứng",
       "dueDate": "Ngày đến hạn",
-      "responsibleOwner": "Ngữ cảnh phụ trách",
+      "responsibleOwner": "Người phụ trách",
       "reason": "Lý do",
       "reviewNote": "Ghi chú nghiệm thu",
-      "eventId": "ID Sự kiện đã hoàn tất",
+      "eventId": "Mã Sự kiện đã hoàn tất",
       "linkReason": "Lý do liên kết",
       "deliveryNote": "Ghi chú giao nộp",
       "eventEvidenceLinks": "Liên kết bằng chứng sự kiện",
       "directRefType": "Loại tham chiếu trực tiếp",
       "directRefLabel": "Nhãn tham chiếu trực tiếp",
       "directRefUrl": "URL",
-      "directRefReferenceId": "ID tham chiếu",
+      "directRefReferenceId": "Mã tham chiếu",
       "deliveredAt": "Lần giao nộp gần nhất",
       "reviewedAt": "Lần nghiệm thu gần nhất",
-      "eventSnapshot": "Ảnh chụp sự kiện",
+      "eventSnapshot": "Thông tin Sự kiện khi liên kết",
       "linkStatus": "Trạng thái liên kết",
       "completedAt": "Hoàn tất lúc",
       "completedBy": "Hoàn tất bởi",

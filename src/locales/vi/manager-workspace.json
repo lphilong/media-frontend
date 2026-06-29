@@ -16,7 +16,7 @@
     "scopeLabel": "Phạm vi được phân công",
     "readOnly": "Chỉ đọc",
     "actionable": "Có thể thao tác",
-    "unavailable": "Chưa mở trong workspace này",
+    "unavailable": "Chưa mở trong không gian này",
     "selectedModule": "Đang xem"
   },
   "modules": {
@@ -36,10 +36,10 @@
       "readinessMessage": "Chưa có phạm vi lịch làm việc được phân công đang hiệu lực."
     },
     "revenue": {
-      "title": "D\u1eef li\u1ec7u ngu\u1ed3n h\u1eb1ng ng\u00e0y",
-      "summary": "G\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n n\u1ec1n t\u1ea3ng cho Nh\u00f3m Talent \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng.",
-      "disabledReason": "C\u1ea7n ph\u00e2n c\u00f4ng Nh\u00f3m Talent \u0111ang hi\u1ec7u l\u1ef1c v\u00e0 quy\u1ec1n g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n.",
-      "readinessMessage": "Ch\u01b0a th\u1ec3 g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n cho \u0111\u1ebfn khi Finance m\u1edf ph\u1ea1m vi Nh\u00f3m Talent \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng."
+      "title": "Dữ liệu nguồn hằng ngày",
+      "summary": "Gửi dữ liệu nguồn nền tảng cho Nhóm Talent được phân công.",
+      "disabledReason": "Cần phân công Nhóm Talent đang hiệu lực và quyền gửi dữ liệu nguồn.",
+      "readinessMessage": "Chưa thể gửi dữ liệu nguồn cho đến khi Tài chính mở phạm vi Nhóm Talent được phân công."
     },
     "events": {
       "title": "Sự kiện",
@@ -50,14 +50,14 @@
     "groups": {
       "title": "Nhóm được phân công",
       "summary": "Đơn vị và nhóm Talent trong phạm vi được phân công.",
-      "disabledReason": "Chưa mở trong workspace này.",
-      "readinessMessage": "Module này chưa được mở cho Không gian quản lý. Phạm vi hiện tại vẫn được tóm tắt tại Tổng quan."
+      "disabledReason": "Chưa mở trong không gian này.",
+      "readinessMessage": "Khu vực này chưa được mở cho Không gian quản lý. Phạm vi hiện tại vẫn được tóm tắt tại Tổng quan."
     },
     "members": {
       "title": "Thành viên",
       "summary": "Thành viên trong phạm vi được phân công.",
-      "disabledReason": "Chưa mở trong workspace này.",
-      "readinessMessage": "Module này chưa được mở cho Không gian quản lý."
+      "disabledReason": "Chưa mở trong không gian này.",
+      "readinessMessage": "Khu vực này chưa được mở cho Không gian quản lý."
     }
   },
   "values": {
@@ -84,10 +84,10 @@
     "INTERNAL_REFERENCE": "Tham chiếu nội bộ"
   },
   "readiness": {
-    "NO_LINKED_EMPLOYMENT_PROFILE": "Chưa liên kết Hồ sơ nhân sự",
+    "NO_LINKED_EMPLOYMENT_PROFILE": "Chưa liên kết hồ sơ nhân sự",
     "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Hồ sơ nhân sự không ở trạng thái hoạt động phù hợp",
     "NO_MANAGED_SCOPE_ASSIGNED": "Chưa có phạm vi được phân công",
-    "MISSING_KPI_MANAGER_CAPABILITY": "Chưa có quyền KPI quản lý"
+    "MISSING_KPI_MANAGER_CAPABILITY": "Chưa có quyền quản lý KPI"
   },
   "overview": {
     "readinessTitle": "Trạng thái không gian làm việc",
@@ -96,7 +96,7 @@
     "kpiTitle": "Trạng thái KPI",
     "kpiSummary": "KPI quản lý hiển thị theo phân công đang hiệu lực.",
     "unsupportedTitle": "Khu vực chưa mở",
-    "unsupportedSummary": "Các module này hiện chưa được mở cho Không gian quản lý.",
+    "unsupportedSummary": "Các khu vực này hiện chưa được mở cho Không gian quản lý.",
     "profileTitle": "Hồ sơ người quản lý",
     "scopeTitle": "Phạm vi được phân công"
   },
@@ -107,7 +107,7 @@
     "status": "Trạng thái"
   },
   "employmentStatus": {
-    "ACTIVE": "Đang hoạt động",
+    "ACTIVE": "Đang làm",
     "ON_LEAVE": "Đang nghỉ phép",
     "SUSPENDED": "Tạm ngưng",
     "TERMINATED": "Đã nghỉ việc",
@@ -116,7 +116,7 @@
   "orgUnitRole": {
     "DEPARTMENT_OWNER": "Chủ quản phòng ban",
     "UNIT_MANAGER": "Quản lý đơn vị",
-    "UNIT_OPERATOR": "Vận hành đơn vị"
+    "UNIT_OPERATOR": "Điều phối đơn vị"
   },
   "kpi": {
     "title": "KPI được phân công",
@@ -148,7 +148,7 @@
       "unit": "Đơn vị",
       "allocationSummary": "Tóm tắt phân bổ KPI",
       "noAllocations": "Chưa có dòng phân bổ KPI hiển thị cho kế hoạch này.",
-      "readOnlyPosture": "Phân công hiện tại cho phép xem KPI này nhưng không cho phép thao tác cập nhật.",
+      "readOnlyPosture": "Phân công hiện tại cho phép xem KPI này nhưng chưa cho phép cập nhật.",
       "talentGroupReadOnlyTitle": "KPI nhóm Talent chỉ đọc",
       "talentGroupReadOnlyMessage": "Thao tác KPI nhóm Talent chưa được mở trong Không gian quản lý.",
       "units": {
@@ -187,23 +187,35 @@
     "actionNeeded": {
       "title": "Cần xử lý",
       "summary": "Tín hiệu vận hành chỉ để hiển thị từ các đợt yêu cầu và lịch rảnh/bận hiện có.",
-      "bounded": "Số liệu chỉ phản ánh kết quả đã tải cho tháng đã chọn, không phải tổng chính xác toàn hệ thống.",
+      "bounded": "Số liệu chỉ phản ánh dữ liệu đã tải cho tháng đã chọn, không phải tổng chính xác toàn hệ thống.",
       "severity": {
         "INFO": "Thông tin",
         "DUE_SOON": "Sắp đến hạn",
         "BLOCKED": "Cần sửa"
       },
       "cards": {
-        "pendingAvailability": { "label": "Lịch rảnh/bận đang chờ", "cta": "Xem mục" },
-        "rejectedAvailability": { "label": "Lịch rảnh/bận bị từ chối", "cta": "Xem mục" },
-        "pendingRequests": { "label": "Yêu cầu đang chờ", "cta": "Xem mục" },
-        "rejectedRequests": { "label": "Yêu cầu bị từ chối hoặc lỗi", "cta": "Xem mục" }
+        "pendingAvailability": {
+          "label": "Lịch rảnh/bận đang chờ",
+          "cta": "Xem mục"
+        },
+        "rejectedAvailability": {
+          "label": "Lịch rảnh/bận bị từ chối",
+          "cta": "Xem mục"
+        },
+        "pendingRequests": {
+          "label": "Yêu cầu đang chờ",
+          "cta": "Xem mục"
+        },
+        "rejectedRequests": {
+          "label": "Yêu cầu bị từ chối hoặc lỗi",
+          "cta": "Xem mục"
+        }
       }
     }
   },
   "events": {
     "title": "Sự kiện được phân công",
-    "boundaryHelper": "Màn này chỉ cho phép xem. Quản lý chỉ xem được sự kiện trong phạm vi được phân công và không thể xác nhận, hủy, hoàn thành, lưu trữ hoặc đặt tài nguyên từ đây.",
+    "boundaryHelper": "Màn hình này chỉ cho phép xem. Quản lý chỉ xem được sự kiện trong phạm vi được phân công và không thể xác nhận, hủy, hoàn thành, lưu trữ hoặc đặt tài nguyên từ đây.",
     "noScopeTitle": "Sự kiện chỉ đọc",
     "noScopeMessage": "Chưa có phân công quản lý Đơn vị hoặc Nhóm Talent đang hiệu lực để xem sự kiện theo phạm vi.",
     "loadErrorTitle": "Không tải được sự kiện",
@@ -228,48 +240,48 @@
     "bookingWindow": "Khung đặt"
   },
   "revenue": {
-    "title": "D\u1eef li\u1ec7u ngu\u1ed3n h\u1eb1ng ng\u00e0y",
-    "boundaryHelper": "Qu\u1ea3n l\u00fd ch\u1ec9 g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n trong ph\u1ea1m vi \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng. Finance r\u00e0 so\u00e1t v\u00e0 t\u1ea1o B\u1ea3n ghi doanh thu ch\u00ednh th\u1ee9c. Vi\u1ec7c qu\u1ea3n l\u00fd g\u1eedi ngu\u1ed3n kh\u00f4ng ph\u1ea3i ph\u00ea duy\u1ec7t doanh thu v\u00e0 kh\u00f4ng t\u1ea1o hoa h\u1ed3ng, thanh to\u00e1n, b\u1ea3ng l\u01b0\u01a1ng, thu\u1ebf ho\u1eb7c h\u1ea1ch to\u00e1n.",
-    "noScopeTitle": "Ch\u01b0a g\u1eedi \u0111\u01b0\u1ee3c d\u1eef li\u1ec7u ngu\u1ed3n",
-    "noScopeMessage": "Ch\u01b0a c\u00f3 ph\u1ea1m vi Nh\u00f3m Talent \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng cho vi\u1ec7c g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n.",
-    "loadErrorTitle": "Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c ph\u1ea1m vi ngu\u1ed3n",
-    "loadErrorMessage": "Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c ph\u1ea1m vi g\u1eedi d\u1eef li\u1ec7u ngu\u1ed3n \u0111\u01b0\u1ee3c ph\u00e2n c\u00f4ng.",
-    "noEligibleAccountTitle": "Ch\u01b0a c\u00f3 t\u00e0i kho\u1ea3n n\u1ec1n t\u1ea3ng ph\u00f9 h\u1ee3p",
-    "noEligibleAccountMessage": "Nh\u00f3m Talent \u0111\u00e3 ch\u1ecdn ch\u01b0a c\u00f3 t\u00e0i kho\u1ea3n livestream \u0111ang ho\u1ea1t \u0111\u1ed9ng v\u00e0 b\u1eadt ki\u1ebfm ti\u1ec1n.",
-    "createBatchTitle": "T\u1ea1o batch ngu\u1ed3n nh\u00e1p",
-    "ownBatches": "Batch ngu\u1ed3n c\u1ee7a t\u00f4i",
+    "title": "Dữ liệu nguồn hằng ngày",
+    "boundaryHelper": "Quản lý chỉ gửi dữ liệu nguồn trong phạm vi được phân công. Tài chính sẽ rà soát và tạo bút toán doanh thu chính thức. Việc gửi dữ liệu nguồn không phải là phê duyệt doanh thu và không tạo hoa hồng, thanh toán, bảng lương, thuế hoặc hạch toán.",
+    "noScopeTitle": "Chưa gửi được dữ liệu nguồn",
+    "noScopeMessage": "Chưa có phạm vi Nhóm Talent được phân công cho việc gửi dữ liệu nguồn.",
+    "loadErrorTitle": "Không tải được phạm vi nguồn",
+    "loadErrorMessage": "Không tải được phạm vi gửi dữ liệu nguồn được phân công.",
+    "noEligibleAccountTitle": "Chưa có tài khoản nền tảng phù hợp",
+    "noEligibleAccountMessage": "Nhóm Talent đã chọn chưa có tài khoản livestream đang hoạt động và bật kiếm tiền.",
+    "createBatchTitle": "Tạo đợt nguồn nháp",
+    "ownBatches": "Đợt nguồn của tôi",
     "fields": {
-      "talentGroup": "Nh\u00f3m Talent",
-      "platformAccount": "T\u00e0i kho\u1ea3n n\u1ec1n t\u1ea3ng",
-      "periodMonth": "Th\u00e1ng",
-      "sourceDateFrom": "T\u1eeb ng\u00e0y ngu\u1ed3n",
-      "sourceDateTo": "\u0110\u1ebfn ng\u00e0y ngu\u1ed3n",
-      "sourceDate": "Ng\u00e0y ngu\u1ed3n",
-      "member": "Th\u00e0nh vi\u00ean",
-      "rawQuantity": "Kim c\u01b0\u01a1ng h\u1eb1ng ng\u00e0y",
-      "externalSourceRef": "Tham chi\u1ebfu ngu\u1ed3n",
-      "actions": "Thao t\u00e1c"
+      "talentGroup": "Nhóm Talent",
+      "platformAccount": "Tài khoản nền tảng",
+      "periodMonth": "Tháng",
+      "sourceDateFrom": "Từ ngày nguồn",
+      "sourceDateTo": "Đến ngày nguồn",
+      "sourceDate": "Ngày nguồn",
+      "member": "Thành viên",
+      "rawQuantity": "Kim cương hằng ngày",
+      "externalSourceRef": "Tham chiếu nguồn",
+      "actions": "Thao tác"
     },
     "statuses": {
-      "DRAFT": "Nh\u00e1p",
-      "SUBMITTED": "\u0110\u00e3 g\u1eedi",
-      "UNDER_REVIEW": "\u0110ang r\u00e0 so\u00e1t",
-      "APPROVED": "\u0110\u00e3 duy\u1ec7t",
-      "REJECTED": "B\u1ecb t\u1eeb ch\u1ed1i",
-      "VOIDED": "\u0110\u00e3 h\u1ee7y hi\u1ec7u l\u1ef1c",
-      "ARCHIVED": "\u0110\u00e3 l\u01b0u tr\u1eef"
+      "DRAFT": "Nháp",
+      "SUBMITTED": "Đã gửi",
+      "UNDER_REVIEW": "Đang rà soát",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Bị từ chối",
+      "VOIDED": "Đã hủy hiệu lực",
+      "ARCHIVED": "Đã lưu trữ"
     },
     "actions": {
-      "createBatch": "T\u1ea1o batch nh\u00e1p",
-      "addLine": "Th\u00eam d\u00f2ng ngu\u1ed3n",
-      "updateLine": "C\u1eadp nh\u1eadt d\u00f2ng",
-      "editLine": "S\u1eeda d\u00f2ng",
-      "submitBatch": "G\u1eedi cho Finance"
+      "createBatch": "Tạo đợt nháp",
+      "addLine": "Thêm dòng nguồn",
+      "updateLine": "Cập nhật dòng",
+      "editLine": "Sửa dòng",
+      "submitBatch": "Gửi cho Tài chính"
     },
     "feedback": {
-      "batchCreated": "\u0110\u00e3 t\u1ea1o batch ngu\u1ed3n nh\u00e1p.",
-      "lineSaved": "\u0110\u00e3 l\u01b0u d\u00f2ng ngu\u1ed3n.",
-      "batchSubmitted": "\u0110\u00e3 g\u1eedi batch ngu\u1ed3n cho Finance."
+      "batchCreated": "Đã tạo đợt nguồn nháp.",
+      "lineSaved": "Đã lưu dòng nguồn.",
+      "batchSubmitted": "Đã gửi đợt nguồn cho Tài chính."
     }
   },
   "availability": {

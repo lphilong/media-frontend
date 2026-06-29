@@ -7,11 +7,11 @@
     "refreshing": "Refreshing…"
   },
   "meta": {
-    "title": "Snapshot Metadata",
-    "generatedAt": "Generated At (UTC)",
+    "title": "Snapshot metadata",
+    "generatedAt": "Generated at (UTC)",
     "lastUpdated": "Last updated",
     "autoRefreshHelper": "Auto-refreshes every 10 minutes.",
-    "businessDate": "Business Date"
+    "businessDate": "Business date"
   },
   "sectionNav": {
     "label": "Dashboard sections"
@@ -32,12 +32,12 @@
   "groupDescriptions": {
     "needsReview": "Items that may require follow-up.",
     "workInProgress": "Saved records that are not finalized yet.",
-    "finalizedResults": "Completed or active figures in the current reporting window.",
+    "finalizedResults": "Completed records and active figures in the current reporting window.",
     "upcomingDates": "Events and contracts near the current business date."
   },
   "metrics": {
     "todayEventCount": "Events today",
-    "next7DayEventCount": "Events next 7 days",
+    "next7DayEventCount": "Events in next 7 days",
     "draftTalentKpiCount": "Draft KPI records",
     "finalizedTalentKpiCount30d": "Finalized KPI records",
     "draftRevenueEntryCount": "Draft revenue entries",
@@ -60,19 +60,19 @@
     "finalizedRevenueAmount30d": "Revenue finalized in the dashboard reporting window.",
     "reconciledRevenueAmount30d": "Revenue entries marked as reconciled in the reporting window.",
     "draftSettlementCount": "Settlement records saved but not finalized.",
-    "finalizedSettlementAmount30d": "Settlement value finalized in the reporting window.",
+    "finalizedSettlementAmount30d": "Settlement amount finalized in the reporting window.",
     "activeCommissionRuleCount": "Commission rules currently active.",
-    "expiringContractCount30d": "Active contracts with an end date in the dashboard expiry window.",
+    "expiringContractCount30d": "Active contracts ending within the next 30 days.",
     "staleTalentKpiDraftCount": "Drafts that may need review because they have been open for too long.",
     "staleRevenueDraftCount": "Drafts that may need review because they have been open for too long.",
     "staleSettlementDraftCount": "Drafts that may need review because they have been open for too long."
   },
   "states": {
-    "loadErrorTitle": "Unable To Load Dashboard Snapshot",
+    "loadErrorTitle": "Unable to load dashboard snapshot",
     "loadErrorMessage": "Please retry loading the dashboard snapshot.",
     "refreshingInline": "Refreshing…",
     "refreshErrorInline": "Could not refresh dashboard. Showing the last loaded data.",
-    "emptyTitle": "No Snapshot Data",
+    "emptyTitle": "No snapshot data",
     "emptyMessage": "The backend returned no dashboard snapshot payload."
   }
 }

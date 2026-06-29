@@ -1,8 +1,8 @@
 {
   "page": {
-    "title": "Sổ doanh thu",
-    "subtitle": "Quản lý bút toán doanh thu thương mại và vòng đời doanh thu ở phạm vi toàn cục.",
-    "placeholder": "Luồng nghiệp vụ sổ doanh thu đã được triển khai trong Wave 8."
+    "title": "Doanh thu",
+    "subtitle": "Quản lý bút toán doanh thu thương mại và trạng thái doanh thu ở phạm vi toàn cục.",
+    "placeholder": "Tính năng doanh thu đã khả dụng."
   },
   "sort": {
     "recognizedAt": "Thời điểm ghi nhận",
@@ -47,12 +47,12 @@
   },
   "entrySources": {
     "MANUAL": "Thủ công",
-    "PLATFORM_EARNING_BATCH": "Batch doanh thu nền tảng"
+    "PLATFORM_EARNING_BATCH": "Đợt doanh thu nền tảng"
   },
   "platformEarnings": {
-    "title": "Batch doanh thu nền tảng",
-    "reviewBadge": "Finance rà soát nguồn",
-    "boundaryHelper": "Dữ liệu nguồn chưa phải doanh thu chính thức cho đến khi Finance duyệt và tạo Bản ghi doanh thu. Bản ghi doanh thu không tạo hoa hồng, thanh toán, bảng lương, thuế hoặc hạch toán.",
+    "title": "Đợt doanh thu nền tảng",
+    "reviewBadge": "Tài chính rà soát nguồn",
+    "boundaryHelper": "Dữ liệu nguồn chưa phải doanh thu chính thức cho đến khi Tài chính duyệt và tạo bút toán doanh thu. Bút toán doanh thu không tự tạo hoa hồng, thanh toán, bảng lương, thuế hoặc hạch toán kế toán.",
     "filters": {
       "status": "Trạng thái",
       "allStatuses": "Tất cả trạng thái",
@@ -68,29 +68,29 @@
       "ARCHIVED": "Đã lưu trữ"
     },
     "fields": {
-      "batchCode": "Mã batch",
+      "batchCode": "Mã đợt",
       "periodMonth": "Tháng",
       "platform": "Nền tảng",
       "platformAccountId": "Tài khoản nền tảng",
       "talentGroupId": "Nhóm Talent",
       "status": "Trạng thái",
-      "rawQuantityTotal": "Kim cương hằng ngày",
-      "sourceLineCount": "Dòng nguồn nền tảng",
+      "rawQuantityTotal": "Tổng kim cương",
+      "sourceLineCount": "Số dòng dữ liệu nguồn",
       "companyNetAmount": "Phần công ty thực nhận",
       "commissionableBasisAmount": "Cơ sở tính hoa hồng",
-      "revenueEntry": "Bút toán doanh thu vận hành",
+      "revenueEntry": "Bút toán doanh thu",
       "actions": "Thao tác"
     },
     "lines": {
       "sourceDate": "Ngày nguồn",
       "member": "Thành viên",
-      "rawQuantity": "Kim cương hằng ngày",
+      "rawQuantity": "Kim cương",
       "externalSourceRef": "Tham chiếu nguồn"
     },
     "snapshots": {
-      "conversion": "Snapshot quy đổi",
-      "platformCut": "Phần nền tảng giữ lại và phần công ty",
-      "traceability": "Truy vết dữ liệu nguồn"
+      "conversion": "Thông tin quy đổi đã ghi nhận",
+      "platformCut": "Tỷ lệ nền tảng và phần công ty",
+      "traceability": "Thông tin truy vết dữ liệu nguồn"
     },
     "actions": {
       "submit": "Gửi",
@@ -117,21 +117,21 @@
       "voidLabel": "Lý do hủy hiệu lực"
     },
     "revenueEntry": {
-      "subjectTalent": "Talent ghi nhận",
-      "selectSubject": "Chọn Talent thành viên trong batch",
-      "subjectHelper": "Batch có nhiều Talent thành viên. Hãy chọn Talent đứng tên Bản ghi doanh thu."
+      "subjectTalent": "Talent ghi nhận doanh thu",
+      "selectSubject": "Chọn Talent trong đợt này",
+      "subjectHelper": "Đợt này có nhiều Talent thành viên. Hãy chọn Talent đứng tên bút toán doanh thu."
     },
     "validation": {
       "reasonRequired": "Bắt buộc nhập lý do.",
-      "subjectTalentRequired": "Hãy chọn Talent ghi nhận trước khi tạo Bản ghi doanh thu."
+      "subjectTalentRequired": "Hãy chọn Talent ghi nhận doanh thu trước khi tạo bút toán doanh thu."
     },
     "feedback": {
-      "updated": "Đã cập nhật batch doanh thu nền tảng.",
-      "revenueEntryCreated": "Đã tạo bút toán doanh thu từ batch đã duyệt."
+      "updated": "Đã cập nhật đợt doanh thu nền tảng.",
+      "revenueEntryCreated": "Đã tạo bút toán doanh thu từ đợt đã duyệt."
     },
     "states": {
-      "loadErrorTitle": "Không tải được batch doanh thu nền tảng",
-      "loadErrorMessage": "Không tải được batch doanh thu nền tảng."
+      "loadErrorTitle": "Không tải được đợt doanh thu nền tảng",
+      "loadErrorMessage": "Không tải được đợt doanh thu nền tảng."
     }
   },
   "fields": {
@@ -179,7 +179,7 @@
     "create": "Tạo bút toán doanh thu",
     "closeCreate": "Đóng tạo mới",
     "open": "Mở",
-    "editDraftCore": "Chỉnh sửa nội dung nháp",
+    "editDraftCore": "Chỉnh sửa nháp",
     "finalize": "Chốt",
     "reconcile": "Đối soát",
     "void": "Hủy hiệu lực",
@@ -194,9 +194,9 @@
       "pending": "Đang tạo"
     },
     "draftCore": {
-      "title": "Chỉnh sửa nội dung nháp",
+      "title": "Chỉnh sửa nháp",
       "subtitle": "Mã và nguồn bút toán không thể đổi sau khi tạo.",
-      "submit": "Lưu nội dung nháp",
+      "submit": "Lưu nháp",
       "pending": "Đang lưu"
     },
     "reconcile": {
@@ -215,9 +215,9 @@
     "globalOnly": "Chỉ dùng phạm vi toàn cục",
     "revenueTitle": "Doanh thu",
     "attributionTitle": "Ghi nhận",
-    "lifecycleTitle": "Vòng đời",
+    "lifecycleTitle": "Trạng thái",
     "freeTextTitle": "Ghi chú",
-    "boundaryHelper": "Bản ghi doanh thu không tạo hoa hồng, thanh toán, bảng lương, thuế hoặc hạch toán."
+    "boundaryHelper": "Bút toán doanh thu không tự tạo hoa hồng, thanh toán, bảng lương, thuế hoặc hạch toán kế toán."
   },
   "related": {
     "navigationTitle": "Bản ghi thương mại liên quan",
@@ -236,7 +236,7 @@
     "loadErrorMessage": "Không tải được bút toán doanh thu."
   },
   "confirm": {
-    "finalize": "Chốt bút toán doanh thu này? Backend vẫn có thể từ chối nếu còn ràng buộc.",
+    "finalize": "Chốt bút toán doanh thu này? Hệ thống vẫn có thể từ chối nếu còn ràng buộc.",
     "reconcile": "Đối soát bút toán doanh thu này?",
     "void": "Hủy hiệu lực bút toán doanh thu này? Các quyết toán phụ thuộc có thể chặn thao tác.",
     "archive": "Lưu trữ bút toán doanh thu này? Bút toán đã lưu trữ vẫn xem được chi tiết."
@@ -245,14 +245,14 @@
     "created": "Đã tạo bút toán doanh thu.",
     "updated": "Đã cập nhật nội dung nháp của bút toán doanh thu.",
     "reconciled": "Đã đối soát bút toán doanh thu.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời doanh thu."
+    "lifecycleUpdated": "Đã cập nhật trạng thái doanh thu."
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
     "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối.",
     "invalidCurrency": "Dùng đúng 3 chữ cái viết hoa cho mã tiền tệ.",
     "invalidAmount": "Nhập số tiền dương, tối đa 2 chữ số thập phân.",
-    "invalidTimestamp": "Nhập timestamp số nguyên hợp lệ.",
+    "invalidTimestamp": "Nhập thời điểm hợp lệ.",
     "futureTimestamp": "Thời điểm ghi nhận không được nằm trong tương lai.",
     "attributionPlatformRequired": "Doanh thu nền tảng yêu cầu tài khoản nền tảng.",
     "attributionEventRequired": "Doanh thu sự kiện yêu cầu sự kiện."

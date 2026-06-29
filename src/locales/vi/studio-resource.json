@@ -1,8 +1,8 @@
 {
   "page": {
     "title": "Tài nguyên studio",
-    "subtitle": "Quản lý tài nguyên studio toàn cục, trạng thái khả dụng và vòng đời.",
-    "placeholder": "Luồng nghiệp vụ tài nguyên studio chưa được triển khai chủ đích."
+    "subtitle": "Quản lý tài nguyên studio toàn hệ thống, trạng thái khả dụng và trạng thái sử dụng.",
+    "placeholder": "Tính năng tài nguyên studio chưa khả dụng đầy đủ."
   },
   "fields": {
     "resourceCode": "Mã tài nguyên",
@@ -13,13 +13,13 @@
     "maxOccupancy": "Sức chứa tối đa",
     "description": "Mô tả",
     "externalRef": "Tham chiếu bên ngoài",
-    "operationalStatus": "Trạng thái",
+    "operationalStatus": "Trạng thái sử dụng",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã tài nguyên sẽ được tạo tự động"
+    "description": "Mã tài nguyên sẽ được hệ thống tự tạo sau khi lưu."
   },
   "placeholders": {
     "locationLabel": "Tòa nhà / tầng / phòng, ví dụ HQ 3F - Studio A"
@@ -29,16 +29,16 @@
   },
   "states": {
     "emptyTitle": "Không có tài nguyên studio",
-    "emptyMessage": "Không có bản ghi khớp với truy vấn hiện tại.",
+    "emptyMessage": "Không có tài nguyên nào khớp với bộ lọc hiện tại.",
     "loadErrorTitle": "Không tải được dữ liệu tài nguyên studio",
-    "loadErrorMessage": "Thử lại yêu cầu hoặc điều chỉnh bộ lọc hiện tại."
+    "loadErrorMessage": "Thử lại hoặc điều chỉnh bộ lọc hiện tại."
   },
   "filters": {
-    "searchPlaceholder": "Nhập mã tài nguyên",
+    "searchPlaceholder": "Tìm theo mã tài nguyên",
     "operationalStatus": "Trạng thái",
-    "allStatuses": "Tất cả chưa lưu trữ",
+    "allStatuses": "Tất cả trạng thái chưa lưu trữ",
     "resourceClass": "Loại tài nguyên",
-    "resourceClassPlaceholder": "SPACE",
+    "resourceClassPlaceholder": "Chọn loại tài nguyên",
     "allResourceClasses": "Tất cả loại tài nguyên",
     "hasMaxOccupancy": "Sức chứa",
     "allOccupancyStates": "Trạng thái sức chứa",
@@ -52,7 +52,7 @@
   },
   "statuses": {
     "ACTIVE": "Hoạt động",
-    "OUT_OF_SERVICE": "Bảo trì / Không sử dụng",
+    "OUT_OF_SERVICE": "Bảo trì / Ngừng sử dụng",
     "INACTIVE": "Không hoạt động",
     "ARCHIVED": "Đã lưu trữ"
   },
@@ -66,13 +66,13 @@
     "closeCreate": "Đóng tạo mới",
     "open": "Mở",
     "edit": "Chỉnh sửa trường chính",
-    "outOfService": "Đánh dấu ngừng phục vụ",
+    "outOfService": "Đánh dấu bảo trì/ngừng sử dụng",
     "restoreToActive": "Khôi phục hoạt động",
     "deactivate": "Vô hiệu hóa",
     "activate": "Kích hoạt",
     "archive": "Lưu trữ",
     "openAvailability": "Xem trạng thái khả dụng",
-    "exitAvailability": "Xem danh sách đầy đủ"
+    "exitAvailability": "Quay lại danh sách đầy đủ"
   },
   "table": {
     "caption": "Danh sách tài nguyên studio",
@@ -92,46 +92,46 @@
   },
   "detail": {
     "identityTitle": "Định danh và sức chứa",
-    "metadataTitle": "Mô tả và metadata",
-    "archivedReadOnly": "Tài nguyên studio đã lưu trữ chỉ đọc. Vẫn xem được chi tiết khi backend có dữ liệu."
+    "metadataTitle": "Thông tin mô tả",
+    "archivedReadOnly": "Tài nguyên studio đã lưu trữ chỉ có thể xem. Vẫn xem được chi tiết khi hệ thống có dữ liệu."
   },
   "related": {
     "navigationTitle": "Điều hướng liên quan",
     "workShifts": "Ca làm việc theo tài nguyên",
     "events": "Sự kiện theo tài nguyên",
     "openFilteredList": "Mở danh sách đã lọc",
-    "unavailable": "Không có tuyến liên quan an toàn."
+    "unavailable": "Không có liên kết liên quan khả dụng."
   },
   "mutations": {
     "create": {
       "title": "Tạo tài nguyên studio",
-      "subtitle": "Tạo bản ghi tài nguyên studio toàn cục bằng các trường định danh đã tài liệu hóa.",
+      "subtitle": "Tạo bản ghi tài nguyên studio toàn hệ thống với thông tin định danh cơ bản.",
       "submit": "Tạo tài nguyên",
       "pending": "Đang tạo"
     },
     "edit": {
       "title": "Chỉnh sửa tài nguyên studio",
-      "subtitle": "Chỉ cập nhật metadata có thể chỉnh sửa.",
+      "subtitle": "Chỉ cập nhật thông tin có thể chỉnh sửa.",
       "submit": "Lưu thay đổi",
       "pending": "Đang lưu"
     }
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidToken": "Dùng token chữ hoa như SPACE hoặc EQUIPMENT.",
+    "invalidToken": "Chọn loại tài nguyên được hỗ trợ.",
     "invalidPositiveInteger": "Nhập số nguyên dương.",
-    "maxOccupancySpaceOnly": "Sức chứa tối đa chỉ hợp lệ với tài nguyên loại SPACE."
+    "maxOccupancySpaceOnly": "Sức chứa tối đa chỉ áp dụng cho tài nguyên loại Không gian."
   },
   "feedback": {
     "created": "Đã tạo tài nguyên studio.",
     "updated": "Đã cập nhật tài nguyên studio.",
     "availabilityUpdated": "Đã cập nhật trạng thái khả dụng.",
-    "lifecycleUpdated": "Đã cập nhật trạng thái vòng đời."
+    "lifecycleUpdated": "Đã cập nhật trạng thái tài nguyên studio."
   },
   "confirm": {
-    "outOfService": "Đánh dấu tài nguyên đang hoạt động này là ngừng phục vụ? Backend vẫn có thể từ chối do ràng buộc phân bổ.",
+    "outOfService": "Đánh dấu tài nguyên đang hoạt động này là bảo trì/ngừng sử dụng? Hệ thống vẫn có thể từ chối nếu tài nguyên đang được phân bổ.",
     "restoreToActive": "Khôi phục tài nguyên này về trạng thái hoạt động?",
-    "deactivate": "Vô hiệu hóa tài nguyên này? Backend vẫn có thể từ chối do ràng buộc phân bổ.",
+    "deactivate": "Vô hiệu hóa tài nguyên này? Hệ thống vẫn có thể từ chối nếu tài nguyên đang được phân bổ.",
     "activate": "Kích hoạt tài nguyên này?",
     "archive": "Lưu trữ tài nguyên không hoạt động này?"
   },

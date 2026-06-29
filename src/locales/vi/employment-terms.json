@@ -1,11 +1,11 @@
 {
   "page": {
     "title": "Điều khoản làm việc / lương",
-    "subtitle": "Theo dõi điều khoản làm việc, lương và trạng thái nguồn bảng lương của nhân sự.",
+    "subtitle": "Theo dõi điều khoản làm việc, lương và trạng thái làm nguồn bảng lương của nhân sự.",
     "placeholder": "Không gian Điều khoản làm việc / lương"
   },
   "notices": {
-    "readOnlyTitle": "Không gian chỉ đọc",
+    "readOnlyTitle": "Chỉ xem",
     "structuredTerms": "Màn hình này liệt kê điều khoản làm việc có cấu trúc và trạng thái nguồn bảng lương, không phải quản lý tài liệu hợp đồng lao động."
   },
   "sections": {
@@ -17,15 +17,15 @@
     "pendingApproval": "Chờ duyệt",
     "expired": "Đã hết hiệu lực",
     "missingBaseSalary": "Thiếu lương cơ bản",
-    "overlap": "Có overlap",
+    "overlap": "Có chồng lấn",
     "payrollSourceEligible": "Dùng làm nguồn bảng lương",
     "payrollSourceIneligible": "Không dùng làm nguồn bảng lương"
   },
   "filters": {
     "search": "Tìm kiếm",
     "searchPlaceholder": "Tên hồ sơ, mã nhân sự hoặc mã điều khoản",
-    "employmentProfileId": "EmploymentProfile ID",
-    "orgUnitId": "OrgUnit ID",
+    "employmentProfileId": "Hồ sơ nhân sự",
+    "orgUnitId": "Đơn vị tổ chức",
     "employmentStatus": "Trạng thái nhân sự",
     "allEmploymentStatuses": "Tất cả trạng thái nhân sự",
     "status": "Trạng thái điều khoản",
@@ -36,7 +36,7 @@
     "allReadiness": "Tất cả trạng thái sẵn sàng",
     "effectiveOn": "Hiệu lực vào ngày",
     "expiringBefore": "Hết hiệu lực trước",
-    "limit": "Giới hạn"
+    "limit": "Số dòng"
   },
   "table": {
     "profile": "Hồ sơ nhân sự",
@@ -73,7 +73,7 @@
     "PENDING_APPROVAL": "Chờ duyệt",
     "EXPIRED": "Đã hết hiệu lực",
     "MISSING_BASE_SALARY": "Thiếu lương cơ bản",
-    "OVERLAPPING": "Có overlap",
+    "OVERLAPPING": "Có chồng lấn",
     "PAYROLL_SOURCE_ELIGIBLE": "Dùng làm nguồn bảng lương",
     "PAYROLL_SOURCE_INELIGIBLE": "Không dùng làm nguồn bảng lương"
   },
@@ -93,7 +93,7 @@
     "loadErrorTitle": "Không tải được điều khoản làm việc",
     "loadErrorMessage": "Kiểm tra quyền truy cập hoặc thử lại.",
     "refreshingInline": "Đang cập nhật điều khoản làm việc...",
-    "refreshErrorTitle": "Cập nhật thất bại",
+    "refreshErrorTitle": "Không cập nhật được dữ liệu",
     "refreshErrorMessage": "Kết quả hiện tại vẫn được giữ lại.",
     "emptyTitle": "Không có điều khoản phù hợp bộ lọc",
     "emptyMessage": "Không có điều khoản phù hợp bộ lọc hiện tại."

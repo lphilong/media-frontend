@@ -1,23 +1,23 @@
 {
   "page": {
     "title": "Tài khoản nền tảng",
-    "subtitle": "Quản trị định danh nền tảng, quyền sở hữu, khả năng và trạng thái vòng đời ở phạm vi toàn cục.",
-    "placeholder": "Luồng nghiệp vụ tài khoản nền tảng chưa được triển khai."
+    "subtitle": "Quản lý tài khoản/kênh nền tảng, chủ sở hữu, tính năng được bật và trạng thái vận hành.",
+    "placeholder": "Tính năng tài khoản nền tảng chưa khả dụng."
   },
   "fields": {
     "accountCode": "Mã tài khoản",
     "platform": "Nền tảng",
-    "platformSurfaceType": "Loại nền tảng",
+    "platformSurfaceType": "Loại tài khoản/kênh",
     "displayName": "Tên hiển thị",
     "ownerKind": "Loại chủ sở hữu",
     "ownerId": "Chủ sở hữu",
-    "operationalStatus": "Trạng thái",
-    "handle": "Tên công khai",
-    "externalPlatformId": "ID nền tảng bên ngoài",
-    "profileUrl": "URL hồ sơ",
-    "livestreamEnabled": "Livestream",
-    "contentPublishingEnabled": "Xuất bản nội dung",
-    "monetizationEnabled": "Kiếm tiền",
+    "operationalStatus": "Trạng thái vận hành",
+    "handle": "Tên tài khoản công khai",
+    "externalPlatformId": "ID trên nền tảng",
+    "profileUrl": "Đường dẫn hồ sơ",
+    "livestreamEnabled": "Bật livestream",
+    "contentPublishingEnabled": "Bật đăng nội dung",
+    "monetizationEnabled": "Bật kiếm tiền",
     "description": "Mô tả",
     "externalRef": "Tham chiếu bên ngoài",
     "createdAt": "Thời điểm tạo",
@@ -31,11 +31,11 @@
     "optional": "Không bắt buộc",
     "ownerSearch": "Tìm chủ sở hữu theo loại đã chọn",
     "selectPlatform": "Chọn nền tảng",
-    "selectSurfaceType": "Chọn loại bề mặt",
-    "handle": "my_channel"
+    "selectSurfaceType": "Chọn loại tài khoản/kênh",
+    "handle": "Ví dụ: my_channel"
   },
   "help": {
-    "handle": "Tên người dùng công khai trên nền tảng, thường không có @. Ví dụ: my_channel."
+    "handle": "Tên tài khoản công khai trên nền tảng, thường không có @. Ví dụ: my_channel."
   },
   "referenceHelp": {
     "ownerId": "Chọn chủ sở hữu trong danh sách theo loại chủ sở hữu đã chọn."
@@ -47,21 +47,21 @@
     "loadErrorMessage": "Thử lại yêu cầu hoặc điều chỉnh bộ lọc hiện tại."
   },
   "filters": {
-    "searchPlaceholder": "Nhập mã tài khoản, tên hiển thị, handle hoặc URL hồ sơ",
+    "searchPlaceholder": "Nhập mã tài khoản, tên hiển thị, tên công khai hoặc URL hồ sơ",
     "operationalStatus": "Trạng thái",
     "allStatuses": "Tất cả chưa lưu trữ",
     "platform": "Nền tảng",
     "platformPlaceholder": "youtube",
     "allPlatforms": "Tất cả nền tảng",
-    "platformSurfaceType": "Loại nền tảng",
-    "platformSurfaceTypePlaceholder": "Livestream",
-    "allSurfaceTypes": "Tất cả loại bề mặt",
+    "platformSurfaceType": "Loại tài khoản/kênh",
+    "platformSurfaceTypePlaceholder": "Ví dụ: Livestream",
+    "allSurfaceTypes": "Tất cả loại tài khoản/kênh",
     "ownerKind": "Loại chủ sở hữu",
     "allOwnerKinds": "Tất cả loại chủ sở hữu",
     "ownerId": "Chủ sở hữu",
     "ownerIdPlaceholder": "Chọn chủ sở hữu",
     "livestreamEnabled": "Livestream",
-    "contentPublishingEnabled": "Xuất bản nội dung",
+    "contentPublishingEnabled": "Đăng nội dung",
     "monetizationEnabled": "Kiếm tiền",
     "allCapabilityStates": "Tất cả trạng thái"
   },
@@ -101,7 +101,7 @@
     "open": "Mở",
     "edit": "Chỉnh sửa trường chính",
     "transferOwnership": "Chuyển quyền sở hữu",
-    "updateCapabilities": "Cập nhật khả năng",
+    "updateCapabilities": "Cập nhật tính năng",
     "activate": "Kích hoạt",
     "deactivate": "Vô hiệu hóa",
     "archive": "Lưu trữ"
@@ -110,22 +110,22 @@
     "caption": "Danh sách tài khoản nền tảng",
     "accountCode": "Mã tài khoản",
     "platform": "Nền tảng",
-    "platformSurfaceType": "Loại nền tảng",
+    "platformSurfaceType": "Loại tài khoản/kênh",
     "displayName": "Tên hiển thị",
     "handle": "Tên công khai",
     "ownerKind": "Loại chủ sở hữu",
     "ownerId": "Chủ sở hữu",
     "operationalStatus": "Trạng thái",
     "livestreamEnabled": "Livestream",
-    "contentPublishingEnabled": "Xuất bản nội dung",
+    "contentPublishingEnabled": "Đăng nội dung",
     "monetizationEnabled": "Kiếm tiền",
     "createdAt": "Thời điểm tạo",
     "actions": "Hành động"
   },
   "detail": {
     "identityTitle": "Định danh và chủ sở hữu",
-    "locatorsTitle": "Thông tin định vị, khả năng và metadata",
-    "archivedReadOnly": "Tài khoản nền tảng đã lưu trữ chỉ đọc. Vẫn xem được chi tiết khi backend có dữ liệu.",
+    "locatorsTitle": "Thông tin nhận diện và tính năng",
+    "archivedReadOnly": "Tài khoản nền tảng đã lưu trữ chỉ đọc. Vẫn xem được chi tiết khi hệ thống có dữ liệu.",
     "boundaryHelper": "Tài khoản nền tảng không phải tài khoản đăng nhập hoặc nguồn thanh toán."
   },
   "related": {
@@ -134,12 +134,12 @@
     "talentKpi": "KPI theo tài khoản nền tảng",
     "revenueLedger": "Doanh thu theo tài khoản nền tảng",
     "openFilteredList": "Mở danh sách đã lọc",
-    "unavailable": "Không có tuyến liên quan an toàn."
+    "unavailable": "Chưa có liên kết liên quan khả dụng."
   },
   "mutations": {
     "create": {
       "title": "Tạo tài khoản nền tảng",
-      "subtitle": "Tạo bản ghi tài khoản toàn cục bằng các trường định danh và chủ sở hữu đã được hỗ trợ.",
+      "subtitle": "Tạo hồ sơ tài khoản nền tảng bằng các thông tin nhận diện và chủ sở hữu được hỗ trợ.",
       "submit": "Tạo tài khoản",
       "pending": "Đang tạo"
     },
@@ -151,14 +151,14 @@
     },
     "transferOwnership": {
       "title": "Chuyển quyền sở hữu",
-      "subtitle": "Thay đổi chủ sở hữu thông qua tuyến chuyển quyền riêng.",
+      "subtitle": "Thay đổi chủ sở hữu bằng thao tác chuyển quyền riêng.",
       "submit": "Chuyển chủ sở hữu",
       "pending": "Đang chuyển"
     },
     "capabilities": {
-      "title": "Cập nhật khả năng",
-      "subtitle": "Chỉ gửi đúng ba cờ khả năng của tài khoản nền tảng.",
-      "submit": "Cập nhật khả năng",
+      "title": "Cập nhật tính năng",
+      "subtitle": "Chỉ cập nhật ba tính năng của tài khoản nền tảng.",
+      "submit": "Cập nhật tính năng",
       "pending": "Đang cập nhật"
     }
   },
@@ -166,19 +166,19 @@
     "required": "Trường này là bắt buộc.",
     "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối theo yêu cầu của trường này.",
     "invalidReferenceToken": "Nhập ID tham chiếu hợp lệ.",
-    "locatorRequired": "Cần có ít nhất một thông tin định vị."
+    "locatorRequired": "Cần có ít nhất một thông tin nhận diện trên nền tảng."
   },
   "feedback": {
     "created": "Đã tạo tài khoản nền tảng.",
     "updated": "Đã cập nhật tài khoản nền tảng.",
     "ownershipTransferred": "Đã chuyển quyền sở hữu.",
-    "capabilitiesUpdated": "Đã cập nhật khả năng.",
-    "lifecycleUpdated": "Đã cập nhật trạng thái vòng đời."
+    "capabilitiesUpdated": "Đã cập nhật tính năng.",
+    "lifecycleUpdated": "Đã cập nhật trạng thái tài khoản nền tảng."
   },
   "confirm": {
     "activate": "Kích hoạt tài khoản nền tảng này?",
-    "deactivate": "Vô hiệu hóa tài khoản nền tảng này? Backend vẫn có thể từ chối nếu còn ràng buộc.",
-    "archive": "Lưu trữ tài khoản nền tảng không hoạt động này? Backend sẽ tắt toàn bộ cờ khả năng khi lưu trữ."
+    "deactivate": "Vô hiệu hóa tài khoản nền tảng này? Hệ thống vẫn có thể từ chối nếu còn ràng buộc.",
+    "archive": "Lưu trữ tài khoản nền tảng không hoạt động này? Khi lưu trữ, hệ thống sẽ tắt toàn bộ tính năng đang bật."
   },
   "actionRail": {
     "title": "Hành động tài khoản nền tảng"

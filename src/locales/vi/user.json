@@ -1,22 +1,22 @@
 {
   "page": {
     "title": "Người dùng",
-    "subtitle": "Quản trị định danh người dùng và metadata liên kết Auth0.",
-    "placeholder": "Luồng định danh và truy cập người dùng chưa khả dụng."
+    "subtitle": "Quản lý định danh người dùng và thông tin liên kết Auth0.",
+    "placeholder": "Tính năng quản lý người dùng và quyền truy cập hiện chưa khả dụng."
   },
   "fields": {
     "id": "ID người dùng",
-    "authSubject": "Chủ thể Auth0",
-    "authProvider": "Nhà cung cấp",
-    "authLinkageStatus": "Trạng thái liên kết xác thực",
-    "actorKind": "Loại tác nhân",
-    "accountStatus": "Trạng thái",
+    "authSubject": "Mã định danh Auth0",
+    "authProvider": "Nhà cung cấp xác thực",
+    "authLinkageStatus": "Trạng thái liên kết Auth0",
+    "actorKind": "Loại tài khoản",
+    "accountStatus": "Trạng thái tài khoản",
     "displayName": "Tên hiển thị",
     "email": "Email",
     "phone": "Điện thoại",
     "locale": "Ngôn ngữ",
     "timezone": "Múi giờ",
-    "contexts": "Ngữ cảnh",
+    "contexts": "Ngữ cảnh truy cập",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật",
     "activatedAt": "Thời điểm kích hoạt",
@@ -27,17 +27,17 @@
   "sections": {
     "profile": "Hồ sơ",
     "preferences": "Tùy chọn",
-    "authLinkage": "Liên kết xác thực nâng cao"
+    "authLinkage": "Liên kết Auth0"
   },
   "help": {
     "displayName": "Tên người dùng dễ đọc hiển thị trên màn hình quản trị.",
     "timezone": "Mặc định dùng múi giờ nghiệp vụ Việt Nam cho người dùng mới.",
-    "authSubjectRequired": "Liên kết người dùng này với danh tính Auth0 bên ngoài. Hợp đồng backend hiện tại yêu cầu trường này và giá trị phải khớp chính xác subject bên ngoài.",
-    "authSubjectExact": "Phải khớp chính xác subject của danh tính Auth0 bên ngoài.",
-    "provisionEmail": "Backend sẽ tạo tài khoản Auth0 và luồng mời cho email này.",
-    "employmentProfileLater": "Luồng chọn Hồ sơ nhân sự sẽ xử lý sau; form này chỉ cấp phát tài khoản người dùng nội bộ.",
+    "authSubjectRequired": "Liên kết tài khoản này với định danh Auth0. Hệ thống hiện yêu cầu thông tin này và giá trị phải khớp chính xác với mã định danh Auth0.",
+    "authSubjectExact": "Phải khớp chính xác với mã định danh Auth0.",
+    "provisionEmail": "Hệ thống sẽ tạo tài khoản Auth0 và gửi luồng mời/thiết lập mật khẩu cho email này.",
+    "employmentProfileLater": "Luồng chọn Hồ sơ nhân sự sẽ xử lý sau. Form này chỉ dùng để cấp phát tài khoản người dùng nội bộ.",
     "actorKind": "Tài khoản quản trị nội bộ dành cho HR, quản lý, vận hành, tài chính và kiểm toán; vẫn cần vai trò/phạm vi. Tài khoản nhân viên tự phục vụ dành cho hồ sơ, lịch và KPI của chính họ.",
-    "actorKindConversion": "Loại tài khoản là ngữ cảnh bảo mật. Chuyển đổi cần quyền toàn quyền và lý do.",
+    "actorKindConversion": "Loại tài khoản là thông tin bảo mật. Chỉ tài khoản có quyền phù hợp mới được chuyển đổi và phải nhập lý do.",
     "actorKindReason": "Bắt buộc để phục vụ kiểm toán."
   },
   "placeholders": {
@@ -63,9 +63,9 @@
     "caption": "Danh sách người dùng",
     "displayName": "Tên hiển thị",
     "email": "Email",
-    "actorKind": "Loại tác nhân",
-    "accountStatus": "Trạng thái",
-    "authLinkage": "Liên kết xác thực",
+    "actorKind": "Loại tài khoản",
+    "accountStatus": "Trạng thái tài khoản",
+    "authLinkage": "Liên kết Auth0",
     "updatedAt": "Thời điểm cập nhật",
     "actions": "Hành động"
   },
@@ -73,8 +73,8 @@
     "searchPlaceholder": "Tìm theo tên hiển thị hoặc email",
     "state": "Trạng thái",
     "allStates": "Tất cả trạng thái",
-    "actorKind": "Loại tác nhân",
-    "allActorKinds": "Tất cả loại tác nhân"
+    "actorKind": "Loại tài khoản",
+    "allActorKinds": "Tất cả loại tài khoản"
   },
   "actions": {
     "open": "Mở",
@@ -97,11 +97,11 @@
   },
   "detail": {
     "identityTitle": "Danh tính",
-    "authLinkageTitle": "Metadata liên kết Auth0",
+    "authLinkageTitle": "Thông tin liên kết Auth0",
     "accountTypeTitle": "Loại tài khoản",
-    "lifecycleTitle": "Vòng đời",
-    "archivedReadOnly": "Người dùng đã lưu trữ chỉ đọc.",
-    "boundaryNotice": "Màn hình Người dùng chỉ quản lý hồ sơ định danh, tùy chọn, vòng đời và metadata Auth0. Gán vai trò thuộc chi tiết Vai trò, còn liên kết hồ sơ nhân sự thuộc Hồ sơ nhân sự."
+    "lifecycleTitle": "Thông tin trạng thái",
+    "archivedReadOnly": "Người dùng đã lưu trữ chỉ có thể xem.",
+    "boundaryNotice": "Màn hình Người dùng chỉ quản lý định danh, tùy chọn, trạng thái tài khoản và thông tin liên kết Auth0. Việc gán vai trò nằm ở màn hình Vai trò; liên kết hồ sơ nhân sự nằm ở Hồ sơ nhân sự."
   },
   "mutations": {
     "create": {
@@ -112,7 +112,7 @@
     },
     "provision": {
       "title": "Cấp phát tài khoản",
-      "subtitle": "Tạo người dùng nội bộ và yêu cầu backend tạo hoặc liên kết Auth0 bằng luồng mời/thiết lập mật khẩu.",
+      "subtitle": "Tạo người dùng nội bộ và yêu cầu hệ thống tạo hoặc liên kết Auth0 bằng luồng mời/thiết lập mật khẩu.",
       "submit": "Cấp phát tài khoản",
       "pending": "Đang cấp phát tài khoản"
     },
@@ -123,8 +123,8 @@
       "pending": "Đang cập nhật người dùng"
     },
     "authLinkage": {
-      "title": "Thiết lập metadata liên kết Auth0",
-      "subtitle": "Chỉ cập nhật metadata của nhà cung cấp.",
+      "title": "Thiết lập thông tin liên kết Auth0",
+      "subtitle": "Chỉ cập nhật thông tin liên kết với nhà cung cấp xác thực.",
       "submit": "Thiết lập liên kết",
       "pending": "Đang thiết lập liên kết"
     },
@@ -139,37 +139,37 @@
     "required": "Trường này là bắt buộc.",
     "maxText": "Văn bản quá dài.",
     "noChangedFields": "Thay đổi ít nhất một trường được hỗ trợ.",
-    "passwordSetupRequiresLinked": "Password setup requires a linked Auth0 identity."
+    "passwordSetupRequiresLinked": "Cần liên kết Auth0 trước khi gửi thiết lập mật khẩu."
   },
   "confirm": {
-    "activate": "Kích hoạt người dùng này nếu backend cho phép?",
-    "disable": "Vô hiệu hóa người dùng này? Backend vẫn có thể từ chối do tác nhân hiện tại hoặc ràng buộc khôi phục quản trị.",
+    "activate": "Kích hoạt người dùng này?",
+    "disable": "Vô hiệu hóa người dùng này? Hệ thống có thể từ chối nếu tài khoản hiện tại không đủ quyền hoặc cần giữ lại tài khoản quản trị.",
     "archive": "Lưu trữ người dùng này? Không thể lưu trữ người dùng đang hoạt động.",
-    "unlinkAuth0": "Hủy liên kết Auth0 của người dùng này? Tài khoản có thể ở trạng thái đang chờ hoặc chưa liên kết cho đến khi backend cho phép kích hoạt."
+    "unlinkAuth0": "Hủy liên kết Auth0 của người dùng này? Tài khoản có thể ở trạng thái đang chờ hoặc chưa liên kết cho đến khi được kích hoạt lại."
   },
   "feedback": {
-    "passwordSetupEmailSent": "\u0110\u00e3 g\u1eedi email thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u.",
-    "passwordSetupTicketCreated": "\u0110\u00e3 t\u1ea1o ticket thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u. Lu\u1ed3ng frontend n\u00e0y ch\u01b0a g\u1eedi email.",
-    "passwordSetupCompleted": "\u0110\u00e3 ho\u00e0n t\u1ea5t y\u00eau c\u1ea7u thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u.",
+    "passwordSetupEmailSent": "Đã gửi email thiết lập mật khẩu.",
+    "passwordSetupTicketCreated": "Đã tạo liên kết thiết lập mật khẩu. Màn hình này chưa gửi email.",
+    "passwordSetupCompleted": "Đã hoàn tất yêu cầu thiết lập mật khẩu.",
     "created": "Đã tạo người dùng.",
     "provisioned": "Đã cấp phát tài khoản.",
     "updated": "Đã cập nhật người dùng.",
-    "authLinkageUpdated": "Đã cập nhật metadata liên kết Auth0.",
+    "authLinkageUpdated": "Đã cập nhật thông tin liên kết Auth0.",
     "authLinkageUnlinked": "Đã hủy liên kết Auth0.",
     "passwordSetupSent": "Đã gửi thiết lập mật khẩu.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời người dùng.",
+    "lifecycleUpdated": "Đã cập nhật trạng thái người dùng.",
     "actorKindUpdated": "Đã chuyển loại tài khoản."
   },
   "provisionResult": {
-    "passwordSetupEmailSent": "\u0110\u00e3 g\u1eedi email thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u.",
-    "passwordSetupTicketCreated": "\u0110\u00e3 t\u1ea1o ticket thi\u1ebft l\u1eadp m\u1eadt kh\u1ea9u. Vi\u1ec7c g\u1eedi email \u0111ang ch\u1edd backend x\u1eed l\u00fd.",
+    "passwordSetupEmailSent": "Đã gửi email thiết lập mật khẩu.",
+    "passwordSetupTicketCreated": "Đã tạo liên kết thiết lập mật khẩu. Việc gửi email đang chờ hệ thống xử lý.",
     "title": "Kết quả cấp phát",
     "userCreated": "Đã tạo người dùng.",
     "auth0Linked": "Đã liên kết Auth0.",
     "auth0ExistingLinked": "Đã liên kết người dùng Auth0 sẵn có.",
     "passwordSetupSent": "Đã gửi thiết lập mật khẩu.",
     "passwordSetupNotCreated": "Chưa tạo thiết lập mật khẩu.",
-    "noTicketUrl": "Không hiển thị URL ticket.",
+    "noTicketUrl": "Không có URL thiết lập mật khẩu để hiển thị.",
     "pendingUntilActivated": "Tài khoản sẽ ở trạng thái đang chờ cho đến khi được kích hoạt."
   },
   "states": {

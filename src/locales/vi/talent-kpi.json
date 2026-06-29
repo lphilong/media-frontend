@@ -2,7 +2,7 @@
   "page": {
     "title": "KPI Talent",
     "subtitle": "Quản lý bản ghi KPI của Talent.",
-    "placeholder": "Luồng nghiệp vụ KPI Talent đã được triển khai trong Wave 8."
+    "placeholder": "Tính năng KPI Talent hiện đã khả dụng."
   },
   "sort": {
     "periodStartAt": "Bắt đầu kỳ",
@@ -10,9 +10,9 @@
     "createdAt": "Thời điểm tạo"
   },
   "filters": {
-    "searchPlaceholder": "Nhập mã KPI",
+    "searchPlaceholder": "Tìm theo mã KPI",
     "status": "Trạng thái",
-    "allStatuses": "Tất cả chưa lưu trữ",
+    "allStatuses": "Tất cả trạng thái chưa lưu trữ",
     "subjectTalentId": "Talent",
     "subjectTalentIdPlaceholder": "Chọn Talent",
     "attributionPlatformAccountId": "Tài khoản nền tảng",
@@ -20,16 +20,16 @@
     "attributionEventId": "Sự kiện",
     "attributionEventIdPlaceholder": "Chọn sự kiện",
     "measurementSource": "Nguồn đo lường",
-    "allMeasurementSources": "Bất kỳ nguồn nào",
+    "allMeasurementSources": "Tất cả nguồn đo lường",
     "containsMetricCode": "Mã chỉ số",
-    "allMetricCodes": "Bất kỳ chỉ số nào",
-    "windowStartAt": "Thời gian bắt đầu",
-    "windowEndAt": "Thời gian kết thúc"
+    "allMetricCodes": "Tất cả chỉ số",
+    "windowStartAt": "Từ thời điểm",
+    "windowEndAt": "Đến thời điểm"
   },
   "relatedModes": {
-    "by-talent": "Bản ghi KPI liên quan theo Talent",
-    "by-platform": "Bản ghi KPI liên quan theo tài khoản nền tảng",
-    "by-event": "Bản ghi KPI liên quan theo sự kiện"
+    "by-talent": "Bản ghi KPI theo Talent",
+    "by-platform": "Bản ghi KPI theo tài khoản nền tảng",
+    "by-event": "Bản ghi KPI theo sự kiện"
   },
   "statuses": {
     "DRAFT": "Nháp",
@@ -52,8 +52,8 @@
     "kpiRecordCode": "Mã bản ghi KPI",
     "title": "Tiêu đề",
     "subjectTalentId": "Talent",
-    "attributionPlatformAccountId": "Tài khoản nền tảng ghi nhận",
-    "attributionEventId": "Sự kiện ghi nhận",
+    "attributionPlatformAccountId": "Tài khoản nền tảng liên quan",
+    "attributionEventId": "Sự kiện liên quan",
     "measurementSource": "Nguồn đo lường",
     "periodStartAt": "Bắt đầu kỳ",
     "periodEndAt": "Kết thúc kỳ",
@@ -63,13 +63,13 @@
     "description": "Mô tả",
     "externalRef": "Tham chiếu bên ngoài",
     "status": "Trạng thái",
-    "scopeBoundary": "Ranh giới phạm vi",
+    "scopeBoundary": "Phạm vi dữ liệu",
     "createdAt": "Thời điểm tạo",
     "updatedAt": "Thời điểm cập nhật"
   },
   "generatedCode": {
     "label": "Mã hệ thống",
-    "description": "Mã bản ghi KPI sẽ được tạo tự động"
+    "description": "Mã bản ghi KPI sẽ được hệ thống tự tạo sau khi lưu."
   },
   "table": {
     "caption": "Danh sách bản ghi KPI Talent",
@@ -89,8 +89,8 @@
     "create": "Tạo bản ghi KPI",
     "closeCreate": "Đóng tạo mới",
     "open": "Mở",
-    "editDraftCore": "Chỉnh sửa nội dung nháp",
-    "replaceMetrics": "Thay thế chỉ số",
+    "editDraftCore": "Sửa bản nháp",
+    "replaceMetrics": "Cập nhật bộ chỉ số",
     "addMetric": "Thêm chỉ số",
     "removeMetric": "Xóa khỏi danh sách",
     "clearReference": "Xóa lựa chọn",
@@ -100,38 +100,38 @@
   "mutations": {
     "create": {
       "title": "Tạo bản ghi KPI",
-      "subtitle": "Tạo bản ghi KPI thủ công ở phạm vi toàn cục với toàn bộ bộ chỉ số ban đầu.",
+      "subtitle": "Tạo bản ghi KPI thủ công với bộ chỉ số ban đầu.",
       "submit": "Tạo",
       "pending": "Đang tạo"
     },
     "draftCore": {
-      "title": "Chỉnh sửa nội dung nháp",
-      "subtitle": "Chỉ bản ghi KPI ở trạng thái nháp mới được sửa các trường chính.",
-      "submit": "Lưu nội dung nháp",
+      "title": "Sửa bản nháp",
+      "subtitle": "Chỉ bản ghi KPI ở trạng thái nháp mới được sửa thông tin chính.",
+      "submit": "Lưu bản nháp",
       "pending": "Đang lưu"
     },
     "metrics": {
-      "title": "Thay thế chỉ số",
-      "subtitle": "Gửi toàn bộ bộ chỉ số chuẩn hóa; không hỗ trợ cập nhật từng dòng.",
+      "title": "Cập nhật bộ chỉ số",
+      "subtitle": "Gửi toàn bộ bộ chỉ số. Hệ thống chưa hỗ trợ cập nhật từng dòng riêng lẻ.",
       "rowsTitle": "Bộ chỉ số",
-      "submit": "Thay thế chỉ số",
-      "pending": "Đang thay thế"
+      "submit": "Cập nhật bộ chỉ số",
+      "pending": "Đang cập nhật"
     }
   },
   "placeholders": {
     "searchReference": "Tìm theo tên hoặc mã"
   },
   "detail": {
-    "archivedReadOnly": "Bản ghi KPI đã lưu trữ chỉ đọc.",
+    "archivedReadOnly": "Bản ghi KPI đã lưu trữ chỉ có thể xem.",
     "identityTitle": "Định danh bản ghi",
-    "globalOnly": "Chỉ dùng phạm vi toàn cục",
+    "globalOnly": "Áp dụng toàn hệ thống",
     "measurementTitle": "Khung thời gian đo lường",
     "attributionTitle": "Ghi nhận",
     "metricsTitle": "Chỉ số",
     "freeTextTitle": "Ghi chú"
   },
   "related": {
-    "navigationTitle": "Bản ghi thương mại liên quan",
+    "navigationTitle": "Dữ liệu liên quan",
     "revenueByTalent": "Doanh thu theo cùng Talent",
     "revenueByPlatform": "Doanh thu theo cùng nền tảng",
     "revenueByEvent": "Doanh thu theo cùng sự kiện"
@@ -146,22 +146,22 @@
     "loadErrorMessage": "Không tải được bản ghi KPI.",
     "metricsLoadErrorTitle": "Không tải được chỉ số",
     "metricsLoadErrorMessage": "Không tải được danh sách chỉ số.",
-    "noMetrics": "Không có chỉ số nào được trả về cho bản ghi này."
+    "noMetrics": "Không có chỉ số nào cho bản ghi này."
   },
   "confirm": {
-    "finalize": "Chốt bản ghi KPI này? Backend vẫn có thể từ chối nếu còn ràng buộc.",
-    "archive": "Lưu trữ bản ghi KPI này? Bản ghi đã lưu trữ vẫn xem được chi tiết."
+    "finalize": "Chốt bản ghi KPI này? Hệ thống có thể từ chối nếu chưa đủ điều kiện.",
+    "archive": "Lưu trữ bản ghi KPI này? Bản ghi đã lưu trữ vẫn có thể xem chi tiết."
   },
   "feedback": {
     "created": "Đã tạo bản ghi KPI.",
-    "updated": "Đã cập nhật nội dung nháp của KPI.",
-    "metricsUpdated": "Đã thay thế bộ chỉ số KPI.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời KPI."
+    "updated": "Đã cập nhật bản nháp KPI.",
+    "metricsUpdated": "Đã cập nhật bộ chỉ số KPI.",
+    "lifecycleUpdated": "Đã cập nhật trạng thái KPI."
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
     "invalidToken": "Chỉ dùng chữ cái, chữ số, dấu gạch dưới hoặc dấu gạch nối.",
-    "invalidTimestamp": "Nhập timestamp số nguyên hợp lệ.",
+    "invalidTimestamp": "Nhập mốc thời gian hợp lệ.",
     "periodWindow": "Kỳ đo lường phải kết thúc sau thời điểm bắt đầu.",
     "metricValue": "Giá trị chỉ số không khớp với quy tắc của chỉ số.",
     "duplicateMetricCode": "Các mã chỉ số không được trùng nhau."

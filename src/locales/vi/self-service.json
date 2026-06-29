@@ -3,14 +3,14 @@
     "eyebrow": "Không gian nhân sự",
     "title": "Không gian nhân sự",
     "subtitle": "Hồ sơ, lịch làm việc, KPI, nhóm Talent và tùy chọn tài khoản đăng nhập của bạn.",
-    "readOnly": "Nền tảng chỉ đọc"
+    "readOnly": "Chỉ xem dữ liệu"
   },
   "navigation": {
     "label": "Các mục tự phục vụ"
   },
   "overview": {
     "title": "Tổng quan",
-    "summary": "Trạng thái hồ sơ và tóm tắt dữ liệu của bạn.",
+    "summary": "Trạng thái hồ sơ và tóm tắt dữ liệu cá nhân của bạn.",
     "profileReadiness": "Trạng thái hồ sơ",
     "accountLink": "Liên kết tài khoản đăng nhập",
     "todayWork": "Tóm tắt hôm nay",
@@ -33,7 +33,7 @@
     },
     "kpi": {
       "title": "KPI của bạn",
-      "summary": "Kế hoạch KPI, phân bổ KPI, số thực đạt và tiến độ ở chế độ chỉ đọc.",
+      "summary": "Kế hoạch KPI, phân bổ KPI, số thực đạt và tiến độ của bạn ở chế độ chỉ đọc.",
       "boundary": "Số thực đạt không tự quyết định hoa hồng hoặc bảng lương."
     },
     "events": {
@@ -104,7 +104,7 @@
   },
   "kpiStatusSummary": {
     "title": "Tóm tắt trạng thái Số thực đạt",
-    "readOnlySource": "Trạng thái dựa trên Số thực đạt hằng ngày do quản lý nhập. Chỉ đọc.",
+    "readOnlySource": "Trạng thái dựa trên số thực đạt hằng ngày do quản lý nhập. Chỉ đọc.",
     "expected": "Cần nhập",
     "entered": "Đã nhập",
     "enteredZero": "Đã nhập 0",
@@ -115,7 +115,7 @@
     "notDue": "Chưa đến hạn"
   },
   "kpiHistory": {
-    "selectedPeriodCopy": "Đang hiển thị {{count}} bản ghi KPI trước cho {{periodMonth}}."
+    "selectedPeriodCopy": "Đang hiển thị {{count}} bản ghi KPI trước của {{periodMonth}}."
   },
   "talentGroupFields": {
     "managers": "Quản lý",
@@ -149,7 +149,7 @@
     "selectedModule": "Đang xem",
     "comingSoon": "Sắp có",
     "readOnly": "Chỉ đọc",
-    "preferencesOnly": "Chỉ tùy chỉnh",
+    "preferencesOnly": "Chỉ chỉnh tùy chọn",
     "ownDataOnly": "Dữ liệu của bạn",
     "scopeLabel": "Dữ liệu của bạn"
   },
@@ -250,7 +250,7 @@
   },
   "workShiftSourceType": {
     "MANUAL": "Thủ công",
-    "ROSTER_GENERATED": "Tạo từ Lịch tháng"
+    "ROSTER_GENERATED": "Tạo từ bảng lịch tháng"
   },
   "talentGroupStatus": {
     "ACTIVE": "Đang hoạt động"
@@ -263,9 +263,9 @@
     "kpiTitle": "Chưa thể tải KPI",
     "kpiMessage": "Không thể tải KPI hiện hành của bạn.",
     "currentPersonNotLinkedTitle": "Chưa liên kết Hồ sơ nhân sự",
-    "currentPersonNotLinkedMessage": "Tài khoản đăng nhập đã được xác thực nhưng chưa có hồ sơ nhân sự liên kết cho tự phục vụ.",
+    "currentPersonNotLinkedMessage": "Tài khoản đăng nhập đã được xác thực nhưng chưa liên kết với hồ sơ nhân sự để dùng tính năng tự phục vụ.",
     "profileNotOperationalTitle": "Không gian nhân sự chưa khả dụng",
-    "profileNotOperationalMessage": "Hồ sơ nhân sự của bạn hiện không ở trạng thái hoạt động phù hợp. Liên hệ HR/Admin nếu cần kiểm tra.",
+    "profileNotOperationalMessage": "Hồ sơ nhân sự của bạn hiện chưa ở trạng thái hoạt động phù hợp. Liên hệ HR/Admin nếu cần kiểm tra.",
     "profileNotOperationalLabel": "Không đủ điều kiện truy cập",
     "profileNotOperationalHelper": "Quyền truy cập được kiểm tra bởi hệ thống nhân sự. Màn hình này chỉ hiển thị thông báo, không tự sửa dữ liệu.",
     "currentPersonLoadTitle": "Chưa thể tải không gian nhân sự",

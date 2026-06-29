@@ -2,7 +2,7 @@
   "page": {
     "title": "Đơn vị tổ chức",
     "subtitle": "Quản lý cơ cấu tổ chức.",
-    "placeholder": "Danh sách, bộ lọc và hành động của Đơn vị tổ chức chưa được triển khai."
+    "placeholder": "Tính năng danh sách, bộ lọc và hành động của đơn vị tổ chức chưa khả dụng."
   },
   "fields": {
     "code": "Mã",
@@ -12,8 +12,8 @@
     "parentOrgUnitId": "Đơn vị tổ chức cha",
     "newParentOrgUnitId": "Đơn vị tổ chức cha mới",
     "displayOrder": "Ưu tiên sắp xếp",
-    "depth": "Độ sâu",
-    "ancestorChain": "Chuỗi cấp trên",
+    "depth": "Cấp phân cấp",
+    "ancestorChain": "Đường dẫn cấp trên",
     "externalRef": "Tham chiếu bên ngoài",
     "description": "Mô tả",
     "createdAt": "Thời điểm tạo",
@@ -92,7 +92,7 @@
     "type": "Loại",
     "status": "Trạng thái",
     "parentOrgUnitId": "Đơn vị cha",
-    "depth": "Độ sâu",
+    "depth": "Cấp",
     "displayOrder": "Ưu tiên sắp xếp",
     "createdAt": "Thời điểm tạo",
     "actions": "Hành động"
@@ -102,12 +102,12 @@
     "name": "Tên",
     "type": "Loại",
     "status": "Trạng thái",
-    "depth": "Độ sâu",
+    "depth": "Cấp",
     "displayOrder": "Ưu tiên sắp xếp"
   },
   "detail": {
-    "summaryTitle": "Metadata chính",
-    "hierarchyTitle": "Phân cấp",
+    "summaryTitle": "Thông tin chính",
+    "hierarchyTitle": "Cơ cấu phân cấp",
     "rootUnit": "Đơn vị gốc"
   },
   "related": {
@@ -142,7 +142,7 @@
   "validation": {
     "required": "Trường này là bắt buộc.",
     "invalidDisplayOrder": "Ưu tiên sắp xếp phải là số nguyên lớn hơn hoặc bằng 0.",
-    "invalidTypeToken": "Loại phải là token chữ hoa, ví dụ DEPARTMENT.",
+    "invalidTypeToken": "Loại phải dùng mã viết hoa, ví dụ DEPARTMENT.",
     "invalidReferenceToken": "ID tham chiếu chứa ký tự không được hỗ trợ.",
     "moveSelfForbidden": "Không thể di chuyển đơn vị tổ chức vào chính nó."
   },
@@ -150,43 +150,43 @@
     "created": "Đã tạo đơn vị tổ chức.",
     "updated": "Đã cập nhật đơn vị tổ chức.",
     "moved": "Đã di chuyển đơn vị tổ chức.",
-    "lifecycleUpdated": "Đã cập nhật vòng đời đơn vị tổ chức.",
-    "responsibilityAssigned": "Đã gán trách nhiệm.",
-    "responsibilityUpdated": "Đã cập nhật trách nhiệm.",
-    "responsibilityRevoked": "Đã thu hồi trách nhiệm."
+    "lifecycleUpdated": "Đã cập nhật trạng thái đơn vị tổ chức.",
+    "responsibilityAssigned": "Đã gán trách nhiệm quản lý.",
+    "responsibilityUpdated": "Đã cập nhật trách nhiệm quản lý.",
+    "responsibilityRevoked": "Đã thu hồi trách nhiệm quản lý."
   },
   "confirm": {
     "activate": "Kích hoạt đơn vị tổ chức này?",
     "deactivate": "Vô hiệu hóa đơn vị tổ chức này?",
     "archive": "Lưu trữ đơn vị tổ chức này?",
-    "revokeResponsibility": "Thu hồi trách nhiệm sẽ xóa quyền vận hành cho đơn vị này. Thao tác này không thay đổi quản lý trực tiếp trên hồ sơ nhân sự hoặc mẫu vai trò."
+    "revokeResponsibility": "Thu hồi trách nhiệm sẽ gỡ phạm vi vận hành của người này đối với đơn vị này. Thao tác này không thay đổi quản lý trực tiếp trên hồ sơ nhân sự hoặc mẫu vai trò."
   },
   "responsibilityRoles": {
-    "DEPARTMENT_OWNER": "Chủ quản phòng ban",
+    "DEPARTMENT_OWNER": "Phụ trách chính phòng ban",
     "UNIT_MANAGER": "Quản lý đơn vị",
     "UNIT_OPERATOR": "Điều phối đơn vị"
   },
   "responsibilityStatuses": {
-    "ACTIVE": "Hoạt động",
-    "INACTIVE": "Không hoạt động",
-    "REMOVED": "Đã xóa"
+    "ACTIVE": "Đang hiệu lực",
+    "INACTIVE": "Không còn hiệu lực",
+    "REMOVED": "Đã gỡ"
   },
   "responsibilities": {
-    "title": "Trách nhiệm / Quản lý",
-    "helper": "Trách nhiệm đơn vị xác định ai được xem hoặc vận hành đơn vị này. Thiết lập này không thay đổi quản lý trực tiếp trên hồ sơ nhân sự.",
-    "assign": "Gán trách nhiệm",
+    "title": "Trách nhiệm quản lý",
+    "helper": "Trách nhiệm đơn vị xác định ai phụ trách xem xét hoặc vận hành đơn vị này. Thiết lập này không thay đổi quản lý trực tiếp trên hồ sơ nhân sự.",
+    "assign": "Gán trách nhiệm quản lý",
     "assigning": "Đang gán...",
-    "assignTitle": "Gán trách nhiệm",
-    "assignSubtitle": "Gán quyền vận hành đơn vị cho một hồ sơ nhân sự.",
-    "editTitle": "Chỉnh sửa trách nhiệm",
-    "editSubtitle": "Cập nhật metadata an toàn mà không đổi danh tính người quản lý.",
-    "save": "Lưu trách nhiệm",
+    "assignTitle": "Gán trách nhiệm quản lý",
+    "assignSubtitle": "Gán trách nhiệm vận hành đơn vị cho một hồ sơ nhân sự.",
+    "editTitle": "Chỉnh sửa trách nhiệm quản lý",
+    "editSubtitle": "Cập nhật thông tin trách nhiệm mà không đổi người phụ trách.",
+    "save": "Lưu trách nhiệm quản lý",
     "saving": "Đang lưu...",
-    "managerEmploymentProfile": "Hồ sơ nhân sự quản lý",
-    "managerHelp": "Chọn hồ sơ nhân sự nội bộ giữ trách nhiệm vận hành này.",
+    "managerEmploymentProfile": "Người phụ trách",
+    "managerHelp": "Chọn hồ sơ nhân sự nội bộ chịu trách nhiệm vận hành này.",
     "managerSearch": "Tìm hồ sơ nhân sự",
     "role": "Vai trò trách nhiệm",
-    "rolePlaceholder": "Chọn trách nhiệm",
+    "rolePlaceholder": "Chọn vai trò trách nhiệm",
     "effectiveFrom": "Hiệu lực từ",
     "effectiveTo": "Hiệu lực đến",
     "includeDescendants": "Bao gồm đơn vị con",
@@ -195,9 +195,9 @@
     "descendantsIncluded": "Bao gồm đơn vị con",
     "effectiveRange": "{{from}} đến {{to}}",
     "openEnded": "Không giới hạn",
-    "revoke": "Thu hồi",
-    "emptyTitle": "Chưa gán trách nhiệm cho đơn vị này.",
-    "emptyMessage": "Chưa gán trách nhiệm cho đơn vị này."
+    "revoke": "Thu hồi trách nhiệm",
+    "emptyTitle": "Chưa có trách nhiệm quản lý",
+    "emptyMessage": "Đơn vị này hiện chưa có trách nhiệm quản lý nào được gán."
   },
   "actionRail": {
     "title": "Hành động đơn vị tổ chức"

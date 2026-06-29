@@ -8,26 +8,26 @@
     "loadOptionsFailedWithResource": "Không tải được danh sách {{resource}}."
   },
   "transport": {
-    "generic": "Không thể kết nối đến máy chủ."
+    "generic": "Không thể kết nối đến hệ thống."
   },
   "auth": {
-    "title": "Lỗi xác thực",
-    "loginFailed": "Không thể chuyển hướng đến trang đăng nhập.",
-    "callbackFailed": "Không thể xử lý callback xác thực.",
-    "configMissing": "Thiếu cấu hình Auth0. Hãy thiết lập VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID và VITE_AUTH0_AUDIENCE, hoặc chỉ dùng VITE_AUTH_MODE=mock cho mock auth cục bộ."
+    "title": "Lỗi đăng nhập",
+    "loginFailed": "Không thể mở trang đăng nhập.",
+    "callbackFailed": "Không thể hoàn tất bước xác thực đăng nhập.",
+    "configMissing": "Thiếu cấu hình đăng nhập. Vui lòng liên hệ người quản trị hệ thống."
   },
   "permission": {
     "title": "Không có quyền truy cập",
-    "message": "Backend đã từ chối quyền truy cập tài nguyên này."
+    "message": "Hệ thống đã từ chối quyền truy cập vào dữ liệu này."
   },
   "notFound": {
     "title": "Không tìm thấy trang",
-    "message": "Đường dẫn này không tồn tại trong admin shell."
+    "message": "Đường dẫn này không tồn tại trong khu vực quản trị."
   },
   "validation": {
     "invalidTransition": "Hành động này không khả dụng với trạng thái hiện tại.",
-    "unsupportedPayload": "Yêu cầu có trường không được hỗ trợ.",
-    "unsupportedQuery": "Yêu cầu có bộ lọc không được hỗ trợ."
+    "unsupportedPayload": "Yêu cầu có thông tin chưa được hỗ trợ.",
+    "unsupportedQuery": "Yêu cầu có bộ lọc chưa được hỗ trợ."
   },
   "conflict": {
     "message": "Yêu cầu xung đột với bản ghi hiện có."

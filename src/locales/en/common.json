@@ -3,11 +3,11 @@
     "name": "Livestream Admin"
   },
   "labels": {
-    "locale": "Locale",
+    "locale": "Language",
     "breadcrumb": "Breadcrumb navigation",
     "detail": "Detail",
     "recordId": "Record ID",
-    "waveState": "Wave State",
+    "waveState": "Wave state",
     "search": "Search",
     "sort": "Sort",
     "sortDefault": "Default",
@@ -29,7 +29,7 @@
     "go": "Go",
     "pageSize": "Rows per page",
     "cursorShowingLimit": "Showing up to {{count}} rows",
-    "cursorDisclosure": "This list uses load-by-load pagination and has no total page count.",
+    "cursorDisclosure": "This list loads one page at a time and does not show a total page count.",
     "totalRows": "Total rows: {{count}}",
     "noPrevious": "No previous page",
     "noNext": "No next page"
@@ -47,11 +47,11 @@
     "next": "Next",
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "confirmDestructive": "Confirm Action",
+    "confirmDestructive": "Confirm action",
     "close": "Close",
     "clear": "Clear",
     "search": "Search",
-    "stubAction": "Actions In Next Wave",
+    "stubAction": "Actions in next wave",
     "toggleSidebar": "Toggle sidebar",
     "login": "Login",
     "logout": "Logout"
@@ -62,7 +62,7 @@
   "semanticStates": {
     "loading": {
       "title": "Loading data",
-      "message": "The list is being updated."
+      "message": "The list is loading the latest data."
     },
     "no-data": {
       "title": "No data yet",
@@ -77,15 +77,15 @@
       "message": "Contact an Admin if this access is needed for your work."
     },
     "no-scope": {
-      "title": "No data in your assigned scope",
-      "message": "Working scope is assigned by Admin/Ops or the responsible setup owner."
+      "title": "No data in your assigned work scope",
+      "message": "Your work scope is assigned by Admin/Ops or the setup owner."
     },
     "missing-profile": {
       "title": "No linked employment profile",
       "message": "An Admin must link this login account to an employment profile before personal data can appear."
     },
     "blocked-profile": {
-      "title": "Employment profile is not operational",
+      "title": "Employment profile is not active for operations",
       "message": "Data is shown only when the employment profile is in an operational status."
     },
     "service-error": {
@@ -101,34 +101,34 @@
     "missingPermission": "You do not have permission to perform this action.",
     "missingScope": "Your role assignment does not include the required scope.",
     "invalidStatus": "This action is not available for the current record status.",
-    "notWired": "This action is not wired yet.",
+    "notWired": "This action is not available yet.",
     "checkingPermissions": "Checking permissions.",
-    "backendEnforced": "Backend authorization is still enforced when you submit."
+    "backendEnforced": "Your permissions are checked again when you submit."
   },
   "auth": {
     "loginTitle": "Admin sign in",
-    "loginSubtitle": "Foundation auth seam is ready for Auth0"
+    "loginSubtitle": "Authentication is ready for Auth0 sign-in."
   },
   "session": {
     "placeholderUser": "Admin session",
     "statusActive": "Active"
   },
   "placeholders": {
-    "foundationOnlyTitle": "This page is scaffolded at foundation level",
+    "foundationOnlyTitle": "This page has a basic foundation layout",
     "waveStubSubtitle": "Not yet implemented in this wave",
-    "waveStubState": "Stub Only",
-    "listSectionTitle": "List Surface",
-    "detailSummaryTitle": "Record Summary",
-    "detailMetadataTitle": "Metadata Surface",
-    "relatedSectionTitle": "Related Surface",
-    "relatedSectionSubtitle": "Related views are scaffolded for future module work",
-    "relatedSectionMessage": "No related list behavior is implemented in this wave.",
+    "waveStubState": "Placeholder only",
+    "listSectionTitle": "List area",
+    "detailSummaryTitle": "Record summary",
+    "detailMetadataTitle": "Metadata",
+    "relatedSectionTitle": "Related records",
+    "relatedSectionSubtitle": "Related views are prepared for future module work",
+    "relatedSectionMessage": "Related lists are not available in this wave.",
     "actionRailTitle": "Actions",
-    "actionRailPlaceholder": "Detail actions are not implemented yet."
+    "actionRailPlaceholder": "Detail actions are not available yet."
   },
   "dialogs": {
     "destructive": {
-      "title": "Confirm Destructive Action"
+      "title": "Confirm destructive action"
     }
   },
   "feedback": {
