@@ -1,9 +1,7 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   FormProvider,
-  get,
   useForm,
-  useFormContext,
   type FieldValues,
   type Path,
   type UseFormSetError,
@@ -17,18 +15,13 @@ import {
 } from '@modules/role/constants/role.constants';
 import { formatPermissionCapabilityItems } from '@modules/role/utils/permission-labels';
 import type {
-  JsonPlainValue,
-  RoleAssignmentRule,
-  RoleAssignmentRuleReplacementPayload,
   RoleAssignmentScopeGrants,
   RoleAssignToUserPayload,
   RoleCreateFromTemplatePayload,
-  RoleCreatePayload,
   RoleDelegationBand,
   RoleDetailRecord,
   RoleLifecyclePayload,
   RoleMaxDelegatableBand,
-  RolePermissionReplacementPayload,
   RoleRevokeAssignmentPayload,
   RoleTemplateListItem,
   RoleTemplatePreview,
@@ -54,7 +47,6 @@ type BaseMutationSurfaceProps = {
 };
 
 type RoleCreateSurfaceProps = BaseMutationSurfaceProps & {
-  onSubmit: (payload: RoleCreatePayload) => Promise<void> | void;
   onTemplateSubmit: (payload: RoleCreateFromTemplatePayload) => Promise<void> | void;
   onPreviewTemplate: (templateCode: string) => Promise<RoleTemplatePreview>;
   templateCatalog: RoleTemplateListItem[];
@@ -64,16 +56,6 @@ type RoleCreateSurfaceProps = BaseMutationSurfaceProps & {
 type RoleEditSurfaceProps = BaseMutationSurfaceProps & {
   initialRecord: RoleDetailRecord;
   onSubmit: (payload: RoleUpdatePayload) => Promise<void> | void;
-};
-
-type RolePermissionsSurfaceProps = BaseMutationSurfaceProps & {
-  initialPermissions: string[];
-  onSubmit: (payload: RolePermissionReplacementPayload) => Promise<void> | void;
-};
-
-type RoleAssignmentRulesSurfaceProps = BaseMutationSurfaceProps & {
-  initialRules: RoleAssignmentRule[];
-  onSubmit: (payload: RoleAssignmentRuleReplacementPayload) => Promise<void> | void;
 };
 
 type RoleLifecycleReasonSurfaceProps = BaseMutationSurfaceProps & {
@@ -94,15 +76,10 @@ type RoleRevokeAssignmentSurfaceProps = BaseMutationSurfaceProps & {
 };
 
 type RoleCreateFormValues = {
-  mode: 'template' | 'custom';
   templateCode: string;
   name: string;
   code: string;
   description: string;
-  initialDelegationBand: RoleDelegationBand;
-  initialMaxDelegatableBand: RoleMaxDelegatableBand;
-  permissionsText: string;
-  rulesJson: string;
 };
 
 type RoleEditFormValues = {
@@ -110,14 +87,6 @@ type RoleEditFormValues = {
   description: string;
   delegationBand: RoleDelegationBand;
   maxDelegatableBand: RoleMaxDelegatableBand;
-};
-
-type RolePermissionsFormValues = {
-  permissionsText: string;
-};
-
-type RoleAssignmentRulesFormValues = {
-  rulesJson: string;
 };
 
 type RoleReasonFormValues = {
@@ -156,15 +125,6 @@ const applySchemaErrors = <TValues extends FieldValues>(
       message: issue.message,
     });
   });
-};
-
-const parsePermissionText = (text: string): string[] => {
-  const values = text
-    .split(/[\s,]+/)
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-
-  return Array.from(new Set(values));
 };
 
 const templateCodeFallbackLabels: Record<string, string> = {
@@ -285,83 +245,12 @@ const createScopeGrantFormValues = (
   dashboardLite: Boolean(recommendedScopeGrants?.dashboardLite?.includes('global')),
 });
 
-const isPlainJsonObject = (value: unknown): value is Record<string, JsonPlainValue> => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return false;
-  }
-
-  return Object.values(value).every((item) => {
-    if (item === null || ['string', 'number', 'boolean'].includes(typeof item)) {
-      return true;
-    }
-
-    return isPlainJsonObject(item);
-  });
-};
-
-const parseAssignmentRules = (text: string, errorMessage: string): RoleAssignmentRule[] => {
-  const trimmed = text.trim();
-  if (trimmed.length === 0) {
-    return [];
-  }
-
-  const parsed = JSON.parse(trimmed) as unknown;
-  if (!Array.isArray(parsed)) {
-    throw new Error(errorMessage);
-  }
-
-  return parsed.map((item) => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) {
-      throw new Error(errorMessage);
-    }
-
-    const candidate = item as Record<string, unknown>;
-    if (typeof candidate.code !== 'string' || candidate.code.trim().length === 0) {
-      throw new Error(errorMessage);
-    }
-
-    if (
-      candidate.conditions !== undefined &&
-      candidate.conditions !== null &&
-      !isPlainJsonObject(candidate.conditions)
-    ) {
-      throw new Error(errorMessage);
-    }
-
-    return {
-      id: typeof candidate.id === 'string' && candidate.id.trim() ? candidate.id : undefined,
-      code: candidate.code.trim(),
-      description:
-        typeof candidate.description === 'string'
-          ? candidate.description
-          : candidate.description === null
-            ? null
-            : undefined,
-      state:
-        typeof candidate.state === 'string'
-          ? candidate.state
-          : candidate.state === null
-            ? null
-            : undefined,
-      conditions:
-        candidate.conditions === null || candidate.conditions === undefined
-          ? null
-          : candidate.conditions,
-    };
-  });
-};
-
 const createRoleCreateSchema = (requiredMessage: string) =>
   z.object({
-    mode: z.enum(['template', 'custom']),
-    templateCode: z.string(),
+    templateCode: z.string().trim().min(1, requiredMessage),
     name: z.string().trim().min(1, requiredMessage),
     code: z.string().trim().optional(),
     description: z.string().trim().optional(),
-    initialDelegationBand: z.enum(roleDelegationBandValues),
-    initialMaxDelegatableBand: z.enum(roleMaxDelegatableBandValues),
-    permissionsText: z.string(),
-    rulesJson: z.string(),
   });
 
 const createRoleEditSchema = (requiredMessage: string) =>
@@ -396,9 +285,6 @@ const useMaxDelegatableBandOptions = () => {
   );
 };
 
-const formatRulesJson = (rules: RoleAssignmentRule[]): string =>
-  rules.length === 0 ? '' : JSON.stringify(rules, null, 2);
-
 const formatRecommendedScopeGrants = (scopeGrants?: RoleAssignmentScopeGrants): string => {
   if (!scopeGrants || Object.keys(scopeGrants).length === 0) {
     return '-';
@@ -419,7 +305,6 @@ const formatRecommendedScopeGrants = (scopeGrants?: RoleAssignmentScopeGrants): 
 
 export const RoleCreateSurface = ({
   onCancel,
-  onSubmit,
   onTemplateSubmit,
   onPreviewTemplate,
   templateCatalog,
@@ -427,27 +312,19 @@ export const RoleCreateSurface = ({
   isPending = false,
 }: RoleCreateSurfaceProps): JSX.Element => {
   const { t } = useTranslation(['role', 'common']);
-  const delegationBandOptions = useDelegationBandOptions();
-  const maxDelegatableBandOptions = useMaxDelegatableBandOptions();
   const [templatePreview, setTemplatePreview] = useState<RoleTemplatePreview | null>(null);
   const [templatePreviewError, setTemplatePreviewError] = useState<string | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const form = useForm<RoleCreateFormValues>({
     defaultValues: {
-      mode: 'template',
       templateCode: '',
       name: '',
       code: '',
       description: '',
-      initialDelegationBand: 'LIMITED',
-      initialMaxDelegatableBand: 'NONE',
-      permissionsText: '',
-      rulesJson: '',
     },
   });
 
   const schema = useMemo(() => createRoleCreateSchema(t('role:validation.required')), [t]);
-  const mode = form.watch('mode');
   const templateCode = form.watch('templateCode');
 
   const templateOptions = useMemo(
@@ -460,7 +337,7 @@ export const RoleCreateSurface = ({
   );
 
   useEffect(() => {
-    if (mode !== 'template' || !templateCode) {
+    if (!templateCode) {
       setTemplatePreview(null);
       setTemplatePreviewError(null);
       return;
@@ -495,7 +372,7 @@ export const RoleCreateSurface = ({
     return () => {
       cancelled = true;
     };
-  }, [mode, onPreviewTemplate, t, templateCode]);
+  }, [onPreviewTemplate, t, templateCode]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const parsed = schema.safeParse(values);
@@ -504,48 +381,12 @@ export const RoleCreateSurface = ({
       return;
     }
 
-    if (parsed.data.mode === 'template') {
-      if (!parsed.data.templateCode) {
-        form.setError('templateCode', {
-          type: 'validate',
-          message: t('role:validation.required'),
-        });
-        return;
-      }
-
-      const code = toNullableText(parsed.data.code)?.toUpperCase();
-      await onTemplateSubmit({
-        templateCode: parsed.data.templateCode as RoleCreateFromTemplatePayload['templateCode'],
-        name: parsed.data.name,
-        ...(code ? { code } : {}),
-        description: toNullableText(parsed.data.description),
-      });
-      return;
-    }
-
-    let initialAssignmentRules: RoleAssignmentRule[];
-    try {
-      initialAssignmentRules = parseAssignmentRules(
-        parsed.data.rulesJson,
-        t('role:validation.invalidRulesJson'),
-      );
-    } catch {
-      form.setError('rulesJson', {
-        type: 'validate',
-        message: t('role:validation.invalidRulesJson'),
-      });
-      return;
-    }
-
     const code = toNullableText(parsed.data.code)?.toUpperCase();
-    await onSubmit({
+    await onTemplateSubmit({
+      templateCode: parsed.data.templateCode as RoleCreateFromTemplatePayload['templateCode'],
       name: parsed.data.name,
       ...(code ? { code } : {}),
       description: toNullableText(parsed.data.description),
-      initialPermissions: parsePermissionText(parsed.data.permissionsText),
-      initialDelegationBand: parsed.data.initialDelegationBand,
-      initialMaxDelegatableBand: parsed.data.initialMaxDelegatableBand,
-      initialAssignmentRules,
     });
   });
 
@@ -562,16 +403,22 @@ export const RoleCreateSurface = ({
         onSubmit={(event) => void handleSubmit(event)}
         isPending={isPending}
       >
-        <div className="flex flex-wrap gap-2">
-          <label className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm">
-            <input type="radio" value="template" {...form.register('mode')} />
-            {t('role:templates.templateMode')}
-          </label>
-          <label className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm">
-            <input type="radio" value="custom" {...form.register('mode')} />
-            {t('role:templates.customMode')}
-          </label>
-        </div>
+        <SelectField
+          name="templateCode"
+          label={t('role:templates.roleTemplate')}
+          options={templateOptions}
+          placeholder={
+            isTemplateCatalogLoading
+              ? t('role:templates.loading')
+              : t('role:templates.chooseTemplate')
+          }
+          helperText={t('role:templates.backendAuthority')}
+        />
+        <RoleTemplatePreviewPanel
+          preview={templatePreview}
+          isLoading={isPreviewLoading}
+          errorMessage={templatePreviewError}
+        />
         <FormGrid columns={2}>
           <TextInputField
             name="name"
@@ -589,51 +436,6 @@ export const RoleCreateSurface = ({
           description={t('role:generatedCode.description')}
         />
         <TextInputField name="description" label={t('role:fields.description')} />
-        {mode === 'template' ? (
-          <div className="space-y-3">
-            <SelectField
-              name="templateCode"
-              label={t('role:templates.roleTemplate')}
-              options={templateOptions}
-              placeholder={
-                isTemplateCatalogLoading
-                  ? t('role:templates.loading')
-                  : t('role:templates.chooseTemplate')
-              }
-              helperText={t('role:templates.backendAuthority')}
-            />
-            <RoleTemplatePreviewPanel
-              preview={templatePreview}
-              isLoading={isPreviewLoading}
-              errorMessage={templatePreviewError}
-            />
-          </div>
-        ) : (
-          <>
-            <FormGrid columns={2}>
-              <SelectField
-                name="initialDelegationBand"
-                label={t('role:fields.delegationBand')}
-                options={delegationBandOptions}
-              />
-              <SelectField
-                name="initialMaxDelegatableBand"
-                label={t('role:fields.maxDelegatableBand')}
-                options={maxDelegatableBandOptions}
-              />
-            </FormGrid>
-            <RoleTextareaField
-              name="permissionsText"
-              label={t('role:fields.permissions')}
-              placeholder={t('role:placeholders.permissions')}
-            />
-            <RoleTextareaField
-              name="rulesJson"
-              label={t('role:fields.assignmentRules')}
-              placeholder={t('role:placeholders.assignmentRules')}
-            />
-          </>
-        )}
       </ModuleMutationSurface>
     </FormProvider>
   );
@@ -785,99 +587,6 @@ export const RoleEditSurface = ({
           />
         </FormGrid>
         <TextInputField name="description" label={t('role:fields.description')} />
-      </ModuleMutationSurface>
-    </FormProvider>
-  );
-};
-
-export const RolePermissionsSurface = ({
-  initialPermissions,
-  onCancel,
-  onSubmit,
-  isPending = false,
-}: RolePermissionsSurfaceProps): JSX.Element => {
-  const { t } = useTranslation(['role', 'common']);
-  const form = useForm<RolePermissionsFormValues>({
-    defaultValues: {
-      permissionsText: initialPermissions.join('\n'),
-    },
-  });
-
-  const handleSubmit = form.handleSubmit(async (values) => {
-    await onSubmit({
-      permissions: parsePermissionText(values.permissionsText),
-    });
-  });
-
-  return (
-    <FormProvider {...form}>
-      <ModuleMutationSurface
-        title={t('role:mutations.permissions.title')}
-        subtitle={t('role:mutations.permissions.subtitle')}
-        kind="action"
-        submitLabel={t('role:mutations.permissions.submit')}
-        pendingLabel={t('role:mutations.permissions.pending')}
-        cancelLabel={t('common:actions.cancel')}
-        onCancel={onCancel}
-        onSubmit={(event) => void handleSubmit(event)}
-        isPending={isPending}
-      >
-        <RoleTextareaField
-          name="permissionsText"
-          label={t('role:fields.permissions')}
-          placeholder={t('role:placeholders.permissions')}
-        />
-      </ModuleMutationSurface>
-    </FormProvider>
-  );
-};
-
-export const RoleAssignmentRulesSurface = ({
-  initialRules,
-  onCancel,
-  onSubmit,
-  isPending = false,
-}: RoleAssignmentRulesSurfaceProps): JSX.Element => {
-  const { t } = useTranslation(['role', 'common']);
-  const form = useForm<RoleAssignmentRulesFormValues>({
-    defaultValues: {
-      rulesJson: formatRulesJson(initialRules),
-    },
-  });
-
-  const handleSubmit = form.handleSubmit(async (values) => {
-    let rules: RoleAssignmentRule[];
-    try {
-      rules = parseAssignmentRules(values.rulesJson, t('role:validation.invalidRulesJson'));
-    } catch {
-      form.setError('rulesJson', {
-        type: 'validate',
-        message: t('role:validation.invalidRulesJson'),
-      });
-      return;
-    }
-
-    await onSubmit({ rules });
-  });
-
-  return (
-    <FormProvider {...form}>
-      <ModuleMutationSurface
-        title={t('role:mutations.assignmentRules.title')}
-        subtitle={t('role:mutations.assignmentRules.subtitle')}
-        kind="action"
-        submitLabel={t('role:mutations.assignmentRules.submit')}
-        pendingLabel={t('role:mutations.assignmentRules.pending')}
-        cancelLabel={t('common:actions.cancel')}
-        onCancel={onCancel}
-        onSubmit={(event) => void handleSubmit(event)}
-        isPending={isPending}
-      >
-        <RoleTextareaField
-          name="rulesJson"
-          label={t('role:fields.assignmentRules')}
-          placeholder={t('role:placeholders.assignmentRules')}
-        />
       </ModuleMutationSurface>
     </FormProvider>
   );
@@ -1125,50 +834,4 @@ export const RoleRevokeAssignmentSurface = ({
       </ModuleMutationSurface>
     </FormProvider>
   );
-};
-
-type RoleTextareaFieldProps = {
-  name: string;
-  label: string;
-  placeholder?: string;
-};
-
-const RoleTextareaField = ({ name, label, placeholder }: RoleTextareaFieldProps): JSX.Element => {
-  const id = useId();
-  const labelId = `${id}-label`;
-  const errorId = `${id}-error`;
-  const form = useFormContextBridge();
-  const fieldError = form.errorMessage(name);
-
-  return (
-    <label htmlFor={id} className="flex flex-col gap-1">
-      <span id={labelId} className="text-xs font-medium uppercase text-muted">
-        {label}
-      </span>
-      <textarea
-        id={id}
-        {...form.register(name)}
-        placeholder={placeholder}
-        rows={6}
-        aria-labelledby={labelId}
-        aria-describedby={fieldError ? errorId : undefined}
-        aria-invalid={fieldError ? true : undefined}
-        className="rounded border border-border bg-panel px-3 py-2 font-mono text-sm outline-none ring-accent focus:ring-2"
-      />
-      {fieldError ? (
-        <span id={errorId} className="text-xs font-medium text-danger">
-          {fieldError}
-        </span>
-      ) : null}
-    </label>
-  );
-};
-
-const useFormContextBridge = () => {
-  const { register, formState } = useFormContext<FieldValues>();
-
-  return {
-    register,
-    errorMessage: (name: string) => get(formState.errors, name)?.message as string | undefined,
-  };
 };

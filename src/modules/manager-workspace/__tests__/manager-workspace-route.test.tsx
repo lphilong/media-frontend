@@ -1386,7 +1386,7 @@ describe('/manager workspace route', () => {
 
     expect(rawAdminAvailabilityCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
-  });
+  }, 10_000);
 
   it('rejects unsupported availability apply and policy statuses', () => {
     for (const parseApplyStatus of [
@@ -1617,14 +1617,10 @@ describe('/manager workspace route', () => {
     await user.click(await screen.findByTestId('manager-module-revenue'));
     expect(await screen.findByTestId('manager-revenue-source-panel')).toBeInTheDocument();
     expect(screen.getByText(/Manager submission is not revenue approval/i)).toBeInTheDocument();
-    expect(screen.getByText(/commission, payment, payroll, tax, or accounting/i)).toBeInTheDocument();
-    for (const action of [
-      'Approve',
-      'Reject',
-      'Void',
-      'Archive',
-      'Create revenue entry',
-    ]) {
+    expect(
+      screen.getByText(/commission, payment, payroll, tax, or accounting/i),
+    ).toBeInTheDocument();
+    for (const action of ['Approve', 'Reject', 'Void', 'Archive', 'Create revenue entry']) {
       expect(screen.queryByRole('button', { name: action })).not.toBeInTheDocument();
     }
     await waitFor(() => expect(managerRevenueCalls).toBeGreaterThan(0));

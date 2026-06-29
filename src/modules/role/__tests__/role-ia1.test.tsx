@@ -60,7 +60,9 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByText(/role:view/u)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: i18n.t('role:tabs.bundles') }));
-    expect(await screen.findByText('OWNER_ADMIN_BUNDLE')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getAllByText('Quản trị chủ sở hữu').length).toBeGreaterThan(0),
+    );
     expect(
       screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
     ).not.toBeInTheDocument();
@@ -85,7 +87,7 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText('Admin role')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:detail.permissionMatrixTitle'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:templates.basedOnTemplate'))).toBeInTheDocument();
-    expect(screen.getByText(/Owner Admin \(OWNER_ADMIN\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Quản trị chủ sở hữu \(OWNER_ADMIN\)/)).toBeInTheDocument();
     expect(
       screen.getByText(/Lịch làm việc: Dữ liệu của chính nhân sự này, Nhóm đang phụ trách/u),
     ).toBeInTheDocument();
@@ -173,11 +175,13 @@ describe('role IA-1 surfaces', () => {
       screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: i18n.t('role:actions.replacePermissions') }),
+      screen.queryByRole('textbox', { name: i18n.t('role:fields.permissions') }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: i18n.t('role:actions.replaceAssignmentRules') }),
+      screen.queryByRole('textbox', { name: i18n.t('role:fields.assignmentRules') }),
     ).not.toBeInTheDocument();
+    expect(screen.queryByText(/replace permissions/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/replace assignment rules/i)).not.toBeInTheDocument();
 
     expect(assignmentRow).not.toBeNull();
     if (!assignmentRow) {
@@ -230,11 +234,13 @@ describe('role IA-1 surfaces', () => {
       screen.getByRole('button', { name: i18n.t('role:actions.edit') }),
     ).toHaveAccessibleDescription(i18n.t('common:capabilities.invalidStatus'));
     expect(
-      screen.queryByRole('button', { name: i18n.t('role:actions.replacePermissions') }),
+      screen.queryByRole('textbox', { name: i18n.t('role:fields.permissions') }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: i18n.t('role:actions.replaceAssignmentRules') }),
+      screen.queryByRole('textbox', { name: i18n.t('role:fields.assignmentRules') }),
     ).not.toBeInTheDocument();
+    expect(screen.queryByText(/replace permissions/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/replace assignment rules/i)).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
     ).not.toBeInTheDocument();

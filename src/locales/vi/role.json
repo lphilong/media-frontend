@@ -56,7 +56,7 @@
     "custom": "Tùy chỉnh",
     "templateVersion": "Phiên bản mẫu",
     "templateAppliedAt": "Thời điểm áp dụng mẫu",
-    "permissionsRemainExplicit": "Quyền vẫn là quyền rõ ràng và metadata mẫu không có tính thẩm quyền."
+    "permissionsRemainExplicit": "Năng lực vẫn được ghi rõ và ghi chú mẫu không tự cấp quyền truy cập."
   },
   "permissionGroups": {
     "summaryItem": "{{group}} ({{count}} năng lực)",
@@ -84,7 +84,7 @@
   },
   "scopePicker": {
     "assignmentScopes": "Phạm vi gán",
-    "backendValidation": "Gán phạm vi ảnh hưởng quyền truy cập khi chạy. Hệ thống nguồn từ chối phạm vi người thao tác hiện tại không được phép cấp.",
+    "backendValidation": "Gán phạm vi ảnh hưởng quyền truy cập. Hệ thống nguồn từ chối phạm vi người thao tác hiện tại không được phép cấp.",
     "recommendedScopes": "Phạm vi được khuyến nghị",
     "recommendedScopesHelp": "Phạm vi khuyến nghị được điền sẵn từ mẫu vai trò. Hãy điều chỉnh trước khi gửi nếu bản ghi gán này cần phạm vi khác.",
     "applyRecommendedScopes": "Áp dụng phạm vi khuyến nghị",
@@ -136,8 +136,6 @@
     "create": "Tạo vai trò",
     "closeCreate": "Đóng tạo mới",
     "edit": "Chỉnh sửa",
-    "replacePermissions": "Thay thế quyền",
-    "replaceAssignmentRules": "Thay thế quy tắc gán",
     "assignToUser": "Gán cho người dùng",
     "revokeAssignment": "Thu hồi",
     "activate": "Kích hoạt",
@@ -162,22 +160,10 @@
       "pending": "Đang tạo vai trò"
     },
     "update": {
-      "title": "Cập nhật metadata và dải ủy quyền",
-      "subtitle": "Chỉ gửi metadata vai trò và các trường dải ủy quyền.",
+      "title": "Cập nhật thông tin vai trò và dải ủy quyền",
+      "subtitle": "Chỉ gửi thông tin vai trò và các trường dải ủy quyền.",
       "submit": "Cập nhật vai trò",
       "pending": "Đang cập nhật vai trò"
-    },
-    "permissions": {
-      "title": "Thay thế quyền",
-      "subtitle": "Payload thay thế đầy đủ phải đúng dạng { permissions: [...] }.",
-      "submit": "Thay thế quyền",
-      "pending": "Đang thay thế quyền"
-    },
-    "assignmentRules": {
-      "title": "Thay thế quy tắc gán",
-      "subtitle": "Payload thay thế đầy đủ phải đúng dạng { rules: [...] }.",
-      "submit": "Thay thế quy tắc",
-      "pending": "Đang thay thế quy tắc"
     },
     "deactivate": {
       "title": "Vô hiệu hóa vai trò",
@@ -205,8 +191,6 @@
     }
   },
   "placeholders": {
-    "permissions": "role:view user:view",
-    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]",
     "userSearch": "Tìm người dùng theo tên hoặc email"
   },
   "referenceHelp": {
@@ -214,7 +198,7 @@
   },
   "validation": {
     "required": "Trường này là bắt buộc.",
-    "invalidRulesJson": "Quy tắc gán phải là mảng JSON, trong đó conditions là object thuần hoặc null.",
+    "invalidRulesJson": "Quy tắc gán phải dùng danh sách quy tắc có cấu trúc được hỗ trợ.",
     "adminRoleRequiresAdminActor": "Vai trò này yêu cầu tài khoản quản trị nội bộ.",
     "selfRoleRequiresStaffActor": "Vai trò này yêu cầu tài khoản nhân viên tự phục vụ."
   },
@@ -227,8 +211,6 @@
     "created": "Đã tạo vai trò.",
     "updated": "Đã cập nhật vai trò.",
     "lifecycleUpdated": "Đã cập nhật vòng đời vai trò.",
-    "permissionsUpdated": "Đã thay thế quyền của vai trò.",
-    "assignmentRulesUpdated": "Đã thay thế quy tắc gán của vai trò.",
     "assignedToUser": "Đã gán vai trò cho người dùng.",
     "assignedToUserDetailed": "Đã gán {{role}} cho {{user}}.",
     "assignmentResponseInvalid": "Không nhận diện được phản hồi gán vai trò.",
@@ -243,7 +225,7 @@
   },
   "templateCatalog": {
     "title": "Danh mục mẫu vai trò",
-    "subtitle": "Mẫu do hệ thống nguồn cung cấp; metadata mẫu không tự cấp thẩm quyền runtime.",
+    "subtitle": "Mẫu do hệ thống nguồn cung cấp; ghi chú mẫu không tự cấp quyền truy cập.",
     "loadErrorTitle": "Không tải được mẫu vai trò",
     "loadErrorMessage": "Không thể tải danh mục mẫu vai trò.",
     "emptyTitle": "Chưa có mẫu vai trò",
@@ -273,7 +255,7 @@
     "unavailableTitle": "Luồng gán quyền theo người dùng chưa khả dụng",
     "unavailableMessage": "Chưa thể gán quyền trong bước này. Bạn có thể xem quyền hiện có hoặc liên hệ người phụ trách phân quyền.",
     "workflowTitle": "Luồng gán quyền theo người dùng",
-    "workflowSubtitle": "Các bước dưới đây thể hiện hướng sản phẩm cuối cùng. Nút xác nhận đang tắt vì frontend chưa có hợp đồng nguồn an toàn để ghi nhận gán quyền.",
+    "workflowSubtitle": "Các bước dưới đây thể hiện hướng sản phẩm cuối cùng. Nút xác nhận đang tắt vì màn hình này chưa hỗ trợ ghi nhận gán quyền an toàn.",
     "departmentFilterLabel": "Đơn vị / Phòng ban",
     "departmentFilterValue": "Chọn phòng ban để tìm nhân sự",
     "departmentFilterHelp": "Dùng để lọc danh sách nhân sự. Đây chưa phải phạm vi cấp quyền.",

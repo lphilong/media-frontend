@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ColumnDef } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,7 +10,6 @@ import { roleStateValues } from '@modules/role/constants/role.constants';
 import { RoleCreateSurface } from '@modules/role/forms/role-mutation-forms';
 import {
   useCreateRoleFromTemplateMutation,
-  useCreateRoleMutation,
   useRoleLifecycleMutation,
   useEffectiveAccess,
   useRoleBundles,
@@ -40,6 +40,7 @@ import {
   FilterToolbar,
   LoadingState,
   MetadataSection,
+  useModalHost,
   PermissionDeniedState,
   ReadOnlyFieldGrid,
   ReferenceChip,
@@ -109,13 +110,12 @@ export const RoleListPage = (): JSX.Element => {
   const roleBundlesQuery = useRoleBundles();
   const effectiveAccessQuery = useEffectiveAccess(effectiveAccessUserId);
   const capabilitiesQuery = useCurrentActorCapabilities();
-  const createMutation = useCreateRoleMutation();
   const createFromTemplateMutation = useCreateRoleFromTemplateMutation();
   const lifecycleMutation = useRoleLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
+  const modalHost = useModalHost();
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [, setCursorStack] = useState(createCursorStack);
 
   const queryShapeSignature = useMemo(
@@ -156,19 +156,6 @@ export const RoleListPage = (): JSX.Element => {
     [capabilitiesQuery.data],
   );
 
-  const pageActions =
-    activeTab === 'templates' && canCreateRole ? (
-      <button
-        type="button"
-        onClick={() => setIsCreateOpen((current) => !current)}
-        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
-      >
-        {isCreateOpen ? t('role:actions.closeCreate') : t('role:actions.create')}
-      </button>
-    ) : null;
-
-  usePageActions(pageActions);
-
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
   const canGoNext = Boolean(nextCursor);
   const canGoBack = Boolean(query.cursor);
@@ -191,27 +178,54 @@ export const RoleListPage = (): JSX.Element => {
     });
   };
 
-  const onCreateSubmit = async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
-    try {
-      await createMutation.mutateAsync(payload);
-      notifySuccess('role:feedback.created');
-      setIsCreateOpen(false);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
+  const onCreateFromTemplateSubmit = useCallback(
+    async (payload: Parameters<typeof createFromTemplateMutation.mutateAsync>[0]) => {
+      try {
+        await createFromTemplateMutation.mutateAsync(payload);
+        notifySuccess('role:feedback.created');
+        modalHost.close();
+      } catch (error) {
+        notifyError(error as NormalizedApiError);
+      }
+    },
+    [createFromTemplateMutation, modalHost, notifyError, notifySuccess],
+  );
 
-  const onCreateFromTemplateSubmit = async (
-    payload: Parameters<typeof createFromTemplateMutation.mutateAsync>[0],
-  ) => {
-    try {
-      await createFromTemplateMutation.mutateAsync(payload);
-      notifySuccess('role:feedback.created');
-      setIsCreateOpen(false);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
+  const openCreateDrawer = useCallback(() => {
+    modalHost.openDrawer({
+      title: t('role:mutations.create.title'),
+      content: (
+        <RoleCreateSurface
+          isPending={createFromTemplateMutation.isPending}
+          onCancel={modalHost.close}
+          onTemplateSubmit={onCreateFromTemplateSubmit}
+          onPreviewTemplate={previewRoleTemplate}
+          templateCatalog={roleTemplatesQuery.data ?? []}
+          isTemplateCatalogLoading={roleTemplatesQuery.isLoading}
+        />
+      ),
+    });
+  }, [
+    createFromTemplateMutation.isPending,
+    modalHost,
+    onCreateFromTemplateSubmit,
+    roleTemplatesQuery.data,
+    roleTemplatesQuery.isLoading,
+    t,
+  ]);
+
+  const pageActions =
+    activeTab === 'templates' && canCreateRole ? (
+      <button
+        type="button"
+        onClick={openCreateDrawer}
+        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
+      >
+        {t('role:actions.create')}
+      </button>
+    ) : null;
+
+  usePageActions(pageActions);
 
   const onLifecycleAction = useCallback(
     async (roleId: string, action: RoleLifecycleAction) => {
@@ -320,7 +334,7 @@ export const RoleListPage = (): JSX.Element => {
           activeTab={activeTab}
           onChange={(nextTab) => {
             setActiveTab(nextTab);
-            setIsCreateOpen(false);
+            modalHost.close();
           }}
         />
       }
@@ -368,23 +382,7 @@ export const RoleListPage = (): JSX.Element => {
           </FilterToolbar>
         ) : null
       }
-      interactionSection={
-        activeTab === 'templates' ? (
-          <>
-            {canCreateRole && isCreateOpen ? (
-              <RoleCreateSurface
-                isPending={createMutation.isPending || createFromTemplateMutation.isPending}
-                onCancel={() => setIsCreateOpen(false)}
-                onSubmit={onCreateSubmit}
-                onTemplateSubmit={onCreateFromTemplateSubmit}
-                onPreviewTemplate={previewRoleTemplate}
-                templateCatalog={roleTemplatesQuery.data ?? []}
-                isTemplateCatalogLoading={roleTemplatesQuery.isLoading}
-              />
-            ) : null}
-          </>
-        ) : null
-      }
+      interactionSection={null}
       tableSection={
         activeTab === 'templates' ? (
           <div className="space-y-4">
@@ -515,51 +513,59 @@ const RoleTemplateCatalogPanel = ({
     );
   }
 
+  const columns: Array<ColumnDef<RoleTemplateListItem>> = [
+    {
+      accessorKey: 'code',
+      header: t('role:fields.name'),
+      cell: ({ row }) => (
+        <div>
+          <p className="font-semibold text-text">{formatRoleCodeLabel(row.original.code)}</p>
+          <p className="text-xs text-muted">{formatRoleCategoryLabel(row.original.category)}</p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'recommendedAccountContext',
+      header: t('role:templateCatalog.requiredContext'),
+      cell: ({ row }) => formatAccountContextLabel(row.original.recommendedAccountContext),
+    },
+    {
+      accessorKey: 'permissionCount',
+      header: t('role:templateCatalog.capabilitySummary'),
+      cell: ({ row }) =>
+        t('role:templateCatalog.capabilityCount', {
+          count: row.original.permissionCount,
+        }),
+    },
+    {
+      accessorKey: 'status',
+      header: t('role:bundles.status'),
+      cell: ({ row }) => <StatusBadge status={row.original.status} family="readiness" />,
+    },
+    {
+      id: 'warning',
+      header: t('role:templates.warnings'),
+      cell: ({ row }) =>
+        row.original.warnings.length > 0 ? (
+          <StatusBadge label={t('role:templateCatalog.sensitiveWarning')} tone="warning" />
+        ) : (
+          '-'
+        ),
+    },
+  ];
+
   return (
     <MetadataSection
       title={t('role:templateCatalog.title')}
       subtitle={t('role:templateCatalog.subtitle')}
     >
-      <div className="grid gap-3 lg:grid-cols-2">
-        {templates.map((template) => (
-          <div key={template.code} className="rounded border border-border bg-bg p-3">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <p className="font-semibold text-text">{formatRoleCodeLabel(template.code)}</p>
-                <p className="text-xs text-muted">{template.code}</p>
-              </div>
-              <StatusBadge status={template.status} family="readiness" />
-            </div>
-            <ReadOnlyFieldGrid
-              columns={3}
-              fields={[
-                {
-                  key: 'group',
-                  label: t('role:templateCatalog.roleGroup'),
-                  value: formatRoleCategoryLabel(template.category),
-                },
-                {
-                  key: 'context',
-                  label: t('role:templateCatalog.requiredContext'),
-                  value: formatAccountContextLabel(template.recommendedAccountContext),
-                },
-                {
-                  key: 'capabilities',
-                  label: t('role:templateCatalog.capabilitySummary'),
-                  value: t('role:templateCatalog.capabilityCount', {
-                    count: template.permissionCount,
-                  }),
-                },
-              ]}
-            />
-            {template.warnings.length > 0 ? (
-              <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-                {t('role:templateCatalog.sensitiveWarning')}
-              </p>
-            ) : null}
-          </div>
-        ))}
-      </div>
+      <AdminTableShell
+        data={templates}
+        columns={columns}
+        emptyTitle={t('role:templateCatalog.emptyTitle')}
+        emptyMessage={t('role:templateCatalog.emptyMessage')}
+        caption={t('role:templateCatalog.title')}
+      />
     </MetadataSection>
   );
 };
@@ -598,68 +604,73 @@ const RoleBundleTab = ({
     );
   }
 
+  const columns: Array<ColumnDef<RoleBundleListItem>> = [
+    {
+      accessorKey: 'code',
+      header: t('role:fields.name'),
+      cell: ({ row }) => (
+        <div>
+          <p className="font-semibold text-text">{formatBundleCodeLabel(row.original.code)}</p>
+          <p className="text-xs text-muted">
+            {formatBundlePurpose(row.original.code, row.original.businessPurpose)}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: t('role:bundles.status'),
+      cell: ({ row }) => (
+        <StatusBadge
+          status={row.original.status}
+          tone={row.original.status === 'ACTIVE' ? 'success' : 'muted'}
+        />
+      ),
+    },
+    {
+      accessorKey: 'recommendedAccountContext',
+      header: t('role:bundles.recommendedContext'),
+      cell: ({ row }) => formatAccountContextLabel(row.original.recommendedAccountContext),
+    },
+    {
+      accessorKey: 'childRoles',
+      header: t('role:bundles.childRoles'),
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.childRoles.map((roleCode) => (
+            <ReferenceChip key={roleCode} label={formatRoleCodeLabel(roleCode)} />
+          ))}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'recommendedScopes',
+      header: t('role:bundles.recommendedScope'),
+      cell: ({ row }) =>
+        t('role:bundles.scopeCount', {
+          count: row.original.recommendedScopes.length,
+        }),
+    },
+    {
+      id: 'support',
+      header: t('role:bundles.supportMode'),
+      cell: ({ row }) =>
+        row.original.sensitive || row.original.sensitiveWarning ? (
+          <StatusBadge label={t('role:bundles.sensitiveWarning')} tone="warning" />
+        ) : (
+          t('role:bundles.readOnlySupport')
+        ),
+    },
+  ];
+
   return (
-    <div className="grid gap-3">
-      {bundles.map((bundle) => (
-        <MetadataSection
-          key={bundle.code}
-          title={formatBundleCodeLabel(bundle.code)}
-          subtitle={formatBundlePurpose(bundle.code, bundle.businessPurpose)}
-        >
-          <div className="space-y-3">
-            <ReadOnlyFieldGrid
-              columns={3}
-              fields={[
-                { key: 'code', label: t('role:bundles.code'), value: bundle.code },
-                {
-                  key: 'status',
-                  label: t('role:bundles.status'),
-                  value: (
-                    <StatusBadge
-                      status={bundle.status}
-                      tone={bundle.status === 'ACTIVE' ? 'success' : 'muted'}
-                    />
-                  ),
-                },
-                {
-                  key: 'context',
-                  label: t('role:bundles.recommendedContext'),
-                  value: formatAccountContextLabel(bundle.recommendedAccountContext),
-                },
-                {
-                  key: 'roles',
-                  label: t('role:bundles.childRoles'),
-                  value: (
-                    <div className="flex flex-wrap gap-1">
-                      {bundle.childRoles.map((roleCode) => (
-                        <ReferenceChip key={roleCode} label={formatRoleCodeLabel(roleCode)} />
-                      ))}
-                    </div>
-                  ),
-                },
-                {
-                  key: 'scope',
-                  label: t('role:bundles.recommendedScope'),
-                  value: t('role:bundles.scopeCount', {
-                    count: bundle.recommendedScopes.length,
-                  }),
-                },
-                {
-                  key: 'mode',
-                  label: t('role:bundles.supportMode'),
-                  value: t('role:bundles.readOnlySupport'),
-                },
-              ]}
-            />
-            {bundle.sensitive || bundle.sensitiveWarning ? (
-              <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-                {t('role:bundles.sensitiveWarning')}
-              </p>
-            ) : null}
-          </div>
-        </MetadataSection>
-      ))}
-    </div>
+    <AdminTableShell
+      data={bundles}
+      columns={columns}
+      emptyTitle={t('role:bundles.emptyTitle')}
+      emptyMessage={t('role:bundles.emptyMessage')}
+      caption={t('role:tabs.bundles')}
+    />
   );
 };
 
@@ -793,6 +804,16 @@ const RoleUserAccessTab = ({
   onRetry: () => void;
 }): JSX.Element => {
   const { t } = useTranslation(['role', 'common']);
+  const loadSearchFirstUserOptions = useCallback(
+    (search: string): ReturnType<typeof loadUserReferenceOptions> => {
+      if (search.trim().length < 2) {
+        return Promise.resolve([]);
+      }
+
+      return loadUserReferenceOptions(search);
+    },
+    [],
+  );
 
   return (
     <div className="space-y-4">
@@ -804,7 +825,7 @@ const RoleUserAccessTab = ({
           pickerId="role-effective-access-user"
           value={userId}
           onChange={onUserChange}
-          loadOptions={loadUserReferenceOptions}
+          loadOptions={loadSearchFirstUserOptions}
           placeholder={t('role:placeholders.userSearch')}
           resourceLabel={t('role:userAccess.userResource')}
           emptySlot={<p className="text-xs text-muted">{t('role:userAccess.noUserResults')}</p>}
@@ -972,6 +993,10 @@ const roleCodeLabels: Record<string, string> = {
   PAYROLL_DRAFT_APPROVER: 'Duyệt nháp lương',
   VIEWER_AUDITOR: 'Audit / Chỉ đọc',
   STAFF_CONSOLE_USER: 'Nhân sự tự xem dữ liệu',
+  ADMIN_FULL: 'Vai trò cũ: quản trị toàn hệ thống',
+  TEAM_MANAGER: 'Vai trò cũ: quản lý nhóm',
+  COMMERCIAL_FINANCE: 'Vai trò cũ: tài chính thương mại',
+  TALENT_STAFF_SELF: 'Vai trò cũ: nhân sự tự phục vụ',
 };
 
 const capabilityGroupLabels: Record<string, string> = {

@@ -6,18 +6,14 @@ import { createRoleActionRailItems } from '@modules/role/actions/role-action-rai
 import { RoleBoundaryNotice } from '@modules/role/components/RoleBoundaryNotice';
 import { roleAssignmentStateValues } from '@modules/role/constants/role.constants';
 import {
-  RoleAssignmentRulesSurface,
   RoleEditSurface,
   RoleLifecycleReasonSurface,
-  RolePermissionsSurface,
 } from '@modules/role/forms/role-mutation-forms';
 import {
-  useRoleAssignmentRuleReplacementMutation,
   useRoleAssignments,
   useRoleDetail,
   useRoleLifecycleMutation,
   useRolePermissionMatrix,
-  useRolePermissionReplacementMutation,
   useUpdateRoleMutation,
 } from '@modules/role/hooks/use-role';
 import { createRoleAssignmentColumns } from '@modules/role/tables/role-columns';
@@ -65,8 +61,6 @@ import {
 
 type ActiveMutationSurface =
   | 'edit'
-  | 'permissions'
-  | 'assignment-rules'
   | 'deactivate'
   | 'archive'
   | null;
@@ -98,35 +92,35 @@ const formatOptionalTimestamp = (value?: number | string | null): string =>
   value === null || value === undefined ? '-' : formatBusinessTimestamp(value);
 
 const roleTemplateDisplayNames: Partial<Record<RoleTemplateCode, string>> = {
-  OWNER_ADMIN: 'Owner Admin',
-  ACCESS_ADMIN: 'Access Admin',
-  HR_OPERATIONS: 'HR Operations',
-  HR_TERMS_APPROVER: 'HR Terms Approver',
-  PRODUCTION_OPS: 'Production Ops',
-  PLATFORM_CHANNEL_OPS: 'Platform Channel Ops',
-  CREATIVE_VISUAL_LEAD: 'Creative Visual Lead',
-  CONTENT_OPS: 'Content Ops',
-  TALENT_GROUP_MANAGER: 'Talent Group Manager',
-  ORG_UNIT_MANAGER: 'Org Unit Manager',
-  KPI_OPERATIONS: 'KPI Operations',
-  COMMERCIAL_CONTRACT_OPS: 'Commercial Contract Ops',
-  REVENUE_FINANCE_OPS: 'Revenue Finance Ops',
-  REVENUE_APPROVER: 'Revenue Approver',
-  REVENUE_RECONCILER: 'Revenue Reconciler',
-  COMMISSION_OPS: 'Commission Ops',
-  COMMISSION_APPROVER: 'Commission Approver',
-  ATTENDANCE_OPS: 'Attendance Ops',
-  LEAVE_REVIEWER: 'Leave Reviewer',
-  ATTENDANCE_APPROVER: 'Attendance Approver',
-  MONTHLY_CLOSE_OWNER: 'Monthly Close Owner',
-  PAYROLL_DRAFT_OPS: 'Payroll Draft Ops',
-  PAYROLL_DRAFT_APPROVER: 'Payroll Draft Approver',
-  VIEWER_AUDITOR: 'Viewer Auditor',
-  STAFF_CONSOLE_USER: 'Staff Console User',
-  ADMIN_FULL: 'Legacy Admin Full',
-  TEAM_MANAGER: 'Legacy Team Manager',
-  COMMERCIAL_FINANCE: 'Legacy Commercial Finance',
-  TALENT_STAFF_SELF: 'Legacy Talent/Staff Self',
+  OWNER_ADMIN: 'Quản trị chủ sở hữu',
+  ACCESS_ADMIN: 'Quản trị phân quyền',
+  HR_OPERATIONS: 'Vận hành nhân sự',
+  HR_TERMS_APPROVER: 'Duyệt điều khoản nhân sự',
+  PRODUCTION_OPS: 'Vận hành sản xuất',
+  PLATFORM_CHANNEL_OPS: 'Vận hành kênh nền tảng',
+  CREATIVE_VISUAL_LEAD: 'Phụ trách hình ảnh sáng tạo',
+  CONTENT_OPS: 'Vận hành nội dung',
+  TALENT_GROUP_MANAGER: 'Quản lý nhóm Talent',
+  ORG_UNIT_MANAGER: 'Quản lý phòng ban',
+  KPI_OPERATIONS: 'Vận hành KPI',
+  COMMERCIAL_CONTRACT_OPS: 'Vận hành hợp đồng thương mại',
+  REVENUE_FINANCE_OPS: 'Vận hành tài chính doanh thu',
+  REVENUE_APPROVER: 'Duyệt doanh thu',
+  REVENUE_RECONCILER: 'Đối soát doanh thu',
+  COMMISSION_OPS: 'Vận hành hoa hồng',
+  COMMISSION_APPROVER: 'Duyệt hoa hồng',
+  ATTENDANCE_OPS: 'Vận hành chấm công',
+  LEAVE_REVIEWER: 'Rà soát nghỉ phép',
+  ATTENDANCE_APPROVER: 'Duyệt chấm công',
+  MONTHLY_CLOSE_OWNER: 'Phụ trách khóa sổ tháng',
+  PAYROLL_DRAFT_OPS: 'Vận hành nháp lương',
+  PAYROLL_DRAFT_APPROVER: 'Duyệt nháp lương',
+  VIEWER_AUDITOR: 'Audit / Chỉ đọc',
+  STAFF_CONSOLE_USER: 'Nhân sự tự xem dữ liệu',
+  ADMIN_FULL: 'Vai trò cũ: quản trị toàn hệ thống',
+  TEAM_MANAGER: 'Vai trò cũ: quản lý nhóm',
+  COMMERCIAL_FINANCE: 'Vai trò cũ: tài chính thương mại',
+  TALENT_STAFF_SELF: 'Vai trò cũ: nhân sự tự phục vụ',
 };
 
 const readTemplateDisplay = (templateCode?: RoleTemplateCode | null): string =>
@@ -145,8 +139,6 @@ export const RoleDetailPage = (): JSX.Element => {
   const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateRoleMutation();
   const lifecycleMutation = useRoleLifecycleMutation();
-  const permissionsMutation = useRolePermissionReplacementMutation();
-  const assignmentRulesMutation = useRoleAssignmentRuleReplacementMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
 
@@ -279,38 +271,6 @@ export const RoleDetailPage = (): JSX.Element => {
     try {
       await updateMutation.mutateAsync({ roleId: record.id, payload });
       notifySuccess('role:feedback.updated');
-      setActiveSurface(null);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
-  const onPermissionsSubmit = async (
-    payload: Parameters<typeof permissionsMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!record) {
-      return;
-    }
-
-    try {
-      await permissionsMutation.mutateAsync({ roleId: record.id, payload });
-      notifySuccess('role:feedback.permissionsUpdated');
-      setActiveSurface(null);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
-  const onAssignmentRulesSubmit = async (
-    payload: Parameters<typeof assignmentRulesMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!record) {
-      return;
-    }
-
-    try {
-      await assignmentRulesMutation.mutateAsync({ roleId: record.id, payload });
-      notifySuccess('role:feedback.assignmentRulesUpdated');
       setActiveSurface(null);
     } catch (error) {
       notifyError(error as NormalizedApiError);
@@ -578,22 +538,6 @@ export const RoleDetailPage = (): JSX.Element => {
                 isPending={updateMutation.isPending}
                 onCancel={() => setActiveSurface(null)}
                 onSubmit={onUpdateSubmit}
-              />
-            ) : null}
-            {activeSurface === 'permissions' ? (
-              <RolePermissionsSurface
-                initialPermissions={record.permissions.map((permission) => permission.code)}
-                isPending={permissionsMutation.isPending}
-                onCancel={() => setActiveSurface(null)}
-                onSubmit={onPermissionsSubmit}
-              />
-            ) : null}
-            {activeSurface === 'assignment-rules' ? (
-              <RoleAssignmentRulesSurface
-                initialRules={record.assignmentRules}
-                isPending={assignmentRulesMutation.isPending}
-                onCancel={() => setActiveSurface(null)}
-                onSubmit={onAssignmentRulesSubmit}
               />
             ) : null}
             {activeSurface === 'deactivate' ? (

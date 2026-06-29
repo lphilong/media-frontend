@@ -209,6 +209,8 @@ export type EffectiveAccessRoleAssignment = {
   roleId: string;
   roleCode: string | null;
   roleName: string | null;
+  permissions: string[];
+  legacyScopeGrants: RoleAssignmentScopeGrants | null;
   structuredScopeGrants: Array<Record<string, unknown>>;
   scopeFingerprint: string;
   reason: string | null;

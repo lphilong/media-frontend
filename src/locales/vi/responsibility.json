@@ -64,7 +64,7 @@
   },
   "list": {
     "title": "Danh sách phân công",
-    "subtitle": "Hiá»ƒn thá»‹ cÃ¡c phÃ¢n cÃ´ng trÃ¡ch nhiá»‡m quáº£n lÃ½ trung tÃ¢m Ä‘ang hiá»‡u lá»±c.",
+    "subtitle": "Hiển thị các phân công trách nhiệm quản lý",
     "emptyTitle": "Chưa có phân công",
     "emptyMessage": "Chọn đối tượng và hồ sơ phụ trách để tạo phân công trung tâm.",
     "loadErrorTitle": "Không tải được phân công",

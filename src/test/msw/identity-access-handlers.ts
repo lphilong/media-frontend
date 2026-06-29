@@ -773,7 +773,16 @@ const roleTemplates: RoleTemplateRecord[] = [
     name: 'Access Admin',
     category: 'ACCESS_GOVERNANCE',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['user:view', 'user:create', 'user:edit', 'role:list', 'role:view', 'role:create', 'role:update', 'role:assign_to_user'],
+    permissions: [
+      'user:view',
+      'user:create',
+      'user:edit',
+      'role:list',
+      'role:view',
+      'role:create',
+      'role:update',
+      'role:assign_to_user',
+    ],
     status: 'READY',
   }),
   createRoleTemplateRecord({
@@ -781,42 +790,89 @@ const roleTemplates: RoleTemplateRecord[] = [
     name: 'HR Terms Approver',
     category: 'PEOPLE_APPROVAL',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['employmentTerms.read', 'employmentTerms.readSensitive', 'employmentTerms.approve', 'employmentTerms.audit'],
+    permissions: [
+      'employmentTerms.read',
+      'employmentTerms.readSensitive',
+      'employmentTerms.approve',
+      'employmentTerms.audit',
+    ],
   }),
   createRoleTemplateRecord({
     code: 'PLATFORM_CHANNEL_OPS',
     name: 'Platform Channel Ops',
     category: 'PLATFORM',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['platformAccount.read', 'platformAccount.lookup', 'platformAccount.create', 'platformAccount.update', 'platformAccount.manageOwnership', 'platformAccount.manageLifecycle', 'platformAccount.manageCapabilities'],
+    permissions: [
+      'platformAccount.read',
+      'platformAccount.lookup',
+      'platformAccount.create',
+      'platformAccount.update',
+      'platformAccount.manageOwnership',
+      'platformAccount.manageLifecycle',
+      'platformAccount.manageCapabilities',
+    ],
   }),
   createRoleTemplateRecord({
     code: 'CREATIVE_VISUAL_LEAD',
     name: 'Creative Visual Lead',
     category: 'CREATIVE',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['event.read', 'event.lookup', 'studioResource.read', 'studioResource.lookup', 'workSchedule.read', 'talent.read', 'talentGroup.read'],
+    permissions: [
+      'event.read',
+      'event.lookup',
+      'studioResource.read',
+      'studioResource.lookup',
+      'workSchedule.read',
+      'talent.read',
+      'talentGroup.read',
+    ],
   }),
   createRoleTemplateRecord({
     code: 'CONTENT_OPS',
     name: 'Content Ops',
     category: 'CONTENT',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['event.read', 'event.lookup', 'studioResource.read', 'studioResource.lookup', 'workSchedule.read', 'platformAccount.read', 'platformAccount.lookup'],
+    permissions: [
+      'event.read',
+      'event.lookup',
+      'studioResource.read',
+      'studioResource.lookup',
+      'workSchedule.read',
+      'platformAccount.read',
+      'platformAccount.lookup',
+    ],
   }),
   createRoleTemplateRecord({
     code: 'ORG_UNIT_MANAGER',
     name: 'Org Unit Manager',
     category: 'MANAGEMENT',
     recommendedAccountContext: 'MANAGER_CONSOLE',
-    permissions: ['orgUnit.read', 'employmentProfile.read', 'talent.read', 'workSchedule.read', 'kpi.read', 'kpi.readProgress'],
+    permissions: [
+      'orgUnit.read',
+      'employmentProfile.read',
+      'talent.read',
+      'workSchedule.read',
+      'kpi.read',
+      'kpi.readProgress',
+    ],
   }),
   createRoleTemplateRecord({
     code: 'KPI_OPERATIONS',
     name: 'KPI Operations',
     category: 'KPI',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['kpi.read', 'kpi.createPlan', 'kpi.updateDraft', 'kpi.publish', 'kpi.manageAllocation', 'kpi.archive', 'kpi.enterActual', 'kpi.correctActual', 'kpi.readProgress', 'kpi.finalize'],
+    permissions: [
+      'kpi.read',
+      'kpi.createPlan',
+      'kpi.updateDraft',
+      'kpi.publish',
+      'kpi.manageAllocation',
+      'kpi.archive',
+      'kpi.enterActual',
+      'kpi.correctActual',
+      'kpi.readProgress',
+      'kpi.finalize',
+    ],
     status: 'READY',
   }),
   createRoleTemplateRecord({
@@ -824,7 +880,15 @@ const roleTemplates: RoleTemplateRecord[] = [
     name: 'Commercial Contract Ops',
     category: 'COMMERCIAL',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['contractRegistry.read', 'contractRegistry.lookup', 'contractRegistry.create', 'contractRegistry.update', 'contractObligation.read', 'contractObligation.manageDraft', 'contractObligation.deliver'],
+    permissions: [
+      'contractRegistry.read',
+      'contractRegistry.lookup',
+      'contractRegistry.create',
+      'contractRegistry.update',
+      'contractObligation.read',
+      'contractObligation.manageDraft',
+      'contractObligation.deliver',
+    ],
     status: 'READY',
   }),
   createRoleTemplateRecord({
@@ -840,7 +904,12 @@ const roleTemplates: RoleTemplateRecord[] = [
     name: 'Revenue Reconciler',
     category: 'FINANCE_RECONCILIATION',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['revenueLedger.read', 'revenueLedger.lookup', 'revenueLedger.reconcile', 'dashboardLite.read'],
+    permissions: [
+      'revenueLedger.read',
+      'revenueLedger.lookup',
+      'revenueLedger.reconcile',
+      'dashboardLite.read',
+    ],
     status: 'READY',
   }),
   createRoleTemplateRecord({
@@ -848,7 +917,15 @@ const roleTemplates: RoleTemplateRecord[] = [
     name: 'Commission Ops',
     category: 'COMMISSION',
     recommendedAccountContext: 'ADMIN_CONSOLE',
-    permissions: ['commissionRule.read', 'commissionRule.lookup', 'commissionRule.create', 'commissionRule.update', 'commissionSettlement.read', 'commissionSettlement.create', 'commissionSettlement.update'],
+    permissions: [
+      'commissionRule.read',
+      'commissionRule.lookup',
+      'commissionRule.create',
+      'commissionRule.update',
+      'commissionSettlement.read',
+      'commissionSettlement.create',
+      'commissionSettlement.update',
+    ],
     status: 'READY',
   }),
   createRoleTemplateRecord({
@@ -1177,7 +1254,9 @@ function cloneCurrentActorCapabilities(
   };
 }
 
-function buildWorkspaceAvailability(accountContexts: AccountContext[]): WorkspaceAvailabilityRecord {
+function buildWorkspaceAvailability(
+  accountContexts: AccountContext[],
+): WorkspaceAvailabilityRecord {
   const uniqueContexts = Array.from(new Set(accountContexts));
   const primaryWorkspace =
     (['ADMIN_CONSOLE', 'MANAGER_CONSOLE', 'STAFF_CONSOLE'] as const).find((context) =>
@@ -1418,6 +1497,8 @@ const toEffectiveAccessRecord = (user: UserRecord) => {
         roleId: assignment.roleId,
         roleCode: role?.code ?? null,
         roleName: role?.name ?? null,
+        permissions: role ? role.permissions.map((permission) => permission.code) : [],
+        legacyScopeGrants: assignment.scopeGrants ?? null,
         structuredScopeGrants: scopeModules.map((module) => ({ module })),
         scopeFingerprint: scopeModules.length > 0 ? scopeModules.join('|') : 'none',
         reason: assignment.reason,
@@ -1430,7 +1511,7 @@ const toEffectiveAccessRecord = (user: UserRecord) => {
         bundleOrigin: null,
         sensitiveOrGlobal: Boolean(
           assignment.scopeGrants &&
-            Object.values(assignment.scopeGrants).some((scopes) => scopes?.includes('global')),
+          Object.values(assignment.scopeGrants).some((scopes) => scopes?.includes('global')),
         ),
       };
     }),

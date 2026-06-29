@@ -56,7 +56,7 @@
     "custom": "Custom",
     "templateVersion": "Template version",
     "templateAppliedAt": "Template applied",
-    "permissionsRemainExplicit": "Permissions remain explicit and template metadata is non-authoritative."
+    "permissionsRemainExplicit": "Capabilities remain explicit and template notes do not grant access."
   },
   "permissionGroups": {
     "summaryItem": "{{group}} ({{count}} capabilities)",
@@ -84,7 +84,7 @@
   },
   "scopePicker": {
     "assignmentScopes": "Assignment scopes",
-    "backendValidation": "Assigning scopes affects runtime access. The source system rejects scopes the current actor cannot grant.",
+    "backendValidation": "Assigned scopes affect access. The source system rejects scopes the current actor cannot grant.",
     "recommendedScopes": "Recommended scopes",
     "recommendedScopesHelp": "Recommended scopes are prefilled from the role template. Adjust them before submitting if this user assignment needs a different scope.",
     "applyRecommendedScopes": "Apply recommended scopes",
@@ -136,8 +136,6 @@
     "create": "Create role",
     "closeCreate": "Close create",
     "edit": "Edit",
-    "replacePermissions": "Replace permissions",
-    "replaceAssignmentRules": "Replace assignment rules",
     "assignToUser": "Assign to user",
     "revokeAssignment": "Revoke",
     "activate": "Activate",
@@ -152,7 +150,7 @@
     "policyTitle": "Permission policy",
     "permissionMatrixTitle": "Permission matrix",
     "archivedReadOnly": "Archived roles are immutable.",
-    "boundaryNotice": "A role only describes business capabilities. The role detail page is not where access is assigned or revoked; assignment must use the user-first flow when a safe source-backed contract is available."
+    "boundaryNotice": "A role only describes business capabilities. The role detail page is not where access is assigned or revoked; assignment must use the user-first flow when this workspace supports it."
   },
   "mutations": {
     "create": {
@@ -162,22 +160,10 @@
       "pending": "Creating role"
     },
     "update": {
-      "title": "Update metadata and delegation bands",
-      "subtitle": "Only Role metadata and delegation-band fields are submitted.",
+      "title": "Update role details and delegation bands",
+      "subtitle": "Only role details and delegation-band fields are submitted.",
       "submit": "Update role",
       "pending": "Updating role"
-    },
-    "permissions": {
-      "title": "Replace permissions",
-      "subtitle": "Full replacement payload is exactly { permissions: [...] }.",
-      "submit": "Replace permissions",
-      "pending": "Replacing permissions"
-    },
-    "assignmentRules": {
-      "title": "Replace assignment rules",
-      "subtitle": "Full replacement payload is exactly { rules: [...] }.",
-      "submit": "Replace rules",
-      "pending": "Replacing rules"
     },
     "deactivate": {
       "title": "Deactivate role",
@@ -205,8 +191,6 @@
     }
   },
   "placeholders": {
-    "permissions": "role:view\nuser:view",
-    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]",
     "userSearch": "Search users by name or email"
   },
   "referenceHelp": {
@@ -214,7 +198,7 @@
   },
   "validation": {
     "required": "This field is required.",
-    "invalidRulesJson": "Assignment rules must be a JSON array with plain-object or null conditions.",
+    "invalidRulesJson": "Assignment rules must use a supported structured rule list.",
     "adminRoleRequiresAdminActor": "This role requires an admin console account.",
     "selfRoleRequiresStaffActor": "This role requires a self-service staff account."
   },
@@ -227,8 +211,6 @@
     "created": "Role created.",
     "updated": "Role updated.",
     "lifecycleUpdated": "Role lifecycle updated.",
-    "permissionsUpdated": "Role permissions replaced.",
-    "assignmentRulesUpdated": "Role assignment rules replaced.",
     "assignedToUser": "Role assigned to user.",
     "assignedToUserDetailed": "Assigned {{role}} to {{user}}.",
     "assignmentResponseInvalid": "Role assignment response was not recognized.",
@@ -243,7 +225,7 @@
   },
   "templateCatalog": {
     "title": "Role template catalog",
-    "subtitle": "Source-provided templates; template metadata is not runtime authority.",
+    "subtitle": "Source-provided templates; template notes do not grant access by themselves.",
     "loadErrorTitle": "Unable to load role templates",
     "loadErrorMessage": "The role template catalog could not be loaded.",
     "emptyTitle": "No role templates",
@@ -273,7 +255,7 @@
     "unavailableTitle": "User-first assignment flow is not available",
     "unavailableMessage": "Access cannot be assigned in this step yet. You can review current access or contact the access owner.",
     "workflowTitle": "User-first access assignment flow",
-    "workflowSubtitle": "These steps show the target product direction. Confirmation is disabled because the frontend does not yet have a safe source-backed contract to record access assignments.",
+    "workflowSubtitle": "These steps show the target product direction. Confirmation is disabled because this workspace does not yet support recording access assignments.",
     "departmentFilterLabel": "Unit / Department",
     "departmentFilterValue": "Choose a department to find personnel",
     "departmentFilterHelp": "Use this only to filter personnel. It is not the access-grant scope.",
@@ -328,7 +310,7 @@
     "noPrimaryWorkspace": "None",
     "rolesTitle": "Effective roles",
     "sensitive": "Sensitive",
-    "scopeCount": "{{count}} structured scopes",
+    "scopeCount": "{{count}} assigned scopes",
     "noAssignmentsTitle": "No effective roles",
     "noAssignmentsMessage": "The source system did not return active role assignments.",
     "capabilitiesTitle": "Business capability groups",

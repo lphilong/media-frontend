@@ -84,7 +84,7 @@
   },
   "scopePicker": {
     "assignmentScopes": "分配范围",
-    "backendValidation": "分配范围会影响运行时访问。源系统会拒绝当前操作者无权授予的范围。",
+    "backendValidation": "分配范围会影响访问。源系统会拒绝当前操作者无权授予的范围。",
     "recommendedScopes": "推荐范围",
     "recommendedScopesHelp": "推荐范围会从角色模板预填。提交前如需为此用户分配使用不同范围，请进行调整。",
     "applyRecommendedScopes": "应用推荐范围",
@@ -136,8 +136,6 @@
     "create": "新建角色",
     "closeCreate": "关闭新建",
     "edit": "编辑",
-    "replacePermissions": "替换权限",
-    "replaceAssignmentRules": "替换分配规则",
     "assignToUser": "分配给用户",
     "revokeAssignment": "撤销分配",
     "activate": "启用",
@@ -167,18 +165,6 @@
       "submit": "更新角色",
       "pending": "角色更新中"
     },
-    "permissions": {
-      "title": "替换权限",
-      "subtitle": "完整替换 payload 必须为 { permissions: [...] }。",
-      "submit": "替换权限",
-      "pending": "权限替换中"
-    },
-    "assignmentRules": {
-      "title": "替换分配规则",
-      "subtitle": "完整替换 payload 必须为 { rules: [...] }。",
-      "submit": "替换规则",
-      "pending": "规则替换中"
-    },
     "deactivate": {
       "title": "停用角色",
       "subtitle": "源系统可能因启用中的分配或治理约束而拒绝。",
@@ -205,8 +191,6 @@
     }
   },
   "placeholders": {
-    "permissions": "role:view user:view",
-    "assignmentRules": "[{\"code\":\"ALLOW_ADMIN\",\"conditions\":null}]",
     "userSearch": "按姓名或邮箱搜索用户"
   },
   "referenceHelp": {
@@ -214,7 +198,7 @@
   },
   "validation": {
     "required": "此字段为必填。",
-    "invalidRulesJson": "分配规则必须是 JSON 数组，conditions 必须是普通对象或 null。",
+    "invalidRulesJson": "分配规则必须使用支持的结构化规则列表。",
     "adminRoleRequiresAdminActor": "此角色需要管理后台账号。",
     "selfRoleRequiresStaffActor": "此角色需要自助员工账号。"
   },
@@ -227,8 +211,6 @@
     "created": "角色已创建。",
     "updated": "角色已更新。",
     "lifecycleUpdated": "角色生命周期已更新。",
-    "permissionsUpdated": "角色权限已替换。",
-    "assignmentRulesUpdated": "角色分配规则已替换。",
     "assignedToUser": "角色已分配给用户。",
     "assignedToUserDetailed": "已将 {{role}} 分配给 {{user}}。",
     "assignmentResponseInvalid": "无法识别角色分配响应。",

@@ -31,7 +31,10 @@ import type {
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
 import { apiRequest, type NormalizedApiError } from '@shared/api';
-import { accountContextSchema, workspaceAvailabilitySchema } from '@shared/auth/current-actor-capabilities';
+import {
+  accountContextSchema,
+  workspaceAvailabilitySchema,
+} from '@shared/auth/current-actor-capabilities';
 
 const roleStateSchema = z.enum(roleStateValues);
 const roleAssignmentStateSchema = z.enum(roleAssignmentStateValues);
@@ -312,6 +315,8 @@ const effectiveAccessAssignmentSchema = z
     roleId: z.string().trim().min(1),
     roleCode: z.string().nullable(),
     roleName: z.string().nullable(),
+    permissions: z.array(z.string().trim().min(1)),
+    legacyScopeGrants: roleAssignmentScopeGrantsSchema.nullable(),
     structuredScopeGrants: z.array(z.record(z.unknown())),
     scopeFingerprint: z.string(),
     reason: z.string().nullable(),

@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -18,11 +18,9 @@ import {
   updateRole,
 } from '@modules/role/api/role.api';
 import {
-  RoleAssignmentRulesSurface,
   RoleAssignUserSurface,
   RoleCreateSurface,
   RoleEditSurface,
-  RolePermissionsSurface,
   RoleRevokeAssignmentSurface,
 } from '@modules/role/forms/role-mutation-forms';
 import {
@@ -534,61 +532,42 @@ describe('role IA-1 query and payload shaping', () => {
     await expect(fetchRoleTemplates()).rejects.toThrow();
   });
 
-  it('submits Role create, update, permission, assignment-rule, assign, and revoke surfaces with supported payloads', async () => {
+  it('submits normal Role create, update, assign, and revoke surfaces with supported payloads', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
-    const onCreate = vi.fn();
     const onCreateFromTemplate = vi.fn();
     const onUpdate = vi.fn();
-    const onPermissions = vi.fn();
-    const onRules = vi.fn();
     const onAssign = vi.fn();
     const onRevoke = vi.fn();
 
     const createRender = render(
       <RoleCreateSurface
         onCancel={() => undefined}
-        onSubmit={onCreate}
         onTemplateSubmit={onCreateFromTemplate}
         onPreviewTemplate={vi.fn(async () => roleTemplatePreview)}
         templateCatalog={roleTemplateCatalog}
       />,
     );
-    await user.click(screen.getByLabelText(i18n.t('role:templates.customMode')));
+    expect(screen.queryByLabelText(i18n.t('role:templates.customMode'))).not.toBeInTheDocument();
+    await user.selectOptions(
+      screen.getByRole('combobox', {
+        name: i18n.t('role:templates.roleTemplate'),
+      }),
+      'TALENT_GROUP_MANAGER',
+    );
     expect(screen.getByText(i18n.t('role:generatedCode.description'))).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('role:fields.name')), 'Ops role');
-    await user.type(
-      screen.getByLabelText(i18n.t('role:fields.permissions')),
-      'role:view role:view,user:view',
-    );
-    fireEvent.change(screen.getByLabelText(i18n.t('role:fields.assignmentRules')), {
-      target: {
-        value: '[{"code":"ALLOW_OPS","conditions":{"band":"LIMITED"}}]',
-      },
-    });
     await user.click(screen.getByRole('button', { name: i18n.t('role:mutations.create.submit') }));
-    expect(onCreate).toHaveBeenCalledWith({
+    expect(onCreateFromTemplate).toHaveBeenCalledWith({
+      templateCode: 'TALENT_GROUP_MANAGER',
       name: 'Ops role',
       description: null,
-      initialPermissions: ['role:view', 'user:view'],
-      initialDelegationBand: 'LIMITED',
-      initialMaxDelegatableBand: 'NONE',
-      initialAssignmentRules: [
-        {
-          id: undefined,
-          code: 'ALLOW_OPS',
-          description: undefined,
-          state: undefined,
-          conditions: { band: 'LIMITED' },
-        },
-      ],
     });
     createRender.unmount();
 
     const templateRender = render(
       <RoleCreateSurface
         onCancel={() => undefined}
-        onSubmit={onCreate}
         onTemplateSubmit={onCreateFromTemplate}
         onPreviewTemplate={vi.fn(async () => roleTemplatePreview)}
         templateCatalog={roleTemplateCatalog}
@@ -635,54 +614,6 @@ describe('role IA-1 query and payload shaping', () => {
       maxDelegatableBand: 'LIMITED',
     });
     editRender.unmount();
-
-    const permissionsRender = render(
-      <RolePermissionsSurface
-        initialPermissions={['role:view']}
-        onCancel={() => undefined}
-        onSubmit={onPermissions}
-      />,
-    );
-    await user.clear(screen.getByLabelText(i18n.t('role:fields.permissions')));
-    await user.type(
-      screen.getByLabelText(i18n.t('role:fields.permissions')),
-      'role:view user:view',
-    );
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.permissions.submit') }),
-    );
-    expect(onPermissions).toHaveBeenCalledWith({
-      permissions: ['role:view', 'user:view'],
-    });
-    permissionsRender.unmount();
-
-    const rulesRender = render(
-      <RoleAssignmentRulesSurface
-        initialRules={[]}
-        onCancel={() => undefined}
-        onSubmit={onRules}
-      />,
-    );
-    fireEvent.change(screen.getByLabelText(i18n.t('role:fields.assignmentRules')), {
-      target: {
-        value: '[{"code":"ALLOW_ADMIN","conditions":null}]',
-      },
-    });
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignmentRules.submit') }),
-    );
-    expect(onRules).toHaveBeenCalledWith({
-      rules: [
-        {
-          id: undefined,
-          code: 'ALLOW_ADMIN',
-          description: undefined,
-          state: undefined,
-          conditions: null,
-        },
-      ],
-    });
-    rulesRender.unmount();
 
     const assignRender = render(
       <MemoryRouter>
