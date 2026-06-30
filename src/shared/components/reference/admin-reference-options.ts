@@ -106,6 +106,40 @@ const toEmploymentProfileOption = (item: EmploymentProfileListItem): ReferenceOp
   href: APP_PATHS.employmentProfileDetail(item.id),
 });
 
+const toAccessAssignmentLinkedUserOption = (item: EmploymentProfileListItem): ReferenceOption => {
+  const linkedUserId = item.linkedUserId ?? '';
+  const linkedUserStatus = item.linkedUserRef?.status;
+  const disabled =
+    !linkedUserId ||
+    !['ACTIVE', 'ON_LEAVE'].includes(item.employmentStatus) ||
+    (linkedUserStatus !== undefined && linkedUserStatus !== 'ACTIVE');
+
+  return {
+    id: linkedUserId || item.id,
+    label:
+      compactDescription([
+        item.displayName,
+        item.linkedUserRef?.name,
+        item.linkedUserRef?.displayName,
+      ]) ?? item.displayName,
+    description: compactDescription([
+      item.employeeCode,
+      item.jobTitle,
+      item.orgUnitRef?.name ?? item.orgUnitRef?.displayName ?? item.orgUnitRef?.code,
+      item.employmentStatus,
+      linkedUserStatus ? `Tài khoản ${linkedUserStatus}` : undefined,
+    ]),
+    href: APP_PATHS.employmentProfileDetail(item.id),
+    disabled,
+    meta: {
+      employmentProfileId: item.id,
+      employeeCode: item.employeeCode,
+      employmentStatus: item.employmentStatus,
+      linkedUserStatus,
+    },
+  };
+};
+
 export const loadOrgUnitReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
   return loadLookupReferenceOptions('org-units', search, APP_PATHS.orgUnitDetail);
 };
@@ -137,6 +171,36 @@ export const loadUserReferenceOptions = async (search: string): Promise<Referenc
   });
 
   return response.data.map(toUserOption);
+};
+
+export const loadAccessAssignmentLinkedUserOptions = async (
+  search: string,
+): Promise<ReferenceOption[]> => {
+  const statuses: Array<Extract<EmploymentStatus, 'ACTIVE' | 'ON_LEAVE'>> = ['ACTIVE', 'ON_LEAVE'];
+  const result = await Promise.all(
+    statuses.map((employmentStatus) =>
+      fetchEmploymentProfiles({
+        search: search || undefined,
+        employmentStatus,
+        hasLinkedUser: true,
+        limit: OPTION_LIMIT,
+      }).then((response) => response.data),
+    ),
+  );
+
+  const seen = new Set<string>();
+  return result
+    .flat()
+    .filter((item) => {
+      const linkedUserId = item.linkedUserId ?? '';
+      if (!linkedUserId || seen.has(linkedUserId)) {
+        return false;
+      }
+      seen.add(linkedUserId);
+      return true;
+    })
+    .slice(0, OPTION_LIMIT)
+    .map(toAccessAssignmentLinkedUserOption);
 };
 
 const fetchUnlinkedUsersForReference = async (search: string): Promise<UserListItem[]> => {

@@ -254,6 +254,140 @@ export type EffectiveAccessRecord = {
   generatedAt: string;
 };
 
+export type AccessAssignmentScopeType =
+  | 'self'
+  | 'global'
+  | 'managedTalentGroup'
+  | 'managedOrgUnit'
+  | 'assignedPlatformAccount'
+  | 'financeGlobal'
+  | 'financePeriod'
+  | 'contractPortfolio'
+  | 'assignedEvent'
+  | 'assignedStudioResource'
+  | 'payrollPeriod'
+  | 'attendancePeriodOrg';
+
+export type AccessAssignmentScopeGrant = {
+  scopeType: AccessAssignmentScopeType;
+  targetId?: string;
+  targetKey?: string;
+  periodKey?: string;
+};
+
+export type AccessAssignmentTargetType = 'ROLE' | 'ROLE_TEMPLATE' | 'BUNDLE';
+
+export type AccessAssignmentTargetOption = {
+  assignmentKind: AccessAssignmentTargetType;
+  id?: string;
+  code: string;
+  version?: string;
+  name: string;
+  childRoles?: string[];
+  recommendedAccountContext?: RecommendedAccountContext;
+  requiredScopeTypes: string[];
+  requiresResponsibility: boolean;
+  requiredResponsibilityType?: string | string[] | null;
+  sensitiveLevel?: 'STANDARD' | 'HIGH_RISK' | string;
+  legacyAssignable: boolean;
+  recommendedPickerMode?: string;
+};
+
+export type AccessAssignmentTargetsMetadata = {
+  readOnly: boolean;
+  unrestrictedUserListReturned: boolean;
+  searchFirstUserPickerRequired: boolean;
+  eligibleUsersReturned: boolean;
+  userListReturned: boolean;
+  frontendSettableFields: string[];
+  frontendSettableAuthorityFields: string[];
+  backendOwnedAuthorityFields: string[];
+  assignmentTargets: AccessAssignmentTargetOption[];
+  previewRemainsAuthoritative: boolean;
+};
+
+export type AccessAssignmentRequestPayload = {
+  targetUserId: string;
+  assignmentTargetType: AccessAssignmentTargetType;
+  assignmentTargetId?: string;
+  assignmentTargetCode?: string;
+  bundleVersion?: string;
+  structuredScopeGrants: AccessAssignmentScopeGrant[];
+  reason: string;
+  sourceContext?: {
+    talentGroupId?: string;
+    orgUnitId?: string;
+    platformAccountId?: string;
+    eventId?: string;
+    studioResourceId?: string;
+    financePeriod?: string;
+    payrollPeriod?: string;
+    attendancePeriodOrgUnitId?: string;
+  };
+};
+
+export type AccessAssignmentIssue = {
+  severity?: 'BLOCKER' | 'WARNING' | string;
+  code: string;
+  summary?: string;
+  [key: string]: unknown;
+};
+
+export type AccessAssignmentPreviewResult = {
+  previewOnly?: boolean;
+  canApply: boolean;
+  blockers: AccessAssignmentIssue[];
+  warnings: AccessAssignmentIssue[];
+  targetUser?: Record<string, unknown>;
+  assignmentTarget?: Record<string, unknown>;
+  requestedScope?: AccessAssignmentScopeGrant[];
+  normalizedScope?: AccessAssignmentScopeGrant[];
+  scopeFingerprint?: string;
+  reasonRequirement?: Record<string, unknown>;
+  lifecyclePreview?: Record<string, unknown>;
+  currentEffectiveAccess?: Record<string, unknown> | null;
+  proposedEffectiveAccess?: Record<string, unknown> | null;
+  effectiveAccessDelta?: {
+    addedPermissions?: string[];
+    removedPermissions?: string[];
+    unchangedPermissions?: string[];
+  };
+  proposedAssignments?: Array<Record<string, unknown>>;
+  bundleExpansion?: Record<string, unknown> | null;
+  accountContextRequirement?: Record<string, unknown> | null;
+  consoleEntitlementPreview?: Record<string, unknown> | null;
+  responsibilityRequirements?: Array<Record<string, unknown>>;
+  sensitiveAccess?: Record<string, unknown> | null;
+  duplicateConflicts?: Array<Record<string, unknown>>;
+  legacyRoleStatus?: Record<string, unknown> | null;
+  selfAssignmentStatus?: Record<string, unknown> | null;
+  previewCompleteness?: Record<string, unknown> | null;
+  sourceTrace?: Record<string, unknown> | null;
+};
+
+export type AccessAssignmentApplyResult = {
+  applied: boolean;
+  canApply: boolean;
+  applyStatus: 'APPLIED' | 'BLOCKED' | string;
+  blockers: AccessAssignmentIssue[];
+  warnings: AccessAssignmentIssue[];
+  targetUser?: Record<string, unknown>;
+  assignmentTarget?: Record<string, unknown>;
+  normalizedScope?: AccessAssignmentScopeGrant[];
+  scopeFingerprint?: string;
+  proposedAssignments?: Array<Record<string, unknown>>;
+  appliedAssignments?: Array<Record<string, unknown>>;
+  bundleExpansion?: Record<string, unknown> | null;
+  accountContextResult?: Record<string, unknown> | null;
+  consoleEntitlementResult?: Record<string, unknown> | null;
+  responsibilityRequirements?: Array<Record<string, unknown>>;
+  sensitiveAccess?: Record<string, unknown> | null;
+  duplicateConflicts?: Array<Record<string, unknown>>;
+  auditTrace?: Record<string, unknown> | null;
+  sourceTrace?: Record<string, unknown> | null;
+  effectiveAccessAfterApply?: EffectiveAccessRecord | Record<string, unknown>;
+};
+
 export type RoleListQuery = {
   state?: RoleState;
   limit?: number;

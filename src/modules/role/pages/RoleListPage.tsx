@@ -16,6 +16,7 @@ import {
   useRoleList,
   useRoleTemplates,
 } from '@modules/role/hooks/use-role';
+import { AccessAssignmentTab } from '@modules/role/components/AccessAssignmentTab';
 import { createRoleListColumns } from '@modules/role/tables/role-columns';
 import type {
   EffectiveAccessRecord,
@@ -409,7 +410,7 @@ export const RoleListPage = (): JSX.Element => {
             onRetry={() => void roleBundlesQuery.refetch()}
           />
         ) : activeTab === 'assignments' ? (
-          <RoleAssignmentUnavailableTab />
+          <AccessAssignmentTab />
         ) : (
           <RoleUserAccessTab
             userId={effectiveAccessUserId}
@@ -671,120 +672,6 @@ const RoleBundleTab = ({
       emptyMessage={t('role:bundles.emptyMessage')}
       caption={t('role:tabs.bundles')}
     />
-  );
-};
-
-const RoleAssignmentUnavailableTab = (): JSX.Element => {
-  const { t } = useTranslation('role');
-
-  return (
-    <div className="space-y-4">
-      <EmptyState
-        title={t('assignmentTab.unavailableTitle')}
-        message={t('assignmentTab.unavailableMessage')}
-      />
-      <MetadataSection
-        title={t('assignmentTab.workflowTitle')}
-        subtitle={t('assignmentTab.workflowSubtitle')}
-      >
-        <ReadOnlyFieldGrid
-          columns={2}
-          fields={[
-            {
-              key: 'department-filter',
-              label: t('assignmentTab.departmentFilterLabel'),
-              value: t('assignmentTab.departmentFilterValue'),
-              description: t('assignmentTab.departmentFilterHelp'),
-            },
-            {
-              key: 'person',
-              label: t('assignmentTab.personLabel'),
-              value: t('assignmentTab.personValue'),
-              description: t('assignmentTab.personHelp'),
-            },
-            {
-              key: 'mode',
-              label: t('assignmentTab.modeLabel'),
-              value: t('assignmentTab.modeValue'),
-              description: t('assignmentTab.modeHelp'),
-            },
-            {
-              key: 'workspace',
-              label: t('assignmentTab.workspaceLabel'),
-              value: t('assignmentTab.workspaceValue'),
-              description: t('assignmentTab.workspaceHelp'),
-            },
-          ]}
-        />
-      </MetadataSection>
-
-      <MetadataSection title={t('assignmentTab.scopeTitle')}>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="rounded border border-border bg-bg px-3 py-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted">
-              {t('assignmentTab.talentGroupScopeLabel')}
-            </p>
-            <div className="mt-2 space-y-2 text-sm text-text">
-              <div>
-                <p className="font-medium">{t('assignmentTab.currentManaged')}</p>
-                <p className="text-muted">{t('assignmentTab.currentTalentGroupExample')}</p>
-              </div>
-              <div>
-                <p className="font-medium">{t('assignmentTab.addTalentGroup')}</p>
-                <p className="text-muted">{t('assignmentTab.newTalentGroupExample')}</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded border border-border bg-bg px-3 py-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted">
-              {t('assignmentTab.orgUnitScopeLabel')}
-            </p>
-            <div className="mt-2 space-y-2 text-sm text-text">
-              <div>
-                <p className="font-medium">{t('assignmentTab.currentManaged')}</p>
-                <p className="text-muted">{t('assignmentTab.currentOrgUnitExample')}</p>
-              </div>
-              <div>
-                <p className="font-medium">{t('assignmentTab.addOrgUnit')}</p>
-                <p className="text-muted">{t('assignmentTab.newOrgUnitExample')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </MetadataSection>
-
-      <MetadataSection title={t('assignmentTab.previewTitle')}>
-        <div className="space-y-3 text-sm text-text">
-          <p>{t('assignmentTab.reviewRequired')}</p>
-          <p>{t('assignmentTab.previewIntro')}</p>
-          <ul className="list-disc space-y-1 pl-5">
-            <li>{t('assignmentTab.previewWorkspaceChange')}</li>
-            <li>{t('assignmentTab.previewScopeChange')}</li>
-            <li>{t('assignmentTab.previewCapabilityChange')}</li>
-          </ul>
-          <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
-            {t('assignmentTab.sensitiveWarning')}
-          </p>
-          <label className="block">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted">
-              {t('assignmentTab.reasonLabel')}
-            </span>
-            <textarea
-              className="mt-1 min-h-20 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
-              placeholder={t('assignmentTab.reasonPlaceholder')}
-              disabled
-            />
-          </label>
-          <button
-            type="button"
-            disabled
-            className="rounded border border-border px-3 py-2 text-sm font-medium text-muted disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {t('assignmentTab.confirmLabel')}
-          </button>
-        </div>
-      </MetadataSection>
-    </div>
   );
 };
 

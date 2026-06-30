@@ -8,6 +8,10 @@ import {
 } from '@modules/role/constants/role.constants';
 import type {
   CursorPagedResponse,
+  AccessAssignmentApplyResult,
+  AccessAssignmentPreviewResult,
+  AccessAssignmentRequestPayload,
+  AccessAssignmentTargetsMetadata,
   RoleAssignToUserPayload,
   RoleAssignmentItem,
   RoleAssignmentListQuery,
@@ -309,6 +313,154 @@ const roleBundleListResponseSchema = z
   })
   .strict();
 
+const accessAssignmentScopeTypeSchema = z.enum([
+  'self',
+  'global',
+  'managedTalentGroup',
+  'managedOrgUnit',
+  'assignedPlatformAccount',
+  'financeGlobal',
+  'financePeriod',
+  'contractPortfolio',
+  'assignedEvent',
+  'assignedStudioResource',
+  'payrollPeriod',
+  'attendancePeriodOrg',
+]);
+
+const accessAssignmentScopeGrantSchema = z
+  .object({
+    scopeType: accessAssignmentScopeTypeSchema,
+    targetId: z.string().trim().min(1).optional(),
+    targetKey: z.string().trim().min(1).optional(),
+    periodKey: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+const accessAssignmentTargetOptionSchema = z
+  .object({
+    assignmentKind: z.enum(['ROLE', 'ROLE_TEMPLATE', 'BUNDLE']),
+    id: z.string().trim().min(1).optional(),
+    code: z.string().trim().min(1),
+    version: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1),
+    childRoles: z.array(z.string().trim().min(1)).optional(),
+    recommendedAccountContext: accountContextSchema.optional(),
+    requiredScopeTypes: z.array(z.string().trim().min(1)).default([]),
+    requiresResponsibility: z.boolean().default(false),
+    requiredResponsibilityType: z
+      .union([z.string().trim().min(1), z.array(z.string().trim().min(1))])
+      .nullable()
+      .optional(),
+    sensitiveLevel: z.string().trim().min(1).optional(),
+    legacyAssignable: z.boolean(),
+    recommendedPickerMode: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+const accessAssignmentTargetsMetadataSchema = z
+  .object({
+    readOnly: z.boolean(),
+    unrestrictedUserListReturned: z.boolean(),
+    searchFirstUserPickerRequired: z.boolean(),
+    eligibleUsersReturned: z.boolean(),
+    userListReturned: z.boolean(),
+    frontendSettableFields: z.array(z.string()),
+    frontendSettableAuthorityFields: z.array(z.string()),
+    backendOwnedAuthorityFields: z.array(z.string()),
+    assignmentTargets: z.array(accessAssignmentTargetOptionSchema),
+    previewRemainsAuthoritative: z.boolean(),
+  })
+  .strict();
+
+const accessAssignmentTargetsResponseSchema = z
+  .object({
+    data: accessAssignmentTargetsMetadataSchema,
+  })
+  .strict();
+
+const accessAssignmentIssueSchema = z
+  .object({
+    severity: z.string().optional(),
+    code: z.string().trim().min(1),
+    summary: z.string().optional(),
+  })
+  .catchall(z.unknown());
+
+const accessAssignmentPreviewSchema = z
+  .object({
+    previewOnly: z.boolean().optional(),
+    canApply: z.boolean(),
+    blockers: z.array(accessAssignmentIssueSchema).default([]),
+    warnings: z.array(accessAssignmentIssueSchema).default([]),
+    targetUser: z.record(z.unknown()).optional(),
+    assignmentTarget: z.record(z.unknown()).optional(),
+    requestedScope: z.array(accessAssignmentScopeGrantSchema).optional(),
+    normalizedScope: z.array(accessAssignmentScopeGrantSchema).optional(),
+    scopeFingerprint: z.string().optional(),
+    reasonRequirement: z.record(z.unknown()).optional(),
+    lifecyclePreview: z.record(z.unknown()).optional(),
+    currentEffectiveAccess: z.record(z.unknown()).nullable().optional(),
+    proposedEffectiveAccess: z.record(z.unknown()).nullable().optional(),
+    effectiveAccessDelta: z
+      .object({
+        addedPermissions: z.array(z.string()).optional(),
+        removedPermissions: z.array(z.string()).optional(),
+        unchangedPermissions: z.array(z.string()).optional(),
+      })
+      .catchall(z.unknown())
+      .optional(),
+    proposedAssignments: z.array(z.record(z.unknown())).optional(),
+    bundleExpansion: z.record(z.unknown()).nullable().optional(),
+    accountContextRequirement: z.record(z.unknown()).nullable().optional(),
+    consoleEntitlementPreview: z.record(z.unknown()).nullable().optional(),
+    responsibilityRequirements: z.array(z.record(z.unknown())).optional(),
+    sensitiveAccess: z.record(z.unknown()).nullable().optional(),
+    duplicateConflicts: z.array(z.record(z.unknown())).optional(),
+    legacyRoleStatus: z.record(z.unknown()).nullable().optional(),
+    selfAssignmentStatus: z.record(z.unknown()).nullable().optional(),
+    previewCompleteness: z.record(z.unknown()).nullable().optional(),
+    sourceTrace: z.record(z.unknown()).nullable().optional(),
+  })
+  .catchall(z.unknown());
+
+const accessAssignmentPreviewResponseSchema = z
+  .object({
+    data: accessAssignmentPreviewSchema,
+  })
+  .strict();
+
+const accessAssignmentApplySchema = z
+  .object({
+    applied: z.boolean(),
+    canApply: z.boolean(),
+    applyStatus: z.string(),
+    blockers: z.array(accessAssignmentIssueSchema).default([]),
+    warnings: z.array(accessAssignmentIssueSchema).default([]),
+    targetUser: z.record(z.unknown()).optional(),
+    assignmentTarget: z.record(z.unknown()).optional(),
+    normalizedScope: z.array(accessAssignmentScopeGrantSchema).optional(),
+    scopeFingerprint: z.string().optional(),
+    proposedAssignments: z.array(z.record(z.unknown())).optional(),
+    appliedAssignments: z.array(z.record(z.unknown())).optional(),
+    bundleExpansion: z.record(z.unknown()).nullable().optional(),
+    accountContextResult: z.record(z.unknown()).nullable().optional(),
+    consoleEntitlementResult: z.record(z.unknown()).nullable().optional(),
+    responsibilityRequirements: z.array(z.record(z.unknown())).optional(),
+    sensitiveAccess: z.record(z.unknown()).nullable().optional(),
+    duplicateConflicts: z.array(z.record(z.unknown())).optional(),
+    auditTrace: z.record(z.unknown()).nullable().optional(),
+    sourceTrace: z.record(z.unknown()).nullable().optional(),
+    effectiveAccessAfterApply: z.record(z.unknown()).optional(),
+  })
+  .catchall(z.unknown());
+
+const accessAssignmentApplyResponseSchema = z
+  .object({
+    data: accessAssignmentApplySchema,
+  })
+  .strict();
+
 const effectiveAccessAssignmentSchema = z
   .object({
     assignmentId: z.string().trim().min(1),
@@ -464,6 +616,52 @@ export const fetchEffectiveAccess = async (userId: string): Promise<EffectiveAcc
   });
 
   return effectiveAccessResponseSchema.parse(response).data;
+};
+
+export const fetchAccessAssignmentTargets = async (): Promise<AccessAssignmentTargetsMetadata> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/access-assignments/targets',
+  });
+
+  return accessAssignmentTargetsResponseSchema.parse(response).data;
+};
+
+const sanitizeAccessAssignmentPayload = (
+  payload: AccessAssignmentRequestPayload,
+): AccessAssignmentRequestPayload => ({
+  targetUserId: payload.targetUserId,
+  assignmentTargetType: payload.assignmentTargetType,
+  ...(payload.assignmentTargetId ? { assignmentTargetId: payload.assignmentTargetId } : {}),
+  ...(payload.assignmentTargetCode ? { assignmentTargetCode: payload.assignmentTargetCode } : {}),
+  ...(payload.bundleVersion ? { bundleVersion: payload.bundleVersion } : {}),
+  structuredScopeGrants: payload.structuredScopeGrants,
+  reason: payload.reason,
+  ...(payload.sourceContext ? { sourceContext: payload.sourceContext } : {}),
+});
+
+export const previewAccessAssignment = async (
+  payload: AccessAssignmentRequestPayload,
+): Promise<AccessAssignmentPreviewResult> => {
+  const response = await apiRequest<unknown, AccessAssignmentRequestPayload>({
+    method: 'POST',
+    url: '/admin/access-assignments/preview',
+    data: sanitizeAccessAssignmentPayload(payload),
+  });
+
+  return accessAssignmentPreviewResponseSchema.parse(response).data;
+};
+
+export const applyAccessAssignment = async (
+  payload: AccessAssignmentRequestPayload,
+): Promise<AccessAssignmentApplyResult> => {
+  const response = await apiRequest<unknown, AccessAssignmentRequestPayload>({
+    method: 'POST',
+    url: '/admin/access-assignments/apply',
+    data: sanitizeAccessAssignmentPayload(payload),
+  });
+
+  return accessAssignmentApplyResponseSchema.parse(response).data;
 };
 
 export const previewRoleTemplate = async (templateCode: string): Promise<RoleTemplatePreview> => {

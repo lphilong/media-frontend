@@ -155,6 +155,34 @@ type RoleBundleRecord = {
   updatedAt: string;
 };
 
+type AccessAssignmentTargetFixture =
+  | {
+      assignmentKind: 'ROLE_TEMPLATE';
+      code: RoleTemplateCode;
+      name: string;
+      recommendedAccountContext: AccountContext;
+      requiredScopeTypes: string[];
+      requiresResponsibility: boolean;
+      requiredResponsibilityType: string | null;
+      sensitiveLevel: 'STANDARD' | 'HIGH_RISK';
+      legacyAssignable: boolean;
+      recommendedPickerMode: string;
+    }
+  | {
+      assignmentKind: 'BUNDLE';
+      code: string;
+      version: string;
+      name: string;
+      childRoles: string[];
+      recommendedAccountContext: AccountContext;
+      requiredScopeTypes: string[];
+      requiresResponsibility: boolean;
+      requiredResponsibilityType: string[];
+      sensitiveLevel: 'STANDARD' | 'HIGH_RISK';
+      legacyAssignable: boolean;
+      recommendedPickerMode: string;
+    };
+
 type CurrentActorCapabilitiesRecord = {
   id: string;
   type: 'admin' | 'staff';
@@ -363,6 +391,21 @@ const initialUsers: UserRecord[] = [
     createdAt: now - 10_000,
     updatedAt: now - 9_000,
     activatedAt: now - 9_000,
+    disabledAt: null,
+    archivedAt: null,
+  },
+  {
+    id: 'user-alice',
+    accountStatus: 'ACTIVE',
+    actorKind: 'STAFF',
+    accountContexts: ['STAFF_CONSOLE'],
+    authLinkage: { provider: 'auth0', subject: 'auth0|alice', status: 'LINKED' },
+    contextAccess: { contexts: [{ context: 'ADMIN' }] },
+    profile: { displayName: 'Alice User', email: 'alice@example.test', phone: null },
+    preferences: { locale: 'vi', timezone: 'Asia/Saigon' },
+    createdAt: now - 9_500,
+    updatedAt: now - 9_250,
+    activatedAt: now - 9_250,
     disabledAt: null,
     archivedAt: null,
   },
@@ -1531,6 +1574,241 @@ const toEffectiveAccessRecord = (user: UserRecord) => {
   };
 };
 
+const accessAssignmentTargets = (): AccessAssignmentTargetFixture[] => [
+  ...roleTemplates.map<AccessAssignmentTargetFixture>((template) => ({
+    assignmentKind: 'ROLE_TEMPLATE',
+    code: template.code,
+    name: template.name,
+    recommendedAccountContext: template.recommendedAccountContext,
+    requiredScopeTypes: Object.values(template.recommendedScopeGrants).flatMap((scopes) =>
+      scopes.map((scope) =>
+        scope === 'managedGroup' || scope === 'team'
+          ? 'managedTalentGroup'
+          : scope === 'department'
+            ? 'managedOrgUnit'
+            : scope,
+      ),
+    ),
+    requiresResponsibility:
+      template.code === 'TALENT_GROUP_MANAGER' || template.code === 'ORG_UNIT_MANAGER',
+    requiredResponsibilityType:
+      template.code === 'TALENT_GROUP_MANAGER'
+        ? 'TALENT_GROUP_MANAGER'
+        : template.code === 'ORG_UNIT_MANAGER'
+          ? 'ORG_UNIT_MANAGER'
+          : null,
+    sensitiveLevel: template.code === 'OWNER_ADMIN' ? 'HIGH_RISK' : 'STANDARD',
+    legacyAssignable: !['PRODUCTION_OPS', 'VIEWER_AUDITOR', 'HR_OPERATIONS'].includes(
+      template.code,
+    ),
+    recommendedPickerMode:
+      template.code === 'TALENT_GROUP_MANAGER' || template.code === 'ORG_UNIT_MANAGER'
+        ? 'RESPONSIBILITY_SCOPE_FIRST'
+        : 'SEARCH_FIRST',
+  })),
+  ...roleBundles.map<AccessAssignmentTargetFixture>((bundle) => ({
+    assignmentKind: 'BUNDLE',
+    code: bundle.code,
+    version: bundle.version,
+    name: bundle.name,
+    childRoles: bundle.childRoles,
+    recommendedAccountContext: bundle.recommendedAccountContext,
+    requiredScopeTypes: bundle.recommendedScopes,
+    requiresResponsibility: bundle.childRoles.some((roleCode) =>
+      ['TALENT_GROUP_MANAGER', 'ORG_UNIT_MANAGER'].includes(roleCode),
+    ),
+    requiredResponsibilityType: bundle.childRoles
+      .map((roleCode) =>
+        roleCode === 'TALENT_GROUP_MANAGER'
+          ? 'TALENT_GROUP_MANAGER'
+          : roleCode === 'ORG_UNIT_MANAGER'
+            ? 'ORG_UNIT_MANAGER'
+            : null,
+      )
+      .filter(
+        (value): value is 'TALENT_GROUP_MANAGER' | 'ORG_UNIT_MANAGER' => value !== null,
+      ),
+    sensitiveLevel: bundle.sensitive ? 'HIGH_RISK' : 'STANDARD',
+    legacyAssignable: bundle.code !== 'AUDITOR_BUNDLE',
+    recommendedPickerMode: bundle.childRoles.some((roleCode) =>
+      ['TALENT_GROUP_MANAGER', 'ORG_UNIT_MANAGER'].includes(roleCode),
+    )
+      ? 'RESPONSIBILITY_SCOPE_FIRST'
+      : 'SEARCH_FIRST',
+  })),
+];
+
+const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
+  const targetUserId = String(body.targetUserId ?? '');
+  const targetUser = users.find((user) => user.id === targetUserId);
+  const targetCode = String(body.assignmentTargetCode ?? '');
+  const target = accessAssignmentTargets().find((item) => item.code === targetCode);
+  const scopeGrants = Array.isArray(body.structuredScopeGrants)
+    ? (body.structuredScopeGrants as Array<Record<string, unknown>>)
+    : [];
+  const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+  const blockers: Array<{ severity: 'BLOCKER'; code: string; summary: string }> = [];
+  const warnings: Array<{ severity: 'WARNING'; code: string; summary: string }> = [];
+
+  if (!targetUser || targetUser.accountStatus !== 'ACTIVE') {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'TARGET_USER_NOT_ASSIGNABLE',
+      summary: 'Target user is not active or assignable.',
+    });
+  }
+  if (!reason) {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'REASON_REQUIRED',
+      summary: 'Reason is required.',
+    });
+  }
+  if (target?.legacyAssignable === false) {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'LEGACY_ROLE_BLOCKED',
+      summary: 'Legacy role target is blocked.',
+    });
+  }
+  const requiredContext = target?.recommendedAccountContext;
+  if (
+    requiredContext &&
+    targetUser &&
+    !readAssignedAccountContexts(targetUser).includes(requiredContext)
+  ) {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'REQUIRED_ACCOUNT_CONTEXT_MISSING',
+      summary: 'Target user is missing required AccountContext.',
+    });
+  }
+  if (
+    target?.requiresResponsibility &&
+    !scopeGrants.some((scope) => typeof scope.targetId === 'string' && scope.targetId === 'group-a')
+  ) {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'RESPONSIBILITY_REQUIRED',
+      summary: 'Matching active management responsibility is required.',
+    });
+  }
+  if (target?.sensitiveLevel === 'HIGH_RISK') {
+    warnings.push({
+      severity: 'WARNING',
+      code: 'ADDITIONAL_REVIEW_REQUIRED',
+      summary: 'Additional review is required.',
+    });
+  }
+
+  const canApply = blockers.length === 0;
+  const proposedAssignments = canApply
+    ? [
+        {
+          assignmentId: 'preview:assignment-1',
+          roleId: `role-${targetCode.toLowerCase()}`,
+          roleCode:
+            target?.assignmentKind === 'BUNDLE'
+              ? ((target.childRoles?.[0] as string | undefined) ?? targetCode)
+              : targetCode,
+          roleName: target?.name ?? targetCode,
+          permissions: ['workSchedule.read'],
+          structuredScopeGrants: scopeGrants,
+          scopeFingerprint: scopeGrants.length > 0 ? 'scope:v1:test' : 'scope:v1:legacy',
+          effectiveAt: Date.now(),
+          expiresAt: null,
+          reviewAt: null,
+          origin: target?.assignmentKind === 'BUNDLE' ? 'BUNDLE' : 'DIRECT',
+          bundleOrigin:
+            target?.assignmentKind === 'BUNDLE'
+              ? {
+                  bundleAssignmentId: 'preview:bundle-1',
+                  bundleCode: target.code,
+                  bundleVersion: target.version,
+                }
+              : null,
+          reason,
+        },
+      ]
+    : [];
+
+  return {
+    previewOnly: true,
+    canApply,
+    blockers,
+    warnings,
+    targetUser: targetUser
+      ? {
+          id: targetUser.id,
+          displayName: targetUser.profile.displayName,
+          email: targetUser.profile.email,
+          accountStatus: targetUser.accountStatus,
+          activeEmploymentProfile: {
+            id: 'ep-001',
+            employeeCode: 'EP-000001',
+            displayName: 'Alice',
+            employmentStatus: 'ACTIVE',
+          },
+        }
+      : { id: targetUserId, missing: true },
+    assignmentTarget: target ?? { code: targetCode },
+    requestedScope: scopeGrants,
+    normalizedScope: scopeGrants,
+    scopeFingerprint: scopeGrants.length > 0 ? 'scope:v1:test' : 'scope:v1:legacy',
+    effectiveAccessDelta: {
+      addedPermissions: canApply ? ['workSchedule.read'] : [],
+      removedPermissions: [],
+      unchangedPermissions: [],
+    },
+    proposedAssignments,
+    bundleExpansion:
+      target?.assignmentKind === 'BUNDLE'
+        ? {
+            bundleAssignmentId: 'preview:bundle-1',
+            childRoleCodes: target.childRoles,
+            proposedChildCount: proposedAssignments.length,
+            persistedParentBundleAssignment: false,
+          }
+        : null,
+    accountContextRequirement: {
+      status: blockers.some((blocker) => blocker.code === 'REQUIRED_ACCOUNT_CONTEXT_MISSING')
+        ? 'MISSING_REQUIRED_CONTEXT'
+        : 'SATISFIED',
+      requiredAccountContexts: requiredContext ? [requiredContext] : [],
+      currentAccountContexts: targetUser ? readAssignedAccountContexts(targetUser) : [],
+      materializationInScope: false,
+    },
+    consoleEntitlementPreview: {
+      previewOnly: true,
+      accountContextMutated: false,
+      grantsAuthorityByItself: false,
+    },
+    responsibilityRequirements: target?.requiresResponsibility
+      ? [
+          {
+            roleCode: targetCode,
+            requiredScopeType: 'managedTalentGroup',
+            requiredResponsibilityType: 'TALENT_GROUP_MANAGER',
+            status: blockers.some((blocker) => blocker.code === 'RESPONSIBILITY_REQUIRED')
+              ? 'MISSING_RESPONSIBILITY'
+              : 'SATISFIED',
+          },
+        ]
+      : [],
+    sensitiveAccess: {
+      sensitiveOrGlobal: target?.sensitiveLevel === 'HIGH_RISK',
+      reasonRequired: target?.sensitiveLevel === 'HIGH_RISK',
+    },
+    duplicateConflicts: [],
+    previewCompleteness: { status: 'COMPLETE', gaps: [] },
+    sourceTrace: {
+      roleSource: 'roles',
+      assignmentSource: 'role_assignments',
+      mutatesSource: false,
+    },
+  };
+};
+
 const readManualRoleCode = (value: unknown): string | undefined => {
   if (typeof value === 'string' && value.trim().length > 0) {
     return value.trim().toUpperCase();
@@ -1587,6 +1865,129 @@ export const identityAccessHandlers = [
 
   http.get('*/admin/role-bundles', () => {
     return HttpResponse.json({ data: roleBundles });
+  }),
+
+  http.get('*/admin/access-assignments/targets', () => {
+    return HttpResponse.json({
+      data: {
+        readOnly: true,
+        unrestrictedUserListReturned: false,
+        searchFirstUserPickerRequired: true,
+        eligibleUsersReturned: false,
+        userListReturned: false,
+        frontendSettableFields: [
+          'targetUserId',
+          'assignmentTargetType',
+          'assignmentTargetId',
+          'assignmentTargetCode',
+          'bundleVersion',
+          'structuredScopeGrants',
+          'reason',
+          'sourceContext',
+        ],
+        frontendSettableAuthorityFields: [],
+        backendOwnedAuthorityFields: [
+          'accountContext',
+          'accountContexts',
+          'console',
+          'workspaceAvailability',
+          'primaryWorkspace',
+          'actorKind',
+        ],
+        assignmentTargets: accessAssignmentTargets(),
+        previewRemainsAuthoritative: true,
+      },
+    });
+  }),
+
+  http.post('*/admin/access-assignments/preview', async ({ request }) => {
+    const body = await parseJsonBody(request);
+    return HttpResponse.json({ data: buildAccessAssignmentPreview(body) });
+  }),
+
+  http.post('*/admin/access-assignments/apply', async ({ request }) => {
+    const body = await parseJsonBody(request);
+    const preview = buildAccessAssignmentPreview(body);
+    if (!preview.canApply) {
+      return HttpResponse.json({
+        data: {
+          applied: false,
+          canApply: false,
+          applyStatus: 'BLOCKED',
+          blockers: preview.blockers,
+          warnings: preview.warnings,
+          targetUser: preview.targetUser,
+          assignmentTarget: preview.assignmentTarget,
+          normalizedScope: preview.normalizedScope,
+          scopeFingerprint: preview.scopeFingerprint,
+          proposedAssignments: preview.proposedAssignments,
+          bundleExpansion: preview.bundleExpansion,
+          accountContextResult: {
+            materialized: false,
+            materializationPolicy: 'DEFERRED_FAIL_CLOSED',
+            requirement: preview.accountContextRequirement,
+            grantsAuthorityByItself: false,
+          },
+          consoleEntitlementResult: preview.consoleEntitlementPreview,
+          responsibilityRequirements: preview.responsibilityRequirements,
+          sensitiveAccess: preview.sensitiveAccess,
+          duplicateConflicts: preview.duplicateConflicts,
+          auditTrace: { written: false, reason: 'APPLY_BLOCKED_BEFORE_MUTATION' },
+          sourceTrace: { ...preview.sourceTrace, mutatesSource: false },
+        },
+      });
+    }
+
+    assignmentSeed += 1;
+    const appliedAssignments = preview.proposedAssignments.map((assignment, index) => ({
+      ...assignment,
+      assignmentId: `assignment-${assignmentSeed + index}`,
+      userId: String(body.targetUserId),
+      assignedBy: 'user-admin',
+      assignedAt: Date.now(),
+    }));
+    return HttpResponse.json({
+      data: {
+        applied: true,
+        canApply: true,
+        applyStatus: 'APPLIED',
+        blockers: [],
+        warnings: preview.warnings,
+        targetUser: preview.targetUser,
+        assignmentTarget: preview.assignmentTarget,
+        normalizedScope: preview.normalizedScope,
+        scopeFingerprint: preview.scopeFingerprint,
+        appliedAssignments,
+        bundleExpansion:
+          preview.bundleExpansion && typeof preview.bundleExpansion === 'object'
+            ? {
+                ...preview.bundleExpansion,
+                appliedChildCount: appliedAssignments.length,
+                childAssignmentIds: appliedAssignments.map((assignment) =>
+                  String(assignment.assignmentId),
+                ),
+              }
+            : null,
+        accountContextResult: {
+          materialized: false,
+          materializationPolicy: 'DEFERRED_FAIL_CLOSED',
+          requirement: preview.accountContextRequirement,
+          grantsAuthorityByItself: false,
+        },
+        consoleEntitlementResult: preview.consoleEntitlementPreview,
+        responsibilityRequirements: preview.responsibilityRequirements,
+        sensitiveAccess: preview.sensitiveAccess,
+        duplicateConflicts: [],
+        auditTrace: {
+          written: true,
+          mutationType: 'role.assign-to-user',
+          assignmentIds: appliedAssignments.map((assignment) => String(assignment.assignmentId)),
+          targetUserId: String(body.targetUserId),
+        },
+        sourceTrace: { ...preview.sourceTrace, mutatesSource: true, auditSource: 'audit_log' },
+        effectiveAccessAfterApply: toEffectiveAccessRecord(users[0]),
+      },
+    });
   }),
 
   http.post('*/admin/role-templates/:templateCode/preview', ({ params }) => {

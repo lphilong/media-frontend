@@ -4,13 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import {
+  applyAccessAssignment,
   assignRoleToUser,
   createRoleFromTemplate,
   createRole,
+  fetchAccessAssignmentTargets,
   fetchRoleAssignments,
   fetchRoleTemplates,
   fetchRoles,
   performRoleLifecycleAction,
+  previewAccessAssignment,
   previewRoleTemplate,
   replaceRoleAssignmentRules,
   replaceRolePermissions,
@@ -35,6 +38,7 @@ import type {
   RolePermissionReplacementPayload,
   RoleTemplateListItem,
   RoleTemplatePreview,
+  AccessAssignmentTargetsMetadata,
 } from '@modules/role/types/role.types';
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
@@ -161,6 +165,41 @@ const roleTemplatePreview: RoleTemplatePreview = {
   scopePlan: roleTemplateCatalog[0].scopePlan,
   warnings: roleTemplateCatalog[0].warnings,
   unsupportedScopeNotes: [],
+};
+
+const accessAssignmentTargetsMetadata: AccessAssignmentTargetsMetadata = {
+  readOnly: false,
+  unrestrictedUserListReturned: false,
+  searchFirstUserPickerRequired: true,
+  eligibleUsersReturned: false,
+  userListReturned: false,
+  frontendSettableFields: [
+    'targetUserId',
+    'assignmentTargetType',
+    'assignmentTargetCode',
+    'bundleVersion',
+    'structuredScopeGrants',
+    'reason',
+  ],
+  frontendSettableAuthorityFields: [],
+  backendOwnedAuthorityFields: ['accountContext', 'workspaceAvailability', 'actorKind'],
+  assignmentTargets: [
+    {
+      assignmentKind: 'BUNDLE',
+      code: 'STAFF_CONSOLE_BUNDLE',
+      version: '2026-05-20',
+      name: 'Staff Console',
+      childRoles: ['STAFF_CONSOLE_USER'],
+      recommendedAccountContext: 'STAFF_CONSOLE',
+      requiredScopeTypes: ['self'],
+      requiresResponsibility: false,
+      requiredResponsibilityType: null,
+      sensitiveLevel: 'STANDARD',
+      legacyAssignable: true,
+      recommendedPickerMode: 'SEARCH_FIRST',
+    },
+  ],
+  previewRemainsAuthoritative: true,
 };
 
 const mockDetailResponse = () => {
@@ -530,6 +569,148 @@ describe('role IA-1 query and payload shaping', () => {
       ],
     });
     await expect(fetchRoleTemplates()).rejects.toThrow();
+  });
+
+  it('uses accepted access-assignment endpoints and strips frontend-owned authority fields', async () => {
+    apiRequestMock.mockResolvedValueOnce({ data: accessAssignmentTargetsMetadata });
+    await expect(fetchAccessAssignmentTargets()).resolves.toEqual(accessAssignmentTargetsMetadata);
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/admin/access-assignments/targets',
+      }),
+    );
+    expect(apiRequestMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('data');
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        previewOnly: true,
+        canApply: true,
+        blockers: [],
+        warnings: [],
+        normalizedScope: [{ scopeType: 'self' }],
+        effectiveAccessDelta: {
+          addedPermissions: ['workSchedule.read'],
+          removedPermissions: [],
+          unchangedPermissions: [],
+        },
+        proposedAssignments: [{ roleCode: 'STAFF_CONSOLE_USER' }],
+      },
+    });
+    await expect(
+      previewAccessAssignment({
+        targetUserId: 'user-alice',
+        assignmentTargetType: 'BUNDLE',
+        assignmentTargetCode: 'STAFF_CONSOLE_BUNDLE',
+        bundleVersion: '2026-05-20',
+        structuredScopeGrants: [{ scopeType: 'self' }],
+        reason: 'Promoted to self-service access',
+        accountContext: 'ADMIN_CONSOLE',
+        workspaceAvailability: { primaryWorkspace: 'ADMIN_CONSOLE' },
+        actorKind: 'ADMIN',
+        consoleEntitlement: true,
+        employmentProfileId: 'ep-001',
+      } as Parameters<typeof previewAccessAssignment>[0]),
+    ).resolves.toMatchObject({
+      canApply: true,
+    });
+
+    const previewPayload = apiRequestMock.mock.calls.at(-1)?.[0].data;
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/access-assignments/preview',
+      }),
+    );
+    expect(previewPayload).toEqual({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'BUNDLE',
+      assignmentTargetCode: 'STAFF_CONSOLE_BUNDLE',
+      bundleVersion: '2026-05-20',
+      structuredScopeGrants: [{ scopeType: 'self' }],
+      reason: 'Promoted to self-service access',
+    });
+    expect(previewPayload).not.toHaveProperty('accountContext');
+    expect(previewPayload).not.toHaveProperty('accountContexts');
+    expect(previewPayload).not.toHaveProperty('console');
+    expect(previewPayload).not.toHaveProperty('consoleCode');
+    expect(previewPayload).not.toHaveProperty('workspaceAvailability');
+    expect(previewPayload).not.toHaveProperty('primaryWorkspace');
+    expect(previewPayload).not.toHaveProperty('actorKind');
+    expect(previewPayload).not.toHaveProperty('consoleEntitlement');
+    expect(previewPayload).not.toHaveProperty('manualEntitlements');
+    expect(previewPayload).not.toHaveProperty('permissions');
+    expect(previewPayload).not.toHaveProperty('permissionRules');
+    expect(previewPayload).not.toHaveProperty('assignmentRules');
+    expect(previewPayload).not.toHaveProperty('employmentProfileId');
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        applied: true,
+        canApply: true,
+        applyStatus: 'APPLIED',
+        blockers: [],
+        warnings: [],
+        normalizedScope: [{ scopeType: 'self' }],
+        appliedAssignments: [{ assignmentId: 'assignment-4c' }],
+        auditTrace: { assignmentIds: ['assignment-4c'] },
+        effectiveAccessAfterApply: { permissions: ['workSchedule.read'] },
+      },
+    });
+    await expect(
+      applyAccessAssignment({
+        targetUserId: 'user-alice',
+        assignmentTargetType: 'BUNDLE',
+        assignmentTargetCode: 'STAFF_CONSOLE_BUNDLE',
+        bundleVersion: '2026-05-20',
+        structuredScopeGrants: [{ scopeType: 'self' }],
+        reason: 'Promoted to self-service access',
+        previewResponse: { canApply: true },
+        accountContexts: ['ADMIN_CONSOLE'],
+        console: 'ADMIN',
+        consoleCode: 'ADMIN_CONSOLE',
+        workspaceAvailability: { primaryWorkspace: 'ADMIN_CONSOLE' },
+        primaryWorkspace: 'ADMIN_CONSOLE',
+        actorKind: 'ADMIN',
+        manualEntitlements: ['role.assign'],
+        permissions: ['role:assign_to_user'],
+        permissionRules: [{ code: 'ALLOW_ALL' }],
+        assignmentRules: [{ code: 'ALLOW_ALL' }],
+        employmentProfileId: 'ep-001',
+      } as Parameters<typeof applyAccessAssignment>[0]),
+    ).resolves.toMatchObject({
+      applied: true,
+      applyStatus: 'APPLIED',
+    });
+
+    const applyPayload = apiRequestMock.mock.calls.at(-1)?.[0].data;
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: '/admin/access-assignments/apply',
+      }),
+    );
+    expect(applyPayload).toEqual({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'BUNDLE',
+      assignmentTargetCode: 'STAFF_CONSOLE_BUNDLE',
+      bundleVersion: '2026-05-20',
+      structuredScopeGrants: [{ scopeType: 'self' }],
+      reason: 'Promoted to self-service access',
+    });
+    expect(applyPayload).not.toHaveProperty('previewResponse');
+    expect(applyPayload).not.toHaveProperty('accountContext');
+    expect(applyPayload).not.toHaveProperty('accountContexts');
+    expect(applyPayload).not.toHaveProperty('console');
+    expect(applyPayload).not.toHaveProperty('consoleCode');
+    expect(applyPayload).not.toHaveProperty('workspaceAvailability');
+    expect(applyPayload).not.toHaveProperty('primaryWorkspace');
+    expect(applyPayload).not.toHaveProperty('actorKind');
+    expect(applyPayload).not.toHaveProperty('manualEntitlements');
+    expect(applyPayload).not.toHaveProperty('permissions');
+    expect(applyPayload).not.toHaveProperty('permissionRules');
+    expect(applyPayload).not.toHaveProperty('assignmentRules');
+    expect(applyPayload).not.toHaveProperty('employmentProfileId');
   });
 
   it('submits normal Role create, update, assign, and revoke surfaces with supported payloads', async () => {

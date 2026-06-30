@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  applyAccessAssignment,
   assignRoleToUser,
   createRole,
   createRoleFromTemplate,
+  fetchAccessAssignmentTargets,
   fetchEffectiveAccess,
   fetchRoleBundles,
   fetchRoleAssignments,
@@ -12,6 +14,7 @@ import {
   fetchRoleTemplates,
   fetchRoles,
   performRoleLifecycleAction,
+  previewAccessAssignment,
   previewRoleTemplate,
   replaceRoleAssignmentRules,
   replaceRolePermissions,
@@ -20,6 +23,7 @@ import {
 } from '@modules/role/api/role.api';
 import type {
   RoleAssignmentListQuery,
+  AccessAssignmentRequestPayload,
   RoleAssignmentRuleReplacementPayload,
   RoleAssignToUserPayload,
   RoleCreateFromTemplatePayload,
@@ -52,6 +56,7 @@ export const roleQueryKeys = {
   detail: (roleId: string) => ['role', 'detail', roleId] as const,
   templates: () => ['role', 'templates'] as const,
   bundles: () => ['role', 'bundles'] as const,
+  accessAssignmentTargets: () => ['role', 'access-assignment-targets'] as const,
   effectiveAccess: (userId: string) => ['role', 'effective-access', userId] as const,
   templatePreview: (templateCode: string) => ['role', 'template-preview', templateCode] as const,
   assignments: (roleId: string, query: RoleAssignmentListQuery) =>
@@ -85,6 +90,13 @@ export const useRoleBundles = () => {
   return useQuery({
     queryKey: roleQueryKeys.bundles(),
     queryFn: fetchRoleBundles,
+  });
+};
+
+export const useAccessAssignmentTargets = () => {
+  return useQuery({
+    queryKey: roleQueryKeys.accessAssignmentTargets(),
+    queryFn: fetchAccessAssignmentTargets,
   });
 };
 
@@ -245,6 +257,26 @@ export const useRoleRevokeAssignmentMutation = () => {
     }) => revokeRoleAssignment(roleId, assignmentId, payload),
     onSuccess: async () => {
       await invalidateRoleLaneQueries(queryClient);
+    },
+  });
+};
+
+export const useAccessAssignmentPreviewMutation = () => {
+  return useMutation({
+    mutationFn: (payload: AccessAssignmentRequestPayload) => previewAccessAssignment(payload),
+  });
+};
+
+export const useAccessAssignmentApplyMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AccessAssignmentRequestPayload) => applyAccessAssignment(payload),
+    onSuccess: async (_result, payload) => {
+      await invalidateRoleLaneQueries(queryClient);
+      await queryClient.invalidateQueries({
+        queryKey: roleQueryKeys.effectiveAccess(payload.targetUserId),
+      });
     },
   });
 };
