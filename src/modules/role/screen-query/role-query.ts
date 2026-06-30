@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { roleAssignmentStateValues, roleStateValues } from '@modules/role/constants/role.constants';
+import { roleStateValues } from '@modules/role/constants/role.constants';
 import { defineScreenQueryConfig } from '@shared/query/screen-query-config';
 
 const cursorSchema = z.string().trim().min(1).optional();
@@ -24,12 +24,6 @@ const roleFlatListSchema = z.object({
   cursor: cursorSchema,
   limit: limitSchema,
   search: searchSchema,
-});
-
-const roleAssignmentListSchema = z.object({
-  state: z.enum(roleAssignmentStateValues).optional(),
-  cursor: cursorSchema,
-  limit: limitSchema,
 });
 
 export const roleFlatListQueryConfig = defineScreenQueryConfig({
@@ -57,27 +51,5 @@ export const roleFlatListQueryConfig = defineScreenQueryConfig({
       statusKey: 'state',
       archivedValue: 'ARCHIVED',
     },
-  },
-});
-
-export const roleAssignmentListQueryConfig = defineScreenQueryConfig({
-  id: 'role.assignment-list',
-  schema: roleAssignmentListSchema,
-  cursorKey: 'cursor',
-  capabilities: {
-    surface: 'related-list',
-    search: {
-      supported: false,
-    },
-    cursor: {
-      supported: true,
-      key: 'cursor',
-    },
-    sort: {
-      supported: false,
-      allowedSortFields: [],
-      allowedSortDirections: [],
-    },
-    allowedFilterKeys: ['state'],
   },
 });

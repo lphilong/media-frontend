@@ -15,27 +15,18 @@ import {
 } from '@modules/role/constants/role.constants';
 import { formatPermissionCapabilityItems } from '@modules/role/utils/permission-labels';
 import type {
-  RoleAssignmentScopeGrants,
-  RoleAssignToUserPayload,
   RoleCreateFromTemplatePayload,
   RoleDelegationBand,
   RoleDetailRecord,
   RoleLifecyclePayload,
   RoleMaxDelegatableBand,
-  RoleRevokeAssignmentPayload,
   RoleTemplateListItem,
   RoleTemplatePreview,
   RoleUpdatePayload,
-  EventAssignmentScope,
-  WorkScheduleAssignmentScope,
-  KpiAssignmentScope,
 } from '@modules/role/types/role.types';
-import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import {
-  CheckboxField,
   FormGrid,
   GeneratedCodeNotice,
-  ReferencePickerField,
   SelectField,
   TextInputField,
 } from '@shared/forms';
@@ -63,18 +54,6 @@ type RoleLifecycleReasonSurfaceProps = BaseMutationSurfaceProps & {
   onSubmit: (payload: RoleLifecyclePayload) => Promise<void> | void;
 };
 
-type RoleAssignUserSurfaceProps = BaseMutationSurfaceProps & {
-  onSubmit: (payload: RoleAssignToUserPayload) => Promise<void> | void;
-  recommendedScopeGrants?: RoleAssignmentScopeGrants;
-  roleCode: string;
-  templateCode?: string | null;
-};
-
-type RoleRevokeAssignmentSurfaceProps = BaseMutationSurfaceProps & {
-  assignmentId: string;
-  onSubmit: (payload: RoleRevokeAssignmentPayload) => Promise<void> | void;
-};
-
 type RoleCreateFormValues = {
   templateCode: string;
   name: string;
@@ -91,21 +70,6 @@ type RoleEditFormValues = {
 
 type RoleReasonFormValues = {
   reason: string;
-};
-
-type RoleAssignUserFormValues = {
-  userId: string;
-  reason: string;
-  scopeGrants: {
-    workSchedule: Record<WorkScheduleAssignmentScope, boolean>;
-    eventAssignment: Record<EventAssignmentScope, boolean>;
-    contractRegistry: boolean;
-    talentKpi: boolean;
-    kpi: Record<KpiAssignmentScope, boolean>;
-    revenueLedger: boolean;
-    commission: boolean;
-    dashboardLite: boolean;
-  };
 };
 
 const toNullableText = (value?: string | null): string | null => {
@@ -155,95 +119,10 @@ const templateCodeFallbackLabels: Record<string, string> = {
   STAFF_CONSOLE_USER: 'Staff Console User',
 };
 
-const scopeModuleLabels = {
-  workSchedule: 'Work Schedule',
-  eventAssignment: 'Event Assignment',
-  contractRegistry: 'Contract Registry',
-  talentKpi: 'Talent KPI',
-  kpi: 'KPI',
-  revenueLedger: 'Revenue Ledger',
-  commission: 'Commission',
-  dashboardLite: 'Dashboard Lite',
-} as const;
-
-const workScheduleScopeValues: WorkScheduleAssignmentScope[] = [
-  'self',
-  'team',
-  'department',
-  'global',
-];
-const eventAssignmentScopeValues: EventAssignmentScope[] = ['managedGroup', 'global'];
-const kpiScopeValues: KpiAssignmentScope[] = ['global', 'managedGroup', 'self'];
-
 const toTitle = (value: string): string => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 
 const readTemplateLabel = (template: Pick<RoleTemplateListItem, 'code' | 'name'>): string =>
   template.name || templateCodeFallbackLabels[template.code] || template.code;
-
-const buildScopeGrants = (
-  values: RoleAssignUserFormValues['scopeGrants'],
-): RoleAssignmentScopeGrants | undefined => {
-  const scopeGrants: RoleAssignmentScopeGrants = {};
-
-  const selectedWorkSchedule = workScheduleScopeValues.filter(
-    (scope) => values.workSchedule[scope],
-  );
-  if (selectedWorkSchedule.length > 0) {
-    scopeGrants.workSchedule = selectedWorkSchedule;
-  }
-  const selectedEventAssignment = eventAssignmentScopeValues.filter(
-    (scope) => values.eventAssignment[scope],
-  );
-  if (selectedEventAssignment.length > 0) {
-    scopeGrants.eventAssignment = selectedEventAssignment;
-  }
-  if (values.contractRegistry) {
-    scopeGrants.contractRegistry = ['global'];
-  }
-  if (values.talentKpi) {
-    scopeGrants.talentKpi = ['global'];
-  }
-  const selectedKpi = kpiScopeValues.filter((scope) => values.kpi[scope]);
-  if (selectedKpi.length > 0) {
-    scopeGrants.kpi = selectedKpi;
-  }
-  if (values.revenueLedger) {
-    scopeGrants.revenueLedger = ['global'];
-  }
-  if (values.commission) {
-    scopeGrants.commission = ['global'];
-  }
-  if (values.dashboardLite) {
-    scopeGrants.dashboardLite = ['global'];
-  }
-
-  return Object.keys(scopeGrants).length > 0 ? scopeGrants : undefined;
-};
-
-const createScopeGrantFormValues = (
-  recommendedScopeGrants?: RoleAssignmentScopeGrants,
-): RoleAssignUserFormValues['scopeGrants'] => ({
-  workSchedule: {
-    self: Boolean(recommendedScopeGrants?.workSchedule?.includes('self')),
-    team: Boolean(recommendedScopeGrants?.workSchedule?.includes('team')),
-    department: Boolean(recommendedScopeGrants?.workSchedule?.includes('department')),
-    global: Boolean(recommendedScopeGrants?.workSchedule?.includes('global')),
-  },
-  eventAssignment: {
-    managedGroup: Boolean(recommendedScopeGrants?.eventAssignment?.includes('managedGroup')),
-    global: Boolean(recommendedScopeGrants?.eventAssignment?.includes('global')),
-  },
-  contractRegistry: Boolean(recommendedScopeGrants?.contractRegistry?.includes('global')),
-  talentKpi: Boolean(recommendedScopeGrants?.talentKpi?.includes('global')),
-  kpi: {
-    global: Boolean(recommendedScopeGrants?.kpi?.includes('global')),
-    managedGroup: Boolean(recommendedScopeGrants?.kpi?.includes('managedGroup')),
-    self: Boolean(recommendedScopeGrants?.kpi?.includes('self')),
-  },
-  revenueLedger: Boolean(recommendedScopeGrants?.revenueLedger?.includes('global')),
-  commission: Boolean(recommendedScopeGrants?.commission?.includes('global')),
-  dashboardLite: Boolean(recommendedScopeGrants?.dashboardLite?.includes('global')),
-});
 
 const createRoleCreateSchema = (requiredMessage: string) =>
   z.object({
@@ -283,24 +162,6 @@ const useMaxDelegatableBandOptions = () => {
       })),
     [t],
   );
-};
-
-const formatRecommendedScopeGrants = (scopeGrants?: RoleAssignmentScopeGrants): string => {
-  if (!scopeGrants || Object.keys(scopeGrants).length === 0) {
-    return '-';
-  }
-
-  return Object.entries(scopeGrants)
-    .flatMap(([module, scopes]) =>
-      scopes && scopes.length > 0
-        ? [
-            `${scopeModuleLabels[module as keyof typeof scopeModuleLabels] ?? module}: ${scopes
-              .map((scope) => (module === 'kpi' ? `kpi.${scope}` : scope))
-              .join(', ')}`,
-          ]
-        : [],
-    )
-    .join('; ');
 };
 
 export const RoleCreateSurface = ({
@@ -619,212 +480,6 @@ export const RoleLifecycleReasonSurface = ({
         kind="action"
         submitLabel={t(`role:mutations.${action}.submit`)}
         pendingLabel={t(`role:mutations.${action}.pending`)}
-        cancelLabel={t('common:actions.cancel')}
-        onCancel={onCancel}
-        onSubmit={(event) => void handleSubmit(event)}
-        isPending={isPending}
-      >
-        <TextInputField name="reason" label={t('role:fields.reason')} />
-      </ModuleMutationSurface>
-    </FormProvider>
-  );
-};
-
-export const RoleAssignUserSurface = ({
-  onCancel,
-  onSubmit,
-  recommendedScopeGrants,
-  isPending = false,
-}: RoleAssignUserSurfaceProps): JSX.Element => {
-  const { t } = useTranslation(['role', 'common']);
-  const form = useForm<RoleAssignUserFormValues>({
-    defaultValues: {
-      userId: '',
-      reason: '',
-      scopeGrants: createScopeGrantFormValues(recommendedScopeGrants),
-    },
-  });
-
-  const handleSubmit = form.handleSubmit(async (values) => {
-    const userId = values.userId.trim();
-    if (!userId) {
-      form.setError('userId', {
-        type: 'validate',
-        message: t('role:validation.required'),
-      });
-      return;
-    }
-
-    const scopeGrants = buildScopeGrants(values.scopeGrants);
-
-    await onSubmit({
-      userId,
-      reason: toNullableText(values.reason),
-      ...(scopeGrants ? { scopeGrants } : {}),
-    });
-  });
-
-  const applyRecommendedScopeGrants = (): void => {
-    const nextScopeGrants = createScopeGrantFormValues(recommendedScopeGrants);
-
-    workScheduleScopeValues.forEach((scope) => {
-      form.setValue(`scopeGrants.workSchedule.${scope}`, nextScopeGrants.workSchedule[scope]);
-    });
-    eventAssignmentScopeValues.forEach((scope) => {
-      form.setValue(`scopeGrants.eventAssignment.${scope}`, nextScopeGrants.eventAssignment[scope]);
-    });
-    form.setValue('scopeGrants.contractRegistry', nextScopeGrants.contractRegistry);
-    form.setValue('scopeGrants.talentKpi', nextScopeGrants.talentKpi);
-    kpiScopeValues.forEach((scope) => {
-      form.setValue(`scopeGrants.kpi.${scope}`, nextScopeGrants.kpi[scope]);
-    });
-    form.setValue('scopeGrants.revenueLedger', nextScopeGrants.revenueLedger);
-    form.setValue('scopeGrants.commission', nextScopeGrants.commission);
-    form.setValue('scopeGrants.dashboardLite', nextScopeGrants.dashboardLite);
-  };
-
-  return (
-    <FormProvider {...form}>
-      <ModuleMutationSurface
-        title={t('role:mutations.assignToUser.title')}
-        subtitle={t('role:mutations.assignToUser.subtitle')}
-        kind="action"
-        submitLabel={t('role:mutations.assignToUser.submit')}
-        pendingLabel={t('role:mutations.assignToUser.pending')}
-        cancelLabel={t('common:actions.cancel')}
-        onCancel={onCancel}
-        onSubmit={(event) => void handleSubmit(event)}
-        isPending={isPending}
-      >
-        <FormGrid columns={2}>
-          <ReferencePickerField
-            name="userId"
-            label={t('role:fields.userId')}
-            pickerId="role-assignment-user"
-            loadOptions={loadUserReferenceOptions}
-            helperText={t('role:referenceHelp.userId')}
-            placeholder={t('role:placeholders.userSearch')}
-          />
-          <TextInputField name="reason" label={t('role:fields.reason')} />
-        </FormGrid>
-        <div className="space-y-3 rounded border border-border bg-bg p-3">
-          <div>
-            <h4 className="text-sm font-semibold text-text">
-              {t('role:scopePicker.assignmentScopes')}
-            </h4>
-            <p className="text-xs text-muted">{t('role:scopePicker.backendValidation')}</p>
-          </div>
-          <div className="rounded border border-border bg-panel p-3 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h5 className="font-semibold text-text">
-                  {t('role:scopePicker.recommendedScopes')}
-                </h5>
-                <p className="text-xs text-muted">{t('role:scopePicker.recommendedScopesHelp')}</p>
-              </div>
-              <button
-                type="button"
-                className="rounded border border-border px-2 py-1 text-xs"
-                onClick={applyRecommendedScopeGrants}
-              >
-                {t('role:scopePicker.applyRecommendedScopes')}
-              </button>
-            </div>
-            <p className="mt-2 font-mono text-xs text-text">
-              {formatRecommendedScopeGrants(recommendedScopeGrants)}
-            </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-2 rounded border border-border bg-panel p-3">
-              <div className="text-xs font-medium uppercase text-muted">
-                {scopeModuleLabels.workSchedule}
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {workScheduleScopeValues.map((scope) => (
-                  <CheckboxField
-                    key={scope}
-                    name={`scopeGrants.workSchedule.${scope}`}
-                    label={t(`role:scopePicker.scopes.${scope}`)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2 rounded border border-border bg-panel p-3">
-              <div className="text-xs font-medium uppercase text-muted">
-                {scopeModuleLabels.eventAssignment}
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {eventAssignmentScopeValues.map((scope) => (
-                  <CheckboxField
-                    key={scope}
-                    name={`scopeGrants.eventAssignment.${scope}`}
-                    label={`${scopeModuleLabels.eventAssignment}: ${t(
-                      `role:scopePicker.scopes.${scope}`,
-                    )}`}
-                  />
-                ))}
-              </div>
-            </div>
-            {['contractRegistry', 'talentKpi', 'revenueLedger', 'commission', 'dashboardLite'].map(
-              (module) => (
-                <div key={module} className="rounded border border-border bg-panel p-3">
-                  <CheckboxField
-                    name={`scopeGrants.${module}`}
-                    label={`${scopeModuleLabels[module as keyof typeof scopeModuleLabels]}: ${t(
-                      'role:scopePicker.scopes.global',
-                    )}`}
-                  />
-                </div>
-              ),
-            )}
-            <div className="space-y-2 rounded border border-border bg-panel p-3">
-              <div className="text-xs font-medium uppercase text-muted">
-                {scopeModuleLabels.kpi}
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {kpiScopeValues.map((scope) => (
-                  <CheckboxField
-                    key={scope}
-                    name={`scopeGrants.kpi.${scope}`}
-                    label={`${scopeModuleLabels.kpi}: ${t(`role:scopePicker.scopes.${scope}`)}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </ModuleMutationSurface>
-    </FormProvider>
-  );
-};
-
-export const RoleRevokeAssignmentSurface = ({
-  assignmentId,
-  onCancel,
-  onSubmit,
-  isPending = false,
-}: RoleRevokeAssignmentSurfaceProps): JSX.Element => {
-  const { t } = useTranslation(['role', 'common']);
-  const form = useForm<RoleReasonFormValues>({
-    defaultValues: {
-      reason: '',
-    },
-  });
-
-  const handleSubmit = form.handleSubmit(async (values) => {
-    await onSubmit({
-      reason: toNullableText(values.reason),
-    });
-  });
-
-  return (
-    <FormProvider {...form}>
-      <ModuleMutationSurface
-        title={t('role:mutations.revokeAssignment.title')}
-        subtitle={t('role:mutations.revokeAssignment.subtitle', { assignmentId })}
-        kind="action"
-        submitLabel={t('role:mutations.revokeAssignment.submit')}
-        pendingLabel={t('role:mutations.revokeAssignment.pending')}
         cancelLabel={t('common:actions.cancel')}
         onCancel={onCancel}
         onSubmit={(event) => void handleSubmit(event)}

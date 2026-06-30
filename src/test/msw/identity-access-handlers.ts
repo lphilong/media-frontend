@@ -1449,45 +1449,8 @@ const toNullableText = (value: unknown): string | null => {
 const readUser = (userId: string): UserRecord | undefined =>
   users.find((record) => record.id === userId);
 
-const toUserRef = (userId: string): ReferenceSummary | null => {
-  const user = readUser(userId);
-  return user
-    ? {
-        id: user.id,
-        displayName: user.profile.displayName,
-        name: user.profile.email ?? undefined,
-        status: user.accountStatus,
-      }
-    : null;
-};
-
 const readRole = (roleId: string): RoleRecord | undefined =>
   roles.find((record) => record.id === roleId);
-
-const toRoleRef = (roleId: string): ReferenceSummary | null => {
-  const role = readRole(roleId);
-  return role
-    ? {
-        id: role.id,
-        code: role.code,
-        name: role.name,
-        status: role.state,
-      }
-    : null;
-};
-
-const toRoleAssignmentItem = (assignment: RoleAssignmentRecord) => ({
-  assignmentId: assignment.assignmentId,
-  roleId: assignment.roleId,
-  userId: assignment.userId,
-  scopeGrants: assignment.scopeGrants,
-  state: assignment.state,
-  effectiveAt: assignment.effectiveAt,
-  revokedAt: assignment.revokedAt,
-  reason: assignment.reason,
-  roleRef: toRoleRef(assignment.roleId),
-  userRef: toUserRef(assignment.userId),
-});
 
 const toUserListItem = (record: UserRecord) => ({
   id: record.id,
@@ -2522,15 +2485,14 @@ export const identityAccessHandlers = [
     return HttpResponse.json({ data: toUserDetail(record) });
   }),
 
-  http.get('*/admin/roles/:roleId/assignments', ({ params, request }) => {
-    const url = new URL(request.url);
-    const state = url.searchParams.get('state');
-    let rows = assignments.filter((assignment) => assignment.roleId === String(params.roleId));
-    if (state) {
-      rows = rows.filter((assignment) => assignment.state === state);
-    }
-
-    return HttpResponse.json(paginate(rows.map(toRoleAssignmentItem), url.searchParams));
+  http.get('*/admin/roles/:roleId/assignments', () => {
+    return HttpResponse.json(
+      {
+        message:
+          'ROLE_ASSIGNMENT_LIST is superseded by GET /admin/access-assignments?targetUserId=...',
+      },
+      { status: 410 },
+    );
   }),
 
   http.post('*/admin/roles/:roleId/assignments/:assignmentId/revoke', () => {
@@ -2539,51 +2501,17 @@ export const identityAccessHandlers = [
         message:
           'ROLE_REVOKE_FROM_USER is superseded by POST /admin/access-assignments/:assignmentId/revoke',
       },
-      { status: 400 },
+      { status: 410 },
     );
   }),
 
-  http.post('*/admin/roles/:roleId/assignments', async ({ params, request }) => {
-    const role = readRole(String(params.roleId));
-    if (!role || role.state !== 'ACTIVE') {
-      return HttpResponse.json({ message: 'role:validation.required' }, { status: 422 });
-    }
-
-    const body = await parseJsonBody(request);
-    const targetUser = readUser(String(body.userId ?? ''));
-    if (!targetUser) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    const governingRoleCode = role.templateCode ?? role.code;
-    const requiredAccountContext =
-      requiredAccountContextByRoleCode[governingRoleCode as RoleTemplateCode];
-    if (
-      requiredAccountContext &&
-      !readAssignedAccountContexts(targetUser).includes(requiredAccountContext)
-    ) {
-      return HttpResponse.json(
-        { message: `${governingRoleCode} requires ${requiredAccountContext} account context.` },
-        { status: 422 },
-      );
-    }
-
-    assignmentSeed += 1;
-    const assignment: RoleAssignmentRecord = {
-      assignmentId: `assignment-${assignmentSeed}`,
-      roleId: role.id,
-      userId: String(body.userId ?? ''),
-      ...(body.scopeGrants &&
-      typeof body.scopeGrants === 'object' &&
-      !Array.isArray(body.scopeGrants)
-        ? { scopeGrants: body.scopeGrants as RoleAssignmentScopeGrants }
-        : {}),
-      state: 'ACTIVE',
-      effectiveAt: Date.now(),
-      revokedAt: null,
-      reason: toNullableText(body.reason),
-    };
-    assignments.push(assignment);
-    return HttpResponse.json({ data: toRoleAssignmentItem(assignment) });
+  http.post('*/admin/roles/:roleId/assignments', () => {
+    return HttpResponse.json(
+      {
+        message: 'ROLE_ASSIGN_TO_USER is superseded by POST /admin/access-assignments/apply',
+      },
+      { status: 410 },
+    );
   }),
 
   http.get('*/admin/roles/:roleId/permission-matrix', ({ params }) => {

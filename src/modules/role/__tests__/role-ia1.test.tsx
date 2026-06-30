@@ -1147,8 +1147,19 @@ describe('role IA-1 surfaces', () => {
     ).not.toBeInTheDocument();
   }, 20_000);
 
-  it('renders Role detail, permission matrix, and Role-owned assignments only', async () => {
+  it('renders Role detail without calling the old role-scoped assignment list', async () => {
     await setLocale(DEFAULT_LOCALE);
+    let oldAssignmentListRequests = 0;
+    server.use(
+      http.get('*/admin/roles/:roleId/assignments', () => {
+        oldAssignmentListRequests += 1;
+        return HttpResponse.json(
+          { message: 'ROLE_ASSIGNMENT_LIST is superseded' },
+          { status: 410 },
+        );
+      }),
+    );
+
     renderRoute('/roles/role-admin?state=ACTIVE&scope=global');
 
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
@@ -1156,17 +1167,12 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText(i18n.t('role:detail.permissionMatrixTitle'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:templates.basedOnTemplate'))).toBeInTheDocument();
     expect(screen.getByText(/Quản trị chủ sở hữu \(OWNER_ADMIN\)/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Lịch làm việc: Dữ liệu của chính nhân sự này, Nhóm đang phụ trách/u),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Tổng quan vận hành: Toàn bộ phạm vi được phép/u)).toBeInTheDocument();
     expect(screen.getAllByText(/Quản trị vai trò/u).length).toBeGreaterThan(0);
     expect(screen.queryByText(/role:view/u)).not.toBeInTheDocument();
     expect(screen.queryByText('assignment-1')).not.toBeInTheDocument();
 
-    const userLink = await screen.findByRole('link', { name: /Admin User/u }, { timeout: 3000 });
-    expect(userLink).toHaveAttribute('href', '/users/user-admin');
     expect(screen.queryByText('user-admin')).not.toBeInTheDocument();
+    expect(oldAssignmentListRequests).toBe(0);
     expect(screen.queryByRole('button', { name: /grant scope/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /rename permission/i })).not.toBeInTheDocument();
     expect(
@@ -1232,8 +1238,6 @@ describe('role IA-1 surfaces', () => {
     renderRoute('/roles/role-admin');
 
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
-    const assignmentRow = (await screen.findByRole('link', { name: /Admin User/u })).closest('tr');
-
     await waitFor(() =>
       expect(
         screen.queryByRole('button', { name: i18n.t('role:actions.edit') }),
@@ -1251,14 +1255,8 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByText(/replace permissions/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/replace assignment rules/i)).not.toBeInTheDocument();
 
-    expect(assignmentRow).not.toBeNull();
-    if (!assignmentRow) {
-      return;
-    }
     expect(
-      within(assignmentRow).queryByRole('button', {
-        name: i18n.t('role:actions.revokeAssignment'),
-      }),
+      screen.queryByRole('button', { name: i18n.t('role:actions.revokeAssignment') }),
     ).not.toBeInTheDocument();
   });
 
@@ -1267,7 +1265,6 @@ describe('role IA-1 surfaces', () => {
     renderRoute('/roles/role-admin');
 
     expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
-    expect(await screen.findByRole('link', { name: /Admin User/u })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
     ).not.toBeInTheDocument();

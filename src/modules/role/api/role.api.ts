@@ -15,11 +15,7 @@ import type {
   AccessAssignmentRequestPayload,
   AccessAssignmentRevokePayload,
   AccessAssignmentTargetsMetadata,
-  RoleAssignToUserPayload,
-  RoleAssignmentItem,
-  RoleAssignmentListQuery,
   RoleAssignmentRuleReplacementPayload,
-  RoleAssignmentScopeGrants,
   RoleCreateFromTemplatePayload,
   RoleCreatePayload,
   RoleDetailRecord,
@@ -32,12 +28,11 @@ import type {
   RoleListQuery,
   RolePermissionMatrix,
   RolePermissionReplacementPayload,
-  RoleRevokeAssignmentPayload,
   RoleTemplateListItem,
   RoleTemplatePreview,
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
-import { apiRequest, type NormalizedApiError } from '@shared/api';
+import { apiRequest } from '@shared/api';
 import {
   accountContextSchema,
   workspaceAvailabilitySchema,
@@ -47,19 +42,6 @@ const roleStateSchema = z.enum(roleStateValues);
 const roleAssignmentStateSchema = z.enum(roleAssignmentStateValues);
 const delegationBandSchema = z.enum(roleDelegationBandValues);
 const maxDelegatableBandSchema = z.enum(roleMaxDelegatableBandValues);
-const referenceSummarySchema = z
-  .object({
-    id: z.string().trim().min(1),
-    code: z.string().trim().min(1).optional(),
-    name: z.string().trim().min(1).optional(),
-    title: z.string().trim().min(1).optional(),
-    displayName: z.string().trim().min(1).optional(),
-    handle: z.string().trim().min(1).optional(),
-    platform: z.string().trim().min(1).optional(),
-    status: z.string().trim().min(1).optional(),
-  })
-  .strict();
-
 const permissionSchema = z
   .object({
     code: z.string().trim().min(1),
@@ -215,21 +197,6 @@ const roleDetailSchema = z
   })
   .strict();
 
-const assignmentItemSchema = z
-  .object({
-    assignmentId: z.string().trim().min(1),
-    roleId: z.string().trim().min(1),
-    userId: z.string().trim().min(1),
-    roleRef: referenceSummarySchema.nullable().optional(),
-    userRef: referenceSummarySchema.nullable().optional(),
-    scopeGrants: roleAssignmentScopeGrantsSchema.nullable().optional(),
-    state: roleAssignmentStateSchema,
-    effectiveAt: z.union([z.number(), z.string()]),
-    revokedAt: z.union([z.number(), z.string()]).nullable().optional(),
-    reason: z.string().nullable().optional(),
-  })
-  .strict();
-
 const permissionMatrixSchema = z
   .object({
     roleId: z.string().trim().min(1),
@@ -258,19 +225,6 @@ const listResponseSchema = z
 const detailResponseSchema = z
   .object({
     data: roleDetailSchema,
-  })
-  .strict();
-
-const assignmentListResponseSchema = z
-  .object({
-    data: z.array(assignmentItemSchema),
-    meta: cursorMetaSchema,
-  })
-  .strict();
-
-const assignmentMutationResponseSchema = z
-  .object({
-    data: assignmentItemSchema,
   })
   .strict();
 
@@ -635,14 +589,6 @@ const sanitizeRoleListQuery = (
   search: query.search,
 });
 
-const sanitizeAssignmentListQuery = (
-  query: RoleAssignmentListQuery,
-): Record<string, string | number | undefined> => ({
-  state: query.state,
-  cursor: query.cursor,
-  limit: query.limit,
-});
-
 export const fetchRoles = async (
   query: RoleListQuery,
 ): Promise<CursorPagedResponse<RoleListItem>> => {
@@ -876,44 +822,6 @@ export const replaceRoleAssignmentRules = async (
   return detailResponseSchema.parse(response).data;
 };
 
-export const fetchRoleAssignments = async (
-  roleId: string,
-  query: RoleAssignmentListQuery,
-): Promise<CursorPagedResponse<RoleAssignmentItem>> => {
-  const response = await apiRequest<unknown>({
-    method: 'GET',
-    url: `/admin/roles/${encodeURIComponent(roleId)}/assignments`,
-    params: sanitizeAssignmentListQuery(query),
-  });
-
-  return assignmentListResponseSchema.parse(response);
-};
-
-export const assignRoleToUser = async (
-  roleId: string,
-  payload: RoleAssignToUserPayload,
-): Promise<RoleAssignmentItem> => {
-  const scopeGrants = normalizeScopeGrantsForPayload(payload.scopeGrants);
-  const response = await apiRequest<unknown, RoleAssignToUserPayload>({
-    method: 'POST',
-    url: `/admin/roles/${encodeURIComponent(roleId)}/assignments`,
-    data: {
-      userId: payload.userId,
-      reason: payload.reason ?? null,
-      ...(scopeGrants ? { scopeGrants } : {}),
-    },
-  });
-
-  return parseAssignmentMutationResponse(response);
-};
-
-export const revokeRoleAssignment = async (
-  _roleId: string,
-  assignmentId: string,
-  payload: RoleRevokeAssignmentPayload,
-): Promise<AccessAssignmentLifecycleResult> =>
-  revokeAccessAssignment(assignmentId, { reason: payload.reason ?? '' });
-
 export const fetchRolePermissionMatrix = async (roleId: string): Promise<RolePermissionMatrix> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
@@ -922,61 +830,3 @@ export const fetchRolePermissionMatrix = async (roleId: string): Promise<RolePer
 
   return permissionMatrixResponseSchema.parse(response).data;
 };
-
-const normalizeScopeGrantsForPayload = (
-  scopeGrants: RoleAssignmentScopeGrants | undefined,
-): RoleAssignmentScopeGrants | undefined => {
-  if (!scopeGrants) {
-    return undefined;
-  }
-
-  const parsed = roleAssignmentScopeGrantsSchema.parse(scopeGrants);
-  const normalized: RoleAssignmentScopeGrants = {};
-
-  if ((parsed.workSchedule?.length ?? 0) > 0) {
-    normalized.workSchedule = parsed.workSchedule;
-  }
-  if ((parsed.eventAssignment?.length ?? 0) > 0) {
-    normalized.eventAssignment = parsed.eventAssignment;
-  }
-  if ((parsed.contractRegistry?.length ?? 0) > 0) {
-    normalized.contractRegistry = parsed.contractRegistry;
-  }
-  if ((parsed.talentKpi?.length ?? 0) > 0) {
-    normalized.talentKpi = parsed.talentKpi;
-  }
-  if ((parsed.kpi?.length ?? 0) > 0) {
-    normalized.kpi = parsed.kpi;
-  }
-  if ((parsed.revenueLedger?.length ?? 0) > 0) {
-    normalized.revenueLedger = parsed.revenueLedger;
-  }
-  if ((parsed.commission?.length ?? 0) > 0) {
-    normalized.commission = parsed.commission;
-  }
-  if ((parsed.dashboardLite?.length ?? 0) > 0) {
-    normalized.dashboardLite = parsed.dashboardLite;
-  }
-
-  return Object.keys(normalized).length > 0 ? normalized : undefined;
-};
-
-const parseAssignmentMutationResponse = (response: unknown): RoleAssignmentItem => {
-  const parsed = assignmentMutationResponseSchema.safeParse(response);
-
-  if (!parsed.success) {
-    throw createInvalidAssignmentResponseError();
-  }
-
-  return parsed.data.data;
-};
-
-const createInvalidAssignmentResponseError = (): NormalizedApiError => ({
-  status: null,
-  code: 'ROLE_ASSIGNMENT_RESPONSE_INVALID',
-  message: 'role:feedback.assignmentResponseInvalid',
-  fieldErrors: {},
-  retryable: false,
-  permissionDenied: false,
-  notFound: false,
-});

@@ -1,16 +1,13 @@
 import i18n from 'i18next';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 
 import {
   applyAccessAssignment,
-  assignRoleToUser,
   createRoleFromTemplate,
   createRole,
   fetchAccessAssignmentTargets,
   fetchAccessAssignmentsForUser,
-  fetchRoleAssignments,
   fetchRoleTemplates,
   fetchRoles,
   performRoleLifecycleAction,
@@ -18,23 +15,19 @@ import {
   previewRoleTemplate,
   replaceRoleAssignmentRules,
   replaceRolePermissions,
-  revokeRoleAssignment,
+  revokeAccessAssignment,
   updateRole,
 } from '@modules/role/api/role.api';
 import {
-  RoleAssignUserSurface,
   RoleCreateSurface,
   RoleEditSurface,
-  RoleRevokeAssignmentSurface,
 } from '@modules/role/forms/role-mutation-forms';
 import {
   roleAssignmentRuleReplacementPayloadSchema,
-  roleAssignToUserPayloadSchema,
   roleCreatePayloadSchema,
   roleCreateFromTemplatePayloadSchema,
 } from '@modules/role/schemas/role-payload-schemas';
 import type {
-  RoleAssignmentItem,
   RoleDetailRecord,
   RolePermissionReplacementPayload,
   RoleTemplateListItem,
@@ -45,7 +38,6 @@ import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import {
   parseScreenQueryParams,
-  roleAssignmentListQueryConfig,
   roleFlatListQueryConfig,
   serializeScreenQueryParams,
 } from '@shared/query';
@@ -54,39 +46,7 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
-  loadUserReferenceOptions: vi.fn(async () => [
-    {
-      id: 'user-admin',
-      label: 'Admin User - admin@example.com',
-      description: 'ACTIVE',
-      href: '/users/user-admin',
-    },
-  ]),
-}));
-
 const apiRequestMock = vi.mocked(apiRequest);
-
-const selectPickerOption = async (
-  user: ReturnType<typeof userEvent.setup>,
-  pickerId: string,
-  optionText: RegExp,
-): Promise<void> => {
-  await waitFor(() => {
-    expect(
-      screen
-        .getAllByTestId('picker-surface')
-        .some((surface) => surface.getAttribute('data-picker-id') === pickerId),
-    ).toBe(true);
-  });
-  const picker = screen
-    .getAllByTestId('picker-surface')
-    .find((surface) => surface.getAttribute('data-picker-id') === pickerId);
-  if (!picker) {
-    throw new Error(`Picker not found: ${pickerId}`);
-  }
-  await user.click(await within(picker).findByText(optionText));
-};
 
 const roleDetail: RoleDetailRecord = {
   id: 'role-admin',
@@ -105,28 +65,6 @@ const roleDetail: RoleDetailRecord = {
   updatedAt: 2,
   activatedAt: 2,
   archivedAt: null,
-};
-
-const roleAssignment: RoleAssignmentItem = {
-  assignmentId: 'assignment-1',
-  roleId: 'role-admin',
-  userId: 'user-admin',
-  roleRef: {
-    id: 'role-admin',
-    code: 'ADMIN',
-    name: 'Admin role',
-  },
-  userRef: {
-    id: 'user-admin',
-    displayName: 'Admin User',
-  },
-  scopeGrants: {
-    workSchedule: ['self', 'team'],
-  },
-  state: 'ACTIVE',
-  effectiveAt: 2,
-  revokedAt: null,
-  reason: null,
 };
 
 const lifecycleAssignment = {
@@ -306,10 +244,6 @@ const mockDetailResponse = () => {
   apiRequestMock.mockResolvedValue({ data: roleDetail });
 };
 
-const mockAssignmentResponse = () => {
-  apiRequestMock.mockResolvedValue({ data: roleAssignment });
-};
-
 describe('role IA-1 query and payload shaping', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -351,29 +285,6 @@ describe('role IA-1 query and payload shaping', () => {
     expect(roleListParams.get('scopeGrants')).toBeNull();
     expect(roleListParams.get('sortBy')).toBeNull();
 
-    const assignmentQuery = parseScreenQueryParams(
-      new URLSearchParams('state=ACTIVE&cursor=a1&limit=50&search=nope&scope=global'),
-      roleAssignmentListQueryConfig,
-    );
-    expect(assignmentQuery).toEqual({
-      state: 'ACTIVE',
-      cursor: 'a1',
-      limit: 50,
-    });
-
-    const assignmentParams = serializeScreenQueryParams(
-      {
-        state: 'REVOKED',
-        cursor: 'a2',
-        limit: 25,
-        search: 'forbidden',
-        scopeGrants: 'x',
-      },
-      roleAssignmentListQueryConfig,
-    );
-    expect(Array.from(assignmentParams.keys()).sort()).toEqual(['cursor', 'limit', 'state']);
-    expect(assignmentParams.get('search')).toBeNull();
-    expect(assignmentParams.get('scopeGrants')).toBeNull();
   });
 
   it('does not emit scope, scopeGrants, sort, or unsupported assignment keys through the Role API layer', async () => {
@@ -400,26 +311,6 @@ describe('role IA-1 query and payload shaping', () => {
           cursor: 'opaque',
           limit: 50,
           search: 'Admin',
-        },
-      }),
-    );
-
-    await fetchRoleAssignments('role-admin', {
-      state: 'ACTIVE',
-      cursor: 'a1',
-      limit: 50,
-      search: 'unsupported',
-      scope: 'global',
-    } as Parameters<typeof fetchRoleAssignments>[1]);
-
-    expect(apiRequestMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        method: 'GET',
-        url: '/admin/roles/role-admin/assignments',
-        params: {
-          state: 'ACTIVE',
-          cursor: 'a1',
-          limit: 50,
         },
       }),
     );
@@ -475,7 +366,7 @@ describe('role IA-1 query and payload shaping', () => {
     expect(updateCall.data).not.toHaveProperty('scopeGrants');
   });
 
-  it('sends Role lifecycle, permission, assignment-rule, assign, and revoke payloads exactly', async () => {
+  it('sends Role lifecycle, permission, assignment-rule, and canonical revoke payloads exactly', async () => {
     mockDetailResponse();
 
     await performRoleLifecycleAction('role-admin', 'activate');
@@ -526,54 +417,8 @@ describe('role IA-1 query and payload shaping', () => {
       }),
     );
 
-    mockAssignmentResponse();
-    await assignRoleToUser('role-admin', {
-      userId: 'user-admin',
-      reason: null,
-      effectiveAt: 1,
-    } as Parameters<typeof assignRoleToUser>[1]);
-    expect(apiRequestMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/admin/roles/role-admin/assignments',
-        data: {
-          userId: 'user-admin',
-          reason: null,
-        },
-      }),
-    );
-    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('effectiveAt');
-    expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('scopeGrants');
-
-    await assignRoleToUser('role-admin', {
-      userId: 'user-admin',
-      reason: 'Scoped coverage',
-      scopeGrants: {
-        workSchedule: ['self', 'team', 'department', 'global'],
-        eventAssignment: ['managedGroup'],
-        kpi: ['global', 'managedGroup', 'self'],
-        dashboardLite: ['global'],
-      },
-    });
-    expect(apiRequestMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        method: 'POST',
-        url: '/admin/roles/role-admin/assignments',
-        data: {
-          userId: 'user-admin',
-          reason: 'Scoped coverage',
-          scopeGrants: {
-            workSchedule: ['self', 'team', 'department', 'global'],
-            eventAssignment: ['managedGroup'],
-            kpi: ['global', 'managedGroup', 'self'],
-            dashboardLite: ['global'],
-          },
-        },
-      }),
-    );
-
     apiRequestMock.mockResolvedValueOnce({ data: lifecycleRevokeResponse });
-    await revokeRoleAssignment('role-admin', 'assignment-1', { reason: 'Done' });
+    await revokeAccessAssignment('assignment-1', { reason: 'Done' });
     expect(apiRequestMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'POST',
@@ -583,42 +428,6 @@ describe('role IA-1 query and payload shaping', () => {
         },
       }),
     );
-  });
-
-  it('parses assignment mutation responses and rejects role DTO or unsafe extras safely', async () => {
-    mockAssignmentResponse();
-    await expect(
-      assignRoleToUser('role-admin', {
-        userId: 'user-admin',
-        reason: null,
-      }),
-    ).resolves.toEqual(roleAssignment);
-
-    apiRequestMock.mockResolvedValueOnce({ data: roleDetail });
-    await expect(
-      assignRoleToUser('role-admin', {
-        userId: 'user-admin',
-        reason: null,
-      }),
-    ).rejects.toMatchObject({
-      message: 'role:feedback.assignmentResponseInvalid',
-      code: 'ROLE_ASSIGNMENT_RESPONSE_INVALID',
-    });
-
-    apiRequestMock.mockResolvedValueOnce({
-      data: {
-        ...roleAssignment,
-        secret: 'do-not-expose',
-      },
-    });
-    await expect(
-      assignRoleToUser('role-admin', {
-        userId: 'user-admin',
-        reason: null,
-      }),
-    ).rejects.toMatchObject({
-      message: 'role:feedback.assignmentResponseInvalid',
-    });
   });
 
   it('parses role templates, previews, and create-from-template responses with strict schemas', async () => {
@@ -828,13 +637,11 @@ describe('role IA-1 query and payload shaping', () => {
     expect(applyPayload).not.toHaveProperty('employmentProfileId');
   });
 
-  it('submits normal Role create, update, assign, and revoke surfaces with supported payloads', async () => {
+  it('submits normal Role create and update surfaces with supported payloads', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
     const onCreateFromTemplate = vi.fn();
     const onUpdate = vi.fn();
-    const onAssign = vi.fn();
-    const onRevoke = vi.fn();
 
     const createRender = render(
       <RoleCreateSurface
@@ -910,221 +717,6 @@ describe('role IA-1 query and payload shaping', () => {
       maxDelegatableBand: 'LIMITED',
     });
     editRender.unmount();
-
-    const assignRender = render(
-      <MemoryRouter>
-        <RoleAssignUserSurface
-          onCancel={() => undefined}
-          onSubmit={onAssign}
-          roleCode="OWNER_ADMIN"
-        />
-      </MemoryRouter>,
-    );
-    await selectPickerOption(user, 'role-assignment-user', /Admin User/);
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
-    );
-    expect(onAssign).toHaveBeenCalledWith({
-      userId: 'user-admin',
-      reason: null,
-    });
-    expect(onAssign.mock.calls[0][0]).not.toHaveProperty('effectiveAt');
-    assignRender.unmount();
-
-    const scopedAssignRender = render(
-      <MemoryRouter>
-        <RoleAssignUserSurface
-          onCancel={() => undefined}
-          onSubmit={onAssign}
-          roleCode="OWNER_ADMIN"
-          recommendedScopeGrants={{
-            workSchedule: ['team'],
-            eventAssignment: ['managedGroup'],
-            kpi: ['global', 'managedGroup', 'self'],
-          }}
-        />
-      </MemoryRouter>,
-    );
-    await selectPickerOption(user, 'role-assignment-user', /Admin User/);
-    expect(screen.getByText(i18n.t('role:scopePicker.recommendedScopes'))).toBeInTheDocument();
-    expect(screen.getByText(/kpi\.global, kpi\.managedGroup, kpi\.self/u)).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(`Event Assignment: ${i18n.t('role:scopePicker.scopes.managedGroup')}`),
-    ).toBeChecked();
-    expect(
-      screen.getByLabelText(`Event Assignment: ${i18n.t('role:scopePicker.scopes.global')}`),
-    ).not.toBeChecked();
-    expect(screen.queryByLabelText(/Event Assignment: Team/u)).not.toBeInTheDocument();
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('role:scopePicker.applyRecommendedScopes'),
-      }),
-    );
-    expect(screen.getByLabelText(`KPI: ${i18n.t('role:scopePicker.scopes.global')}`)).toBeChecked();
-    expect(
-      screen.getByLabelText(`KPI: ${i18n.t('role:scopePicker.scopes.managedGroup')}`),
-    ).toBeChecked();
-    expect(screen.getByLabelText(`KPI: ${i18n.t('role:scopePicker.scopes.self')}`)).toBeChecked();
-    await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.self')));
-    await user.click(screen.getByLabelText(i18n.t('role:scopePicker.scopes.department')));
-    await user.click(
-      screen.getByLabelText(`Dashboard Lite: ${i18n.t('role:scopePicker.scopes.global')}`),
-    );
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
-    );
-    expect(onAssign).toHaveBeenLastCalledWith({
-      userId: 'user-admin',
-      reason: null,
-      scopeGrants: {
-        workSchedule: ['self', 'team', 'department'],
-        eventAssignment: ['managedGroup'],
-        kpi: ['global', 'managedGroup', 'self'],
-        dashboardLite: ['global'],
-      },
-    });
-    scopedAssignRender.unmount();
-
-    render(
-      <RoleRevokeAssignmentSurface
-        assignmentId="assignment-1"
-        onCancel={() => undefined}
-        onSubmit={onRevoke}
-      />,
-    );
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.revokeAssignment.submit') }),
-    );
-    expect(onRevoke).toHaveBeenCalledWith({
-      reason: null,
-    });
-  }, 20_000);
-
-  it('prefills template assignment scopes without promoting managedGroup to global', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    const onAssign = vi.fn();
-
-    const teamManagerRender = render(
-      <MemoryRouter>
-        <RoleAssignUserSurface
-          onCancel={() => undefined}
-          onSubmit={onAssign}
-          roleCode="TALENT_GROUP_MANAGER"
-          templateCode="TALENT_GROUP_MANAGER"
-          recommendedScopeGrants={{
-            workSchedule: ['self', 'team'],
-            kpi: ['managedGroup'],
-            eventAssignment: ['managedGroup'],
-          }}
-        />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByLabelText(i18n.t('role:scopePicker.scopes.self'))).toBeChecked();
-    expect(screen.getByLabelText(i18n.t('role:scopePicker.scopes.team'))).toBeChecked();
-    expect(screen.getByLabelText(i18n.t('role:scopePicker.scopes.department'))).not.toBeChecked();
-    expect(
-      screen.getByLabelText(`Event Assignment: ${i18n.t('role:scopePicker.scopes.managedGroup')}`),
-    ).toBeChecked();
-    expect(
-      screen.getByLabelText(`Event Assignment: ${i18n.t('role:scopePicker.scopes.global')}`),
-    ).not.toBeChecked();
-
-    await selectPickerOption(user, 'role-assignment-user', /Admin User/);
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
-    );
-
-    expect(onAssign).toHaveBeenCalledWith({
-      userId: 'user-admin',
-      reason: null,
-      scopeGrants: {
-        workSchedule: ['self', 'team'],
-        eventAssignment: ['managedGroup'],
-        kpi: ['managedGroup'],
-      },
-    });
-    teamManagerRender.unmount();
-
-    const productionOpsRender = render(
-      <MemoryRouter>
-        <RoleAssignUserSurface
-          onCancel={() => undefined}
-          onSubmit={onAssign}
-          roleCode="PRODUCTION_OPS"
-          templateCode="PRODUCTION_OPS"
-          recommendedScopeGrants={{
-            workSchedule: ['global'],
-            eventAssignment: ['global'],
-          }}
-        />
-      </MemoryRouter>,
-    );
-
-    expect(
-      screen.getByLabelText(`Event Assignment: ${i18n.t('role:scopePicker.scopes.managedGroup')}`),
-    ).not.toBeChecked();
-    expect(
-      screen.getByLabelText(`Event Assignment: ${i18n.t('role:scopePicker.scopes.global')}`),
-    ).toBeChecked();
-
-    await selectPickerOption(user, 'role-assignment-user', /Admin User/);
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
-    );
-
-    expect(onAssign).toHaveBeenLastCalledWith({
-      userId: 'user-admin',
-      reason: null,
-      scopeGrants: {
-        workSchedule: ['global'],
-        eventAssignment: ['global'],
-      },
-    });
-    productionOpsRender.unmount();
-
-    const viewerAuditorRender = render(
-      <MemoryRouter>
-        <RoleAssignUserSurface
-          onCancel={() => undefined}
-          onSubmit={onAssign}
-          roleCode="VIEWER_AUDITOR"
-          templateCode="VIEWER_AUDITOR"
-          recommendedScopeGrants={{
-            workSchedule: ['global'],
-            eventAssignment: ['global'],
-            contractRegistry: ['global'],
-            talentKpi: ['global'],
-            kpi: ['global'],
-            revenueLedger: ['global'],
-            commission: ['global'],
-            dashboardLite: ['global'],
-          }}
-        />
-      </MemoryRouter>,
-    );
-
-    await selectPickerOption(user, 'role-assignment-user', /Admin User/);
-    await user.click(
-      screen.getByRole('button', { name: i18n.t('role:mutations.assignToUser.submit') }),
-    );
-
-    expect(onAssign).toHaveBeenLastCalledWith({
-      userId: 'user-admin',
-      reason: null,
-      scopeGrants: {
-        workSchedule: ['global'],
-        eventAssignment: ['global'],
-        contractRegistry: ['global'],
-        talentKpi: ['global'],
-        kpi: ['global'],
-        revenueLedger: ['global'],
-        commission: ['global'],
-        dashboardLite: ['global'],
-      },
-    });
-    viewerAuditorRender.unmount();
   }, 20_000);
 
   it('keeps exported assignment-rule conditions schemas strict plain JSON objects or null', () => {
@@ -1177,41 +769,6 @@ describe('role IA-1 query and payload shaping', () => {
         description: null,
       }).success,
     ).toBe(true);
-
-    expect(
-      roleAssignToUserPayloadSchema.safeParse({
-        userId: 'user-admin',
-        reason: null,
-        scopeGrants: {
-          workSchedule: ['self', 'team', 'department', 'global'],
-          eventAssignment: ['managedGroup', 'global'],
-          contractRegistry: ['global'],
-          talentKpi: ['global'],
-          kpi: ['global', 'managedGroup', 'self'],
-          revenueLedger: ['global'],
-          commission: ['global'],
-          dashboardLite: ['global'],
-        },
-      }).success,
-    ).toBe(true);
-
-    expect(
-      roleAssignToUserPayloadSchema.safeParse({
-        userId: 'user-admin',
-        scopeGrants: {
-          role: ['global'],
-        },
-      }).success,
-    ).toBe(false);
-
-    expect(
-      roleAssignToUserPayloadSchema.safeParse({
-        userId: 'user-admin',
-        scopeGrants: {
-          eventAssignment: ['team'],
-        },
-      }).success,
-    ).toBe(false);
 
     const forbiddenConditions: unknown[] = [
       [],

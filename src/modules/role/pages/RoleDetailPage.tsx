@@ -1,33 +1,27 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 
 import { createRoleActionRailItems } from '@modules/role/actions/role-action-rail';
 import { RoleBoundaryNotice } from '@modules/role/components/RoleBoundaryNotice';
-import { roleAssignmentStateValues } from '@modules/role/constants/role.constants';
 import {
   RoleEditSurface,
   RoleLifecycleReasonSurface,
 } from '@modules/role/forms/role-mutation-forms';
 import {
-  useRoleAssignments,
   useRoleDetail,
   useRoleLifecycleMutation,
   useRolePermissionMatrix,
   useUpdateRoleMutation,
 } from '@modules/role/hooks/use-role';
-import { createRoleAssignmentColumns } from '@modules/role/tables/role-columns';
 import { formatPermissionCapabilitySummary } from '@modules/role/utils/permission-labels';
 import type {
-  RoleAssignmentListQuery,
   RoleLifecycleAction,
   RoleTemplateCode,
 } from '@modules/role/types/role.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
   ActionRail,
-  AdminTableShell,
-  CursorPager,
   ErrorState,
   LoadingState,
   MetadataSection,
@@ -35,7 +29,6 @@ import {
   PermissionDeniedState,
   ReadOnlyFieldGrid,
   ReferenceChip,
-  RelatedSectionShell,
   StatusBadge,
   useDestructiveConfirm,
   useMutationFeedback,
@@ -50,14 +43,6 @@ import {
 } from '@shared/auth/current-actor-capabilities';
 import { ModuleDetailScreenShell } from '@shared/modules';
 import { useScrollToPanel } from '@shared/hooks/useScrollToPanel';
-import {
-  createCursorStack,
-  moveNextCursor,
-  movePreviousCursor,
-  roleAssignmentListQueryConfig,
-  serializeScreenQueryParams,
-  useRouteQueryState,
-} from '@shared/query';
 
 type ActiveMutationSurface =
   | 'edit'
@@ -131,10 +116,8 @@ const readTemplateDisplay = (templateCode?: RoleTemplateCode | null): string =>
 export const RoleDetailPage = (): JSX.Element => {
   const { roleId } = useParams<{ roleId: string }>();
   const { t } = useTranslation(['role', 'common', 'errors']);
-  const { query, patchQuery } = useRouteQueryState(roleAssignmentListQueryConfig);
 
   const detailQuery = useRoleDetail(roleId);
-  const assignmentsQuery = useRoleAssignments(roleId, query);
   const permissionMatrixQuery = useRolePermissionMatrix(roleId);
   const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateRoleMutation();
@@ -143,7 +126,6 @@ export const RoleDetailPage = (): JSX.Element => {
   const requestDestructiveConfirm = useDestructiveConfirm();
 
   const [activeSurface, setActiveSurface] = useState<ActiveMutationSurface>(null);
-  const [, setCursorStack] = useState(createCursorStack);
   const { containerRef: mutationPanelRef } = useScrollToPanel(activeSurface);
 
   const capabilityCopy = useMemo<Record<CapabilityMissingReason, string>>(
@@ -155,31 +137,9 @@ export const RoleDetailPage = (): JSX.Element => {
     [t],
   );
 
-  const queryShapeSignature = useMemo(
-    () =>
-      serializeScreenQueryParams(
-        {
-          ...query,
-          cursor: undefined,
-        },
-        roleAssignmentListQueryConfig,
-      ).toString(),
-    [query],
-  );
-  const previousShapeSignatureRef = useRef(queryShapeSignature);
-
   useEffect(() => {
     setActiveSurface(null);
   }, [roleId]);
-
-  useEffect(() => {
-    if (previousShapeSignatureRef.current === queryShapeSignature) {
-      return;
-    }
-
-    previousShapeSignatureRef.current = queryShapeSignature;
-    setCursorStack(createCursorStack());
-  }, [queryShapeSignature]);
 
   const detailError = detailQuery.error as NormalizedApiError | null;
   const detailState = useMemo(() => {
@@ -208,27 +168,6 @@ export const RoleDetailPage = (): JSX.Element => {
   ]);
 
   const record = detailQuery.data;
-  const nextCursor = assignmentsQuery.data?.meta?.nextCursor;
-  const canGoNext = Boolean(nextCursor);
-  const canGoBack = Boolean(query.cursor);
-
-  const onNextAssignments = (): void => {
-    if (!nextCursor) {
-      return;
-    }
-
-    setCursorStack((current) => moveNextCursor(current, nextCursor));
-    patchQuery({ cursor: nextCursor }, { resetCursorOnChange: false });
-  };
-
-  const onPreviousAssignments = (): void => {
-    setCursorStack((current) => {
-      const nextStack = movePreviousCursor(current);
-      patchQuery({ cursor: nextStack.current ?? undefined }, { resetCursorOnChange: false });
-
-      return nextStack;
-    });
-  };
 
   const onLifecycleAction = useCallback(
     async (action: RoleLifecycleAction) => {
@@ -358,16 +297,6 @@ export const RoleDetailPage = (): JSX.Element => {
     record,
     t,
   ]);
-
-  const assignmentColumns = useMemo(
-    () =>
-      createRoleAssignmentColumns(t, {
-        roleState: record?.state,
-        canRevokeAssignment: false,
-        onRevokeAssignment: () => undefined,
-      }),
-    [record?.state, t],
-  );
 
   const matrix = permissionMatrixQuery.data;
   return (
@@ -557,51 +486,6 @@ export const RoleDetailPage = (): JSX.Element => {
               />
             ) : null}
           </div>
-        ) : undefined
-      }
-      relatedSection={
-        record ? (
-          <RelatedSectionShell title={t('role:assignments.title')}>
-            <div className="space-y-3">
-              <label className="flex max-w-[220px] flex-col gap-1">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('role:assignments.state')}
-                </span>
-                <select
-                  value={query.state ?? ''}
-                  className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                  onChange={(event) =>
-                    patchQuery({
-                      state: (event.target.value || undefined) as RoleAssignmentListQuery['state'],
-                    })
-                  }
-                >
-                  <option value="">{t('role:assignments.allStates')}</option>
-                  {roleAssignmentStateValues.map((state) => (
-                    <option key={state} value={state}>
-                      {t(`role:assignmentStates.${state}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <AdminTableShell
-                data={assignmentsQuery.data?.data ?? []}
-                columns={assignmentColumns}
-                isLoading={assignmentsQuery.isFetching && !assignmentsQuery.data}
-                emptyTitle={t('role:assignments.emptyTitle')}
-                emptyMessage={t('role:assignments.emptyMessage')}
-                caption={t('role:assignments.caption')}
-              />
-              <div className="flex justify-end">
-                <CursorPager
-                  canGoBack={canGoBack}
-                  canGoNext={canGoNext}
-                  onNext={onNextAssignments}
-                  onPrevious={onPreviousAssignments}
-                />
-              </div>
-            </div>
-          </RelatedSectionShell>
         ) : undefined
       }
       actionRail={<ActionRail title={t('role:actionRail.title')} items={actionItems} />}

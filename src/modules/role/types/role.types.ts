@@ -6,8 +6,6 @@ import type {
   roleMaxDelegatableBandValues,
   roleStateValues,
 } from '@modules/role/constants/role.constants';
-import type { ReferenceSummary } from '@shared/formatting/reference-display';
-
 export type RoleState = (typeof roleStateValues)[number];
 export type RoleAssignmentState = (typeof roleAssignmentStateValues)[number];
 export type RoleDelegationBand = (typeof roleDelegationBandValues)[number];
@@ -165,19 +163,6 @@ export type RoleDetailRecord = {
   updatedAt: number | string;
   activatedAt?: number | string | null;
   archivedAt?: number | string | null;
-};
-
-export type RoleAssignmentItem = {
-  assignmentId: string;
-  roleId: string;
-  userId: string;
-  roleRef?: ReferenceSummary | null;
-  userRef?: ReferenceSummary | null;
-  scopeGrants?: RoleAssignmentScopeGrants | null;
-  state: RoleAssignmentState;
-  effectiveAt: number | string;
-  revokedAt?: number | string | null;
-  reason?: string | null;
 };
 
 export type RolePermissionMatrix = {
@@ -463,12 +448,6 @@ export type RoleListQuery = {
   search?: string;
 };
 
-export type RoleAssignmentListQuery = {
-  state?: RoleAssignmentState;
-  limit?: number;
-  cursor?: string;
-};
-
 export type RoleCreatePayload = {
   name: string;
   code?: string;
@@ -498,21 +477,11 @@ export type RoleAssignmentRuleReplacementPayload = {
   rules: RoleAssignmentRule[];
 };
 
-export type RoleAssignToUserPayload = {
-  userId: string;
-  reason?: string | null;
-  scopeGrants?: RoleAssignmentScopeGrants;
-};
-
 export type RoleCreateFromTemplatePayload = {
   templateCode: ActiveRoleTemplateCode;
   code?: string;
   name: string;
   description?: string | null;
-};
-
-export type RoleRevokeAssignmentPayload = {
-  reason?: string | null;
 };
 
 export type CursorPagedResponse<TData> = {

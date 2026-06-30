@@ -34,24 +34,6 @@ const roleTemplateCodeSchema = z.enum([
   'STAFF_CONSOLE_USER',
 ]);
 
-const workScheduleScopeGrantSchema = z.enum(['self', 'team', 'department', 'global']);
-const globalScopeGrantSchema = z.enum(['global']);
-const eventAssignmentScopeGrantSchema = z.enum(['global', 'managedGroup']);
-const kpiScopeGrantSchema = z.enum(['global', 'managedGroup', 'self']);
-
-export const roleAssignmentScopeGrantsPayloadSchema = z
-  .object({
-    workSchedule: z.array(workScheduleScopeGrantSchema).optional(),
-    eventAssignment: z.array(eventAssignmentScopeGrantSchema).optional(),
-    contractRegistry: z.array(globalScopeGrantSchema).optional(),
-    talentKpi: z.array(globalScopeGrantSchema).optional(),
-    kpi: z.array(kpiScopeGrantSchema).optional(),
-    revenueLedger: z.array(globalScopeGrantSchema).optional(),
-    commission: z.array(globalScopeGrantSchema).optional(),
-    dashboardLite: z.array(globalScopeGrantSchema).optional(),
-  })
-  .strict();
-
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false;
@@ -136,25 +118,11 @@ export const roleAssignmentRuleReplacementPayloadSchema = z
   })
   .strict();
 
-export const roleAssignToUserPayloadSchema = z
-  .object({
-    userId: z.string().trim().min(1),
-    reason: z.string().nullable().optional(),
-    scopeGrants: roleAssignmentScopeGrantsPayloadSchema.optional(),
-  })
-  .strict();
-
 export const roleCreateFromTemplatePayloadSchema = z
   .object({
     templateCode: roleTemplateCodeSchema,
     code: z.string().trim().min(1).optional(),
     name: z.string().trim().min(1),
     description: z.string().nullable().optional(),
-  })
-  .strict();
-
-export const roleRevokeAssignmentPayloadSchema = z
-  .object({
-    reason: z.string().nullable().optional(),
   })
   .strict();

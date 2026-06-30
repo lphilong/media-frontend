@@ -2,14 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   applyAccessAssignment,
-  assignRoleToUser,
   createRole,
   createRoleFromTemplate,
   fetchAccessAssignmentsForUser,
   fetchAccessAssignmentTargets,
   fetchEffectiveAccess,
   fetchRoleBundles,
-  fetchRoleAssignments,
   fetchRoleDetail,
   fetchRolePermissionMatrix,
   fetchRoleTemplates,
@@ -20,26 +18,21 @@ import {
   replaceRoleAssignmentRules,
   replaceRolePermissions,
   revokeAccessAssignment,
-  revokeRoleAssignment,
   updateRole,
 } from '@modules/role/api/role.api';
 import type {
-  RoleAssignmentListQuery,
   AccessAssignmentRevokePayload,
   AccessAssignmentRequestPayload,
   RoleAssignmentRuleReplacementPayload,
-  RoleAssignToUserPayload,
   RoleCreateFromTemplatePayload,
   RoleCreatePayload,
   RoleLifecycleAction,
   RoleLifecyclePayload,
   RoleListQuery,
   RolePermissionReplacementPayload,
-  RoleRevokeAssignmentPayload,
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
 import {
-  roleAssignmentListQueryConfig,
   roleFlatListQueryConfig,
   serializeScreenQueryParams,
 } from '@shared/query';
@@ -49,9 +42,6 @@ const USER_QUERY_ROOT = ['user'] as const;
 
 const toListQueryToken = (query: RoleListQuery): string =>
   serializeScreenQueryParams(query, roleFlatListQueryConfig).toString();
-
-const toAssignmentListQueryToken = (query: RoleAssignmentListQuery): string =>
-  serializeScreenQueryParams(query, roleAssignmentListQueryConfig).toString();
 
 export const roleQueryKeys = {
   all: (): readonly ['role'] => ROLE_QUERY_ROOT,
@@ -63,8 +53,6 @@ export const roleQueryKeys = {
   accessAssignmentsForUser: (userId: string) => ['role', 'access-assignments', userId] as const,
   effectiveAccess: (userId: string) => ['role', 'effective-access', userId] as const,
   templatePreview: (templateCode: string) => ['role', 'template-preview', templateCode] as const,
-  assignments: (roleId: string, query: RoleAssignmentListQuery) =>
-    ['role', 'assignments', roleId, toAssignmentListQueryToken(query)] as const,
   permissionMatrix: (roleId: string) => ['role', 'permission-matrix', roleId] as const,
 };
 
@@ -131,16 +119,6 @@ export const useRoleTemplatePreview = (templateCode?: string) => {
       : [...ROLE_QUERY_ROOT, 'template-preview'],
     queryFn: () => previewRoleTemplate(templateCode ?? ''),
     enabled: Boolean(templateCode),
-  });
-};
-
-export const useRoleAssignments = (roleId: string | undefined, query: RoleAssignmentListQuery) => {
-  return useQuery({
-    queryKey: roleId
-      ? roleQueryKeys.assignments(roleId, query)
-      : [...ROLE_QUERY_ROOT, 'assignments'],
-    queryFn: () => fetchRoleAssignments(roleId ?? '', query),
-    enabled: Boolean(roleId),
   });
 };
 
@@ -240,37 +218,6 @@ export const useRoleAssignmentRuleReplacementMutation = () => {
       roleId: string;
       payload: RoleAssignmentRuleReplacementPayload;
     }) => replaceRoleAssignmentRules(roleId, payload),
-    onSuccess: async () => {
-      await invalidateRoleLaneQueries(queryClient);
-    },
-  });
-};
-
-export const useRoleAssignToUserMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ roleId, payload }: { roleId: string; payload: RoleAssignToUserPayload }) =>
-      assignRoleToUser(roleId, payload),
-    onSuccess: async () => {
-      await invalidateRoleLaneQueries(queryClient);
-    },
-  });
-};
-
-export const useRoleRevokeAssignmentMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      roleId,
-      assignmentId,
-      payload,
-    }: {
-      roleId: string;
-      assignmentId: string;
-      payload: RoleRevokeAssignmentPayload;
-    }) => revokeRoleAssignment(roleId, assignmentId, payload),
     onSuccess: async () => {
       await invalidateRoleLaneQueries(queryClient);
     },
