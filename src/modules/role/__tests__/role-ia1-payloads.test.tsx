@@ -9,6 +9,7 @@ import {
   createRoleFromTemplate,
   createRole,
   fetchAccessAssignmentTargets,
+  fetchAccessAssignmentsForUser,
   fetchRoleAssignments,
   fetchRoleTemplates,
   fetchRoles,
@@ -126,6 +127,105 @@ const roleAssignment: RoleAssignmentItem = {
   effectiveAt: 2,
   revokedAt: null,
   reason: null,
+};
+
+const lifecycleAssignment = {
+  assignmentId: 'assignment-1',
+  targetUserId: 'user-admin',
+  roleId: 'role-admin',
+  roleCode: 'ADMIN',
+  roleName: 'Admin role',
+  roleTemplateCode: 'OWNER_ADMIN',
+  roleTemplateVersion: '2026-05-20',
+  structuredScopeGrants: [{ scopeType: 'self' as const }],
+  scopeFingerprint: 'scope:v1:self',
+  status: 'ACTIVE' as const,
+  lifecycleState: 'ACTIVE' as const,
+  currentlyEffective: true,
+  inactiveReason: null,
+  effectiveAt: 2,
+  expiresAt: null,
+  reviewAt: null,
+  assignedBy: 'user-owner',
+  assignedAt: 2,
+  revokedAt: null,
+  revokedBy: null,
+  revokeReason: null,
+  origin: 'DIRECT' as const,
+  bundleOrigin: null,
+  reason: 'Initial assignment',
+  sensitiveOrGlobal: false,
+  supportedActions: ['REVOKE'],
+  auditSummary: {
+    assignmentId: 'assignment-1',
+    action: 'ASSIGN',
+    actorId: 'user-owner',
+    timestamp: 2,
+    reason: 'Initial assignment',
+    oldStatus: null,
+    newStatus: 'ACTIVE',
+  },
+};
+
+const lifecycleListResponse = {
+  readOnly: true,
+  sourceTruth: false,
+  targetUser: {
+    id: 'user-admin',
+    displayName: 'Admin User',
+    email: 'admin@example.test',
+    accountStatus: 'ACTIVE',
+  },
+  supportedLifecycleActions: ['REVOKE'],
+  unsupportedLifecycleActions: ['DISABLE', 'EXPIRE', 'ARCHIVE'],
+  items: [lifecycleAssignment],
+  generatedAt: '2026-05-20T00:00:00.000Z',
+};
+
+const lifecycleRevokeResponse = {
+  revoked: true,
+  lifecycleStatus: 'REVOKED',
+  blockers: [],
+  warnings: [],
+  assignment: {
+    ...lifecycleAssignment,
+    status: 'REVOKED' as const,
+    lifecycleState: 'REVOKED' as const,
+    currentlyEffective: false,
+    inactiveReason: 'REVOKED',
+    revokedAt: 3,
+    revokedBy: 'user-admin',
+    revokeReason: 'Done',
+    supportedActions: [],
+    auditSummary: {
+      assignmentId: 'assignment-1',
+      action: 'REVOKE',
+      actorId: 'user-admin',
+      timestamp: 3,
+      reason: 'Done',
+      oldStatus: 'ACTIVE',
+      newStatus: 'REVOKED',
+    },
+  },
+  auditTrace: {
+    written: true,
+    lifecycleAction: 'REVOKE',
+    actorId: 'user-admin',
+    assignmentId: 'assignment-1',
+    targetUserId: 'user-admin',
+    oldStatus: 'ACTIVE',
+    newStatus: 'REVOKED',
+    reason: 'Done',
+    timestamp: 3,
+  },
+  sourceTrace: {
+    mutatesSource: true,
+    source: 'role_assignments',
+    auditSource: 'audit_log',
+  },
+  effectiveAccessAfterLifecycle: {
+    permissions: [],
+  },
 };
 
 const roleTemplateCatalog: RoleTemplateListItem[] = [
@@ -472,11 +572,12 @@ describe('role IA-1 query and payload shaping', () => {
       }),
     );
 
+    apiRequestMock.mockResolvedValueOnce({ data: lifecycleRevokeResponse });
     await revokeRoleAssignment('role-admin', 'assignment-1', { reason: 'Done' });
     expect(apiRequestMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'POST',
-        url: '/admin/roles/role-admin/assignments/assignment-1/revoke',
+        url: '/admin/access-assignments/assignment-1/revoke',
         data: {
           reason: 'Done',
         },
@@ -581,6 +682,20 @@ describe('role IA-1 query and payload shaping', () => {
       }),
     );
     expect(apiRequestMock.mock.calls.at(-1)?.[0]).not.toHaveProperty('data');
+
+    apiRequestMock.mockResolvedValueOnce({ data: lifecycleListResponse });
+    await expect(fetchAccessAssignmentsForUser('user-admin')).resolves.toEqual(
+      lifecycleListResponse,
+    );
+    expect(apiRequestMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        method: 'GET',
+        url: '/admin/access-assignments',
+        params: {
+          targetUserId: 'user-admin',
+        },
+      }),
+    );
 
     apiRequestMock.mockResolvedValueOnce({
       data: {

@@ -5,6 +5,7 @@ import {
   assignRoleToUser,
   createRole,
   createRoleFromTemplate,
+  fetchAccessAssignmentsForUser,
   fetchAccessAssignmentTargets,
   fetchEffectiveAccess,
   fetchRoleBundles,
@@ -18,11 +19,13 @@ import {
   previewRoleTemplate,
   replaceRoleAssignmentRules,
   replaceRolePermissions,
+  revokeAccessAssignment,
   revokeRoleAssignment,
   updateRole,
 } from '@modules/role/api/role.api';
 import type {
   RoleAssignmentListQuery,
+  AccessAssignmentRevokePayload,
   AccessAssignmentRequestPayload,
   RoleAssignmentRuleReplacementPayload,
   RoleAssignToUserPayload,
@@ -57,6 +60,7 @@ export const roleQueryKeys = {
   templates: () => ['role', 'templates'] as const,
   bundles: () => ['role', 'bundles'] as const,
   accessAssignmentTargets: () => ['role', 'access-assignment-targets'] as const,
+  accessAssignmentsForUser: (userId: string) => ['role', 'access-assignments', userId] as const,
   effectiveAccess: (userId: string) => ['role', 'effective-access', userId] as const,
   templatePreview: (templateCode: string) => ['role', 'template-preview', templateCode] as const,
   assignments: (roleId: string, query: RoleAssignmentListQuery) =>
@@ -102,8 +106,20 @@ export const useAccessAssignmentTargets = () => {
 
 export const useEffectiveAccess = (userId?: string) => {
   return useQuery({
-    queryKey: userId ? roleQueryKeys.effectiveAccess(userId) : [...ROLE_QUERY_ROOT, 'effective-access'],
+    queryKey: userId
+      ? roleQueryKeys.effectiveAccess(userId)
+      : [...ROLE_QUERY_ROOT, 'effective-access'],
     queryFn: () => fetchEffectiveAccess(userId ?? ''),
+    enabled: Boolean(userId),
+  });
+};
+
+export const useAccessAssignmentsForUser = (userId?: string) => {
+  return useQuery({
+    queryKey: userId
+      ? roleQueryKeys.accessAssignmentsForUser(userId)
+      : [...ROLE_QUERY_ROOT, 'access-assignments'],
+    queryFn: () => fetchAccessAssignmentsForUser(userId ?? ''),
     enabled: Boolean(userId),
   });
 };
@@ -261,6 +277,32 @@ export const useRoleRevokeAssignmentMutation = () => {
   });
 };
 
+export const useAccessAssignmentRevokeMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      assignmentId,
+      payload,
+    }: {
+      assignmentId: string;
+      payload: AccessAssignmentRevokePayload;
+    }) => revokeAccessAssignment(assignmentId, payload),
+    onSuccess: async (result) => {
+      await invalidateRoleLaneQueries(queryClient);
+      const targetUserId = result.assignment?.targetUserId;
+      if (targetUserId) {
+        await queryClient.invalidateQueries({
+          queryKey: roleQueryKeys.effectiveAccess(targetUserId),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: roleQueryKeys.accessAssignmentsForUser(targetUserId),
+        });
+      }
+    },
+  });
+};
+
 export const useAccessAssignmentPreviewMutation = () => {
   return useMutation({
     mutationFn: (payload: AccessAssignmentRequestPayload) => previewAccessAssignment(payload),
@@ -276,6 +318,9 @@ export const useAccessAssignmentApplyMutation = () => {
       await invalidateRoleLaneQueries(queryClient);
       await queryClient.invalidateQueries({
         queryKey: roleQueryKeys.effectiveAccess(payload.targetUserId),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: roleQueryKeys.accessAssignmentsForUser(payload.targetUserId),
       });
     },
   });

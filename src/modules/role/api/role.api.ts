@@ -9,8 +9,11 @@ import {
 import type {
   CursorPagedResponse,
   AccessAssignmentApplyResult,
+  AccessAssignmentLifecycleListResult,
+  AccessAssignmentLifecycleResult,
   AccessAssignmentPreviewResult,
   AccessAssignmentRequestPayload,
+  AccessAssignmentRevokePayload,
   AccessAssignmentTargetsMetadata,
   RoleAssignToUserPayload,
   RoleAssignmentItem,
@@ -461,6 +464,94 @@ const accessAssignmentApplyResponseSchema = z
   })
   .strict();
 
+const accessAssignmentAuditSummarySchema = z
+  .object({
+    assignmentId: z.string().trim().min(1).optional(),
+    action: z.string().nullable().optional(),
+    actorId: z.string().nullable().optional(),
+    timestamp: z.union([z.number(), z.string()]).nullable().optional(),
+    reason: z.string().nullable().optional(),
+    oldStatus: z.string().nullable().optional(),
+    newStatus: z.string().nullable().optional(),
+  })
+  .catchall(z.unknown());
+
+const accessAssignmentLifecycleItemSchema = z
+  .object({
+    assignmentId: z.string().trim().min(1),
+    targetUserId: z.string().trim().min(1),
+    roleId: z.string().trim().min(1),
+    roleCode: z.string().nullable(),
+    roleName: z.string().nullable(),
+    roleTemplateCode: z.string().nullable().optional(),
+    roleTemplateVersion: z.string().nullable().optional(),
+    structuredScopeGrants: z.array(accessAssignmentScopeGrantSchema).default([]),
+    scopeFingerprint: z.string(),
+    status: roleAssignmentStateSchema,
+    lifecycleState: roleAssignmentStateSchema,
+    currentlyEffective: z.boolean(),
+    inactiveReason: z.string().nullable().optional(),
+    effectiveAt: z.union([z.number(), z.string()]).nullable(),
+    expiresAt: z.union([z.number(), z.string()]).nullable().optional(),
+    reviewAt: z.union([z.number(), z.string()]).nullable().optional(),
+    assignedBy: z.string().nullable().optional(),
+    assignedAt: z.union([z.number(), z.string()]).optional(),
+    revokedAt: z.union([z.number(), z.string()]).nullable().optional(),
+    revokedBy: z.string().nullable().optional(),
+    revokeReason: z.string().nullable().optional(),
+    origin: z.enum(['DIRECT', 'BUNDLE', 'LEGACY']),
+    bundleOrigin: z.record(z.unknown()).nullable(),
+    reason: z.string().nullable(),
+    sensitiveOrGlobal: z.boolean(),
+    supportedActions: z.array(z.string()),
+    auditSummary: accessAssignmentAuditSummarySchema.nullable().optional(),
+  })
+  .catchall(z.unknown());
+
+const accessAssignmentLifecycleListSchema = z
+  .object({
+    readOnly: z.boolean(),
+    sourceTruth: z.boolean(),
+    targetUser: z
+      .object({
+        id: z.string().trim().min(1),
+        displayName: z.string().nullable(),
+        email: z.string().nullable(),
+        accountStatus: z.string(),
+      })
+      .strict(),
+    supportedLifecycleActions: z.array(z.string()),
+    unsupportedLifecycleActions: z.array(z.string()),
+    items: z.array(accessAssignmentLifecycleItemSchema),
+    generatedAt: z.string().trim().min(1),
+  })
+  .strict();
+
+const accessAssignmentLifecycleListResponseSchema = z
+  .object({
+    data: accessAssignmentLifecycleListSchema,
+  })
+  .strict();
+
+const accessAssignmentLifecycleResultSchema = z
+  .object({
+    revoked: z.boolean(),
+    lifecycleStatus: z.string(),
+    blockers: z.array(accessAssignmentIssueSchema).default([]),
+    warnings: z.array(accessAssignmentIssueSchema).default([]),
+    assignment: accessAssignmentLifecycleItemSchema.nullable(),
+    auditTrace: z.record(z.unknown()).nullable().optional(),
+    sourceTrace: z.record(z.unknown()).nullable().optional(),
+    effectiveAccessAfterLifecycle: z.record(z.unknown()).optional(),
+  })
+  .catchall(z.unknown());
+
+const accessAssignmentLifecycleResponseSchema = z
+  .object({
+    data: accessAssignmentLifecycleResultSchema,
+  })
+  .strict();
+
 const effectiveAccessAssignmentSchema = z
   .object({
     assignmentId: z.string().trim().min(1),
@@ -664,6 +755,33 @@ export const applyAccessAssignment = async (
   return accessAssignmentApplyResponseSchema.parse(response).data;
 };
 
+export const fetchAccessAssignmentsForUser = async (
+  targetUserId: string,
+): Promise<AccessAssignmentLifecycleListResult> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/access-assignments',
+    params: { targetUserId },
+  });
+
+  return accessAssignmentLifecycleListResponseSchema.parse(response).data;
+};
+
+export const revokeAccessAssignment = async (
+  assignmentId: string,
+  payload: AccessAssignmentRevokePayload,
+): Promise<AccessAssignmentLifecycleResult> => {
+  const response = await apiRequest<unknown, AccessAssignmentRevokePayload>({
+    method: 'POST',
+    url: `/admin/access-assignments/${encodeURIComponent(assignmentId)}/revoke`,
+    data: {
+      reason: payload.reason,
+    },
+  });
+
+  return accessAssignmentLifecycleResponseSchema.parse(response).data;
+};
+
 export const previewRoleTemplate = async (templateCode: string): Promise<RoleTemplatePreview> => {
   const response = await apiRequest<unknown>({
     method: 'POST',
@@ -790,22 +908,11 @@ export const assignRoleToUser = async (
 };
 
 export const revokeRoleAssignment = async (
-  roleId: string,
+  _roleId: string,
   assignmentId: string,
   payload: RoleRevokeAssignmentPayload,
-): Promise<RoleAssignmentItem> => {
-  const response = await apiRequest<unknown, RoleRevokeAssignmentPayload>({
-    method: 'POST',
-    url: `/admin/roles/${encodeURIComponent(roleId)}/assignments/${encodeURIComponent(
-      assignmentId,
-    )}/revoke`,
-    data: {
-      reason: payload.reason ?? null,
-    },
-  });
-
-  return parseAssignmentMutationResponse(response);
-};
+): Promise<AccessAssignmentLifecycleResult> =>
+  revokeAccessAssignment(assignmentId, { reason: payload.reason ?? '' });
 
 export const fetchRolePermissionMatrix = async (roleId: string): Promise<RolePermissionMatrix> => {
   const response = await apiRequest<unknown>({

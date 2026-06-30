@@ -4,11 +4,15 @@ import { useTranslation } from 'react-i18next';
 import {
   useAccessAssignmentApplyMutation,
   useAccessAssignmentPreviewMutation,
+  useAccessAssignmentRevokeMutation,
+  useAccessAssignmentsForUser,
   useAccessAssignmentTargets,
 } from '@modules/role/hooks/use-role';
 import type {
   AccessAssignmentApplyResult,
   AccessAssignmentIssue,
+  AccessAssignmentLifecycleItem,
+  AccessAssignmentLifecycleResult,
   AccessAssignmentPreviewResult,
   AccessAssignmentRequestPayload,
   AccessAssignmentScopeGrant,
@@ -73,10 +77,12 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const targetsQuery = useAccessAssignmentTargets();
   const previewMutation = useAccessAssignmentPreviewMutation();
   const applyMutation = useAccessAssignmentApplyMutation();
+  const revokeMutation = useAccessAssignmentRevokeMutation();
   const resetPreviewMutation = previewMutation.reset;
   const { notifyError, notifySuccess } = useMutationFeedback();
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [selectedUserOption, setSelectedUserOption] = useState<ReferenceOption | undefined>();
+  const assignmentsQuery = useAccessAssignmentsForUser(selectedUserId);
   const [mode, setMode] = useState<AssignmentMode>('BUNDLE');
   const [targetKey, setTargetKey] = useState<string>('');
   const [scopeTargetIds, setScopeTargetIds] = useState<Record<string, string | undefined>>({});
@@ -84,16 +90,17 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const [reason, setReason] = useState('');
   const [previewSignature, setPreviewSignature] = useState<string | null>(null);
   const [applyResult, setApplyResult] = useState<AccessAssignmentApplyResult | null>(null);
+  const [selectedLifecycleAssignment, setSelectedLifecycleAssignment] =
+    useState<AccessAssignmentLifecycleItem | null>(null);
+  const [revokeReason, setRevokeReason] = useState('');
+  const [revokeResult, setRevokeResult] = useState<AccessAssignmentLifecycleResult | null>(null);
 
   const targets = useMemo(
     () => targetsQuery.data?.assignmentTargets ?? [],
     [targetsQuery.data?.assignmentTargets],
   );
   const bundleTargets = useMemo(
-    () =>
-      targets.filter(
-        (target) => target.assignmentKind === 'BUNDLE' && target.legacyAssignable,
-      ),
+    () => targets.filter((target) => target.assignmentKind === 'BUNDLE' && target.legacyAssignable),
     [targets],
   );
   const roleTemplateTargets = useMemo(
@@ -139,7 +146,13 @@ export const AccessAssignmentTab = (): JSX.Element => {
             reason: reasonValue,
           })
         : null,
-    [reasonValue, selectedTarget, selectedUserId, structuredScopeGrants, unsupportedScopeTypes.length],
+    [
+      reasonValue,
+      selectedTarget,
+      selectedUserId,
+      structuredScopeGrants,
+      unsupportedScopeTypes.length,
+    ],
   );
   const currentSignature = currentPayload ? JSON.stringify(currentPayload) : '';
   const previewResult = previewMutation.data;
@@ -148,19 +161,19 @@ export const AccessAssignmentTab = (): JSX.Element => {
   );
   const canPreview = Boolean(
     currentPayload &&
-      selectedUserId &&
-      selectedTarget &&
-      reasonValue &&
-      !missingScope &&
-      unsupportedScopeTypes.length === 0 &&
-      !previewMutation.isPending,
+    selectedUserId &&
+    selectedTarget &&
+    reasonValue &&
+    !missingScope &&
+    unsupportedScopeTypes.length === 0 &&
+    !previewMutation.isPending,
   );
   const canApply = Boolean(
     currentPayload &&
-      previewMatchesCurrent &&
-      previewResult?.canApply === true &&
-      reasonValue &&
-      !applyMutation.isPending,
+    previewMatchesCurrent &&
+    previewResult?.canApply === true &&
+    reasonValue &&
+    !applyMutation.isPending,
   );
 
   useEffect(() => {
@@ -168,6 +181,12 @@ export const AccessAssignmentTab = (): JSX.Element => {
     setApplyResult(null);
     resetPreviewMutation();
   }, [currentSignature, resetPreviewMutation]);
+
+  useEffect(() => {
+    setSelectedLifecycleAssignment(null);
+    setRevokeReason('');
+    setRevokeResult(null);
+  }, [selectedUserId]);
 
   const loadSearchFirstLinkedUsers = useCallback(
     (search: string): ReturnType<typeof loadAccessAssignmentLinkedUserOptions> => {
@@ -206,6 +225,27 @@ export const AccessAssignmentTab = (): JSX.Element => {
       notifyError(error as unknown as NormalizedApiError);
     }
   }, [applyMutation, canApply, currentPayload, notifyError, notifySuccess]);
+
+  const runRevoke = useCallback(async () => {
+    const reasonText = revokeReason.trim();
+    if (!selectedLifecycleAssignment || !reasonText || revokeMutation.isPending) {
+      return;
+    }
+    try {
+      const result = await revokeMutation.mutateAsync({
+        assignmentId: selectedLifecycleAssignment.assignmentId,
+        payload: { reason: reasonText },
+      });
+      setRevokeResult(result);
+      if (isLifecycleRevokeSuccess(result)) {
+        notifySuccess('role:accessAssignment.lifecycle.feedback.revoked');
+        setSelectedLifecycleAssignment(null);
+        setRevokeReason('');
+      }
+    } catch (error) {
+      notifyError(error as unknown as NormalizedApiError);
+    }
+  }, [notifyError, notifySuccess, revokeMutation, revokeReason, selectedLifecycleAssignment]);
 
   if (targetsQuery.isLoading) {
     return <LoadingState lines={6} />;
@@ -268,6 +308,30 @@ export const AccessAssignmentTab = (): JSX.Element => {
           />
         ) : null}
       </MetadataSection>
+
+      {selectedUserId ? (
+        <AssignmentLifecycleSection
+          isLoading={assignmentsQuery.isLoading}
+          error={assignmentsQuery.error as NormalizedApiError | null}
+          onRetry={() => void assignmentsQuery.refetch()}
+          assignments={assignmentsQuery.data?.items ?? []}
+          selectedAssignment={selectedLifecycleAssignment}
+          revokeReason={revokeReason}
+          revokeResult={revokeResult}
+          revokePending={revokeMutation.isPending}
+          onSelectAssignment={(assignment) => {
+            setSelectedLifecycleAssignment(assignment);
+            setRevokeReason('');
+            setRevokeResult(null);
+          }}
+          onCancelRevoke={() => {
+            setSelectedLifecycleAssignment(null);
+            setRevokeReason('');
+          }}
+          onReasonChange={setRevokeReason}
+          onConfirmRevoke={() => void runRevoke()}
+        />
+      ) : null}
 
       <MetadataSection
         title={t('role:accessAssignment.targetTitle')}
@@ -437,9 +501,7 @@ const ScopeResolver = ({
             <div key={scopeType} className="rounded border border-border bg-bg p-3">
               <p className="text-sm font-semibold text-text">{formatScopeTypeLabel(scopeType)}</p>
               {unsupportedScopeTypes.includes(scopeType) ? (
-                <p className="mt-2 text-sm text-danger">
-                  {t('accessAssignment.scopeUnavailable')}
-                </p>
+                <p className="mt-2 text-sm text-danger">{t('accessAssignment.scopeUnavailable')}</p>
               ) : scopeTypesWithoutTarget.has(scopeType) ? (
                 <p className="mt-2 text-sm text-muted">{formatScopeReadOnlyHelp(scopeType)}</p>
               ) : periodScopeTypes.has(scopeType) ? (
@@ -472,6 +534,240 @@ const ScopeResolver = ({
         </div>
       )}
     </MetadataSection>
+  );
+};
+
+const AssignmentLifecycleSection = ({
+  isLoading,
+  error,
+  assignments,
+  selectedAssignment,
+  revokeReason,
+  revokeResult,
+  revokePending,
+  onRetry,
+  onSelectAssignment,
+  onCancelRevoke,
+  onReasonChange,
+  onConfirmRevoke,
+}: {
+  isLoading: boolean;
+  error: NormalizedApiError | null;
+  assignments: AccessAssignmentLifecycleItem[];
+  selectedAssignment: AccessAssignmentLifecycleItem | null;
+  revokeReason: string;
+  revokeResult: AccessAssignmentLifecycleResult | null;
+  revokePending: boolean;
+  onRetry: () => void;
+  onSelectAssignment: (assignment: AccessAssignmentLifecycleItem) => void;
+  onCancelRevoke: () => void;
+  onReasonChange: (value: string) => void;
+  onConfirmRevoke: () => void;
+}): JSX.Element => {
+  const { t } = useTranslation(['role', 'common']);
+
+  return (
+    <MetadataSection
+      title={t('role:accessAssignment.lifecycle.title')}
+      subtitle={t('role:accessAssignment.lifecycle.subtitle')}
+    >
+      {isLoading ? (
+        <LoadingState lines={4} />
+      ) : error ? (
+        <ErrorState
+          title={t('role:accessAssignment.lifecycle.loadErrorTitle')}
+          message={readErrorMessage(t, error)}
+          actionLabel={t('common:actions.retry')}
+          onRetry={onRetry}
+        />
+      ) : assignments.length === 0 ? (
+        <EmptyState
+          variant="inline"
+          title={t('role:accessAssignment.lifecycle.emptyTitle')}
+          message={t('role:accessAssignment.lifecycle.emptyMessage')}
+        />
+      ) : (
+        <div className="space-y-3">
+          {assignments.map((assignment) => (
+            <div key={assignment.assignmentId} className="rounded border border-border bg-bg p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-text">
+                    {assignment.roleName ?? assignment.roleCode ?? assignment.roleId}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    {t('role:accessAssignment.lifecycle.assignmentReference', {
+                      assignmentId: assignment.assignmentId,
+                    })}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusBadge
+                    label={formatLifecycleStatus(t, assignment.status)}
+                    tone={assignment.status === 'ACTIVE' ? 'success' : 'neutral'}
+                  />
+                  {assignment.currentlyEffective ? (
+                    <StatusBadge
+                      label={t('role:accessAssignment.lifecycle.effective')}
+                      tone="success"
+                    />
+                  ) : (
+                    <StatusBadge
+                      label={t('role:accessAssignment.lifecycle.inactive')}
+                      tone="warning"
+                    />
+                  )}
+                </div>
+              </div>
+              <ReadOnlyFieldGrid
+                columns={3}
+                fields={[
+                  {
+                    key: 'scope',
+                    label: t('role:accessAssignment.lifecycle.scope'),
+                    value: formatScopeSummary(assignment.structuredScopeGrants),
+                  },
+                  {
+                    key: 'source',
+                    label: t('role:accessAssignment.lifecycle.bundleOrigin'),
+                    value: formatBundleOrigin(assignment),
+                  },
+                  {
+                    key: 'reason',
+                    label: t('role:accessAssignment.lifecycle.originalReason'),
+                    value: assignment.reason ?? '-',
+                  },
+                  {
+                    key: 'assigned',
+                    label: t('role:accessAssignment.lifecycle.assignedAt'),
+                    value: formatTimestamp(assignment.assignedAt),
+                  },
+                  {
+                    key: 'expires',
+                    label: t('role:accessAssignment.lifecycle.expiresAt'),
+                    value: formatTimestamp(assignment.expiresAt),
+                  },
+                  {
+                    key: 'audit',
+                    label: t('role:accessAssignment.lifecycle.audit'),
+                    value: formatAssignmentAudit(assignment),
+                  },
+                ]}
+              />
+              {assignment.status === 'REVOKED' ? (
+                <p className="mt-2 text-sm text-muted">
+                  {t('role:accessAssignment.lifecycle.revokedSummary', {
+                    actor: assignment.revokedBy ?? '-',
+                    time: formatTimestamp(assignment.revokedAt),
+                    reason: assignment.revokeReason ?? '-',
+                  })}
+                </p>
+              ) : assignment.supportedActions.includes('REVOKE') ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectAssignment(assignment)}
+                  className="mt-3 rounded border border-danger px-3 py-2 text-sm font-medium text-danger"
+                >
+                  {t('role:accessAssignment.lifecycle.revokeButton')}
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selectedAssignment ? (
+        <div className="mt-4 rounded border border-danger/50 bg-bg p-3">
+          <p className="text-sm font-semibold text-text">
+            {t('role:accessAssignment.lifecycle.confirmTitle')}
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            {t('role:accessAssignment.lifecycle.confirmSubtitle', {
+              role:
+                selectedAssignment.roleName ??
+                selectedAssignment.roleCode ??
+                selectedAssignment.roleId,
+            })}
+          </p>
+          <label className="mt-3 block">
+            <span className="text-xs font-medium uppercase text-muted">
+              {t('role:accessAssignment.lifecycle.revokeReason')}
+            </span>
+            <textarea
+              value={revokeReason}
+              onChange={(event) => onReasonChange(event.target.value)}
+              className="mt-1 min-h-20 w-full rounded border border-border bg-panel px-3 py-2 text-sm"
+              placeholder={t('role:accessAssignment.lifecycle.revokeReasonPlaceholder')}
+            />
+          </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={!revokeReason.trim() || revokePending}
+              onClick={onConfirmRevoke}
+              className="rounded border border-danger bg-danger px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {revokePending
+                ? t('role:accessAssignment.lifecycle.revokePending')
+                : t('role:accessAssignment.lifecycle.confirmRevoke')}
+            </button>
+            <button
+              type="button"
+              disabled={revokePending}
+              onClick={onCancelRevoke}
+              className="rounded border border-border bg-panel px-3 py-2 text-sm font-medium text-text"
+            >
+              {t('common:actions.cancel')}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {revokeResult ? <LifecycleResultSummary result={revokeResult} /> : null}
+    </MetadataSection>
+  );
+};
+
+const LifecycleResultSummary = ({
+  result,
+}: {
+  result: AccessAssignmentLifecycleResult;
+}): JSX.Element => {
+  const { t } = useTranslation('role');
+  const success = isLifecycleRevokeSuccess(result);
+
+  return (
+    <div className="mt-4 rounded border border-border bg-bg p-3">
+      <StatusBadge
+        label={
+          success
+            ? t('accessAssignment.lifecycle.revoked')
+            : t('accessAssignment.lifecycle.revokeBlocked')
+        }
+        tone={success ? 'success' : 'warning'}
+      />
+      <IssueList title={t('accessAssignment.blockersTitle')} issues={result.blockers ?? []} />
+      <ReadOnlyFieldGrid
+        columns={3}
+        fields={[
+          {
+            key: 'assignment',
+            label: t('accessAssignment.lifecycle.assignmentId'),
+            value: result.assignment?.assignmentId ?? '-',
+          },
+          {
+            key: 'audit',
+            label: t('accessAssignment.lifecycle.audit'),
+            value: readLifecycleAuditTrace(result.auditTrace),
+          },
+          {
+            key: 'effective',
+            label: t('accessAssignment.lifecycle.effectiveAfterRevoke'),
+            value: result.effectiveAccessAfterLifecycle ? t('accessAssignment.available') : '-',
+          },
+        ]}
+      />
+    </div>
   );
 };
 
@@ -553,11 +849,7 @@ const ApplySummary = ({
   return (
     <MetadataSection
       title={t('accessAssignment.resultTitle')}
-      subtitle={
-        applied
-          ? t('accessAssignment.resultApplied')
-          : t('accessAssignment.resultBlocked')
-      }
+      subtitle={applied ? t('accessAssignment.resultApplied') : t('accessAssignment.resultBlocked')}
     >
       <IssueList title={t('accessAssignment.blockersTitle')} issues={result.blockers ?? []} />
       <IssueList title={t('accessAssignment.warningsTitle')} issues={result.warnings ?? []} />
@@ -751,6 +1043,17 @@ function isApplySuccess(result: AccessAssignmentApplyResult | null | undefined):
   return result.applied === true && result.applyStatus === 'APPLIED' && blockers.length === 0;
 }
 
+function isLifecycleRevokeSuccess(
+  result: AccessAssignmentLifecycleResult | null | undefined,
+): boolean {
+  if (!result) {
+    return false;
+  }
+  return (
+    result.revoked === true && result.lifecycleStatus === 'REVOKED' && result.blockers.length === 0
+  );
+}
+
 function formatIssue(issue: AccessAssignmentIssue): string {
   const friendly: Record<string, string> = {
     REQUIRED_ACCOUNT_CONTEXT_MISSING:
@@ -801,12 +1104,89 @@ function formatScopeSummary(scopes: readonly AccessAssignmentScopeGrant[]): stri
     .join(', ');
 }
 
+function formatLifecycleStatus(t: (key: string) => string, status: string): string {
+  const key = `role:assignmentStates.${status}`;
+  const translated = t(key);
+  return translated === key ? status : translated;
+}
+
+function formatBundleOrigin(assignment: AccessAssignmentLifecycleItem): string {
+  if (!assignment.bundleOrigin) {
+    return assignment.origin === 'BUNDLE' ? 'Gói quyền' : 'Trực tiếp';
+  }
+  const code = readStringRecordValue(assignment.bundleOrigin, 'bundleCode');
+  const version = readStringRecordValue(assignment.bundleOrigin, 'bundleVersion');
+  return [code, version].filter(Boolean).join(' · ') || 'Gói quyền';
+}
+
+function formatAssignmentAudit(assignment: AccessAssignmentLifecycleItem): string {
+  const audit = assignment.auditSummary;
+  if (!audit) {
+    return '-';
+  }
+  const action = audit.action ?? '-';
+  const actor = audit.actorId ?? '-';
+  const time = formatTimestamp(audit.timestamp);
+  const reason = audit.reason ?? '-';
+  return `${action} · ${actor} · ${time} · ${reason}`;
+}
+
+function formatTimestamp(value: number | string | null | undefined): string {
+  if (value === null || value === undefined || value === '') {
+    return '-';
+  }
+  const date =
+    typeof value === 'number'
+      ? new Date(value)
+      : /^\d+$/u.test(value)
+        ? new Date(Number(value))
+        : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+  const parts = new Intl.DateTimeFormat('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+  return `${parts}, giờ Việt Nam`;
+}
+
 function readAuditTrace(value: Record<string, unknown> | null | undefined): string {
   if (!value) {
     return '-';
   }
   const assignmentIds = Array.isArray(value.assignmentIds) ? value.assignmentIds : [];
-  return assignmentIds.length > 0 ? assignmentIds.map(String).join(', ') : String(value.mutationType ?? '-');
+  return assignmentIds.length > 0
+    ? assignmentIds.map(String).join(', ')
+    : String(value.mutationType ?? '-');
+}
+
+function readLifecycleAuditTrace(value: Record<string, unknown> | null | undefined): string {
+  if (!value) {
+    return '-';
+  }
+  const action =
+    readStringRecordValue(value, 'lifecycleAction') ?? readStringRecordValue(value, 'mutationType');
+  const actor = readStringRecordValue(value, 'actorId');
+  const timestamp = value.timestamp;
+  return [
+    action,
+    actor,
+    formatTimestamp(
+      typeof timestamp === 'string' || typeof timestamp === 'number' ? timestamp : null,
+    ),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+function readStringRecordValue(value: Record<string, unknown>, key: string): string | null {
+  const field = value[key];
+  return typeof field === 'string' && field.trim() ? field : null;
 }
 
 function readErrorMessage(

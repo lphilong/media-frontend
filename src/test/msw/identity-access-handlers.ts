@@ -114,6 +114,8 @@ type RoleAssignmentRecord = {
   state: RoleAssignmentState;
   effectiveAt: number;
   revokedAt: number | null;
+  revokedBy?: string | null;
+  revokeReason?: string | null;
   reason: string | null;
 };
 
@@ -1129,6 +1131,24 @@ const initialRoles: RoleRecord[] = [
     archivedAt: null,
   },
   {
+    id: 'role-staff',
+    code: 'STAFF_CONSOLE_USER',
+    name: 'Staff Console User',
+    description: 'Staff self-service baseline',
+    state: 'ACTIVE',
+    permissions: [{ code: 'workSchedule.read' }, { code: 'employmentProfile.read' }],
+    delegationBand: 'LIMITED',
+    maxDelegatableBand: 'NONE',
+    assignmentRules: [],
+    templateCode: 'STAFF_CONSOLE_USER',
+    templateVersion,
+    templateAppliedAt: now - 7_500,
+    createdAt: now - 7_500,
+    updatedAt: now - 7_000,
+    activatedAt: now - 7_000,
+    archivedAt: null,
+  },
+  {
     id: 'role-draft',
     code: 'OPS',
     name: 'Operations role',
@@ -1172,7 +1192,23 @@ const initialAssignments: RoleAssignmentRecord[] = [
     state: 'ACTIVE',
     effectiveAt: now - 8_000,
     revokedAt: null,
+    revokedBy: null,
+    revokeReason: null,
     reason: null,
+  },
+  {
+    assignmentId: 'assignment-alice-staff',
+    roleId: 'role-staff',
+    userId: 'user-alice',
+    scopeGrants: {
+      workSchedule: ['self'],
+    },
+    state: 'ACTIVE',
+    effectiveAt: now - 7_000,
+    revokedAt: null,
+    revokedBy: null,
+    revokeReason: null,
+    reason: 'Mock staff console access',
   },
 ];
 
@@ -1440,8 +1476,15 @@ const toRoleRef = (roleId: string): ReferenceSummary | null => {
     : null;
 };
 
-const toRoleAssignmentItem = (assignment: RoleAssignmentRecord): RoleAssignmentRecord => ({
-  ...assignment,
+const toRoleAssignmentItem = (assignment: RoleAssignmentRecord) => ({
+  assignmentId: assignment.assignmentId,
+  roleId: assignment.roleId,
+  userId: assignment.userId,
+  scopeGrants: assignment.scopeGrants,
+  state: assignment.state,
+  effectiveAt: assignment.effectiveAt,
+  revokedAt: assignment.revokedAt,
+  reason: assignment.reason,
   roleRef: toRoleRef(assignment.roleId),
   userRef: toUserRef(assignment.userId),
 });
@@ -1574,6 +1617,82 @@ const toEffectiveAccessRecord = (user: UserRecord) => {
   };
 };
 
+const toAccessAssignmentLifecycleItem = (assignment: RoleAssignmentRecord) => {
+  const role = readRole(assignment.roleId);
+  const structuredScopeGrants = toStructuredScopeGrants(assignment.scopeGrants);
+  const currentlyEffective = assignment.state === 'ACTIVE';
+
+  return {
+    assignmentId: assignment.assignmentId,
+    targetUserId: assignment.userId,
+    roleId: assignment.roleId,
+    roleCode: role?.code ?? null,
+    roleName: role?.name ?? null,
+    roleTemplateCode: role?.templateCode ?? null,
+    roleTemplateVersion: role?.templateVersion ?? null,
+    structuredScopeGrants,
+    scopeFingerprint:
+      structuredScopeGrants.length > 0
+        ? structuredScopeGrants
+            .map((grant) =>
+              [grant.scopeType, grant.targetId, grant.periodKey].filter(Boolean).join(':'),
+            )
+            .join('|')
+        : 'scope:v1:legacy',
+    status: assignment.state,
+    lifecycleState: assignment.state,
+    currentlyEffective,
+    inactiveReason: currentlyEffective ? null : assignment.state,
+    effectiveAt: assignment.effectiveAt,
+    expiresAt: null,
+    reviewAt: null,
+    assignedBy: 'mock-admin',
+    assignedAt: assignment.effectiveAt,
+    revokedAt: assignment.revokedAt,
+    revokedBy: assignment.revokedBy ?? null,
+    revokeReason: assignment.revokeReason ?? null,
+    origin: 'DIRECT',
+    bundleOrigin: null,
+    reason: assignment.reason,
+    sensitiveOrGlobal: structuredScopeGrants.some((grant) =>
+      ['global', 'financeGlobal'].includes(grant.scopeType),
+    ),
+    supportedActions: assignment.state === 'ACTIVE' ? ['REVOKE'] : [],
+    auditSummary: {
+      assignmentId: assignment.assignmentId,
+      action: assignment.state === 'REVOKED' ? 'REVOKE' : 'ASSIGN',
+      actorId: assignment.state === 'REVOKED' ? (assignment.revokedBy ?? null) : 'mock-admin',
+      timestamp: assignment.state === 'REVOKED' ? assignment.revokedAt : assignment.effectiveAt,
+      reason:
+        assignment.state === 'REVOKED' ? (assignment.revokeReason ?? null) : assignment.reason,
+      oldStatus: assignment.state === 'REVOKED' ? 'ACTIVE' : null,
+      newStatus: assignment.state,
+    },
+  };
+};
+
+const toStructuredScopeGrants = (scopeGrants: RoleAssignmentScopeGrants | undefined) => {
+  const grants: Array<{ scopeType: string; targetId?: string; periodKey?: string }> = [];
+  if (!scopeGrants) {
+    return grants;
+  }
+  for (const scope of scopeGrants.workSchedule ?? []) {
+    grants.push({
+      scopeType:
+        scope === 'department' ? 'managedOrgUnit' : scope === 'team' ? 'managedTalentGroup' : scope,
+    });
+  }
+  for (const scope of scopeGrants.kpi ?? []) {
+    grants.push({
+      scopeType: scope === 'managedGroup' ? 'managedTalentGroup' : scope,
+    });
+  }
+  if (scopeGrants.dashboardLite?.includes('global')) {
+    grants.push({ scopeType: 'global' });
+  }
+  return grants;
+};
+
 const accessAssignmentTargets = (): AccessAssignmentTargetFixture[] => [
   ...roleTemplates.map<AccessAssignmentTargetFixture>((template) => ({
     assignmentKind: 'ROLE_TEMPLATE',
@@ -1625,9 +1744,7 @@ const accessAssignmentTargets = (): AccessAssignmentTargetFixture[] => [
             ? 'ORG_UNIT_MANAGER'
             : null,
       )
-      .filter(
-        (value): value is 'TALENT_GROUP_MANAGER' | 'ORG_UNIT_MANAGER' => value !== null,
-      ),
+      .filter((value): value is 'TALENT_GROUP_MANAGER' | 'ORG_UNIT_MANAGER' => value !== null),
     sensitiveLevel: bundle.sensitive ? 'HIGH_RISK' : 'STANDARD',
     legacyAssignable: bundle.code !== 'AUDITOR_BUNDLE',
     recommendedPickerMode: bundle.childRoles.some((roleCode) =>
@@ -1867,6 +1984,34 @@ export const identityAccessHandlers = [
     return HttpResponse.json({ data: roleBundles });
   }),
 
+  http.get('*/admin/access-assignments', ({ request }) => {
+    const url = new URL(request.url);
+    const targetUserId = url.searchParams.get('targetUserId');
+    const user = targetUserId ? readUser(targetUserId) : undefined;
+    if (!targetUserId || !user) {
+      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
+    }
+
+    return HttpResponse.json({
+      data: {
+        readOnly: true,
+        sourceTruth: false,
+        targetUser: {
+          id: user.id,
+          displayName: user.profile.displayName,
+          email: user.profile.email,
+          accountStatus: user.accountStatus,
+        },
+        supportedLifecycleActions: ['REVOKE'],
+        unsupportedLifecycleActions: ['DISABLE', 'EXPIRE', 'ARCHIVE'],
+        items: assignments
+          .filter((assignment) => assignment.userId === targetUserId)
+          .map(toAccessAssignmentLifecycleItem),
+        generatedAt: new Date(now).toISOString(),
+      },
+    });
+  }),
+
   http.get('*/admin/access-assignments/targets', () => {
     return HttpResponse.json({
       data: {
@@ -1986,6 +2131,79 @@ export const identityAccessHandlers = [
         },
         sourceTrace: { ...preview.sourceTrace, mutatesSource: true, auditSource: 'audit_log' },
         effectiveAccessAfterApply: toEffectiveAccessRecord(users[0]),
+      },
+    });
+  }),
+
+  http.post('*/admin/access-assignments/:assignmentId/revoke', async ({ params, request }) => {
+    const body = await parseJsonBody(request);
+    const assignment = assignments.find(
+      (item) => item.assignmentId === String(params.assignmentId),
+    );
+    const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+
+    if (!reason) {
+      return HttpResponse.json({ message: 'reason is required' }, { status: 400 });
+    }
+
+    if (!assignment) {
+      return HttpResponse.json({
+        data: {
+          revoked: false,
+          lifecycleStatus: 'BLOCKED',
+          blockers: [{ severity: 'BLOCKER', code: 'ASSIGNMENT_NOT_FOUND' }],
+          warnings: [],
+          assignment: null,
+          auditTrace: { written: false, reason: 'LIFECYCLE_REVOKE_BLOCKED_BEFORE_MUTATION' },
+          sourceTrace: { mutatesSource: false, source: 'role_assignments' },
+        },
+      });
+    }
+
+    if (assignment.state !== 'ACTIVE') {
+      return HttpResponse.json({
+        data: {
+          revoked: false,
+          lifecycleStatus: 'BLOCKED',
+          blockers: [{ severity: 'BLOCKER', code: 'ASSIGNMENT_ALREADY_INACTIVE' }],
+          warnings: [],
+          assignment: toAccessAssignmentLifecycleItem(assignment),
+          auditTrace: { written: false, reason: 'LIFECYCLE_REVOKE_BLOCKED_BEFORE_MUTATION' },
+          sourceTrace: { mutatesSource: false, source: 'role_assignments' },
+        },
+      });
+    }
+
+    assignment.state = 'REVOKED';
+    assignment.revokedAt = Date.now();
+    assignment.revokedBy = 'user-admin';
+    assignment.revokeReason = reason;
+
+    const user = readUser(assignment.userId);
+    return HttpResponse.json({
+      data: {
+        revoked: true,
+        lifecycleStatus: 'REVOKED',
+        blockers: [],
+        warnings: [],
+        assignment: toAccessAssignmentLifecycleItem(assignment),
+        auditTrace: {
+          written: true,
+          lifecycleAction: 'REVOKE',
+          actorId: 'user-admin',
+          assignmentId: assignment.assignmentId,
+          targetUserId: assignment.userId,
+          oldStatus: 'ACTIVE',
+          newStatus: 'REVOKED',
+          reason,
+          timestamp: assignment.revokedAt,
+        },
+        sourceTrace: {
+          mutatesSource: true,
+          source: 'role_assignments',
+          auditSource: 'audit_log',
+        },
+        effectiveAccessAfterLifecycle: user ? toEffectiveAccessRecord(user) : undefined,
       },
     });
   }),
@@ -2315,25 +2533,15 @@ export const identityAccessHandlers = [
     return HttpResponse.json(paginate(rows.map(toRoleAssignmentItem), url.searchParams));
   }),
 
-  http.post(
-    '*/admin/roles/:roleId/assignments/:assignmentId/revoke',
-    async ({ params, request }) => {
-      const assignment = assignments.find(
-        (item) =>
-          item.roleId === String(params.roleId) &&
-          item.assignmentId === String(params.assignmentId),
-      );
-      if (!assignment) {
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      }
-
-      const body = await parseJsonBody(request);
-      assignment.state = 'REVOKED';
-      assignment.revokedAt = Date.now();
-      assignment.reason = toNullableText(body.reason);
-      return HttpResponse.json({ data: toRoleAssignmentItem(assignment) });
-    },
-  ),
+  http.post('*/admin/roles/:roleId/assignments/:assignmentId/revoke', () => {
+    return HttpResponse.json(
+      {
+        message:
+          'ROLE_REVOKE_FROM_USER is superseded by POST /admin/access-assignments/:assignmentId/revoke',
+      },
+      { status: 400 },
+    );
+  }),
 
   http.post('*/admin/roles/:roleId/assignments', async ({ params, request }) => {
     const role = readRole(String(params.roleId));

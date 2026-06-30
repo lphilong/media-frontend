@@ -388,6 +388,74 @@ export type AccessAssignmentApplyResult = {
   effectiveAccessAfterApply?: EffectiveAccessRecord | Record<string, unknown>;
 };
 
+export type AccessAssignmentLifecycleItem = {
+  assignmentId: string;
+  targetUserId: string;
+  roleId: string;
+  roleCode: string | null;
+  roleName: string | null;
+  roleTemplateCode?: string | null;
+  roleTemplateVersion?: string | null;
+  structuredScopeGrants: AccessAssignmentScopeGrant[];
+  scopeFingerprint: string;
+  status: RoleAssignmentState;
+  lifecycleState: RoleAssignmentState;
+  currentlyEffective: boolean;
+  inactiveReason?: string | null;
+  effectiveAt: number | string | null;
+  expiresAt?: number | string | null;
+  reviewAt?: number | string | null;
+  assignedBy?: string | null;
+  assignedAt?: number | string;
+  revokedAt?: number | string | null;
+  revokedBy?: string | null;
+  revokeReason?: string | null;
+  origin: 'DIRECT' | 'BUNDLE' | 'LEGACY';
+  bundleOrigin: Record<string, unknown> | null;
+  reason: string | null;
+  sensitiveOrGlobal: boolean;
+  supportedActions: string[];
+  auditSummary?: {
+    assignmentId?: string;
+    action?: string | null;
+    actorId?: string | null;
+    timestamp?: number | string | null;
+    reason?: string | null;
+    oldStatus?: string | null;
+    newStatus?: string | null;
+  } | null;
+};
+
+export type AccessAssignmentLifecycleListResult = {
+  readOnly: boolean;
+  sourceTruth: boolean;
+  targetUser: {
+    id: string;
+    displayName: string | null;
+    email: string | null;
+    accountStatus: string;
+  };
+  supportedLifecycleActions: string[];
+  unsupportedLifecycleActions: string[];
+  items: AccessAssignmentLifecycleItem[];
+  generatedAt: string;
+};
+
+export type AccessAssignmentLifecycleResult = {
+  revoked: boolean;
+  lifecycleStatus: 'REVOKED' | 'BLOCKED' | string;
+  blockers: AccessAssignmentIssue[];
+  warnings: AccessAssignmentIssue[];
+  assignment: AccessAssignmentLifecycleItem | null;
+  auditTrace?: Record<string, unknown> | null;
+  sourceTrace?: Record<string, unknown> | null;
+  effectiveAccessAfterLifecycle?: EffectiveAccessRecord | Record<string, unknown>;
+};
+
+export type AccessAssignmentRevokePayload = {
+  reason: string;
+};
+
 export type RoleListQuery = {
   state?: RoleState;
   limit?: number;

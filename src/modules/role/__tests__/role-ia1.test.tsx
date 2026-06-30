@@ -24,7 +24,9 @@ const renderAssignmentTab = async (user: ReturnType<typeof userEvent.setup>) => 
   expect(
     await screen.findByRole('heading', { name: i18n.t('role:page.title') }),
   ).toBeInTheDocument();
-  await user.click(await screen.findByRole('tab', { name: i18n.t('role:tabs.assignments') }));
+  await user.click(
+    await screen.findByRole('tab', { name: i18n.t('role:tabs.assignments') }, { timeout: 3000 }),
+  );
   expect(
     await screen.findByRole('heading', {
       name: i18n.t('role:accessAssignment.userTitle'),
@@ -66,6 +68,44 @@ const successfulAccessAssignmentPreview = {
   effectiveAccessDelta: { addedPermissions: ['workSchedule.read'] },
 };
 
+const lifecycleAssignment = {
+  assignmentId: 'assignment-alice-staff',
+  targetUserId: 'user-alice',
+  roleId: 'role-staff',
+  roleCode: 'STAFF_CONSOLE_USER',
+  roleName: 'Staff Console User',
+  roleTemplateCode: 'STAFF_CONSOLE_USER',
+  roleTemplateVersion: '2026-05-20',
+  structuredScopeGrants: [{ scopeType: 'self' }],
+  scopeFingerprint: 'self',
+  status: 'ACTIVE',
+  lifecycleState: 'ACTIVE',
+  currentlyEffective: true,
+  inactiveReason: null,
+  effectiveAt: Date.UTC(2026, 4, 20),
+  expiresAt: null,
+  reviewAt: null,
+  assignedBy: 'mock-admin',
+  assignedAt: Date.UTC(2026, 4, 20),
+  revokedAt: null,
+  revokedBy: null,
+  revokeReason: null,
+  origin: 'DIRECT',
+  bundleOrigin: null,
+  reason: 'Mock staff console access',
+  sensitiveOrGlobal: false,
+  supportedActions: ['REVOKE'],
+  auditSummary: {
+    assignmentId: 'assignment-alice-staff',
+    action: 'ASSIGN',
+    actorId: 'mock-admin',
+    timestamp: Date.UTC(2026, 4, 20),
+    reason: 'Mock staff console access',
+    oldStatus: null,
+    newStatus: 'ACTIVE',
+  },
+};
+
 const completeSuccessfulPreviewAndApply = async (
   user: ReturnType<typeof userEvent.setup>,
   reason = 'Apply result classification coverage',
@@ -74,9 +114,7 @@ const completeSuccessfulPreviewAndApply = async (
 
   const userPicker = await findPickerSurface('role-access-assignment-linked-user');
   await user.type(
-    within(userPicker).getByPlaceholderText(
-      i18n.t('role:accessAssignment.userSearchPlaceholder'),
-    ),
+    within(userPicker).getByPlaceholderText(i18n.t('role:accessAssignment.userSearchPlaceholder')),
     'Al',
   );
   await user.click(await within(userPicker).findByText(/Alice Linked/u));
@@ -314,8 +352,194 @@ describe('role IA-1 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.feedback.applied')),
     ).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('role:accessAssignment.auditTrace'))).toBeInTheDocument();
+    expect(screen.getAllByText(i18n.t('role:accessAssignment.auditTrace')).length).toBeGreaterThan(
+      0,
+    );
   }, 25_000);
+
+  it('lists target-user assignments and revokes through the canonical lifecycle endpoint only', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    const revokePayloads: Array<Record<string, unknown>> = [];
+
+    server.use(
+      http.post('*/admin/access-assignments/:assignmentId/revoke', async ({ params, request }) => {
+        const body = (await request.json()) as Record<string, unknown>;
+        revokePayloads.push(body);
+
+        return HttpResponse.json({
+          data: {
+            revoked: true,
+            lifecycleStatus: 'REVOKED',
+            blockers: [],
+            warnings: [],
+            assignment: {
+              ...lifecycleAssignment,
+              assignmentId: String(params.assignmentId),
+              status: 'REVOKED',
+              lifecycleState: 'REVOKED',
+              currentlyEffective: false,
+              inactiveReason: 'REVOKED',
+              revokedAt: Date.UTC(2026, 5, 1),
+              revokedBy: 'user-admin',
+              revokeReason: String(body.reason),
+              supportedActions: [],
+              auditSummary: {
+                assignmentId: String(params.assignmentId),
+                action: 'REVOKE',
+                actorId: 'user-admin',
+                timestamp: Date.UTC(2026, 5, 1),
+                reason: String(body.reason),
+                oldStatus: 'ACTIVE',
+                newStatus: 'REVOKED',
+              },
+            },
+            auditTrace: {
+              written: true,
+              lifecycleAction: 'REVOKE',
+              actorId: 'user-admin',
+              assignmentId: String(params.assignmentId),
+              targetUserId: 'user-alice',
+              oldStatus: 'ACTIVE',
+              newStatus: 'REVOKED',
+              reason: String(body.reason),
+              timestamp: Date.UTC(2026, 5, 1),
+            },
+            sourceTrace: {
+              mutatesSource: true,
+              source: 'role_assignments',
+              auditSource: 'audit_log',
+            },
+            effectiveAccessAfterLifecycle: { permissions: [] },
+          },
+        });
+      }),
+    );
+
+    await renderAssignmentTab(user);
+
+    const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.userSearchPlaceholder'),
+      ),
+      'Al',
+    );
+    await user.click(await within(userPicker).findByText(/Alice/u));
+
+    expect(
+      await screen.findByRole('heading', {
+        name: i18n.t('role:accessAssignment.lifecycle.title'),
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Staff Console User')).toBeInTheDocument();
+    expect(screen.getAllByText(/Mock staff console access/u).length).toBeGreaterThan(0);
+    expect(screen.getByText(/ASSIGN/u)).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('role:accessAssignment.lifecycle.revokeButton'),
+      }),
+    );
+    const confirmButton = screen.getByRole('button', {
+      name: i18n.t('role:accessAssignment.lifecycle.confirmRevoke'),
+    });
+    expect(confirmButton).toBeDisabled();
+
+    await user.type(
+      screen.getByPlaceholderText(
+        i18n.t('role:accessAssignment.lifecycle.revokeReasonPlaceholder'),
+      ),
+      'Access no longer required',
+    );
+    expect(confirmButton).toBeEnabled();
+    await user.click(confirmButton);
+
+    await waitFor(() => expect(revokePayloads).toHaveLength(1));
+    expect(revokePayloads[0]).toEqual({ reason: 'Access no longer required' });
+    expect(revokePayloads[0]).not.toHaveProperty('actorKind');
+    expect(revokePayloads[0]).not.toHaveProperty('accountContext');
+    expect(revokePayloads[0]).not.toHaveProperty('workspaceAvailability');
+    expect(
+      await screen.findByText(i18n.t('role:accessAssignment.lifecycle.feedback.revoked')),
+    ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:accessAssignment.lifecycle.revoked'))).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.lifecycle.effectiveAfterRevoke')),
+    ).toBeInTheDocument();
+  }, 20_000);
+
+  it('renders blocked lifecycle revoke results without success feedback', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    server.use(
+      http.post('*/admin/access-assignments/:assignmentId/revoke', async ({ params }) =>
+        HttpResponse.json({
+          data: {
+            revoked: false,
+            lifecycleStatus: 'BLOCKED',
+            blockers: [
+              {
+                severity: 'BLOCKER',
+                code: 'ASSIGNMENT_ALREADY_INACTIVE',
+                summary: 'Assignment is already inactive.',
+              },
+            ],
+            warnings: [],
+            assignment: {
+              ...lifecycleAssignment,
+              assignmentId: String(params.assignmentId),
+            },
+            auditTrace: {
+              written: false,
+              reason: 'LIFECYCLE_REVOKE_BLOCKED_BEFORE_MUTATION',
+            },
+            sourceTrace: {
+              mutatesSource: false,
+              source: 'role_assignments',
+            },
+          },
+        }),
+      ),
+    );
+
+    await renderAssignmentTab(user);
+
+    const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.userSearchPlaceholder'),
+      ),
+      'Al',
+    );
+    await user.click(await within(userPicker).findByText(/Alice/u));
+    await screen.findByText('Staff Console User');
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('role:accessAssignment.lifecycle.revokeButton'),
+      }),
+    );
+    await user.type(
+      screen.getByPlaceholderText(
+        i18n.t('role:accessAssignment.lifecycle.revokeReasonPlaceholder'),
+      ),
+      'Already gone',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('role:accessAssignment.lifecycle.confirmRevoke'),
+      }),
+    );
+
+    expect(await screen.findByText('Assignment is already inactive.')).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.lifecycle.revokeBlocked')),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('role:accessAssignment.lifecycle.feedback.revoked')),
+    ).not.toBeInTheDocument();
+  }, 20_000);
 
   it('does not load a full user list or fallback to /admin/users before operator search', async () => {
     await setLocale(DEFAULT_LOCALE);

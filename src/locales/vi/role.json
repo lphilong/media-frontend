@@ -313,6 +313,37 @@
     "consoleResult": "Kết quả Console",
     "available": "Có",
     "readOnlyOutcome": "Kết quả chỉ đọc",
+    "lifecycle": {
+      "title": "Quyền đang có",
+      "subtitle": "Xem bản ghi gán quyền, phạm vi, nguồn gói quyền và audit trước khi thu hồi.",
+      "loadErrorTitle": "Không tải được quyền đang có",
+      "emptyTitle": "Chưa có quyền đang có",
+      "emptyMessage": "Người dùng này chưa có bản ghi gán quyền nào.",
+      "assignmentReference": "Bản ghi {{assignmentId}}",
+      "effective": "Đang hiệu lực",
+      "inactive": "Không hiệu lực",
+      "scope": "Phạm vi",
+      "bundleOrigin": "Nguồn gói quyền",
+      "originalReason": "Lý do gốc",
+      "assignedAt": "Thời điểm gán",
+      "expiresAt": "Thời điểm hết hạn",
+      "audit": "Audit",
+      "revokedSummary": "Đã thu hồi bởi {{actor}} lúc {{time}}. Lý do: {{reason}}",
+      "revokeButton": "Thu hồi quyền",
+      "confirmTitle": "Xác nhận thu hồi",
+      "confirmSubtitle": "Thu hồi quyền {{role}} nếu hệ thống xác nhận bản ghi vẫn có thể thu hồi.",
+      "revokeReason": "Lý do thu hồi",
+      "revokeReasonPlaceholder": "Ví dụ: Nhân sự đã chuyển nhóm và không còn cần quyền này.",
+      "confirmRevoke": "Xác nhận thu hồi",
+      "revokePending": "Đang thu hồi quyền",
+      "revoked": "Đã thu hồi quyền",
+      "revokeBlocked": "Không thể thu hồi quyền",
+      "assignmentId": "Bản ghi",
+      "effectiveAfterRevoke": "Quyền sau khi thu hồi",
+      "feedback": {
+        "revoked": "Đã thu hồi quyền."
+      }
+    },
     "feedback": {
       "applied": "Đã gán quyền."
     }
