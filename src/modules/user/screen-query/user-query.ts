@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 import {
   userAccountStatusValues,
-  userActorKindValues,
 } from '@modules/user/constants/user.constants';
 import { defineScreenQueryConfig } from '@shared/query/screen-query-config';
 
@@ -24,7 +23,6 @@ const limitSchema = z.preprocess(
 
 const userFlatListSchema = z.object({
   state: z.enum(userAccountStatusValues).optional(),
-  actorKind: z.enum(userActorKindValues).optional(),
   cursor: cursorSchema,
   limit: limitSchema,
   search: searchSchema,
@@ -49,7 +47,7 @@ export const userFlatListQueryConfig = defineScreenQueryConfig({
       allowedSortFields: [],
       allowedSortDirections: [],
     },
-    allowedFilterKeys: ['state', 'actorKind'],
+    allowedFilterKeys: ['state'],
     archivedByDefault: {
       hiddenByDefault: true,
       statusKey: 'state',

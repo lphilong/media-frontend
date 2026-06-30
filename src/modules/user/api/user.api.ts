@@ -2,12 +2,10 @@ import { z } from 'zod';
 
 import {
   userAccountStatusValues,
-  userActorKindValues,
 } from '@modules/user/constants/user.constants';
 import type {
   CursorPagedResponse,
   UserAuthLinkagePayload,
-  UserActorKindUpdatePayload,
   UserCreatePayload,
   UserDetailRecord,
   UserLifecycleAction,
@@ -20,7 +18,6 @@ import type {
 import { apiRequest } from '@shared/api';
 
 const userAccountStatusSchema = z.enum(userAccountStatusValues);
-const userActorKindSchema = z.enum(userActorKindValues);
 const passwordSetupDeliveryModeSchema = z.enum(['auth0_email', 'backend_ticket']);
 
 const userListItemSchema = z
@@ -28,7 +25,6 @@ const userListItemSchema = z
     id: z.string().trim().min(1),
     displayName: z.string().trim().min(1),
     email: z.string().nullable().optional(),
-    actorKind: userActorKindSchema,
     accountStatus: userAccountStatusSchema,
     authLinkage: z
       .object({
@@ -44,7 +40,6 @@ const userDetailSchema = z
   .object({
     id: z.string().trim().min(1),
     accountStatus: userAccountStatusSchema,
-    actorKind: userActorKindSchema,
     authLinkage: z
       .object({
         provider: z.literal('auth0'),
@@ -135,14 +130,12 @@ const mutationResponseSchema = z
 
 const sanitizeListQuery = (query: UserListQuery): Record<string, string | number | undefined> => ({
   state: query.state,
-  actorKind: query.actorKind,
   limit: query.limit,
   cursor: query.cursor,
   search: query.search,
 });
 
 const sanitizeCreatePayload = (payload: UserCreatePayload): UserCreatePayload => ({
-  actorKind: payload.actorKind,
   displayName: payload.displayName,
   email: payload.email,
   phone: payload.phone,
@@ -151,7 +144,6 @@ const sanitizeCreatePayload = (payload: UserCreatePayload): UserCreatePayload =>
 });
 
 const sanitizeProvisionPayload = (payload: UserProvisionPayload): UserProvisionPayload => ({
-  actorKind: payload.actorKind,
   displayName: payload.displayName,
   email: payload.email,
   phone: payload.phone,
@@ -167,13 +159,6 @@ const sanitizeUpdatePayload = (payload: UserUpdatePayload): UserUpdatePayload =>
   phone: payload.phone,
   locale: payload.locale,
   timezone: payload.timezone,
-});
-
-const sanitizeActorKindUpdatePayload = (
-  payload: UserActorKindUpdatePayload,
-): UserActorKindUpdatePayload => ({
-  actorKind: payload.actorKind,
-  reason: payload.reason,
 });
 
 export const fetchUsers = async (
@@ -271,19 +256,6 @@ export const setUserAuthLinkage = async (
       provider: 'auth0',
       subject: payload.subject,
     },
-  });
-
-  return detailResponseSchema.parse(response).data;
-};
-
-export const updateUserActorKind = async (
-  userId: string,
-  payload: UserActorKindUpdatePayload,
-): Promise<UserDetailRecord> => {
-  const response = await apiRequest<unknown, UserActorKindUpdatePayload>({
-    method: 'PATCH',
-    url: `/admin/users/${encodeURIComponent(userId)}/actor-kind`,
-    data: sanitizeActorKindUpdatePayload(payload),
   });
 
   return detailResponseSchema.parse(response).data;

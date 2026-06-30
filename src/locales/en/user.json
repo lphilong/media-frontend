@@ -9,7 +9,6 @@
     "authSubject": "Auth0 subject",
     "authProvider": "Provider",
     "authLinkageStatus": "Auth linkage status",
-    "actorKind": "Actor kind",
     "accountStatus": "Status",
     "displayName": "Display name",
     "email": "Email",
@@ -21,8 +20,7 @@
     "updatedAt": "Updated",
     "activatedAt": "Activated",
     "disabledAt": "Disabled",
-    "archivedAt": "Archived",
-    "reason": "Reason"
+    "archivedAt": "Archived"
   },
   "sections": {
     "profile": "Profile",
@@ -35,18 +33,11 @@
     "authSubjectRequired": "Links this user to an external Auth0 identity. Required by the current backend contract and must match the external subject exactly.",
     "authSubjectExact": "Must match the external Auth0 identity subject exactly.",
     "provisionEmail": "The backend provisions the Auth0 account and invite flow for this email.",
-    "employmentProfileLater": "Employment Profile selection is handled in a later flow; this form only provisions the internal user account.",
-    "actorKind": "Admin console account is for HR, manager, ops, finance, and auditor surfaces and still needs roles/scopes. Self-service staff account is for own profile, schedule, and KPI access.",
-    "actorKindConversion": "Account type is a security context. Conversion requires full-control permission and a reason.",
-    "actorKindReason": "Required for audit."
+    "employmentProfileLater": "Employment Profile selection is handled in a later flow; this form only provisions the internal user account."
   },
   "placeholders": {
     "locale": "No preference",
     "timezone": "No preference"
-  },
-  "actorKinds": {
-    "ADMIN": "Admin console account",
-    "STAFF": "Self-service staff account"
   },
   "statuses": {
     "PENDING": "Pending",
@@ -63,7 +54,6 @@
     "caption": "Users",
     "displayName": "Display name",
     "email": "Email",
-    "actorKind": "Actor kind",
     "accountStatus": "Status",
     "authLinkage": "Auth linkage",
     "updatedAt": "Updated",
@@ -72,9 +62,7 @@
   "filters": {
     "searchPlaceholder": "Search display name or email",
     "state": "State",
-    "allStates": "All states",
-    "actorKind": "Actor kind",
-    "allActorKinds": "All actor kinds"
+    "allStates": "All states"
   },
   "actions": {
     "open": "Open",
@@ -89,8 +77,7 @@
     "sendPasswordSetup": "Send password setup",
     "activate": "Activate",
     "disable": "Disable",
-    "archive": "Archive",
-    "convertActorKind": "Convert account type"
+    "archive": "Archive"
   },
   "actionRail": {
     "title": "User actions"
@@ -98,7 +85,6 @@
   "detail": {
     "identityTitle": "Identity",
     "authLinkageTitle": "Auth0 linkage metadata",
-    "accountTypeTitle": "Account type",
     "lifecycleTitle": "Lifecycle",
     "archivedReadOnly": "Archived users are read-only.",
     "boundaryNotice": "User screens manage identity profile, preferences, lifecycle, and Auth0 metadata only. Role assignment is owned by Role detail, and Employment Profile linkage is owned by Employment Profile."
@@ -127,12 +113,6 @@
       "subtitle": "Updates provider metadata only.",
       "submit": "Set linkage",
       "pending": "Setting linkage"
-    },
-    "actorKind": {
-      "title": "Convert account type",
-      "subtitle": "Changes whether this user is an admin console account or self-service staff account.",
-      "submit": "Convert account type",
-      "pending": "Converting account type"
     }
   },
   "validation": {
@@ -157,8 +137,7 @@
     "passwordSetupEmailSent": "Password setup email sent.",
     "passwordSetupTicketCreated": "Password setup ticket created. Email delivery was not sent by this frontend flow.",
     "passwordSetupCompleted": "Password setup request completed.",
-    "lifecycleUpdated": "User lifecycle updated.",
-    "actorKindUpdated": "Account type converted."
+    "lifecycleUpdated": "User lifecycle updated."
   },
   "provisionResult": {
     "title": "Provision result",

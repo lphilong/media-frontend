@@ -59,11 +59,6 @@ export const createUserListColumns = (
     cell: (context) => String(context.getValue() ?? '-'),
   },
   {
-    accessorKey: 'actorKind',
-    header: t('user:table.actorKind'),
-    cell: (context) => t(`user:actorKinds.${String(context.getValue() ?? '')}`),
-  },
-  {
     accessorKey: 'accountStatus',
     header: t('user:table.accountStatus'),
     cell: (context) => (

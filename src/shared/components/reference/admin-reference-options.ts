@@ -24,7 +24,6 @@ const referenceUserListItemSchema = z
     id: z.string().trim().min(1),
     displayName: z.string().trim().min(1),
     email: z.string().nullable().optional(),
-    actorKind: z.enum(['ADMIN', 'STAFF']),
     accountStatus: z.enum(['PENDING', 'ACTIVE', 'DISABLED', 'ARCHIVED']),
     authLinkage: z
       .object({
@@ -92,11 +91,8 @@ const loadLookupReferenceOptionsByIds = async (
 const toUserOption = (item: UserListItem): ReferenceOption => ({
   id: item.id,
   label: compactDescription([item.displayName, item.email]) ?? item.displayName,
-  description: compactDescription([item.accountStatus, item.actorKind]),
+  description: compactDescription([item.accountStatus]),
   href: APP_PATHS.userDetail(item.id),
-  meta: {
-    actorKind: item.actorKind,
-  },
 });
 
 const toEmploymentProfileOption = (item: EmploymentProfileListItem): ReferenceOption => ({

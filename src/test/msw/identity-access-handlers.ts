@@ -233,7 +233,6 @@ const adminFullPermissionCodes = [
   'user:provision_account',
   'user:auth_linkage:unlink',
   'user:password_setup:send',
-  'user:actor_kind:update',
   'role:list',
   'role:view',
   'role:create',
@@ -348,37 +347,6 @@ const adminFullPermissionCodes = [
 let userSeed = initialUserSeed;
 let roleSeed = initialRoleSeed;
 let assignmentSeed = initialAssignmentSeed;
-
-const requiredAccountContextByRoleCode: Partial<Record<RoleTemplateCode, AccountContext>> = {
-  OWNER_ADMIN: 'ADMIN_CONSOLE',
-  ACCESS_ADMIN: 'ADMIN_CONSOLE',
-  HR_OPERATIONS: 'ADMIN_CONSOLE',
-  HR_TERMS_APPROVER: 'ADMIN_CONSOLE',
-  PRODUCTION_OPS: 'ADMIN_CONSOLE',
-  PLATFORM_CHANNEL_OPS: 'ADMIN_CONSOLE',
-  CREATIVE_VISUAL_LEAD: 'ADMIN_CONSOLE',
-  CONTENT_OPS: 'ADMIN_CONSOLE',
-  TALENT_GROUP_MANAGER: 'MANAGER_CONSOLE',
-  ORG_UNIT_MANAGER: 'MANAGER_CONSOLE',
-  KPI_OPERATIONS: 'ADMIN_CONSOLE',
-  COMMERCIAL_CONTRACT_OPS: 'ADMIN_CONSOLE',
-  REVENUE_FINANCE_OPS: 'ADMIN_CONSOLE',
-  REVENUE_APPROVER: 'ADMIN_CONSOLE',
-  REVENUE_RECONCILER: 'ADMIN_CONSOLE',
-  COMMISSION_OPS: 'ADMIN_CONSOLE',
-  COMMISSION_APPROVER: 'ADMIN_CONSOLE',
-  ATTENDANCE_OPS: 'ADMIN_CONSOLE',
-  LEAVE_REVIEWER: 'ADMIN_CONSOLE',
-  ATTENDANCE_APPROVER: 'ADMIN_CONSOLE',
-  MONTHLY_CLOSE_OWNER: 'ADMIN_CONSOLE',
-  PAYROLL_DRAFT_OPS: 'ADMIN_CONSOLE',
-  PAYROLL_DRAFT_APPROVER: 'ADMIN_CONSOLE',
-  VIEWER_AUDITOR: 'ADMIN_CONSOLE',
-  STAFF_CONSOLE_USER: 'STAFF_CONSOLE',
-};
-
-const isAdminConsoleRoleCode = (code: string): boolean =>
-  requiredAccountContextByRoleCode[code as RoleTemplateCode] === 'ADMIN_CONSOLE';
 
 const initialUsers: UserRecord[] = [
   {
@@ -1456,13 +1424,26 @@ const toUserListItem = (record: UserRecord) => ({
   id: record.id,
   displayName: record.profile.displayName,
   email: record.profile.email,
-  actorKind: record.actorKind,
   accountStatus: record.accountStatus,
   authLinkage: { status: record.authLinkage.status ?? 'LINKED' },
   updatedAt: record.updatedAt,
 });
 
-const toUserDetail = (record: UserRecord) => ({ ...record });
+const toUserDetail = (record: UserRecord) => ({
+  id: record.id,
+  accountStatus: record.accountStatus,
+  authLinkage: { ...record.authLinkage },
+  contextAccess: {
+    contexts: [...record.contextAccess.contexts],
+  },
+  profile: { ...record.profile },
+  preferences: { ...record.preferences },
+  createdAt: record.createdAt,
+  updatedAt: record.updatedAt,
+  activatedAt: record.activatedAt,
+  disabledAt: record.disabledAt,
+  archivedAt: record.archivedAt,
+});
 
 const toRoleListItem = (record: RoleRecord) => ({
   id: record.id,
@@ -2206,7 +2187,6 @@ export const identityAccessHandlers = [
     const url = new URL(request.url);
     const searchParams = url.searchParams;
     const state = searchParams.get('state');
-    const actorKind = searchParams.get('actorKind');
     const search = searchParams.get('search');
 
     let rows = [...users];
@@ -2214,9 +2194,6 @@ export const identityAccessHandlers = [
       rows = rows.filter((item) => item.accountStatus !== 'ARCHIVED');
     } else {
       rows = rows.filter((item) => item.accountStatus === state);
-    }
-    if (actorKind) {
-      rows = rows.filter((item) => item.actorKind === actorKind);
     }
     if (search) {
       rows = rows.filter(
@@ -2240,7 +2217,7 @@ export const identityAccessHandlers = [
     const record: UserRecord = {
       id: `user-${userSeed}`,
       accountStatus: 'PENDING',
-      actorKind: body.actorKind === 'ADMIN' ? 'ADMIN' : 'STAFF',
+      actorKind: 'STAFF',
       authLinkage: { provider: 'auth0', subject: body.authSubject.trim() },
       contextAccess: { contexts: [{ context: 'ADMIN' }] },
       profile: {
@@ -2273,7 +2250,7 @@ export const identityAccessHandlers = [
     const record: UserRecord = {
       id: `user-${userSeed}`,
       accountStatus: 'PENDING',
-      actorKind: body.actorKind === 'ADMIN' ? 'ADMIN' : 'STAFF',
+      actorKind: 'STAFF',
       authLinkage: {
         provider: 'auth0',
         subject: `auth0|provisioned-${userSeed}`,
@@ -2370,46 +2347,6 @@ export const identityAccessHandlers = [
       subject: String(body.subject ?? ''),
       status: 'LINKED',
     };
-    record.updatedAt = Date.now();
-    return HttpResponse.json({ data: toUserDetail(record) });
-  }),
-
-  http.patch('*/admin/users/:userId/actor-kind', async ({ params, request }) => {
-    const record = readUser(String(params.userId));
-    if (!record) {
-      return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    }
-    if (record.accountStatus === 'ARCHIVED') {
-      return HttpResponse.json({ message: 'user:detail.archivedReadOnly' }, { status: 422 });
-    }
-
-    const body = await parseJsonBody(request);
-    const nextActorKind = body.actorKind;
-    const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
-    if (nextActorKind !== 'ADMIN' && nextActorKind !== 'STAFF') {
-      return HttpResponse.json({ message: 'actorKind must be ADMIN or STAFF' }, { status: 422 });
-    }
-    if (!reason) {
-      return HttpResponse.json({ message: 'reason is required' }, { status: 422 });
-    }
-    if (record.actorKind === 'ADMIN' && nextActorKind === 'STAFF') {
-      const activeAdminRoleCodes = assignments
-        .filter((assignment) => assignment.userId === record.id && assignment.state === 'ACTIVE')
-        .map((assignment) => readRole(assignment.roleId))
-        .filter((role): role is RoleRecord => Boolean(role))
-        .map((role) => role.templateCode ?? role.code)
-        .filter((code) => isAdminConsoleRoleCode(code));
-      if (activeAdminRoleCodes.length > 0) {
-        return HttpResponse.json(
-          {
-            message: `Cannot convert ADMIN account to STAFF while active admin-console role assignments exist: ${activeAdminRoleCodes.join(', ')}`,
-          },
-          { status: 422 },
-        );
-      }
-    }
-
-    record.actorKind = nextActorKind;
     record.updatedAt = Date.now();
     return HttpResponse.json({ data: toUserDetail(record) });
   }),

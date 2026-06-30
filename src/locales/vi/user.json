@@ -9,7 +9,6 @@
     "authSubject": "Mã định danh Auth0",
     "authProvider": "Nhà cung cấp xác thực",
     "authLinkageStatus": "Trạng thái liên kết Auth0",
-    "actorKind": "Loại tài khoản",
     "accountStatus": "Trạng thái tài khoản",
     "displayName": "Tên hiển thị",
     "email": "Email",
@@ -21,8 +20,7 @@
     "updatedAt": "Thời điểm cập nhật",
     "activatedAt": "Thời điểm kích hoạt",
     "disabledAt": "Thời điểm vô hiệu hóa",
-    "archivedAt": "Thời điểm lưu trữ",
-    "reason": "Lý do"
+    "archivedAt": "Thời điểm lưu trữ"
   },
   "sections": {
     "profile": "Hồ sơ",
@@ -35,18 +33,11 @@
     "authSubjectRequired": "Liên kết tài khoản này với định danh Auth0. Hệ thống hiện yêu cầu thông tin này và giá trị phải khớp chính xác với mã định danh Auth0.",
     "authSubjectExact": "Phải khớp chính xác với mã định danh Auth0.",
     "provisionEmail": "Hệ thống sẽ tạo tài khoản Auth0 và gửi luồng mời/thiết lập mật khẩu cho email này.",
-    "employmentProfileLater": "Luồng chọn Hồ sơ nhân sự sẽ xử lý sau. Form này chỉ dùng để cấp phát tài khoản người dùng nội bộ.",
-    "actorKind": "Tài khoản quản trị nội bộ dành cho HR, quản lý, vận hành, tài chính và kiểm toán; vẫn cần vai trò/phạm vi. Tài khoản nhân viên tự phục vụ dành cho hồ sơ, lịch và KPI của chính họ.",
-    "actorKindConversion": "Loại tài khoản là thông tin bảo mật. Chỉ tài khoản có quyền phù hợp mới được chuyển đổi và phải nhập lý do.",
-    "actorKindReason": "Bắt buộc để phục vụ kiểm toán."
+    "employmentProfileLater": "Luồng chọn Hồ sơ nhân sự sẽ xử lý sau. Form này chỉ dùng để cấp phát tài khoản người dùng nội bộ."
   },
   "placeholders": {
     "locale": "Không đặt tùy chọn",
     "timezone": "Không đặt tùy chọn"
-  },
-  "actorKinds": {
-    "ADMIN": "Tài khoản quản trị nội bộ",
-    "STAFF": "Tài khoản nhân viên tự phục vụ"
   },
   "statuses": {
     "PENDING": "Đang chờ",
@@ -63,7 +54,6 @@
     "caption": "Danh sách người dùng",
     "displayName": "Tên hiển thị",
     "email": "Email",
-    "actorKind": "Loại tài khoản",
     "accountStatus": "Trạng thái tài khoản",
     "authLinkage": "Liên kết Auth0",
     "updatedAt": "Thời điểm cập nhật",
@@ -72,9 +62,7 @@
   "filters": {
     "searchPlaceholder": "Tìm theo tên hiển thị hoặc email",
     "state": "Trạng thái",
-    "allStates": "Tất cả trạng thái",
-    "actorKind": "Loại tài khoản",
-    "allActorKinds": "Tất cả loại tài khoản"
+    "allStates": "Tất cả trạng thái"
   },
   "actions": {
     "open": "Mở",
@@ -89,8 +77,7 @@
     "sendPasswordSetup": "Gửi thiết lập mật khẩu",
     "activate": "Kích hoạt",
     "disable": "Vô hiệu hóa",
-    "archive": "Lưu trữ",
-    "convertActorKind": "Chuyển loại tài khoản"
+    "archive": "Lưu trữ"
   },
   "actionRail": {
     "title": "Hành động người dùng"
@@ -98,7 +85,6 @@
   "detail": {
     "identityTitle": "Danh tính",
     "authLinkageTitle": "Thông tin liên kết Auth0",
-    "accountTypeTitle": "Loại tài khoản",
     "lifecycleTitle": "Thông tin trạng thái",
     "archivedReadOnly": "Người dùng đã lưu trữ chỉ có thể xem.",
     "boundaryNotice": "Màn hình Người dùng chỉ quản lý định danh, tùy chọn, trạng thái tài khoản và thông tin liên kết Auth0. Việc gán vai trò nằm ở màn hình Vai trò; liên kết hồ sơ nhân sự nằm ở Hồ sơ nhân sự."
@@ -127,12 +113,6 @@
       "subtitle": "Chỉ cập nhật thông tin liên kết với nhà cung cấp xác thực.",
       "submit": "Thiết lập liên kết",
       "pending": "Đang thiết lập liên kết"
-    },
-    "actorKind": {
-      "title": "Chuyển loại tài khoản",
-      "subtitle": "Thay đổi việc người dùng này là tài khoản quản trị nội bộ hay nhân viên tự phục vụ.",
-      "submit": "Chuyển loại tài khoản",
-      "pending": "Đang chuyển loại tài khoản"
     }
   },
   "validation": {
@@ -157,8 +137,7 @@
     "authLinkageUpdated": "Đã cập nhật thông tin liên kết Auth0.",
     "authLinkageUnlinked": "Đã hủy liên kết Auth0.",
     "passwordSetupSent": "Đã gửi thiết lập mật khẩu.",
-    "lifecycleUpdated": "Đã cập nhật trạng thái người dùng.",
-    "actorKindUpdated": "Đã chuyển loại tài khoản."
+    "lifecycleUpdated": "Đã cập nhật trạng thái người dùng."
   },
   "provisionResult": {
     "passwordSetupEmailSent": "Đã gửi email thiết lập mật khẩu.",

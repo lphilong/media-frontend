@@ -27,7 +27,6 @@ export const PERMISSIONS = {
   USER_AUTH_LINKAGE_SET: 'user:auth_linkage:set',
   USER_AUTH_LINKAGE_UNLINK: 'user:auth_linkage:unlink',
   USER_PASSWORD_SETUP_SEND: 'user:password_setup:send',
-  USER_ACTOR_KIND_UPDATE: 'user:actor_kind:update',
   ORG_UNIT_READ: 'orgUnit.read',
   ORG_UNIT_CREATE: 'orgUnit.create',
   ORG_UNIT_UPDATE: 'orgUnit.update',

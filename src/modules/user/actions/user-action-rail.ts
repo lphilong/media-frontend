@@ -8,7 +8,6 @@ type UserActionRailHandlers = {
   onAuthLinkage: () => void;
   onUnlinkAuthLinkage: () => void;
   onSendPasswordSetup: () => void;
-  onConvertActorKind: () => void;
   onLifecycleAction: (action: UserLifecycleAction) => void;
   isLifecyclePending?: (action: UserLifecycleAction) => boolean;
   isUnlinkPending?: boolean;
@@ -68,13 +67,6 @@ export const createUserActionRailItems = (
       Boolean(readPasswordSetupDisabledReason(t, record)) || handlers.isPasswordSetupPending,
     disabledReason: readPasswordSetupDisabledReason(t, record),
     onClick: !readPasswordSetupDisabledReason(t, record) ? handlers.onSendPasswordSetup : undefined,
-  },
-  {
-    id: 'actor-kind-convert',
-    label: t('user:actions.convertActorKind'),
-    disabled: isArchived(record),
-    disabledReason: isArchived(record) ? t('common:capabilities.invalidStatus') : undefined,
-    onClick: !isArchived(record) ? handlers.onConvertActorKind : undefined,
   },
   {
     id: 'activate',

@@ -5,13 +5,11 @@ import { useParams } from 'react-router-dom';
 import { createUserActionRailItems } from '@modules/user/actions/user-action-rail';
 import { UserBoundaryNotice } from '@modules/user/components/UserBoundaryNotice';
 import {
-  UserActorKindSurface,
   UserAuthLinkageSurface,
   UserUpdateSurface,
 } from '@modules/user/forms/user-mutation-forms';
 import {
   useUpdateUserMutation,
-  useUserActorKindMutation,
   useUserAuthLinkageUnlinkMutation,
   useUserAuthLinkageMutation,
   useUserDetail,
@@ -42,7 +40,6 @@ import {
   applyActionCapabilityHints,
   createActionCapabilityHint,
   PERMISSIONS,
-  hasPermission,
   useCurrentActorCapabilities,
   type CapabilityMissingReason,
 } from '@shared/auth/current-actor-capabilities';
@@ -50,7 +47,7 @@ import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/f
 import { useScrollToPanel } from '@shared/hooks/useScrollToPanel';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
-type ActiveMutationSurface = 'edit' | 'auth-linkage' | 'actor-kind' | null;
+type ActiveMutationSurface = 'edit' | 'auth-linkage' | null;
 
 const statusToneMap = {
   PENDING: 'neutral',
@@ -107,7 +104,6 @@ export const UserDetailPage = (): JSX.Element => {
   const detailQuery = useUserDetail(userId);
   const capabilitiesQuery = useCurrentActorCapabilities();
   const updateMutation = useUpdateUserMutation();
-  const actorKindMutation = useUserActorKindMutation();
   const authLinkageMutation = useUserAuthLinkageMutation();
   const authLinkageUnlinkMutation = useUserAuthLinkageUnlinkMutation();
   const passwordSetupMutation = useUserPasswordSetupMutation();
@@ -222,25 +218,6 @@ export const UserDetailPage = (): JSX.Element => {
     }
   };
 
-  const onActorKindSubmit = async (
-    payload: Parameters<typeof actorKindMutation.mutateAsync>[0]['payload'],
-  ) => {
-    if (!record) {
-      return;
-    }
-
-    try {
-      await actorKindMutation.mutateAsync({
-        userId: record.id,
-        payload,
-      });
-      notifySuccess('user:feedback.actorKindUpdated');
-      setActiveSurface(null);
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
   const onUnlinkAuthLinkage = useCallback(async () => {
     if (!record) {
       return;
@@ -283,16 +260,10 @@ export const UserDetailPage = (): JSX.Element => {
       return [];
     }
 
-    const canConvertActorKind = hasPermission(
-      capabilitiesQuery.data,
-      PERMISSIONS.USER_ACTOR_KIND_UPDATE,
-    );
-
     return applyActionCapabilityHints(
       createUserActionRailItems(t, record, {
         onEdit: () => setActiveSurface('edit'),
         onAuthLinkage: () => setActiveSurface('auth-linkage'),
-        onConvertActorKind: () => setActiveSurface('actor-kind'),
         onUnlinkAuthLinkage,
         onSendPasswordSetup,
         onLifecycleAction,
@@ -343,15 +314,6 @@ export const UserDetailPage = (): JSX.Element => {
           { permission: PERMISSIONS.USER_PASSWORD_SETUP_SEND },
           capabilityCopy,
         ),
-        'actor-kind-convert': createActionCapabilityHint(
-          {
-            capabilities: capabilitiesQuery.data,
-            isLoading: capabilitiesQuery.isLoading,
-            isError: capabilitiesQuery.isError,
-          },
-          { permission: PERMISSIONS.USER_ACTOR_KIND_UPDATE },
-          capabilityCopy,
-        ),
         activate: createActionCapabilityHint(
           {
             capabilities: capabilitiesQuery.data,
@@ -380,7 +342,7 @@ export const UserDetailPage = (): JSX.Element => {
           capabilityCopy,
         ),
       },
-    ).filter((item) => item.id !== 'actor-kind-convert' || canConvertActorKind);
+    );
   }, [
     capabilityCopy,
     capabilitiesQuery.data,
@@ -443,11 +405,6 @@ export const UserDetailPage = (): JSX.Element => {
                   value: record.profile.phone ?? '-',
                 },
                 {
-                  key: 'actorKind',
-                  label: t('user:fields.actorKind'),
-                  value: t(`user:actorKinds.${record.actorKind}`),
-                },
-                {
                   key: 'accountStatus',
                   label: t('user:fields.accountStatus'),
                   value: t(`user:statuses.${record.accountStatus}`),
@@ -505,19 +462,6 @@ export const UserDetailPage = (): JSX.Element => {
                 columns={2}
               />
             </MetadataSection>
-            <MetadataSection title={t('user:detail.accountTypeTitle')}>
-              <ReadOnlyFieldGrid
-                fields={[
-                  {
-                    key: 'actorKind',
-                    label: t('user:fields.actorKind'),
-                    value: t(`user:actorKinds.${record.actorKind}`),
-                    description: t('user:help.actorKind'),
-                  },
-                ]}
-                columns={1}
-              />
-            </MetadataSection>
             <MetadataSection title={t('user:detail.lifecycleTitle')}>
               <ReadOnlyFieldGrid
                 fields={[
@@ -571,14 +515,6 @@ export const UserDetailPage = (): JSX.Element => {
                 isPending={authLinkageMutation.isPending}
                 onCancel={() => setActiveSurface(null)}
                 onSubmit={onAuthLinkageSubmit}
-              />
-            ) : null}
-            {activeSurface === 'actor-kind' ? (
-              <UserActorKindSurface
-                currentActorKind={record.actorKind}
-                isPending={actorKindMutation.isPending}
-                onCancel={() => setActiveSurface(null)}
-                onSubmit={onActorKindSubmit}
               />
             ) : null}
           </div>

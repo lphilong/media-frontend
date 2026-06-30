@@ -1,12 +1,10 @@
 import type {
   userAccountStatusValues,
-  userActorKindValues,
   userLifecycleActionValues,
   USER_PERMISSION_LITERALS,
 } from '@modules/user/constants/user.constants';
 
 export type UserAccountStatus = (typeof userAccountStatusValues)[number];
-export type UserActorKind = (typeof userActorKindValues)[number];
 export type UserLifecycleAction = (typeof userLifecycleActionValues)[number];
 export type UserPermissionLiteral = (typeof USER_PERMISSION_LITERALS)[number];
 export type UserAuthLinkageStatus = 'LINKED' | 'UNLINKED' | 'PENDING';
@@ -25,7 +23,6 @@ export type UserListItem = {
   id: string;
   displayName: string;
   email?: string | null;
-  actorKind: UserActorKind;
   accountStatus: UserAccountStatus;
   authLinkage?: UserListAuthLinkage;
   updatedAt: number | string;
@@ -34,7 +31,6 @@ export type UserListItem = {
 export type UserDetailRecord = {
   id: string;
   accountStatus: UserAccountStatus;
-  actorKind: UserActorKind;
   authLinkage: UserAuthLinkage;
   contextAccess: {
     contexts: Array<{ context: 'ADMIN' }>;
@@ -57,14 +53,12 @@ export type UserDetailRecord = {
 
 export type UserListQuery = {
   state?: UserAccountStatus;
-  actorKind?: UserActorKind;
   limit?: number;
   cursor?: string;
   search?: string;
 };
 
 export type UserCreatePayload = {
-  actorKind?: UserActorKind;
   displayName: string;
   email?: string;
   phone?: string;
@@ -89,11 +83,6 @@ export type UserUpdatePayload = {
 export type UserAuthLinkagePayload = {
   provider: 'auth0';
   subject: string;
-};
-
-export type UserActorKindUpdatePayload = {
-  actorKind: UserActorKind;
-  reason: string;
 };
 
 export type UserProvisionMetadata = {

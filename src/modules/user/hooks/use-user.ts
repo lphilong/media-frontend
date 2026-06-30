@@ -9,12 +9,10 @@ import {
   sendUserPasswordSetup,
   setUserAuthLinkage,
   unlinkUserAuthLinkage,
-  updateUserActorKind,
   updateUser,
 } from '@modules/user/api/user.api';
 import type {
   UserAuthLinkagePayload,
-  UserActorKindUpdatePayload,
   UserCreatePayload,
   UserLifecycleAction,
   UserListQuery,
@@ -117,18 +115,6 @@ export const useUserPasswordSetupMutation = () => {
 
   return useMutation({
     mutationFn: ({ userId }: { userId: string }) => sendUserPasswordSetup(userId),
-    onSuccess: async () => {
-      await invalidateUserLaneQueries(queryClient);
-    },
-  });
-};
-
-export const useUserActorKindMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ userId, payload }: { userId: string; payload: UserActorKindUpdatePayload }) =>
-      updateUserActorKind(userId, payload),
     onSuccess: async () => {
       await invalidateUserLaneQueries(queryClient);
     },

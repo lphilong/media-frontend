@@ -4,10 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
-import {
-  userAccountStatusValues,
-  userActorKindValues,
-} from '@modules/user/constants/user.constants';
+import { userAccountStatusValues } from '@modules/user/constants/user.constants';
 import { UserProvisionSurface } from '@modules/user/forms/user-mutation-forms';
 import {
   useProvisionUserMutation,
@@ -290,7 +287,6 @@ export const UserListPage = (): JSX.Element => {
     patchQuery({
       search: undefined,
       state: undefined,
-      actorKind: undefined,
     });
   }, [patchQuery]);
 
@@ -315,17 +311,8 @@ export const UserListPage = (): JSX.Element => {
       });
     }
 
-    if (query.actorKind) {
-      items.push({
-        id: 'actor-kind',
-        label: t('user:filters.actorKind'),
-        value: t(`user:actorKinds.${query.actorKind}`),
-        onClear: () => patchQuery({ actorKind: undefined }),
-      });
-    }
-
     return items;
-  }, [patchQuery, query.actorKind, query.search, query.state, t]);
+  }, [patchQuery, query.search, query.state, t]);
 
   return (
     <ModuleListScreenShell
@@ -365,27 +352,6 @@ export const UserListPage = (): JSX.Element => {
               {userAccountStatusValues.map((status) => (
                 <option key={status} value={status}>
                   {t(`user:statuses.${status}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex min-w-[180px] flex-col gap-1">
-            <span className="text-xs font-medium uppercase text-muted">
-              {t('user:filters.actorKind')}
-            </span>
-            <select
-              value={query.actorKind ?? ''}
-              className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-              onChange={(event) =>
-                patchQuery({
-                  actorKind: (event.target.value || undefined) as UserListQuery['actorKind'],
-                })
-              }
-            >
-              <option value="">{t('user:filters.allActorKinds')}</option>
-              {userActorKindValues.map((actorKind) => (
-                <option key={actorKind} value={actorKind}>
-                  {t(`user:actorKinds.${actorKind}`)}
                 </option>
               ))}
             </select>

@@ -23,7 +23,6 @@ const createUserDetailResponse = (authLinkage: {
   data: {
     id: 'user-audit',
     accountStatus: 'ACTIVE',
-    actorKind: 'ADMIN',
     authLinkage,
     contextAccess: {
       contexts: [{ context: 'ADMIN' }],
@@ -44,6 +43,23 @@ const createUserDetailResponse = (authLinkage: {
     archivedAt: null,
   },
 });
+
+const adminWorkspaceAvailability = {
+  primaryWorkspace: 'ADMIN_CONSOLE',
+  availableWorkspaces: [
+    {
+      context: 'ADMIN_CONSOLE',
+      available: true,
+      source: 'ACCOUNT_CONTEXT',
+      reasonCodes: ['ACCOUNT_CONTEXT_ASSIGNED'],
+      trace: [{ source: 'ACCOUNT_CONTEXT', accountContexts: ['ADMIN_CONSOLE'] }],
+    },
+  ],
+  ownDataAvailable: false,
+  managerResponsibilitiesAvailable: false,
+  effectiveAccessTraceAvailable: true,
+  sourceTrace: [{ source: 'ACCOUNT_CONTEXT', accountContexts: ['ADMIN_CONSOLE'] }],
+};
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {
@@ -75,7 +91,7 @@ describe('user IA-1 surfaces', () => {
     expect(await screen.findByText('Staff User', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
     expect(screen.getAllByText(i18n.t('user:statuses.PENDING')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(i18n.t('user:actorKinds.STAFF')).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('combobox', { name: i18n.t('user:filters.actorKind') })).not.toBeInTheDocument();
     expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
     expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
     expect(screen.getByText('staff@example.test')).toBeInTheDocument();
@@ -106,6 +122,9 @@ describe('user IA-1 surfaces', () => {
     ).toBeEnabled();
     expect(screen.getByRole('button', { name: i18n.t('user:actions.disable') })).toBeEnabled();
     expect(screen.getByRole('button', { name: i18n.t('user:actions.archive') })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: i18n.t('user:actions.convertActorKind') }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /assign role/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /employment profile/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/credential|token|session/i)).not.toBeInTheDocument();
@@ -120,10 +139,12 @@ describe('user IA-1 surfaces', () => {
             id: 'user-admin',
             type: 'admin',
             context: 'ADMIN',
+            accountContexts: ['ADMIN_CONSOLE'],
             isActive: true,
             roles: ['role-admin'],
             permissions: ['user:view'],
             scopeGrants: {},
+            workspaceAvailability: adminWorkspaceAvailability,
             generatedAt: '2026-05-20T00:00:00.000Z',
           },
         }),
@@ -158,10 +179,12 @@ describe('user IA-1 surfaces', () => {
             id: 'hr-operations-user',
             type: 'admin',
             context: 'ADMIN',
+            accountContexts: ['ADMIN_CONSOLE'],
             isActive: true,
             roles: ['HR_OPERATIONS'],
             permissions: ['user:view', 'user:password_setup:send'],
             scopeGrants: {},
+            workspaceAvailability: adminWorkspaceAvailability,
             generatedAt: '2026-05-24T00:00:00.000Z',
           },
         }),
@@ -273,47 +296,6 @@ describe('user IA-1 surfaces', () => {
     );
   }, 15_000);
 
-  it('converts actor kind with a required reason and shows success feedback', async () => {
-    await setLocale(DEFAULT_LOCALE);
-    const user = userEvent.setup();
-    renderRoute('/users/user-staff');
-
-    await user.click(
-      await screen.findByRole('button', { name: i18n.t('user:actions.convertActorKind') }),
-    );
-
-    const heading = await screen.findByRole('heading', {
-      name: i18n.t('user:mutations.actorKind.title'),
-    });
-    const surface = heading.closest('section');
-    expect(surface).not.toBeNull();
-    if (!surface) {
-      return;
-    }
-
-    await user.click(
-      within(surface).getByRole('button', {
-        name: i18n.t('user:mutations.actorKind.submit'),
-      }),
-    );
-    expect(
-      await within(surface).findByText(i18n.t('user:validation.required')),
-    ).toBeInTheDocument();
-
-    await user.type(
-      within(surface).getByLabelText(i18n.t('user:fields.reason')),
-      'Promote for HR console access',
-    );
-    await user.click(
-      within(surface).getByRole('button', {
-        name: i18n.t('user:mutations.actorKind.submit'),
-      }),
-    );
-
-    expect(await screen.findByText(i18n.t('user:feedback.actorKindUpdated'))).toBeInTheDocument();
-    expect(await screen.findAllByText(i18n.t('user:actorKinds.ADMIN'))).not.toHaveLength(0);
-  });
-
   it('keeps User provision and identity/access filters inspectable when the list request fails', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -332,9 +314,7 @@ describe('user IA-1 surfaces', () => {
     expect(screen.getByRole('combobox', { name: i18n.t('user:filters.state') })).toHaveValue(
       'PENDING',
     );
-    expect(screen.getByRole('combobox', { name: i18n.t('user:filters.actorKind') })).toHaveValue(
-      'STAFF',
-    );
+    expect(screen.queryByRole('combobox', { name: i18n.t('user:filters.actorKind') })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: i18n.t('user:actions.provisionAccount') }));
 
@@ -423,7 +403,6 @@ describe('user IA-1 surfaces', () => {
           data: {
             id: 'user-ticket-provision',
             accountStatus: 'PENDING',
-            actorKind: 'STAFF',
             authLinkage: {
               provider: 'auth0',
               subject: 'auth0|ticket-provision',
@@ -633,10 +612,12 @@ describe('user IA-1 surfaces', () => {
             id: 'user-admin',
             type: 'admin',
             context: 'ADMIN',
+            accountContexts: ['ADMIN_CONSOLE'],
             isActive: true,
             roles: ['role-admin'],
             permissions: ['user:view'],
             scopeGrants: {},
+            workspaceAvailability: adminWorkspaceAvailability,
             generatedAt: '2026-05-20T00:00:00.000Z',
           },
         }),

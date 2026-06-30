@@ -10,19 +10,17 @@ import {
   sendUserPasswordSetup,
   setUserAuthLinkage,
   unlinkUserAuthLinkage,
-  updateUserActorKind,
   updateUser,
 } from '@modules/user/api/user.api';
 import { APP_PATHS } from '@app/router/paths';
 import {
   UserAuthLinkageSurface,
-  UserActorKindSurface,
   UserCreateSurface,
   UserProvisionSurface,
   UserUpdateSurface,
 } from '@modules/user/forms/user-mutation-forms';
 import {
-  userActorKindUpdatePayloadSchema,
+  userCreatePayloadSchema,
   userProvisionPayloadSchema,
 } from '@modules/user/schemas/user-payload-schemas';
 import type { UserDetailRecord } from '@modules/user/types/user.types';
@@ -44,7 +42,6 @@ const unsafeSetupUrlField = ['ticket', 'Url'].join('');
 const userDetail: UserDetailRecord = {
   id: 'user-admin',
   accountStatus: 'ACTIVE',
-  actorKind: 'ADMIN',
   authLinkage: {
     provider: 'auth0',
     subject: 'auth0|admin',
@@ -88,7 +85,6 @@ describe('user IA-1 query and payload shaping', () => {
 
     expect(parsed).toEqual({
       state: 'ACTIVE',
-      actorKind: 'ADMIN',
       cursor: 'opaque',
       search: 'Admin',
     });
@@ -96,7 +92,6 @@ describe('user IA-1 query and payload shaping', () => {
     const serialized = serializeScreenQueryParams(
       {
         state: 'DISABLED',
-        actorKind: 'STAFF',
         cursor: 'next',
         limit: 50,
         search: 'Staff',
@@ -107,13 +102,8 @@ describe('user IA-1 query and payload shaping', () => {
       userFlatListQueryConfig,
     );
 
-    expect(Array.from(serialized.keys()).sort()).toEqual([
-      'actorKind',
-      'cursor',
-      'limit',
-      'search',
-      'state',
-    ]);
+    expect(Array.from(serialized.keys()).sort()).toEqual(['cursor', 'limit', 'search', 'state']);
+    expect(serialized.get('actorKind')).toBeNull();
     expect(serialized.get('scope')).toBeNull();
     expect(serialized.get('scopeGrants')).toBeNull();
     expect(serialized.get('sortBy')).toBeNull();
@@ -134,7 +124,6 @@ describe('user IA-1 query and payload shaping', () => {
     });
     await fetchUsers({
       state: 'ACTIVE',
-      actorKind: 'ADMIN',
       cursor: 'opaque',
       limit: 50,
       search: 'Admin',
@@ -148,7 +137,6 @@ describe('user IA-1 query and payload shaping', () => {
         url: '/admin/users',
         params: {
           state: 'ACTIVE',
-          actorKind: 'ADMIN',
           cursor: 'opaque',
           limit: 50,
           search: 'Admin',
@@ -158,9 +146,9 @@ describe('user IA-1 query and payload shaping', () => {
 
     mockDetailResponse();
     await createUser({
-      actorKind: 'STAFF',
       displayName: 'New User',
       email: 'new@example.test',
+      actorKind: 'STAFF',
       scope: 'global',
       scopeGrants: ['x'],
       roleIds: ['role-admin'],
@@ -168,10 +156,10 @@ describe('user IA-1 query and payload shaping', () => {
 
     const createCall = apiRequestMock.mock.calls.at(-1)?.[0];
     expect(createCall?.data).toMatchObject({
-      actorKind: 'STAFF',
       displayName: 'New User',
       email: 'new@example.test',
     });
+    expect(createCall?.data).not.toHaveProperty('actorKind');
     expect(createCall?.data).not.toHaveProperty('scope');
     expect(createCall?.data).not.toHaveProperty('scopeGrants');
     expect(createCall?.data).not.toHaveProperty('roleIds');
@@ -194,16 +182,15 @@ describe('user IA-1 query and payload shaping', () => {
       },
     });
     await provisionUser({
-      actorKind: 'STAFF',
       displayName: 'Provisioned User',
       email: 'provisioned@example.test',
+      actorKind: 'STAFF',
       scope: 'global',
       [unsafeSetupUrlField]: 'https://unsafe.example.test',
     } as Parameters<typeof provisionUser>[0]);
 
     const provisionCall = apiRequestMock.mock.calls.at(-1)?.[0];
     expect(provisionCall?.data).toEqual({
-      actorKind: 'STAFF',
       displayName: 'Provisioned User',
       email: 'provisioned@example.test',
       phone: undefined,
@@ -212,6 +199,7 @@ describe('user IA-1 query and payload shaping', () => {
       credentialMode: 'INVITE_LINK',
       sendInvitation: true,
     });
+    expect(provisionCall?.data).not.toHaveProperty('actorKind');
     expect(provisionCall?.data).not.toHaveProperty(unsafeSetupUrlField);
     expect(provisionCall?.data).not.toHaveProperty('password');
 
@@ -240,7 +228,6 @@ describe('user IA-1 query and payload shaping', () => {
           id: 'user-list-linked',
           displayName: 'List Linked',
           email: 'list-linked@example.test',
-          actorKind: 'ADMIN',
           accountStatus: 'ACTIVE',
           authLinkage: {
             status: 'LINKED',
@@ -266,7 +253,6 @@ describe('user IA-1 query and payload shaping', () => {
           id: 'user-list-leaky',
           displayName: 'List Leaky',
           email: 'list-leaky@example.test',
-          actorKind: 'ADMIN',
           accountStatus: 'ACTIVE',
           authLinkage: {
             status: 'LINKED',
@@ -287,7 +273,6 @@ describe('user IA-1 query and payload shaping', () => {
     const onProvision = vi.fn();
     const onUpdate = vi.fn();
     const onAuthLinkage = vi.fn();
-    const onActorKindUpdate = vi.fn();
 
     const provisionRender = render(
       <UserProvisionSurface onCancel={() => undefined} onSubmit={onProvision} />,
@@ -295,11 +280,11 @@ describe('user IA-1 query and payload shaping', () => {
     await user.type(screen.getByLabelText(i18n.t('user:fields.email')), 'created@example.test');
     await user.type(screen.getByLabelText(i18n.t('user:fields.displayName')), 'Created User');
     expect(screen.getByText(i18n.t('user:help.employmentProfileLater'))).toBeInTheDocument();
+    expect(screen.queryByLabelText(i18n.t('user:fields.actorKind'))).not.toBeInTheDocument();
     await user.click(
       screen.getByRole('button', { name: i18n.t('user:mutations.provision.submit') }),
     );
     expect(onProvision).toHaveBeenCalledWith({
-      actorKind: 'ADMIN',
       displayName: 'Created User',
       email: 'created@example.test',
       phone: undefined,
@@ -318,10 +303,10 @@ describe('user IA-1 query and payload shaping', () => {
     await user.type(screen.getByLabelText(i18n.t('user:fields.email')), 'created@example.test');
     expect(screen.getByLabelText(i18n.t('user:fields.locale')).tagName).toBe('SELECT');
     expect(screen.getByLabelText(i18n.t('user:fields.timezone'))).toHaveValue('Asia/Ho_Chi_Minh');
+    expect(screen.queryByLabelText(i18n.t('user:fields.actorKind'))).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: i18n.t('user:mutations.create.submit') }));
 
     expect(onCreate).toHaveBeenCalledWith({
-      actorKind: 'ADMIN',
       displayName: 'Created User',
       email: 'created@example.test',
       phone: undefined,
@@ -364,25 +349,6 @@ describe('user IA-1 query and payload shaping', () => {
     expect(onAuthLinkage).toHaveBeenCalledWith({
       provider: 'auth0',
       subject: 'auth0|updated',
-    });
-
-    render(
-      <UserActorKindSurface
-        currentActorKind="STAFF"
-        onCancel={() => undefined}
-        onSubmit={onActorKindUpdate}
-      />,
-    );
-    await user.type(screen.getByLabelText(i18n.t('user:fields.reason')), 'Promote for HR access');
-    await user.click(
-      screen.getByRole('button', {
-        name: i18n.t('user:mutations.actorKind.submit'),
-      }),
-    );
-
-    expect(onActorKindUpdate).toHaveBeenCalledWith({
-      actorKind: 'ADMIN',
-      reason: 'Promote for HR access',
     });
   });
 
@@ -441,35 +407,27 @@ describe('user IA-1 query and payload shaping', () => {
         data: {},
       }),
     );
-
-    await updateUserActorKind('user-staff', {
-      actorKind: 'ADMIN',
-      reason: 'Promote for HR access',
-    });
-    expect(apiRequestMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        method: 'PATCH',
-        url: '/admin/users/user-staff/actor-kind',
-        data: {
-          actorKind: 'ADMIN',
-          reason: 'Promote for HR access',
-        },
-      }),
-    );
   });
 
   it('rejects unsafe user provisioning schema fields and setup URL responses', async () => {
+    expect(
+      userCreatePayloadSchema.safeParse({
+        displayName: 'Created User',
+        actorKind: 'ADMIN',
+      }).success,
+    ).toBe(false);
+    expect(
+      userProvisionPayloadSchema.safeParse({
+        displayName: 'Provisioned User',
+        email: 'provisioned@example.test',
+        actorKind: 'ADMIN',
+      }).success,
+    ).toBe(false);
     expect(
       userProvisionPayloadSchema.safeParse({
         displayName: 'Provisioned User',
         email: 'provisioned@example.test',
         [unsafeSetupUrlField]: 'https://unsafe.example.test',
-      }).success,
-    ).toBe(false);
-    expect(
-      userActorKindUpdatePayloadSchema.safeParse({
-        actorKind: 'ADMIN',
-        reason: '',
       }).success,
     ).toBe(false);
 

@@ -10,7 +10,6 @@ export type ReferenceOption = {
   href?: string;
   disabled?: boolean;
   meta?: {
-    actorKind?: 'ADMIN' | 'STAFF';
     employmentProfileId?: string;
     employeeCode?: string;
     employmentStatus?: string;
