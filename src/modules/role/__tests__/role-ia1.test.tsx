@@ -804,7 +804,7 @@ describe('role IA-1 surfaces', () => {
     ).toBe(true);
   }, 15_000);
 
-  it('omits legacy/non-assignable targets and unsupported scopes block preview', async () => {
+  it('omits true legacy/non-assignable targets while keeping canonical role targets visible', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
     const previewPayloads: Array<Record<string, unknown>> = [];
@@ -847,20 +847,58 @@ describe('role IA-1 surfaces', () => {
                 assignmentKind: 'BUNDLE',
                 code: 'AUDITOR_BUNDLE',
                 version: '2026-05-20',
-                name: 'Legacy Auditor',
+                name: 'Auditor',
                 childRoles: ['VIEWER_AUDITOR'],
                 recommendedAccountContext: 'ADMIN_CONSOLE',
                 requiredScopeTypes: ['global'],
                 requiresResponsibility: false,
                 requiredResponsibilityType: null,
                 sensitiveLevel: 'STANDARD',
-                legacyAssignable: false,
+                legacyAssignable: true,
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              ...['ADMIN_FULL', 'TEAM_MANAGER', 'COMMERCIAL_FINANCE', 'TALENT_STAFF_SELF'].map(
+                (code) => ({
+                  assignmentKind: 'ROLE_TEMPLATE',
+                  code,
+                  name: `Legacy ${code}`,
+                  recommendedAccountContext: 'ADMIN_CONSOLE',
+                  requiredScopeTypes: ['global'],
+                  requiresResponsibility: false,
+                  requiredResponsibilityType: null,
+                  sensitiveLevel: 'STANDARD',
+                  legacyAssignable: false,
+                  recommendedPickerMode: 'SEARCH_FIRST',
+                }),
+              ),
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'HR_OPERATIONS',
+                name: 'HR Operations',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: ['global'],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'PRODUCTION_OPS',
+                name: 'Production Ops',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: ['global'],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
                 recommendedPickerMode: 'SEARCH_FIRST',
               },
               {
                 assignmentKind: 'ROLE_TEMPLATE',
                 code: 'VIEWER_AUDITOR',
-                name: 'Unsupported Auditor',
+                name: 'Viewer Auditor',
                 recommendedAccountContext: 'ADMIN_CONSOLE',
                 requiredScopeTypes: ['attendancePeriodOrg'],
                 requiresResponsibility: false,
@@ -886,9 +924,7 @@ describe('role IA-1 surfaces', () => {
     await renderAssignmentTab(user);
 
     const targetSelect = await screen.findByLabelText(i18n.t('role:accessAssignment.targetLabel'));
-    expect(
-      within(targetSelect).queryByRole('option', { name: /Legacy Auditor/u }),
-    ).not.toBeInTheDocument();
+    expect(within(targetSelect).getByRole('option', { name: /Auditor/u })).toBeInTheDocument();
     expect(
       screen.getByText(i18n.t('role:accessAssignment.legacyTargetsHidden')),
     ).toBeInTheDocument();
@@ -898,8 +934,20 @@ describe('role IA-1 surfaces', () => {
     );
     const roleTargetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
     expect(
-      within(roleTargetSelect).getByRole('option', { name: /Unsupported Auditor/u }),
+      within(roleTargetSelect).getByRole('option', { name: /HR Operations/u }),
     ).toBeInTheDocument();
+    expect(
+      within(roleTargetSelect).getByRole('option', { name: /Production Ops/u }),
+    ).toBeInTheDocument();
+    expect(
+      within(roleTargetSelect).getByRole('option', { name: /Viewer Auditor/u }),
+    ).toBeInTheDocument();
+    for (const code of ['ADMIN_FULL', 'TEAM_MANAGER', 'COMMERCIAL_FINANCE', 'TALENT_STAFF_SELF']) {
+      expect(
+        within(roleTargetSelect).queryByRole('option', { name: new RegExp(code, 'u') }),
+      ).not.toBeInTheDocument();
+    }
+    await user.selectOptions(roleTargetSelect, 'ROLE_TEMPLATE:VIEWER_AUDITOR:');
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.scopeUnavailable')),
     ).toBeInTheDocument();

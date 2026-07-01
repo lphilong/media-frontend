@@ -218,6 +218,12 @@ const templateVersion = '2026-05-20';
 const initialUserSeed = 900;
 const initialRoleSeed = 800;
 const initialAssignmentSeed = 300;
+const trueLegacyAssignmentTargetCodes = [
+  'ADMIN_FULL',
+  'TEAM_MANAGER',
+  'COMMERCIAL_FINANCE',
+  'TALENT_STAFF_SELF',
+] as const;
 
 const permissionRecords = (codes: readonly string[]): Array<{ code: string }> =>
   codes.map((code) => ({ code }));
@@ -1661,9 +1667,7 @@ const accessAssignmentTargets = (): AccessAssignmentTargetFixture[] => [
           ? 'ORG_UNIT_MANAGER'
           : null,
     sensitiveLevel: template.code === 'OWNER_ADMIN' ? 'HIGH_RISK' : 'STANDARD',
-    legacyAssignable: !['PRODUCTION_OPS', 'VIEWER_AUDITOR', 'HR_OPERATIONS'].includes(
-      template.code,
-    ),
+    legacyAssignable: true,
     recommendedPickerMode:
       template.code === 'TALENT_GROUP_MANAGER' || template.code === 'ORG_UNIT_MANAGER'
         ? 'RESPONSIBILITY_SCOPE_FIRST'
@@ -1690,7 +1694,7 @@ const accessAssignmentTargets = (): AccessAssignmentTargetFixture[] => [
       )
       .filter((value): value is 'TALENT_GROUP_MANAGER' | 'ORG_UNIT_MANAGER' => value !== null),
     sensitiveLevel: bundle.sensitive ? 'HIGH_RISK' : 'STANDARD',
-    legacyAssignable: bundle.code !== 'AUDITOR_BUNDLE',
+    legacyAssignable: true,
     recommendedPickerMode: bundle.childRoles.some((roleCode) =>
       ['TALENT_GROUP_MANAGER', 'ORG_UNIT_MANAGER'].includes(roleCode),
     )
@@ -1725,7 +1729,12 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
       summary: 'Reason is required.',
     });
   }
-  if (target?.legacyAssignable === false) {
+  if (
+    target?.legacyAssignable === false ||
+    trueLegacyAssignmentTargetCodes.includes(
+      targetCode as (typeof trueLegacyAssignmentTargetCodes)[number],
+    )
+  ) {
     blockers.push({
       severity: 'BLOCKER',
       code: 'LEGACY_ROLE_BLOCKED',
