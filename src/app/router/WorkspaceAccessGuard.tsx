@@ -25,10 +25,18 @@ export const WorkspaceAccessGuard = ({
     );
   }
 
-  if (capabilitiesQuery.isError || !hasWorkspace(capabilitiesQuery.data, workspace)) {
+  if (capabilitiesQuery.isError) {
     return (
       <PageContainer>
-        <PermissionDeniedState />
+        <PermissionDeniedState reason="missing-capabilities" />
+      </PageContainer>
+    );
+  }
+
+  if (!hasWorkspace(capabilitiesQuery.data, workspace)) {
+    return (
+      <PageContainer>
+        <PermissionDeniedState reason="missing-account-context" requiredAccountContext={workspace} />
       </PageContainer>
     );
   }

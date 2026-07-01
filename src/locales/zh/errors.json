@@ -17,8 +17,17 @@
     "configMissing": "Auth0 配置缺失。请设置 VITE_AUTH0_DOMAIN、VITE_AUTH0_CLIENT_ID 和 VITE_AUTH0_AUDIENCE，或仅在本地 mock auth 时设置 VITE_AUTH_MODE=mock。"
   },
   "permission": {
-    "title": "无访问权限",
-    "message": "后端拒绝了该资源"
+    "title": "当前账号缺少查看此数据的权限或范围",
+    "message": "当前账号缺少此页面所需的权限、数据范围或账号上下文。",
+    "reason": {
+      "missingPermission": "当前账号缺少此页面所需的权限。",
+      "missingScope": "当前账号可能具有功能权限，但缺少所需的数据范围。",
+      "missingAccountContext": "当前账号缺少此页面所需的工作区上下文。",
+      "missingCapabilities": "无法加载访问数据\n\n系统未能加载此页面所需的权限或访问能力数据。\n请重试。如果错误持续发生，请告知系统管理员。",
+      "unknown": "当前账号不满足此页面的访问条件。"
+    },
+    "nextActions": "你可以：\n- 在角色和权限页面检查访问设置；\n- 请 Owner Admin 授予合适的权限或范围；\n- 如果账号有多个上下文，尝试切换工作区。",
+    "requirementsTitle": "此页面需要："
   },
   "notFound": {
     "title": "页面不存在",

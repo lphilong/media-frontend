@@ -8,6 +8,7 @@ import {
   createRole,
   fetchAccessAssignmentTargets,
   fetchAccessAssignmentsForUser,
+  fetchEffectiveAccess,
   fetchRoleTemplates,
   fetchRoles,
   performRoleLifecycleAction,
@@ -93,6 +94,11 @@ const lifecycleAssignment = {
   bundleOrigin: null,
   reason: 'Initial assignment',
   sensitiveOrGlobal: false,
+  isSensitive: false,
+  isGlobalLike: false,
+  isHighRisk: false,
+  requiresReview: false,
+  isBreakGlassLike: false,
   supportedActions: ['REVOKE'],
   auditSummary: {
     assignmentId: 'assignment-1',
@@ -191,6 +197,11 @@ const roleTemplateCatalog: RoleTemplateListItem[] = [
     warnings: ['Scope plans are preview-only.'],
     implementationNotes: ['Permissions remain explicit.'],
     status: 'PREVIEW_ONLY',
+    isSensitive: false,
+    isGlobalLike: false,
+    isHighRisk: false,
+    requiresReview: false,
+    isBreakGlassLike: false,
   },
 ];
 
@@ -635,6 +646,88 @@ describe('role IA-1 query and payload shaping', () => {
     expect(applyPayload).not.toHaveProperty('permissionRules');
     expect(applyPayload).not.toHaveProperty('assignmentRules');
     expect(applyPayload).not.toHaveProperty('employmentProfileId');
+  });
+
+  it('accepts additive templateCode in Effective Access assignment traces', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        readOnly: true,
+        sourceTruth: true,
+        user: {
+          id: 'user-admin',
+          displayName: 'Admin User',
+          email: 'admin@example.test',
+          accountStatus: 'ACTIVE',
+        },
+        accountContextSignals: {
+          canonicalAccountContextImplemented: true,
+          canonicalSource: 'ACCOUNT_CONTEXT',
+          accountContexts: ['ADMIN_CONSOLE'],
+          compatibilityContexts: [],
+          grantsAuthorityByItself: false,
+        },
+        workspaceAvailability: {
+          primaryWorkspace: 'ADMIN_CONSOLE',
+          availableWorkspaces: [
+            {
+              context: 'ADMIN_CONSOLE',
+              available: true,
+              source: 'ACCOUNT_CONTEXT',
+              reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+              trace: [],
+            },
+          ],
+          ownDataAvailable: false,
+          managerResponsibilitiesAvailable: false,
+          effectiveAccessTraceAvailable: true,
+          sourceTrace: [],
+        },
+        activeRoleAssignments: [
+          {
+            assignmentId: 'assignment-owner',
+            roleId: 'role-owner',
+            roleCode: 'OWNER_ADMIN',
+            roleName: 'Owner Admin',
+            templateCode: 'OWNER_ADMIN',
+            permissions: ['role:view'],
+            legacyScopeGrants: null,
+            structuredScopeGrants: [{ scopeType: 'global', additiveTrace: 'preserved' }],
+            scopeFingerprint: 'global',
+            reason: 'Source trace coverage',
+            assignedBy: 'owner',
+            assignedAt: 1,
+            effectiveAt: 1,
+            expiresAt: null,
+            reviewAt: null,
+            origin: 'DIRECT',
+            bundleOrigin: null,
+            sensitiveOrGlobal: true,
+            isSensitive: true,
+            isGlobalLike: true,
+            isHighRisk: true,
+            requiresReview: true,
+            isBreakGlassLike: false,
+            futureAdditiveTrace: 'accepted',
+          },
+        ],
+        roles: [{ id: 'role-owner', code: 'OWNER_ADMIN', name: 'Owner Admin' }],
+        permissions: ['role:view'],
+        permissionSourceTrace: [],
+        businessResponsibilitySupport: {
+          status: 'NOT_EVALUATED',
+          claims: [],
+          note: 'No responsibility trace.',
+        },
+        generatedAt: '2026-05-20T00:00:00.000Z',
+      },
+    });
+
+    const access = await fetchEffectiveAccess('user-admin');
+
+    expect(access.activeRoleAssignments[0]).toMatchObject({
+      assignmentId: 'assignment-owner',
+      templateCode: 'OWNER_ADMIN',
+    });
   });
 
   it('submits normal Role create and update surfaces with supported payloads', async () => {

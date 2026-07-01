@@ -34,6 +34,10 @@ const statusSchema = z.enum([
   'CANCELLED',
   'ARCHIVED',
 ]);
+const eventReadStatusSchema = z.preprocess(
+  (value) => (value === 'SCHEDULED' ? 'PLANNED' : value),
+  statusSchema,
+);
 const studioBookingStatusSchema = z.enum(['HELD', 'CONFIRMED', 'RELEASED', 'CANCELLED']);
 const assignmentKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT', 'TALENT_GROUP']);
 const completionEvidenceRefTypeSchema = z.enum([
@@ -160,14 +164,14 @@ const listItemSchema = z
     id: z.string().trim().min(1),
     eventCode: z.string().trim().min(1),
     title: z.string().trim().min(1),
-    status: statusSchema,
+    status: eventReadStatusSchema,
     eventStartAt: timestampSchema,
     eventEndAt: timestampSchema,
     createdAt: timestampSchema,
   })
-  .strict();
+  .catchall(z.unknown());
 
-const relatedListItemSchema = listItemSchema.omit({ createdAt: true }).strict();
+const relatedListItemSchema = listItemSchema.omit({ createdAt: true }).catchall(z.unknown());
 
 const detailSchema = listItemSchema
   .extend({

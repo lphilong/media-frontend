@@ -883,6 +883,7 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
         <ErrorState
           title={t('event-assignment:states.loadErrorTitle')}
           message={readErrorMessage(t, detailError, 'event-assignment:states.loadErrorMessage')}
+          technicalDetails={detailError}
           actionLabel={t('common:actions.retry')}
           onRetry={() => void detailQuery.refetch()}
         />

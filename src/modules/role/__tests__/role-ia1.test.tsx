@@ -305,6 +305,7 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText('Cần rà soát')).toBeInTheDocument();
     expect(screen.getByText('Thiếu ngày rà soát')).toBeInTheDocument();
     expect(screen.getByText(/Ngày rà soát: - · Ngày hết hiệu lực: -/u)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/unrecognized_keys|templateCode/u);
   }, 15_000);
 
   it('supports user-first access assignment preview and apply without frontend-owned authority fields', async () => {

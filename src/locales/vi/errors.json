@@ -17,8 +17,17 @@
     "configMissing": "Thiếu cấu hình đăng nhập. Vui lòng liên hệ người quản trị hệ thống."
   },
   "permission": {
-    "title": "Không có quyền truy cập",
-    "message": "Hệ thống đã từ chối quyền truy cập vào dữ liệu này."
+    "title": "Bạn chưa có quyền hoặc phạm vi để xem dữ liệu này",
+    "message": "Tài khoản hiện tại chưa có đủ quyền, phạm vi dữ liệu, hoặc ngữ cảnh tài khoản cần thiết cho màn hình này.",
+    "reason": {
+      "missingPermission": "Tài khoản hiện tại chưa có quyền phù hợp để mở màn hình này.",
+      "missingScope": "Tài khoản hiện tại có thể có quyền chức năng nhưng chưa có phạm vi dữ liệu phù hợp.",
+      "missingAccountContext": "Tài khoản hiện tại chưa có ngữ cảnh làm việc phù hợp cho màn hình này.",
+      "missingCapabilities": "Không tải được dữ liệu quyền truy cập\n\nHệ thống chưa tải được dữ liệu quyền hoặc năng lực truy cập cần thiết cho màn hình này.\nVui lòng thử lại. Nếu lỗi tiếp tục xảy ra, báo người quản trị hệ thống.",
+      "unknown": "Tài khoản hiện tại chưa đáp ứng đủ điều kiện truy cập cho màn hình này."
+    },
+    "nextActions": "Bạn có thể:\n- kiểm tra lại quyền trong màn hình phân quyền;\n- yêu cầu Owner Admin cấp thêm quyền hoặc phạm vi phù hợp;\n- thử đổi ngữ cảnh làm việc nếu tài khoản có nhiều ngữ cảnh.",
+    "requirementsTitle": "Màn hình này cần:"
   },
   "notFound": {
     "title": "Không tìm thấy trang",

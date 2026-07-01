@@ -39,6 +39,7 @@ const setEventCapabilities = (
     roles: overrides.roles ?? ['TEAM_MANAGER'],
     permissions: overrides.permissions ?? ['event.read'],
     scopeGrants: overrides.scopeGrants ?? { eventAssignment: ['managedGroup'] },
+    accountContexts: ['ADMIN_CONSOLE'],
     generatedAt: '2026-05-20T00:00:00.000Z',
   });
 };
@@ -145,6 +146,42 @@ describe('event assignment wave 6 surfaces', () => {
       ),
     ).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent('Backend đã từ chối');
+  });
+
+  it('renders legacy SCHEDULED Event rows with the planned Vietnamese label', async () => {
+    setEventCapabilities({
+      roles: ['VIEWER_AUDITOR'],
+      permissions: ['event.read'],
+      scopeGrants: { eventAssignment: ['global'] },
+    });
+    server.use(
+      http.get('*/admin/events', () =>
+        HttpResponse.json({
+          data: [
+            {
+              id: 'event-scheduled-compat',
+              eventCode: 'EVT-LEGACY-SCHEDULED',
+              title: 'Legacy scheduled event',
+              status: 'SCHEDULED',
+              eventStartAt: Date.UTC(2026, 4, 20, 7),
+              eventEndAt: Date.UTC(2026, 4, 20, 8),
+              createdAt: Date.UTC(2026, 4, 1),
+            },
+          ],
+          meta: {},
+        }),
+      ),
+    );
+
+    renderRoute('/events');
+
+    const row = (await screen.findByText('EVT-LEGACY-SCHEDULED')).closest('tr');
+    expect(row).not.toBeNull();
+    if (!row) {
+      return;
+    }
+    expect(within(row).getByText(i18n.t('event-assignment:statuses.PLANNED'))).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/invalid_enum_value/u);
   });
 
   it('VIEWER_AUDITOR with global Event scope sees Event read-only', async () => {

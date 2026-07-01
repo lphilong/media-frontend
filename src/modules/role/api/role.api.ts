@@ -563,6 +563,7 @@ const effectiveAccessAssignmentSchema = z
     roleId: z.string().trim().min(1),
     roleCode: z.string().nullable(),
     roleName: z.string().nullable(),
+    templateCode: roleTemplateCodeSchema.nullable().optional(),
     permissions: z.array(z.string().trim().min(1)),
     legacyScopeGrants: roleAssignmentScopeGrantsSchema.nullable(),
     structuredScopeGrants: z.array(z.record(z.unknown())),
@@ -583,7 +584,7 @@ const effectiveAccessAssignmentSchema = z
     isBreakGlassLike: z.boolean().default(false),
     accessRisk: accessRiskSchema.nullable().optional(),
   })
-  .strict();
+  .catchall(z.unknown());
 
 const effectiveAccessSchema = z
   .object({

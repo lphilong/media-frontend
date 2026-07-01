@@ -838,6 +838,7 @@ export const EventAssignmentListPage = (): JSX.Element => {
         <ErrorState
           title={t('event-assignment:states.loadErrorTitle')}
           message={readErrorMessage(t, listError, 'event-assignment:states.loadErrorMessage')}
+          technicalDetails={listError}
           actionLabel={t('common:actions.retry')}
           onRetry={() => void listQueryResult.refetch()}
         />

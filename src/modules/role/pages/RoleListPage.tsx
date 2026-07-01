@@ -762,6 +762,7 @@ const RoleUserAccessTab = ({
         <ErrorState
           title={t('role:userAccess.loadErrorTitle')}
           message={readErrorMessage(t, error, 'role:userAccess.loadErrorMessage')}
+          technicalDetails={error}
           actionLabel={t('common:actions.retry')}
           onRetry={onRetry}
         />

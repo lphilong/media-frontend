@@ -346,6 +346,27 @@ describe('event assignment wave 6 query and payload shaping', () => {
     expect(apiRequestMock.mock.calls.at(-1)?.[0].data).not.toHaveProperty('completedByActorId');
   });
 
+  it('normalizes legacy SCHEDULED read statuses to canonical PLANNED', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      data: [
+        {
+          ...eventRecord,
+          status: 'SCHEDULED',
+        },
+      ],
+      meta: undefined,
+    });
+
+    await expect(fetchEvents({})).resolves.toMatchObject({
+      data: [
+        {
+          id: eventRecord.id,
+          status: 'PLANNED',
+        },
+      ],
+    });
+  });
+
   it('rejects over-limit completion evidence before sending lifecycle API payloads', async () => {
     apiRequestMock.mockResolvedValue({ data: eventRecord });
 

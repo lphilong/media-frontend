@@ -1544,6 +1544,7 @@ const toEffectiveAccessRecord = (user: UserRecord) => {
         roleId: assignment.roleId,
         roleCode: role?.code ?? null,
         roleName: role?.name ?? null,
+        templateCode: role?.templateCode ?? null,
         permissions: role ? role.permissions.map((permission) => permission.code) : [],
         legacyScopeGrants: assignment.scopeGrants ?? null,
         structuredScopeGrants,

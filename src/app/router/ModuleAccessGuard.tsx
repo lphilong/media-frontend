@@ -1,6 +1,10 @@
 import type { PropsWithChildren } from 'react';
 
-import { canAccessModule, type ModuleAccessModuleId } from '@app/router/module-access';
+import {
+  canAccessModule,
+  getModuleAccessReason,
+  type ModuleAccessModuleId,
+} from '@app/router/module-access';
 import { hasWorkspace, useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { LoadingState, PageContainer, PermissionDeniedState } from '@shared/components/primitives';
 
@@ -19,14 +23,31 @@ export const ModuleAccessGuard = ({ children, moduleId }: ModuleAccessGuardProps
     );
   }
 
-  if (
-    capabilitiesQuery.isError ||
-    !hasWorkspace(capabilitiesQuery.data, 'ADMIN_CONSOLE') ||
-    !canAccessModule(capabilitiesQuery.data, moduleId)
-  ) {
+  if (capabilitiesQuery.isError) {
     return (
       <PageContainer>
-        <PermissionDeniedState />
+        <PermissionDeniedState reason="missing-capabilities" />
+      </PageContainer>
+    );
+  }
+
+  if (!hasWorkspace(capabilitiesQuery.data, 'ADMIN_CONSOLE')) {
+    return (
+      <PageContainer>
+        <PermissionDeniedState
+          reason="missing-account-context"
+          requiredAccountContext="ADMIN_CONSOLE"
+        />
+      </PageContainer>
+    );
+  }
+
+  if (!canAccessModule(capabilitiesQuery.data, moduleId)) {
+    const reason = getModuleAccessReason(capabilitiesQuery.data, moduleId);
+
+    return (
+      <PageContainer>
+        <PermissionDeniedState reason={reason ?? 'unknown'} />
       </PageContainer>
     );
   }
