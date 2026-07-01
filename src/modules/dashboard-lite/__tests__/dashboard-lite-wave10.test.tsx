@@ -66,7 +66,6 @@ const dashboardSnapshot = (
       },
       overview: {
         todayEventCount,
-        draftTalentKpiCount: 4,
         draftRevenueEntryCount: 5,
         draftSettlementCount: 2,
         activeCommissionRuleCount: 7,
@@ -75,8 +74,6 @@ const dashboardSnapshot = (
       operations: {
         todayEventCount,
         next7DayEventCount: 39,
-        draftTalentKpiCount: 4,
-        finalizedTalentKpiCount30d: 24,
       },
       commercial: {
         draftRevenueEntryCount: 5,
@@ -87,7 +84,6 @@ const dashboardSnapshot = (
         activeCommissionRuleCount: 7,
       },
       attention: {
-        staleTalentKpiDraftCount: 1,
         staleRevenueDraftCount: 2,
         staleSettlementDraftCount: 1,
         expiringContractCount30d: 3,
@@ -315,7 +311,6 @@ describe('Dashboard Lite hardening', () => {
 
     const needsReview = await findDashboardSection('Needs review');
     expect(within(needsReview).getByText('Items that may require follow-up.')).toBeInTheDocument();
-    expect(within(needsReview).getByText('Stale KPI drafts')).toBeInTheDocument();
     expect(within(needsReview).getByText('Stale revenue drafts')).toBeInTheDocument();
     expect(within(needsReview).getByText('Stale settlement drafts')).toBeInTheDocument();
     expect(within(needsReview).getByText('Contracts ending soon')).toBeInTheDocument();
@@ -324,17 +319,15 @@ describe('Dashboard Lite hardening', () => {
     expect(
       within(workInProgress).getByText('Saved records that are not finalized yet.'),
     ).toBeInTheDocument();
-    expect(within(workInProgress).getByText('Draft KPI records')).toBeInTheDocument();
     expect(within(workInProgress).getByText('Draft revenue entries')).toBeInTheDocument();
     expect(within(workInProgress).getByText('Draft settlements')).toBeInTheDocument();
 
     const finalizedResults = await findDashboardSection('Finalized results');
     expect(
       within(finalizedResults).getByText(
-        'Completed or active figures in the current reporting window.',
+        'Completed records and active figures in the current reporting window.',
       ),
     ).toBeInTheDocument();
-    expect(within(finalizedResults).getByText('Finalized KPI records')).toBeInTheDocument();
     expect(within(finalizedResults).getByText('Finalized revenue')).toBeInTheDocument();
     expect(within(finalizedResults).getByText('Reconciled revenue')).toBeInTheDocument();
     expect(within(finalizedResults).getByText('Finalized settlements')).toBeInTheDocument();
@@ -345,7 +338,7 @@ describe('Dashboard Lite hardening', () => {
       within(upcomingDates).getByText('Events and contracts near the current business date.'),
     ).toBeInTheDocument();
     expect(within(upcomingDates).getByText('Events today')).toBeInTheDocument();
-    expect(within(upcomingDates).getByText('Events next 7 days')).toBeInTheDocument();
+    expect(within(upcomingDates).getByText('Events in next 7 days')).toBeInTheDocument();
   });
 
   it('renders severity badges and section navigation without hiding sections', async () => {
@@ -389,9 +382,9 @@ describe('Dashboard Lite hardening', () => {
     expect(within(finalizedResults).getByText('Active')).toBeInTheDocument();
     expect(within(upcomingDates).getAllByText('Upcoming').length).toBeGreaterThan(1);
 
-    expect(findMetricLink('Stale KPI drafts')).toHaveClass('border-rose-200');
-    expect(findMetricLink('Draft KPI records')).toHaveClass('border-amber-200');
-    expect(findMetricLink('Finalized KPI records')).toHaveClass('border-emerald-200');
+    expect(findMetricLink('Stale revenue drafts')).toHaveClass('border-rose-200');
+    expect(findMetricLink('Draft revenue entries')).toHaveClass('border-amber-200');
+    expect(findMetricLink('Finalized revenue')).toHaveClass('border-emerald-200');
     expect(findMetricLink('Events today')).toHaveClass('border-sky-200');
 
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
@@ -405,20 +398,17 @@ describe('Dashboard Lite hardening', () => {
     server.use(http.get('*/admin/dashboard-lite/snapshot', () => HttpResponse.json(response)));
 
     await renderDashboardRoute();
-    await screen.findByText('Stale KPI drafts');
+    await screen.findByText('Stale revenue drafts');
 
     const metricLabels = [
-      'Stale KPI drafts',
       'Stale revenue drafts',
       'Stale settlement drafts',
       'Contracts ending soon',
-      'Finalized KPI records',
       'Finalized revenue',
       'Reconciled revenue',
       'Finalized settlements',
       'Events today',
-      'Events next 7 days',
-      'Draft KPI records',
+      'Events in next 7 days',
       'Draft revenue entries',
       'Draft settlements',
       'Active commission rules',
@@ -440,21 +430,10 @@ describe('Dashboard Lite hardening', () => {
       eventOverlapEndAt: windows.today.endAtExclusive,
     });
 
-    expectMetricLinkQuery('Events next 7 days', APP_PATHS.events, {
+    expectMetricLinkQuery('Events in next 7 days', APP_PATHS.events, {
       statusGroup: 'ACTIVE',
       eventStartFromAt: windows.next7Days.startAtInclusive,
       eventStartToAt: windows.next7Days.endAtExclusive,
-    });
-
-    expectMetricLinkQuery('Stale KPI drafts', APP_PATHS.talentKpiRecords, {
-      status: 'DRAFT',
-      createdBeforeAt: windows.staleDrafts.olderThanAtExclusive,
-    });
-
-    expectMetricLinkQuery('Finalized KPI records', APP_PATHS.talentKpiRecords, {
-      status: 'FINALIZED',
-      publishedFromAt: windows.trailing30Days.startAtInclusive,
-      publishedToAt: windows.trailing30Days.endAtExclusive,
     });
 
     expectMetricLinkQuery('Stale revenue drafts', APP_PATHS.revenueEntries, {
@@ -486,7 +465,6 @@ describe('Dashboard Lite hardening', () => {
     });
 
     const expectedStatusLinks = [
-      ['Draft KPI records', `${APP_PATHS.talentKpiRecords}?status=DRAFT`],
       ['Draft revenue entries', `${APP_PATHS.revenueEntries}?status=DRAFT`],
       ['Draft settlements', `${APP_PATHS.commissionSettlements}?status=DRAFT`],
       ['Active commission rules', `${APP_PATHS.commissionRules}?status=ACTIVE`],
@@ -497,9 +475,6 @@ describe('Dashboard Lite hardening', () => {
       expect(link).toHaveAttribute('href', expectedPath);
     }
 
-    expect(
-      new URLSearchParams(readMetricHref('Draft KPI records').split('?')[1]).has('createdBeforeAt'),
-    ).toBe(false);
     expect(
       new URLSearchParams(readMetricHref('Draft revenue entries').split('?')[1]).has(
         'createdBeforeAt',
@@ -531,9 +506,8 @@ describe('Dashboard Lite hardening', () => {
     await screen.findByText('Contracts ending soon');
 
     expect(
-      screen.getByText('Active contracts with an end date in the dashboard expiry window.'),
+      screen.getByText('Active contracts ending within the next 30 days.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('KPI records saved but not finalized.')).toBeInTheDocument();
     expect(
       screen.getByText('Revenue finalized in the dashboard reporting window.'),
     ).toBeInTheDocument();

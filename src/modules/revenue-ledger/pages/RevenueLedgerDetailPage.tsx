@@ -5,9 +5,6 @@ import { Link, useParams } from 'react-router-dom';
 import {
   buildCommissionSettlementsByRevenueEntryHref,
   buildEntityDetailHref,
-  buildTalentKpiByEventHref,
-  buildTalentKpiByPlatformHref,
-  buildTalentKpiByTalentHref,
 } from '@app/router/reference-links';
 import { createRevenueLedgerActionRailItems } from '@modules/revenue-ledger/actions/revenue-ledger-action-rail';
 import {
@@ -272,9 +269,6 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
     record?.attributionPlatformAccountId,
   );
   const eventHref = buildEntityDetailHref('event', record?.attributionEventId);
-  const kpiByTalentHref = buildTalentKpiByTalentHref(record?.subjectTalentId);
-  const kpiByPlatformHref = buildTalentKpiByPlatformHref(record?.attributionPlatformAccountId);
-  const kpiByEventHref = buildTalentKpiByEventHref(record?.attributionEventId);
   const settlementHref = buildCommissionSettlementsByRevenueEntryHref(record?.id);
 
   return (
@@ -523,30 +517,6 @@ export const RevenueLedgerDetailPage = (): JSX.Element => {
         record ? (
           <RelatedSectionShell title={t('revenue-ledger:related.navigationTitle')}>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {kpiByTalentHref ? (
-                <Link
-                  to={kpiByTalentHref}
-                  className="rounded border border-border bg-bg px-3 py-2 text-sm text-accent hover:underline"
-                >
-                  {t('revenue-ledger:related.kpiByTalent')}
-                </Link>
-              ) : null}
-              {kpiByPlatformHref ? (
-                <Link
-                  to={kpiByPlatformHref}
-                  className="rounded border border-border bg-bg px-3 py-2 text-sm text-accent hover:underline"
-                >
-                  {t('revenue-ledger:related.kpiByPlatform')}
-                </Link>
-              ) : null}
-              {kpiByEventHref ? (
-                <Link
-                  to={kpiByEventHref}
-                  className="rounded border border-border bg-bg px-3 py-2 text-sm text-accent hover:underline"
-                >
-                  {t('revenue-ledger:related.kpiByEvent')}
-                </Link>
-              ) : null}
               {settlementHref ? (
                 <Link
                   to={settlementHref}

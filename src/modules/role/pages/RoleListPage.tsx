@@ -894,7 +894,6 @@ const capabilityGroupLabels: Record<string, string> = {
   kpi: 'KPI',
   dashboardLite: 'Bảng điều hành',
   contractRegistry: 'Hợp đồng',
-  talentKpi: 'Talent KPI',
   revenueLedger: 'Doanh thu',
   commission: 'Hoa hồng',
 };

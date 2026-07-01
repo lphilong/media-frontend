@@ -88,8 +88,6 @@ const commissionRuleStatusSchema = z.enum(['DRAFT', 'INACTIVE', 'ACTIVE', 'ARCHI
 const commissionSettlementStatusSchema = z
   .enum(['DRAFT', 'FINALIZED', 'VOIDED', 'ARCHIVED'])
   .optional();
-const talentKpiStatusSchema = z.enum(['DRAFT', 'FINALIZED', 'ARCHIVED']).optional();
-
 const contractKindSchema = z.enum(['EMPLOYMENT', 'TALENT_SERVICE', 'TALENT_MANAGEMENT']).optional();
 const linkedEntityKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT']).optional();
 const confidentialityTierSchema = z.enum(['INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']).optional();
@@ -97,18 +95,6 @@ const revenueKindSchema = z
   .enum(['PLATFORM_LIVESTREAM', 'PLATFORM_CONTENT', 'EVENT_OPERATIONAL'])
   .optional();
 const entrySourceSchema = z.literal('MANUAL').optional();
-const measurementSourceSchema = z.literal('MANUAL').optional();
-const talentKpiMetricCodeSchema = z
-  .enum([
-    'LIVESTREAM_HOURS',
-    'REVENUE_ATTRIBUTED_AMOUNT',
-    'LIVESTREAM_SESSION_COUNT',
-    'CONTENT_PUBLISH_COUNT',
-    'EVENT_APPEARANCE_COUNT',
-    'ENGAGEMENT_COUNT',
-    'FOLLOWER_DELTA',
-  ])
-  .optional();
 const settlementKindSchema = z.literal('REVENUE_SHARE').optional();
 const beneficiaryKindSchema = z.enum(['EMPLOYMENT_PROFILE', 'TALENT']).optional();
 const settlementKindSnapshotSchema = z.literal('REVENUE_SHARE').optional();
@@ -457,26 +443,6 @@ const commissionRuleSortSchema = z
 const commissionSettlementSortSchema = z
   .enum(['settlementPeriodStartAt', 'settlementCode', 'createdAt', 'finalizedAt'])
   .optional();
-const talentKpiSortSchema = z.enum(['periodStartAt', 'kpiRecordCode', 'createdAt']).optional();
-
-const talentKpiFlatListSchema = z.object({
-  status: talentKpiStatusSchema,
-  subjectTalentId: idSchema.optional(),
-  attributionPlatformAccountId: idSchema.optional(),
-  attributionEventId: idSchema.optional(),
-  measurementSource: measurementSourceSchema,
-  containsMetricCode: talentKpiMetricCodeSchema,
-  windowStartAt: integerTimestampSchema,
-  windowEndAt: integerTimestampSchema,
-  createdBeforeAt: integerTimestampSchema,
-  publishedFromAt: integerTimestampSchema,
-  publishedToAt: integerTimestampSchema,
-  search: searchSchema,
-  sortBy: talentKpiSortSchema,
-  sortDirection: sortDirectionSchema,
-  limit: limitSchema,
-  cursor: cursorSchema,
-});
 
 const revenueFlatListSchema = z.object({
   status: revenueEntryStatusSchema,
@@ -655,16 +621,6 @@ const commissionSettlementByRevenueEntrySchema = z.object({
   cursor: cursorSchema,
 });
 
-const talentKpiRelatedSchemaBase = z.object({
-  status: talentKpiStatusSchema,
-  windowStartAt: integerTimestampSchema,
-  windowEndAt: integerTimestampSchema,
-  sortBy: talentKpiSortSchema,
-  sortDirection: sortDirectionSchema,
-  limit: limitSchema,
-  cursor: cursorSchema,
-});
-
 const revenueByTalentSchema = revenueRelatedSchemaBase.extend({
   view: z.literal('by-talent').optional(),
   subjectTalentId: idSchema.optional(),
@@ -676,21 +632,6 @@ const revenueByPlatformSchema = revenueRelatedSchemaBase.extend({
 });
 
 const revenueByEventSchema = revenueRelatedSchemaBase.extend({
-  view: z.literal('by-event').optional(),
-  attributionEventId: idSchema.optional(),
-});
-
-const talentKpiByTalentSchema = talentKpiRelatedSchemaBase.extend({
-  view: z.literal('by-talent').optional(),
-  subjectTalentId: idSchema.optional(),
-});
-
-const talentKpiByPlatformSchema = talentKpiRelatedSchemaBase.extend({
-  view: z.literal('by-platform').optional(),
-  attributionPlatformAccountId: idSchema.optional(),
-});
-
-const talentKpiByEventSchema = talentKpiRelatedSchemaBase.extend({
   view: z.literal('by-event').optional(),
   attributionEventId: idSchema.optional(),
 });
@@ -785,18 +726,6 @@ const revenueByPlatformIdentityRules: readonly RelatedIdentityRule<
 
 const revenueByEventIdentityRules: readonly RelatedIdentityRule<
   z.infer<typeof revenueByEventSchema>
->[] = [{ requiredKeys: ['attributionEventId'] }];
-
-const talentKpiByTalentIdentityRules: readonly RelatedIdentityRule<
-  z.infer<typeof talentKpiByTalentSchema>
->[] = [{ requiredKeys: ['subjectTalentId'] }];
-
-const talentKpiByPlatformIdentityRules: readonly RelatedIdentityRule<
-  z.infer<typeof talentKpiByPlatformSchema>
->[] = [{ requiredKeys: ['attributionPlatformAccountId'] }];
-
-const talentKpiByEventIdentityRules: readonly RelatedIdentityRule<
-  z.infer<typeof talentKpiByEventSchema>
 >[] = [{ requiredKeys: ['attributionEventId'] }];
 
 export const revenueLedgerFlatListQueryConfig = defineScreenQueryConfig({
@@ -1484,183 +1413,6 @@ export const commissionSettlementsByRevenueEntryQueryConfig = defineScreenQueryC
   },
 });
 
-export const talentKpiFlatListQueryConfig = defineScreenQueryConfig({
-  id: 'talent-kpi.flat-list',
-  schema: talentKpiFlatListSchema,
-  cursorKey: 'cursor',
-  normalize: (query) => {
-    return dropSortDirectionWithoutSortBy(
-      sanitizeWindowRange(
-        sanitizeWindowRange({ ...query }, 'publishedFromAt', 'publishedToAt'),
-        'windowStartAt',
-        'windowEndAt',
-      ),
-    );
-  },
-  capabilities: {
-    surface: 'flat-list',
-    search: {
-      supported: true,
-      key: 'search',
-    },
-    cursor: {
-      supported: true,
-      key: 'cursor',
-    },
-    sort: {
-      supported: true,
-      sortByKey: 'sortBy',
-      sortDirectionKey: 'sortDirection',
-      allowedSortFields: ['periodStartAt', 'kpiRecordCode', 'createdAt'],
-      allowedSortDirections: ['asc', 'desc'],
-    },
-    allowedFilterKeys: [
-      'status',
-      'subjectTalentId',
-      'attributionPlatformAccountId',
-      'attributionEventId',
-      'measurementSource',
-      'containsMetricCode',
-      'windowStartAt',
-      'windowEndAt',
-      'createdBeforeAt',
-      'publishedFromAt',
-      'publishedToAt',
-    ],
-    archivedByDefault: {
-      hiddenByDefault: true,
-      statusKey: 'status',
-      archivedValue: 'ARCHIVED',
-    },
-  },
-});
-
-export const talentKpiByTalentQueryConfig = defineScreenQueryConfig({
-  id: 'talent-kpi.by-talent',
-  schema: talentKpiByTalentSchema,
-  cursorKey: 'cursor',
-  normalize: (query) => {
-    return enforceRelatedIdentityContract(
-      dropSortDirectionWithoutSortBy(
-        sanitizeWindowRange({ ...query }, 'windowStartAt', 'windowEndAt'),
-      ),
-      'by-talent',
-      talentKpiByTalentIdentityRules,
-    );
-  },
-  capabilities: {
-    surface: 'related-list',
-    related: {
-      view: 'by-talent',
-      identityRules: talentKpiByTalentIdentityRules,
-    },
-    search: {
-      supported: false,
-    },
-    cursor: {
-      supported: true,
-      key: 'cursor',
-    },
-    sort: {
-      supported: true,
-      sortByKey: 'sortBy',
-      sortDirectionKey: 'sortDirection',
-      allowedSortFields: ['periodStartAt', 'kpiRecordCode', 'createdAt'],
-      allowedSortDirections: ['asc', 'desc'],
-    },
-    allowedFilterKeys: ['subjectTalentId', 'status', 'windowStartAt', 'windowEndAt'],
-    archivedByDefault: {
-      hiddenByDefault: true,
-      statusKey: 'status',
-      archivedValue: 'ARCHIVED',
-    },
-  },
-});
-
-export const talentKpiByPlatformQueryConfig = defineScreenQueryConfig({
-  id: 'talent-kpi.by-platform',
-  schema: talentKpiByPlatformSchema,
-  cursorKey: 'cursor',
-  normalize: (query) => {
-    return enforceRelatedIdentityContract(
-      dropSortDirectionWithoutSortBy(
-        sanitizeWindowRange({ ...query }, 'windowStartAt', 'windowEndAt'),
-      ),
-      'by-platform',
-      talentKpiByPlatformIdentityRules,
-    );
-  },
-  capabilities: {
-    surface: 'related-list',
-    related: {
-      view: 'by-platform',
-      identityRules: talentKpiByPlatformIdentityRules,
-    },
-    search: {
-      supported: false,
-    },
-    cursor: {
-      supported: true,
-      key: 'cursor',
-    },
-    sort: {
-      supported: true,
-      sortByKey: 'sortBy',
-      sortDirectionKey: 'sortDirection',
-      allowedSortFields: ['periodStartAt', 'kpiRecordCode', 'createdAt'],
-      allowedSortDirections: ['asc', 'desc'],
-    },
-    allowedFilterKeys: ['attributionPlatformAccountId', 'status', 'windowStartAt', 'windowEndAt'],
-    archivedByDefault: {
-      hiddenByDefault: true,
-      statusKey: 'status',
-      archivedValue: 'ARCHIVED',
-    },
-  },
-});
-
-export const talentKpiByEventQueryConfig = defineScreenQueryConfig({
-  id: 'talent-kpi.by-event',
-  schema: talentKpiByEventSchema,
-  cursorKey: 'cursor',
-  normalize: (query) => {
-    return enforceRelatedIdentityContract(
-      dropSortDirectionWithoutSortBy(
-        sanitizeWindowRange({ ...query }, 'windowStartAt', 'windowEndAt'),
-      ),
-      'by-event',
-      talentKpiByEventIdentityRules,
-    );
-  },
-  capabilities: {
-    surface: 'related-list',
-    related: {
-      view: 'by-event',
-      identityRules: talentKpiByEventIdentityRules,
-    },
-    search: {
-      supported: false,
-    },
-    cursor: {
-      supported: true,
-      key: 'cursor',
-    },
-    sort: {
-      supported: true,
-      sortByKey: 'sortBy',
-      sortDirectionKey: 'sortDirection',
-      allowedSortFields: ['periodStartAt', 'kpiRecordCode', 'createdAt'],
-      allowedSortDirections: ['asc', 'desc'],
-    },
-    allowedFilterKeys: ['attributionEventId', 'status', 'windowStartAt', 'windowEndAt'],
-    archivedByDefault: {
-      hiddenByDefault: true,
-      statusKey: 'status',
-      archivedValue: 'ARCHIVED',
-    },
-  },
-});
-
 export const commercialScreenQueryConfigs = {
   revenueLedger: {
     flatList: revenueLedgerFlatListQueryConfig,
@@ -1683,11 +1435,5 @@ export const commercialScreenQueryConfigs = {
     byBeneficiary: commissionSettlementsByBeneficiaryQueryConfig,
     bySubjectTalent: commissionSettlementsBySubjectTalentQueryConfig,
     byRevenueEntry: commissionSettlementsByRevenueEntryQueryConfig,
-  },
-  talentKpi: {
-    flatList: talentKpiFlatListQueryConfig,
-    byTalent: talentKpiByTalentQueryConfig,
-    byPlatform: talentKpiByPlatformQueryConfig,
-    byEvent: talentKpiByEventQueryConfig,
   },
 } as const;

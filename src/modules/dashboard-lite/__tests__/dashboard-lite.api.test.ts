@@ -29,7 +29,6 @@ const snapshot = {
   },
   overview: {
     todayEventCount: 12,
-    draftTalentKpiCount: 4,
     draftRevenueEntryCount: 5,
     draftSettlementCount: 2,
     activeCommissionRuleCount: 7,
@@ -38,8 +37,6 @@ const snapshot = {
   operations: {
     todayEventCount: 12,
     next7DayEventCount: 39,
-    draftTalentKpiCount: 4,
-    finalizedTalentKpiCount30d: 24,
   },
   commercial: {
     draftRevenueEntryCount: 5,
@@ -50,7 +47,6 @@ const snapshot = {
     activeCommissionRuleCount: 7,
   },
   attention: {
-    staleTalentKpiDraftCount: 1,
     staleRevenueDraftCount: 2,
     staleSettlementDraftCount: 1,
     expiringContractCount30d: 3,

@@ -29,9 +29,6 @@ import {
   buildRevenueLedgerByEventHref,
   buildRevenueLedgerByPlatformHref,
   buildRevenueLedgerByTalentHref,
-  buildTalentKpiByPlatformHref,
-  buildTalentKpiByTalentHref,
-  buildTalentKpiByEventHref,
 } from '@app/router/reference-links';
 
 const splitHref = (href: string): { path: string; params: URLSearchParams } => {
@@ -289,30 +286,6 @@ describe('reference link builders', () => {
       {
         href: buildRevenueLedgerByEventHref('event-01'),
         path: '/revenue-entries',
-        params: {
-          view: 'by-event',
-          attributionEventId: 'event-01',
-        },
-      },
-      {
-        href: buildTalentKpiByTalentHref('talent-01'),
-        path: '/talent-kpi-records',
-        params: {
-          view: 'by-talent',
-          subjectTalentId: 'talent-01',
-        },
-      },
-      {
-        href: buildTalentKpiByPlatformHref('platform-01'),
-        path: '/talent-kpi-records',
-        params: {
-          view: 'by-platform',
-          attributionPlatformAccountId: 'platform-01',
-        },
-      },
-      {
-        href: buildTalentKpiByEventHref('event-01'),
-        path: '/talent-kpi-records',
         params: {
           view: 'by-event',
           attributionEventId: 'event-01',
@@ -649,39 +622,6 @@ describe('reference link builders', () => {
           attributionEventId: 'event-01',
         },
       },
-      {
-        request: {
-          kind: 'talentKpi.byTalent',
-          subjectTalentId: 'talent-01',
-        },
-        path: '/talent-kpi-records',
-        params: {
-          view: 'by-talent',
-          subjectTalentId: 'talent-01',
-        },
-      },
-      {
-        request: {
-          kind: 'talentKpi.byPlatform',
-          attributionPlatformAccountId: 'platform-01',
-        },
-        path: '/talent-kpi-records',
-        params: {
-          view: 'by-platform',
-          attributionPlatformAccountId: 'platform-01',
-        },
-      },
-      {
-        request: {
-          kind: 'talentKpi.byEvent',
-          attributionEventId: 'event-01',
-        },
-        path: '/talent-kpi-records',
-        params: {
-          view: 'by-event',
-          attributionEventId: 'event-01',
-        },
-      },
     ];
 
     cases.forEach((testCase) => {
@@ -719,9 +659,6 @@ describe('reference link builders', () => {
     expect(buildRevenueLedgerByTalentHref(null)).toBeUndefined();
     expect(buildRevenueLedgerByPlatformHref('')).toBeUndefined();
     expect(buildRevenueLedgerByEventHref('')).toBeUndefined();
-    expect(buildTalentKpiByTalentHref('')).toBeUndefined();
-    expect(buildTalentKpiByPlatformHref('')).toBeUndefined();
-    expect(buildTalentKpiByEventHref('')).toBeUndefined();
   });
 
   it('returns no href for every kind when required related identity is missing', () => {
@@ -754,9 +691,6 @@ describe('reference link builders', () => {
       'revenueLedger.byTalent',
       'revenueLedger.byPlatform',
       'revenueLedger.byEvent',
-      'talentKpi.byTalent',
-      'talentKpi.byPlatform',
-      'talentKpi.byEvent',
     ];
 
     missingIdentityKinds.forEach((kind) => {

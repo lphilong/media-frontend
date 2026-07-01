@@ -9,17 +9,8 @@ import type {
   PlatformEarningLine,
 } from '@modules/revenue-ledger/types/revenue-ledger.types';
 
-type TalentKpiStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
 type RevenueEntryStatus = 'DRAFT' | 'FINALIZED' | 'RECONCILED' | 'VOIDED' | 'ARCHIVED';
 type RevenueKind = 'PLATFORM_LIVESTREAM' | 'PLATFORM_CONTENT' | 'EVENT_OPERATIONAL';
-type MetricCode =
-  | 'LIVESTREAM_HOURS'
-  | 'REVENUE_ATTRIBUTED_AMOUNT'
-  | 'LIVESTREAM_SESSION_COUNT'
-  | 'CONTENT_PUBLISH_COUNT'
-  | 'EVENT_APPEARANCE_COUNT'
-  | 'ENGAGEMENT_COUNT'
-  | 'FOLLOWER_DELTA';
 
 type ReferenceSummary = {
   id: string;
@@ -30,35 +21,6 @@ type ReferenceSummary = {
   handle?: string;
   platform?: string;
   status?: string;
-};
-
-type TalentKpiMetricRecord = {
-  id: string;
-  metricCode: MetricCode;
-  numericValue: number;
-  createdAt: number;
-  updatedAt: number;
-};
-
-type TalentKpiRecord = {
-  id: string;
-  kpiRecordCode: string;
-  title: string;
-  subjectTalentId: string;
-  attributionPlatformAccountId?: string | null;
-  attributionEventId?: string | null;
-  subjectTalentRef?: ReferenceSummary | null;
-  attributionPlatformAccountRef?: ReferenceSummary | null;
-  attributionEventRef?: ReferenceSummary | null;
-  measurementSource: 'MANUAL';
-  status: TalentKpiStatus;
-  periodStartAt: number;
-  periodEndAt: number;
-  publishedAt?: number | null;
-  description?: string | null;
-  externalRef?: string | null;
-  createdAt: number;
-  updatedAt: number;
 };
 
 type RevenueEntryRecord = {
@@ -88,16 +50,6 @@ type RevenueEntryRecord = {
 };
 
 const now = Date.parse('2026-04-22T00:00:00.000Z');
-const metricCodes: MetricCode[] = [
-  'LIVESTREAM_HOURS',
-  'REVENUE_ATTRIBUTED_AMOUNT',
-  'LIVESTREAM_SESSION_COUNT',
-  'CONTENT_PUBLISH_COUNT',
-  'EVENT_APPEARANCE_COUNT',
-  'ENGAGEMENT_COUNT',
-  'FOLLOWER_DELTA',
-];
-
 const talentRefs = new Map<string, ReferenceSummary>([
   ['talent-001', { id: 'talent-001', code: 'TAL-001', name: 'Luna Park', status: 'ACTIVE' }],
   ['talent-002', { id: 'talent-002', code: 'TAL-002', name: 'Minh Tran', status: 'ACTIVE' }],
@@ -128,90 +80,6 @@ const eventRefs = new Map<string, ReferenceSummary>([
     },
   ],
 ]);
-
-const initialTalentKpiRecords: TalentKpiRecord[] = [
-  {
-    id: 'talent-kpi-record-001',
-    kpiRecordCode: 'KPI-202604-000001',
-    title: 'April livestream performance',
-    subjectTalentId: 'talent-001',
-    attributionPlatformAccountId: 'platform-001',
-    attributionEventId: 'event-001',
-    measurementSource: 'MANUAL',
-    status: 'DRAFT',
-    periodStartAt: now - 86_400_000,
-    periodEndAt: now,
-    publishedAt: null,
-    description: 'Draft KPI record',
-    externalRef: 'KPI-EXT-1',
-    createdAt: now - 10_000,
-    updatedAt: now - 9_000,
-  },
-  {
-    id: 'talent-kpi-record-finalized',
-    kpiRecordCode: 'KPI-202604-000002',
-    title: 'Finalized KPI record',
-    subjectTalentId: 'talent-002',
-    attributionPlatformAccountId: null,
-    attributionEventId: 'event-001',
-    measurementSource: 'MANUAL',
-    status: 'FINALIZED',
-    periodStartAt: now - 172_800_000,
-    periodEndAt: now - 86_400_000,
-    publishedAt: now - 80_000_000,
-    description: null,
-    externalRef: null,
-    createdAt: now - 8_000,
-    updatedAt: now - 7_000,
-  },
-  {
-    id: 'talent-kpi-record-archived',
-    kpiRecordCode: 'KPI-202604-999999',
-    title: 'Archived KPI record',
-    subjectTalentId: 'talent-001',
-    attributionPlatformAccountId: 'platform-001',
-    attributionEventId: null,
-    measurementSource: 'MANUAL',
-    status: 'ARCHIVED',
-    periodStartAt: now - 259_200_000,
-    periodEndAt: now - 172_800_000,
-    publishedAt: null,
-    description: null,
-    externalRef: null,
-    createdAt: now - 6_000,
-    updatedAt: now - 5_000,
-  },
-];
-
-const initialTalentKpiMetrics: Record<string, TalentKpiMetricRecord[]> = {
-  'talent-kpi-record-001': [
-    {
-      id: 'metric-001',
-      metricCode: 'ENGAGEMENT_COUNT',
-      numericValue: 120,
-      createdAt: now - 10_000,
-      updatedAt: now - 9_000,
-    },
-  ],
-  'talent-kpi-record-finalized': [
-    {
-      id: 'metric-002',
-      metricCode: 'LIVESTREAM_HOURS',
-      numericValue: 12.5,
-      createdAt: now - 8_000,
-      updatedAt: now - 7_000,
-    },
-  ],
-  'talent-kpi-record-archived': [
-    {
-      id: 'metric-999',
-      metricCode: 'FOLLOWER_DELTA',
-      numericValue: -5,
-      createdAt: now - 6_000,
-      updatedAt: now - 5_000,
-    },
-  ],
-};
 
 const initialRevenueEntries: RevenueEntryRecord[] = [
   {
@@ -568,25 +436,11 @@ const initialPlatformEarningLines: Record<string, PlatformEarningLine[]> = {
   ],
 };
 
-let talentKpiSeed = 100;
 let revenueSeed = 100;
 let platformEarningRevenueSeed = 100;
-let talentKpiRecords: TalentKpiRecord[] = [];
-let talentKpiMetrics: Record<string, TalentKpiMetricRecord[]> = {};
 let revenueEntries: RevenueEntryRecord[] = [];
 let platformEarningBatches: PlatformEarningBatch[] = [];
 let platformEarningLines: Record<string, PlatformEarningLine[]> = {};
-
-const cloneTalentKpis = (): TalentKpiRecord[] =>
-  initialTalentKpiRecords.map((record) => ({ ...record }));
-
-const cloneTalentKpiMetrics = (): Record<string, TalentKpiMetricRecord[]> =>
-  Object.fromEntries(
-    Object.entries(initialTalentKpiMetrics).map(([id, metrics]) => [
-      id,
-      metrics.map((metric) => ({ ...metric })),
-    ]),
-  );
 
 const cloneRevenueEntries = (): RevenueEntryRecord[] =>
   initialRevenueEntries.map((record) => ({ ...record }));
@@ -603,11 +457,8 @@ const clonePlatformEarningLines = (): Record<string, PlatformEarningLine[]> =>
   );
 
 export const resetWave8MockData = (): void => {
-  talentKpiSeed = 100;
   revenueSeed = 100;
   platformEarningRevenueSeed = 100;
-  talentKpiRecords = cloneTalentKpis();
-  talentKpiMetrics = cloneTalentKpiMetrics();
   revenueEntries = cloneRevenueEntries();
   platformEarningBatches = clonePlatformEarningBatches();
   platformEarningLines = clonePlatformEarningLines();
@@ -688,6 +539,9 @@ const rejectUnsupportedBody = (
   return undefined;
 };
 
+const retiredTalentKpiResponse = (): Response =>
+  HttpResponse.json({ message: 'Talent KPI has been retired' }, { status: 410 });
+
 const matchesText = (value: string, search: string): boolean => {
   const normalizedValue = value.trim().toLowerCase();
   const normalizedSearch = search.trim().toLowerCase();
@@ -702,98 +556,6 @@ const readNumberParam = (searchParams: URLSearchParams, key: string): number | u
 
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) ? parsed : undefined;
-};
-
-const metricValueValid = (metricCode: MetricCode, value: unknown): boolean => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return false;
-  }
-
-  if (metricCode === 'LIVESTREAM_HOURS' || metricCode === 'REVENUE_ATTRIBUTED_AMOUNT') {
-    return value >= 0 && /^\d+(\.\d{1,2})?$/.test(String(value));
-  }
-
-  if (
-    metricCode === 'LIVESTREAM_SESSION_COUNT' ||
-    metricCode === 'CONTENT_PUBLISH_COUNT' ||
-    metricCode === 'EVENT_APPEARANCE_COUNT' ||
-    metricCode === 'ENGAGEMENT_COUNT'
-  ) {
-    return Number.isInteger(value) && value >= 0;
-  }
-
-  return Number.isInteger(value);
-};
-
-const validMetricsPayload = (body: Record<string, unknown>): boolean => {
-  if (!Array.isArray(body.metrics) || body.metrics.length === 0) {
-    return false;
-  }
-
-  const seen = new Set<string>();
-  return body.metrics.every((item) => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) {
-      return false;
-    }
-    const metric = item as Record<string, unknown>;
-    const metricCode = metric.metricCode as MetricCode;
-    if (!metricCodes.includes(metricCode) || seen.has(metricCode)) {
-      return false;
-    }
-    seen.add(metricCode);
-    return metricValueValid(metricCode, metric.numericValue);
-  });
-};
-
-const filterTalentKpis = (records: TalentKpiRecord[], searchParams: URLSearchParams) => {
-  let rows = [...records];
-  const status = searchParams.get('status');
-  const search = searchParams.get('search');
-  const windowStartAt = readNumberParam(searchParams, 'windowStartAt');
-  const windowEndAt = readNumberParam(searchParams, 'windowEndAt');
-  const createdBeforeAt = readNumberParam(searchParams, 'createdBeforeAt');
-  const publishedFromAt = readNumberParam(searchParams, 'publishedFromAt');
-  const publishedToAt = readNumberParam(searchParams, 'publishedToAt');
-  const containsMetricCode = searchParams.get('containsMetricCode');
-
-  rows = status
-    ? rows.filter((item) => item.status === status)
-    : rows.filter((item) => item.status !== 'ARCHIVED');
-  if (search)
-    rows = rows.filter(
-      (item) => matchesText(item.kpiRecordCode, search) || matchesText(item.title, search),
-    );
-  if (searchParams.get('subjectTalentId'))
-    rows = rows.filter((item) => item.subjectTalentId === searchParams.get('subjectTalentId'));
-  if (searchParams.get('attributionPlatformAccountId'))
-    rows = rows.filter(
-      (item) =>
-        item.attributionPlatformAccountId === searchParams.get('attributionPlatformAccountId'),
-    );
-  if (searchParams.get('attributionEventId'))
-    rows = rows.filter(
-      (item) => item.attributionEventId === searchParams.get('attributionEventId'),
-    );
-  if (searchParams.get('measurementSource'))
-    rows = rows.filter((item) => item.measurementSource === searchParams.get('measurementSource'));
-  if (windowStartAt !== undefined) rows = rows.filter((item) => item.periodEndAt > windowStartAt);
-  if (windowEndAt !== undefined) rows = rows.filter((item) => item.periodStartAt < windowEndAt);
-  if (createdBeforeAt !== undefined) rows = rows.filter((item) => item.createdAt < createdBeforeAt);
-  if (publishedFromAt !== undefined) {
-    rows = rows.filter((item) => item.publishedAt != null && item.publishedAt >= publishedFromAt);
-  }
-  if (publishedToAt !== undefined) {
-    rows = rows.filter((item) => item.publishedAt != null && item.publishedAt < publishedToAt);
-  }
-  if (containsMetricCode) {
-    rows = rows.filter((item) =>
-      (talentKpiMetrics[item.id] ?? []).some((metric) => metric.metricCode === containsMetricCode),
-    );
-  }
-
-  return rows.sort(
-    (left, right) => left.periodStartAt - right.periodStartAt || left.id.localeCompare(right.id),
-  );
 };
 
 const hasUnsafeRevenueNarrowSort = (searchParams: URLSearchParams): boolean => {
@@ -880,9 +642,6 @@ const filterRevenueEntries = (records: RevenueEntryRecord[], searchParams: URLSe
   );
 };
 
-const readTalentKpi = (id: string): TalentKpiRecord | undefined =>
-  talentKpiRecords.find((item) => item.id === id);
-
 const readRevenueEntry = (id: string): RevenueEntryRecord | undefined =>
   revenueEntries.find((item) => item.id === id);
 
@@ -921,73 +680,6 @@ const updatePlatformBatchLineStatuses = (batch: PlatformEarningBatch): void => {
     updatedAt: batch.updatedAt,
   }));
 };
-
-const toTalentKpiListItem = (record: TalentKpiRecord) => ({
-  id: record.id,
-  kpiRecordCode: record.kpiRecordCode,
-  title: record.title,
-  subjectTalentId: record.subjectTalentId,
-  attributionPlatformAccountId: record.attributionPlatformAccountId ?? null,
-  attributionEventId: record.attributionEventId ?? null,
-  subjectTalentRef: talentRefs.get(record.subjectTalentId) ?? null,
-  attributionPlatformAccountRef: record.attributionPlatformAccountId
-    ? (platformRefSummaries.get(record.attributionPlatformAccountId) ?? null)
-    : null,
-  attributionEventRef: record.attributionEventId
-    ? (eventRefs.get(record.attributionEventId) ?? null)
-    : null,
-  measurementSource: record.measurementSource,
-  status: record.status,
-  periodStartAt: record.periodStartAt,
-  periodEndAt: record.periodEndAt,
-  publishedAt: record.publishedAt ?? null,
-  createdAt: record.createdAt,
-});
-
-const toTalentKpiByTalentItem = (record: TalentKpiRecord) => ({
-  id: record.id,
-  kpiRecordCode: record.kpiRecordCode,
-  title: record.title,
-  subjectTalentId: record.subjectTalentId,
-  status: record.status,
-  measurementSource: record.measurementSource,
-  periodStartAt: record.periodStartAt,
-  periodEndAt: record.periodEndAt,
-  publishedAt: record.publishedAt ?? null,
-});
-
-const toTalentKpiByPlatformItem = (record: TalentKpiRecord) => ({
-  id: record.id,
-  kpiRecordCode: record.kpiRecordCode,
-  title: record.title,
-  subjectTalentId: record.subjectTalentId,
-  attributionPlatformAccountId: record.attributionPlatformAccountId,
-  status: record.status,
-  periodStartAt: record.periodStartAt,
-  periodEndAt: record.periodEndAt,
-});
-
-const toTalentKpiByEventItem = (record: TalentKpiRecord) => ({
-  id: record.id,
-  kpiRecordCode: record.kpiRecordCode,
-  title: record.title,
-  subjectTalentId: record.subjectTalentId,
-  attributionEventId: record.attributionEventId,
-  status: record.status,
-  periodStartAt: record.periodStartAt,
-  periodEndAt: record.periodEndAt,
-});
-
-const toTalentKpiDetail = (record: TalentKpiRecord): TalentKpiRecord => ({
-  ...record,
-  subjectTalentRef: talentRefs.get(record.subjectTalentId) ?? null,
-  attributionPlatformAccountRef: record.attributionPlatformAccountId
-    ? (platformRefSummaries.get(record.attributionPlatformAccountId) ?? null)
-    : null,
-  attributionEventRef: record.attributionEventId
-    ? (eventRefs.get(record.attributionEventId) ?? null)
-    : null,
-});
 
 const toRevenueEntryListItem = (record: RevenueEntryRecord) => ({
   id: record.id,
@@ -1061,66 +753,6 @@ const toRevenueEntryDetail = (record: RevenueEntryRecord): RevenueEntryRecord =>
     : null,
 });
 
-const toMetricRecords = (
-  talentKpiRecordId: string,
-  metrics: Array<Record<string, unknown>>,
-): TalentKpiMetricRecord[] =>
-  metrics.map((metric, index) => ({
-    id: `${talentKpiRecordId}-metric-${index + 1}`,
-    metricCode: metric.metricCode as MetricCode,
-    numericValue: Number(metric.numericValue),
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  }));
-
-const talentKpiFlatKeys = [
-  'status',
-  'subjectTalentId',
-  'attributionPlatformAccountId',
-  'attributionEventId',
-  'measurementSource',
-  'containsMetricCode',
-  'windowStartAt',
-  'windowEndAt',
-  'createdBeforeAt',
-  'publishedFromAt',
-  'publishedToAt',
-  'limit',
-  'cursor',
-  'search',
-  'sortBy',
-  'sortDirection',
-] as const;
-const talentKpiByTalentKeys = [
-  'subjectTalentId',
-  'status',
-  'windowStartAt',
-  'windowEndAt',
-  'limit',
-  'cursor',
-  'sortBy',
-  'sortDirection',
-] as const;
-const talentKpiByPlatformKeys = [
-  'attributionPlatformAccountId',
-  'status',
-  'windowStartAt',
-  'windowEndAt',
-  'limit',
-  'cursor',
-  'sortBy',
-  'sortDirection',
-] as const;
-const talentKpiByEventKeys = [
-  'attributionEventId',
-  'status',
-  'windowStartAt',
-  'windowEndAt',
-  'limit',
-  'cursor',
-  'sortBy',
-  'sortDirection',
-] as const;
 const revenueFlatKeys = [
   'status',
   'subjectTalentId',
@@ -1142,9 +774,36 @@ const revenueFlatKeys = [
   'sortBy',
   'sortDirection',
 ] as const;
-const revenueByTalentKeys = talentKpiByTalentKeys;
-const revenueByPlatformKeys = talentKpiByPlatformKeys;
-const revenueByEventKeys = talentKpiByEventKeys;
+const revenueByTalentKeys = [
+  'view',
+  'subjectTalentId',
+  'status',
+  'search',
+  'limit',
+  'cursor',
+  'sortBy',
+  'sortDir',
+];
+const revenueByPlatformKeys = [
+  'view',
+  'attributionPlatformAccountId',
+  'status',
+  'search',
+  'limit',
+  'cursor',
+  'sortBy',
+  'sortDir',
+];
+const revenueByEventKeys = [
+  'view',
+  'attributionEventId',
+  'status',
+  'search',
+  'limit',
+  'cursor',
+  'sortBy',
+  'sortDir',
+];
 const platformEarningBatchKeys = [
   'status',
   'platform',
@@ -1169,192 +828,8 @@ const platformEarningLineKeys = [
 ] as const;
 
 export const wave8Handlers = [
-  http.get('*/admin/talent-kpi-records', ({ request }) => {
-    const url = new URL(request.url);
-    const unsupported = rejectUnsupportedQuery(url.searchParams, talentKpiFlatKeys);
-    if (unsupported) return unsupported;
-    return HttpResponse.json(
-      paginate(
-        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiListItem),
-        url.searchParams,
-      ),
-    );
-  }),
-  http.get('*/admin/talent-kpi-records/by-talent', ({ request }) => {
-    const url = new URL(request.url);
-    const unsupported = rejectUnsupportedQuery(url.searchParams, talentKpiByTalentKeys);
-    if (unsupported) return unsupported;
-    if (!url.searchParams.get('subjectTalentId'))
-      return HttpResponse.json({ message: 'Missing subjectTalentId' }, { status: 422 });
-    return HttpResponse.json(
-      paginate(
-        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiByTalentItem),
-        url.searchParams,
-      ),
-    );
-  }),
-  http.get('*/admin/talent-kpi-records/by-platform', ({ request }) => {
-    const url = new URL(request.url);
-    const unsupported = rejectUnsupportedQuery(url.searchParams, talentKpiByPlatformKeys);
-    if (unsupported) return unsupported;
-    if (!url.searchParams.get('attributionPlatformAccountId'))
-      return HttpResponse.json(
-        { message: 'Missing attributionPlatformAccountId' },
-        { status: 422 },
-      );
-    return HttpResponse.json(
-      paginate(
-        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiByPlatformItem),
-        url.searchParams,
-      ),
-    );
-  }),
-  http.get('*/admin/talent-kpi-records/by-event', ({ request }) => {
-    const url = new URL(request.url);
-    const unsupported = rejectUnsupportedQuery(url.searchParams, talentKpiByEventKeys);
-    if (unsupported) return unsupported;
-    if (!url.searchParams.get('attributionEventId'))
-      return HttpResponse.json({ message: 'Missing attributionEventId' }, { status: 422 });
-    return HttpResponse.json(
-      paginate(
-        filterTalentKpis(talentKpiRecords, url.searchParams).map(toTalentKpiByEventItem),
-        url.searchParams,
-      ),
-    );
-  }),
-  http.post('*/admin/talent-kpi-records', async ({ request }) => {
-    const body = await parseJsonBody(request);
-    const unsupported = rejectUnsupportedBody(body, [
-      'kpiRecordCode',
-      'title',
-      'subjectTalentId',
-      'attributionPlatformAccountId',
-      'attributionEventId',
-      'measurementSource',
-      'periodStartAt',
-      'periodEndAt',
-      'metrics',
-      'description',
-      'externalRef',
-    ]);
-    if (unsupported) return unsupported;
-    if (!validMetricsPayload(body))
-      return HttpResponse.json({ message: 'Invalid metrics' }, { status: 422 });
-    talentKpiSeed += 1;
-    const id = `talent-kpi-record-${talentKpiSeed}`;
-    const record: TalentKpiRecord = {
-      id,
-      kpiRecordCode: providedOrGeneratedFixtureCode(
-        body.kpiRecordCode,
-        generatedFixtureMonthCode('KPI', body.periodStartAt, talentKpiSeed),
-      ),
-      title: String(body.title),
-      subjectTalentId: String(body.subjectTalentId),
-      attributionPlatformAccountId:
-        (body.attributionPlatformAccountId as string | null | undefined) ?? null,
-      attributionEventId: (body.attributionEventId as string | null | undefined) ?? null,
-      measurementSource: 'MANUAL',
-      status: 'DRAFT',
-      periodStartAt: Number(body.periodStartAt),
-      periodEndAt: Number(body.periodEndAt),
-      publishedAt: null,
-      description: (body.description as string | null | undefined) ?? null,
-      externalRef: (body.externalRef as string | null | undefined) ?? null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    talentKpiRecords.push(record);
-    talentKpiMetrics[id] = toMetricRecords(id, body.metrics as Array<Record<string, unknown>>);
-    return HttpResponse.json({ data: toTalentKpiDetail(record) });
-  }),
-  http.get('*/admin/talent-kpi-records/:talentKpiRecordId/metrics', ({ params }) => {
-    const record = readTalentKpi(String(params.talentKpiRecordId));
-    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    return HttpResponse.json({ data: talentKpiMetrics[record.id] ?? [] });
-  }),
-  http.get('*/admin/talent-kpi-records/:talentKpiRecordId', ({ params }) => {
-    const record = readTalentKpi(String(params.talentKpiRecordId));
-    if (!record) return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-    return HttpResponse.json({ data: toTalentKpiDetail(record) });
-  }),
-  http.patch(
-    '*/admin/talent-kpi-records/:talentKpiRecordId/draft-core',
-    async ({ params, request }) => {
-      const record = readTalentKpi(String(params.talentKpiRecordId));
-      if (!record)
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      if (record.status !== 'DRAFT')
-        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
-      const body = await parseJsonBody(request);
-      const unsupported = rejectUnsupportedBody(body, [
-        'title',
-        'subjectTalentId',
-        'attributionPlatformAccountId',
-        'attributionEventId',
-        'periodStartAt',
-        'periodEndAt',
-        'description',
-        'externalRef',
-      ]);
-      if (unsupported) return unsupported;
-      Object.assign(record, body, { updatedAt: Date.now() });
-      return HttpResponse.json({ data: toTalentKpiDetail(record) });
-    },
-  ),
-  http.post(
-    '*/admin/talent-kpi-records/:talentKpiRecordId/metrics',
-    async ({ params, request }) => {
-      const record = readTalentKpi(String(params.talentKpiRecordId));
-      if (!record)
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      if (record.status !== 'DRAFT')
-        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
-      const body = await parseJsonBody(request);
-      const unsupported = rejectUnsupportedBody(body, ['metrics']);
-      if (unsupported) return unsupported;
-      if (!validMetricsPayload(body))
-        return HttpResponse.json({ message: 'Invalid metrics' }, { status: 422 });
-      talentKpiMetrics[record.id] = toMetricRecords(
-        record.id,
-        body.metrics as Array<Record<string, unknown>>,
-      );
-      record.updatedAt = Date.now();
-      return HttpResponse.json({ data: toTalentKpiDetail(record) });
-    },
-  ),
-  http.post(
-    '*/admin/talent-kpi-records/:talentKpiRecordId/finalize',
-    async ({ params, request }) => {
-      const body = await parseJsonBody(request);
-      const unsupported = rejectUnsupportedBody(body, []);
-      if (unsupported) return unsupported;
-      const record = readTalentKpi(String(params.talentKpiRecordId));
-      if (!record)
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      if (record.status !== 'DRAFT')
-        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
-      record.status = 'FINALIZED';
-      record.publishedAt = Date.now();
-      record.updatedAt = Date.now();
-      return HttpResponse.json({ data: toTalentKpiDetail(record) });
-    },
-  ),
-  http.post(
-    '*/admin/talent-kpi-records/:talentKpiRecordId/archive',
-    async ({ params, request }) => {
-      const body = await parseJsonBody(request);
-      const unsupported = rejectUnsupportedBody(body, []);
-      if (unsupported) return unsupported;
-      const record = readTalentKpi(String(params.talentKpiRecordId));
-      if (!record)
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      if (record.status !== 'DRAFT' && record.status !== 'FINALIZED')
-        return HttpResponse.json({ message: 'Invalid lifecycle transition' }, { status: 409 });
-      record.status = 'ARCHIVED';
-      record.updatedAt = Date.now();
-      return HttpResponse.json({ data: toTalentKpiDetail(record) });
-    },
-  ),
+  http.all('*/admin/talent-kpi-records', () => retiredTalentKpiResponse()),
+  http.all('*/admin/talent-kpi-records/*', () => retiredTalentKpiResponse()),
 
   http.get('*/admin/revenue-ledger/platform-earning-batches', ({ request }) => {
     const url = new URL(request.url);

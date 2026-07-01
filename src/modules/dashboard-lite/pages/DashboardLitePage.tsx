@@ -35,7 +35,6 @@ import {
   eventFlatListQueryConfig,
   revenueLedgerFlatListQueryConfig,
   serializeScreenQueryParams,
-  talentKpiFlatListQueryConfig,
 } from '@shared/query';
 
 type DashboardSourceGroup = 'overview' | 'operations' | 'commercial' | 'attention';
@@ -74,10 +73,6 @@ const buildStatusLink = (path: string, params: URLSearchParams): string => {
 };
 
 const dashboardMetricStatusLinks = {
-  draftTalentKpi: buildStatusLink(
-    APP_PATHS.talentKpiRecords,
-    serializeScreenQueryParams({ status: 'DRAFT' }, talentKpiFlatListQueryConfig),
-  ),
   draftRevenueEntry: buildStatusLink(
     APP_PATHS.revenueEntries,
     serializeScreenQueryParams({ status: 'DRAFT' }, revenueLedgerFlatListQueryConfig),
@@ -93,17 +88,6 @@ const dashboardMetricStatusLinks = {
 } as const;
 
 const dashboardMetricExactLinks = {
-  staleTalentKpiDraft: (windows: DashboardLiteWindows) =>
-    buildStatusLink(
-      APP_PATHS.talentKpiRecords,
-      serializeScreenQueryParams(
-        {
-          status: 'DRAFT',
-          createdBeforeAt: windows.staleDrafts.olderThanAtExclusive,
-        },
-        talentKpiFlatListQueryConfig,
-      ),
-    ),
   staleRevenueDraft: (windows: DashboardLiteWindows) =>
     buildStatusLink(
       APP_PATHS.revenueEntries,
@@ -136,18 +120,6 @@ const dashboardMetricExactLinks = {
           effectiveEndDateTo: windows.contractExpiry30Days.endDateInclusive,
         },
         contractRegistryFlatListQueryConfig,
-      ),
-    ),
-  finalizedTalentKpi: (windows: DashboardLiteWindows) =>
-    buildStatusLink(
-      APP_PATHS.talentKpiRecords,
-      serializeScreenQueryParams(
-        {
-          status: 'FINALIZED',
-          publishedFromAt: windows.trailing30Days.startAtInclusive,
-          publishedToAt: windows.trailing30Days.endAtExclusive,
-        },
-        talentKpiFlatListQueryConfig,
       ),
     ),
   finalizedRevenue: (windows: DashboardLiteWindows) =>
@@ -215,11 +187,6 @@ const dashboardMetricExactLinks = {
 const metricGroups: Record<DashboardDisplayGroup, MetricCardDefinition[]> = {
   needsReview: [
     {
-      key: 'staleTalentKpiDraftCount',
-      sourceGroup: 'attention',
-      linkTo: dashboardMetricExactLinks.staleTalentKpiDraft,
-    },
-    {
       key: 'staleRevenueDraftCount',
       sourceGroup: 'attention',
       linkTo: dashboardMetricExactLinks.staleRevenueDraft,
@@ -237,11 +204,6 @@ const metricGroups: Record<DashboardDisplayGroup, MetricCardDefinition[]> = {
   ],
   workInProgress: [
     {
-      key: 'draftTalentKpiCount',
-      sourceGroup: 'overview',
-      linkTo: dashboardMetricStatusLinks.draftTalentKpi,
-    },
-    {
       key: 'draftRevenueEntryCount',
       sourceGroup: 'overview',
       linkTo: dashboardMetricStatusLinks.draftRevenueEntry,
@@ -253,11 +215,6 @@ const metricGroups: Record<DashboardDisplayGroup, MetricCardDefinition[]> = {
     },
   ],
   finalizedResults: [
-    {
-      key: 'finalizedTalentKpiCount30d',
-      sourceGroup: 'operations',
-      linkTo: dashboardMetricExactLinks.finalizedTalentKpi,
-    },
     {
       key: 'finalizedRevenueAmount30d',
       sourceGroup: 'commercial',

@@ -10,7 +10,6 @@ import { renderAppWithProviders } from '@test/render-app-route';
 
 type CommercialScopeGrants = {
   contractRegistry?: Array<'global'>;
-  talentKpi?: Array<'global'>;
   commission?: Array<'global'>;
 };
 
@@ -157,44 +156,6 @@ describe('commercial capability UX hints', () => {
         name: i18n.t('contract-registry:actions.assignOwner'),
       }),
     ).not.toBeInTheDocument();
-  });
-
-  it('requires Talent KPI permission and global scope while preserving archived local disabled state', async () => {
-    mockCapabilities({
-      permissions: [
-        'talentKpi.read',
-        'talentKpi.update',
-        'talentKpi.manageMetrics',
-        'talentKpi.manageLifecycle',
-      ],
-      scopeGrants: {},
-    });
-
-    renderRoute('/talent-kpi-records/talent-kpi-record-001');
-
-    await screen.findByText('Không có quyền truy cập');
-    expect(
-      screen.queryByRole('button', {
-        name: i18n.t('talent-kpi:actions.replaceMetrics'),
-      }),
-    ).not.toBeInTheDocument();
-
-    cleanup();
-    mockCapabilities({
-      permissions: [
-        'talentKpi.read',
-        'talentKpi.update',
-        'talentKpi.manageMetrics',
-        'talentKpi.manageLifecycle',
-      ],
-      scopeGrants: { talentKpi: ['global'] },
-    });
-    renderRoute('/talent-kpi-records/talent-kpi-record-archived');
-
-    const archivedEdit = await screen.findByRole('button', {
-      name: i18n.t('talent-kpi:actions.editDraftCore'),
-    });
-    expect(archivedEdit).toBeDisabled();
   });
 
   it('requires Commission Rule global scope and leaves fully capable local actions enabled', async () => {

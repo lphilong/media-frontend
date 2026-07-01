@@ -85,11 +85,6 @@ export const APP_PATHS = {
   contractRecordDetail: (contractRecordId: string) =>
     joinDetailPath('/contract-records', contractRecordId),
 
-  talentKpiRecords: '/talent-kpi-records',
-  talentKpiRecordDetailPattern: '/talent-kpi-records/:talentKpiRecordId',
-  talentKpiRecordDetail: (talentKpiRecordId: string) =>
-    joinDetailPath('/talent-kpi-records', talentKpiRecordId),
-
   kpi: '/kpi',
   kpiPlans: '/kpi/plans',
   kpiPlanDetailPattern: '/kpi/plans/:kpiPlanId',

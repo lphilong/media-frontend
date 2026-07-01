@@ -10,7 +10,6 @@ import {
   buildPlatformAccountsByOwnerTalentHref,
   buildRevenueLedgerByTalentHref,
   buildTalentGroupsByTalentHref,
-  buildTalentKpiByTalentHref,
   buildWorkShiftsBySubjectTalentHref,
 } from '@app/router/reference-links';
 import { createTalentActionRailItems } from '@modules/talent/actions/talent-action-rail';
@@ -256,7 +255,6 @@ export const TalentDetailPage = (): JSX.Element => {
     : undefined;
   const relatedWorkShiftsHref = record ? buildWorkShiftsBySubjectTalentHref(record.id) : undefined;
   const relatedEventsHref = record ? buildEventsByAssignmentTalentHref(record.id) : undefined;
-  const relatedKpiHref = record ? buildTalentKpiByTalentHref(record.id) : undefined;
   const relatedRevenueHref = record ? buildRevenueLedgerByTalentHref(record.id) : undefined;
   const relatedSettlementsHref = record
     ? buildCommissionSettlementsBySubjectTalentHref(record.id)
@@ -588,21 +586,6 @@ export const TalentDetailPage = (): JSX.Element => {
                 {relatedEventsHref ? (
                   <Link
                     to={relatedEventsHref}
-                    className="mt-1 inline-flex text-sm text-accent hover:underline"
-                  >
-                    {t('talent:related.openFilteredList')}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
-                )}
-              </div>
-              <div className="rounded border border-border bg-bg px-3 py-2">
-                <p className="text-xs font-medium uppercase text-muted">
-                  {t('talent:related.talentKpi')}
-                </p>
-                {relatedKpiHref ? (
-                  <Link
-                    to={relatedKpiHref}
                     className="mt-1 inline-flex text-sm text-accent hover:underline"
                   >
                     {t('talent:related.openFilteredList')}

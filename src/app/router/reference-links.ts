@@ -19,9 +19,6 @@ import {
   revenueLedgerByPlatformQueryConfig,
   revenueLedgerByTalentQueryConfig,
   talentGroupByTalentQueryConfig,
-  talentKpiByEventQueryConfig,
-  talentKpiByPlatformQueryConfig,
-  talentKpiByTalentQueryConfig,
   workShiftByResourceQueryConfig,
   workShiftBySubjectQueryConfig,
   getMissingRelatedIdentityKeys,
@@ -41,7 +38,6 @@ export type DetailReferenceEntity =
   | 'workShift'
   | 'event'
   | 'contractRecord'
-  | 'talentKpiRecord'
   | 'revenueEntry'
   | 'commissionRule'
   | 'commissionSettlement';
@@ -58,7 +54,6 @@ const DETAIL_PATH_BUILDERS: Record<DetailReferenceEntity, (entityId: string) => 
   workShift: APP_PATHS.workShiftDetail,
   event: APP_PATHS.eventDetail,
   contractRecord: APP_PATHS.contractRecordDetail,
-  talentKpiRecord: APP_PATHS.talentKpiRecordDetail,
   revenueEntry: APP_PATHS.revenueEntryDetail,
   commissionRule: APP_PATHS.commissionRuleDetail,
   commissionSettlement: APP_PATHS.commissionSettlementDetail,
@@ -630,58 +625,6 @@ export const buildRevenueLedgerByEventHref = (
   );
 };
 
-export const buildTalentKpiByTalentHref = (subjectTalentId?: string | null): string | undefined => {
-  const normalizedId = normalizeReferenceId(subjectTalentId);
-  if (!normalizedId) {
-    return undefined;
-  }
-
-  return buildConfigOwnedRelatedHref(
-    APP_PATHS.talentKpiRecords,
-    {
-      view: 'by-talent',
-      subjectTalentId: normalizedId,
-    },
-    talentKpiByTalentQueryConfig,
-  );
-};
-
-export const buildTalentKpiByPlatformHref = (
-  attributionPlatformAccountId?: string | null,
-): string | undefined => {
-  const normalizedId = normalizeReferenceId(attributionPlatformAccountId);
-  if (!normalizedId) {
-    return undefined;
-  }
-
-  return buildConfigOwnedRelatedHref(
-    APP_PATHS.talentKpiRecords,
-    {
-      view: 'by-platform',
-      attributionPlatformAccountId: normalizedId,
-    },
-    talentKpiByPlatformQueryConfig,
-  );
-};
-
-export const buildTalentKpiByEventHref = (
-  attributionEventId?: string | null,
-): string | undefined => {
-  const normalizedId = normalizeReferenceId(attributionEventId);
-  if (!normalizedId) {
-    return undefined;
-  }
-
-  return buildConfigOwnedRelatedHref(
-    APP_PATHS.talentKpiRecords,
-    {
-      view: 'by-event',
-      attributionEventId: normalizedId,
-    },
-    talentKpiByEventQueryConfig,
-  );
-};
-
 export type RelatedListBuildRequest =
   | {
       kind: 'employmentProfile.byOrgUnit';
@@ -764,10 +707,7 @@ export type RelatedListBuildRequest =
   | { kind: 'commissionSettlements.bySourceRule'; sourceRuleId?: string | null }
   | { kind: 'revenueLedger.byTalent'; subjectTalentId?: string | null }
   | { kind: 'revenueLedger.byPlatform'; attributionPlatformAccountId?: string | null }
-  | { kind: 'revenueLedger.byEvent'; attributionEventId?: string | null }
-  | { kind: 'talentKpi.byTalent'; subjectTalentId?: string | null }
-  | { kind: 'talentKpi.byPlatform'; attributionPlatformAccountId?: string | null }
-  | { kind: 'talentKpi.byEvent'; attributionEventId?: string | null };
+  | { kind: 'revenueLedger.byEvent'; attributionEventId?: string | null };
 
 const assertNever = (value: never): undefined => {
   void value;
@@ -836,12 +776,6 @@ export const buildRelatedListHref = (request: RelatedListBuildRequest): string |
       return buildRevenueLedgerByPlatformHref(request.attributionPlatformAccountId);
     case 'revenueLedger.byEvent':
       return buildRevenueLedgerByEventHref(request.attributionEventId);
-    case 'talentKpi.byTalent':
-      return buildTalentKpiByTalentHref(request.subjectTalentId);
-    case 'talentKpi.byPlatform':
-      return buildTalentKpiByPlatformHref(request.attributionPlatformAccountId);
-    case 'talentKpi.byEvent':
-      return buildTalentKpiByEventHref(request.attributionEventId);
     default:
       return assertNever(request);
   }

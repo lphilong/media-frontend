@@ -27,7 +27,6 @@ export type ModuleAccessModuleId =
   | 'work-schedule'
   | 'event-assignment'
   | 'contract-registry'
-  | 'talent-kpi'
   | 'kpi'
   | 'revenue-ledger'
   | 'commission-rules'
@@ -180,17 +179,6 @@ export const moduleAccessDefinitions: Readonly<
     routePaths: ['/contract-records'],
     access: { allPermissions: [PERMISSIONS.CONTRACT_REGISTRY_READ] },
   },
-  'talent-kpi': {
-    id: 'talent-kpi',
-    routePaths: ['/talent-kpi-records'],
-    access: {
-      allPermissions: [PERMISSIONS.TALENT_KPI_READ],
-      anyScope: {
-        module: 'talentKpi',
-        anyOf: ['global'],
-      },
-    },
-  },
   kpi: {
     id: 'kpi',
     routePaths: ['/kpi', '/kpi/plans'],
@@ -324,7 +312,6 @@ const isSelfServiceOnlyAdminActor = (capabilities: CurrentActorCapabilities): bo
     hasScopeGrant(capabilities, 'eventAssignment', 'global') ||
     hasScopeGrant(capabilities, 'eventAssignment', 'managedGroup') ||
     hasScopeGrant(capabilities, 'contractRegistry', 'global') ||
-    hasScopeGrant(capabilities, 'talentKpi', 'global') ||
     hasScopeGrant(capabilities, 'revenueLedger', 'global') ||
     hasScopeGrant(capabilities, 'commission', 'global') ||
     hasScopeGrant(capabilities, 'dashboardLite', 'global');

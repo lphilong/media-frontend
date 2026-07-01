@@ -6,7 +6,6 @@ import {
   buildEntityDetailHref,
   buildEventsByPlatformAccountHref,
   buildRevenueLedgerByPlatformHref,
-  buildTalentKpiByPlatformHref,
 } from '@app/router/reference-links';
 import { createPlatformAccountActionRailItems } from '@modules/platform-account/actions/platform-account-action-rail';
 import {
@@ -336,7 +335,6 @@ export const PlatformAccountDetailPage = (): JSX.Element => {
   const ownerId = record ? readPlatformAccountOwnerId(record) : undefined;
   const ownerHref = record ? buildOwnerHref(record) : undefined;
   const relatedEventsHref = record ? buildEventsByPlatformAccountHref(record.id) : undefined;
-  const relatedKpiHref = record ? buildTalentKpiByPlatformHref(record.id) : undefined;
   const relatedRevenueHref = record ? buildRevenueLedgerByPlatformHref(record.id) : undefined;
 
   return (
@@ -537,7 +535,6 @@ export const PlatformAccountDetailPage = (): JSX.Element => {
               {(
                 [
                   ['events', relatedEventsHref],
-                  ['talentKpi', relatedKpiHref],
                   ['revenueLedger', relatedRevenueHref],
                 ] satisfies Array<[string, string | undefined]>
               ).map(([key, href]) => (

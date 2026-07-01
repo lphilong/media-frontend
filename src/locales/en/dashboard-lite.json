@@ -38,8 +38,6 @@
   "metrics": {
     "todayEventCount": "Events today",
     "next7DayEventCount": "Events in next 7 days",
-    "draftTalentKpiCount": "Draft KPI records",
-    "finalizedTalentKpiCount30d": "Finalized KPI records",
     "draftRevenueEntryCount": "Draft revenue entries",
     "finalizedRevenueAmount30d": "Finalized revenue",
     "reconciledRevenueAmount30d": "Reconciled revenue",
@@ -47,15 +45,12 @@
     "finalizedSettlementAmount30d": "Finalized settlements",
     "activeCommissionRuleCount": "Active commission rules",
     "expiringContractCount30d": "Contracts ending soon",
-    "staleTalentKpiDraftCount": "Stale KPI drafts",
     "staleRevenueDraftCount": "Stale revenue drafts",
     "staleSettlementDraftCount": "Stale settlement drafts"
   },
   "metricDescriptions": {
     "todayEventCount": "Events scheduled for the current business date.",
     "next7DayEventCount": "Events scheduled in the next seven days.",
-    "draftTalentKpiCount": "KPI records saved but not finalized.",
-    "finalizedTalentKpiCount30d": "KPI records finalized in the dashboard reporting window.",
     "draftRevenueEntryCount": "Revenue entries saved but not finalized.",
     "finalizedRevenueAmount30d": "Revenue finalized in the dashboard reporting window.",
     "reconciledRevenueAmount30d": "Revenue entries marked as reconciled in the reporting window.",
@@ -63,7 +58,6 @@
     "finalizedSettlementAmount30d": "Settlement amount finalized in the reporting window.",
     "activeCommissionRuleCount": "Commission rules currently active.",
     "expiringContractCount30d": "Active contracts ending within the next 30 days.",
-    "staleTalentKpiDraftCount": "Drafts that may need review because they have been open for too long.",
     "staleRevenueDraftCount": "Drafts that may need review because they have been open for too long.",
     "staleSettlementDraftCount": "Drafts that may need review because they have been open for too long."
   },

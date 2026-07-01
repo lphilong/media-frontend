@@ -221,9 +221,6 @@
   },
   "related": {
     "navigationTitle": "Related commercial records",
-    "kpiByTalent": "KPI by same talent",
-    "kpiByPlatform": "KPI by same platform",
-    "kpiByEvent": "KPI by same event",
     "commissionSettlements": "Commission settlements by revenue entry"
   },
   "actionRail": {

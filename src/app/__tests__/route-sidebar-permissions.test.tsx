@@ -415,7 +415,6 @@ describe('route and sidebar permission model', () => {
           'workSchedule.read',
           'event.read',
           'kpi.read',
-          'talentKpi.read',
           'contractRegistry.read',
           'revenueLedger.read',
           'commissionRule.read',
@@ -426,7 +425,6 @@ describe('route and sidebar permission model', () => {
           workSchedule: ['global'],
           eventAssignment: ['global'],
           kpi: ['global'],
-          talentKpi: ['global'],
           contractRegistry: ['global'],
           revenueLedger: ['global'],
           commission: ['global'],
@@ -447,6 +445,7 @@ describe('route and sidebar permission model', () => {
     const kpi = await screen.findByTestId('nav-link-kpi');
     const revenueLedger = await screen.findByTestId('nav-link-revenue-ledger');
 
+    expect(screen.queryByTestId('nav-link-talent-kpi')).not.toBeInTheDocument();
     expect(studioResources.compareDocumentPosition(workShifts) & Node.DOCUMENT_POSITION_FOLLOWING)
       .toBeTruthy();
     expect(kpi.compareDocumentPosition(revenueLedger) & Node.DOCUMENT_POSITION_FOLLOWING)

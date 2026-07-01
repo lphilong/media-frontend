@@ -131,7 +131,6 @@
   "related": {
     "navigationTitle": "Related navigation",
     "events": "Events by platform account",
-    "talentKpi": "KPI by platform account",
     "revenueLedger": "Revenue by platform account",
     "openFilteredList": "Open filtered list",
     "unavailable": "No safe related route is available."

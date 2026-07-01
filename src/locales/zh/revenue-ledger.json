@@ -221,9 +221,6 @@
   },
   "related": {
     "navigationTitle": "关联商业记录",
-    "kpiByTalent": "同一艺人的 KPI",
-    "kpiByPlatform": "同一平台的 KPI",
-    "kpiByEvent": "同一活动的 KPI",
     "commissionSettlements": "佣金结算按收入记录"
   },
   "actionRail": {

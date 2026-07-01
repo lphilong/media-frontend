@@ -5,7 +5,6 @@ import { apiRequest } from '@shared/api';
 const overviewMetricsSchema = z
   .object({
     todayEventCount: z.number(),
-    draftTalentKpiCount: z.number(),
     draftRevenueEntryCount: z.number(),
     draftSettlementCount: z.number(),
     activeCommissionRuleCount: z.number(),
@@ -17,8 +16,6 @@ const operationsMetricsSchema = z
   .object({
     todayEventCount: z.number(),
     next7DayEventCount: z.number(),
-    draftTalentKpiCount: z.number(),
-    finalizedTalentKpiCount30d: z.number(),
   })
   .strict();
 
@@ -35,7 +32,6 @@ const commercialMetricsSchema = z
 
 const attentionMetricsSchema = z
   .object({
-    staleTalentKpiDraftCount: z.number(),
     staleRevenueDraftCount: z.number(),
     staleSettlementDraftCount: z.number(),
     expiringContractCount30d: z.number(),

@@ -110,11 +110,6 @@ const modulePageMap: Record<string, LazyExoticComponent<LazyModuleRoute>> = {
       default: module.ContractRegistryListPage,
     })),
   ),
-  'talent-kpi': lazy(() =>
-    import('@modules/talent-kpi/pages/TalentKpiListPage').then((module) => ({
-      default: module.TalentKpiListPage,
-    })),
-  ),
   kpi: lazy(() =>
     import('@modules/kpi/pages/KpiListPage').then((module) => ({
       default: module.KpiListPage,
@@ -191,11 +186,6 @@ const moduleDetailPageMap: Record<string, LazyExoticComponent<LazyModuleRoute>> 
   'contract-registry': lazy(() =>
     import('@modules/contract-registry/pages/ContractRegistryDetailPage').then((module) => ({
       default: module.ContractRegistryDetailPage,
-    })),
-  ),
-  'talent-kpi': lazy(() =>
-    import('@modules/talent-kpi/pages/TalentKpiDetailPage').then((module) => ({
-      default: module.TalentKpiDetailPage,
     })),
   ),
   kpi: lazy(() =>
@@ -346,6 +336,10 @@ const isManagerOnlyKpiActor = (capabilities: CurrentActorCapabilities | undefine
 function AdminKpiRouteBoundary({ children }: { children: JSX.Element }): JSX.Element {
   const capabilitiesQuery = useCurrentActorCapabilities();
   const { kpiPlanId } = useParams<{ kpiPlanId?: string }>();
+
+  if (capabilitiesQuery.isLoading && !capabilitiesQuery.data) {
+    return <RouteLoadingFallback />;
+  }
 
   if (isManagerOnlyKpiActor(capabilitiesQuery.data)) {
     return (

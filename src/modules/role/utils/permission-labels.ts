@@ -17,7 +17,6 @@ const permissionGroupOrder = [
   'workSchedule',
   'contractRegistry',
   'contractObligation',
-  'talentKpi',
   'kpi',
   'revenueLedger',
   'commissionRule',

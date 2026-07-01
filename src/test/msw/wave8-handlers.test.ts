@@ -27,22 +27,14 @@ const requestJson = async (
 export {};
 
 describe('wave 8 MSW commercial guards', () => {
-  it('rejects Talent KPI scope leakage and invalid metric replacement payloads', async () => {
-    const scopeLeak = await fetch(
-      'http://localhost/admin/talent-kpi-records?scope=global&status=DRAFT',
-    );
-    expect(scopeLeak.status).toBe(422);
+  it('fail-closes retired Talent KPI endpoints', async () => {
+    const list = await fetch('http://localhost/admin/talent-kpi-records?status=DRAFT');
+    expect(list.status).toBe(410);
 
-    const invalidMetrics = await requestJson(
-      '/admin/talent-kpi-records/talent-kpi-record-001/metrics',
-      {
-        metrics: [
-          { metricCode: 'ENGAGEMENT_COUNT', numericValue: 1 },
-          { metricCode: 'ENGAGEMENT_COUNT', numericValue: 2 },
-        ],
-      },
-    );
-    expect(invalidMetrics.status).toBe(422);
+    const mutation = await requestJson('/admin/talent-kpi-records/talent-kpi-record-001/metrics', {
+      metrics: [{ metricCode: 'ENGAGEMENT_COUNT', numericValue: 1 }],
+    });
+    expect(mutation.status).toBe(410);
   });
 
   it('rejects Revenue Ledger scope leakage and unsafe narrow sort combinations', async () => {

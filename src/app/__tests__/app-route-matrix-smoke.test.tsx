@@ -60,12 +60,6 @@ const routeSmokeMatrix: RouteSmokeCase[] = [
     surface: 'real-detail',
     entityId: 'contract-record-001',
   },
-  { path: '/talent-kpi-records', surface: 'real-list' },
-  {
-    path: '/talent-kpi-records/talent-kpi-record-001',
-    surface: 'real-detail',
-    entityId: 'talent-kpi-record-001',
-  },
   { path: '/revenue-entries', surface: 'real-list' },
   {
     path: '/revenue-entries/revenue-entry-001',
@@ -152,9 +146,7 @@ describe('app route matrix smoke', () => {
                                   ? i18n.t('work-schedule:monthlyRosters.actionRail.title')
                                   : path.startsWith('/events')
                                     ? i18n.t('event-assignment:actionRail.title')
-                                    : path.startsWith('/talent-kpi-records')
-                                      ? i18n.t('talent-kpi:actionRail.title')
-                                      : path.startsWith('/revenue-entries')
+                                  : path.startsWith('/revenue-entries')
                                         ? i18n.t('revenue-ledger:actionRail.title')
                                         : path.startsWith('/commission/rules')
                                           ? i18n.t('commission:rules.actionRail.title')

@@ -19,10 +19,6 @@ import {
   revenueLedgerByTalentQueryConfig,
   revenueLedgerFlatListQueryConfig,
   serializeScreenQueryParams,
-  talentKpiByEventQueryConfig,
-  talentKpiByPlatformQueryConfig,
-  talentKpiByTalentQueryConfig,
-  talentKpiFlatListQueryConfig,
   talentFlatListQueryConfig,
   talentGroupByTalentQueryConfig,
   talentGroupFlatListQueryConfig,
@@ -239,87 +235,7 @@ describe('shared query seam hardening', () => {
     expect(invalidSettlement.get('settlementCurrencyCode')).toBeNull();
   });
 
-  it('enforces Talent KPI flat-list and related query contracts', () => {
-    const flat = serializeScreenQueryParams(
-      {
-        status: 'DRAFT',
-        subjectTalentId: 'talent-01',
-        attributionPlatformAccountId: 'platform-01',
-        attributionEventId: 'event-01',
-        measurementSource: 'MANUAL',
-        containsMetricCode: 'ENGAGEMENT_COUNT',
-        windowStartAt: 1000,
-        windowEndAt: 2000,
-        search: 'KPI001',
-        sortBy: 'periodStartAt',
-        sortDirection: 'desc',
-        scope: 'global',
-      },
-      talentKpiFlatListQueryConfig,
-    );
-    const related = serializeScreenQueryParams(
-      {
-        view: 'by-platform',
-        attributionPlatformAccountId: 'platform-01',
-        search: 'not-supported',
-        sortBy: 'kpiRecordCode',
-      },
-      talentKpiByPlatformQueryConfig,
-    );
-
-    expect(flat.get('status')).toBe('DRAFT');
-    expect(flat.get('measurementSource')).toBe('MANUAL');
-    expect(flat.get('containsMetricCode')).toBe('ENGAGEMENT_COUNT');
-    expect(flat.get('windowStartAt')).toBe('1000');
-    expect(flat.get('windowEndAt')).toBe('2000');
-    expect(flat.get('search')).toBe('KPI001');
-    expect(flat.get('sortBy')).toBe('periodStartAt');
-    expect(flat.get('scope')).toBeNull();
-    expect(related.get('view')).toBe('by-platform');
-    expect(related.get('attributionPlatformAccountId')).toBe('platform-01');
-    expect(related.get('search')).toBeNull();
-    expect(related.get('sortBy')).toBe('kpiRecordCode');
-  });
-
-  it('accepts Batch 2E-B Talent KPI target timestamp filters and rejects invalid ranges', () => {
-    const serialized = serializeScreenQueryParams(
-      parseScreenQueryParams(
-        new URLSearchParams(
-          'status=FINALIZED&createdBeforeAt=1000&publishedFromAt=2000&publishedToAt=3000&windowStartAt=4000&windowEndAt=5000',
-        ),
-        talentKpiFlatListQueryConfig,
-      ),
-      talentKpiFlatListQueryConfig,
-    );
-    const invalid = serializeScreenQueryParams(
-      {
-        publishedFromAt: 3000,
-        publishedToAt: 2000,
-        createdBeforeAt: 'bad',
-      },
-      talentKpiFlatListQueryConfig,
-    );
-
-    expect(serialized.get('status')).toBe('FINALIZED');
-    expect(serialized.get('createdBeforeAt')).toBe('1000');
-    expect(serialized.get('publishedFromAt')).toBe('2000');
-    expect(serialized.get('publishedToAt')).toBe('3000');
-    expect(serialized.get('windowStartAt')).toBe('4000');
-    expect(serialized.get('windowEndAt')).toBe('5000');
-    expect(invalid.get('createdBeforeAt')).toBeNull();
-    expect(invalid.get('publishedFromAt')).toBeNull();
-    expect(invalid.get('publishedToAt')).toBeNull();
-  });
-
   it('keeps target timestamp URL params serialized as raw milliseconds for display-only chip formatting', () => {
-    const talentKpi = serializeScreenQueryParams(
-      {
-        createdBeforeAt: 1780000000000,
-        publishedFromAt: 1770000000000,
-        publishedToAt: 1780000000000,
-      },
-      talentKpiFlatListQueryConfig,
-    );
     const revenueLedger = serializeScreenQueryParams(
       {
         createdBeforeAt: 1780000000000,
@@ -339,9 +255,6 @@ describe('shared query seam hardening', () => {
       commissionSettlementsFlatListQueryConfig,
     );
 
-    expect(talentKpi.get('createdBeforeAt')).toBe('1780000000000');
-    expect(talentKpi.get('publishedFromAt')).toBe('1770000000000');
-    expect(talentKpi.get('publishedToAt')).toBe('1780000000000');
     expect(revenueLedger.get('createdBeforeAt')).toBe('1780000000000');
     expect(revenueLedger.get('finalizedFromAt')).toBe('1770000000000');
     expect(revenueLedger.get('finalizedToAt')).toBe('1780000000000');
@@ -432,32 +345,6 @@ describe('shared query seam hardening', () => {
   });
 
   it('keeps Wave 8 flat identity filters flat unless an explicit related view is present', () => {
-    const talentKpiSubject = serializeScreenQueryParams(
-      {
-        subjectTalentId: 'talent-01',
-        search: 'KPI001',
-      },
-      talentKpiFlatListQueryConfig,
-    );
-    const talentKpiSubjectThroughRelated = serializeScreenQueryParams(
-      {
-        subjectTalentId: 'talent-01',
-        search: 'KPI001',
-      },
-      talentKpiByTalentQueryConfig,
-    );
-    const talentKpiPlatformThroughRelated = serializeScreenQueryParams(
-      {
-        attributionPlatformAccountId: 'platform-01',
-      },
-      talentKpiByPlatformQueryConfig,
-    );
-    const talentKpiEventThroughRelated = serializeScreenQueryParams(
-      {
-        attributionEventId: 'event-01',
-      },
-      talentKpiByEventQueryConfig,
-    );
     const revenueSubject = serializeScreenQueryParams(
       {
         subjectTalentId: 'talent-01',
@@ -484,14 +371,6 @@ describe('shared query seam hardening', () => {
       },
       revenueLedgerByEventQueryConfig,
     );
-    const explicitTalentKpiRelated = serializeScreenQueryParams(
-      {
-        view: 'by-talent',
-        subjectTalentId: 'talent-01',
-        search: 'not-supported',
-      },
-      talentKpiByTalentQueryConfig,
-    );
     const explicitRevenueRelated = serializeScreenQueryParams(
       {
         view: 'by-platform',
@@ -501,21 +380,12 @@ describe('shared query seam hardening', () => {
       revenueLedgerByPlatformQueryConfig,
     );
 
-    expect(talentKpiSubject.get('view')).toBeNull();
-    expect(talentKpiSubject.get('subjectTalentId')).toBe('talent-01');
-    expect(talentKpiSubject.get('search')).toBe('KPI001');
-    expect(talentKpiSubjectThroughRelated.get('view')).toBeNull();
-    expect(talentKpiPlatformThroughRelated.get('view')).toBeNull();
-    expect(talentKpiEventThroughRelated.get('view')).toBeNull();
     expect(revenueSubject.get('view')).toBeNull();
     expect(revenueSubject.get('subjectTalentId')).toBe('talent-01');
     expect(revenueSubject.get('search')).toBe('REV001');
     expect(revenueSubjectThroughRelated.get('view')).toBeNull();
     expect(revenuePlatformThroughRelated.get('view')).toBeNull();
     expect(revenueEventThroughRelated.get('view')).toBeNull();
-    expect(explicitTalentKpiRelated.get('view')).toBe('by-talent');
-    expect(explicitTalentKpiRelated.get('subjectTalentId')).toBe('talent-01');
-    expect(explicitTalentKpiRelated.get('search')).toBeNull();
     expect(explicitRevenueRelated.get('view')).toBe('by-platform');
     expect(explicitRevenueRelated.get('attributionPlatformAccountId')).toBe('platform-01');
     expect(explicitRevenueRelated.get('search')).toBeNull();
@@ -646,17 +516,9 @@ describe('shared query seam hardening', () => {
       new URLSearchParams('windowStartDate=&windowEndDate=%20'),
       commissionRulesFlatListQueryConfig,
     );
-    const parsedTalentKpi = parseScreenQueryParams(
-      new URLSearchParams('windowStartAt=&windowEndAt=%20%20&limit=%20'),
-      talentKpiFlatListQueryConfig,
-    );
     const ruleWindowSerialized = serializeScreenQueryParams(
       parsedRuleWindow,
       commissionRulesFlatListQueryConfig,
-    );
-    const talentKpiSerialized = serializeScreenQueryParams(
-      parsedTalentKpi,
-      talentKpiFlatListQueryConfig,
     );
     const invalidNumericValues = serializeScreenQueryParams(
       {
@@ -672,9 +534,6 @@ describe('shared query seam hardening', () => {
     expect(revenueSerialized.get('limit')).toBeNull();
     expect(ruleWindowSerialized.get('windowStartDate')).toBeNull();
     expect(ruleWindowSerialized.get('windowEndDate')).toBeNull();
-    expect(talentKpiSerialized.get('windowStartAt')).toBeNull();
-    expect(talentKpiSerialized.get('windowEndAt')).toBeNull();
-    expect(talentKpiSerialized.get('limit')).toBeNull();
     expect(invalidNumericValues.get('windowStartAt')).toBeNull();
     expect(invalidNumericValues.get('windowEndAt')).toBeNull();
     expect(invalidNumericValues.get('limit')).toBeNull();
@@ -793,21 +652,6 @@ describe('shared query seam hardening', () => {
       expect(serialized.get('scopeGrants')).toBeNull();
     };
 
-    expectNoScope(talentKpiByTalentQueryConfig, {
-      view: 'by-talent',
-      subjectTalentId: 'talent-01',
-    });
-    expectNoScope(talentKpiFlatListQueryConfig, {
-      status: 'DRAFT',
-    });
-    expectNoScope(talentKpiByPlatformQueryConfig, {
-      view: 'by-platform',
-      attributionPlatformAccountId: 'platform-01',
-    });
-    expectNoScope(talentKpiByEventQueryConfig, {
-      view: 'by-event',
-      attributionEventId: 'event-01',
-    });
     expectNoScope(revenueLedgerFlatListQueryConfig, { status: 'DRAFT' });
     expectNoScope(revenueLedgerByTalentQueryConfig, {
       view: 'by-talent',

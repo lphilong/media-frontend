@@ -131,7 +131,6 @@
   "related": {
     "navigationTitle": "关联导航",
     "events": "按平台账号查看活动",
-    "talentKpi": "KPI按平台账号",
     "revenueLedger": "收入按平台账号",
     "openFilteredList": "打开筛选列表",
     "unavailable": "没有可用的安全关联路由。"

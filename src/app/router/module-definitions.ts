@@ -223,20 +223,6 @@ export const moduleRouteDefinitions: ModuleRouteDefinition[] = [
     placeholderKey: 'contract-registry:page.placeholder',
   },
   {
-    id: 'talent-kpi',
-    listPath: APP_PATHS.talentKpiRecords,
-    detailPath: APP_PATHS.talentKpiRecordDetailPattern,
-    detailParamKey: 'talentKpiRecordId',
-    namespace: 'talent-kpi',
-    navGroup: 'performance',
-    navItemKey: 'talentKpi',
-    listTitleKey: 'talent-kpi:page.title',
-    listSubtitleKey: 'talent-kpi:page.subtitle',
-    detailTitleKey: 'talent-kpi:page.title',
-    detailSubtitleKey: 'talent-kpi:page.subtitle',
-    placeholderKey: 'talent-kpi:page.placeholder',
-  },
-  {
     id: 'kpi',
     listPath: APP_PATHS.kpi,
     detailPath: APP_PATHS.kpiPlanDetailPattern,
@@ -406,12 +392,6 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
     id: 'performance',
     items: [
       { id: 'kpi', moduleId: 'kpi', navItemKey: 'kpi', to: APP_PATHS.kpi },
-      {
-        id: 'talent-kpi',
-        moduleId: 'talent-kpi',
-        navItemKey: 'talentKpi',
-        to: APP_PATHS.talentKpiRecords,
-      },
     ],
   },
   {

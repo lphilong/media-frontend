@@ -323,7 +323,7 @@ describe('KPI MVP UX', () => {
     expect(await screen.findByRole('navigation', { name: 'List pagination' })).toBeInTheDocument();
     expect(
       await screen.findByText(
-        'This list uses load-by-load pagination and has no total page count.',
+        'This list loads one page at a time and does not show a total page count.',
       ),
     ).toBeInTheDocument();
     expect(screen.queryByRole('spinbutton', { name: /go to page/i })).not.toBeInTheDocument();
@@ -3424,8 +3424,9 @@ describe('KPI MVP UX', () => {
     );
 
     renderRoute('/kpi');
-    await screen.findByText('Access denied');
-    expect(screen.queryByRole('button', { name: 'Create KPI plan' })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Create KPI plan' })).not.toBeInTheDocument(),
+    );
     expect(called).toBe(false);
   });
 
@@ -3970,19 +3971,71 @@ describe('KPI MVP UX', () => {
   });
 });
 
+const makeWorkspaceAvailability = (
+  scopeGrants: CurrentActorCapabilities['scopeGrants'],
+): CurrentActorCapabilities['workspaceAvailability'] => {
+  const kpiScopes = scopeGrants.kpi ?? [];
+  const hasAdmin = kpiScopes.includes('global');
+  const hasManager = kpiScopes.includes('managedGroup');
+  const hasStaff = kpiScopes.includes('self');
+  const primaryWorkspace = hasAdmin
+    ? 'ADMIN_CONSOLE'
+    : hasManager
+      ? 'MANAGER_CONSOLE'
+      : hasStaff
+        ? 'STAFF_CONSOLE'
+        : null;
+
+  return {
+    primaryWorkspace,
+    ownDataAvailable: hasStaff,
+    managerResponsibilitiesAvailable: hasManager,
+    effectiveAccessTraceAvailable: hasAdmin || hasManager || hasStaff,
+    sourceTrace: [],
+    availableWorkspaces: [
+      {
+        context: 'ADMIN_CONSOLE',
+        available: hasAdmin,
+        source: 'ACCOUNT_CONTEXT',
+        reasonCodes: hasAdmin ? [] : ['NO_ADMIN_CONTEXT'],
+        trace: [],
+      },
+      {
+        context: 'MANAGER_CONSOLE',
+        available: hasManager,
+        source: 'ACCOUNT_CONTEXT',
+        reasonCodes: hasManager ? [] : ['NO_MANAGER_CONTEXT'],
+        trace: [],
+      },
+      {
+        context: 'STAFF_CONSOLE',
+        available: hasStaff,
+        source: 'ACCOUNT_CONTEXT',
+        reasonCodes: hasStaff ? [] : ['NO_STAFF_CONTEXT'],
+        trace: [],
+      },
+    ],
+  };
+};
+
 const makeCapabilities = (
   overrides: Partial<CurrentActorCapabilities> = {},
-): CurrentActorCapabilities => ({
-  id: 'kpi-capability-test-user',
-  type: 'admin',
-  context: 'ADMIN',
-  isActive: true,
-  roles: ['role-kpi-capability-test'],
-  permissions: ['kpi.createPlan', 'kpi.enterActual', 'kpi.correctActual'],
-  scopeGrants: { kpi: ['global'] },
-  generatedAt: '2026-05-22T00:00:00.000Z',
-  ...overrides,
-});
+): CurrentActorCapabilities => {
+  const scopeGrants = overrides.scopeGrants ?? { kpi: ['global'] };
+
+  return {
+    id: 'kpi-capability-test-user',
+    type: 'admin',
+    context: 'ADMIN',
+    isActive: true,
+    roles: ['role-kpi-capability-test'],
+    permissions: ['kpi.createPlan', 'kpi.enterActual', 'kpi.correctActual'],
+    scopeGrants,
+    workspaceAvailability: makeWorkspaceAvailability(scopeGrants),
+    generatedAt: '2026-05-22T00:00:00.000Z',
+    ...overrides,
+  };
+};
 
 const makeDetail = (id: string, status: 'DRAFT' | 'PUBLISHED' | 'FINALIZED' | 'ARCHIVED') => ({
   id,
