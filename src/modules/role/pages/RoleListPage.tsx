@@ -6,6 +6,11 @@ import { useNavigate } from 'react-router-dom';
 import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
 import { previewRoleTemplate } from '@modules/role/api/role.api';
+import {
+  AccessRiskBadges,
+  ReviewDueBadge,
+  formatRiskDate,
+} from '@modules/role/components/AccessRiskIndicators';
 import { roleStateValues } from '@modules/role/constants/role.constants';
 import { RoleCreateSurface } from '@modules/role/forms/role-mutation-forms';
 import {
@@ -547,8 +552,17 @@ const RoleTemplateCatalogPanel = ({
       id: 'warning',
       header: t('role:templates.warnings'),
       cell: ({ row }) =>
-        row.original.warnings.length > 0 ? (
-          <StatusBadge label={t('role:templateCatalog.sensitiveWarning')} tone="warning" />
+        row.original.warnings.length > 0 ||
+        row.original.isSensitive ||
+        row.original.isGlobalLike ||
+        row.original.isHighRisk ||
+        row.original.requiresReview ? (
+          <div className="flex flex-wrap gap-1">
+            <AccessRiskBadges risk={row.original} />
+            {row.original.warnings.length > 0 ? (
+              <StatusBadge label={t('role:templateCatalog.sensitiveWarning')} tone="warning" />
+            ) : null}
+          </div>
         ) : (
           '-'
         ),
@@ -657,9 +671,26 @@ const RoleBundleTab = ({
       header: t('role:bundles.supportMode'),
       cell: ({ row }) =>
         row.original.sensitive || row.original.sensitiveWarning ? (
-          <StatusBadge label={t('role:bundles.sensitiveWarning')} tone="warning" />
+          <div className="flex flex-wrap gap-1">
+            <StatusBadge label={t('role:bundles.sensitiveWarning')} tone="warning" />
+            <AccessRiskBadges
+              risk={{
+                ...row.original,
+                isSensitive: row.original.isSensitive ?? row.original.sensitive,
+                requiresReview: row.original.requiresReview ?? row.original.sensitive,
+              }}
+            />
+          </div>
         ) : (
-          t('role:bundles.readOnlySupport')
+          <div>
+            <p>{t('role:bundles.readOnlySupport')}</p>
+            {row.original.code === 'AUDITOR_BUNDLE' ? (
+              <p className="mt-1 text-xs text-muted">
+                Auditor mặc định chỉ có quyền đọc không nhạy cảm. Dữ liệu lương, phụ cấp hoặc dữ
+                liệu nhạy cảm cần quyền riêng.
+              </p>
+            ) : null}
+          </div>
         ),
     },
   ];
@@ -809,15 +840,18 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
                   </span>
                   <div className="flex flex-wrap gap-1">
                     <StatusBadge label={formatAssignmentOrigin(assignment.origin)} tone="info" />
-                    {assignment.sensitiveOrGlobal ? (
-                      <StatusBadge label={t('userAccess.sensitive')} tone="warning" />
-                    ) : null}
+                    <AccessRiskBadges risk={assignment} />
+                    <ReviewDueBadge risk={assignment} />
                   </div>
                 </div>
                 <p className="mt-1 text-xs text-muted">
                   {t('userAccess.scopeCount', {
                     count: assignment.structuredScopeGrants.length,
                   })}
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  Ngày rà soát: {formatRiskDate(assignment.reviewAt)} · Ngày hết hiệu lực:{' '}
+                  {formatRiskDate(assignment.expiresAt)}
                 </p>
               </div>
             ))}

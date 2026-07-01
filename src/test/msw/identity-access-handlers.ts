@@ -113,6 +113,8 @@ type RoleAssignmentRecord = {
   scopeGrants?: RoleAssignmentScopeGrants;
   state: RoleAssignmentState;
   effectiveAt: number;
+  expiresAt?: number | null;
+  reviewAt?: number | null;
   revokedAt: number | null;
   revokedBy?: string | null;
   revokeReason?: string | null;
@@ -214,6 +216,10 @@ type WorkspaceAvailabilityRecord = {
 };
 
 const now = Date.parse('2026-04-22T00:00:00.000Z');
+const dayMs = 24 * 60 * 60 * 1000;
+const sensitiveAccessDefaultReviewWindowDays = 90;
+const privilegedAccessReviewWindowDays = 30;
+const breakGlassAccessWindowDays = 14;
 const templateVersion = '2026-05-20';
 const initialUserSeed = 900;
 const initialRoleSeed = 800;
@@ -1527,6 +1533,11 @@ const toEffectiveAccessRecord = (user: UserRecord) => {
     activeRoleAssignments: activeAssignments.map((assignment) => {
       const role = readRole(assignment.roleId);
       const scopeModules = assignment.scopeGrants ? Object.keys(assignment.scopeGrants) : [];
+      const structuredScopeGrants = toStructuredScopeGrants(assignment.scopeGrants);
+      const accessRisk = buildAccessRisk({
+        roleCode: role?.code ?? null,
+        scopeGrants: structuredScopeGrants,
+      });
 
       return {
         assignmentId: assignment.assignmentId,
@@ -1535,20 +1546,23 @@ const toEffectiveAccessRecord = (user: UserRecord) => {
         roleName: role?.name ?? null,
         permissions: role ? role.permissions.map((permission) => permission.code) : [],
         legacyScopeGrants: assignment.scopeGrants ?? null,
-        structuredScopeGrants: scopeModules.map((module) => ({ module })),
+        structuredScopeGrants,
         scopeFingerprint: scopeModules.length > 0 ? scopeModules.join('|') : 'none',
         reason: assignment.reason,
         assignedBy: 'mock-admin',
         assignedAt: assignment.effectiveAt,
         effectiveAt: assignment.effectiveAt,
-        expiresAt: null,
-        reviewAt: null,
+        expiresAt: assignment.expiresAt ?? null,
+        reviewAt: assignment.reviewAt ?? null,
         origin: 'DIRECT',
         bundleOrigin: null,
-        sensitiveOrGlobal: Boolean(
-          assignment.scopeGrants &&
-          Object.values(assignment.scopeGrants).some((scopes) => scopes?.includes('global')),
-        ),
+        sensitiveOrGlobal: accessRisk.isSensitive || accessRisk.isGlobalLike,
+        isSensitive: accessRisk.isSensitive,
+        isGlobalLike: accessRisk.isGlobalLike,
+        isHighRisk: accessRisk.isHighRisk,
+        requiresReview: accessRisk.requiresReview,
+        isBreakGlassLike: accessRisk.isBreakGlassLike,
+        accessRisk,
       };
     }),
     roles: assignedRoles.map((role) => ({
@@ -1571,6 +1585,10 @@ const toAccessAssignmentLifecycleItem = (assignment: RoleAssignmentRecord) => {
   const role = readRole(assignment.roleId);
   const structuredScopeGrants = toStructuredScopeGrants(assignment.scopeGrants);
   const currentlyEffective = assignment.state === 'ACTIVE';
+  const accessRisk = buildAccessRisk({
+    roleCode: role?.code ?? null,
+    scopeGrants: structuredScopeGrants,
+  });
 
   return {
     assignmentId: assignment.assignmentId,
@@ -1594,8 +1612,8 @@ const toAccessAssignmentLifecycleItem = (assignment: RoleAssignmentRecord) => {
     currentlyEffective,
     inactiveReason: currentlyEffective ? null : assignment.state,
     effectiveAt: assignment.effectiveAt,
-    expiresAt: null,
-    reviewAt: null,
+    expiresAt: assignment.expiresAt ?? null,
+    reviewAt: assignment.reviewAt ?? null,
     assignedBy: 'mock-admin',
     assignedAt: assignment.effectiveAt,
     revokedAt: assignment.revokedAt,
@@ -1604,9 +1622,13 @@ const toAccessAssignmentLifecycleItem = (assignment: RoleAssignmentRecord) => {
     origin: 'DIRECT',
     bundleOrigin: null,
     reason: assignment.reason,
-    sensitiveOrGlobal: structuredScopeGrants.some((grant) =>
-      ['global', 'financeGlobal'].includes(grant.scopeType),
-    ),
+    sensitiveOrGlobal: accessRisk.isSensitive || accessRisk.isGlobalLike,
+    isSensitive: accessRisk.isSensitive,
+    isGlobalLike: accessRisk.isGlobalLike,
+    isHighRisk: accessRisk.isHighRisk,
+    requiresReview: accessRisk.requiresReview,
+    isBreakGlassLike: accessRisk.isBreakGlassLike,
+    accessRisk,
     supportedActions: assignment.state === 'ACTIVE' ? ['REVOKE'] : [],
     auditSummary: {
       assignmentId: assignment.assignmentId,
@@ -1712,6 +1734,17 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
     ? (body.structuredScopeGrants as Array<Record<string, unknown>>)
     : [];
   const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+  const effectiveAt = readOptionalTimestamp(body.effectiveAt) ?? Date.now();
+  const reviewAt = readOptionalTimestamp(body.reviewAt);
+  const expiresAt = readOptionalTimestamp(body.expiresAt);
+  const risk = buildAccessRisk({
+    roleCode:
+      target?.assignmentKind === 'BUNDLE'
+        ? ((target.childRoles?.[0] as string | undefined) ?? targetCode)
+        : targetCode,
+    scopeGrants,
+    catalogHighRisk: target?.sensitiveLevel === 'HIGH_RISK',
+  });
   const blockers: Array<{ severity: 'BLOCKER'; code: string; summary: string }> = [];
   const warnings: Array<{ severity: 'WARNING'; code: string; summary: string }> = [];
 
@@ -1727,6 +1760,13 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
       severity: 'BLOCKER',
       code: 'REASON_REQUIRED',
       summary: 'Reason is required.',
+    });
+  }
+  if (targetUserId === 'user-admin') {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'SELF_ASSIGNMENT_BLOCKED',
+      summary: 'Current actor cannot assign access to themselves.',
     });
   }
   if (
@@ -1763,7 +1803,43 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
       summary: 'Matching active management responsibility is required.',
     });
   }
-  if (target?.sensitiveLevel === 'HIGH_RISK') {
+  if (risk.requiresReview && reviewAt === null) {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'REVIEW_AT_REQUIRED',
+      summary: 'reviewAt is required for sensitive or global access.',
+    });
+  } else if (
+    risk.requiresReview &&
+    reviewAt !== null &&
+    risk.maxReviewWindowDays !== null &&
+    reviewAt > effectiveAt + risk.maxReviewWindowDays * dayMs
+  ) {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'REVIEW_AT_EXCEEDS_MAX_WINDOW',
+      summary: `reviewAt must be within ${risk.maxReviewWindowDays} days for this access grant.`,
+    });
+  }
+  if (risk.isBreakGlassLike && expiresAt === null) {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'EXPIRES_AT_REQUIRED',
+      summary: 'expiresAt is required for break-glass-like access.',
+    });
+  } else if (
+    risk.isBreakGlassLike &&
+    expiresAt !== null &&
+    risk.maxExpiryWindowDays !== null &&
+    expiresAt > effectiveAt + risk.maxExpiryWindowDays * dayMs
+  ) {
+    blockers.push({
+      severity: 'BLOCKER',
+      code: 'EXPIRES_AT_EXCEEDS_MAX_WINDOW',
+      summary: `expiresAt must be within ${risk.maxExpiryWindowDays} days for break-glass-like access.`,
+    });
+  }
+  if (risk.isSensitive || risk.isGlobalLike) {
     warnings.push({
       severity: 'WARNING',
       code: 'ADDITIONAL_REVIEW_REQUIRED',
@@ -1785,9 +1861,9 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
           permissions: ['workSchedule.read'],
           structuredScopeGrants: scopeGrants,
           scopeFingerprint: scopeGrants.length > 0 ? 'scope:v1:test' : 'scope:v1:legacy',
-          effectiveAt: Date.now(),
-          expiresAt: null,
-          reviewAt: null,
+          effectiveAt,
+          expiresAt,
+          reviewAt,
           origin: target?.assignmentKind === 'BUNDLE' ? 'BUNDLE' : 'DIRECT',
           bundleOrigin:
             target?.assignmentKind === 'BUNDLE'
@@ -1798,6 +1874,12 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
                 }
               : null,
           reason,
+          accessRisk: risk,
+          isSensitive: risk.isSensitive,
+          isGlobalLike: risk.isGlobalLike,
+          isHighRisk: risk.isHighRisk,
+          requiresReview: risk.requiresReview,
+          isBreakGlassLike: risk.isBreakGlassLike,
         },
       ]
     : [];
@@ -1866,8 +1948,24 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
         ]
       : [],
     sensitiveAccess: {
-      sensitiveOrGlobal: target?.sensitiveLevel === 'HIGH_RISK',
-      reasonRequired: target?.sensitiveLevel === 'HIGH_RISK',
+      ...risk,
+      sensitiveOrGlobal: risk.isSensitive || risk.isGlobalLike,
+      reasonRequired: risk.isSensitive || risk.isGlobalLike,
+      requiresReview: risk.requiresReview,
+      requiresExpiry: risk.isBreakGlassLike,
+      reviewAt,
+      expiresAt,
+      lifecycleBlockers: blockers.filter((blocker) =>
+        [
+          'REVIEW_AT_REQUIRED',
+          'REVIEW_AT_EXCEEDS_MAX_WINDOW',
+          'EXPIRES_AT_REQUIRED',
+          'EXPIRES_AT_EXCEEDS_MAX_WINDOW',
+        ].includes(blocker.code),
+      ),
+      denyReasons: blockers.map((blocker) => blocker.code),
+      reviewPolicy: risk.requiresReview ? 'REVIEW_REQUIRED' : 'NOT_REQUIRED',
+      approvalWorkflow: 'NOT_IMPLEMENTED_IN_AUTH_5A',
     },
     duplicateConflicts: [],
     previewCompleteness: { status: 'COMPLETE', gaps: [] },
@@ -1877,6 +1975,78 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
       mutatesSource: false,
     },
   };
+};
+
+const buildAccessRisk = ({
+  roleCode,
+  scopeGrants,
+  catalogHighRisk = false,
+}: {
+  roleCode?: string | null;
+  scopeGrants: Array<Record<string, unknown>>;
+  catalogHighRisk?: boolean;
+}) => {
+  const globalScopes = scopeGrants.filter((grant) =>
+    ['global', 'financeGlobal'].includes(String(grant.scopeType ?? '')),
+  );
+  const isBreakGlassLike = roleCode === 'OWNER_ADMIN';
+  const isPrivilegedAccessGovernance = roleCode === 'OWNER_ADMIN' || roleCode === 'ACCESS_ADMIN';
+  const sensitiveRoles = new Set([
+    'OWNER_ADMIN',
+    'ACCESS_ADMIN',
+    'HR_TERMS_APPROVER',
+    'REVENUE_APPROVER',
+    'REVENUE_RECONCILER',
+    'COMMISSION_APPROVER',
+    'ATTENDANCE_APPROVER',
+    'MONTHLY_CLOSE_OWNER',
+    'PAYROLL_DRAFT_APPROVER',
+  ]);
+  const isSensitive = catalogHighRisk || isBreakGlassLike || sensitiveRoles.has(String(roleCode));
+  const isGlobalLike = globalScopes.length > 0;
+  const isHighRisk = isSensitive || isGlobalLike;
+
+  return {
+    isSensitive,
+    isGlobalLike,
+    isHighRisk,
+    requiresReason: isSensitive || isGlobalLike,
+    requiresReview: isSensitive || isGlobalLike,
+    isBreakGlassLike,
+    isPrivilegedAccessGovernance,
+    maxReviewWindowDays: isBreakGlassLike
+      ? breakGlassAccessWindowDays
+      : isPrivilegedAccessGovernance
+        ? privilegedAccessReviewWindowDays
+        : isSensitive || isGlobalLike
+          ? sensitiveAccessDefaultReviewWindowDays
+          : null,
+    requiresExpiry: isBreakGlassLike,
+    maxExpiryWindowDays: isBreakGlassLike ? breakGlassAccessWindowDays : null,
+    globalScopes,
+    sensitiveRoleCodes: isSensitive && roleCode ? [roleCode] : [],
+    highRiskRoleCodes: isHighRisk && roleCode ? [roleCode] : [],
+    sensitivePermissions: [],
+    riskReasons: [
+      ...(isSensitive && roleCode ? [`Sensitive role template ${roleCode}`] : []),
+      ...(isGlobalLike ? ['Global-like scope grant'] : []),
+    ],
+  };
+};
+
+const readOptionalTimestamp = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const timestamp =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Date.parse(value)
+        : Number.NaN;
+
+  return Number.isFinite(timestamp) ? Math.trunc(timestamp) : null;
 };
 
 const readManualRoleCode = (value: unknown): string | undefined => {
@@ -1981,6 +2151,9 @@ export const identityAccessHandlers = [
           'bundleVersion',
           'structuredScopeGrants',
           'reason',
+          'effectiveAt',
+          'expiresAt',
+          'reviewAt',
           'sourceContext',
         ],
         frontendSettableAuthorityFields: [],

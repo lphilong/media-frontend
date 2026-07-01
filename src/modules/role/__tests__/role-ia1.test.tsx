@@ -8,7 +8,11 @@ import { appRoutes } from '@app/router/router';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import { server } from '@test/msw/server';
-import { createRole, createRoleFromTemplate } from '@modules/role/api/role.api';
+import {
+  createRole,
+  createRoleFromTemplate,
+  previewAccessAssignment,
+} from '@modules/role/api/role.api';
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {
@@ -257,6 +261,11 @@ describe('role IA-1 surfaces', () => {
       expect(screen.getAllByText('Quản trị chủ sở hữu').length).toBeGreaterThan(0),
     );
     expect(
+      screen.getByText(
+        'Auditor mặc định chỉ có quyền đọc không nhạy cảm. Dữ liệu lương, phụ cấp hoặc dữ liệu nhạy cảm cần quyền riêng.',
+      ),
+    ).toBeInTheDocument();
+    expect(
       screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
     ).not.toBeInTheDocument();
 
@@ -273,6 +282,30 @@ describe('role IA-1 surfaces', () => {
     await user.click(screen.getByRole('tab', { name: i18n.t('role:tabs.userAccess') }));
     expect(await screen.findByText(i18n.t('role:userAccess.emptyTitle'))).toBeInTheDocument();
   });
+
+  it('shows AUTH-5 risk and review state in effective access', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    renderRoute('/roles');
+
+    expect(
+      await screen.findByRole('heading', { name: i18n.t('role:page.title') }),
+    ).toBeInTheDocument();
+    await user.click(await screen.findByRole('tab', { name: i18n.t('role:tabs.userAccess') }));
+
+    const userPicker = await findPickerSurface('role-effective-access-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(i18n.t('role:placeholders.userSearch')),
+      'Ad',
+    );
+    await user.click(await within(userPicker).findByText(/Admin User/u));
+
+    expect(await screen.findByText('Phạm vi toàn cục')).toBeInTheDocument();
+    expect(screen.getByText('Rủi ro cao')).toBeInTheDocument();
+    expect(screen.getByText('Cần rà soát')).toBeInTheDocument();
+    expect(screen.getByText('Thiếu ngày rà soát')).toBeInTheDocument();
+    expect(screen.getByText(/Ngày rà soát: - · Ngày hết hiệu lực: -/u)).toBeInTheDocument();
+  }, 15_000);
 
   it('supports user-first access assignment preview and apply without frontend-owned authority fields', async () => {
     await setLocale(DEFAULT_LOCALE);
@@ -539,6 +572,233 @@ describe('role IA-1 surfaces', () => {
     expect(
       screen.queryByText(i18n.t('role:accessAssignment.lifecycle.feedback.revoked')),
     ).not.toBeInTheDocument();
+  }, 20_000);
+
+  it('shows AUTH-5 risk badges and blocks apply when sensitive preview returns blockers', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    await renderAssignmentTab(user);
+
+    const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.userSearchPlaceholder'),
+      ),
+      'Al',
+    );
+    await user.click(await within(userPicker).findByText(/Alice/u));
+    await user.type(
+      screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
+      'Sensitive owner access test',
+    );
+
+    const previewButton = screen.getByRole('button', {
+      name: i18n.t('role:accessAssignment.previewButton'),
+    });
+    const applyButton = screen.getByRole('button', {
+      name: i18n.t('role:accessAssignment.applyButton'),
+    });
+    await user.click(previewButton);
+
+    expect(await screen.findByText('Đánh giá rủi ro quyền cấp')).toBeInTheDocument();
+    expect(screen.getByText('Quyền nhạy cảm')).toBeInTheDocument();
+    expect(screen.getByText('Phạm vi toàn cục')).toBeInTheDocument();
+    expect(screen.getByText('Rủi ro cao')).toBeInTheDocument();
+    expect(screen.getByText('Cần rà soát')).toBeInTheDocument();
+    expect(screen.getByText('Quyền khẩn cấp')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Thiếu ngày rà soát. Quyền này thuộc nhóm nhạy cảm hoặc phạm vi toàn cục nên cần ngày rà soát.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Quyền khẩn cấp cần ngày hết hiệu lực. Quyền này có rủi ro cao và cần ngày hết hiệu lực.',
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(applyButton).toBeDisabled());
+  }, 20_000);
+
+  it('keeps Apply disabled when preview contradicts canApply with blockers', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    let applyRequests = 0;
+
+    server.use(
+      http.get('*/admin/employment-profiles', () =>
+        HttpResponse.json({ data: [activeLinkedEmploymentProfile], meta: {} }),
+      ),
+      http.post('*/admin/access-assignments/preview', () =>
+        HttpResponse.json({
+          data: {
+            previewOnly: true,
+            canApply: true,
+            blockers: [
+              {
+                severity: 'BLOCKER',
+                code: 'REVIEW_AT_EXCEEDS_MAX_WINDOW',
+                summary: 'reviewAt must be within 90 days for this access grant.',
+              },
+            ],
+            warnings: [],
+            normalizedScope: [{ scopeType: 'self' }],
+            proposedAssignments: [{ roleCode: 'STAFF_CONSOLE_USER' }],
+            effectiveAccessDelta: { addedPermissions: ['workSchedule.read'] },
+          },
+        }),
+      ),
+      http.post('*/admin/access-assignments/apply', () => {
+        applyRequests += 1;
+        return HttpResponse.json({ data: { applied: true, applyStatus: 'APPLIED' } });
+      }),
+    );
+
+    await renderAssignmentTab(user);
+
+    const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.userSearchPlaceholder'),
+      ),
+      'Al',
+    );
+    await user.click(await within(userPicker).findByText(/Alice Linked/u));
+    const targetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
+    const staffOption = within(targetSelect).getByRole('option', { name: /Staff Console/u });
+    await user.selectOptions(targetSelect, staffOption);
+    await user.type(
+      screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
+      'Contradictory preview blocker coverage',
+    );
+
+    const previewButton = screen.getByRole('button', {
+      name: i18n.t('role:accessAssignment.previewButton'),
+    });
+    const applyButton = screen.getByRole('button', {
+      name: i18n.t('role:accessAssignment.applyButton'),
+    });
+    await user.click(previewButton);
+
+    expect(
+      await screen.findByText(i18n.t('role:accessAssignment.previewBlocked')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Ngày rà soát vượt giới hạn. Ngày rà soát vượt giới hạn chính sách cho quyền nhạy cảm hoặc quyền toàn cục.',
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(applyButton).toBeDisabled());
+    await user.click(applyButton);
+    expect(applyRequests).toBe(0);
+  }, 20_000);
+
+  it('renders self-grant and self-revoke blockers with operator wording', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    server.use(
+      http.post('*/admin/access-assignments/preview', () =>
+        HttpResponse.json({
+          data: {
+            previewOnly: true,
+            canApply: false,
+            blockers: [
+              {
+                severity: 'BLOCKER',
+                code: 'SELF_ASSIGNMENT_BLOCKED',
+                summary: 'Current actor cannot assign access to themselves.',
+              },
+            ],
+            warnings: [],
+            normalizedScope: [{ scopeType: 'self' }],
+            sensitiveAccess: {
+              sensitiveOrGlobal: true,
+              isSensitive: true,
+              isHighRisk: true,
+              requiresReview: true,
+            },
+          },
+        }),
+      ),
+      http.post('*/admin/access-assignments/:assignmentId/revoke', async ({ params }) =>
+        HttpResponse.json({
+          data: {
+            revoked: false,
+            lifecycleStatus: 'BLOCKED',
+            blockers: [
+              {
+                severity: 'BLOCKER',
+                code: 'SELF_LIFECYCLE_BLOCKED',
+                summary:
+                  'Actors cannot revoke their own access assignment through normal lifecycle UI.',
+              },
+            ],
+            warnings: [],
+            assignment: {
+              ...lifecycleAssignment,
+              assignmentId: String(params.assignmentId),
+            },
+            auditTrace: {
+              written: false,
+              reason: 'LIFECYCLE_REVOKE_BLOCKED_BEFORE_MUTATION',
+            },
+            sourceTrace: {
+              mutatesSource: false,
+              source: 'role_assignments',
+            },
+          },
+        }),
+      ),
+    );
+
+    await renderAssignmentTab(user);
+
+    const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.userSearchPlaceholder'),
+      ),
+      'Al',
+    );
+    await user.click(await within(userPicker).findByText(/Alice/u));
+    const targetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
+    const staffOption = within(targetSelect).getByRole('option', { name: /Staff Console/u });
+    await user.selectOptions(targetSelect, staffOption);
+    await user.type(
+      screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
+      'Self grant copy coverage',
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('role:accessAssignment.previewButton') }),
+    );
+    expect(
+      await screen.findByText(
+        'Không thể tự cấp quyền. Bạn không thể cấp quyền nhạy cảm hoặc quyền toàn cục cho chính mình.',
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('role:accessAssignment.lifecycle.revokeButton'),
+      }),
+    );
+    await user.type(
+      screen.getByPlaceholderText(
+        i18n.t('role:accessAssignment.lifecycle.revokeReasonPlaceholder'),
+      ),
+      'Self revoke copy coverage',
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('role:accessAssignment.lifecycle.confirmRevoke'),
+      }),
+    );
+    expect(
+      await screen.findByText(
+        'Không thể tự thu hồi quyền của chính bạn. Thao tác này cần được thực hiện bởi người có thẩm quyền khác để đảm bảo kiểm soát vận hành.',
+      ),
+    ).toBeInTheDocument();
   }, 20_000);
 
   it('does not load a full user list or fallback to /admin/users before operator search', async () => {
@@ -1364,6 +1624,52 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByRole('button', { name: /rename permission/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /set auth0 linkage/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/credential|token|password|session/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('role MSW access assignment policy behavior', () => {
+  it('returns REVIEW_AT_EXCEEDS_MAX_WINDOW for global access beyond the 90-day review window', async () => {
+    const result = await previewAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'STAFF_CONSOLE_USER',
+      structuredScopeGrants: [{ scopeType: 'global' }],
+      reason: 'MSW max review window coverage',
+      effectiveAt: '2026-01-01',
+      reviewAt: '2026-04-15',
+    });
+
+    expect(result.canApply).toBe(false);
+    expect(result.blockers.map((blocker) => blocker.code)).toContain(
+      'REVIEW_AT_EXCEEDS_MAX_WINDOW',
+    );
+    expect(result.sensitiveAccess).toMatchObject({
+      maxReviewWindowDays: 90,
+      reviewAt: Date.parse('2026-04-15'),
+    });
+  });
+
+  it('returns EXPIRES_AT_EXCEEDS_MAX_WINDOW for Owner Admin beyond the 14-day expiry window', async () => {
+    const result = await previewAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'OWNER_ADMIN',
+      structuredScopeGrants: [{ scopeType: 'global' }],
+      reason: 'MSW max expiry window coverage',
+      effectiveAt: '2026-01-01',
+      reviewAt: '2026-01-10',
+      expiresAt: '2026-01-20',
+    });
+
+    expect(result.canApply).toBe(false);
+    expect(result.blockers.map((blocker) => blocker.code)).toContain(
+      'EXPIRES_AT_EXCEEDS_MAX_WINDOW',
+    );
+    expect(result.sensitiveAccess).toMatchObject({
+      maxReviewWindowDays: 14,
+      maxExpiryWindowDays: 14,
+      expiresAt: Date.parse('2026-01-20'),
+    });
   });
 });
 

@@ -8,6 +8,11 @@ import {
   useAccessAssignmentsForUser,
   useAccessAssignmentTargets,
 } from '@modules/role/hooks/use-role';
+import {
+  AccessRiskBadges,
+  AccessRiskSummary,
+  ReviewDueBadge,
+} from '@modules/role/components/AccessRiskIndicators';
 import type {
   AccessAssignmentApplyResult,
   AccessAssignmentIssue,
@@ -88,6 +93,8 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const [scopeTargetIds, setScopeTargetIds] = useState<Record<string, string | undefined>>({});
   const [scopePeriodKeys, setScopePeriodKeys] = useState<Record<string, string | undefined>>({});
   const [reason, setReason] = useState('');
+  const [reviewAt, setReviewAt] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
   const [previewSignature, setPreviewSignature] = useState<string | null>(null);
   const [applyResult, setApplyResult] = useState<AccessAssignmentApplyResult | null>(null);
   const [selectedLifecycleAssignment, setSelectedLifecycleAssignment] =
@@ -144,14 +151,18 @@ export const AccessAssignmentTab = (): JSX.Element => {
             selectedTarget,
             structuredScopeGrants,
             reason: reasonValue,
+            reviewAt,
+            expiresAt,
           })
         : null,
     [
       reasonValue,
+      reviewAt,
       selectedTarget,
       selectedUserId,
       structuredScopeGrants,
       unsupportedScopeTypes.length,
+      expiresAt,
     ],
   );
   const currentSignature = currentPayload ? JSON.stringify(currentPayload) : '';
@@ -159,6 +170,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const previewMatchesCurrent = Boolean(
     previewResult && previewSignature && previewSignature === currentSignature,
   );
+  const previewHasBlockers = (previewResult?.blockers ?? []).length > 0;
   const canPreview = Boolean(
     currentPayload &&
     selectedUserId &&
@@ -172,6 +184,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
     currentPayload &&
     previewMatchesCurrent &&
     previewResult?.canApply === true &&
+    !previewHasBlockers &&
     reasonValue &&
     !applyMutation.isPending,
   );
@@ -422,6 +435,30 @@ export const AccessAssignmentTab = (): JSX.Element => {
             placeholder={t('role:accessAssignment.reasonPlaceholder')}
           />
         </label>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <label className="block">
+            <span className="text-xs font-medium uppercase text-muted">Ngày rà soát</span>
+            <input
+              type="date"
+              value={reviewAt}
+              onChange={(event) => setReviewAt(event.target.value)}
+              className="mt-1 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium uppercase text-muted">Ngày hết hiệu lực</span>
+            <input
+              type="date"
+              value={expiresAt}
+              onChange={(event) => setExpiresAt(event.target.value)}
+              className="mt-1 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          Quyền nhạy cảm hoặc phạm vi toàn cục có thể cần ngày rà soát; quyền khẩn cấp có thể cần
+          ngày hết hiệu lực. Hệ thống sẽ kiểm tra chính sách khi xem trước.
+        </p>
       </MetadataSection>
 
       <MetadataSection title={t('role:accessAssignment.previewTitle')}>
@@ -617,6 +654,8 @@ const AssignmentLifecycleSection = ({
                       tone="warning"
                     />
                   )}
+                  <AccessRiskBadges risk={assignment} />
+                  <ReviewDueBadge risk={assignment} />
                 </div>
               </div>
               <ReadOnlyFieldGrid
@@ -643,8 +682,13 @@ const AssignmentLifecycleSection = ({
                     value: formatTimestamp(assignment.assignedAt),
                   },
                   {
+                    key: 'review',
+                    label: 'Ngày rà soát',
+                    value: formatTimestamp(assignment.reviewAt),
+                  },
+                  {
                     key: 'expires',
-                    label: t('role:accessAssignment.lifecycle.expiresAt'),
+                    label: 'Ngày hết hiệu lực',
                     value: formatTimestamp(assignment.expiresAt),
                   },
                   {
@@ -783,17 +827,18 @@ const PreviewSummary = ({
   const warnings = result.warnings ?? [];
   const proposedAssignments = result.proposedAssignments ?? [];
   const addedPermissions = result.effectiveAccessDelta?.addedPermissions ?? [];
+  const canApply = result.canApply === true && blockers.length === 0;
 
   return (
     <div className="mt-4 space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge
           label={
-            result.canApply
+            canApply
               ? t('accessAssignment.previewCanApply')
               : t('accessAssignment.previewBlocked')
           }
-          tone={result.canApply ? 'success' : 'warning'}
+          tone={canApply ? 'success' : 'warning'}
         />
         {!previewMatchesCurrent ? (
           <StatusBadge label={t('accessAssignment.previewStale')} tone="warning" />
@@ -801,6 +846,7 @@ const PreviewSummary = ({
       </div>
       <IssueList title={t('accessAssignment.blockersTitle')} issues={blockers} />
       <IssueList title={t('accessAssignment.warningsTitle')} issues={warnings} />
+      <AccessRiskSummary risk={result.sensitiveAccess} />
       <ReadOnlyFieldGrid
         columns={3}
         fields={[
@@ -853,6 +899,7 @@ const ApplySummary = ({
     >
       <IssueList title={t('accessAssignment.blockersTitle')} issues={result.blockers ?? []} />
       <IssueList title={t('accessAssignment.warningsTitle')} issues={result.warnings ?? []} />
+      <AccessRiskSummary risk={result.sensitiveAccess} />
       <ReadOnlyFieldGrid
         columns={3}
         fields={[
@@ -1009,12 +1056,16 @@ function buildPayload(input: {
   selectedTarget: AccessAssignmentTargetOption;
   structuredScopeGrants: AccessAssignmentScopeGrant[];
   reason: string;
+  reviewAt?: string;
+  expiresAt?: string;
 }): AccessAssignmentRequestPayload {
   const payload: AccessAssignmentRequestPayload = {
     targetUserId: input.selectedUserId,
     assignmentTargetType: input.selectedTarget.assignmentKind,
     structuredScopeGrants: input.structuredScopeGrants,
     reason: input.reason,
+    reviewAt: input.reviewAt || undefined,
+    expiresAt: input.expiresAt || undefined,
   };
 
   if (input.selectedTarget.assignmentKind === 'ROLE') {
@@ -1061,8 +1112,21 @@ function formatIssue(issue: AccessAssignmentIssue): string {
     RESPONSIBILITY_REQUIRED: 'Chưa có phân công trách nhiệm quản lý phù hợp.',
     LEGACY_ROLE_BLOCKED: 'Mẫu vai trò cũ không còn được dùng để gán quyền mới.',
     DUPLICATE_ACTIVE_ASSIGNMENT: 'Quyền này đã được gán trong cùng phạm vi.',
-    SELF_ASSIGNMENT_BLOCKED: 'Không thể tự gán quyền cho chính mình.',
+    SELF_ASSIGNMENT_BLOCKED:
+      'Không thể tự cấp quyền. Bạn không thể cấp quyền nhạy cảm hoặc quyền toàn cục cho chính mình.',
     REASON_REQUIRED: 'Nhập lý do gán quyền.',
+    REVIEW_AT_REQUIRED:
+      'Thiếu ngày rà soát. Quyền này thuộc nhóm nhạy cảm hoặc phạm vi toàn cục nên cần ngày rà soát.',
+    REVIEW_AT_EXCEEDS_MAX_WINDOW:
+      'Ngày rà soát vượt giới hạn. Ngày rà soát vượt giới hạn chính sách cho quyền nhạy cảm hoặc quyền toàn cục.',
+    EXPIRES_AT_REQUIRED:
+      'Quyền khẩn cấp cần ngày hết hiệu lực. Quyền này có rủi ro cao và cần ngày hết hiệu lực.',
+    EXPIRES_AT_EXCEEDS_MAX_WINDOW:
+      'Ngày hết hiệu lực vượt giới hạn chính sách cho quyền khẩn cấp.',
+    SOD_CONFLICT_BLOCKED:
+      'Bị chặn do xung đột phân quyền. Thao tác này bị chặn để tránh một người vừa thực hiện vừa kiểm soát cùng quyền nhạy cảm.',
+    SELF_LIFECYCLE_BLOCKED:
+      'Không thể tự thu hồi quyền của chính bạn. Thao tác này cần được thực hiện bởi người có thẩm quyền khác để đảm bảo kiểm soát vận hành.',
   };
 
   return friendly[issue.code] ?? issue.summary ?? issue.code;

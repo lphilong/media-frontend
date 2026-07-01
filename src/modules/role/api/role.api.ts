@@ -99,6 +99,39 @@ const roleTemplateScopePlanEntrySchema = z
   })
   .strict();
 
+const accessRiskSchema = z
+  .object({
+    isSensitive: z.boolean().default(false),
+    isGlobalLike: z.boolean().default(false),
+    isHighRisk: z.boolean().default(false),
+    requiresReason: z.boolean().optional(),
+    requiresReview: z.boolean().default(false),
+    isBreakGlassLike: z.boolean().default(false),
+    isPrivilegedAccessGovernance: z.boolean().optional(),
+    maxReviewWindowDays: z.number().nullable().optional(),
+    requiresExpiry: z.boolean().optional(),
+    maxExpiryWindowDays: z.number().nullable().optional(),
+    globalScopes: z.array(z.record(z.unknown())).optional(),
+    sensitiveRoleCodes: z.array(z.string()).optional(),
+    highRiskRoleCodes: z.array(z.string()).optional(),
+    sensitivePermissions: z.array(z.string()).optional(),
+    riskReasons: z.array(z.string()).optional(),
+  })
+  .catchall(z.unknown());
+
+const accessRiskPreviewSchema = accessRiskSchema
+  .extend({
+    sensitiveOrGlobal: z.boolean().default(false),
+    reasonRequired: z.boolean().optional(),
+    reviewAt: z.union([z.number(), z.string()]).nullable().optional(),
+    expiresAt: z.union([z.number(), z.string()]).nullable().optional(),
+    lifecycleBlockers: z.array(z.record(z.unknown())).optional(),
+    denyReasons: z.array(z.string()).optional(),
+    reviewPolicy: z.string().optional(),
+    approvalWorkflow: z.string().optional(),
+  })
+  .catchall(z.unknown());
+
 const workScheduleScopeGrantSchema = z.enum(['self', 'team', 'department', 'global']);
 const globalScopeGrantSchema = z.enum(['global']);
 const eventAssignmentScopeGrantSchema = z.enum(['global', 'managedGroup']);
@@ -132,6 +165,12 @@ export const roleTemplateSchema = z
     warnings: z.array(z.string()),
     implementationNotes: z.array(z.string()),
     status: roleTemplateStatusSchema,
+    isSensitive: z.boolean().default(false),
+    isGlobalLike: z.boolean().default(false),
+    isHighRisk: z.boolean().default(false),
+    requiresReview: z.boolean().default(false),
+    isBreakGlassLike: z.boolean().default(false),
+    accessRisk: accessRiskSchema.nullable().optional(),
   })
   .strict();
 
@@ -259,6 +298,12 @@ const roleBundleSchema = z
     recommendedScopes: z.array(z.string().trim().min(1)),
     sensitiveWarning: z.string().nullable(),
     sensitive: z.boolean(),
+    isSensitive: z.boolean().default(false),
+    isGlobalLike: z.boolean().default(false),
+    isHighRisk: z.boolean().default(false),
+    requiresReview: z.boolean().default(false),
+    isBreakGlassLike: z.boolean().default(false),
+    accessRisk: accessRiskSchema.nullable().optional(),
     createdAt: z.string().trim().min(1),
     updatedAt: z.string().trim().min(1),
   })
@@ -372,7 +417,7 @@ const accessAssignmentPreviewSchema = z
     accountContextRequirement: z.record(z.unknown()).nullable().optional(),
     consoleEntitlementPreview: z.record(z.unknown()).nullable().optional(),
     responsibilityRequirements: z.array(z.record(z.unknown())).optional(),
-    sensitiveAccess: z.record(z.unknown()).nullable().optional(),
+    sensitiveAccess: accessRiskPreviewSchema.nullable().optional(),
     duplicateConflicts: z.array(z.record(z.unknown())).optional(),
     legacyRoleStatus: z.record(z.unknown()).nullable().optional(),
     selfAssignmentStatus: z.record(z.unknown()).nullable().optional(),
@@ -404,7 +449,7 @@ const accessAssignmentApplySchema = z
     accountContextResult: z.record(z.unknown()).nullable().optional(),
     consoleEntitlementResult: z.record(z.unknown()).nullable().optional(),
     responsibilityRequirements: z.array(z.record(z.unknown())).optional(),
-    sensitiveAccess: z.record(z.unknown()).nullable().optional(),
+    sensitiveAccess: accessRiskPreviewSchema.nullable().optional(),
     duplicateConflicts: z.array(z.record(z.unknown())).optional(),
     auditTrace: z.record(z.unknown()).nullable().optional(),
     sourceTrace: z.record(z.unknown()).nullable().optional(),
@@ -456,7 +501,13 @@ const accessAssignmentLifecycleItemSchema = z
     origin: z.enum(['DIRECT', 'BUNDLE', 'LEGACY']),
     bundleOrigin: z.record(z.unknown()).nullable(),
     reason: z.string().nullable(),
-    sensitiveOrGlobal: z.boolean(),
+    sensitiveOrGlobal: z.boolean().default(false),
+    isSensitive: z.boolean().default(false),
+    isGlobalLike: z.boolean().default(false),
+    isHighRisk: z.boolean().default(false),
+    requiresReview: z.boolean().default(false),
+    isBreakGlassLike: z.boolean().default(false),
+    accessRisk: accessRiskSchema.nullable().optional(),
     supportedActions: z.array(z.string()),
     auditSummary: accessAssignmentAuditSummarySchema.nullable().optional(),
   })
@@ -524,7 +575,13 @@ const effectiveAccessAssignmentSchema = z
     reviewAt: z.union([z.number(), z.string()]).nullable(),
     origin: z.enum(['DIRECT', 'BUNDLE', 'LEGACY']),
     bundleOrigin: z.record(z.unknown()).nullable(),
-    sensitiveOrGlobal: z.boolean(),
+    sensitiveOrGlobal: z.boolean().default(false),
+    isSensitive: z.boolean().default(false),
+    isGlobalLike: z.boolean().default(false),
+    isHighRisk: z.boolean().default(false),
+    requiresReview: z.boolean().default(false),
+    isBreakGlassLike: z.boolean().default(false),
+    accessRisk: accessRiskSchema.nullable().optional(),
   })
   .strict();
 
@@ -674,6 +731,9 @@ const sanitizeAccessAssignmentPayload = (
   ...(payload.bundleVersion ? { bundleVersion: payload.bundleVersion } : {}),
   structuredScopeGrants: payload.structuredScopeGrants,
   reason: payload.reason,
+  ...(payload.effectiveAt ? { effectiveAt: payload.effectiveAt } : {}),
+  ...(payload.expiresAt ? { expiresAt: payload.expiresAt } : {}),
+  ...(payload.reviewAt ? { reviewAt: payload.reviewAt } : {}),
   ...(payload.sourceContext ? { sourceContext: payload.sourceContext } : {}),
 });
 

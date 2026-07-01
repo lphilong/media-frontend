@@ -79,6 +79,12 @@ export type RoleTemplateListItem = {
   warnings: string[];
   implementationNotes: string[];
   status: RoleTemplateStatus;
+  isSensitive?: boolean;
+  isGlobalLike?: boolean;
+  isHighRisk?: boolean;
+  requiresReview?: boolean;
+  isBreakGlassLike?: boolean;
+  accessRisk?: AccessRisk | null;
 };
 
 export type RoleBundleListItem = {
@@ -93,6 +99,12 @@ export type RoleBundleListItem = {
   recommendedScopes: string[];
   sensitiveWarning: string | null;
   sensitive: boolean;
+  isSensitive?: boolean;
+  isGlobalLike?: boolean;
+  isHighRisk?: boolean;
+  requiresReview?: boolean;
+  isBreakGlassLike?: boolean;
+  accessRisk?: AccessRisk | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -207,6 +219,12 @@ export type EffectiveAccessRoleAssignment = {
   origin: 'DIRECT' | 'BUNDLE' | 'LEGACY';
   bundleOrigin: Record<string, unknown> | null;
   sensitiveOrGlobal: boolean;
+  isSensitive: boolean;
+  isGlobalLike: boolean;
+  isHighRisk: boolean;
+  requiresReview: boolean;
+  isBreakGlassLike: boolean;
+  accessRisk?: AccessRisk | null;
 };
 
 export type EffectiveAccessRecord = {
@@ -299,6 +317,9 @@ export type AccessAssignmentRequestPayload = {
   bundleVersion?: string;
   structuredScopeGrants: AccessAssignmentScopeGrant[];
   reason: string;
+  effectiveAt?: number | string | null;
+  expiresAt?: number | string | null;
+  reviewAt?: number | string | null;
   sourceContext?: {
     talentGroupId?: string;
     orgUnitId?: string;
@@ -342,7 +363,7 @@ export type AccessAssignmentPreviewResult = {
   accountContextRequirement?: Record<string, unknown> | null;
   consoleEntitlementPreview?: Record<string, unknown> | null;
   responsibilityRequirements?: Array<Record<string, unknown>>;
-  sensitiveAccess?: Record<string, unknown> | null;
+  sensitiveAccess?: AccessRiskPreview | null;
   duplicateConflicts?: Array<Record<string, unknown>>;
   legacyRoleStatus?: Record<string, unknown> | null;
   selfAssignmentStatus?: Record<string, unknown> | null;
@@ -366,7 +387,7 @@ export type AccessAssignmentApplyResult = {
   accountContextResult?: Record<string, unknown> | null;
   consoleEntitlementResult?: Record<string, unknown> | null;
   responsibilityRequirements?: Array<Record<string, unknown>>;
-  sensitiveAccess?: Record<string, unknown> | null;
+  sensitiveAccess?: AccessRiskPreview | null;
   duplicateConflicts?: Array<Record<string, unknown>>;
   auditTrace?: Record<string, unknown> | null;
   sourceTrace?: Record<string, unknown> | null;
@@ -399,6 +420,12 @@ export type AccessAssignmentLifecycleItem = {
   bundleOrigin: Record<string, unknown> | null;
   reason: string | null;
   sensitiveOrGlobal: boolean;
+  isSensitive: boolean;
+  isGlobalLike: boolean;
+  isHighRisk: boolean;
+  requiresReview: boolean;
+  isBreakGlassLike: boolean;
+  accessRisk?: AccessRisk | null;
   supportedActions: string[];
   auditSummary?: {
     assignmentId?: string;
@@ -439,6 +466,35 @@ export type AccessAssignmentLifecycleResult = {
 
 export type AccessAssignmentRevokePayload = {
   reason: string;
+};
+
+export type AccessRisk = {
+  isSensitive?: boolean;
+  isGlobalLike?: boolean;
+  isHighRisk?: boolean;
+  requiresReason?: boolean;
+  requiresReview?: boolean;
+  isBreakGlassLike?: boolean;
+  isPrivilegedAccessGovernance?: boolean;
+  maxReviewWindowDays?: number | null;
+  requiresExpiry?: boolean;
+  maxExpiryWindowDays?: number | null;
+  globalScopes?: Array<Record<string, unknown>>;
+  sensitiveRoleCodes?: string[];
+  highRiskRoleCodes?: string[];
+  sensitivePermissions?: string[];
+  riskReasons?: string[];
+};
+
+export type AccessRiskPreview = AccessRisk & {
+  sensitiveOrGlobal?: boolean;
+  reasonRequired?: boolean;
+  reviewAt?: number | string | null;
+  expiresAt?: number | string | null;
+  lifecycleBlockers?: Array<Record<string, unknown>>;
+  denyReasons?: string[];
+  reviewPolicy?: string;
+  approvalWorkflow?: string;
 };
 
 export type RoleListQuery = {
