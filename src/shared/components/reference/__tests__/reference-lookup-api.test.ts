@@ -35,7 +35,9 @@ describe('reference lookup API', () => {
     await expect(loadTalentReferenceOptions('Mina')).resolves.toEqual([
       expect.objectContaining({
         id: 'talent-finance-1',
-        label: 'Mina - TAL-000001',
+        label: 'Mina',
+        code: 'TAL-000001',
+        status: 'ACTIVE',
       }),
     ]);
   });
@@ -67,7 +69,10 @@ describe('reference lookup API', () => {
     await expect(loadStudioResourceReferenceOptionsByIds(['studio-hr-1'])).resolves.toEqual([
       expect.objectContaining({
         id: 'studio-hr-1',
-        label: 'Main Studio - SR-000001',
+        label: 'Main Studio',
+        code: 'SR-000001',
+        status: 'ACTIVE',
+        type: 'ROOM',
       }),
     ]);
     expect(capturedUrls[0]?.searchParams.get('ids')).toBe('studio-hr-1');
@@ -99,7 +104,11 @@ describe('reference lookup API', () => {
     await expect(loadPlatformAccountReferenceOptions('Mina')).resolves.toEqual([
       expect.objectContaining({
         id: 'platform-ops-1',
-        label: 'Mina Live - PA-000001',
+        label: 'Mina Live',
+        secondaryLabel: 'YOUTUBE',
+        code: 'PA-000001',
+        status: 'ACTIVE',
+        type: 'CHANNEL',
       }),
     ]);
   });
@@ -129,7 +138,10 @@ describe('reference lookup API', () => {
     await expect(loadPlatformOwnerReferenceOptions('ORG_UNIT', 'Production')).resolves.toEqual([
       expect.objectContaining({
         id: 'ou-production',
-        label: 'Production - OU-PROD',
+        label: 'Production',
+        code: 'OU-PROD',
+        status: 'ACTIVE',
+        type: 'DEPARTMENT',
       }),
     ]);
   });

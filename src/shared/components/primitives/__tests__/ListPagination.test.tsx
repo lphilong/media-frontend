@@ -48,9 +48,10 @@ describe('ListPagination', () => {
 
     expect(screen.getByText('Đang hiển thị tối đa 20 dòng')).toBeInTheDocument();
     expect(
-      screen.getByText('Danh sách dùng phân trang theo lượt tải, không có tổng số trang.'),
+      screen.getByText('Danh sách tải dữ liệu theo từng lượt và không hiển thị tổng số trang.'),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Trang 1 \//u)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button')[0]).toHaveAttribute('aria-disabled', 'true');
     expect(screen.queryByLabelText('Đi tới trang')).not.toBeInTheDocument();
   });
 });

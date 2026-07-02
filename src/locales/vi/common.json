@@ -59,6 +59,21 @@
   "states": {
     "loading": "Đang tải"
   },
+  "referencePicker": {
+    "options": "Tùy chọn tham chiếu",
+    "badges": "Nhãn trạng thái tham chiếu",
+    "selected": "Tham chiếu đã chọn",
+    "loadingWithResource": "Đang tải tùy chọn {{resource}}",
+    "emptyTitle": "Không có tùy chọn phù hợp",
+    "emptyMessage": "Thử từ khóa khác hoặc xóa bộ lọc nếu trường này không bắt buộc.",
+    "errorHelp": "Thử tải lại tùy chọn hoặc điều chỉnh từ khóa tìm kiếm.",
+    "metadata": {
+      "code": "Mã: {{code}}",
+      "employeeCode": "Mã nhân sự: {{code}}",
+      "employmentProfileId": "Hồ sơ nhân sự: {{id}}",
+      "id": "ID: {{id}}"
+    }
+  },
   "semanticStates": {
     "loading": {
       "title": "Đang tải dữ liệu",

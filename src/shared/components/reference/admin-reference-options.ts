@@ -57,8 +57,13 @@ const toLookupOption = (
   href: (id: string) => string,
 ): ReferenceOption => ({
   id: item.id,
-  label: item.code ? `${item.label} - ${item.code}` : item.label,
-  description: compactDescription([item.secondaryLabel, item.type, item.status, item.state]),
+  label: item.label,
+  description: item.secondaryLabel,
+  secondaryLabel: item.secondaryLabel,
+  code: item.code,
+  type: item.type,
+  status: item.status,
+  state: item.state,
   href: href(item.id),
 });
 
@@ -90,15 +95,21 @@ const loadLookupReferenceOptionsByIds = async (
 
 const toUserOption = (item: UserListItem): ReferenceOption => ({
   id: item.id,
-  label: compactDescription([item.displayName, item.email]) ?? item.displayName,
-  description: compactDescription([item.accountStatus]),
+  label: item.displayName,
+  description: item.email ?? undefined,
+  status: item.accountStatus,
   href: APP_PATHS.userDetail(item.id),
 });
 
 const toEmploymentProfileOption = (item: EmploymentProfileListItem): ReferenceOption => ({
   id: item.id,
-  label: compactDescription([item.displayName, item.employeeCode]) ?? item.displayName,
-  description: compactDescription([item.jobTitle, item.employmentStatus]),
+  label: item.displayName,
+  description: item.jobTitle,
+  status: item.employmentStatus,
+  meta: {
+    employeeCode: item.employeeCode,
+    employmentStatus: item.employmentStatus,
+  },
   href: APP_PATHS.employmentProfileDetail(item.id),
 });
 
@@ -119,12 +130,10 @@ const toAccessAssignmentLinkedUserOption = (item: EmploymentProfileListItem): Re
         item.linkedUserRef?.displayName,
       ]) ?? item.displayName,
     description: compactDescription([
-      item.employeeCode,
       item.jobTitle,
       item.orgUnitRef?.name ?? item.orgUnitRef?.displayName ?? item.orgUnitRef?.code,
-      item.employmentStatus,
-      linkedUserStatus ? `Tài khoản ${linkedUserStatus}` : undefined,
     ]),
+    status: item.employmentStatus,
     href: APP_PATHS.employmentProfileDetail(item.id),
     disabled,
     meta: {

@@ -31,6 +31,9 @@ export type ListPaginationProps = PageModePaginationProps | CursorModePagination
 const clampPage = (page: number, totalPages: number): number =>
   Math.min(Math.max(Math.trunc(page), 1), totalPages);
 
+const paginationButtonClass =
+  'rounded border border-border bg-panel px-3 py-2 font-medium text-text disabled:cursor-not-allowed disabled:opacity-50';
+
 export const ListPagination = (props: ListPaginationProps): JSX.Element => {
   const { t } = useTranslation('common');
   const [jumpPage, setJumpPage] = useState('');
@@ -47,12 +50,13 @@ export const ListPagination = (props: ListPaginationProps): JSX.Element => {
           type="button"
           onClick={props.onPrevious}
           disabled={!props.canGoBack}
+          aria-disabled={!props.canGoBack}
           title={!props.canGoBack ? t('pagination.noPrevious') : undefined}
-          className="rounded border border-border bg-panel px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className={paginationButtonClass}
         >
           {t('actions.previous')}
         </button>
-        <div className="text-right text-muted">
+        <div className="text-right text-muted" aria-live="polite">
           {visibleLimit !== undefined ? (
             <p>
               {t('pagination.cursorShowingLimit', {
@@ -79,8 +83,9 @@ export const ListPagination = (props: ListPaginationProps): JSX.Element => {
           type="button"
           onClick={props.onNext}
           disabled={!props.canGoNext}
+          aria-disabled={!props.canGoNext}
           title={!props.canGoNext ? t('pagination.noNext') : undefined}
-          className="rounded border border-border bg-panel px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className={paginationButtonClass}
         >
           {t('actions.next')}
         </button>
@@ -112,12 +117,13 @@ export const ListPagination = (props: ListPaginationProps): JSX.Element => {
         type="button"
         onClick={props.onPrevious}
         disabled={!canGoBack}
+        aria-disabled={!canGoBack}
         title={!canGoBack ? t('pagination.noPrevious') : undefined}
-        className="rounded border border-border bg-panel px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className={paginationButtonClass}
       >
         {t('actions.previous')}
       </button>
-      <span className="font-medium text-text">
+      <span className="font-medium text-text" aria-live="polite">
         {t('pagination.pageStatus', {
           page: props.currentPage,
           total: props.totalPages,
@@ -128,8 +134,9 @@ export const ListPagination = (props: ListPaginationProps): JSX.Element => {
         type="button"
         onClick={props.onNext}
         disabled={!canGoNext}
+        aria-disabled={!canGoNext}
         title={!canGoNext ? t('pagination.noNext') : undefined}
-        className="rounded border border-border bg-panel px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className={paginationButtonClass}
       >
         {t('actions.next')}
       </button>

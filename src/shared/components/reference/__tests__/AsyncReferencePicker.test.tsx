@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 
 import {
@@ -51,9 +52,38 @@ describe('AsyncReferencePicker', () => {
     });
 
     await user.click(screen.getByRole('button', { name: 'Search' }));
-    await user.click(screen.getByRole('button', { name: /Talent 01/i }));
+    await user.click(screen.getByRole('option', { name: /Talent 01/i }));
 
     expect(onChange).toHaveBeenCalledWith('talent-01');
+  });
+
+  it('renders primary labels with secondary metadata and optional badges', async () => {
+    const loadOptions = vi.fn(async () => {
+      return [
+        {
+          id: 'profile-01',
+          label: 'Nguyen Van A',
+          description: 'Operations lead',
+          code: 'EMP-001',
+          status: 'ACTIVE',
+          badges: [{ label: 'Internal', tone: 'info' as const }],
+        },
+      ];
+    });
+
+    render(
+      <AsyncReferencePicker
+        pickerId="employment-profile"
+        onChange={vi.fn()}
+        loadOptions={loadOptions}
+      />,
+    );
+
+    expect(await screen.findByRole('option', { name: /Nguyen Van A/i })).toBeInTheDocument();
+    expect(screen.getByText(/Operations lead/u)).toBeInTheDocument();
+    expect(screen.getByText(/Code: EMP-001/u)).toBeInTheDocument();
+    expect(screen.getByText('ACTIVE')).toBeInTheDocument();
+    expect(screen.getByText('Internal')).toBeInTheDocument();
   });
 
   it('renders safe plain-text fallback for selected value without href', async () => {
@@ -101,6 +131,85 @@ describe('AsyncReferencePicker', () => {
     await waitFor(() => {
       expect(screen.queryByText('Loading')).not.toBeInTheDocument();
     });
+  });
+
+  it('renders a default empty state when no options match', async () => {
+    render(
+      <AsyncReferencePicker
+        pickerId="talent"
+        onChange={vi.fn()}
+        loadOptions={vi.fn(async () => [])}
+      />,
+    );
+
+    expect(await screen.findByText('No matching options')).toBeInTheDocument();
+    expect(screen.getByText(/Try another search term/u)).toBeInTheDocument();
+  });
+
+  it('keeps selected context without clear UI when optional selection is not explicitly clearable', async () => {
+    render(
+      <MemoryRouter>
+        <AsyncReferencePicker
+          pickerId="talent"
+          onChange={vi.fn()}
+          loadOptions={vi.fn(async () => [
+            {
+              id: 'talent-01',
+              label: 'Talent One',
+              code: 'TL-001',
+              href: '/talents/talent-01',
+            },
+          ])}
+          value="talent-01"
+          exactOneId={false}
+          clearLabel="Clear talent"
+        />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Selected reference')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Talent One' })).toHaveAttribute(
+      'href',
+      '/talents/talent-01',
+    );
+    expect(screen.getAllByText(/Code: TL-001/u).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Clear talent' })).not.toBeInTheDocument();
+  });
+
+  it('keeps selected context clear and can clear explicitly clearable optional selections', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <AsyncReferencePicker
+          pickerId="talent"
+          onChange={onChange}
+          loadOptions={vi.fn(async () => [
+            {
+              id: 'talent-01',
+              label: 'Talent One',
+              code: 'TL-001',
+              href: '/talents/talent-01',
+            },
+          ])}
+          value="talent-01"
+          exactOneId={false}
+          clearable
+          clearLabel="Clear talent"
+        />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Selected reference')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Talent One' })).toHaveAttribute(
+      'href',
+      '/talents/talent-01',
+    );
+    expect(screen.getAllByText(/Code: TL-001/u).length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole('button', { name: 'Clear talent' }));
+    expect(onChange).toHaveBeenCalledWith(undefined);
   });
 
   it('debounces rapid search input before loading options', async () => {

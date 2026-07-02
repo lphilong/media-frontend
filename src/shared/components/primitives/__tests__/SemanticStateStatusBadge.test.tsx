@@ -28,4 +28,19 @@ describe('semantic UI primitives', () => {
     expect(badge).toHaveTextContent('Cần xử lý gấp');
     expect(badge).toHaveClass('bg-rose-100');
   });
+
+  it('supports caller-provided operator labels while keeping raw status fallback safe', () => {
+    const { rerender } = render(
+      <StatusBadge
+        family="workflow"
+        status="PENDING_APPROVAL"
+        labelByStatus={{ PENDING_APPROVAL: 'Cho duyet' }}
+      />,
+    );
+
+    expect(screen.getByLabelText('Cho duyet')).toHaveTextContent('Cho duyet');
+
+    rerender(<StatusBadge family="workflow" status="UNKNOWN_STATUS" />);
+    expect(screen.getByLabelText('UNKNOWN_STATUS')).toHaveTextContent('UNKNOWN_STATUS');
+  });
 });

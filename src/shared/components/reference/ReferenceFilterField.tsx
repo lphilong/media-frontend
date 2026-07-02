@@ -39,16 +39,9 @@ export const ReferenceFilterField = ({
       exactOneId={false}
       placeholder={placeholder}
       resourceLabel={label}
+      clearable
+      clearLabel={clearLabel}
       onSelectedOptionChange={onSelectedOptionChange}
     />
-    {value ? (
-      <button
-        type="button"
-        className="self-start rounded border border-border px-2 py-1 text-xs"
-        onClick={() => onChange(undefined)}
-      >
-        {clearLabel}
-      </button>
-    ) : null}
   </fieldset>
 );

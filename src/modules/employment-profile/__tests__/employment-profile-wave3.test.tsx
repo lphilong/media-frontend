@@ -214,7 +214,7 @@ describe('employment profile wave 3 surfaces', () => {
     const orgUnitPicker = await findPicker('employment-profile-filter-org-unit');
     expect(await within(orgUnitPicker).findAllByText(/OU-SALES/)).not.toHaveLength(0);
 
-    await user.click(await within(orgUnitPicker).findByRole('button', { name: /OU-SALES/ }));
+    await user.click(await within(orgUnitPicker).findByRole('option', { name: /OU-SALES/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).toBe('ou-sales');
       expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).not.toBe(
@@ -233,7 +233,7 @@ describe('employment profile wave 3 surfaces', () => {
       expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).toBeNull();
     });
 
-    await user.click(await within(orgUnitPicker).findByRole('button', { name: /OU-SALES/ }));
+    await user.click(await within(orgUnitPicker).findByRole('option', { name: /OU-SALES/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('orgUnitId')).toBe('ou-sales');
     });
@@ -261,8 +261,16 @@ describe('employment profile wave 3 surfaces', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(i18n.t('employment-profile:actionRail.title'))).toBeInTheDocument();
     expect(screen.getByText('Alice - EP-000001')).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('employment-profile:detail.overviewTitle'))).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('employment-profile:detail.accountTitle'))).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        name: i18n.t('employment-profile:detail.overviewTitle'),
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        name: i18n.t('employment-profile:detail.accountTitle'),
+      }),
+    ).toBeInTheDocument();
     const peopleHubHeading = screen.getByRole('heading', {
       name: i18n.t('employment-profile:related.peopleHubNavigationTitle'),
     });

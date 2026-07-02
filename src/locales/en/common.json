@@ -59,6 +59,21 @@
   "states": {
     "loading": "Loading"
   },
+  "referencePicker": {
+    "options": "Reference options",
+    "badges": "Reference badges",
+    "selected": "Selected reference",
+    "loadingWithResource": "Loading {{resource}} options",
+    "emptyTitle": "No matching options",
+    "emptyMessage": "Try another search term or clear the filter if this field is optional.",
+    "errorHelp": "Retry loading options or adjust the search text.",
+    "metadata": {
+      "code": "Code: {{code}}",
+      "employeeCode": "Employee code: {{code}}",
+      "employmentProfileId": "Employment profile: {{id}}",
+      "id": "ID: {{id}}"
+    }
+  },
   "semanticStates": {
     "loading": {
       "title": "Loading data",

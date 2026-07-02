@@ -59,6 +59,21 @@
   "states": {
     "loading": "加载中"
   },
+  "referencePicker": {
+    "options": "引用选项",
+    "badges": "引用状态标签",
+    "selected": "已选择引用",
+    "loadingWithResource": "正在加载 {{resource}} 选项",
+    "emptyTitle": "没有匹配选项",
+    "emptyMessage": "请尝试其他搜索词；如果此字段可选，也可以清除筛选。",
+    "errorHelp": "请重试加载选项，或调整搜索词。",
+    "metadata": {
+      "code": "代码：{{code}}",
+      "employeeCode": "员工编号：{{code}}",
+      "employmentProfileId": "员工档案：{{id}}",
+      "id": "ID：{{id}}"
+    }
+  },
   "semanticStates": {
     "loading": {
       "title": "正在加载数据",

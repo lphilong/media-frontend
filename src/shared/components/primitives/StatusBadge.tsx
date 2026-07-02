@@ -10,6 +10,7 @@ export type StatusBadgeTone =
   | 'indigo'
   | 'privacy';
 export type StatusToneMap = Record<string, StatusBadgeTone>;
+export type StatusLabelMap = Record<string, string>;
 export type StatusBadgeFamily =
   | 'lifecycle'
   | 'employment'
@@ -23,6 +24,7 @@ export type StatusBadgeFamily =
 type StatusBadgeProps = {
   label?: string;
   status?: string;
+  labelByStatus?: StatusLabelMap;
   tone?: StatusBadgeTone;
   family?: StatusBadgeFamily;
   toneByStatus?: StatusToneMap;
@@ -121,6 +123,7 @@ export const StatusBadge = ({
   ariaLabel,
   family,
   label,
+  labelByStatus,
   status,
   tone = 'neutral',
   toneByStatus,
@@ -134,7 +137,7 @@ export const StatusBadge = ({
     tone,
     toneByStatus ?? (family ? STATUS_BADGE_TONE_BY_FAMILY[family] : undefined),
   );
-  const text = label ?? status ?? '';
+  const text = label ?? (status ? labelByStatus?.[status] : undefined) ?? status ?? '';
 
   return (
     <span
