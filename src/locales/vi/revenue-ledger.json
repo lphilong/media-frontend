@@ -26,7 +26,12 @@
     "currencyCode": "Tiền tệ",
     "currencyCodePlaceholder": "VND",
     "windowStartAt": "Thời gian bắt đầu",
-    "windowEndAt": "Thời gian kết thúc"
+    "windowEndAt": "Thời gian kết thúc",
+    "createdBeforeAt": "Tạo trước",
+    "finalizedFromAt": "Chốt từ",
+    "finalizedToAt": "Chốt đến",
+    "reconciledFromAt": "Đối soát từ",
+    "reconciledToAt": "Đối soát đến"
   },
   "relatedModes": {
     "by-talent": "Bút toán doanh thu liên quan theo Talent",

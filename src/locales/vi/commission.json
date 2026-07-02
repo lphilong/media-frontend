@@ -202,7 +202,10 @@
       "containsRevenueEntryId": "Bút toán doanh thu",
       "settlementCurrencyCode": "Tiền tệ",
       "windowStartAt": "Thời gian bắt đầu",
-      "windowEndAt": "Thời gian kết thúc"
+      "windowEndAt": "Thời gian kết thúc",
+      "createdBeforeAt": "Tạo trước",
+      "finalizedFromAt": "Chốt từ",
+      "finalizedToAt": "Chốt đến"
     },
     "fields": {
       "settlementCode": "Mã quyết toán",

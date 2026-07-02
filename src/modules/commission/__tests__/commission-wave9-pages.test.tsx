@@ -15,6 +15,7 @@ import {
   CommissionSettlementCreateSurface,
   CommissionSettlementRevenueEntriesSurface,
 } from '@modules/commission/forms/commission-mutation-forms';
+import { formatVietnamTimestamp } from '@shared/formatting/formatters';
 import { setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 
@@ -207,13 +208,27 @@ describe('commission Wave 9 pages', () => {
     );
 
     expect(await screen.findByText('CS-202604-000002')).toBeInTheDocument();
-    expect(screen.getByText('Created before:')).toBeInTheDocument();
-    expect(screen.getByText('Finalized from:')).toBeInTheDocument();
-    expect(screen.getByText('Finalized until:')).toBeInTheDocument();
-    expect(screen.getAllByText(/20:26 28-05-2026/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/02:40 02-02-2026/).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(`${i18n.t('commission:settlements.filters.createdBeforeAt')}:`),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(`${i18n.t('commission:settlements.filters.finalizedFromAt')}:`),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(`${i18n.t('commission:settlements.filters.finalizedToAt')}:`),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(formatVietnamTimestamp(1_780_000_000_000)).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getAllByText(formatVietnamTimestamp(1_770_000_000_000)).length).toBeGreaterThan(
+      0,
+    );
     expect(screen.queryByText(/1770000000000|1780000000000/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('spinbutton', { name: 'Finalized from' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('spinbutton', {
+        name: i18n.t('commission:settlements.filters.finalizedFromAt'),
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('exposes the documented flat-list filters on the Commission Settlements list', async () => {
@@ -399,8 +414,8 @@ describe('commission Wave 9 pages', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText(i18n.t('commission:generatedCode.description'))).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('commission:rules.fields.title')), 'Rule create');
-    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
-    await user.click(await screen.findByRole('button', { name: /Contract One/ }));
+    await user.click(await screen.findByRole('option', { name: /Talent One/ }));
+    await user.click(await screen.findByRole('option', { name: /Contract One/ }));
     await user.type(screen.getByLabelText(i18n.t('commission:rules.fields.ratePercent')), '12.5');
     await user.type(
       screen.getByLabelText(i18n.t('commission:rules.fields.effectiveStartDate')),
@@ -436,7 +451,7 @@ describe('commission Wave 9 pages', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText(i18n.t('commission:generatedCode.description'))).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('commission:settlements.fields.title')), 'Settle');
-    await user.click(await screen.findByRole('button', { name: /Rule One/ }));
+    await user.click(await screen.findByRole('option', { name: /Rule One/ }));
     await user.type(
       screen.getByLabelText(i18n.t('commission:settlements.fields.settlementPeriodStartAt')),
       '2030-03-18T00:46',
@@ -445,7 +460,7 @@ describe('commission Wave 9 pages', () => {
       screen.getByLabelText(i18n.t('commission:settlements.fields.settlementPeriodEndAt')),
       '2030-03-18T01:46',
     );
-    await user.click(await screen.findByRole('button', { name: /Revenue One/ }));
+    await user.click(await screen.findByRole('option', { name: /Revenue One/ }));
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('commission:settlements.mutations.create.submit'),

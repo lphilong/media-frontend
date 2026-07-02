@@ -26,7 +26,12 @@
     "currencyCode": "Currency",
     "currencyCodePlaceholder": "VND",
     "windowStartAt": "Window start",
-    "windowEndAt": "Window end"
+    "windowEndAt": "Window end",
+    "createdBeforeAt": "Created before",
+    "finalizedFromAt": "Finalized from",
+    "finalizedToAt": "Finalized until",
+    "reconciledFromAt": "Reconciled from",
+    "reconciledToAt": "Reconciled until"
   },
   "relatedModes": {
     "by-talent": "Related revenue entries by talent",

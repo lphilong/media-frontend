@@ -202,7 +202,10 @@
       "containsRevenueEntryId": "收入记录",
       "settlementCurrencyCode": "币种",
       "windowStartAt": "窗口开始时间戳",
-      "windowEndAt": "窗口结束时间戳"
+      "windowEndAt": "窗口结束时间戳",
+      "createdBeforeAt": "创建早于",
+      "finalizedFromAt": "确认起始",
+      "finalizedToAt": "确认截至"
     },
     "fields": {
       "settlementCode": "结算编码",

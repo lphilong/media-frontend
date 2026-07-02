@@ -615,7 +615,7 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
     if (routeMode === 'flat' && flatListQuery.createdBeforeAt !== undefined) {
       chips.push({
         id: 'createdBeforeAt',
-        label: 'Created before',
+        label: t('commission:settlements.filters.createdBeforeAt'),
         value: String(flatListQuery.createdBeforeAt),
         onClear: () => patchQuery({ createdBeforeAt: undefined }),
       });
@@ -624,7 +624,7 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
     if (routeMode === 'flat' && flatListQuery.finalizedFromAt !== undefined) {
       chips.push({
         id: 'finalizedFromAt',
-        label: 'Finalized from',
+        label: t('commission:settlements.filters.finalizedFromAt'),
         value: String(flatListQuery.finalizedFromAt),
         onClear: () => patchQuery({ finalizedFromAt: undefined }),
       });
@@ -633,7 +633,7 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
     if (routeMode === 'flat' && flatListQuery.finalizedToAt !== undefined) {
       chips.push({
         id: 'finalizedToAt',
-        label: 'Finalized until',
+        label: t('commission:settlements.filters.finalizedToAt'),
         value: String(flatListQuery.finalizedToAt),
         onClear: () => patchQuery({ finalizedToAt: undefined }),
       });

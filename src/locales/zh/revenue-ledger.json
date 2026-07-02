@@ -26,7 +26,12 @@
     "currencyCode": "币种",
     "currencyCodePlaceholder": "vnd",
     "windowStartAt": "窗口开始",
-    "windowEndAt": "窗口结束"
+    "windowEndAt": "窗口结束",
+    "createdBeforeAt": "创建早于",
+    "finalizedFromAt": "确认起始",
+    "finalizedToAt": "确认截至",
+    "reconciledFromAt": "对账起始",
+    "reconciledToAt": "对账截至"
   },
   "relatedModes": {
     "by-talent": "关联收入记录按艺人",

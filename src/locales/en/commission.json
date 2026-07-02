@@ -202,7 +202,10 @@
       "containsRevenueEntryId": "Revenue entry",
       "settlementCurrencyCode": "Currency",
       "windowStartAt": "Window start timestamp",
-      "windowEndAt": "Window end timestamp"
+      "windowEndAt": "Window end timestamp",
+      "createdBeforeAt": "Created before",
+      "finalizedFromAt": "Finalized from",
+      "finalizedToAt": "Finalized until"
     },
     "fields": {
       "settlementCode": "Settlement code",

@@ -612,7 +612,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
     if (routeMode === 'flat' && flatListQuery.createdBeforeAt !== undefined) {
       chips.push({
         id: 'createdBeforeAt',
-        label: 'Created before',
+        label: t('revenue-ledger:filters.createdBeforeAt'),
         value: String(flatListQuery.createdBeforeAt),
         onClear: () => patchQuery({ createdBeforeAt: undefined }),
       });
@@ -621,7 +621,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
     if (routeMode === 'flat' && flatListQuery.finalizedFromAt !== undefined) {
       chips.push({
         id: 'finalizedFromAt',
-        label: 'Finalized from',
+        label: t('revenue-ledger:filters.finalizedFromAt'),
         value: String(flatListQuery.finalizedFromAt),
         onClear: () => patchQuery({ finalizedFromAt: undefined }),
       });
@@ -630,7 +630,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
     if (routeMode === 'flat' && flatListQuery.finalizedToAt !== undefined) {
       chips.push({
         id: 'finalizedToAt',
-        label: 'Finalized until',
+        label: t('revenue-ledger:filters.finalizedToAt'),
         value: String(flatListQuery.finalizedToAt),
         onClear: () => patchQuery({ finalizedToAt: undefined }),
       });
@@ -639,7 +639,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
     if (routeMode === 'flat' && flatListQuery.reconciledFromAt !== undefined) {
       chips.push({
         id: 'reconciledFromAt',
-        label: 'Reconciled from',
+        label: t('revenue-ledger:filters.reconciledFromAt'),
         value: String(flatListQuery.reconciledFromAt),
         onClear: () => patchQuery({ reconciledFromAt: undefined }),
       });
@@ -648,7 +648,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
     if (routeMode === 'flat' && flatListQuery.reconciledToAt !== undefined) {
       chips.push({
         id: 'reconciledToAt',
-        label: 'Reconciled until',
+        label: t('revenue-ledger:filters.reconciledToAt'),
         value: String(flatListQuery.reconciledToAt),
         onClear: () => patchQuery({ reconciledToAt: undefined }),
       });

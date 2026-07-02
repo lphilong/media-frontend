@@ -11,9 +11,47 @@ import {
   fetchRevenueEntriesByPlatform,
   fetchRevenueEntriesByTalent,
 } from '@modules/revenue-ledger/api/revenue-ledger.api';
+import { formatVietnamTimestamp } from '@shared/formatting/formatters';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import { server } from '@test/msw/server';
+
+const adminWorkspaceAvailability = {
+  primaryWorkspace: 'ADMIN_CONSOLE',
+  availableWorkspaces: [
+    {
+      context: 'STAFF_CONSOLE',
+      available: false,
+      source: 'ACCOUNT_CONTEXT',
+      reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+      trace: [{ source: 'ACCOUNT_CONTEXT', context: 'STAFF_CONSOLE', matched: false }],
+    },
+    {
+      context: 'MANAGER_CONSOLE',
+      available: false,
+      source: 'ACCOUNT_CONTEXT',
+      reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+      trace: [{ source: 'ACCOUNT_CONTEXT', context: 'MANAGER_CONSOLE', matched: false }],
+    },
+    {
+      context: 'ADMIN_CONSOLE',
+      available: true,
+      source: 'ACCOUNT_CONTEXT',
+      reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+      trace: [{ source: 'ACCOUNT_CONTEXT', context: 'ADMIN_CONSOLE', matched: true }],
+    },
+  ],
+  ownDataAvailable: false,
+  managerResponsibilitiesAvailable: false,
+  effectiveAccessTraceAvailable: true,
+  sourceTrace: [
+    {
+      source: 'ACCOUNT_CONTEXT',
+      accountContexts: ['ADMIN_CONSOLE'],
+      primaryWorkspace: 'ADMIN_CONSOLE',
+    },
+  ],
+} as const;
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {
@@ -114,7 +152,7 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     fireEvent.click(screen.getByRole('button', { name: i18n.t('common:filters.moreFilters') }));
 
     const appliedFilters = screen.getByLabelText(i18n.t('common:filters.appliedFilters'));
-    await waitFor(() => expect(appliedFilters).toHaveTextContent('Mina - TAL-000001'));
+    await waitFor(() => expect(appliedFilters).toHaveTextContent('Mina'));
 
     await user.type(
       screen.getByPlaceholderText(i18n.t('revenue-ledger:filters.subjectTalentIdPlaceholder')),
@@ -123,7 +161,7 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
 
     await waitFor(() => {
       expect(appliedFilters).toHaveTextContent('Luna Park');
-      expect(appliedFilters).not.toHaveTextContent('Mina - TAL-000001');
+      expect(appliedFilters).not.toHaveTextContent('Mina');
     });
   });
 
@@ -133,13 +171,27 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     );
 
     expect(await screen.findByText('REV-202604-000002', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.getByText('Created before:')).toBeInTheDocument();
-    expect(screen.getByText('Finalized from:')).toBeInTheDocument();
-    expect(screen.getByText('Finalized until:')).toBeInTheDocument();
-    expect(screen.getAllByText(/03:26 29-05-2026/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/09:40 02-02-2026/).length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(`${i18n.t('revenue-ledger:filters.createdBeforeAt')}:`),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(`${i18n.t('revenue-ledger:filters.finalizedFromAt')}:`),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(`${i18n.t('revenue-ledger:filters.finalizedToAt')}:`),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(formatVietnamTimestamp(1_780_000_000_000)).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getAllByText(formatVietnamTimestamp(1_770_000_000_000)).length).toBeGreaterThan(
+      0,
+    );
     expect(screen.queryByText(/1770000000000|1780000000000/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('spinbutton', { name: 'Finalized from' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('spinbutton', {
+        name: i18n.t('revenue-ledger:filters.finalizedFromAt'),
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('serializes reconciled target filters and keeps narrow sort disabled when they are active', async () => {
@@ -150,10 +202,18 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     expect(
       await screen.findByRole('heading', { name: i18n.t('revenue-ledger:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('Reconciled from:')).toBeInTheDocument();
-    expect(screen.getByText('Reconciled until:')).toBeInTheDocument();
-    expect(screen.getAllByText(/09:40 02-02-2026/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/03:26 29-05-2026/).length).toBeGreaterThan(0);
+    expect(
+      await screen.findByText(`${i18n.t('revenue-ledger:filters.reconciledFromAt')}:`),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(`${i18n.t('revenue-ledger:filters.reconciledToAt')}:`),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(formatVietnamTimestamp(1_770_000_000_000)).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getAllByText(formatVietnamTimestamp(1_780_000_000_000)).length).toBeGreaterThan(
+      0,
+    );
     expect(screen.queryByText(/1770000000000|1780000000000/)).not.toBeInTheDocument();
     expect(screen.getByLabelText(i18n.t('common:labels.sort'))).toHaveValue('recognizedAt');
   });
@@ -296,6 +356,8 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
               'revenueLedger.manageLifecycle',
             ],
             scopeGrants: {},
+            accountContexts: ['ADMIN_CONSOLE'],
+            workspaceAvailability: adminWorkspaceAvailability,
             generatedAt: '2026-05-20T00:00:00.000Z',
           },
         }),
@@ -335,6 +397,8 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
             scopeGrants: {
               revenueLedger: ['global'],
             },
+            accountContexts: ['ADMIN_CONSOLE'],
+            workspaceAvailability: adminWorkspaceAvailability,
             generatedAt: '2026-05-20T00:00:00.000Z',
           },
         }),
