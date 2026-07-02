@@ -46,6 +46,17 @@ import {
 
 type AssignmentMode = 'BUNDLE' | 'ROLE_TEMPLATE';
 
+const normalSelectableAssignability = new Set([
+  'READY_ASSIGNABLE',
+  'REQUIRES_SCOPE_SELECTION',
+  'READ_ONLY_AUDIT',
+]);
+const normalSelectableOperatorFlowGroups = new Set([
+  'READY_TO_ASSIGN',
+  'REQUIRES_SCOPE_SELECTION',
+  'READ_ONLY_AUDIT',
+]);
+
 const supportedScopeTypes = new Set<AccessAssignmentScopeType>([
   'self',
   'global',
@@ -107,13 +118,40 @@ export const AccessAssignmentTab = (): JSX.Element => {
     [targetsQuery.data?.assignmentTargets],
   );
   const bundleTargets = useMemo(
-    () => targets.filter((target) => target.assignmentKind === 'BUNDLE' && target.legacyAssignable),
+    () =>
+      targets.filter(
+        (target) =>
+          target.assignmentKind === 'BUNDLE' && isNormalSelectableAssignmentTarget(target),
+      ),
     [targets],
   );
   const roleTemplateTargets = useMemo(
     () =>
       targets.filter(
-        (target) => target.assignmentKind === 'ROLE_TEMPLATE' && target.legacyAssignable,
+        (target) =>
+          target.assignmentKind === 'ROLE_TEMPLATE' && isNormalSelectableAssignmentTarget(target),
+      ),
+    [targets],
+  );
+  const restrictedTargets = useMemo(
+    () =>
+      targets.filter(
+        (target) =>
+          target.assignmentKind === mode &&
+          target.legacyAssignable &&
+          target.assignabilityStatus === 'RESTRICTED_SENSITIVE',
+      ),
+    [mode, targets],
+  );
+  const hiddenReadinessTargets = useMemo(
+    () =>
+      targets.filter(
+        (target) =>
+          target.legacyAssignable &&
+          (target.assignabilityStatus === 'FUTURE_READY_CONDITION' ||
+            target.assignabilityStatus === 'SYSTEM_CONTROLLED' ||
+            target.operatorFlowGroup === 'FUTURE_READINESS' ||
+            target.operatorFlowGroup === 'SYSTEM_CONTROLLED'),
       ),
     [targets],
   );
@@ -125,7 +163,8 @@ export const AccessAssignmentTab = (): JSX.Element => {
     if (targetKey && nextTargets.some((target) => toTargetKey(target) === targetKey)) {
       return;
     }
-    setTargetKey(nextTargets[0] ? toTargetKey(nextTargets[0]) : '');
+    const defaultTarget = nextTargets.find(hasCompleteDefaultScopes) ?? nextTargets[0];
+    setTargetKey(defaultTarget ? toTargetKey(defaultTarget) : '');
   }, [bundleTargets, mode, roleTemplateTargets, targetKey]);
 
   const requiredScopeTypes = useMemo(
@@ -404,6 +443,30 @@ export const AccessAssignmentTab = (): JSX.Element => {
           <p className="mt-2 text-xs text-muted">
             {t('role:accessAssignment.legacyTargetsHidden')}
           </p>
+        ) : null}
+        {hiddenReadinessTargets.length > 0 ? (
+          <p className="mt-2 text-xs text-muted">
+            {t('role:accessAssignment.futureTargetsHidden')}
+          </p>
+        ) : null}
+        {restrictedTargets.length > 0 ? (
+          <div className="mt-3 rounded border border-border bg-bg p-3">
+            <p className="text-sm font-semibold text-text">
+              {t('role:accessAssignment.restrictedTargetsTitle')}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              {t('role:accessAssignment.restrictedTargetsHelp')}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {restrictedTargets.map((target) => (
+                <StatusBadge
+                  key={toTargetKey(target)}
+                  label={`${target.name} (${target.code})`}
+                  tone="warning"
+                />
+              ))}
+            </div>
+          </div>
         ) : null}
       </MetadataSection>
 
@@ -1084,6 +1147,21 @@ function buildPayload(input: {
 
 function toTargetKey(target: AccessAssignmentTargetOption): string {
   return `${target.assignmentKind}:${target.code}:${target.version ?? target.id ?? ''}`;
+}
+
+function isNormalSelectableAssignmentTarget(target: AccessAssignmentTargetOption): boolean {
+  return (
+    target.legacyAssignable &&
+    target.assignabilityStatus !== undefined &&
+    target.operatorFlowGroup !== undefined &&
+    normalSelectableAssignability.has(target.assignabilityStatus) &&
+    normalSelectableOperatorFlowGroups.has(target.operatorFlowGroup)
+  );
+}
+
+function hasCompleteDefaultScopes(target: AccessAssignmentTargetOption): boolean {
+  const requiredScopes = normalizeRequiredScopeTypes(target.requiredScopeTypes ?? []);
+  return requiredScopes.every((scopeType) => isScopeComplete(scopeType, {}, {}));
 }
 
 function isApplySuccess(result: AccessAssignmentApplyResult | null | undefined): boolean {

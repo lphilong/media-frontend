@@ -24,6 +24,7 @@ import {
 import { AccessAssignmentTab } from '@modules/role/components/AccessAssignmentTab';
 import { createRoleListColumns } from '@modules/role/tables/role-columns';
 import type {
+  CatalogOperatorFlowGroup,
   EffectiveAccessRecord,
   RoleTemplateListItem,
   RoleBundleListItem,
@@ -574,13 +575,27 @@ const RoleTemplateCatalogPanel = ({
       title={t('role:templateCatalog.title')}
       subtitle={t('role:templateCatalog.subtitle')}
     >
-      <AdminTableShell
-        data={templates}
-        columns={columns}
-        emptyTitle={t('role:templateCatalog.emptyTitle')}
-        emptyMessage={t('role:templateCatalog.emptyMessage')}
-        caption={t('role:templateCatalog.title')}
-      />
+      <div className="space-y-4">
+        {groupCatalogItems(templates).map(({ group, items }) => (
+          <div key={group} className="space-y-2">
+            <div>
+              <p className="text-sm font-semibold text-text">
+                {t(`role:catalogGroups.${group}`)}
+              </p>
+              <p className="text-xs text-muted">
+                {t(`role:catalogGroupHelp.${group}`)}
+              </p>
+            </div>
+            <AdminTableShell
+              data={items}
+              columns={columns}
+              emptyTitle={t('role:templateCatalog.emptyTitle')}
+              emptyMessage={t('role:templateCatalog.emptyMessage')}
+              caption={`${t('role:templateCatalog.title')} - ${t(`role:catalogGroups.${group}`)}`}
+            />
+          </div>
+        ))}
+      </div>
     </MetadataSection>
   );
 };
@@ -696,13 +711,23 @@ const RoleBundleTab = ({
   ];
 
   return (
-    <AdminTableShell
-      data={bundles}
-      columns={columns}
-      emptyTitle={t('role:bundles.emptyTitle')}
-      emptyMessage={t('role:bundles.emptyMessage')}
-      caption={t('role:tabs.bundles')}
-    />
+    <div className="space-y-4">
+      {groupCatalogItems(bundles).map(({ group, items }) => (
+        <MetadataSection
+          key={group}
+          title={t(`role:catalogGroups.${group}`)}
+          subtitle={t(`role:catalogGroupHelp.${group}`)}
+        >
+          <AdminTableShell
+            data={items}
+            columns={columns}
+            emptyTitle={t('role:bundles.emptyTitle')}
+            emptyMessage={t('role:bundles.emptyMessage')}
+            caption={`${t('role:tabs.bundles')} - ${t(`role:catalogGroups.${group}`)}`}
+          />
+        </MetadataSection>
+      ))}
+    </div>
   );
 };
 
@@ -915,10 +940,6 @@ const roleCodeLabels: Record<string, string> = {
   PAYROLL_DRAFT_APPROVER: 'Duyệt nháp lương',
   VIEWER_AUDITOR: 'Audit / Chỉ đọc',
   STAFF_CONSOLE_USER: 'Nhân sự tự xem dữ liệu',
-  ADMIN_FULL: 'Vai trò cũ: quản trị toàn hệ thống',
-  TEAM_MANAGER: 'Vai trò cũ: quản lý nhóm',
-  COMMERCIAL_FINANCE: 'Vai trò cũ: tài chính thương mại',
-  TALENT_STAFF_SELF: 'Vai trò cũ: nhân sự tự phục vụ',
 };
 
 const capabilityGroupLabels: Record<string, string> = {
@@ -972,10 +993,44 @@ const bundlePurposeLabels: Record<string, string> = {
   AUDITOR_BUNDLE: 'Dành cho người rà soát chỉ đọc và theo dõi lịch sử thay đổi.',
 };
 
+const catalogGroupOrder: CatalogOperatorFlowGroup[] = [
+  'READY_TO_ASSIGN',
+  'REQUIRES_SCOPE_SELECTION',
+  'READ_ONLY_AUDIT',
+  'RESTRICTED_SENSITIVE',
+  'FUTURE_READINESS',
+  'SYSTEM_CONTROLLED',
+];
+
+const groupCatalogItems = <
+  TItem extends { operatorFlowGroup?: CatalogOperatorFlowGroup },
+>(
+  items: TItem[],
+): Array<{ group: CatalogOperatorFlowGroup; items: TItem[] }> => {
+  const grouped = items.reduce<Partial<Record<CatalogOperatorFlowGroup, TItem[]>>>(
+    (accumulator, item) => {
+      const group =
+        item.operatorFlowGroup && catalogGroupOrder.includes(item.operatorFlowGroup)
+          ? item.operatorFlowGroup
+          : 'SYSTEM_CONTROLLED';
+      accumulator[group] = [...(accumulator[group] ?? []), item];
+      return accumulator;
+    },
+    {},
+  );
+
+  return catalogGroupOrder
+    .map((group) => ({ group, items: grouped[group] ?? [] }))
+    .filter(({ items }) => items.length > 0);
+};
+
 const formatRoleCategoryLabel = (category: string): string =>
   roleCategoryLabels[category] ?? category;
 
-const formatRoleCodeLabel = (roleCode: string): string => roleCodeLabels[roleCode] ?? roleCode;
+const legacyRoleCodes = new Set(['ADMIN_FULL', 'TEAM_MANAGER', 'COMMERCIAL_FINANCE', 'TALENT_STAFF_SELF']);
+
+const formatRoleCodeLabel = (roleCode: string): string =>
+  legacyRoleCodes.has(roleCode) ? '-' : (roleCodeLabels[roleCode] ?? roleCode);
 
 const formatBundleCodeLabel = (bundleCode: string): string =>
   bundleCodeLabels[bundleCode] ?? bundleCode;

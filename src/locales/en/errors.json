@@ -22,7 +22,7 @@
     "reason": {
       "missingPermission": "The current account is missing the required permission for this screen.",
       "missingScope": "The current account may have the feature permission but is missing the required data scope.",
-      "missingAccountContext": "The current account is missing the required workspace context for this screen.",
+      "missingAccountContext": "The current account is missing the account context required for this screen.",
       "missingCapabilities": "Unable to load access data\n\nThe system could not load the permission or access capability data required for this screen.\nPlease retry. If the error continues, contact a system administrator.",
       "unknown": "The current account does not meet the access requirements for this screen."
     },

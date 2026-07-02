@@ -197,6 +197,16 @@ const roleTemplateCatalog: RoleTemplateListItem[] = [
     warnings: ['Scope plans are preview-only.'],
     implementationNotes: ['Permissions remain explicit.'],
     status: 'PREVIEW_ONLY',
+    assignabilityStatus: 'REQUIRES_SCOPE_SELECTION',
+    featureStatus: 'SOURCE_BACKED',
+    operatorFlowGroup: 'REQUIRES_SCOPE_SELECTION',
+    sensitivityLevel: 'STANDARD',
+    reviewPolicy: 'NOT_REQUIRED',
+    accountContextLifecyclePolicy: 'SYSTEM_DERIVED_PREVIEW_ONLY',
+    responsibilityPolicy: 'REQUIRES_EXISTING_RESPONSIBILITY',
+    scopeSelectorSupport: 'SUPPORTED',
+    futureReadinessNote: null,
+    legacyVisibility: 'NORMAL_OPERATOR',
     isSensitive: false,
     isGlobalLike: false,
     isHighRisk: false,
@@ -245,6 +255,16 @@ const accessAssignmentTargetsMetadata: AccessAssignmentTargetsMetadata = {
       requiredResponsibilityType: null,
       sensitiveLevel: 'STANDARD',
       legacyAssignable: true,
+      assignabilityStatus: 'REQUIRES_SCOPE_SELECTION',
+      featureStatus: 'SOURCE_BACKED',
+      operatorFlowGroup: 'REQUIRES_SCOPE_SELECTION',
+      sensitivityLevel: 'STANDARD',
+      reviewPolicy: 'NOT_REQUIRED',
+      accountContextLifecyclePolicy: 'SYSTEM_DERIVED_PREVIEW_ONLY',
+      responsibilityPolicy: 'NOT_REQUIRED',
+      scopeSelectorSupport: 'SUPPORTED',
+      futureReadinessNote: null,
+      legacyVisibility: 'NORMAL_OPERATOR',
       recommendedPickerMode: 'SEARCH_FIRST',
     },
   ],
@@ -490,6 +510,45 @@ describe('role IA-1 query and payload shaping', () => {
       ],
     });
     await expect(fetchRoleTemplates()).rejects.toThrow();
+  });
+
+  it('normalizes missing readiness metadata to non-ready catalog states', async () => {
+    const templateMissingReadiness: Partial<RoleTemplateListItem> = {
+      ...roleTemplateCatalog[0],
+    };
+    delete templateMissingReadiness.assignabilityStatus;
+    delete templateMissingReadiness.operatorFlowGroup;
+
+    apiRequestMock.mockResolvedValueOnce({ data: [templateMissingReadiness] });
+
+    const [template] = await fetchRoleTemplates();
+
+    expect(template.assignabilityStatus).toBe('SYSTEM_CONTROLLED');
+    expect(template.operatorFlowGroup).toBe('SYSTEM_CONTROLLED');
+    expect(template.assignabilityStatus).not.toBe('READY_ASSIGNABLE');
+    expect(template.operatorFlowGroup).not.toBe('READY_TO_ASSIGN');
+  });
+
+  it('normalizes unknown assignment target readiness metadata to non-selectable states', async () => {
+    const malformedTargets = {
+      ...accessAssignmentTargetsMetadata,
+      assignmentTargets: [
+        {
+          ...accessAssignmentTargetsMetadata.assignmentTargets[0],
+          assignabilityStatus: 'UNKNOWN_READY_STATE',
+          operatorFlowGroup: 'UNKNOWN_READY_GROUP',
+        },
+      ],
+    };
+    apiRequestMock.mockResolvedValueOnce({ data: malformedTargets });
+
+    const result = await fetchAccessAssignmentTargets();
+    const [target] = result.assignmentTargets;
+
+    expect(target.assignabilityStatus).toBe('SYSTEM_CONTROLLED');
+    expect(target.operatorFlowGroup).toBe('SYSTEM_CONTROLLED');
+    expect(target.assignabilityStatus).not.toBe('READY_ASSIGNABLE');
+    expect(target.operatorFlowGroup).not.toBe('READY_TO_ASSIGN');
   });
 
   it('uses accepted access-assignment endpoints and strips frontend-owned authority fields', async () => {

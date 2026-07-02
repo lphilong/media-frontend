@@ -90,6 +90,62 @@ const roleTemplateCodeSchema = z.union([
 
 const roleTemplateStatusSchema = z.enum(['READY', 'PREVIEW_ONLY', 'REQUIRES_FUTURE_SCOPE']);
 
+const assignabilityStatusValues = [
+  'READY_ASSIGNABLE',
+  'REQUIRES_SCOPE_SELECTION',
+  'RESTRICTED_SENSITIVE',
+  'FUTURE_READY_CONDITION',
+  'SYSTEM_CONTROLLED',
+  'READ_ONLY_AUDIT',
+] as const;
+const operatorFlowGroupValues = [
+  'READY_TO_ASSIGN',
+  'REQUIRES_SCOPE_SELECTION',
+  'RESTRICTED_SENSITIVE',
+  'FUTURE_READINESS',
+  'SYSTEM_CONTROLLED',
+  'READ_ONLY_AUDIT',
+] as const;
+const knownAssignabilityStatuses = new Set<string>(assignabilityStatusValues);
+const knownOperatorFlowGroups = new Set<string>(operatorFlowGroupValues);
+
+const assignabilityStatusSchema = z.preprocess(
+  (value) =>
+    typeof value === 'string' && knownAssignabilityStatuses.has(value)
+      ? value
+      : 'SYSTEM_CONTROLLED',
+  z.enum(assignabilityStatusValues),
+);
+
+const featureStatusSchema = z
+  .enum(['SOURCE_BACKED', 'PARTIAL_SOURCE_BACKED', 'FUTURE_READY'])
+  .default('SOURCE_BACKED');
+
+const operatorFlowGroupSchema = z.preprocess(
+  (value) =>
+    typeof value === 'string' && knownOperatorFlowGroups.has(value)
+      ? value
+      : 'SYSTEM_CONTROLLED',
+  z.enum(operatorFlowGroupValues),
+);
+
+const catalogVisibilityMetadataSchema = {
+  assignabilityStatus: assignabilityStatusSchema,
+  featureStatus: featureStatusSchema,
+  operatorFlowGroup: operatorFlowGroupSchema,
+  sensitivityLevel: z.string().trim().min(1).default('STANDARD'),
+  reviewPolicy: z.string().trim().min(1).default('NOT_REQUIRED'),
+  accountContextLifecyclePolicy: z
+    .string()
+    .trim()
+    .min(1)
+    .default('SYSTEM_DERIVED_PREVIEW_ONLY'),
+  responsibilityPolicy: z.string().trim().min(1).default('NOT_REQUIRED'),
+  scopeSelectorSupport: z.string().trim().min(1).default('SUPPORTED'),
+  futureReadinessNote: z.string().nullable().default(null),
+  legacyVisibility: z.string().trim().min(1).default('NORMAL_OPERATOR'),
+};
+
 const roleTemplateScopePlanEntrySchema = z
   .object({
     module: z.string().trim().min(1),
@@ -171,6 +227,7 @@ export const roleTemplateSchema = z
     requiresReview: z.boolean().default(false),
     isBreakGlassLike: z.boolean().default(false),
     accessRisk: accessRiskSchema.nullable().optional(),
+    ...catalogVisibilityMetadataSchema,
   })
   .strict();
 
@@ -304,6 +361,7 @@ const roleBundleSchema = z
     requiresReview: z.boolean().default(false),
     isBreakGlassLike: z.boolean().default(false),
     accessRisk: accessRiskSchema.nullable().optional(),
+    ...catalogVisibilityMetadataSchema,
     createdAt: z.string().trim().min(1),
     updatedAt: z.string().trim().min(1),
   })
@@ -356,6 +414,7 @@ const accessAssignmentTargetOptionSchema = z
       .optional(),
     sensitiveLevel: z.string().trim().min(1).optional(),
     legacyAssignable: z.boolean(),
+    ...catalogVisibilityMetadataSchema,
     recommendedPickerMode: z.string().trim().min(1).optional(),
   })
   .strict();

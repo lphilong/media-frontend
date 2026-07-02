@@ -102,14 +102,17 @@ const roleTemplateDisplayNames: Partial<Record<RoleTemplateCode, string>> = {
   PAYROLL_DRAFT_APPROVER: 'Duyệt nháp lương',
   VIEWER_AUDITOR: 'Audit / Chỉ đọc',
   STAFF_CONSOLE_USER: 'Nhân sự tự xem dữ liệu',
-  ADMIN_FULL: 'Vai trò cũ: quản trị toàn hệ thống',
-  TEAM_MANAGER: 'Vai trò cũ: quản lý nhóm',
-  COMMERCIAL_FINANCE: 'Vai trò cũ: tài chính thương mại',
-  TALENT_STAFF_SELF: 'Vai trò cũ: nhân sự tự phục vụ',
 };
 
+const legacyTemplateCodes = new Set<RoleTemplateCode>([
+  'ADMIN_FULL',
+  'TEAM_MANAGER',
+  'COMMERCIAL_FINANCE',
+  'TALENT_STAFF_SELF',
+]);
+
 const readTemplateDisplay = (templateCode?: RoleTemplateCode | null): string =>
-  templateCode
+  templateCode && !legacyTemplateCodes.has(templateCode)
     ? `${roleTemplateDisplayNames[templateCode] ?? templateCode} (${templateCode})`
     : '-';
 

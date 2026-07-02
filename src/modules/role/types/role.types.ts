@@ -57,6 +57,43 @@ export type RoleTemplateCode = ActiveRoleTemplateCode | LegacyRoleTemplateCode;
 export type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
 export type RoleBundleStatus = 'ACTIVE' | 'INACTIVE';
 export type RecommendedAccountContext = 'STAFF_CONSOLE' | 'MANAGER_CONSOLE' | 'ADMIN_CONSOLE';
+export type CatalogAssignabilityStatus =
+  | 'READY_ASSIGNABLE'
+  | 'REQUIRES_SCOPE_SELECTION'
+  | 'RESTRICTED_SENSITIVE'
+  | 'FUTURE_READY_CONDITION'
+  | 'SYSTEM_CONTROLLED'
+  | 'READ_ONLY_AUDIT';
+export type CatalogFeatureStatus = 'SOURCE_BACKED' | 'PARTIAL_SOURCE_BACKED' | 'FUTURE_READY';
+export type CatalogOperatorFlowGroup =
+  | 'READY_TO_ASSIGN'
+  | 'REQUIRES_SCOPE_SELECTION'
+  | 'RESTRICTED_SENSITIVE'
+  | 'FUTURE_READINESS'
+  | 'SYSTEM_CONTROLLED'
+  | 'READ_ONLY_AUDIT';
+export type CatalogSensitivityLevel = 'STANDARD' | 'SENSITIVE' | 'HIGH_RISK' | string;
+export type CatalogReviewPolicy = 'NOT_REQUIRED' | 'REVIEW_REQUIRED' | string;
+export type CatalogAccountContextLifecyclePolicy = 'SYSTEM_DERIVED_PREVIEW_ONLY' | string;
+export type CatalogResponsibilityPolicy =
+  | 'NOT_REQUIRED'
+  | 'REQUIRES_EXISTING_RESPONSIBILITY'
+  | string;
+export type CatalogScopeSelectorSupport = 'SUPPORTED' | 'NOT_REQUIRED' | 'UNSUPPORTED' | string;
+export type CatalogLegacyVisibility = 'NORMAL_OPERATOR' | 'INTERNAL_ONLY' | string;
+
+export type CatalogVisibilityMetadata = {
+  assignabilityStatus: CatalogAssignabilityStatus;
+  featureStatus: CatalogFeatureStatus;
+  operatorFlowGroup: CatalogOperatorFlowGroup;
+  sensitivityLevel: CatalogSensitivityLevel;
+  reviewPolicy: CatalogReviewPolicy;
+  accountContextLifecyclePolicy: CatalogAccountContextLifecyclePolicy;
+  responsibilityPolicy: CatalogResponsibilityPolicy;
+  scopeSelectorSupport: CatalogScopeSelectorSupport;
+  futureReadinessNote: string | null;
+  legacyVisibility: CatalogLegacyVisibility;
+};
 
 export type RoleTemplateScopePlanEntry = {
   module: string;
@@ -65,7 +102,7 @@ export type RoleTemplateScopePlanEntry = {
   note: string;
 };
 
-export type RoleTemplateListItem = {
+export type RoleTemplateListItem = CatalogVisibilityMetadata & {
   code: ActiveRoleTemplateCode;
   version: string;
   name: string;
@@ -87,7 +124,7 @@ export type RoleTemplateListItem = {
   accessRisk?: AccessRisk | null;
 };
 
-export type RoleBundleListItem = {
+export type RoleBundleListItem = CatalogVisibilityMetadata & {
   code: string;
   name: string;
   description: string;
@@ -281,7 +318,7 @@ export type AccessAssignmentScopeGrant = {
 
 export type AccessAssignmentTargetType = 'ROLE' | 'ROLE_TEMPLATE' | 'BUNDLE';
 
-export type AccessAssignmentTargetOption = {
+export type AccessAssignmentTargetOption = Partial<CatalogVisibilityMetadata> & {
   assignmentKind: AccessAssignmentTargetType;
   id?: string;
   code: string;

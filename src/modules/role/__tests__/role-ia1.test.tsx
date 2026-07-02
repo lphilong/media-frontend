@@ -359,18 +359,13 @@ describe('role IA-1 surfaces', () => {
     expect(previewButton).toBeEnabled();
     await user.click(previewButton);
     expect(
-      await screen.findByText(i18n.t('role:accessAssignment.previewBlocked')),
+      await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
     ).toBeInTheDocument();
-    await waitFor(() => expect(applyButton).toBeDisabled());
+    await waitFor(() => expect(applyButton).toBeEnabled());
 
     const targetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
     const staffOption = within(targetSelect).getByRole('option', { name: /Staff Console/u });
     await user.selectOptions(targetSelect, staffOption);
-    await waitFor(() => expect(applyButton).toBeDisabled());
-    await user.click(previewButton);
-    expect(
-      await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
-    ).toBeInTheDocument();
     await waitFor(() => expect(applyButton).toBeEnabled());
 
     await user.type(reasonInput, ' updated');
@@ -575,12 +570,35 @@ describe('role IA-1 surfaces', () => {
     ).not.toBeInTheDocument();
   }, 20_000);
 
-  it('shows AUTH-5 risk badges and blocks apply when sensitive preview returns blockers', async () => {
+  it('separates AUTH-5 sensitive targets from the normal assignment picker', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
 
     await renderAssignmentTab(user);
 
+    const targetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
+    expect(
+      within(targetSelect).queryByRole('option', { name: /Owner Admin/u }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.restrictedTargetsTitle')),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Owner Admin/u)).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.restrictedTargetsHelp')),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('role:accessAssignment.roleMode') }),
+    );
+    const roleTargetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
+    expect(
+      within(roleTargetSelect).queryByRole('option', { name: /Owner Admin/u }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.restrictedTargetsTitle')),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Owner Admin/u)).toBeInTheDocument();
     const userPicker = await findPickerSurface('role-access-assignment-linked-user');
     await user.type(
       within(userPicker).getByPlaceholderText(
@@ -589,36 +607,10 @@ describe('role IA-1 surfaces', () => {
       'Al',
     );
     await user.click(await within(userPicker).findByText(/Alice/u));
-    await user.type(
-      screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
-      'Sensitive owner access test',
-    );
-
     const previewButton = screen.getByRole('button', {
       name: i18n.t('role:accessAssignment.previewButton'),
     });
-    const applyButton = screen.getByRole('button', {
-      name: i18n.t('role:accessAssignment.applyButton'),
-    });
-    await user.click(previewButton);
-
-    expect(await screen.findByText('Đánh giá rủi ro quyền cấp')).toBeInTheDocument();
-    expect(screen.getByText('Quyền nhạy cảm')).toBeInTheDocument();
-    expect(screen.getByText('Phạm vi toàn cục')).toBeInTheDocument();
-    expect(screen.getByText('Rủi ro cao')).toBeInTheDocument();
-    expect(screen.getByText('Cần rà soát')).toBeInTheDocument();
-    expect(screen.getByText('Quyền khẩn cấp')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Thiếu ngày rà soát. Quyền này thuộc nhóm nhạy cảm hoặc phạm vi toàn cục nên cần ngày rà soát.',
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Quyền khẩn cấp cần ngày hết hiệu lực. Quyền này có rủi ro cao và cần ngày hết hiệu lực.',
-      ),
-    ).toBeInTheDocument();
-    await waitFor(() => expect(applyButton).toBeDisabled());
+    expect(previewButton).toBeDisabled();
   }, 20_000);
 
   it('keeps Apply disabled when preview contradicts canApply with blockers', async () => {
@@ -961,7 +953,7 @@ describe('role IA-1 surfaces', () => {
     expect(within(userPicker).getByText(/EP-LINKED-ACTIVE/u)).toBeInTheDocument();
     expect(within(userPicker).getByText(/Director/u)).toBeInTheDocument();
     expect(within(userPicker).getByText(/Sales/u)).toBeInTheDocument();
-    expect(within(userPicker).getByText(/ACTIVE/u)).toBeInTheDocument();
+    expect(within(userPicker).getAllByText(/ACTIVE/u).length).toBeGreaterThan(0);
     await user.click(within(userPicker).getByText(/Alice Linked/u));
 
     await user.type(
@@ -1102,6 +1094,8 @@ describe('role IA-1 surfaces', () => {
                 requiredResponsibilityType: null,
                 sensitiveLevel: 'STANDARD',
                 legacyAssignable: true,
+                assignabilityStatus: 'REQUIRES_SCOPE_SELECTION',
+                operatorFlowGroup: 'REQUIRES_SCOPE_SELECTION',
                 recommendedPickerMode: 'SEARCH_FIRST',
               },
               {
@@ -1116,6 +1110,24 @@ describe('role IA-1 surfaces', () => {
                 requiredResponsibilityType: null,
                 sensitiveLevel: 'STANDARD',
                 legacyAssignable: true,
+                assignabilityStatus: 'READ_ONLY_AUDIT',
+                operatorFlowGroup: 'READ_ONLY_AUDIT',
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              {
+                assignmentKind: 'BUNDLE',
+                code: 'DIRECT_READY_BUNDLE',
+                version: '2026-05-20',
+                name: 'Direct Ready Bundle',
+                childRoles: ['KPI_OPERATIONS'],
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: [],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
+                assignabilityStatus: 'READY_ASSIGNABLE',
+                operatorFlowGroup: 'READY_TO_ASSIGN',
                 recommendedPickerMode: 'SEARCH_FIRST',
               },
               ...['ADMIN_FULL', 'TEAM_MANAGER', 'COMMERCIAL_FINANCE', 'TALENT_STAFF_SELF'].map(
@@ -1129,9 +1141,25 @@ describe('role IA-1 surfaces', () => {
                   requiredResponsibilityType: null,
                   sensitiveLevel: 'STANDARD',
                   legacyAssignable: false,
+                  assignabilityStatus: 'READ_ONLY_AUDIT',
+                  operatorFlowGroup: 'READ_ONLY_AUDIT',
                   recommendedPickerMode: 'SEARCH_FIRST',
                 }),
               ),
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'KPI_OPERATIONS',
+                name: 'KPI Operations',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: [],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
+                assignabilityStatus: 'READY_ASSIGNABLE',
+                operatorFlowGroup: 'READY_TO_ASSIGN',
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
               {
                 assignmentKind: 'ROLE_TEMPLATE',
                 code: 'HR_OPERATIONS',
@@ -1142,6 +1170,8 @@ describe('role IA-1 surfaces', () => {
                 requiredResponsibilityType: null,
                 sensitiveLevel: 'STANDARD',
                 legacyAssignable: true,
+                assignabilityStatus: 'REQUIRES_SCOPE_SELECTION',
+                operatorFlowGroup: 'REQUIRES_SCOPE_SELECTION',
                 recommendedPickerMode: 'SEARCH_FIRST',
               },
               {
@@ -1154,6 +1184,8 @@ describe('role IA-1 surfaces', () => {
                 requiredResponsibilityType: null,
                 sensitiveLevel: 'STANDARD',
                 legacyAssignable: true,
+                assignabilityStatus: 'REQUIRES_SCOPE_SELECTION',
+                operatorFlowGroup: 'REQUIRES_SCOPE_SELECTION',
                 recommendedPickerMode: 'SEARCH_FIRST',
               },
               {
@@ -1161,11 +1193,95 @@ describe('role IA-1 surfaces', () => {
                 code: 'VIEWER_AUDITOR',
                 name: 'Viewer Auditor',
                 recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: ['global'],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
+                assignabilityStatus: 'READ_ONLY_AUDIT',
+                operatorFlowGroup: 'READ_ONLY_AUDIT',
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'OWNER_ADMIN',
+                name: 'Owner Admin',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: ['global'],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'HIGH_RISK',
+                legacyAssignable: true,
+                assignabilityStatus: 'RESTRICTED_SENSITIVE',
+                operatorFlowGroup: 'RESTRICTED_SENSITIVE',
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'ATTENDANCE_OPS',
+                name: 'Attendance Ops',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
                 requiredScopeTypes: ['attendancePeriodOrg'],
                 requiresResponsibility: false,
                 requiredResponsibilityType: null,
                 sensitiveLevel: 'STANDARD',
                 legacyAssignable: true,
+                assignabilityStatus: 'FUTURE_READY_CONDITION',
+                operatorFlowGroup: 'FUTURE_READINESS',
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'MISSING_ASSIGNABILITY',
+                name: 'Missing Assignability',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: [],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
+                operatorFlowGroup: 'READY_TO_ASSIGN',
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'UNKNOWN_ASSIGNABILITY',
+                name: 'Unknown Assignability',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: [],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
+                assignabilityStatus: 'UNKNOWN_READY_STATE',
+                operatorFlowGroup: 'READY_TO_ASSIGN',
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'MISSING_FLOW',
+                name: 'Missing Flow',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: [],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
+                assignabilityStatus: 'READY_ASSIGNABLE',
+                recommendedPickerMode: 'SEARCH_FIRST',
+              },
+              {
+                assignmentKind: 'ROLE_TEMPLATE',
+                code: 'SYSTEM_CONTROLLED_TARGET',
+                name: 'System Controlled Target',
+                recommendedAccountContext: 'ADMIN_CONSOLE',
+                requiredScopeTypes: [],
+                requiresResponsibility: false,
+                requiredResponsibilityType: null,
+                sensitiveLevel: 'STANDARD',
+                legacyAssignable: true,
+                assignabilityStatus: 'SYSTEM_CONTROLLED',
+                operatorFlowGroup: 'SYSTEM_CONTROLLED',
                 recommendedPickerMode: 'SEARCH_FIRST',
               },
             ],
@@ -1187,6 +1303,9 @@ describe('role IA-1 surfaces', () => {
     const targetSelect = await screen.findByLabelText(i18n.t('role:accessAssignment.targetLabel'));
     expect(within(targetSelect).getByRole('option', { name: /Auditor/u })).toBeInTheDocument();
     expect(
+      within(targetSelect).getByRole('option', { name: /Direct Ready Bundle/u }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByText(i18n.t('role:accessAssignment.legacyTargetsHidden')),
     ).toBeInTheDocument();
 
@@ -1194,6 +1313,9 @@ describe('role IA-1 surfaces', () => {
       screen.getByRole('button', { name: i18n.t('role:accessAssignment.roleMode') }),
     );
     const roleTargetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
+    expect(
+      within(roleTargetSelect).getByRole('option', { name: /KPI Operations/u }),
+    ).toBeInTheDocument();
     expect(
       within(roleTargetSelect).getByRole('option', { name: /HR Operations/u }),
     ).toBeInTheDocument();
@@ -1203,15 +1325,35 @@ describe('role IA-1 surfaces', () => {
     expect(
       within(roleTargetSelect).getByRole('option', { name: /Viewer Auditor/u }),
     ).toBeInTheDocument();
+    expect(
+      within(roleTargetSelect).queryByRole('option', { name: /Owner Admin/u }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(roleTargetSelect).queryByRole('option', { name: /Attendance Ops/u }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(roleTargetSelect).queryByRole('option', { name: /Missing Assignability/u }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(roleTargetSelect).queryByRole('option', { name: /Unknown Assignability/u }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(roleTargetSelect).queryByRole('option', { name: /Missing Flow/u }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(roleTargetSelect).queryByRole('option', { name: /System Controlled Target/u }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.restrictedTargetsTitle')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.futureTargetsHidden')),
+    ).toBeInTheDocument();
     for (const code of ['ADMIN_FULL', 'TEAM_MANAGER', 'COMMERCIAL_FINANCE', 'TALENT_STAFF_SELF']) {
       expect(
         within(roleTargetSelect).queryByRole('option', { name: new RegExp(code, 'u') }),
       ).not.toBeInTheDocument();
     }
-    await user.selectOptions(roleTargetSelect, 'ROLE_TEMPLATE:VIEWER_AUDITOR:');
-    expect(
-      await screen.findByText(i18n.t('role:accessAssignment.scopeUnavailable')),
-    ).toBeInTheDocument();
     expect(screen.queryByLabelText(/json/i)).not.toBeInTheDocument();
 
     const userPicker = await findPickerSurface('role-access-assignment-linked-user');
@@ -1226,10 +1368,6 @@ describe('role IA-1 surfaces', () => {
       screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
       'Unsupported scope coverage',
     );
-    const previewButton = screen.getByRole('button', {
-      name: i18n.t('role:accessAssignment.previewButton'),
-    });
-    expect(previewButton).toBeDisabled();
     expect(previewPayloads).toHaveLength(0);
   }, 20_000);
 

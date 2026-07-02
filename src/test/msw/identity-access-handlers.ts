@@ -32,6 +32,33 @@ type RoleTemplateCode =
   | 'STAFF_CONSOLE_USER';
 type RoleTemplateStatus = 'READY' | 'PREVIEW_ONLY' | 'REQUIRES_FUTURE_SCOPE';
 type AccountContext = 'STAFF_CONSOLE' | 'MANAGER_CONSOLE' | 'ADMIN_CONSOLE';
+type CatalogAssignabilityStatus =
+  | 'READY_ASSIGNABLE'
+  | 'REQUIRES_SCOPE_SELECTION'
+  | 'RESTRICTED_SENSITIVE'
+  | 'FUTURE_READY_CONDITION'
+  | 'SYSTEM_CONTROLLED'
+  | 'READ_ONLY_AUDIT';
+type CatalogOperatorFlowGroup =
+  | 'READY_TO_ASSIGN'
+  | 'REQUIRES_SCOPE_SELECTION'
+  | 'RESTRICTED_SENSITIVE'
+  | 'FUTURE_READINESS'
+  | 'SYSTEM_CONTROLLED'
+  | 'READ_ONLY_AUDIT';
+
+type CatalogVisibilityMetadata = {
+  assignabilityStatus: CatalogAssignabilityStatus;
+  featureStatus: 'SOURCE_BACKED' | 'PARTIAL_SOURCE_BACKED' | 'FUTURE_READY';
+  operatorFlowGroup: CatalogOperatorFlowGroup;
+  sensitivityLevel: 'STANDARD' | 'SENSITIVE' | 'HIGH_RISK';
+  reviewPolicy: 'NOT_REQUIRED' | 'REVIEW_REQUIRED';
+  accountContextLifecyclePolicy: 'SYSTEM_DERIVED_PREVIEW_ONLY';
+  responsibilityPolicy: 'NOT_REQUIRED' | 'REQUIRES_EXISTING_RESPONSIBILITY';
+  scopeSelectorSupport: 'SUPPORTED' | 'NOT_REQUIRED' | 'UNSUPPORTED';
+  futureReadinessNote: string | null;
+  legacyVisibility: 'NORMAL_OPERATOR' | 'INTERNAL_ONLY';
+};
 
 type RoleAssignmentScopeGrants = {
   workSchedule?: Array<'self' | 'team' | 'department' | 'global'>;
@@ -128,7 +155,7 @@ type RoleTemplateScopePlanEntry = {
   note: string;
 };
 
-type RoleTemplateRecord = {
+type RoleTemplateRecord = Partial<CatalogVisibilityMetadata> & {
   code: RoleTemplateCode;
   version: string;
   name: string;
@@ -143,7 +170,7 @@ type RoleTemplateRecord = {
   status: RoleTemplateStatus;
 };
 
-type RoleBundleRecord = {
+type RoleBundleRecord = Partial<CatalogVisibilityMetadata> & {
   code: string;
   name: string;
   description: string;
@@ -160,7 +187,7 @@ type RoleBundleRecord = {
 };
 
 type AccessAssignmentTargetFixture =
-  | {
+  | (Partial<CatalogVisibilityMetadata> & {
       assignmentKind: 'ROLE_TEMPLATE';
       code: RoleTemplateCode;
       name: string;
@@ -171,8 +198,8 @@ type AccessAssignmentTargetFixture =
       sensitiveLevel: 'STANDARD' | 'HIGH_RISK';
       legacyAssignable: boolean;
       recommendedPickerMode: string;
-    }
-  | {
+    })
+  | (Partial<CatalogVisibilityMetadata> & {
       assignmentKind: 'BUNDLE';
       code: string;
       version: string;
@@ -185,7 +212,7 @@ type AccessAssignmentTargetFixture =
       sensitiveLevel: 'STANDARD' | 'HIGH_RISK';
       legacyAssignable: boolean;
       recommendedPickerMode: string;
-    };
+    });
 
 type CurrentActorCapabilitiesRecord = {
   id: string;
@@ -1691,6 +1718,7 @@ const accessAssignmentTargets = (): AccessAssignmentTargetFixture[] => [
           : null,
     sensitiveLevel: template.code === 'OWNER_ADMIN' ? 'HIGH_RISK' : 'STANDARD',
     legacyAssignable: true,
+    ...catalogMetadataForRoleTemplate(template),
     recommendedPickerMode:
       template.code === 'TALENT_GROUP_MANAGER' || template.code === 'ORG_UNIT_MANAGER'
         ? 'RESPONSIBILITY_SCOPE_FIRST'
@@ -1718,6 +1746,7 @@ const accessAssignmentTargets = (): AccessAssignmentTargetFixture[] => [
       .filter((value): value is 'TALENT_GROUP_MANAGER' | 'ORG_UNIT_MANAGER' => value !== null),
     sensitiveLevel: bundle.sensitive ? 'HIGH_RISK' : 'STANDARD',
     legacyAssignable: true,
+    ...catalogMetadataForBundle(bundle),
     recommendedPickerMode: bundle.childRoles.some((roleCode) =>
       ['TALENT_GROUP_MANAGER', 'ORG_UNIT_MANAGER'].includes(roleCode),
     )
@@ -1725,6 +1754,113 @@ const accessAssignmentTargets = (): AccessAssignmentTargetFixture[] => [
       : 'SEARCH_FIRST',
   })),
 ];
+
+function catalogMetadataForRoleTemplate(template: RoleTemplateRecord): CatalogVisibilityMetadata {
+  const requiredScopeTypes = Object.values(template.recommendedScopeGrants).flatMap((scopes) =>
+    scopes.map((scope) =>
+      scope === 'managedGroup' || scope === 'team'
+        ? 'managedTalentGroup'
+        : scope === 'department'
+          ? 'managedOrgUnit'
+          : scope,
+    ),
+  );
+  const futureReadinessNote =
+    template.permissions.length === 0
+      ? 'This target role code is reserved for a future source-backed module.'
+      : null;
+  const sensitivityLevel =
+    template.code === 'OWNER_ADMIN' ||
+    template.code === 'ACCESS_ADMIN' ||
+    template.code === 'HR_TERMS_APPROVER' ||
+    template.code.includes('APPROVER')
+      ? 'HIGH_RISK'
+      : requiredScopeTypes.includes('global')
+        ? 'SENSITIVE'
+        : 'STANDARD';
+  const assignabilityStatus = futureReadinessNote
+    ? 'FUTURE_READY_CONDITION'
+    : template.code === 'VIEWER_AUDITOR'
+      ? 'READ_ONLY_AUDIT'
+      : sensitivityLevel !== 'STANDARD'
+        ? 'RESTRICTED_SENSITIVE'
+        : requiredScopeTypes.length > 0
+          ? 'REQUIRES_SCOPE_SELECTION'
+          : 'READY_ASSIGNABLE';
+
+  return buildCatalogMetadata({
+    assignabilityStatus,
+    sensitivityLevel,
+    futureReadinessNote,
+    requiresResponsibility:
+      template.code === 'TALENT_GROUP_MANAGER' || template.code === 'ORG_UNIT_MANAGER',
+  });
+}
+
+function catalogMetadataForBundle(bundle: RoleBundleRecord): CatalogVisibilityMetadata {
+  const childMetadata = bundle.childRoles
+    .map((roleCode) => roleTemplates.find((template) => template.code === roleCode))
+    .filter((template): template is RoleTemplateRecord => Boolean(template))
+    .map(catalogMetadataForRoleTemplate);
+  const futureReadinessNote = childMetadata.some(
+    (metadata) => metadata.assignabilityStatus === 'FUTURE_READY_CONDITION',
+  )
+    ? 'One or more child roles need future source readiness before normal assignment.'
+    : null;
+  const sensitivityLevel =
+    bundle.sensitive ||
+    childMetadata.some((metadata) => metadata.assignabilityStatus === 'RESTRICTED_SENSITIVE')
+      ? 'HIGH_RISK'
+      : bundle.recommendedScopes.includes('global')
+        ? 'SENSITIVE'
+        : 'STANDARD';
+  const assignabilityStatus = futureReadinessNote
+    ? 'FUTURE_READY_CONDITION'
+    : bundle.code === 'AUDITOR_BUNDLE'
+      ? 'READ_ONLY_AUDIT'
+      : sensitivityLevel !== 'STANDARD'
+        ? 'RESTRICTED_SENSITIVE'
+        : bundle.recommendedScopes.length > 0
+          ? 'REQUIRES_SCOPE_SELECTION'
+          : 'READY_ASSIGNABLE';
+
+  return buildCatalogMetadata({
+    assignabilityStatus,
+    sensitivityLevel,
+    futureReadinessNote,
+    requiresResponsibility: bundle.childRoles.some((roleCode) =>
+      ['TALENT_GROUP_MANAGER', 'ORG_UNIT_MANAGER'].includes(roleCode),
+    ),
+  });
+}
+
+function buildCatalogMetadata(params: {
+  assignabilityStatus: CatalogAssignabilityStatus;
+  sensitivityLevel: 'STANDARD' | 'SENSITIVE' | 'HIGH_RISK';
+  futureReadinessNote: string | null;
+  requiresResponsibility: boolean;
+}): CatalogVisibilityMetadata {
+  const operatorFlowGroup: CatalogOperatorFlowGroup =
+    params.assignabilityStatus === 'READY_ASSIGNABLE'
+      ? 'READY_TO_ASSIGN'
+      : params.assignabilityStatus === 'FUTURE_READY_CONDITION'
+        ? 'FUTURE_READINESS'
+        : params.assignabilityStatus;
+  return {
+    assignabilityStatus: params.assignabilityStatus,
+    featureStatus: params.futureReadinessNote ? 'PARTIAL_SOURCE_BACKED' : 'SOURCE_BACKED',
+    operatorFlowGroup,
+    sensitivityLevel: params.sensitivityLevel,
+    reviewPolicy: params.sensitivityLevel === 'STANDARD' ? 'NOT_REQUIRED' : 'REVIEW_REQUIRED',
+    accountContextLifecyclePolicy: 'SYSTEM_DERIVED_PREVIEW_ONLY',
+    responsibilityPolicy: params.requiresResponsibility
+      ? 'REQUIRES_EXISTING_RESPONSIBILITY'
+      : 'NOT_REQUIRED',
+    scopeSelectorSupport: 'SUPPORTED',
+    futureReadinessNote: params.futureReadinessNote,
+    legacyVisibility: 'NORMAL_OPERATOR',
+  };
+}
 
 const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
   const targetUserId = String(body.targetUserId ?? '');
