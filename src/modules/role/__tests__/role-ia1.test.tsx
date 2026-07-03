@@ -360,6 +360,12 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText('Cần rà soát')).toBeInTheDocument();
     expect(screen.getByText('Thiếu ngày rà soát')).toBeInTheDocument();
     expect(screen.getByText(/Ngày rà soát: - · Ngày hết hiệu lực: -/u)).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:userAccess.scopeGrants'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:userAccess.assignedBy'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:userAccess.reason'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:userAccess.responsibilityTitle'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:userAccess.traceTitle'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:userAccess.lifecycleReadOnlyHere'))).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent(/unrecognized_keys|templateCode/u);
   }, 15_000);
 
@@ -416,9 +422,21 @@ describe('role IA-1 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
     ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:accessAssignment.scopeFingerprint'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:accessAssignment.bundleTrace'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:accessAssignment.childRoleTrace'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:accessAssignment.sourceTrace'))).toBeInTheDocument();
     await waitFor(() => expect(applyButton).toBeEnabled());
 
     const targetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
+    expect(
+      Array.from(targetSelect.querySelectorAll('optgroup')).map((group) => group.label),
+    ).toEqual(
+      expect.arrayContaining([
+        i18n.t('role:catalogGroups.REQUIRES_SCOPE_SELECTION'),
+        i18n.t('role:catalogGroups.READ_ONLY_AUDIT'),
+      ]),
+    );
     const staffOption = within(targetSelect).getByRole('option', { name: /Staff Console/u });
     await user.selectOptions(targetSelect, staffOption);
     await waitFor(() => expect(applyButton).toBeEnabled());
@@ -435,6 +453,12 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText(i18n.t('role:accessAssignment.resultApplied'))).toBeInTheDocument();
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.feedback.applied')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.accountContextResult')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.responsibilityResult')),
     ).toBeInTheDocument();
     expect(screen.getAllByText(i18n.t('role:accessAssignment.auditTrace')).length).toBeGreaterThan(
       0,

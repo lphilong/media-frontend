@@ -88,6 +88,12 @@ const scopeTypesWithoutTarget = new Set<AccessAssignmentScopeType>([
 
 const periodScopeTypes = new Set<AccessAssignmentScopeType>(['financePeriod', 'payrollPeriod']);
 
+const assignmentPickerGroupOrder = [
+  'READY_TO_ASSIGN',
+  'REQUIRES_SCOPE_SELECTION',
+  'READ_ONLY_AUDIT',
+] as const;
+
 export const AccessAssignmentTab = (): JSX.Element => {
   const { t } = useTranslation(['role', 'common']);
   const targetsQuery = useAccessAssignmentTargets();
@@ -102,6 +108,9 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const [mode, setMode] = useState<AssignmentMode>('BUNDLE');
   const [targetKey, setTargetKey] = useState<string>('');
   const [scopeTargetIds, setScopeTargetIds] = useState<Record<string, string | undefined>>({});
+  const [scopeTargetOptions, setScopeTargetOptions] = useState<
+    Record<string, ReferenceOption | undefined>
+  >({});
   const [scopePeriodKeys, setScopePeriodKeys] = useState<Record<string, string | undefined>>({});
   const [reason, setReason] = useState('');
   const [reviewAt, setReviewAt] = useState('');
@@ -156,6 +165,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
     [targets],
   );
   const activeTargets = mode === 'BUNDLE' ? bundleTargets : roleTemplateTargets;
+  const groupedActiveTargets = useMemo(() => groupSelectableTargets(activeTargets), [activeTargets]);
   const selectedTarget = activeTargets.find((target) => targetKey === toTargetKey(target));
 
   useEffect(() => {
@@ -425,15 +435,19 @@ export const AccessAssignmentTab = (): JSX.Element => {
             <span className="text-xs font-medium uppercase text-muted">
               {t('role:accessAssignment.targetLabel')}
             </span>
-            <select
+          <select
               value={targetKey}
               onChange={(event) => setTargetKey(event.target.value)}
               className="rounded border border-border bg-panel px-2 py-2 text-sm"
             >
-              {activeTargets.map((target) => (
-                <option key={toTargetKey(target)} value={toTargetKey(target)}>
-                  {target.name} ({target.code})
-                </option>
+              {groupedActiveTargets.map(({ group, items }) => (
+                <optgroup key={group} label={t(`role:catalogGroups.${group}`)}>
+                  {items.map((target) => (
+                    <option key={toTargetKey(target)} value={toTargetKey(target)}>
+                      {target.name} ({target.code})
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
@@ -477,6 +491,9 @@ export const AccessAssignmentTab = (): JSX.Element => {
         scopePeriodKeys={scopePeriodKeys}
         onTargetChange={(scopeType, value) =>
           setScopeTargetIds((current) => ({ ...current, [scopeType]: value }))
+        }
+        onSelectedTargetChange={(scopeType, option) =>
+          setScopeTargetOptions((current) => ({ ...current, [scopeType]: option }))
         }
         onPeriodChange={(scopeType, value) =>
           setScopePeriodKeys((current) => ({ ...current, [scopeType]: value || undefined }))
@@ -558,11 +575,21 @@ export const AccessAssignmentTab = (): JSX.Element => {
         />
 
         {previewResult ? (
-          <PreviewSummary result={previewResult} previewMatchesCurrent={previewMatchesCurrent} />
+          <PreviewSummary
+            result={previewResult}
+            previewMatchesCurrent={previewMatchesCurrent}
+            scopeTargetOptions={scopeTargetOptions}
+          />
         ) : null}
       </MetadataSection>
 
-      {applyResult ? <ApplySummary result={applyResult} reason={reasonValue} /> : null}
+      {applyResult ? (
+        <ApplySummary
+          result={applyResult}
+          reason={reasonValue}
+          scopeTargetOptions={scopeTargetOptions}
+        />
+      ) : null}
     </div>
   );
 };
@@ -573,6 +600,7 @@ const ScopeResolver = ({
   scopeTargetIds,
   scopePeriodKeys,
   onTargetChange,
+  onSelectedTargetChange,
   onPeriodChange,
 }: {
   requiredScopeTypes: AccessAssignmentScopeType[];
@@ -580,6 +608,10 @@ const ScopeResolver = ({
   scopeTargetIds: Record<string, string | undefined>;
   scopePeriodKeys: Record<string, string | undefined>;
   onTargetChange: (scopeType: AccessAssignmentScopeType, value?: string) => void;
+  onSelectedTargetChange: (
+    scopeType: AccessAssignmentScopeType,
+    option: ReferenceOption | undefined,
+  ) => void;
   onPeriodChange: (scopeType: AccessAssignmentScopeType, value?: string) => void;
 }): JSX.Element => {
   const { t } = useTranslation('role');
@@ -621,6 +653,7 @@ const ScopeResolver = ({
                   pickerId={`role-access-assignment-scope-${scopeType}`}
                   value={scopeTargetIds[scopeType]}
                   onChange={(value) => onTargetChange(scopeType, value)}
+                  onSelectedOptionChange={(option) => onSelectedTargetChange(scopeType, option)}
                   loadOptions={objectScopeLoaders[scopeType] ?? (() => Promise.resolve([]))}
                   placeholder={t('accessAssignment.scopeSearchPlaceholder')}
                   resourceLabel={formatScopeTypeLabel(scopeType)}
@@ -881,9 +914,11 @@ const LifecycleResultSummary = ({
 const PreviewSummary = ({
   result,
   previewMatchesCurrent,
+  scopeTargetOptions,
 }: {
   result: AccessAssignmentPreviewResult;
   previewMatchesCurrent: boolean;
+  scopeTargetOptions: Record<string, ReferenceOption | undefined>;
 }): JSX.Element => {
   const { t } = useTranslation('role');
   const blockers = result.blockers ?? [];
@@ -930,9 +965,26 @@ const PreviewSummary = ({
           {
             key: 'scope',
             label: t('accessAssignment.normalizedScope'),
-            value: formatScopeSummary(result.normalizedScope ?? []),
+            value: formatScopeSummary(result.normalizedScope ?? [], scopeTargetOptions),
+          },
+          {
+            key: 'fingerprint',
+            label: t('accessAssignment.scopeFingerprint'),
+            value: result.scopeFingerprint ?? '-',
           },
         ]}
+      />
+      <AssignmentTraceList
+        title={t('accessAssignment.bundleTrace')}
+        records={readTraceRecords(result.bundleExpansion)}
+      />
+      <AssignmentTraceList
+        title={t('accessAssignment.childRoleTrace')}
+        records={proposedAssignments}
+      />
+      <AssignmentTraceList
+        title={t('accessAssignment.sourceTrace')}
+        records={readTraceRecords(result.sourceTrace)}
       />
       {accountContextMessageKey ? (
         <p className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
@@ -951,9 +1003,11 @@ const PreviewSummary = ({
 const ApplySummary = ({
   result,
   reason,
+  scopeTargetOptions,
 }: {
   result: AccessAssignmentApplyResult;
   reason: string;
+  scopeTargetOptions: Record<string, ReferenceOption | undefined>;
 }): JSX.Element => {
   const { t } = useTranslation('role');
   const appliedAssignments = result.appliedAssignments ?? [];
@@ -978,7 +1032,12 @@ const ApplySummary = ({
           {
             key: 'scope',
             label: t('accessAssignment.normalizedScope'),
-            value: formatScopeSummary(result.normalizedScope ?? []),
+            value: formatScopeSummary(result.normalizedScope ?? [], scopeTargetOptions),
+          },
+          {
+            key: 'fingerprint',
+            label: t('accessAssignment.scopeFingerprint'),
+            value: result.scopeFingerprint ?? '-',
           },
           {
             key: 'reason',
@@ -1002,7 +1061,50 @@ const ApplySummary = ({
           },
         ]}
       />
+      <AssignmentTraceList
+        title={t('accessAssignment.bundleTrace')}
+        records={readTraceRecords(result.bundleExpansion)}
+      />
+      <AssignmentTraceList
+        title={t('accessAssignment.childRoleTrace')}
+        records={appliedAssignments.length > 0 ? appliedAssignments : (result.proposedAssignments ?? [])}
+      />
+      <AssignmentTraceList
+        title={t('accessAssignment.accountContextResult')}
+        records={readTraceRecords(result.accountContextResult)}
+      />
+      <AssignmentTraceList
+        title={t('accessAssignment.responsibilityResult')}
+        records={readTraceRecords(result.responsibilityOperationResult)}
+      />
+      <AssignmentTraceList
+        title={t('accessAssignment.sourceTrace')}
+        records={readTraceRecords(result.sourceTrace)}
+      />
     </MetadataSection>
+  );
+};
+
+const AssignmentTraceList = ({
+  title,
+  records,
+}: {
+  title: string;
+  records: readonly Record<string, unknown>[];
+}): JSX.Element | null => {
+  if (records.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded border border-border bg-bg p-3">
+      <p className="text-sm font-semibold text-text">{title}</p>
+      <ul className="mt-2 space-y-1 text-sm text-muted">
+        {records.map((record, index) => (
+          <li key={`${title}-${index}`}>{formatTraceRecord(record)}</li>
+        ))}
+      </ul>
+    </div>
   );
 };
 
@@ -1303,15 +1405,84 @@ function formatScopeReadOnlyHelp(scopeType: AccessAssignmentScopeType): string {
   return 'Không cần chọn đối tượng; hệ thống sẽ kiểm tra rủi ro và điều kiện khi xem trước.';
 }
 
-function formatScopeSummary(scopes: readonly AccessAssignmentScopeGrant[]): string {
+function formatScopeSummary(
+  scopes: readonly AccessAssignmentScopeGrant[],
+  scopeTargetOptions: Record<string, ReferenceOption | undefined> = {},
+): string {
   if (scopes.length === 0) {
     return '-';
   }
   return scopes
-    .map((scope) =>
-      [scope.scopeType, scope.targetId, scope.targetKey, scope.periodKey].filter(Boolean).join(':'),
-    )
+    .map((scope) => {
+      const label = scope.targetId ? scopeTargetOptions[scope.scopeType]?.label : undefined;
+      return [
+        formatScopeTypeLabel(scope.scopeType),
+        label,
+        scope.targetId && label ? `ID ${scope.targetId}` : scope.targetId,
+        scope.targetKey,
+        scope.periodKey,
+      ]
+        .filter(Boolean)
+        .join(': ');
+    })
     .join(', ');
+}
+
+function groupSelectableTargets(
+  targets: readonly AccessAssignmentTargetOption[],
+): Array<{ group: (typeof assignmentPickerGroupOrder)[number]; items: AccessAssignmentTargetOption[] }> {
+  return assignmentPickerGroupOrder
+    .map((group) => ({
+      group,
+      items: targets.filter((target) => target.operatorFlowGroup === group),
+    }))
+    .filter(({ items }) => items.length > 0);
+}
+
+function readTraceRecords(value: unknown): Record<string, unknown>[] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return [];
+  }
+  const record = value as Record<string, unknown>;
+  const itemLists = ['items', 'proposedAssignments', 'appliedAssignments'];
+  const nestedRecords = itemLists.flatMap((key) =>
+    Array.isArray(record[key])
+      ? record[key].filter(
+          (entry): entry is Record<string, unknown> =>
+            typeof entry === 'object' && entry !== null && !Array.isArray(entry),
+        )
+      : [],
+  );
+  return nestedRecords.length > 0 ? [record, ...nestedRecords] : [record];
+}
+
+function formatTraceRecord(record: Record<string, unknown>): string {
+  const preferredKeys = [
+    'bundleAssignmentId',
+    'bundleCode',
+    'bundleVersion',
+    'assignmentId',
+    'roleCode',
+    'roleName',
+    'operation',
+    'materializationPolicy',
+    'responsibilityAssignmentId',
+    'subjectType',
+    'subjectId',
+    'source',
+    'auditSource',
+    'mutationType',
+  ];
+  const parts = preferredKeys
+    .map((key) => {
+      const value = record[key];
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        return `${key}: ${String(value)}`;
+      }
+      return null;
+    })
+    .filter((value): value is string => Boolean(value));
+  return parts.length > 0 ? parts.join(' · ') : JSON.stringify(record);
 }
 
 function formatLifecycleStatus(t: (key: string) => string, status: string): string {

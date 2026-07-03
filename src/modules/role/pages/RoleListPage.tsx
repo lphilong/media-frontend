@@ -37,6 +37,7 @@ import {
   PERMISSIONS,
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
+import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 import {
   AppliedFilterChips,
   type AppliedFilterChipItem,
@@ -870,11 +871,48 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
                   {t('userAccess.scopeCount', {
                     count: assignment.structuredScopeGrants.length,
                   })}
+                  {' · '}
+                  {t('userAccess.scopeFingerprint')}: {assignment.scopeFingerprint || '-'}
                 </p>
                 <p className="mt-1 text-xs text-muted">
                   Ngày rà soát: {formatRiskDate(assignment.reviewAt)} · Ngày hết hiệu lực:{' '}
                   {formatRiskDate(assignment.expiresAt)}
                 </p>
+                <ReadOnlyFieldGrid
+                  columns={3}
+                  fields={[
+                    {
+                      key: 'scope',
+                      label: t('userAccess.scopeGrants'),
+                      value: formatEffectiveScopeSummary(assignment.structuredScopeGrants, t),
+                    },
+                    {
+                      key: 'bundle',
+                      label: t('userAccess.bundleOrigin'),
+                      value: formatEffectiveBundleOrigin(assignment.bundleOrigin),
+                    },
+                    {
+                      key: 'assignedBy',
+                      label: t('userAccess.assignedBy'),
+                      value: assignment.assignedBy ?? '-',
+                    },
+                    {
+                      key: 'assignedAt',
+                      label: t('userAccess.assignedAt'),
+                      value: formatBusinessTimestamp(assignment.assignedAt),
+                    },
+                    {
+                      key: 'reason',
+                      label: t('userAccess.reason'),
+                      value: assignment.reason ?? '-',
+                    },
+                    {
+                      key: 'permissions',
+                      label: t('userAccess.childPermissions'),
+                      value: formatCapabilityGroupSummary(assignment.permissions),
+                    },
+                  ]}
+                />
               </div>
             ))}
           </div>
@@ -902,6 +940,54 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
               value: access.workspaceAvailability.effectiveAccessTraceAvailable
                 ? t('userAccess.available')
                 : t('userAccess.unavailable'),
+            },
+          ]}
+        />
+      </MetadataSection>
+
+      <MetadataSection title={t('userAccess.responsibilityTitle')}>
+        {access.businessResponsibilitySupport.claims.length > 0 ? (
+          <div className="space-y-2">
+            {access.businessResponsibilitySupport.claims.map((claim, index) => (
+              <div key={index} className="rounded border border-border bg-bg px-3 py-2 text-sm">
+                {formatTraceRecord(claim)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted">{access.businessResponsibilitySupport.note}</p>
+        )}
+      </MetadataSection>
+
+      <MetadataSection title={t('userAccess.traceTitle')}>
+        <ReadOnlyFieldGrid
+          columns={2}
+          fields={[
+            {
+              key: 'permissionTrace',
+              label: t('userAccess.permissionSourceTrace'),
+              value:
+                access.permissionSourceTrace.length > 0
+                  ? access.permissionSourceTrace.map(formatTraceRecord).join(' | ')
+                  : '-',
+            },
+            {
+              key: 'workspaceTrace',
+              label: t('userAccess.workspaceSourceTrace'),
+              value:
+                access.workspaceAvailability.sourceTrace.length > 0
+                  ? access.workspaceAvailability.sourceTrace.map(formatTraceRecord).join(' | ')
+                  : '-',
+            },
+            {
+              key: 'history',
+              label: t('userAccess.historySupport'),
+              value: t('userAccess.historyUnavailable'),
+            },
+            {
+              key: 'lifecycle',
+              label: t('userAccess.lifecycleActions'),
+              value: t('userAccess.lifecycleReadOnlyHere'),
             },
           ]}
         />
@@ -1081,4 +1167,74 @@ const formatCapabilityGroupSummary = (permissions: string[]): string => {
   return Object.entries(counts)
     .map(([group, count]) => `${capabilityGroupLabels[group] ?? 'Nhóm nghiệp vụ khác'} (${count})`)
     .join(', ');
+};
+
+const formatEffectiveScopeSummary = (
+  scopes: Array<Record<string, unknown>>,
+  t: (key: string) => string,
+): string => {
+  if (scopes.length === 0) {
+    return '-';
+  }
+
+  return scopes
+    .map((scope) =>
+      [
+        formatEffectiveScopeType(String(scope.scopeType ?? ''), t),
+        typeof scope.targetId === 'string' ? `ID ${scope.targetId}` : null,
+        typeof scope.targetKey === 'string' ? scope.targetKey : null,
+        typeof scope.periodKey === 'string' ? scope.periodKey : null,
+      ]
+        .filter(Boolean)
+        .join(': '),
+    )
+    .join(', ');
+};
+
+const formatEffectiveScopeType = (scopeType: string, t: (key: string) => string): string => {
+  if (!scopeType) {
+    return '-';
+  }
+  const key = `userAccess.scopeTypes.${scopeType}`;
+  const translated = t(key);
+  return translated === key ? scopeType : translated;
+};
+
+const formatEffectiveBundleOrigin = (origin: Record<string, unknown> | null): string => {
+  if (!origin) {
+    return '-';
+  }
+  return ['bundleCode', 'bundleVersion', 'bundleAssignmentId']
+    .map((key) => (typeof origin[key] === 'string' ? String(origin[key]) : null))
+    .filter(Boolean)
+    .join(' · ');
+};
+
+const formatTraceRecord = (record: Record<string, unknown>): string => {
+  const preferredKeys = [
+    'permission',
+    'source',
+    'assignmentId',
+    'roleCode',
+    'scopeFingerprint',
+    'origin',
+    'bundleCode',
+    'subjectType',
+    'subjectId',
+    'responsibilityType',
+    'status',
+  ];
+  const parts = preferredKeys
+    .map((key) => {
+      const value = record[key];
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        return `${key}: ${String(value)}`;
+      }
+      if (key === 'source' && Array.isArray(value)) {
+        return `${key}: ${value.length}`;
+      }
+      return null;
+    })
+    .filter((value): value is string => Boolean(value));
+  return parts.length > 0 ? parts.join(' · ') : JSON.stringify(record);
 };
