@@ -63,6 +63,7 @@ export type AsyncReferencePickerProps = {
   onValidityChange?: (isValid: boolean) => void;
   onSelectedOptionChange?: (option: ReferenceOption | undefined) => void;
   debounceMs?: number;
+  showTechnicalMetadata?: boolean;
 };
 
 const DEFAULT_SEARCH_DEBOUNCE_MS = 250;
@@ -106,6 +107,7 @@ export const AsyncReferencePicker = ({
   onValidityChange,
   onSelectedOptionChange,
   debounceMs = DEFAULT_SEARCH_DEBOUNCE_MS,
+  showTechnicalMetadata = true,
 }: AsyncReferencePickerProps): JSX.Element => {
   const { t } = useTranslation(['common', 'errors']);
   const [search, setSearch] = useState('');
@@ -248,7 +250,7 @@ export const AsyncReferencePicker = ({
       addUniqueMetadata(metadata, option.secondaryLabel);
       addUniqueMetadata(
         metadata,
-        option.code
+        showTechnicalMetadata && option.code
           ? t('common:referencePicker.metadata.code', {
               code: option.code,
               defaultValue: 'Code: {{code}}',
@@ -266,7 +268,7 @@ export const AsyncReferencePicker = ({
       );
       addUniqueMetadata(
         metadata,
-        option.meta?.employmentProfileId
+        showTechnicalMetadata && option.meta?.employmentProfileId
           ? t('common:referencePicker.metadata.employmentProfileId', {
               id: option.meta.employmentProfileId,
               defaultValue: 'Employment profile: {{id}}',
@@ -275,7 +277,7 @@ export const AsyncReferencePicker = ({
       );
       addUniqueMetadata(
         metadata,
-        option.id
+        showTechnicalMetadata && option.id
           ? t('common:referencePicker.metadata.id', {
               id: option.id,
               defaultValue: 'ID: {{id}}',
@@ -285,7 +287,7 @@ export const AsyncReferencePicker = ({
 
       return metadata;
     },
-    [t],
+    [showTechnicalMetadata, t],
   );
 
   const renderOptionBadges = (option: ReferenceOption): ReactNode => {

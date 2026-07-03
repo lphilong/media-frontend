@@ -1,7 +1,7 @@
 {
   "page": {
-    "eyebrow": "员工工作区",
-    "title": "Staff Workspace",
+    "eyebrow": "个人数据",
+    "title": "个人数据",
     "subtitle": "仅包含你自己的档案、排班、KPI、Talent Group 和账户偏好。",
     "readOnly": "只读基础"
   },

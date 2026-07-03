@@ -34,10 +34,7 @@ export const ModuleAccessGuard = ({ children, moduleId }: ModuleAccessGuardProps
   if (!hasWorkspace(capabilitiesQuery.data, 'ADMIN_CONSOLE')) {
     return (
       <PageContainer>
-        <PermissionDeniedState
-          reason="missing-account-context"
-          requiredAccountContext="ADMIN_CONSOLE"
-        />
+        <PermissionDeniedState reason="missing-account-context" />
       </PageContainer>
     );
   }

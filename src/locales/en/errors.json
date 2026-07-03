@@ -18,15 +18,15 @@
   },
   "permission": {
     "title": "You do not have the required access or scope for this data",
-    "message": "The current account does not have the required permission, data scope, or account context for this screen.",
+    "message": "The current account does not have the required permission or data scope for this screen.",
     "reason": {
       "missingPermission": "The current account is missing the required permission for this screen.",
       "missingScope": "The current account may have the feature permission but is missing the required data scope.",
-      "missingAccountContext": "The current account is missing the account context required for this screen.",
+      "missingAccountContext": "The current account is not assigned access for this feature.",
       "missingCapabilities": "Unable to load access data\n\nThe system could not load the permission or access capability data required for this screen.\nPlease retry. If the error continues, contact a system administrator.",
       "unknown": "The current account does not meet the access requirements for this screen."
     },
-    "nextActions": "You can:\n- check access in the role and permission screen;\n- ask an Owner Admin to grant the appropriate permission or scope;\n- switch workspace context if this account has multiple contexts.",
+    "nextActions": "You can:\n- check access in the role and permission screen;\n- ask the access administrator to grant the appropriate permission or data scope.",
     "requirementsTitle": "This screen requires:"
   },
   "notFound": {

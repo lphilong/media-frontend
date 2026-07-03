@@ -284,7 +284,7 @@ export type EffectiveAccessRecord = {
   };
   workspaceAvailability: EffectiveAccessWorkspaceAvailability;
   activeRoleAssignments: EffectiveAccessRoleAssignment[];
-  roles: Array<{ id: string; code: string; name: string }>;
+  roles: Array<{ id: string; code: string; name: string; templateCode?: RoleTemplateCode | null }>;
   permissions: string[];
   permissionSourceTrace: Array<Record<string, unknown>>;
   businessResponsibilitySupport: {

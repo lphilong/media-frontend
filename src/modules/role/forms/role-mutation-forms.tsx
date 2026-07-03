@@ -87,37 +87,37 @@ const applySchemaErrors = <TValues extends FieldValues>(
 };
 
 const templateCodeFallbackLabels: Record<string, string> = {
-  OWNER_ADMIN: 'Owner Admin',
-  ACCESS_ADMIN: 'Access Admin',
-  HR_OPERATIONS: 'HR Operations',
-  HR_TERMS_APPROVER: 'HR Terms Approver',
-  PRODUCTION_OPS: 'Production Ops',
-  PLATFORM_CHANNEL_OPS: 'Platform Channel Ops',
-  CREATIVE_VISUAL_LEAD: 'Creative Visual Lead',
-  CONTENT_OPS: 'Content Ops',
-  TALENT_GROUP_MANAGER: 'Talent Group Manager',
-  ORG_UNIT_MANAGER: 'Org Unit Manager',
-  KPI_OPERATIONS: 'KPI Operations',
-  COMMERCIAL_CONTRACT_OPS: 'Commercial Contract Ops',
-  REVENUE_FINANCE_OPS: 'Revenue Finance Ops',
-  REVENUE_APPROVER: 'Revenue Approver',
-  REVENUE_RECONCILER: 'Revenue Reconciler',
-  COMMISSION_OPS: 'Commission Ops',
-  COMMISSION_APPROVER: 'Commission Approver',
-  ATTENDANCE_OPS: 'Attendance Ops',
-  LEAVE_REVIEWER: 'Leave Reviewer',
-  ATTENDANCE_APPROVER: 'Attendance Approver',
-  MONTHLY_CLOSE_OWNER: 'Monthly Close Owner',
-  PAYROLL_DRAFT_OPS: 'Payroll Draft Ops',
-  PAYROLL_DRAFT_APPROVER: 'Payroll Draft Approver',
-  VIEWER_AUDITOR: 'Viewer Auditor',
-  STAFF_CONSOLE_USER: 'Staff Console User',
+  OWNER_ADMIN: 'Quản trị chủ sở hữu',
+  ACCESS_ADMIN: 'Quản trị quyền truy cập',
+  HR_OPERATIONS: 'Vận hành HR',
+  HR_TERMS_APPROVER: 'Duyệt điều khoản nhân sự',
+  PRODUCTION_OPS: 'Vận hành sản xuất',
+  PLATFORM_CHANNEL_OPS: 'Vận hành kênh nền tảng',
+  CREATIVE_VISUAL_LEAD: 'Phụ trách hình ảnh sáng tạo',
+  CONTENT_OPS: 'Vận hành nội dung',
+  TALENT_GROUP_MANAGER: 'Quản lý nhóm nhân sự',
+  ORG_UNIT_MANAGER: 'Quản lý đơn vị tổ chức',
+  KPI_OPERATIONS: 'Vận hành KPI',
+  COMMERCIAL_CONTRACT_OPS: 'Vận hành hợp đồng thương mại',
+  REVENUE_FINANCE_OPS: 'Vận hành doanh thu',
+  REVENUE_APPROVER: 'Duyệt doanh thu',
+  REVENUE_RECONCILER: 'Đối soát doanh thu',
+  COMMISSION_OPS: 'Vận hành hoa hồng',
+  COMMISSION_APPROVER: 'Duyệt hoa hồng',
+  ATTENDANCE_OPS: 'Vận hành chấm công',
+  LEAVE_REVIEWER: 'Duyệt nghỉ phép',
+  ATTENDANCE_APPROVER: 'Duyệt chấm công',
+  MONTHLY_CLOSE_OWNER: 'Phụ trách chốt tháng',
+  PAYROLL_DRAFT_OPS: 'Lập nháp bảng lương',
+  PAYROLL_DRAFT_APPROVER: 'Duyệt nháp bảng lương',
+  VIEWER_AUDITOR: 'Audit / Chỉ đọc',
+  STAFF_CONSOLE_USER: 'Nhân sự tự xem dữ liệu',
 };
 
 const toTitle = (value: string): string => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 
 const readTemplateLabel = (template: Pick<RoleTemplateListItem, 'code' | 'name'>): string =>
-  template.name || templateCodeFallbackLabels[template.code] || template.code;
+  template.name || templateCodeFallbackLabels[template.code] || 'Quyền truy cập cần rà soát';
 
 const createRoleCreateSchema = (requiredMessage: string) =>
   z.object({

@@ -16,7 +16,7 @@
     "myClosed": "Self KPI uses the backend my-progress endpoint and does not show other member rows."
   },
   "adminWorkspace": {
-    "label": "KPI admin workspace",
+    "label": "KPI administration",
     "plans": "Plans",
     "approvalQueue": "Approval Queue",
     "progressActuals": "Progress & Actuals"
@@ -192,7 +192,7 @@
     "selectReasonCode": "Select reason"
   },
   "actualWorkspace": {
-    "title": "Actual Workspace",
+    "title": "Actual entry",
     "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
     "boundaryHelper": "KPI actuals do not automatically decide revenue, commission, or payroll.",
     "revenueTarget": "Revenue target",
@@ -393,8 +393,8 @@
     "orgUnitProgressNeedsPublishedAllocation": "Progress and actual rows are available only after allocation rows are published.",
     "orgUnitActualGridEmpty": "No official Org Unit actual rows are available for the selected date.",
     "emptyActualWorkspace": "No KPI plans are available for actual entry.",
-    "actualWorkspaceLoadErrorTitle": "Unable to load Actual Workspace",
-    "actualWorkspaceLoadErrorMessage": "Unable to load Actual Workspace plans.",
+    "actualWorkspaceLoadErrorTitle": "Unable to load actual entry",
+    "actualWorkspaceLoadErrorMessage": "Unable to load actual entry plans.",
     "actualWorkspaceDetailLoadErrorTitle": "Unable to load group plan detail",
     "actualWorkspaceDetailLoadErrorMessage": "Unable to load the selected group plan detail.",
     "actualGridLoadErrorTitle": "Unable to load actual grid",

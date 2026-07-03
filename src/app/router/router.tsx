@@ -315,8 +315,8 @@ function NoWorkspaceAvailableState(): JSX.Element {
   return (
     <PageContainer>
       <ErrorState
-        title="Không có workspace khả dụng"
-        message="Tài khoản chưa có Account Context hợp lệ để vào Admin, Manager hoặc Staff Console."
+        title="Chưa có chức năng được phân quyền"
+        message="Tài khoản hiện tại chưa có chức năng phù hợp để mở. Vui lòng liên hệ người phụ trách phân quyền để kiểm tra quyền và phạm vi dữ liệu."
       />
     </PageContainer>
   );

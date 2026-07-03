@@ -122,6 +122,39 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const [revokeReason, setRevokeReason] = useState('');
   const [revokeResult, setRevokeResult] = useState<AccessAssignmentLifecycleResult | null>(null);
 
+  const resetUserBoundState = useCallback(() => {
+    setTargetKey('');
+    setScopeTargetIds({});
+    setScopeTargetOptions({});
+    setScopePeriodKeys({});
+    setReason('');
+    setReviewAt('');
+    setExpiresAt('');
+    setPreviewSignature(null);
+    setApplyResult(null);
+    setSelectedLifecycleAssignment(null);
+    setRevokeReason('');
+    setRevokeResult(null);
+    resetPreviewMutation();
+    applyMutation.reset();
+    revokeMutation.reset();
+  }, [applyMutation, resetPreviewMutation, revokeMutation]);
+
+  const handleSelectedUserChange = useCallback(
+    (nextUserId?: string) => {
+      setSelectedUserId((currentUserId) => {
+        if (currentUserId !== nextUserId) {
+          resetUserBoundState();
+        }
+        return nextUserId;
+      });
+      if (!nextUserId) {
+        setSelectedUserOption(undefined);
+      }
+    },
+    [resetUserBoundState],
+  );
+
   const targets = useMemo(
     () => targetsQuery.data?.assignmentTargets ?? [],
     [targetsQuery.data?.assignmentTargets],
@@ -165,7 +198,10 @@ export const AccessAssignmentTab = (): JSX.Element => {
     [targets],
   );
   const activeTargets = mode === 'BUNDLE' ? bundleTargets : roleTemplateTargets;
-  const groupedActiveTargets = useMemo(() => groupSelectableTargets(activeTargets), [activeTargets]);
+  const groupedActiveTargets = useMemo(
+    () => groupSelectableTargets(activeTargets),
+    [activeTargets],
+  );
   const selectedTarget = activeTargets.find((target) => targetKey === toTargetKey(target));
 
   useEffect(() => {
@@ -255,7 +291,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
       if (search.trim().length < 2) {
         return Promise.resolve([]);
       }
-      return loadAccessAssignmentLinkedUserOptions(search);
+      return loadAccessAssignmentLinkedUserOptions(search).then(sanitizeAssignmentReferenceOptions);
     },
     [],
   );
@@ -333,11 +369,13 @@ export const AccessAssignmentTab = (): JSX.Element => {
         <AsyncReferencePicker
           pickerId="role-access-assignment-linked-user"
           value={selectedUserId}
-          onChange={setSelectedUserId}
+          onChange={handleSelectedUserChange}
           onSelectedOptionChange={setSelectedUserOption}
           loadOptions={loadSearchFirstLinkedUsers}
           placeholder={t('role:accessAssignment.userSearchPlaceholder')}
           resourceLabel={t('role:accessAssignment.userResource')}
+          clearable
+          showTechnicalMetadata={false}
           emptySlot={
             <div className="space-y-1 text-xs text-muted">
               <p>{t('role:accessAssignment.userSearchEmpty')}</p>
@@ -364,7 +402,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
               {
                 key: 'status',
                 label: t('role:accessAssignment.linkedAccount'),
-                value: selectedUserOption.meta?.linkedUserStatus ?? '-',
+                value: selectedUserId ? 'Đã liên kết' : '-',
               },
             ]}
           />
@@ -435,7 +473,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
             <span className="text-xs font-medium uppercase text-muted">
               {t('role:accessAssignment.targetLabel')}
             </span>
-          <select
+            <select
               value={targetKey}
               onChange={(event) => setTargetKey(event.target.value)}
               className="rounded border border-border bg-panel px-2 py-2 text-sm"
@@ -444,7 +482,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
                 <optgroup key={group} label={t(`role:catalogGroups.${group}`)}>
                   {items.map((target) => (
                     <option key={toTargetKey(target)} value={toTargetKey(target)}>
-                      {target.name} ({target.code})
+                      {formatAccessTargetLabel(target)}
                     </option>
                   ))}
                 </optgroup>
@@ -475,7 +513,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
               {restrictedTargets.map((target) => (
                 <StatusBadge
                   key={toTargetKey(target)}
-                  label={`${target.name} (${target.code})`}
+                  label={formatAccessTargetLabel(target)}
                   tone="warning"
                 />
               ))}
@@ -654,9 +692,12 @@ const ScopeResolver = ({
                   value={scopeTargetIds[scopeType]}
                   onChange={(value) => onTargetChange(scopeType, value)}
                   onSelectedOptionChange={(option) => onSelectedTargetChange(scopeType, option)}
-                  loadOptions={objectScopeLoaders[scopeType] ?? (() => Promise.resolve([]))}
+                  loadOptions={buildAssignmentReferenceLoader(
+                    objectScopeLoaders[scopeType] ?? (() => Promise.resolve([])),
+                  )}
                   placeholder={t('accessAssignment.scopeSearchPlaceholder')}
                   resourceLabel={formatScopeTypeLabel(scopeType)}
+                  showTechnicalMetadata={false}
                   emptySlot={
                     <p className="text-xs text-muted">{t('accessAssignment.scopeNoResults')}</p>
                   }
@@ -726,12 +767,7 @@ const AssignmentLifecycleSection = ({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-text">
-                    {assignment.roleName ?? assignment.roleCode ?? assignment.roleId}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    {t('role:accessAssignment.lifecycle.assignmentReference', {
-                      assignmentId: assignment.assignmentId,
-                    })}
+                    {formatAccessRoleLabel(assignment)}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -823,10 +859,7 @@ const AssignmentLifecycleSection = ({
           </p>
           <p className="mt-1 text-sm text-muted">
             {t('role:accessAssignment.lifecycle.confirmSubtitle', {
-              role:
-                selectedAssignment.roleName ??
-                selectedAssignment.roleCode ??
-                selectedAssignment.roleId,
+              role: formatAccessRoleLabel(selectedAssignment),
             })}
           </p>
           <label className="mt-3 block">
@@ -893,7 +926,7 @@ const LifecycleResultSummary = ({
           {
             key: 'assignment',
             label: t('accessAssignment.lifecycle.assignmentId'),
-            value: result.assignment?.assignmentId ?? '-',
+            value: result.assignment ? t('accessAssignment.available') : '-',
           },
           {
             key: 'audit',
@@ -967,11 +1000,6 @@ const PreviewSummary = ({
             label: t('accessAssignment.normalizedScope'),
             value: formatScopeSummary(result.normalizedScope ?? [], scopeTargetOptions),
           },
-          {
-            key: 'fingerprint',
-            label: t('accessAssignment.scopeFingerprint'),
-            value: result.scopeFingerprint ?? '-',
-          },
         ]}
       />
       <AssignmentTraceList
@@ -1035,11 +1063,6 @@ const ApplySummary = ({
             value: formatScopeSummary(result.normalizedScope ?? [], scopeTargetOptions),
           },
           {
-            key: 'fingerprint',
-            label: t('accessAssignment.scopeFingerprint'),
-            value: result.scopeFingerprint ?? '-',
-          },
-          {
             key: 'reason',
             label: t('accessAssignment.reasonLabel'),
             value: reason,
@@ -1067,7 +1090,9 @@ const ApplySummary = ({
       />
       <AssignmentTraceList
         title={t('accessAssignment.childRoleTrace')}
-        records={appliedAssignments.length > 0 ? appliedAssignments : (result.proposedAssignments ?? [])}
+        records={
+          appliedAssignments.length > 0 ? appliedAssignments : (result.proposedAssignments ?? [])
+        }
       />
       <AssignmentTraceList
         title={t('accessAssignment.accountContextResult')}
@@ -1097,14 +1122,14 @@ const AssignmentTraceList = ({
   }
 
   return (
-    <div className="rounded border border-border bg-bg p-3">
-      <p className="text-sm font-semibold text-text">{title}</p>
+    <details className="rounded border border-border bg-bg p-3">
+      <summary className="cursor-pointer text-sm font-semibold text-text">{title}</summary>
       <ul className="mt-2 space-y-1 text-sm text-muted">
         {records.map((record, index) => (
           <li key={`${title}-${index}`}>{formatTraceRecord(record)}</li>
         ))}
       </ul>
-    </div>
+    </details>
   );
 };
 
@@ -1289,11 +1314,61 @@ function isLifecycleRevokeSuccess(
   );
 }
 
+const internalAccessDisplayLabels: Record<string, string> = {
+  STAFF_CONSOLE_USER: 'Nhân sự tự xem dữ liệu',
+  STAFF_CONSOLE_BUNDLE: 'Nhân sự tự xem dữ liệu',
+};
+
+function hasInternalAccessTerm(value: string | null | undefined): boolean {
+  return /console|account context|workspace/i.test(value ?? '');
+}
+
+function sanitizeInternalAccessLabel(value: string | null | undefined, fallback: string): string {
+  if (!value) {
+    return fallback;
+  }
+
+  if (/staff console/i.test(value)) {
+    return 'Nhân sự tự xem dữ liệu';
+  }
+
+  if (/manager console/i.test(value)) {
+    return 'Quyền xem công việc được phân công';
+  }
+
+  if (/admin console/i.test(value)) {
+    return 'Quyền vận hành nội bộ';
+  }
+
+  return hasInternalAccessTerm(value) ? fallback : value;
+}
+
+function formatAccessTargetLabel(target: AccessAssignmentTargetOption): string {
+  const displayLabel =
+    internalAccessDisplayLabels[target.code] ??
+    sanitizeInternalAccessLabel(target.name, 'Quyền truy cập cần rà soát');
+  return displayLabel;
+}
+
+function formatAccessRoleLabel(
+  assignment: Pick<AccessAssignmentLifecycleItem, 'roleCode' | 'roleName' | 'roleId'>,
+): string {
+  if (assignment.roleCode && internalAccessDisplayLabels[assignment.roleCode]) {
+    return internalAccessDisplayLabels[assignment.roleCode];
+  }
+
+  const fallback =
+    assignment.roleCode && !hasInternalAccessTerm(assignment.roleCode)
+      ? (internalAccessDisplayLabels[assignment.roleCode] ?? 'Quyền truy cập đã gán')
+      : 'Quyền truy cập đã gán';
+  return sanitizeInternalAccessLabel(assignment.roleName, fallback);
+}
+
 function formatIssue(issue: AccessAssignmentIssue): string {
   const friendly: Record<string, string> = {
-    REQUIRED_ACCOUNT_CONTEXT_MISSING: 'Người dùng chưa đủ điều kiện vào Console cần thiết.',
+    REQUIRED_ACCOUNT_CONTEXT_MISSING: 'Người dùng chưa đủ điều kiện truy cập cần thiết.',
     ACCOUNT_CONTEXT_MATERIALIZATION_NOT_AUTHORIZED:
-      'Cần quyền áp dụng account context trước khi có thể gán gói quyền này.',
+      'Cần quyền áp dụng điều kiện truy cập trước khi có thể gán gói quyền này.',
     RESPONSIBILITY_REQUIRED: 'Chưa có phân công trách nhiệm quản lý phù hợp.',
     RESPONSIBILITY_MATERIALIZATION_NOT_AUTHORIZED:
       'Cần có trách nhiệm quản lý phù hợp hoặc quyền tạo/liên kết trách nhiệm trước khi áp dụng gói quyền này.',
@@ -1405,6 +1480,31 @@ function formatScopeReadOnlyHelp(scopeType: AccessAssignmentScopeType): string {
   return 'Không cần chọn đối tượng; hệ thống sẽ kiểm tra rủi ro và điều kiện khi xem trước.';
 }
 
+function sanitizeAssignmentReferenceOption(option: ReferenceOption): ReferenceOption {
+  return {
+    ...option,
+    code: undefined,
+    status: undefined,
+    state: undefined,
+    badges: undefined,
+    meta: option.meta
+      ? {
+          employeeCode: option.meta.employeeCode,
+        }
+      : undefined,
+  };
+}
+
+function sanitizeAssignmentReferenceOptions(options: ReferenceOption[]): ReferenceOption[] {
+  return options.map(sanitizeAssignmentReferenceOption);
+}
+
+function buildAssignmentReferenceLoader(
+  loader: (search: string) => Promise<ReferenceOption[]>,
+): (search: string) => Promise<ReferenceOption[]> {
+  return (search: string) => loader(search).then(sanitizeAssignmentReferenceOptions);
+}
+
 function formatScopeSummary(
   scopes: readonly AccessAssignmentScopeGrant[],
   scopeTargetOptions: Record<string, ReferenceOption | undefined> = {},
@@ -1418,8 +1518,7 @@ function formatScopeSummary(
       return [
         formatScopeTypeLabel(scope.scopeType),
         label,
-        scope.targetId && label ? `ID ${scope.targetId}` : scope.targetId,
-        scope.targetKey,
+        scope.targetId && !label ? 'Đối tượng đã chọn' : null,
         scope.periodKey,
       ]
         .filter(Boolean)
@@ -1428,9 +1527,10 @@ function formatScopeSummary(
     .join(', ');
 }
 
-function groupSelectableTargets(
-  targets: readonly AccessAssignmentTargetOption[],
-): Array<{ group: (typeof assignmentPickerGroupOrder)[number]; items: AccessAssignmentTargetOption[] }> {
+function groupSelectableTargets(targets: readonly AccessAssignmentTargetOption[]): Array<{
+  group: (typeof assignmentPickerGroupOrder)[number];
+  items: AccessAssignmentTargetOption[];
+}> {
   return assignmentPickerGroupOrder
     .map((group) => ({
       group,
@@ -1496,8 +1596,9 @@ function formatBundleOrigin(assignment: AccessAssignmentLifecycleItem): string {
     return assignment.origin === 'BUNDLE' ? 'Gói quyền' : 'Trực tiếp';
   }
   const code = readStringRecordValue(assignment.bundleOrigin, 'bundleCode');
-  const version = readStringRecordValue(assignment.bundleOrigin, 'bundleVersion');
-  return [code, version].filter(Boolean).join(' · ') || 'Gói quyền';
+  return code && internalAccessDisplayLabels[code]
+    ? internalAccessDisplayLabels[code]
+    : 'Gói quyền';
 }
 
 function formatAssignmentAudit(assignment: AccessAssignmentLifecycleItem): string {
@@ -1505,11 +1606,10 @@ function formatAssignmentAudit(assignment: AccessAssignmentLifecycleItem): strin
   if (!audit) {
     return '-';
   }
-  const action = audit.action ?? '-';
-  const actor = audit.actorId ?? '-';
+  const action = audit.action === 'ASSIGN' ? 'Gán quyền' : 'Cập nhật quyền';
   const time = formatTimestamp(audit.timestamp);
   const reason = audit.reason ?? '-';
-  return `${action} · ${actor} · ${time} · ${reason}`;
+  return `${action} · ${time} · ${reason}`;
 }
 
 function formatTimestamp(value: number | string | null | undefined): string {
@@ -1540,10 +1640,10 @@ function readAuditTrace(value: Record<string, unknown> | null | undefined): stri
   if (!value) {
     return '-';
   }
-  const assignmentIds = Array.isArray(value.assignmentIds) ? value.assignmentIds : [];
-  return assignmentIds.length > 0
-    ? assignmentIds.map(String).join(', ')
-    : String(value.mutationType ?? '-');
+  if (Array.isArray(value.assignmentIds) && value.assignmentIds.length > 0) {
+    return 'Đã ghi nhận';
+  }
+  return value.mutationType ? 'Đã ghi nhận' : '-';
 }
 
 function readLifecycleAuditTrace(value: Record<string, unknown> | null | undefined): string {
@@ -1552,11 +1652,9 @@ function readLifecycleAuditTrace(value: Record<string, unknown> | null | undefin
   }
   const action =
     readStringRecordValue(value, 'lifecycleAction') ?? readStringRecordValue(value, 'mutationType');
-  const actor = readStringRecordValue(value, 'actorId');
   const timestamp = value.timestamp;
   return [
-    action,
-    actor,
+    action ? 'Đã ghi nhận' : null,
     formatTimestamp(
       typeof timestamp === 'string' || typeof timestamp === 'number' ? timestamp : null,
     ),
@@ -1584,5 +1682,16 @@ function readErrorMessage(
   if (!error?.message) {
     return t('role:statesView.loadErrorMessage');
   }
+  if (containsRawTechnicalToken(error.message)) {
+    return t('role:statesView.loadErrorMessage');
+  }
   return error.message.includes(':') ? t(error.message) : error.message;
+}
+
+function containsRawTechnicalToken(message: string): boolean {
+  return (
+    /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/iu.test(message) ||
+    /\b(objectId|uuid|_id|assignmentId|bundleAssignmentId|scopeFingerprint)\b/iu.test(message) ||
+    /\bnot found:\s*\S+/iu.test(message)
+  );
 }

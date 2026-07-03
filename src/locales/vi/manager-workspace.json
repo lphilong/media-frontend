@@ -1,8 +1,8 @@
 {
-  "title": "Không gian quản lý",
+  "title": "Công việc được phân công",
   "subtitle": "Hồ sơ và tác vụ của bạn trong phạm vi được phân công.",
   "nav": {
-    "label": "Điều hướng không gian quản lý",
+    "label": "Điều hướng công việc được phân công",
     "overview": "Tổng quan",
     "kpi": "KPI được phân công",
     "work": "Lịch làm việc"
@@ -16,7 +16,7 @@
     "scopeLabel": "Phạm vi được phân công",
     "readOnly": "Chỉ đọc",
     "actionable": "Có thể thao tác",
-    "unavailable": "Chưa mở trong không gian này",
+    "unavailable": "Chưa mở cho chức năng này",
     "selectedModule": "Đang xem"
   },
   "modules": {
@@ -50,14 +50,14 @@
     "groups": {
       "title": "Nhóm được phân công",
       "summary": "Đơn vị và nhóm Talent trong phạm vi được phân công.",
-      "disabledReason": "Chưa mở trong không gian này.",
-      "readinessMessage": "Khu vực này chưa được mở cho Không gian quản lý. Phạm vi hiện tại vẫn được tóm tắt tại Tổng quan."
+      "disabledReason": "Chưa mở cho chức năng này.",
+      "readinessMessage": "Khu vực này chưa được mở cho quyền hiện tại. Phạm vi hiện tại vẫn được tóm tắt tại Tổng quan."
     },
     "members": {
       "title": "Thành viên",
       "summary": "Thành viên trong phạm vi được phân công.",
-      "disabledReason": "Chưa mở trong không gian này.",
-      "readinessMessage": "Khu vực này chưa được mở cho Không gian quản lý."
+      "disabledReason": "Chưa mở cho chức năng này.",
+      "readinessMessage": "Khu vực này chưa được mở cho quyền hiện tại."
     }
   },
   "values": {
@@ -90,13 +90,13 @@
     "MISSING_KPI_MANAGER_CAPABILITY": "Chưa có quyền quản lý KPI"
   },
   "overview": {
-    "readinessTitle": "Trạng thái không gian làm việc",
+    "readinessTitle": "Trạng thái quyền truy cập",
     "readinessSummary": "Hồ sơ người quản lý và tình trạng phân công hiện tại.",
-    "readyMessage": "Không gian quản lý đang khả dụng trong phạm vi được phân công.",
+    "readyMessage": "Bạn có thể xem công việc trong phạm vi được phân công.",
     "kpiTitle": "Trạng thái KPI",
     "kpiSummary": "KPI quản lý hiển thị theo phân công đang hiệu lực.",
     "unsupportedTitle": "Khu vực chưa mở",
-    "unsupportedSummary": "Các khu vực này hiện chưa được mở cho Không gian quản lý.",
+    "unsupportedSummary": "Các khu vực này hiện chưa được mở cho quyền hiện tại.",
     "profileTitle": "Hồ sơ người quản lý",
     "scopeTitle": "Phạm vi được phân công"
   },
@@ -150,7 +150,7 @@
       "noAllocations": "Chưa có dòng phân bổ KPI hiển thị cho kế hoạch này.",
       "readOnlyPosture": "Phân công hiện tại cho phép xem KPI này nhưng chưa cho phép cập nhật.",
       "talentGroupReadOnlyTitle": "KPI nhóm Talent chỉ đọc",
-      "talentGroupReadOnlyMessage": "Thao tác KPI nhóm Talent chưa được mở trong Không gian quản lý.",
+      "talentGroupReadOnlyMessage": "Thao tác KPI nhóm Talent chưa được mở cho quyền hiện tại.",
       "units": {
         "VND": "VND",
         "COUNT": "Số lượng",
@@ -435,7 +435,7 @@
   },
   "empty": {
     "noProfileTitle": "Chưa liên kết Hồ sơ nhân sự",
-    "noProfileMessage": "Tài khoản đã đăng nhập nhưng chưa liên kết với Hồ sơ nhân sự phù hợp cho Không gian quản lý.",
+    "noProfileMessage": "Tài khoản đã đăng nhập nhưng chưa liên kết với Hồ sơ nhân sự phù hợp để xem công việc được phân công.",
     "noAssignmentsTitle": "Chưa có phạm vi được phân công",
     "noAssignmentsMessage": "Chưa có phân công đơn vị hoặc nhóm Talent đang hiệu lực cho hồ sơ của bạn.",
     "kpiTitle": "Chưa có KPI được phân công",
@@ -451,8 +451,8 @@
     "workNoMembersMessage": "Phân công hiện tại không có thành viên đang hoạt động đủ điều kiện."
   },
   "errors": {
-    "contextTitle": "Không tải được Không gian quản lý",
-    "contextMessage": "Không tải được thông tin Không gian quản lý của bạn.",
+    "contextTitle": "Không tải được công việc được phân công",
+    "contextMessage": "Không tải được thông tin phân công của bạn.",
     "kpiTitle": "Không tải được KPI được phân công",
     "kpiMessage": "Không tải được các Kế hoạch KPI trong phạm vi được phân công.",
     "kpiDetailTitle": "Không tải được chi tiết KPI",

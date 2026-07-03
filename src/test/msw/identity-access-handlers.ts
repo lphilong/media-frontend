@@ -741,7 +741,7 @@ const roleTemplates: RoleTemplateRecord[] = [
   {
     code: 'STAFF_CONSOLE_USER',
     version: templateVersion,
-    name: 'Staff Console User',
+    name: 'Personal Data Access',
     description: 'Read-only self-intended baseline for talent-facing staff access.',
     category: 'SELF_SERVICE',
     permissions: permissionRecords([
@@ -1058,7 +1058,7 @@ const roleBundles: RoleBundleRecord[] = [
   },
   {
     code: 'STAFF_CONSOLE_BUNDLE',
-    name: 'Staff Console',
+    name: 'Personal Data Access',
     description: 'Preset for staff self-service.',
     businessPurpose: 'Nhân viên xem dữ liệu cá nhân và KPI cá nhân.',
     status: 'ACTIVE',
@@ -1140,7 +1140,7 @@ const initialRoles: RoleRecord[] = [
   {
     id: 'role-staff',
     code: 'STAFF_CONSOLE_USER',
-    name: 'Staff Console User',
+    name: 'Personal Data Access',
     description: 'Staff self-service baseline',
     state: 'ACTIVE',
     permissions: [{ code: 'workSchedule.read' }, { code: 'employmentProfile.read' }],
@@ -1215,7 +1215,7 @@ const initialAssignments: RoleAssignmentRecord[] = [
     revokedAt: null,
     revokedBy: null,
     revokeReason: null,
-    reason: 'Mock staff console access',
+    reason: 'Mock personal data access',
   },
 ];
 

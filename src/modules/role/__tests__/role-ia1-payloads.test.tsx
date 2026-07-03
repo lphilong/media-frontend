@@ -868,7 +868,14 @@ describe('role IA-1 query and payload shaping', () => {
             futureAdditiveTrace: 'accepted',
           },
         ],
-        roles: [{ id: 'role-owner', code: 'OWNER_ADMIN', name: 'Owner Admin' }],
+        roles: [
+          {
+            id: 'role-owner',
+            code: 'OWNER_ADMIN',
+            name: 'Owner Admin',
+            templateCode: 'OWNER_ADMIN',
+          },
+        ],
         permissions: ['role:view'],
         permissionSourceTrace: [],
         businessResponsibilitySupport: {
@@ -884,6 +891,11 @@ describe('role IA-1 query and payload shaping', () => {
 
     expect(access.activeRoleAssignments[0]).toMatchObject({
       assignmentId: 'assignment-owner',
+      templateCode: 'OWNER_ADMIN',
+    });
+    expect(access.roles[0]).toMatchObject({
+      id: 'role-owner',
+      code: 'OWNER_ADMIN',
       templateCode: 'OWNER_ADMIN',
     });
   });

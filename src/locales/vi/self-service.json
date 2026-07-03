@@ -1,7 +1,7 @@
 {
   "page": {
-    "eyebrow": "Không gian nhân sự",
-    "title": "Không gian nhân sự",
+    "eyebrow": "Dữ liệu cá nhân",
+    "title": "Dữ liệu cá nhân",
     "subtitle": "Hồ sơ, lịch làm việc, KPI, nhóm Talent và tùy chọn tài khoản đăng nhập của bạn.",
     "readOnly": "Chỉ xem dữ liệu"
   },
@@ -264,11 +264,11 @@
     "kpiMessage": "Không thể tải KPI hiện hành của bạn.",
     "currentPersonNotLinkedTitle": "Chưa liên kết Hồ sơ nhân sự",
     "currentPersonNotLinkedMessage": "Tài khoản đăng nhập đã được xác thực nhưng chưa liên kết với hồ sơ nhân sự để dùng tính năng tự phục vụ.",
-    "profileNotOperationalTitle": "Không gian nhân sự chưa khả dụng",
+    "profileNotOperationalTitle": "Chưa thể mở dữ liệu cá nhân",
     "profileNotOperationalMessage": "Hồ sơ nhân sự của bạn hiện chưa ở trạng thái hoạt động phù hợp. Liên hệ HR/Admin nếu cần kiểm tra.",
     "profileNotOperationalLabel": "Không đủ điều kiện truy cập",
     "profileNotOperationalHelper": "Quyền truy cập được kiểm tra bởi hệ thống nhân sự. Màn hình này chỉ hiển thị thông báo, không tự sửa dữ liệu.",
-    "currentPersonLoadTitle": "Chưa thể tải không gian nhân sự",
+    "currentPersonLoadTitle": "Chưa thể tải dữ liệu cá nhân",
     "currentPersonLoadMessage": "Không thể tải hồ sơ của bạn.",
     "workShiftsTitle": "Chưa thể tải ca làm",
     "workShiftsMessage": "Không thể tải danh sách ca làm của bạn.",

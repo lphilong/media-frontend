@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import i18n from 'i18next';
 import { vi } from 'vitest';
 
 import { ModuleAccessGuard } from '@app/router/ModuleAccessGuard';
@@ -90,8 +91,13 @@ describe('route access guards', () => {
       </ModuleAccessGuard>,
     );
 
-    expect(screen.getByText(/Không tải được dữ liệu quyền truy cập/u)).toBeInTheDocument();
-    expect(screen.queryByText(/ngữ cảnh làm việc phù hợp/u)).not.toBeInTheDocument();
+    expect(document.body).toHaveTextContent('Không tải được dữ liệu quyền truy cập');
+    expect(document.body).toHaveTextContent(
+      'Hệ thống chưa tải được dữ liệu quyền hoặc năng lực truy cập cần thiết cho màn hình này.',
+    );
+    expect(document.body).not.toHaveTextContent(
+      i18n.t('errors:permission.reason.missingAccountContext'),
+    );
     expect(screen.queryByText('Allowed dashboard')).not.toBeInTheDocument();
   });
 
@@ -104,8 +110,13 @@ describe('route access guards', () => {
       </WorkspaceAccessGuard>,
     );
 
-    expect(screen.getByText(/Không tải được dữ liệu quyền truy cập/u)).toBeInTheDocument();
-    expect(screen.queryByText(/ngữ cảnh làm việc phù hợp/u)).not.toBeInTheDocument();
+    expect(document.body).toHaveTextContent('Không tải được dữ liệu quyền truy cập');
+    expect(document.body).toHaveTextContent(
+      'Hệ thống chưa tải được dữ liệu quyền hoặc năng lực truy cập cần thiết cho màn hình này.',
+    );
+    expect(document.body).not.toHaveTextContent(
+      i18n.t('errors:permission.reason.missingAccountContext'),
+    );
     expect(screen.queryByText('Allowed manager workspace')).not.toBeInTheDocument();
   });
 
@@ -118,9 +129,13 @@ describe('route access guards', () => {
       </ModuleAccessGuard>,
     );
 
-    expect(screen.getByText(/ngữ cảnh làm việc phù hợp/u)).toBeInTheDocument();
-    expect(screen.getByText(/Ngữ cảnh: ADMIN_CONSOLE/u)).toBeInTheDocument();
-    expect(screen.queryByText(/Không tải được dữ liệu quyền truy cập/u)).not.toBeInTheDocument();
+    expect(document.body).toHaveTextContent(
+      i18n.t('errors:permission.reason.missingAccountContext'),
+    );
+    expect(screen.queryByText(/ADMIN_CONSOLE/u)).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(
+      i18n.t('errors:permission.reason.missingCapabilities'),
+    );
     expect(screen.queryByText('Allowed dashboard')).not.toBeInTheDocument();
   });
 
@@ -133,9 +148,13 @@ describe('route access guards', () => {
       </WorkspaceAccessGuard>,
     );
 
-    expect(screen.getByText(/ngữ cảnh làm việc phù hợp/u)).toBeInTheDocument();
-    expect(screen.getByText(/Ngữ cảnh: MANAGER_CONSOLE/u)).toBeInTheDocument();
-    expect(screen.queryByText(/Không tải được dữ liệu quyền truy cập/u)).not.toBeInTheDocument();
+    expect(document.body).toHaveTextContent(
+      i18n.t('errors:permission.reason.missingAccountContext'),
+    );
+    expect(screen.queryByText(/MANAGER_CONSOLE/u)).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(
+      i18n.t('errors:permission.reason.missingCapabilities'),
+    );
     expect(screen.queryByText('Allowed manager workspace')).not.toBeInTheDocument();
   });
 });

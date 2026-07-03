@@ -2,11 +2,11 @@
   "page": {
     "title": "Employment Terms / Salary",
     "subtitle": "Track employment terms, salary, and payroll-source status across people.",
-    "placeholder": "Employment Terms workspace"
+    "placeholder": "Employment terms"
   },
   "notices": {
-    "readOnlyTitle": "Read-only workspace",
-    "structuredTerms": "This workspace lists structured employment terms and payroll-source state. It is not labor contract document management."
+    "readOnlyTitle": "Read-only details",
+    "structuredTerms": "This screen lists structured employment terms and payroll-source state. It is not labor contract document management."
   },
   "sections": {
     "quickFilters": "Quick filters",

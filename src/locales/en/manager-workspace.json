@@ -1,8 +1,8 @@
 {
-  "title": "Manager Workspace",
+  "title": "Assigned work",
   "subtitle": "Your profile and operations within assigned scopes only.",
   "nav": {
-    "label": "Manager workspace navigation",
+    "label": "Assigned work navigation",
     "overview": "Overview",
     "kpi": "My Managed KPI",
     "work": "Managed Work"
@@ -16,7 +16,7 @@
     "scopeLabel": "Assigned scope",
     "readOnly": "Read-only",
     "actionable": "Action available",
-    "unavailable": "Not opened in this workspace",
+    "unavailable": "Not available for this feature",
     "selectedModule": "Selected"
   },
   "modules": {
@@ -50,14 +50,14 @@
     "groups": {
       "title": "Managed Groups",
       "summary": "Assigned Org Unit and Talent Group context.",
-      "disabledReason": "Not opened in this workspace.",
-      "readinessMessage": "This module is not currently available in Manager Workspace. Assigned scope summaries remain in Overview."
+      "disabledReason": "Not available for this feature.",
+      "readinessMessage": "This module is not currently available for the current access. Assigned scope summaries remain in Overview."
     },
     "members": {
       "title": "Managed Members",
       "summary": "Member context for assigned scopes.",
-      "disabledReason": "Not opened in this workspace.",
-      "readinessMessage": "This module is not currently available in Manager Workspace."
+      "disabledReason": "Not available for this feature.",
+      "readinessMessage": "This module is not currently available for the current access."
     }
   },
   "values": {
@@ -90,13 +90,13 @@
     "MISSING_KPI_MANAGER_CAPABILITY": "KPI manager capability is missing"
   },
   "overview": {
-    "readinessTitle": "Workspace readiness",
+    "readinessTitle": "Access status",
     "readinessSummary": "Current manager context and assignment readiness.",
-    "readyMessage": "Manager Workspace context is available.",
+    "readyMessage": "You can view work within the assigned scope.",
     "kpiTitle": "KPI readiness",
     "kpiSummary": "Managed KPI visibility is driven by effective assignments.",
     "unsupportedTitle": "Modules not opened",
-    "unsupportedSummary": "These modules are not currently available in Manager Workspace.",
+    "unsupportedSummary": "These modules are not currently available for the current access.",
     "profileTitle": "Manager Profile",
     "scopeTitle": "Managed Scope"
   },
@@ -150,7 +150,7 @@
       "noAllocations": "No allocation rows are visible for this plan.",
       "readOnlyPosture": "Your current manager assignment can read this KPI, but cannot perform Unit Manager KPI write actions.",
       "talentGroupReadOnlyTitle": "Talent Group KPI is read-only here",
-      "talentGroupReadOnlyMessage": "Talent Group operations are not enabled in Manager Workspace in this batch.",
+      "talentGroupReadOnlyMessage": "Talent Group operations are not enabled for this access in this batch.",
       "units": {
         "VND": "VND",
         "COUNT": "Count",
@@ -439,8 +439,8 @@
     "workNoMembersMessage": "Your assignments currently contain no eligible active managed members."
   },
   "errors": {
-    "contextTitle": "Manager Workspace unavailable",
-    "contextMessage": "Your manager workspace context could not be loaded.",
+    "contextTitle": "Assigned work unavailable",
+    "contextMessage": "Your assigned work access could not be loaded.",
     "kpiTitle": "Managed KPI unavailable",
     "kpiMessage": "Managed KPI plans could not be loaded.",
     "kpiDetailTitle": "Managed KPI detail unavailable",

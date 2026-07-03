@@ -149,7 +149,7 @@
     "policyTitle": "Permission policy",
     "permissionMatrixTitle": "Permission matrix",
     "archivedReadOnly": "Archived roles are immutable.",
-    "boundaryNotice": "A role only describes business capabilities. The role detail page is not where access is assigned or revoked; assignment must use the user-first flow when this workspace supports it."
+    "boundaryNotice": "A role only describes business capabilities. The role detail page is not where access is assigned or revoked; assignment must use the user-first flow when this capability is available."
   },
   "mutations": {
     "create": {
@@ -184,7 +184,7 @@
     },
     "revokeAssignment": {
       "title": "Revoke role assignment",
-      "subtitle": "Assignment {{assignmentId}} will be updated as a Role-owned assignment record.",
+      "subtitle": "The assignment record will be revoked.",
       "submit": "Revoke assignment",
       "pending": "Revoking assignment"
     }
@@ -198,7 +198,7 @@
   "validation": {
     "required": "This field is required.",
     "invalidRulesJson": "Assignment rules must use a supported structured rule list.",
-    "adminRoleRequiresAdminActor": "This role requires an admin console account.",
+    "adminRoleRequiresAdminActor": "This role requires an eligible operations account.",
     "selfRoleRequiresStaffActor": "This role requires a self-service staff account."
   },
   "confirm": {
@@ -230,7 +230,7 @@
     "emptyTitle": "No role templates",
     "emptyMessage": "The source system did not return available role templates.",
     "roleGroup": "Role group",
-    "requiredContext": "Required account context",
+    "requiredContext": "Required access condition",
     "capabilitySummary": "Capability groups",
     "capabilityCount": "{{count}} capabilities",
     "sensitiveWarning": "This template has a source-system sensitive warning."
@@ -254,7 +254,7 @@
   "bundles": {
     "code": "Bundle code",
     "status": "Status",
-    "recommendedContext": "Required account context",
+    "recommendedContext": "Required access condition",
     "childRoles": "Child roles",
     "recommendedScope": "Recommended scope",
     "supportMode": "Support mode",
@@ -321,17 +321,17 @@
     "addedPermissions": "Permissions added",
     "normalizedScope": "Normalized scope",
     "scopeFingerprint": "Scope fingerprint",
-    "bundleTrace": "BundleAssignment trace",
-    "childRoleTrace": "Child role trace",
-    "accountContextResult": "Account Context result",
+    "bundleTrace": "Technical bundle details",
+    "childRoleTrace": "Technical child role details",
+    "accountContextResult": "Access condition result",
     "responsibilityResult": "Responsibility result",
-    "sourceTrace": "Source trace",
+    "sourceTrace": "Technical source details",
     "accountContextStates": {
-      "reused": "The person already has the required account context. The system will reuse the existing context.",
-      "proposed": "On confirmation, the system will apply the required account context for this person.",
-      "blocked": "Permission to apply the account context is required before this access package can be assigned.",
-      "notRequired": "This access package does not require an additional account context.",
-      "unknown": "The preview did not return a supported account context state; review the conditions before confirming."
+      "reused": "The person already meets the required access condition. The system will reuse the existing access state.",
+      "proposed": "On confirmation, the system will apply the required access condition for this person.",
+      "blocked": "Permission to apply the required access condition is required before this access package can be assigned.",
+      "notRequired": "This access package does not require an additional access condition.",
+      "unknown": "The preview did not return a supported access condition state; review the conditions before confirming."
     },
     "responsibilityStates": {
       "reused": "The system will reuse the existing management responsibility for this access scope.",
@@ -346,7 +346,7 @@
     "appliedCount": "Assigned records",
     "auditTrace": "Audit",
     "effectiveAccessAfterApply": "Access after assignment",
-    "consoleResult": "Console result",
+    "consoleResult": "Access opening result",
     "available": "Available",
     "readOnlyOutcome": "Read-only result",
     "lifecycle": {
@@ -355,7 +355,7 @@
       "loadErrorTitle": "Unable to load current access",
       "emptyTitle": "No current access",
       "emptyMessage": "This user has no access assignment records.",
-      "assignmentReference": "Record {{assignmentId}}",
+      "assignmentReference": "Access assignment record",
       "effective": "Effective",
       "inactive": "Inactive",
       "scope": "Scope",
@@ -388,7 +388,7 @@
     "unavailableTitle": "User-first assignment flow is not available",
     "unavailableMessage": "Access cannot be assigned in this step yet. You can review current access or contact the access owner.",
     "workflowTitle": "User-first access assignment flow",
-    "workflowSubtitle": "These steps show the target product direction. Confirmation is disabled because this workspace does not yet support recording access assignments.",
+    "workflowSubtitle": "These steps show the target product direction. Confirmation is disabled because this capability does not yet support recording access assignments.",
     "departmentFilterLabel": "Unit / Department",
     "departmentFilterValue": "Choose a department to find personnel",
     "departmentFilterHelp": "Use this only to filter personnel. It is not the access-grant scope.",
@@ -398,9 +398,9 @@
     "modeLabel": "Access bundle or individual role",
     "modeValue": "Bundle-based assignment by default",
     "modeHelp": "Individual roles are only for exceptional cases and still require a reason.",
-    "workspaceLabel": "Required account context",
+    "workspaceLabel": "Required access condition",
     "workspaceValue": "Derived from the selected access bundle or role",
-    "workspaceHelp": "There is no manual workspace selector; the resulting workspace opens after the system applies access.",
+    "workspaceHelp": "There is no manual destination selector; the appropriate feature opens after the system applies access.",
     "scopeTitle": "Applied scope",
     "talentGroupScopeLabel": "Managed Talent group",
     "orgUnitScopeLabel": "Managed department",
@@ -414,7 +414,7 @@
     "previewTitle": "Change summary",
     "reviewRequired": "Needs review before confirmation.",
     "previewIntro": "After confirmation:",
-    "previewWorkspaceChange": "The system opens the resulting workspace after the required account context and access take effect.",
+    "previewWorkspaceChange": "The system opens the appropriate feature after the required access condition and access take effect.",
     "previewScopeChange": "The person is recorded with the selected management scope if the responsibility source allows it.",
     "previewCapabilityChange": "The person can view and handle work within the scope from the selected access bundle or role.",
     "sensitiveWarning": "Sensitive bundles or roles require a reason, audit trail, and source-system review policy.",
@@ -428,14 +428,14 @@
     "userResource": "personnel",
     "noUserResults": "No matching users found.",
     "emptyTitle": "No user selected",
-    "emptyMessage": "Choose a person to view the login account, account contexts, and current access.",
+    "emptyMessage": "Choose a person to view the login account, access conditions, and current access.",
     "loadErrorTitle": "Unable to load user access",
     "loadErrorMessage": "The user's effective access could not be loaded.",
     "summaryTitle": "Access summary",
     "user": "User",
-    "accountContexts": "Current account contexts",
-    "primaryWorkspace": "Resulting primary workspace",
-    "eligibleWorkspaces": "Workspaces opened by the system",
+    "accountContexts": "Current access conditions",
+    "primaryWorkspace": "Primary feature",
+    "eligibleWorkspaces": "Features opened by the system",
     "ownData": "Own data",
     "managerResponsibilities": "Manager responsibilities",
     "available": "Available",
@@ -457,9 +457,10 @@
     "businessCapabilityGroups": "Capability groups",
     "sourceTrace": "Review trace",
     "responsibilityTitle": "Related responsibilities",
-    "traceTitle": "Audit and source trace",
-    "permissionSourceTrace": "Permission source trace",
-    "workspaceSourceTrace": "Workspace source trace",
+    "responsibilityClaimCount": "{{count}} related responsibilities were returned.",
+    "traceTitle": "Technical details and audit",
+    "permissionSourceTrace": "Permission source details",
+    "workspaceSourceTrace": "Access condition details",
     "historySupport": "History",
     "historyUnavailable": "The effective-access source has not returned revoke or expiry history.",
     "lifecycleActions": "Lifecycle actions",
@@ -481,7 +482,7 @@
   "assignments": {
     "title": "Access currently linked to this role",
     "caption": "Role assignments",
-    "assignmentId": "Assignment id",
+    "assignmentId": "Assignment record",
     "userId": "User",
     "state": "State",
     "effectiveAt": "Effective",

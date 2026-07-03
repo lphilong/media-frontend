@@ -670,6 +670,7 @@ const effectiveAccessSchema = z
           id: z.string().trim().min(1),
           code: z.string().trim().min(1),
           name: z.string().trim().min(1),
+          templateCode: roleTemplateCodeSchema.nullable().optional(),
         })
         .strict(),
     ),

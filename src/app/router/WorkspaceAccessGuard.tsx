@@ -36,10 +36,7 @@ export const WorkspaceAccessGuard = ({
   if (!hasWorkspace(capabilitiesQuery.data, workspace)) {
     return (
       <PageContainer>
-        <PermissionDeniedState
-          reason="missing-account-context"
-          requiredAccountContext={workspace}
-        />
+        <PermissionDeniedState reason="missing-account-context" />
       </PageContainer>
     );
   }

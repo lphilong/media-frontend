@@ -4,6 +4,7 @@ import {
   hasAnyScopeGrant,
   hasPermission,
   hasScopeGrant,
+  hasWorkspace,
   PERMISSIONS,
   type ActorScopeGrantModule,
   type ActorScopeGrantValue,
@@ -32,7 +33,11 @@ export type ModuleAccessModuleId =
   | 'commission-rules'
   | 'commission-settlements';
 
-export type ModuleAccessReason = 'missing-capabilities' | 'missing-permission' | 'missing-scope';
+export type ModuleAccessReason =
+  | 'missing-capabilities'
+  | 'missing-permission'
+  | 'missing-scope'
+  | 'missing-account-context';
 
 type ScopeRequirement = {
   module: ActorScopeGrantModule;
@@ -60,7 +65,13 @@ export const moduleAccessDefinitions: Readonly<
   dashboard: {
     id: 'dashboard',
     routePaths: ['/dashboard'],
-    access: { allPermissions: [PERMISSIONS.DASHBOARD_LITE_READ] },
+    access: {
+      allPermissions: [PERMISSIONS.DASHBOARD_LITE_READ],
+      anyScope: {
+        module: 'dashboardLite',
+        anyOf: ['global'],
+      },
+    },
   },
   'people-readiness': {
     id: 'people-readiness',
@@ -177,7 +188,13 @@ export const moduleAccessDefinitions: Readonly<
   'contract-registry': {
     id: 'contract-registry',
     routePaths: ['/contract-records'],
-    access: { allPermissions: [PERMISSIONS.CONTRACT_REGISTRY_READ] },
+    access: {
+      allPermissions: [PERMISSIONS.CONTRACT_REGISTRY_READ],
+      anyScope: {
+        module: 'contractRegistry',
+        anyOf: ['global'],
+      },
+    },
   },
   kpi: {
     id: 'kpi',
@@ -197,17 +214,35 @@ export const moduleAccessDefinitions: Readonly<
   'revenue-ledger': {
     id: 'revenue-ledger',
     routePaths: ['/revenue-entries'],
-    access: { allPermissions: [PERMISSIONS.REVENUE_LEDGER_READ] },
+    access: {
+      allPermissions: [PERMISSIONS.REVENUE_LEDGER_READ],
+      anyScope: {
+        module: 'revenueLedger',
+        anyOf: ['global'],
+      },
+    },
   },
   'commission-rules': {
     id: 'commission-rules',
     routePaths: ['/commission/rules'],
-    access: { allPermissions: [PERMISSIONS.COMMISSION_RULE_READ] },
+    access: {
+      allPermissions: [PERMISSIONS.COMMISSION_RULE_READ],
+      anyScope: {
+        module: 'commission',
+        anyOf: ['global'],
+      },
+    },
   },
   'commission-settlements': {
     id: 'commission-settlements',
     routePaths: ['/commission/settlements'],
-    access: { allPermissions: [PERMISSIONS.COMMISSION_SETTLEMENT_READ] },
+    access: {
+      allPermissions: [PERMISSIONS.COMMISSION_SETTLEMENT_READ],
+      anyScope: {
+        module: 'commission',
+        anyOf: ['global'],
+      },
+    },
   },
 };
 
@@ -231,6 +266,10 @@ export const getModuleAccessReason = (
     return 'missing-capabilities';
   }
 
+  if (!hasWorkspace(capabilities, 'ADMIN_CONSOLE')) {
+    return 'missing-account-context';
+  }
+
   const access = moduleAccessDefinitions[moduleId].access;
   if (requirementHasMissingPermission(capabilities, access)) {
     return 'missing-permission';
@@ -251,6 +290,10 @@ const evaluateRequirement = (
   requirement: AccessRequirement,
 ): boolean => {
   if (!capabilities) {
+    return false;
+  }
+
+  if (!hasWorkspace(capabilities, 'ADMIN_CONSOLE')) {
     return false;
   }
 

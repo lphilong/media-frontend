@@ -16,7 +16,7 @@
     "myClosed": "KPI cá nhân."
   },
   "adminWorkspace": {
-    "label": "Không gian quản trị KPI",
+    "label": "Quản trị KPI",
     "plans": "Kế hoạch",
     "approvalQueue": "Hàng đợi duyệt",
     "progressActuals": "Tiến độ & số thực đạt"
@@ -192,7 +192,7 @@
     "selectReasonCode": "Chọn lý do"
   },
   "actualWorkspace": {
-    "title": "Không gian số thực đạt",
+    "title": "Nhập số thực đạt",
     "policy": "Có thể nhập trực tiếp từ 00:00 ngày D đến 10:00 ngày D+1 theo giờ Việt Nam, tính cả hai mốc. Mỗi mục được sửa trực tiếp tối đa 3 lần.",
     "boundaryHelper": "Số thực đạt không tự quyết định doanh thu, hoa hồng hoặc bảng lương.",
     "revenueTarget": "Mục tiêu doanh thu",
@@ -379,7 +379,7 @@
   },
   "states": {
     "emptyActualWorkspace": "Không có kế hoạch KPI để nhập số thực đạt.",
-    "actualWorkspaceLoadErrorTitle": "Không tải được không gian nhập số thực đạt",
+    "actualWorkspaceLoadErrorTitle": "Không tải được màn hình nhập số thực đạt",
     "actualWorkspaceLoadErrorMessage": "Không tải được danh sách kế hoạch nhập số thực đạt.",
     "actualWorkspaceDetailLoadErrorTitle": "Không tải được chi tiết kế hoạch nhóm",
     "actualWorkspaceDetailLoadErrorMessage": "Không tải được chi tiết kế hoạch nhóm đã chọn.",

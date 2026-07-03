@@ -4,10 +4,18 @@ import {
   getModuleAccessReason,
   type ModuleAccessModuleId,
 } from '@app/router/module-access';
-import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
+import type {
+  AccountContext,
+  CurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
 
 const makeCapabilities = (
-  overrides: Partial<Pick<CurrentActorCapabilities, 'permissions' | 'roles' | 'scopeGrants'>>,
+  overrides: Partial<
+    Pick<
+      CurrentActorCapabilities,
+      'permissions' | 'roles' | 'scopeGrants' | 'accountContexts' | 'workspaceAvailability'
+    >
+  >,
 ): CurrentActorCapabilities => ({
   id: 'module-access-test-user',
   type: 'admin',
@@ -16,7 +24,38 @@ const makeCapabilities = (
   roles: overrides.roles ?? [],
   permissions: overrides.permissions ?? [],
   scopeGrants: overrides.scopeGrants ?? {},
+  accountContexts: overrides.accountContexts ?? ['ADMIN_CONSOLE'],
+  workspaceAvailability:
+    overrides.workspaceAvailability ??
+    makeWorkspaceAvailability(overrides.accountContexts ?? ['ADMIN_CONSOLE']),
   generatedAt: '2026-05-24T00:00:00.000Z',
+});
+
+const makeWorkspaceAvailability = (
+  availableContexts: readonly AccountContext[],
+): CurrentActorCapabilities['workspaceAvailability'] => ({
+  primaryWorkspace: availableContexts[0] ?? null,
+  availableWorkspaces: (['ADMIN_CONSOLE', 'MANAGER_CONSOLE', 'STAFF_CONSOLE'] as const).map(
+    (context) => ({
+      context,
+      available: availableContexts.includes(context),
+      source: 'ACCOUNT_CONTEXT',
+      reasonCodes: availableContexts.includes(context)
+        ? ['ACCOUNT_CONTEXT_ACTIVE']
+        : ['ACCOUNT_CONTEXT_MISSING'],
+      trace: [{ source: 'ACCOUNT_CONTEXT', context, matched: availableContexts.includes(context) }],
+    }),
+  ),
+  ownDataAvailable: availableContexts.includes('STAFF_CONSOLE'),
+  managerResponsibilitiesAvailable: availableContexts.includes('MANAGER_CONSOLE'),
+  effectiveAccessTraceAvailable: true,
+  sourceTrace: [
+    {
+      source: 'ACCOUNT_CONTEXT',
+      accountContexts: [...availableContexts],
+      primaryWorkspace: availableContexts[0] ?? null,
+    },
+  ],
 });
 
 const accessible = (
@@ -42,6 +81,7 @@ describe('module access model', () => {
         eventAssignment: ['managedGroup'],
         kpi: ['managedGroup'],
       },
+      accountContexts: ['MANAGER_CONSOLE'],
     });
 
     expect(
@@ -60,7 +100,7 @@ describe('module access model', () => {
         'people-readiness',
         'employment-terms',
       ]),
-    ).toEqual(['talent', 'talent-group']);
+    ).toEqual([]);
     expect(canAccessModule(capabilities, 'people-readiness')).toBe(false);
     expect(canAccessModule(capabilities, 'employment-terms')).toBe(false);
     expect(canAccessModule(capabilities, 'kpi')).toBe(false);
@@ -197,6 +237,36 @@ describe('module access model', () => {
     expect(canAccessModule(capabilities, 'org-unit')).toBe(false);
     expect(canAccessModule(capabilities, 'talent')).toBe(false);
     expect(canAccessModule(capabilities, 'platform-account')).toBe(false);
+  });
+
+  it('requires backend admin eligibility before module permissions and scopes are considered', () => {
+    const capabilities = makeCapabilities({
+      permissions: ['dashboardLite.read'],
+      scopeGrants: { dashboardLite: ['global'] },
+      accountContexts: ['MANAGER_CONSOLE'],
+    });
+
+    expect(canAccessModule(capabilities, 'dashboard')).toBe(false);
+    expect(getModuleAccessReason(capabilities, 'dashboard')).toBe('missing-account-context');
+  });
+
+  it('fails closed for commercial modules without matching scope evidence', () => {
+    const capabilities = makeCapabilities({
+      roles: ['COMMERCIAL_FINANCE'],
+      permissions: [
+        'contractRegistry.read',
+        'revenueLedger.read',
+        'commissionRule.read',
+        'commissionSettlement.read',
+      ],
+      scopeGrants: {},
+    });
+
+    expect(canAccessModule(capabilities, 'contract-registry')).toBe(false);
+    expect(canAccessModule(capabilities, 'revenue-ledger')).toBe(false);
+    expect(canAccessModule(capabilities, 'commission-rules')).toBe(false);
+    expect(canAccessModule(capabilities, 'commission-settlements')).toBe(false);
+    expect(getModuleAccessReason(capabilities, 'revenue-ledger')).toBe('missing-scope');
   });
 
   it('allows VIEWER_AUDITOR read routes without asserting mutation action access', () => {

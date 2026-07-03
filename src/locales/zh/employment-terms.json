@@ -2,10 +2,10 @@
   "page": {
     "title": "工作条款 / 薪资",
     "subtitle": "跨员工跟踪工作条款、薪资和工资来源状态。",
-    "placeholder": "工作条款 / 薪资工作区"
+    "placeholder": "工作条款 / 薪资"
   },
   "notices": {
-    "readOnlyTitle": "只读工作区",
+    "readOnlyTitle": "只读明细",
     "structuredTerms": "此页面列出结构化工作条款和工资来源状态，不是劳动合同文件管理。"
   },
   "sections": {

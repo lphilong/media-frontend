@@ -249,7 +249,7 @@ describe('route and sidebar permission model', () => {
         accountContexts: [],
       }),
     );
-    expect(await screen.findByText('Không có workspace khả dụng')).toBeInTheDocument();
+    expect(await screen.findByText('Chưa có chức năng được phân quyền')).toBeInTheDocument();
   });
 
   it('does not use actor type or permissions to grant workspace entry without backend availability', async () => {
@@ -532,6 +532,28 @@ describe('route and sidebar permission model', () => {
     expect(screen.queryByTestId('nav-link-events')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-org-units')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-talents')).not.toBeInTheDocument();
+  });
+
+  it('hides commercial modules when scope evidence is missing', async () => {
+    await renderRoute(
+      '/revenue-entries',
+      makeCapabilities({
+        roles: ['COMMERCIAL_FINANCE'],
+        permissions: [
+          'contractRegistry.read',
+          'revenueLedger.read',
+          'commissionRule.read',
+          'commissionSettlement.read',
+        ],
+        scopeGrants: {},
+      }),
+    );
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-contract-registry')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-revenue-ledger')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-commission-rules')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('nav-link-commission-settlements')).not.toBeInTheDocument();
   });
 
   it('shows No Access for direct lookup-only Event routes', async () => {

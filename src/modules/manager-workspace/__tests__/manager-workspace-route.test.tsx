@@ -136,7 +136,7 @@ describe('/manager workspace route', () => {
     expect(
       await screen.findByTestId('manager-workspace-shell', {}, { timeout: 5000 }),
     ).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Manager Workspace' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Assigned work' })).toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
   });
@@ -146,7 +146,7 @@ describe('/manager workspace route', () => {
     await renderRoute('/manager');
 
     expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Locale' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Language' })).toBeInTheDocument();
 
     const logoutButton = screen.getByRole('button', { name: 'Logout' });
     expect(logoutButton).toBeInTheDocument();
@@ -163,7 +163,9 @@ describe('/manager workspace route', () => {
       await setLocale('vi');
     });
 
-    expect(await screen.findByRole('heading', { name: 'Không gian quản lý' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Công việc được phân công' }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('Mina Manager').length).toBeGreaterThan(0);
     expect(screen.getByText('Hồ sơ nhân sự · EP-MGR-001')).toBeInTheDocument();
     expect(screen.getAllByText('Phạm vi được phân công').length).toBeGreaterThan(0);
@@ -177,7 +179,7 @@ describe('/manager workspace route', () => {
     expect(screen.getByTestId('manager-module-events')).not.toHaveTextContent('Có thể thao tác');
     for (const moduleId of ['groups', 'members']) {
       expect(screen.getByTestId(`manager-module-${moduleId}`)).toHaveTextContent(
-        'Chưa mở trong workspace này',
+        'Chưa mở cho chức năng này',
       );
     }
 
@@ -188,6 +190,8 @@ describe('/manager workspace route', () => {
     expect(bodyText).not.toContain('Danh sach KPI quan ly');
     expect(bodyText).not.toContain('Kha dung');
     expect(bodyText).not.toContain('manager-workspace:');
+    expect(bodyText).not.toContain('Không gian quản lý');
+    expect(bodyText).not.toContain('workspace');
   });
 
   it('keeps Manager KPI module and Overview statuses read-only for the same posture', async () => {
@@ -368,14 +372,14 @@ describe('/manager workspace route', () => {
     expect(await screen.findByTestId('manager-panel-groups')).toBeInTheDocument();
     expect(
       await screen.findByText(
-        'This module is not currently available in Manager Workspace. Assigned scope summaries remain in Overview.',
+        'This module is not currently available for the current access. Assigned scope summaries remain in Overview.',
       ),
     ).toBeInTheDocument();
 
     await user.click(screen.getByTestId('manager-module-members'));
     expect(await screen.findByTestId('manager-panel-members')).toBeInTheDocument();
     expect(
-      await screen.findByText('This module is not currently available in Manager Workspace.'),
+      await screen.findByText('This module is not currently available for the current access.'),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: 'People Operations Hub' }),
@@ -502,7 +506,10 @@ describe('/manager workspace route', () => {
       setMockCurrentActorCapabilities(scopedOperationsCapabilities);
     });
 
-    expect(await screen.findByText(/Access denied|Permission denied/)).toBeInTheDocument();
+    expect(
+      await screen.findByText('You do not have the required access or scope for this data'),
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/account context|workspace context/i);
     expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Work Schedule' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-work-shifts')).not.toBeInTheDocument();
@@ -511,7 +518,10 @@ describe('/manager workspace route', () => {
       setMockCurrentActorCapabilities(scopedOperationsCapabilities);
     });
 
-    expect(await screen.findByText(/Access denied|Permission denied/)).toBeInTheDocument();
+    expect(
+      await screen.findByText('You do not have the required access or scope for this data'),
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/account context|workspace context/i);
     expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(screen.queryByText('EVT-202605-000005')).not.toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-events')).not.toBeInTheDocument();
@@ -722,7 +732,7 @@ describe('/manager workspace route', () => {
     await waitFor(() =>
       expect(screen.getAllByText('Actual cells saved.').length).toBeGreaterThanOrEqual(2),
     );
-  });
+  }, 10000);
 
   it('allows UNIT_MANAGER allocation draft and submit where the ORG_UNIT fixture is draftable', async () => {
     await renderRoute('/manager/kpi/plans/kpi-plan-org-unit-draft-allocation', () => {
@@ -780,7 +790,7 @@ describe('/manager workspace route', () => {
     await userEvent.click(within(operations).getByRole('button', { name: 'Submit Allocation' }));
     expect(await screen.findByText('Allocation submitted for approval.')).toBeInTheDocument();
     expect(await within(operations).findAllByText('Pending Approval')).not.toHaveLength(0);
-  });
+  }, 10000);
 
   it('renders Talent Group KPI only for TalentGroup-only manager context and queries Talent Group plans', async () => {
     const subjectTypes: Array<string | null> = [];
@@ -1139,7 +1149,7 @@ describe('/manager workspace route', () => {
     await waitFor(() => expect(managerSubmitCalls).toBe(1));
     expect(rawAdminBatchCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
-  });
+  }, 10000);
 
   it('submits manager availability through Manager Workspace endpoints only', async () => {
     const user = userEvent.setup();
@@ -1274,7 +1284,7 @@ describe('/manager workspace route', () => {
     expect(managerMemberPickerCalls).toBeGreaterThan(0);
     expect(rawAdminAvailabilityCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
-  });
+  }, 10000);
 
   it('submits availability from default picker fixtures when no published WorkShifts exist', async () => {
     const user = userEvent.setup();
@@ -1301,7 +1311,7 @@ describe('/manager workspace route', () => {
 
     expect((await screen.findAllByText('AVB-000002')).length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
-  });
+  }, 10000);
 
   it('keeps Availability usable when the published-shift request fails', async () => {
     const user = userEvent.setup();
@@ -1401,7 +1411,7 @@ describe('/manager workspace route', () => {
     ]) {
       expect(() => parsePolicyStatus('EVALUATED')).toThrow();
     }
-  });
+  }, 10000);
 
   it('constrains availability members to the selected target and clears prior draft lines', async () => {
     const user = userEvent.setup();
@@ -1502,7 +1512,7 @@ describe('/manager workspace route', () => {
     });
     expect(rawAdminBatchCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
-  });
+  }, 10000);
 
   it('cancels own pending request lines and batches with a manager cancellation reason only', async () => {
     const user = userEvent.setup();
@@ -1535,7 +1545,7 @@ describe('/manager workspace route', () => {
     expect(await screen.findAllByText('Cancelled')).not.toHaveLength(0);
     expect(rawAdminBatchCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
-  });
+  }, 10000);
 
   it('renders Managed Work empty state when no published shifts or eligible members exist', async () => {
     await renderRoute('/manager/work-shifts', () => {

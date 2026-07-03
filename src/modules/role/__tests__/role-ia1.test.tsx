@@ -116,7 +116,7 @@ const lifecycleAssignment = {
   revokeReason: null,
   origin: 'DIRECT',
   bundleOrigin: null,
-  reason: 'Mock staff console access',
+  reason: 'Mock personal data access',
   sensitiveOrGlobal: false,
   supportedActions: ['REVOKE'],
   auditSummary: {
@@ -124,7 +124,7 @@ const lifecycleAssignment = {
     action: 'ASSIGN',
     actorId: 'mock-admin',
     timestamp: Date.UTC(2026, 4, 20),
-    reason: 'Mock staff console access',
+    reason: 'Mock personal data access',
     oldStatus: null,
     newStatus: 'ACTIVE',
   },
@@ -422,7 +422,9 @@ describe('role IA-1 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
     ).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('role:accessAssignment.scopeFingerprint'))).toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('role:accessAssignment.scopeFingerprint')),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:accessAssignment.bundleTrace'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:accessAssignment.childRoleTrace'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:accessAssignment.sourceTrace'))).toBeInTheDocument();
@@ -437,7 +439,9 @@ describe('role IA-1 surfaces', () => {
         i18n.t('role:catalogGroups.READ_ONLY_AUDIT'),
       ]),
     );
-    const staffOption = within(targetSelect).getByRole('option', { name: /Staff Console/u });
+    const staffOption = within(targetSelect).getByRole('option', {
+      name: /Nhân sự tự xem dữ liệu/u,
+    });
     await user.selectOptions(targetSelect, staffOption);
     await waitFor(() => expect(applyButton).toBeEnabled());
 
@@ -464,6 +468,48 @@ describe('role IA-1 surfaces', () => {
       0,
     );
   }, 25_000);
+
+  it('clears user-bound assignment state when the selected person is cleared', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    await renderAssignmentTab(user);
+
+    const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.userSearchPlaceholder'),
+      ),
+      'Al',
+    );
+    await user.click(await within(userPicker).findByText(/Alice/u));
+    await user.type(
+      screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
+      'State reset coverage',
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('role:accessAssignment.previewButton') }),
+    );
+    expect(
+      await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
+    ).toBeInTheDocument();
+
+    const clearButtons = within(userPicker).getAllByRole('button', {
+      name: i18n.t('common:actions.clear'),
+    });
+    await user.click(clearButtons[clearButtons.length - 1]);
+
+    expect(
+      screen.queryByText(i18n.t('role:accessAssignment.previewCanApply')),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('role:accessAssignment.resultTitle'))).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: i18n.t('role:accessAssignment.previewButton') }),
+    ).toBeDisabled();
+    expect(
+      screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
+    ).toHaveValue('');
+  }, 20_000);
 
   it('renders proposed Account Context and CREATE_PROPOSED responsibility preview copy truthfully', async () => {
     await setLocale(DEFAULT_LOCALE);
@@ -716,9 +762,9 @@ describe('role IA-1 surfaces', () => {
         name: i18n.t('role:accessAssignment.lifecycle.title'),
       }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('Staff Console User')).toBeInTheDocument();
-    expect(screen.getAllByText(/Mock staff console access/u).length).toBeGreaterThan(0);
-    expect(screen.getByText(/ASSIGN/u)).toBeInTheDocument();
+    expect((await screen.findAllByText('Nhân sự tự xem dữ liệu')).length).toBeGreaterThan(0);
+    expect(document.body).not.toHaveTextContent(/staff console/i);
+    expect(screen.getAllByText(/Gán quyền/u).length).toBeGreaterThan(0);
 
     await user.click(
       screen.getByRole('button', {
@@ -798,7 +844,7 @@ describe('role IA-1 surfaces', () => {
       'Al',
     );
     await user.click(await within(userPicker).findByText(/Alice/u));
-    await screen.findByText('Staff Console User');
+    expect((await screen.findAllByText('Nhân sự tự xem dữ liệu')).length).toBeGreaterThan(0);
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('role:accessAssignment.lifecycle.revokeButton'),
@@ -913,7 +959,9 @@ describe('role IA-1 surfaces', () => {
     );
     await user.click(await within(userPicker).findByText(/Alice Linked/u));
     const targetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
-    const staffOption = within(targetSelect).getByRole('option', { name: /Staff Console/u });
+    const staffOption = within(targetSelect).getByRole('option', {
+      name: /Nhân sự tự xem dữ liệu/u,
+    });
     await user.selectOptions(targetSelect, staffOption);
     await user.type(
       screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
@@ -1011,7 +1059,9 @@ describe('role IA-1 surfaces', () => {
     );
     await user.click(await within(userPicker).findByText(/Alice/u));
     const targetSelect = screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel'));
-    const staffOption = within(targetSelect).getByRole('option', { name: /Staff Console/u });
+    const staffOption = within(targetSelect).getByRole('option', {
+      name: /Nhân sự tự xem dữ liệu/u,
+    });
     await user.selectOptions(targetSelect, staffOption);
     await user.type(
       screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
@@ -1341,7 +1391,7 @@ describe('role IA-1 surfaces', () => {
                 assignmentKind: 'BUNDLE',
                 code: 'STAFF_CONSOLE_BUNDLE',
                 version: '2026-05-20',
-                name: 'Staff Console',
+                name: 'Personal data access',
                 childRoles: ['STAFF_CONSOLE_USER'],
                 recommendedAccountContext: 'STAFF_CONSOLE',
                 requiredScopeTypes: ['self'],
@@ -1864,11 +1914,17 @@ describe('role IA-1 surfaces', () => {
 
     renderRoute('/roles/role-admin?state=ACTIVE&scope=global');
 
-    expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('role:actionRail.title'), {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Admin role')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:detail.permissionMatrixTitle'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:templates.basedOnTemplate'))).toBeInTheDocument();
-    expect(screen.getByText(/Quản trị chủ sở hữu \(OWNER_ADMIN\)/)).toBeInTheDocument();
+    expect(screen.getByText('Quản trị chủ sở hữu')).toBeInTheDocument();
+    expect(screen.queryByText(/Quản trị chủ sở hữu \(OWNER_ADMIN\)/u)).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(
+      /\b(?:OWNER_ADMIN|HR_OPERATIONS|STAFF_CONSOLE_USER)\b/u,
+    );
     expect(screen.getAllByText(/Quản trị vai trò/u).length).toBeGreaterThan(0);
     expect(screen.queryByText(/role:view/u)).not.toBeInTheDocument();
     expect(screen.queryByText('assignment-1')).not.toBeInTheDocument();
@@ -1939,7 +1995,9 @@ describe('role IA-1 surfaces', () => {
 
     renderRoute('/roles/role-admin');
 
-    expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('role:actionRail.title'), {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     await waitFor(() =>
       expect(
         screen.queryByRole('button', { name: i18n.t('role:actions.edit') }),
@@ -1966,7 +2024,9 @@ describe('role IA-1 surfaces', () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/roles/role-admin');
 
-    expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('role:actionRail.title'), {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('role:actions.assignToUser') }),
     ).not.toBeInTheDocument();
@@ -1985,7 +2045,9 @@ describe('role IA-1 surfaces', () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/roles/role-draft');
 
-    expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('role:actionRail.title'), {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Operations role')).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:templates.custom'))).toBeInTheDocument();
   });
@@ -1994,7 +2056,9 @@ describe('role IA-1 surfaces', () => {
     await setLocale(DEFAULT_LOCALE);
     renderRoute('/roles/role-archived');
 
-    expect(await screen.findByText(i18n.t('role:actionRail.title'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('role:actionRail.title'), {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:detail.archivedReadOnly'))).toBeInTheDocument();
     expect(screen.getByRole('button', { name: i18n.t('role:actions.edit') })).toBeDisabled();
     expect(

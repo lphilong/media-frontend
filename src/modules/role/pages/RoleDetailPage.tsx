@@ -25,7 +25,6 @@ import {
   NotFoundState,
   PermissionDeniedState,
   ReadOnlyFieldGrid,
-  ReferenceChip,
   StatusBadge,
   useDestructiveConfirm,
   useMutationFeedback,
@@ -106,7 +105,7 @@ const legacyTemplateCodes = new Set<RoleTemplateCode>([
 
 const readTemplateDisplay = (templateCode?: RoleTemplateCode | null): string =>
   templateCode && !legacyTemplateCodes.has(templateCode)
-    ? `${roleTemplateDisplayNames[templateCode] ?? templateCode} (${templateCode})`
+    ? (roleTemplateDisplayNames[templateCode] ?? '-')
     : '-';
 
 export const RoleDetailPage = (): JSX.Element => {
@@ -319,11 +318,6 @@ export const RoleDetailPage = (): JSX.Element => {
             <ReadOnlyFieldGrid
               fields={[
                 {
-                  key: 'code',
-                  label: t('role:fields.code'),
-                  value: <ReferenceChip label={record.code} />,
-                },
-                {
                   key: 'name',
                   label: t('role:fields.name'),
                   value: record.name,
@@ -421,16 +415,6 @@ export const RoleDetailPage = (): JSX.Element => {
               ) : matrix ? (
                 <ReadOnlyFieldGrid
                   fields={[
-                    {
-                      key: 'matrix-role-id',
-                      label: t('role:fields.roleId'),
-                      value: matrix.roleId,
-                    },
-                    {
-                      key: 'matrix-role-code',
-                      label: t('role:fields.code'),
-                      value: matrix.roleCode,
-                    },
                     {
                       key: 'matrix-state',
                       label: t('role:fields.state'),

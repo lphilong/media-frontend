@@ -166,7 +166,7 @@ describe('/self-service route', () => {
     await renderRoute('/');
 
     expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Personal data' })).toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByTestId('primary-navigation')).not.toBeInTheDocument();
   });
@@ -183,7 +183,8 @@ describe('/self-service route', () => {
 
     await renderRoute('/');
 
-    expect((await screen.findAllByText(/workspace/i)).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Chưa có chức năng được phân quyền')).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/workspace|console|account context/i);
     expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
   });
 
@@ -191,7 +192,7 @@ describe('/self-service route', () => {
     await renderRoute('/self-service');
 
     expect(await screen.findByTestId('self-service-shell')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Personal data' })).toBeInTheDocument();
     expect(await screen.findByTestId('self-service-overview')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
     expect((await screen.findAllByText('Mina Staff')).length).toBeGreaterThanOrEqual(1);
@@ -489,12 +490,16 @@ describe('/self-service route', () => {
       await setLocale('vi');
     });
 
-    expect(await screen.findByRole('heading', { name: 'Không gian nhân sự' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Dữ liệu cá nhân' })).toBeInTheDocument();
     expect(screen.getAllByText('Mina Staff').length).toBeGreaterThan(0);
     expect(screen.getByText('Hồ sơ nhân sự · EP-SELF-001')).toBeInTheDocument();
     expect(screen.getAllByText('Dữ liệu của bạn').length).toBeGreaterThan(0);
+    expect(document.body).not.toHaveTextContent('Không gian nhân sự');
+    expect(document.body).not.toHaveTextContent(/workspace|console|account context/i);
     expect(screen.getByTestId('self-service-nav-profile')).toHaveTextContent('Chỉ đọc');
-    expect(screen.getByTestId('self-service-nav-account')).toHaveTextContent('Chỉ tùy chỉnh');
+    expect(screen.getByTestId('self-service-nav-account')).toHaveTextContent(
+      'Chỉ chỉnh tùy chọn',
+    );
     expect(screen.getByTestId('self-service-nav-overview')).toHaveAttribute(
       'aria-selected',
       'true',
@@ -1696,7 +1701,7 @@ describe('/self-service route', () => {
       expect(adminUserCalls).toBe(0);
       expect(localeSelect).toHaveValue('zh');
     });
-    expect(await screen.findByRole('heading', { name: 'Staff Workspace' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '个人数据' })).toBeInTheDocument();
     await act(async () => {
       await setLocale('en');
       useShellStore.getState().setLocale('en');

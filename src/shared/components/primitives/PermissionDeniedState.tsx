@@ -29,15 +29,15 @@ const buildRequirementLines = ({
   const lines: string[] = [];
 
   if (requiredPermissions && requiredPermissions.length > 0) {
-    lines.push(`Quyền: ${formatList(requiredPermissions)}`);
+    lines.push(`Quyền thao tác: ${formatList(requiredPermissions)}`);
   }
 
   if (requiredScopes && requiredScopes.length > 0) {
-    lines.push(`Phạm vi: ${formatList(requiredScopes)}`);
+    lines.push(`Phạm vi dữ liệu: ${formatList(requiredScopes)}`);
   }
 
   if (requiredAccountContext) {
-    lines.push(`Ngữ cảnh: ${requiredAccountContext}`);
+    lines.push('Điều kiện truy cập phù hợp cho chức năng này');
   }
 
   return lines;

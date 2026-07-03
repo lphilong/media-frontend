@@ -16,7 +16,7 @@
     "myClosed": "个人 KPI 使用后端 my-progress 端点，不显示其他成员行。"
   },
   "adminWorkspace": {
-    "label": "KPI 管理工作区",
+    "label": "KPI 管理",
     "plans": "计划",
     "approvalQueue": "审批队列",
     "progressActuals": "进度与 actual"
@@ -192,7 +192,7 @@
     "selectReasonCode": "Select reason"
   },
   "actualWorkspace": {
-    "title": "Actual Workspace",
+    "title": "实际值录入",
     "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
     "boundaryHelper": "KPI 实际达成值不会自动决定收入、佣金或工资。",
     "revenueTarget": "Revenue target",
@@ -379,8 +379,8 @@
   },
   "states": {
     "emptyActualWorkspace": "No KPI plans are available for actual entry.",
-    "actualWorkspaceLoadErrorTitle": "无法加载实际值工作区",
-    "actualWorkspaceLoadErrorMessage": "无法加载实际值工作区计划。",
+    "actualWorkspaceLoadErrorTitle": "无法加载实际值录入",
+    "actualWorkspaceLoadErrorMessage": "无法加载实际值录入计划。",
     "actualWorkspaceDetailLoadErrorTitle": "无法加载组计划详情",
     "actualWorkspaceDetailLoadErrorMessage": "无法加载所选组计划详情。",
     "actualGridLoadErrorTitle": "无法加载实际值表格",

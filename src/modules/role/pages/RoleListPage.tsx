@@ -57,7 +57,7 @@ import {
   useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { AsyncReferencePicker } from '@shared/components/reference';
+import { AsyncReferencePicker, type ReferenceOption } from '@shared/components/reference';
 import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
@@ -87,12 +87,21 @@ const readErrorMessage = (
     return t(fallbackKey);
   }
 
+  if (containsRawTechnicalToken(error.message)) {
+    return t(fallbackKey);
+  }
+
   if (error.message.includes(':')) {
     return t(error.message);
   }
 
   return error.message;
 };
+
+const containsRawTechnicalToken = (message: string): boolean =>
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/iu.test(message) ||
+  /\b(objectId|uuid|_id|assignmentId|bundleAssignmentId|scopeFingerprint)\b/iu.test(message) ||
+  /\bnot found:\s*\S+/iu.test(message);
 
 const readLifecycleConfirmKey = (action: RoleLifecycleAction): string => {
   switch (action) {
@@ -750,7 +759,7 @@ const RoleUserAccessTab = ({
         return Promise.resolve([]);
       }
 
-      return loadUserReferenceOptions(search);
+      return loadUserReferenceOptions(search).then(sanitizeUserAccessReferenceOptions);
     },
     [],
   );
@@ -768,6 +777,7 @@ const RoleUserAccessTab = ({
           loadOptions={loadSearchFirstUserOptions}
           placeholder={t('role:placeholders.userSearch')}
           resourceLabel={t('role:userAccess.userResource')}
+          showTechnicalMetadata={false}
           emptySlot={<p className="text-xs text-muted">{t('role:userAccess.noUserResults')}</p>}
         />
       </MetadataSection>
@@ -810,7 +820,7 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
             {
               key: 'user',
               label: t('userAccess.user'),
-              value: access.user.displayName ?? access.user.email ?? access.user.id,
+              value: access.user.displayName ?? access.user.email ?? t('userAccess.userResource'),
             },
             {
               key: 'accountContexts',
@@ -857,9 +867,7 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-text">
-                    {assignment.roleCode
-                      ? formatRoleCodeLabel(assignment.roleCode)
-                      : (assignment.roleName ?? '-')}
+                    {formatEffectiveRoleAssignmentLabel(assignment)}
                   </span>
                   <div className="flex flex-wrap gap-1">
                     <StatusBadge label={formatAssignmentOrigin(assignment.origin)} tone="info" />
@@ -871,8 +879,6 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
                   {t('userAccess.scopeCount', {
                     count: assignment.structuredScopeGrants.length,
                   })}
-                  {' · '}
-                  {t('userAccess.scopeFingerprint')}: {assignment.scopeFingerprint || '-'}
                 </p>
                 <p className="mt-1 text-xs text-muted">
                   Ngày rà soát: {formatRiskDate(assignment.reviewAt)} · Ngày hết hiệu lực:{' '}
@@ -894,7 +900,7 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
                     {
                       key: 'assignedBy',
                       label: t('userAccess.assignedBy'),
-                      value: assignment.assignedBy ?? '-',
+                      value: assignment.assignedBy ? t('userAccess.available') : '-',
                     },
                     {
                       key: 'assignedAt',
@@ -947,19 +953,20 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
 
       <MetadataSection title={t('userAccess.responsibilityTitle')}>
         {access.businessResponsibilitySupport.claims.length > 0 ? (
-          <div className="space-y-2">
-            {access.businessResponsibilitySupport.claims.map((claim, index) => (
-              <div key={index} className="rounded border border-border bg-bg px-3 py-2 text-sm">
-                {formatTraceRecord(claim)}
-              </div>
-            ))}
-          </div>
+          <p className="text-sm text-muted">
+            {t('userAccess.responsibilityClaimCount', {
+              count: access.businessResponsibilitySupport.claims.length,
+            })}
+          </p>
         ) : (
           <p className="text-sm text-muted">{access.businessResponsibilitySupport.note}</p>
         )}
       </MetadataSection>
 
-      <MetadataSection title={t('userAccess.traceTitle')}>
+      <details className="rounded border border-border bg-bg p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-text">
+          {t('userAccess.traceTitle')}
+        </summary>
         <ReadOnlyFieldGrid
           columns={2}
           fields={[
@@ -991,7 +998,7 @@ const RoleEffectiveAccessSummary = ({ access }: { access: EffectiveAccessRecord 
             },
           ]}
         />
-      </MetadataSection>
+      </details>
     </div>
   );
 };
@@ -1052,12 +1059,24 @@ const roleCategoryLabels: Record<string, string> = {
 const bundleCodeLabels: Record<string, string> = {
   OWNER_ADMIN_BUNDLE: 'Quản trị chủ sở hữu',
   ACCESS_ADMIN_BUNDLE: 'Quản trị phân quyền',
+  PRODUCTION_OPS_BUNDLE: 'Vận hành sản xuất',
+  PLATFORM_CHANNEL_OPS_BUNDLE: 'Vận hành kênh nền tảng',
+  CREATIVE_VISUAL_LEAD_BUNDLE: 'Phụ trách hình ảnh sáng tạo',
+  CONTENT_OPS_BUNDLE: 'Vận hành nội dung',
   TALENT_GROUP_MANAGER_BUNDLE: 'Quản lý nhóm Talent',
   ORG_UNIT_MANAGER_BUNDLE: 'Quản lý phòng ban',
+  KPI_OPERATOR_BUNDLE: 'Vận hành KPI',
+  COMMERCIAL_STAFF_BUNDLE: 'Vận hành hợp đồng thương mại',
   HR_MANAGER_BUNDLE: 'Quản lý HR',
   HR_STAFF_BUNDLE: 'Vận hành HR',
   FINANCE_STAFF_BUNDLE: 'Vận hành tài chính',
   FINANCE_APPROVER_BUNDLE: 'Duyệt doanh thu',
+  COMMISSION_APPROVER_BUNDLE: 'Duyệt hoa hồng',
+  ATTENDANCE_OPERATOR_BUNDLE: 'Vận hành chấm công',
+  ATTENDANCE_APPROVER_BUNDLE: 'Duyệt chấm công',
+  MONTHLY_CLOSE_OWNER_BUNDLE: 'Phụ trách khóa sổ tháng',
+  PAYROLL_DRAFT_OPERATOR_BUNDLE: 'Vận hành nháp lương',
+  PAYROLL_DRAFT_APPROVER_BUNDLE: 'Duyệt nháp lương',
   STAFF_CONSOLE_BUNDLE: 'Nhân sự tự xem dữ liệu',
   AUDITOR_BUNDLE: 'Audit / Chỉ đọc',
 };
@@ -1115,10 +1134,49 @@ const legacyRoleCodes = new Set([
 ]);
 
 const formatRoleCodeLabel = (roleCode: string): string =>
-  legacyRoleCodes.has(roleCode) ? '-' : (roleCodeLabels[roleCode] ?? roleCode);
+  legacyRoleCodes.has(roleCode) ? '-' : (roleCodeLabels[roleCode] ?? 'Quyền truy cập cần rà soát');
+
+const hasInternalAccessTerm = (value: string | null | undefined): boolean =>
+  /console|account context|workspace/i.test(value ?? '');
+
+const sanitizeInternalAccessLabel = (
+  value: string | null | undefined,
+  fallback: string,
+): string => {
+  if (!value) {
+    return fallback;
+  }
+
+  if (/staff console/i.test(value)) {
+    return 'Nhân sự tự xem dữ liệu';
+  }
+
+  if (/manager console/i.test(value)) {
+    return 'Quyền xem công việc được phân công';
+  }
+
+  if (/admin console/i.test(value)) {
+    return 'Quyền vận hành nội bộ';
+  }
+
+  return hasInternalAccessTerm(value) ? fallback : value;
+};
+
+const formatEffectiveRoleAssignmentLabel = (
+  assignment: EffectiveAccessRecord['activeRoleAssignments'][number],
+): string => {
+  if (assignment.roleCode) {
+    const codeLabel = formatRoleCodeLabel(assignment.roleCode);
+    return hasInternalAccessTerm(codeLabel)
+      ? sanitizeInternalAccessLabel(codeLabel, '-')
+      : codeLabel;
+  }
+
+  return sanitizeInternalAccessLabel(assignment.roleName, '-');
+};
 
 const formatBundleCodeLabel = (bundleCode: string): string =>
-  bundleCodeLabels[bundleCode] ?? bundleCode;
+  bundleCodeLabels[bundleCode] ?? 'Gói quyền cần rà soát';
 
 const formatBundlePurpose = (bundleCode: string, fallback: string): string =>
   bundlePurposeLabels[bundleCode] ?? fallback;
@@ -1131,7 +1189,7 @@ const formatAssignmentOrigin = (
   }
 
   if (origin === 'LEGACY') {
-    return 'Dữ liệu cũ để rà soát';
+    return 'Cần rà soát';
   }
 
   return 'Gán trực tiếp';
@@ -1140,18 +1198,27 @@ const formatAssignmentOrigin = (
 const formatAccountContextLabel = (context: string): string => {
   switch (context) {
     case 'ADMIN_CONSOLE':
-      return 'Không gian quản trị';
+      return 'Quyền vận hành nội bộ';
     case 'MANAGER_CONSOLE':
-      return 'Không gian quản lý';
+      return 'Quyền xem công việc được phân công';
     case 'STAFF_CONSOLE':
-      return 'Không gian nhân sự';
+      return 'Quyền xem dữ liệu cá nhân';
     default:
-      return context;
+      return 'Điều kiện truy cập khác';
   }
 };
 
 const formatAccountContextList = (contexts: string[]): string =>
   contexts.length > 0 ? contexts.map(formatAccountContextLabel).join(', ') : '-';
+
+const sanitizeUserAccessReferenceOptions = (options: ReferenceOption[]): ReferenceOption[] =>
+  options.map((option) => ({
+    ...option,
+    code: undefined,
+    status: undefined,
+    state: undefined,
+    badges: undefined,
+  }));
 
 const formatCapabilityGroupSummary = (permissions: string[]): string => {
   if (permissions.length === 0) {
@@ -1181,8 +1248,7 @@ const formatEffectiveScopeSummary = (
     .map((scope) =>
       [
         formatEffectiveScopeType(String(scope.scopeType ?? ''), t),
-        typeof scope.targetId === 'string' ? `ID ${scope.targetId}` : null,
-        typeof scope.targetKey === 'string' ? scope.targetKey : null,
+        typeof scope.targetId === 'string' ? 'Đối tượng được phân công' : null,
         typeof scope.periodKey === 'string' ? scope.periodKey : null,
       ]
         .filter(Boolean)
@@ -1204,10 +1270,8 @@ const formatEffectiveBundleOrigin = (origin: Record<string, unknown> | null): st
   if (!origin) {
     return '-';
   }
-  return ['bundleCode', 'bundleVersion', 'bundleAssignmentId']
-    .map((key) => (typeof origin[key] === 'string' ? String(origin[key]) : null))
-    .filter(Boolean)
-    .join(' · ');
+  const bundleCode = typeof origin.bundleCode === 'string' ? origin.bundleCode : null;
+  return bundleCode ? formatBundleCodeLabel(bundleCode) : 'Gói quyền';
 };
 
 const formatTraceRecord = (record: Record<string, unknown>): string => {
