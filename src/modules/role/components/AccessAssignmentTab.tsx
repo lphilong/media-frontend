@@ -891,15 +891,19 @@ const PreviewSummary = ({
   const proposedAssignments = result.proposedAssignments ?? [];
   const addedPermissions = result.effectiveAccessDelta?.addedPermissions ?? [];
   const canApply = result.canApply === true && blockers.length === 0;
+  const accountContextMessageKey = getAccountContextPreviewMessageKey(
+    result.accountContextRequirement,
+  );
+  const responsibilityMessageKey = getResponsibilityPreviewMessageKey(
+    result.responsibilityRequirements ?? [],
+  );
 
   return (
     <div className="mt-4 space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge
           label={
-            canApply
-              ? t('accessAssignment.previewCanApply')
-              : t('accessAssignment.previewBlocked')
+            canApply ? t('accessAssignment.previewCanApply') : t('accessAssignment.previewBlocked')
           }
           tone={canApply ? 'success' : 'warning'}
         />
@@ -930,14 +934,14 @@ const PreviewSummary = ({
           },
         ]}
       />
-      {result.accountContextRequirement ? (
+      {accountContextMessageKey ? (
         <p className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
-          {t('accessAssignment.accountContextReadOnly')}
+          {t(accountContextMessageKey)}
         </p>
       ) : null}
-      {(result.responsibilityRequirements ?? []).length > 0 ? (
+      {responsibilityMessageKey ? (
         <p className="rounded border border-border bg-bg px-3 py-2 text-sm text-muted">
-          {t('accessAssignment.responsibilityReadOnly')}
+          {t(responsibilityMessageKey)}
         </p>
       ) : null}
     </div>
@@ -1185,9 +1189,14 @@ function isLifecycleRevokeSuccess(
 
 function formatIssue(issue: AccessAssignmentIssue): string {
   const friendly: Record<string, string> = {
-    REQUIRED_ACCOUNT_CONTEXT_MISSING:
-      'Người dùng chưa đủ điều kiện vào Console cần thiết. Bước này không tự cấp điều kiện Console.',
+    REQUIRED_ACCOUNT_CONTEXT_MISSING: 'Người dùng chưa đủ điều kiện vào Console cần thiết.',
+    ACCOUNT_CONTEXT_MATERIALIZATION_NOT_AUTHORIZED:
+      'Cần quyền áp dụng account context trước khi có thể gán gói quyền này.',
     RESPONSIBILITY_REQUIRED: 'Chưa có phân công trách nhiệm quản lý phù hợp.',
+    RESPONSIBILITY_MATERIALIZATION_NOT_AUTHORIZED:
+      'Cần có trách nhiệm quản lý phù hợp hoặc quyền tạo/liên kết trách nhiệm trước khi áp dụng gói quyền này.',
+    RESPONSIBILITY_TARGET_NOT_ASSIGNABLE:
+      'Phạm vi trách nhiệm quản lý chưa ở trạng thái có thể gán.',
     LEGACY_ROLE_BLOCKED: 'Mẫu vai trò cũ không còn được dùng để gán quyền mới.',
     DUPLICATE_ACTIVE_ASSIGNMENT: 'Quyền này đã được gán trong cùng phạm vi.',
     SELF_ASSIGNMENT_BLOCKED:
@@ -1199,8 +1208,7 @@ function formatIssue(issue: AccessAssignmentIssue): string {
       'Ngày rà soát vượt giới hạn. Ngày rà soát vượt giới hạn chính sách cho quyền nhạy cảm hoặc quyền toàn cục.',
     EXPIRES_AT_REQUIRED:
       'Quyền khẩn cấp cần ngày hết hiệu lực. Quyền này có rủi ro cao và cần ngày hết hiệu lực.',
-    EXPIRES_AT_EXCEEDS_MAX_WINDOW:
-      'Ngày hết hiệu lực vượt giới hạn chính sách cho quyền khẩn cấp.',
+    EXPIRES_AT_EXCEEDS_MAX_WINDOW: 'Ngày hết hiệu lực vượt giới hạn chính sách cho quyền khẩn cấp.',
     SOD_CONFLICT_BLOCKED:
       'Bị chặn do xung đột phân quyền. Thao tác này bị chặn để tránh một người vừa thực hiện vừa kiểm soát cùng quyền nhạy cảm.',
     SELF_LIFECYCLE_BLOCKED:
@@ -1208,6 +1216,66 @@ function formatIssue(issue: AccessAssignmentIssue): string {
   };
 
   return friendly[issue.code] ?? issue.summary ?? issue.code;
+}
+
+function getAccountContextPreviewMessageKey(
+  requirement: Record<string, unknown> | null | undefined,
+): string | null {
+  if (!requirement) {
+    return null;
+  }
+  const status = readStringRecordValue(requirement, 'status');
+  const requiredAccountContexts = readStringArrayRecordValue(
+    requirement,
+    'requiredAccountContexts',
+  );
+
+  if (status === 'NOT_REQUIRED' || (requiredAccountContexts.length === 0 && status !== null)) {
+    return 'accessAssignment.accountContextStates.notRequired';
+  }
+  if (status === 'SATISFIED') {
+    return 'accessAssignment.accountContextStates.reused';
+  }
+  if (status === 'PROPOSED_FOR_APPLICATION') {
+    return 'accessAssignment.accountContextStates.proposed';
+  }
+  if (
+    status === 'BLOCKED_UNAUTHORIZED' ||
+    status === 'TARGET_USER_UNRESOLVED' ||
+    status === 'MISSING_REQUIRED_CONTEXT'
+  ) {
+    return 'accessAssignment.accountContextStates.blocked';
+  }
+  return 'accessAssignment.accountContextStates.unknown';
+}
+
+function getResponsibilityPreviewMessageKey(
+  requirements: readonly Record<string, unknown>[],
+): string {
+  if (requirements.length === 0) {
+    return 'accessAssignment.responsibilityStates.notRequired';
+  }
+
+  const statuses = requirements.map((requirement) => readStringRecordValue(requirement, 'status'));
+  if (
+    statuses.some(
+      (status) =>
+        status === 'MISSING_RESPONSIBILITY_UNAUTHORIZED' ||
+        status === 'MISSING_RESPONSIBILITY_TARGET_NOT_ACTIVE' ||
+        status === 'CREATE_PROPOSED_REASON_REQUIRED' ||
+        status === 'MISSING_RESPONSIBILITY' ||
+        status === 'RESPONSIBILITY_REQUIRED',
+    )
+  ) {
+    return 'accessAssignment.responsibilityStates.blocked';
+  }
+  if (statuses.some((status) => status === 'CREATE_PROPOSED')) {
+    return 'accessAssignment.responsibilityStates.createProposed';
+  }
+  if (statuses.every((status) => status === 'SATISFIED')) {
+    return 'accessAssignment.responsibilityStates.reused';
+  }
+  return 'accessAssignment.responsibilityStates.unknown';
 }
 
 function formatScopeTypeLabel(scopeType: AccessAssignmentScopeType): string {
@@ -1329,6 +1397,13 @@ function readLifecycleAuditTrace(value: Record<string, unknown> | null | undefin
 function readStringRecordValue(value: Record<string, unknown>, key: string): string | null {
   const field = value[key];
   return typeof field === 'string' && field.trim() ? field : null;
+}
+
+function readStringArrayRecordValue(value: Record<string, unknown>, key: string): string[] {
+  const field = value[key];
+  return Array.isArray(field)
+    ? field.filter((entry): entry is string => typeof entry === 'string')
+    : [];
 }
 
 function readErrorMessage(

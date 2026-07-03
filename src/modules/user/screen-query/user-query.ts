@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-import {
-  userAccountStatusValues,
-} from '@modules/user/constants/user.constants';
+import { userAccountStatusValues } from '@modules/user/constants/user.constants';
 import { defineScreenQueryConfig } from '@shared/query/screen-query-config';
 
 const cursorSchema = z.string().trim().min(1).optional();

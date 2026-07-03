@@ -54,7 +54,9 @@ export const AdminShellLayout = (): JSX.Element => {
           className={`flex flex-col border-r border-border bg-panel transition-all ${sidebarCollapsed ? 'w-20' : 'w-72'}`}
         >
           <div className="flex items-center justify-between border-b border-border px-3 py-3">
-            {!sidebarCollapsed ? <span className="font-semibold">{t('common:app.name')}</span> : null}
+            {!sidebarCollapsed ? (
+              <span className="font-semibold">{t('common:app.name')}</span>
+            ) : null}
             <button
               type="button"
               onClick={toggleSidebar}

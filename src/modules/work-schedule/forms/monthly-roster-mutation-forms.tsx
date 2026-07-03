@@ -154,58 +154,62 @@ const ReadOnlyField = ({ label, value }: { label: string; value: string }): JSX.
 );
 
 const createSchema = (required: string, month: string, planningWindow: string) =>
-  z.object({
-    rosterCode: z.string().trim().optional(),
-    rosterMonth: z
-      .string()
-      .trim()
-      .min(1, required)
-      .refine(isRealMonth, month)
-      .refine(isMonthWithinPlanningWindow, planningWindow),
-    targetType: z.enum(['ORG_UNIT', 'TALENT_GROUP']),
-    targetOrgUnitId: z.string().trim(),
-    targetTalentGroupId: z.string().trim(),
-    workPatternId: z.string().trim().min(1, required),
-    holidayCalendarId: z.string().trim().min(1, required),
-    scope: z.enum(['department', 'global']),
-    description: z.string().trim().optional(),
-    externalRef: z.string().trim().optional(),
-  }).superRefine((values, ctx) => {
-    if (values.targetType === 'ORG_UNIT' && !values.targetOrgUnitId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['targetOrgUnitId'], message: required });
-    }
-    if (values.targetType === 'TALENT_GROUP' && !values.targetTalentGroupId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['targetTalentGroupId'],
-        message: required,
-      });
-    }
-  });
+  z
+    .object({
+      rosterCode: z.string().trim().optional(),
+      rosterMonth: z
+        .string()
+        .trim()
+        .min(1, required)
+        .refine(isRealMonth, month)
+        .refine(isMonthWithinPlanningWindow, planningWindow),
+      targetType: z.enum(['ORG_UNIT', 'TALENT_GROUP']),
+      targetOrgUnitId: z.string().trim(),
+      targetTalentGroupId: z.string().trim(),
+      workPatternId: z.string().trim().min(1, required),
+      holidayCalendarId: z.string().trim().min(1, required),
+      scope: z.enum(['department', 'global']),
+      description: z.string().trim().optional(),
+      externalRef: z.string().trim().optional(),
+    })
+    .superRefine((values, ctx) => {
+      if (values.targetType === 'ORG_UNIT' && !values.targetOrgUnitId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['targetOrgUnitId'], message: required });
+      }
+      if (values.targetType === 'TALENT_GROUP' && !values.targetTalentGroupId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['targetTalentGroupId'],
+          message: required,
+        });
+      }
+    });
 
 const updateSchema = (required: string, month: string) =>
-  z.object({
-    rosterMonth: z.string().trim().min(1, required).refine(isRealMonth, month),
-    targetType: z.enum(['ORG_UNIT', 'TALENT_GROUP']),
-    targetOrgUnitId: z.string().trim(),
-    targetTalentGroupId: z.string().trim(),
-    workPatternId: z.string().trim().min(1, required),
-    holidayCalendarId: z.string().trim().min(1, required),
-    scope: z.enum(['department', 'global']),
-    description: z.string().trim().optional(),
-    externalRef: z.string().trim().optional(),
-  }).superRefine((values, ctx) => {
-    if (values.targetType === 'ORG_UNIT' && !values.targetOrgUnitId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['targetOrgUnitId'], message: required });
-    }
-    if (values.targetType === 'TALENT_GROUP' && !values.targetTalentGroupId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['targetTalentGroupId'],
-        message: required,
-      });
-    }
-  });
+  z
+    .object({
+      rosterMonth: z.string().trim().min(1, required).refine(isRealMonth, month),
+      targetType: z.enum(['ORG_UNIT', 'TALENT_GROUP']),
+      targetOrgUnitId: z.string().trim(),
+      targetTalentGroupId: z.string().trim(),
+      workPatternId: z.string().trim().min(1, required),
+      holidayCalendarId: z.string().trim().min(1, required),
+      scope: z.enum(['department', 'global']),
+      description: z.string().trim().optional(),
+      externalRef: z.string().trim().optional(),
+    })
+    .superRefine((values, ctx) => {
+      if (values.targetType === 'ORG_UNIT' && !values.targetOrgUnitId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['targetOrgUnitId'], message: required });
+      }
+      if (values.targetType === 'TALENT_GROUP' && !values.targetTalentGroupId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['targetTalentGroupId'],
+          message: required,
+        });
+      }
+    });
 
 const createDefaultValues = (initial?: MonthlyRosterRecord): MonthlyRosterFormValues => ({
   rosterCode: initial?.rosterCode ?? '',
@@ -307,9 +311,7 @@ const TargetTypeField = ({ disabled }: { disabled?: boolean }): JSX.Element => {
         disabled={disabled}
         className="rounded border border-border bg-panel px-3 py-2 text-sm outline-none ring-accent disabled:cursor-not-allowed disabled:opacity-70 focus:ring-2"
       >
-        <option value="ORG_UNIT">
-          {t('work-schedule:monthlyRosters.targetTypes.ORG_UNIT')}
-        </option>
+        <option value="ORG_UNIT">{t('work-schedule:monthlyRosters.targetTypes.ORG_UNIT')}</option>
         <option value="TALENT_GROUP">
           {t('work-schedule:monthlyRosters.targetTypes.TALENT_GROUP')}
         </option>
@@ -351,8 +353,7 @@ export const MonthlyRosterCreateSurface = ({
       timezone: MONTHLY_ROSTER_TIMEZONE,
       targetType: parsed.data.targetType,
       targetMode: 'EXACT_ONLY',
-      targetOrgUnitId:
-        parsed.data.targetType === 'ORG_UNIT' ? parsed.data.targetOrgUnitId : null,
+      targetOrgUnitId: parsed.data.targetType === 'ORG_UNIT' ? parsed.data.targetOrgUnitId : null,
       targetTalentGroupId:
         parsed.data.targetType === 'TALENT_GROUP' ? parsed.data.targetTalentGroupId : null,
       workPatternId: parsed.data.workPatternId,
@@ -505,9 +506,7 @@ export const MonthlyRosterEditSurface = ({
             targetOrgUnitId:
               parsed.data.targetType === 'ORG_UNIT' ? parsed.data.targetOrgUnitId : null,
             targetTalentGroupId:
-              parsed.data.targetType === 'TALENT_GROUP'
-                ? parsed.data.targetTalentGroupId
-                : null,
+              parsed.data.targetType === 'TALENT_GROUP' ? parsed.data.targetTalentGroupId : null,
             workPatternId: parsed.data.workPatternId,
             holidayCalendarId: parsed.data.holidayCalendarId,
           },

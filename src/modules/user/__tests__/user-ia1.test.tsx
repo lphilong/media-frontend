@@ -91,7 +91,9 @@ describe('user IA-1 surfaces', () => {
     expect(await screen.findByText('Staff User', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
     expect(screen.getAllByText(i18n.t('user:statuses.PENDING')).length).toBeGreaterThan(0);
-    expect(screen.queryByRole('combobox', { name: i18n.t('user:filters.actorKind') })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: i18n.t('user:filters.actorKind') }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
     expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
     expect(screen.getByText('staff@example.test')).toBeInTheDocument();
@@ -314,7 +316,9 @@ describe('user IA-1 surfaces', () => {
     expect(screen.getByRole('combobox', { name: i18n.t('user:filters.state') })).toHaveValue(
       'PENDING',
     );
-    expect(screen.queryByRole('combobox', { name: i18n.t('user:filters.actorKind') })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: i18n.t('user:filters.actorKind') }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: i18n.t('user:actions.provisionAccount') }));
 

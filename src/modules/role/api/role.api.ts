@@ -123,9 +123,7 @@ const featureStatusSchema = z
 
 const operatorFlowGroupSchema = z.preprocess(
   (value) =>
-    typeof value === 'string' && knownOperatorFlowGroups.has(value)
-      ? value
-      : 'SYSTEM_CONTROLLED',
+    typeof value === 'string' && knownOperatorFlowGroups.has(value) ? value : 'SYSTEM_CONTROLLED',
   z.enum(operatorFlowGroupValues),
 );
 
@@ -135,11 +133,7 @@ const catalogVisibilityMetadataSchema = {
   operatorFlowGroup: operatorFlowGroupSchema,
   sensitivityLevel: z.string().trim().min(1).default('STANDARD'),
   reviewPolicy: z.string().trim().min(1).default('NOT_REQUIRED'),
-  accountContextLifecyclePolicy: z
-    .string()
-    .trim()
-    .min(1)
-    .default('SYSTEM_DERIVED_PREVIEW_ONLY'),
+  accountContextLifecyclePolicy: z.string().trim().min(1).default('SYSTEM_DERIVED_PREVIEW_ONLY'),
   responsibilityPolicy: z.string().trim().min(1).default('NOT_REQUIRED'),
   scopeSelectorSupport: z.string().trim().min(1).default('SUPPORTED'),
   futureReadinessNote: z.string().nullable().default(null),
@@ -508,6 +502,7 @@ const accessAssignmentApplySchema = z
     accountContextResult: z.record(z.unknown()).nullable().optional(),
     consoleEntitlementResult: z.record(z.unknown()).nullable().optional(),
     responsibilityRequirements: z.array(z.record(z.unknown())).optional(),
+    responsibilityOperationResult: z.record(z.unknown()).nullable().optional(),
     sensitiveAccess: accessRiskPreviewSchema.nullable().optional(),
     duplicateConflicts: z.array(z.record(z.unknown())).optional(),
     auditTrace: z.record(z.unknown()).nullable().optional(),

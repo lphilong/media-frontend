@@ -215,14 +215,19 @@ describe('work schedule guided shift workflow', () => {
   it('only exposes Employment Profile create and points group scheduling to Monthly Rosters', async () => {
     renderWorkflow();
 
-    expect(screen.queryByRole('combobox', { name: i18n.t('work-schedule:fields.subjectKind') }))
-      .not.toBeInTheDocument();
-    expect(screen.getByText(i18n.t('work-schedule:task.individualExceptionCopy'))).toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: i18n.t('work-schedule:fields.subjectKind') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('work-schedule:task.individualExceptionCopy')),
+    ).toBeInTheDocument();
     expect(
       screen.getByDisplayValue(i18n.t('work-schedule:subjectKinds.EMPLOYMENT_PROFILE')),
     ).toBeInTheDocument();
     expect(screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT'))).not.toBeInTheDocument();
-    expect(screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT_GROUP'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('work-schedule:subjectKinds.TALENT_GROUP')),
+    ).not.toBeInTheDocument();
     await expect(findPicker('work-shift-subject-EMPLOYMENT_PROFILE')).resolves.toBeInTheDocument();
   });
 

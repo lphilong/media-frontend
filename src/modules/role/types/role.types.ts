@@ -425,6 +425,7 @@ export type AccessAssignmentApplyResult = {
   accountContextResult?: Record<string, unknown> | null;
   consoleEntitlementResult?: Record<string, unknown> | null;
   responsibilityRequirements?: Array<Record<string, unknown>>;
+  responsibilityOperationResult?: Record<string, unknown> | null;
   sensitiveAccess?: AccessRiskPreview | null;
   duplicateConflicts?: Array<Record<string, unknown>>;
   auditTrace?: Record<string, unknown> | null;

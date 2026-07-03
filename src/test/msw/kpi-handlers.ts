@@ -987,8 +987,7 @@ let lastOrgUnitActualPayload: Record<string, unknown> | undefined;
 export const readLastKpiAllocationDraftPayload = (): Record<string, unknown> | undefined =>
   lastAllocationDraftPayload;
 
-export const readLastKpiOrgUnitActualGridDate = (): string | undefined =>
-  lastOrgUnitActualGridDate;
+export const readLastKpiOrgUnitActualGridDate = (): string | undefined => lastOrgUnitActualGridDate;
 
 export const readLastKpiOrgUnitActualPayload = (): Record<string, unknown> | undefined =>
   lastOrgUnitActualPayload;
@@ -2644,7 +2643,9 @@ export const kpiHandlers = [
     }
     if (
       plan.subjectType === 'ORG_UNIT' &&
-      !(allocations[plan.id] ?? []).some((allocation) => allocation.allocationStatus === 'PUBLISHED')
+      !(allocations[plan.id] ?? []).some(
+        (allocation) => allocation.allocationStatus === 'PUBLISHED',
+      )
     ) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
     }

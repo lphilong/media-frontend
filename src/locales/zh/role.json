@@ -269,7 +269,21 @@
   "accessAssignment": {
     "futureTargetsHidden": "未来就绪和系统控制的包不会出现在普通分配选择器中。",
     "restrictedTargetsTitle": "受控敏感访问包",
-    "restrictedTargetsHelp": "这些包需要后续受控复核流程，不能在 M1 普通分配路径中选择。"
+    "restrictedTargetsHelp": "这些包需要后续受控复核流程，不能在 M1 普通分配路径中选择。",
+    "accountContextStates": {
+      "reused": "人员已具备所需 account context，系统将复用现有 context。",
+      "proposed": "确认后，系统会为该人员应用所需 account context。",
+      "blocked": "分配此访问包前，需要具备应用 account context 的权限。",
+      "notRequired": "此访问包不需要额外 account context。",
+      "unknown": "预览未返回受支持的 account context 状态；确认前请复核条件。"
+    },
+    "responsibilityStates": {
+      "reused": "系统将复用此访问范围已有的管理责任。",
+      "createProposed": "确认后，系统会为此范围创建或关联所需管理责任。",
+      "blocked": "应用此访问包前，需要匹配的管理责任或创建/关联该责任的权限。",
+      "notRequired": "此访问包不需要管理责任分配。",
+      "unknown": "预览未返回受支持的管理责任状态；确认前请复核条件。"
+    }
   },
   "assignmentTab": {
     "unavailableTitle": "按用户分配访问权限的流程尚不可用",

@@ -79,9 +79,7 @@ const canArchive = (batch: PlatformEarningBatch): boolean =>
 const canCreateRevenueEntry = (batch: PlatformEarningBatch): boolean =>
   batch.status === 'APPROVED' && !batch.revenueEntryId;
 
-export const getPlatformEarningActionAvailabilityForTest = (
-  batch: PlatformEarningBatch,
-) => ({
+export const getPlatformEarningActionAvailabilityForTest = (batch: PlatformEarningBatch) => ({
   submit: canSubmit(batch),
   startReview: canStartReview(batch),
   approve: canApprove(batch),
@@ -256,9 +254,7 @@ export const PlatformEarningBatchesPanel = (): JSX.Element => {
     if (!revenueEntryBatchId) return;
     const normalizedSubjectTalentId = subjectTalentId.trim();
     if (!normalizedSubjectTalentId) {
-      setSubjectValidation(
-        t('revenue-ledger:platformEarnings.validation.subjectTalentRequired'),
-      );
+      setSubjectValidation(t('revenue-ledger:platformEarnings.validation.subjectTalentRequired'));
       return;
     }
     void createRevenueEntry(revenueEntryBatchId, normalizedSubjectTalentId);
@@ -333,9 +329,7 @@ export const PlatformEarningBatchesPanel = (): JSX.Element => {
           <input
             className="rounded border border-border bg-bg px-2 py-1.5"
             value={query.platformAccountId ?? ''}
-            onChange={(event) =>
-              patchQuery({ platformAccountId: event.target.value || undefined })
-            }
+            onChange={(event) => patchQuery({ platformAccountId: event.target.value || undefined })}
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -413,7 +407,9 @@ export const PlatformEarningBatchesPanel = (): JSX.Element => {
       <CursorPager
         canGoBack={Boolean(query.cursor)}
         canGoNext={Boolean(batchesQuery.data?.meta?.nextCursor)}
-        onNext={() => setQuery((current) => ({ ...current, cursor: batchesQuery.data?.meta?.nextCursor }))}
+        onNext={() =>
+          setQuery((current) => ({ ...current, cursor: batchesQuery.data?.meta?.nextCursor }))
+        }
         onPrevious={() => setQuery((current) => ({ ...current, cursor: undefined }))}
       />
 
@@ -608,7 +604,10 @@ export const PlatformEarningBatchesPanel = (): JSX.Element => {
           ) : null}
 
           {approvalBatchId === selectedBatch.id ? (
-            <form className="grid gap-3 rounded border border-border p-3 md:grid-cols-3" onSubmit={(event) => void onApprove(event)}>
+            <form
+              className="grid gap-3 rounded border border-border p-3 md:grid-cols-3"
+              onSubmit={(event) => void onApprove(event)}
+            >
               <input
                 className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
                 aria-label={t('revenue-ledger:platformEarnings.approval.targetCurrency')}
@@ -640,7 +639,10 @@ export const PlatformEarningBatchesPanel = (): JSX.Element => {
                 aria-label={t('revenue-ledger:platformEarnings.approval.rateType')}
                 {...approvalForm.register('rateType')}
               />
-              <button type="submit" className="rounded border border-accent px-3 py-1.5 text-sm text-accent">
+              <button
+                type="submit"
+                className="rounded border border-accent px-3 py-1.5 text-sm text-accent"
+              >
                 {t('revenue-ledger:platformEarnings.actions.approve')}
               </button>
             </form>
@@ -697,17 +699,33 @@ export const PlatformEarningBatchesPanel = (): JSX.Element => {
             <SnapshotBlock title={t('revenue-ledger:platformEarnings.snapshots.platformCut')}>
               {selectedBatch.platformCutSnapshot ? (
                 <>
-                  <p>{formatDecimal(selectedBatch.platformCutSnapshot.platformCutRate, 'vi-VN', 6)}</p>
-                  <p>{formatCurrency(selectedBatch.platformCutSnapshot.platformCutAmount, selectedCurrency)}</p>
-                  <p>{formatCurrency(selectedBatch.platformCutSnapshot.companyNetAmount, selectedCurrency)}</p>
+                  <p>
+                    {formatDecimal(selectedBatch.platformCutSnapshot.platformCutRate, 'vi-VN', 6)}
+                  </p>
+                  <p>
+                    {formatCurrency(
+                      selectedBatch.platformCutSnapshot.platformCutAmount,
+                      selectedCurrency,
+                    )}
+                  </p>
+                  <p>
+                    {formatCurrency(
+                      selectedBatch.platformCutSnapshot.companyNetAmount,
+                      selectedCurrency,
+                    )}
+                  </p>
                 </>
               ) : (
                 <p>-</p>
               )}
             </SnapshotBlock>
             <SnapshotBlock title={t('revenue-ledger:platformEarnings.snapshots.traceability')}>
-              <p className="break-all font-mono text-xs">{selectedBatch.sourceFingerprint ?? '-'}</p>
-              <p>{selectedBatch.approvedAt ? formatVietnamTimestamp(selectedBatch.approvedAt) : '-'}</p>
+              <p className="break-all font-mono text-xs">
+                {selectedBatch.sourceFingerprint ?? '-'}
+              </p>
+              <p>
+                {selectedBatch.approvedAt ? formatVietnamTimestamp(selectedBatch.approvedAt) : '-'}
+              </p>
             </SnapshotBlock>
           </div>
 

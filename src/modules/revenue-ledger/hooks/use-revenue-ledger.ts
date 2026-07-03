@@ -240,8 +240,13 @@ export const usePlatformEarningLifecycleMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ batchId, action }: { batchId: string; action: 'submit' | 'start-review' | 'archive' }) =>
-      performPlatformEarningLifecycleAction(batchId, action),
+    mutationFn: ({
+      batchId,
+      action,
+    }: {
+      batchId: string;
+      action: 'submit' | 'start-review' | 'archive';
+    }) => performPlatformEarningLifecycleAction(batchId, action),
     onSuccess: async () => {
       await invalidateRevenueLedgerQueries(queryClient);
     },
@@ -252,8 +257,13 @@ export const useApprovePlatformEarningBatchMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ batchId, payload }: { batchId: string; payload: PlatformEarningApprovePayload }) =>
-      approvePlatformEarningBatch(batchId, payload),
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: PlatformEarningApprovePayload;
+    }) => approvePlatformEarningBatch(batchId, payload),
     onSuccess: async () => {
       await invalidateRevenueLedgerQueries(queryClient);
     },
@@ -264,8 +274,13 @@ export const useRejectPlatformEarningBatchMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ batchId, payload }: { batchId: string; payload: PlatformEarningReasonPayload }) =>
-      rejectPlatformEarningBatch(batchId, payload),
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: PlatformEarningReasonPayload;
+    }) => rejectPlatformEarningBatch(batchId, payload),
     onSuccess: async () => {
       await invalidateRevenueLedgerQueries(queryClient);
     },
@@ -276,8 +291,13 @@ export const useVoidPlatformEarningBatchMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ batchId, payload }: { batchId: string; payload: PlatformEarningReasonPayload }) =>
-      voidPlatformEarningBatch(batchId, payload),
+    mutationFn: ({
+      batchId,
+      payload,
+    }: {
+      batchId: string;
+      payload: PlatformEarningReasonPayload;
+    }) => voidPlatformEarningBatch(batchId, payload),
     onSuccess: async () => {
       await invalidateRevenueLedgerQueries(queryClient);
     },

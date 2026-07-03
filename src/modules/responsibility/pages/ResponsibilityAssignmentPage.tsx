@@ -336,10 +336,7 @@ export const ResponsibilityAssignmentPage = (): JSX.Element => {
         id: 'actions',
         header: t('common:labels.actions'),
         cell: ({ row }) => {
-          const canRevoke = canManageSubjectType(
-            capabilitiesQuery.data,
-            row.original.subjectType,
-          );
+          const canRevoke = canManageSubjectType(capabilitiesQuery.data, row.original.subjectType);
 
           return canRevoke ? (
             <button
@@ -359,11 +356,7 @@ export const ResponsibilityAssignmentPage = (): JSX.Element => {
     [capabilitiesQuery.data, onRevoke, revokeMutation.isPending, t],
   );
 
-  const shellState = listQuery.isPending
-    ? 'loading'
-    : listQuery.isError
-      ? 'error'
-      : 'ready';
+  const shellState = listQuery.isPending ? 'loading' : listQuery.isError ? 'error' : 'ready';
 
   return (
     <ModuleListScreenShell
@@ -500,7 +493,9 @@ export const ResponsibilityAssignmentPage = (): JSX.Element => {
             </span>
             <input
               value={form.reason}
-              onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, reason: event.target.value }))
+              }
               placeholder={t('responsibility:form.reasonPlaceholder')}
               className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
             />

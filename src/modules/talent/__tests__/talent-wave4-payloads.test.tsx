@@ -129,7 +129,10 @@ describe('talent wave 4 mutation payloads', () => {
 
     renderWithProviders(<TalentCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
 
-    await user.selectOptions(screen.getByLabelText(i18n.t('talent:fields.talentOrigin')), 'EXTERNAL');
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('talent:fields.talentOrigin')),
+      'EXTERNAL',
+    );
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('talent:mutations.create.submit'),

@@ -210,13 +210,13 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                   }}
                 >
                   <option value="">{t('work-schedule:requestBatches.filters.allStatuses')}</option>
-                  {(['PENDING', 'PARTIALLY_APPROVED', 'APPROVED', 'REJECTED', 'CANCELLED'] as const).map(
-                    (item) => (
-                      <option key={item} value={item}>
-                        {t(`work-schedule:requestBatches.statuses.${item}`)}
-                      </option>
-                    ),
-                  )}
+                  {(
+                    ['PENDING', 'PARTIALLY_APPROVED', 'APPROVED', 'REJECTED', 'CANCELLED'] as const
+                  ).map((item) => (
+                    <option key={item} value={item}>
+                      {t(`work-schedule:requestBatches.statuses.${item}`)}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="text-sm font-medium text-text">
@@ -309,7 +309,9 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
               <>
                 <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-text">{detailQuery.data.batchCode}</h2>
+                    <h2 className="text-lg font-semibold text-text">
+                      {detailQuery.data.batchCode}
+                    </h2>
                     <p className="text-sm text-muted">
                       {getReferenceLabel(
                         detailQuery.data.submittedByEmploymentProfileRef,
@@ -331,7 +333,9 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                   />
                   <SummaryCard
                     label={t('work-schedule:requestBatches.fields.scopeSummary')}
-                    value={t(`work-schedule:requestBatches.scopeSummaries.${detailQuery.data.scopeSummary}`)}
+                    value={t(
+                      `work-schedule:requestBatches.scopeSummaries.${detailQuery.data.scopeSummary}`,
+                    )}
                   />
                   <SummaryCard
                     label={t('work-schedule:requestBatches.fields.pending')}
@@ -384,7 +388,9 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                       <button
                         type="button"
                         className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
-                        disabled={selectedPendingLineIds.length === 0 || decisionReason.trim().length < 10}
+                        disabled={
+                          selectedPendingLineIds.length === 0 || decisionReason.trim().length < 10
+                        }
                         onClick={() => void runDecision('reject')}
                       >
                         {t('work-schedule:requestBatches.actions.rejectSelected')}
@@ -392,7 +398,9 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                       <button
                         type="button"
                         className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
-                        disabled={selectedPendingLineIds.length === 0 || decisionReason.trim().length < 10}
+                        disabled={
+                          selectedPendingLineIds.length === 0 || decisionReason.trim().length < 10
+                        }
                         onClick={() => void runDecision('cancel')}
                       >
                         {t('work-schedule:requestBatches.actions.cancelSelected')}
@@ -409,11 +417,21 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                     <thead className="border-b border-border text-xs uppercase text-muted">
                       <tr>
                         {canDecide ? <th className="px-3 py-2 font-medium"> </th> : null}
-                        <th className="px-3 py-2 font-medium">{t('work-schedule:requestBatches.table.line')}</th>
-                        <th className="px-3 py-2 font-medium">{t('work-schedule:requestBatches.table.member')}</th>
-                        <th className="px-3 py-2 font-medium">{t('work-schedule:requestBatches.table.request')}</th>
-                        <th className="px-3 py-2 font-medium">{t('work-schedule:requestBatches.table.status')}</th>
-                        <th className="px-3 py-2 font-medium">{t('work-schedule:requestBatches.table.notes')}</th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('work-schedule:requestBatches.table.line')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('work-schedule:requestBatches.table.member')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('work-schedule:requestBatches.table.request')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('work-schedule:requestBatches.table.status')}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t('work-schedule:requestBatches.table.notes')}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -442,7 +460,10 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                             ) : null}
                             <td className="px-3 py-3">{line.lineNo}</td>
                             <td className="px-3 py-3">
-                              {getReferenceLabel(line.memberEmploymentProfileRef, line.memberEmploymentProfileId)}
+                              {getReferenceLabel(
+                                line.memberEmploymentProfileRef,
+                                line.memberEmploymentProfileId,
+                              )}
                             </td>
                             <td className="px-3 py-3">
                               <div>{t(`work-schedule:requests.types.${line.requestType}`)}</div>
@@ -455,17 +476,27 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                             </td>
                             <td className="px-3 py-3">
                               <StatusBadge
-                                label={t(`work-schedule:requestBatches.lineStatuses.${line.status}`)}
+                                label={t(
+                                  `work-schedule:requestBatches.lineStatuses.${line.status}`,
+                                )}
                                 status={line.status}
                                 toneByStatus={batchStatusTone}
                               />
                             </td>
                             <td className="px-3 py-3">
                               <div className="max-w-sm text-text">{line.reason}</div>
-                              {line.approvalNote ? <div className="text-xs text-muted">{line.approvalNote}</div> : null}
-                              {line.rejectionReason ? <div className="text-xs text-muted">{line.rejectionReason}</div> : null}
-                              {line.cancellationReason ? <div className="text-xs text-muted">{line.cancellationReason}</div> : null}
-                              {line.failureReason ? <div className="text-xs text-danger">{line.failureReason}</div> : null}
+                              {line.approvalNote ? (
+                                <div className="text-xs text-muted">{line.approvalNote}</div>
+                              ) : null}
+                              {line.rejectionReason ? (
+                                <div className="text-xs text-muted">{line.rejectionReason}</div>
+                              ) : null}
+                              {line.cancellationReason ? (
+                                <div className="text-xs text-muted">{line.cancellationReason}</div>
+                              ) : null}
+                              {line.failureReason ? (
+                                <div className="text-xs text-danger">{line.failureReason}</div>
+                              ) : null}
                             </td>
                           </tr>
                         );

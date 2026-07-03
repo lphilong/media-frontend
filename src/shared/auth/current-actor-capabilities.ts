@@ -299,9 +299,7 @@ export const hasWorkspace = (
   Boolean(
     capabilities?.workspaceAvailability?.availableWorkspaces.some(
       (entry) =>
-        entry.context === workspace &&
-        entry.available &&
-        entry.source === 'ACCOUNT_CONTEXT',
+        entry.context === workspace && entry.available && entry.source === 'ACCOUNT_CONTEXT',
     ),
   );
 

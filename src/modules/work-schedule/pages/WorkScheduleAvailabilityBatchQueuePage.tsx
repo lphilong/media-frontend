@@ -446,9 +446,7 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                     />
                     <SummaryCard
                       label={t('work-schedule:availabilityBatches.summary.policy')}
-                      value={t(
-                        'work-schedule:availabilityBatches.policyStatuses.NOT_EVALUATED',
-                      )}
+                      value={t('work-schedule:availabilityBatches.policyStatuses.NOT_EVALUATED')}
                     />
                   </div>
 
@@ -734,7 +732,9 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                         {applyResult.results.map((result) => (
                           <li key={`${result.availabilityLineId}-${result.outcome}`}>
                             {result.availabilityLineId}:{' '}
-                            {t(`work-schedule:availabilityBatches.apply.outcomes.${result.outcome}`)}
+                            {t(
+                              `work-schedule:availabilityBatches.apply.outcomes.${result.outcome}`,
+                            )}
                             {result.rosterExceptionIds.length > 0
                               ? ` (${result.rosterExceptionIds.join(', ')})`
                               : ''}

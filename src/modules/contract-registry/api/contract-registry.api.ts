@@ -349,9 +349,7 @@ const obligationDetailResponseSchema = z.object({ data: obligationSchema }).stri
 const eventEvidenceLinkListResponseSchema = z
   .object({ data: z.array(eventEvidenceLinkSchema), meta: cursorMetaSchema })
   .strict();
-const eventEvidenceLinkDetailResponseSchema = z
-  .object({ data: eventEvidenceLinkSchema })
-  .strict();
+const eventEvidenceLinkDetailResponseSchema = z.object({ data: eventEvidenceLinkSchema }).strict();
 const obligationPayloadSchema = z
   .object({
     obligationType: obligationTypeSchema,
@@ -395,11 +393,7 @@ const obligationDeliverPayloadSchema = z
 const eventEvidenceLinkPayloadSchema = z
   .object({
     eventId: z.string().trim().min(1),
-    linkReason: z
-      .string()
-      .trim()
-      .min(1)
-      .max(CONTRACT_OBLIGATION_EVENT_EVIDENCE_REASON_MAX_LENGTH),
+    linkReason: z.string().trim().min(1).max(CONTRACT_OBLIGATION_EVENT_EVIDENCE_REASON_MAX_LENGTH),
   })
   .strict();
 const eventEvidenceRemovePayloadSchema = z

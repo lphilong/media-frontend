@@ -664,13 +664,14 @@ const filterPlatformEarningBatches = (
   if (status) rows = rows.filter((item) => item.status === status);
   if (periodMonth) rows = rows.filter((item) => item.periodMonth === periodMonth);
   if (platform) rows = rows.filter((item) => item.platform === platform);
-  if (platformAccountId)
-    rows = rows.filter((item) => item.platformAccountId === platformAccountId);
+  if (platformAccountId) rows = rows.filter((item) => item.platformAccountId === platformAccountId);
   if (talentGroupId) rows = rows.filter((item) => item.talentGroupId === talentGroupId);
   if (sourceType) rows = rows.filter((item) => item.sourceType === sourceType);
   if (createdBeforeAt !== undefined) rows = rows.filter((item) => item.createdAt < createdBeforeAt);
 
-  return rows.sort((left, right) => right.createdAt - left.createdAt || left.id.localeCompare(right.id));
+  return rows.sort(
+    (left, right) => right.createdAt - left.createdAt || left.id.localeCompare(right.id),
+  );
 };
 
 const updatePlatformBatchLineStatuses = (batch: PlatformEarningBatch): void => {
@@ -836,7 +837,10 @@ export const wave8Handlers = [
     const unsupported = rejectUnsupportedQuery(url.searchParams, platformEarningBatchKeys);
     if (unsupported) return unsupported;
     return HttpResponse.json(
-      paginate(filterPlatformEarningBatches(platformEarningBatches, url.searchParams), url.searchParams),
+      paginate(
+        filterPlatformEarningBatches(platformEarningBatches, url.searchParams),
+        url.searchParams,
+      ),
     );
   }),
   http.get(
@@ -849,9 +853,7 @@ export const wave8Handlers = [
       if (!batch) {
         return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
       }
-      return HttpResponse.json(
-        paginate(platformEarningLines[batch.id] ?? [], url.searchParams),
-      );
+      return HttpResponse.json(paginate(platformEarningLines[batch.id] ?? [], url.searchParams));
     },
   ),
   http.post(
@@ -1042,10 +1044,16 @@ export const wave8Handlers = [
         return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
       }
       if (batch.status !== 'APPROVED') {
-        return HttpResponse.json({ message: 'Only approved batches can create revenue entry' }, { status: 409 });
+        return HttpResponse.json(
+          { message: 'Only approved batches can create revenue entry' },
+          { status: 409 },
+        );
       }
       if (batch.revenueEntryId) {
-        return HttpResponse.json({ message: 'Revenue entry already exists for batch' }, { status: 409 });
+        return HttpResponse.json(
+          { message: 'Revenue entry already exists for batch' },
+          { status: 409 },
+        );
       }
       const memberTalentIds = [
         ...new Set(
@@ -1074,7 +1082,11 @@ export const wave8Handlers = [
         id,
         revenueEntryCode: providedOrGeneratedFixtureCode(
           body.revenueEntryCode,
-          generatedFixtureMonthCode('REV', body.recognizedAt ?? batch.approvedAt, platformEarningRevenueSeed),
+          generatedFixtureMonthCode(
+            'REV',
+            body.recognizedAt ?? batch.approvedAt,
+            platformEarningRevenueSeed,
+          ),
         ),
         title: String(body.title ?? batch.batchCode),
         subjectTalentId: requestedSubjectTalentId || memberTalentIds[0],

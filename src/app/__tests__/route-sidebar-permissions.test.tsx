@@ -15,8 +15,8 @@ type MockCapabilities = Parameters<typeof setMockCurrentActorCapabilities>[0];
 
 const makeCapabilities = (
   overrides: Partial<
-    Pick<MockCapabilities, 'permissions' | 'roles' | 'scopeGrants' | 'type' | 'accountContexts'>
-    & Pick<MockCapabilities, 'workspaceAvailability'>
+    Pick<MockCapabilities, 'permissions' | 'roles' | 'scopeGrants' | 'type' | 'accountContexts'> &
+      Pick<MockCapabilities, 'workspaceAvailability'>
   >,
 ): MockCapabilities => ({
   id: 'route-sidebar-permissions-user',
@@ -361,7 +361,9 @@ describe('route and sidebar permission model', () => {
     );
 
     expect(await screen.findByTestId('nav-link-work-shifts')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Official Work Shifts' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Official Work Shifts' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Global Ops Schedule')).not.toBeInTheDocument();
     expect(screen.queryByText(i18n.t('errors:permission.title'))).not.toBeInTheDocument();
   });
@@ -381,11 +383,13 @@ describe('route and sidebar permission model', () => {
     const employmentTerms = await screen.findByTestId('nav-link-employment-terms');
     const peopleReadiness = await screen.findByTestId('nav-link-people-readiness');
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Employment Terms / Salary' }))
-      .toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Employment Terms / Salary' }),
+    ).toBeInTheDocument();
     expect(employmentTerms).toHaveClass('text-accent');
-    expect(orgUnits.compareDocumentPosition(employmentProfiles) & Node.DOCUMENT_POSITION_FOLLOWING)
-      .toBeTruthy();
+    expect(
+      orgUnits.compareDocumentPosition(employmentProfiles) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       employmentProfiles.compareDocumentPosition(employmentTerms) &
         Node.DOCUMENT_POSITION_FOLLOWING,
@@ -446,10 +450,12 @@ describe('route and sidebar permission model', () => {
     const revenueLedger = await screen.findByTestId('nav-link-revenue-ledger');
 
     expect(screen.queryByTestId('nav-link-talent-kpi')).not.toBeInTheDocument();
-    expect(studioResources.compareDocumentPosition(workShifts) & Node.DOCUMENT_POSITION_FOLLOWING)
-      .toBeTruthy();
-    expect(kpi.compareDocumentPosition(revenueLedger) & Node.DOCUMENT_POSITION_FOLLOWING)
-      .toBeTruthy();
+    expect(
+      studioResources.compareDocumentPosition(workShifts) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      kpi.compareDocumentPosition(revenueLedger) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('fails closed for HR department-only authority on raw Admin WorkSchedule routes', async () => {

@@ -146,13 +146,13 @@ describe('app route matrix smoke', () => {
                                   ? i18n.t('work-schedule:monthlyRosters.actionRail.title')
                                   : path.startsWith('/events')
                                     ? i18n.t('event-assignment:actionRail.title')
-                                  : path.startsWith('/revenue-entries')
-                                        ? i18n.t('revenue-ledger:actionRail.title')
-                                        : path.startsWith('/commission/rules')
-                                          ? i18n.t('commission:rules.actionRail.title')
-                                          : path.startsWith('/commission/settlements')
-                                            ? i18n.t('commission:settlements.actionRail.title')
-                                            : i18n.t('contract-registry:actionRail.title'),
+                                    : path.startsWith('/revenue-entries')
+                                      ? i18n.t('revenue-ledger:actionRail.title')
+                                      : path.startsWith('/commission/rules')
+                                        ? i18n.t('commission:rules.actionRail.title')
+                                        : path.startsWith('/commission/settlements')
+                                          ? i18n.t('commission:settlements.actionRail.title')
+                                          : i18n.t('contract-registry:actionRail.title'),
           {},
           { timeout: 3000 },
         );

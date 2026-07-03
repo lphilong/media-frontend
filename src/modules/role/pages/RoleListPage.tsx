@@ -579,12 +579,8 @@ const RoleTemplateCatalogPanel = ({
         {groupCatalogItems(templates).map(({ group, items }) => (
           <div key={group} className="space-y-2">
             <div>
-              <p className="text-sm font-semibold text-text">
-                {t(`role:catalogGroups.${group}`)}
-              </p>
-              <p className="text-xs text-muted">
-                {t(`role:catalogGroupHelp.${group}`)}
-              </p>
+              <p className="text-sm font-semibold text-text">{t(`role:catalogGroups.${group}`)}</p>
+              <p className="text-xs text-muted">{t(`role:catalogGroupHelp.${group}`)}</p>
             </div>
             <AdminTableShell
               data={items}
@@ -1002,9 +998,7 @@ const catalogGroupOrder: CatalogOperatorFlowGroup[] = [
   'SYSTEM_CONTROLLED',
 ];
 
-const groupCatalogItems = <
-  TItem extends { operatorFlowGroup?: CatalogOperatorFlowGroup },
->(
+const groupCatalogItems = <TItem extends { operatorFlowGroup?: CatalogOperatorFlowGroup }>(
   items: TItem[],
 ): Array<{ group: CatalogOperatorFlowGroup; items: TItem[] }> => {
   const grouped = items.reduce<Partial<Record<CatalogOperatorFlowGroup, TItem[]>>>(
@@ -1027,7 +1021,12 @@ const groupCatalogItems = <
 const formatRoleCategoryLabel = (category: string): string =>
   roleCategoryLabels[category] ?? category;
 
-const legacyRoleCodes = new Set(['ADMIN_FULL', 'TEAM_MANAGER', 'COMMERCIAL_FINANCE', 'TALENT_STAFF_SELF']);
+const legacyRoleCodes = new Set([
+  'ADMIN_FULL',
+  'TEAM_MANAGER',
+  'COMMERCIAL_FINANCE',
+  'TALENT_STAFF_SELF',
+]);
 
 const formatRoleCodeLabel = (roleCode: string): string =>
   legacyRoleCodes.has(roleCode) ? '-' : (roleCodeLabels[roleCode] ?? roleCode);

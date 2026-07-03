@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-import {
-  userAccountStatusValues,
-} from '@modules/user/constants/user.constants';
+import { userAccountStatusValues } from '@modules/user/constants/user.constants';
 import type {
   CursorPagedResponse,
   UserAuthLinkagePayload,

@@ -32,10 +32,7 @@ import type {
   RolePermissionReplacementPayload,
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
-import {
-  roleFlatListQueryConfig,
-  serializeScreenQueryParams,
-} from '@shared/query';
+import { roleFlatListQueryConfig, serializeScreenQueryParams } from '@shared/query';
 
 const ROLE_QUERY_ROOT = ['role'] as const;
 const USER_QUERY_ROOT = ['user'] as const;

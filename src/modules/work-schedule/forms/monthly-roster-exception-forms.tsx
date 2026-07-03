@@ -204,8 +204,7 @@ const EmploymentProfilePickerField = ({
       ? (roster.targetOrgUnitId ?? roster.departmentOrgUnitId ?? undefined)
       : undefined;
   const loadOptions = useCallback(
-    (search: string) =>
-      loadMonthlyRosterEmploymentProfileOptions(search, orgUnitFilter),
+    (search: string) => loadMonthlyRosterEmploymentProfileOptions(search, orgUnitFilter),
     [orgUnitFilter],
   );
 

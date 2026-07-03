@@ -9,8 +9,14 @@ import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import { server } from '@test/msw/server';
 import {
+  getMockCurrentActorCapabilities,
+  resetIdentityAccessMockData,
+  setMockCurrentActorCapabilities,
+} from '@test/msw/identity-access-handlers';
+import {
   createRole,
   createRoleFromTemplate,
+  applyAccessAssignment,
   previewAccessAssignment,
 } from '@modules/role/api/role.api';
 
@@ -70,6 +76,20 @@ const successfulAccessAssignmentPreview = {
   normalizedScope: [{ scopeType: 'self' }],
   proposedAssignments: [{ roleCode: 'STAFF_CONSOLE_USER' }],
   effectiveAccessDelta: { addedPermissions: ['workSchedule.read'] },
+};
+
+const materializationPreviewBase = {
+  ...successfulAccessAssignmentPreview,
+  accountContextRequirement: {
+    status: 'NOT_REQUIRED',
+    requiredAccountContexts: [],
+    currentAccountContexts: ['STAFF_CONSOLE'],
+    missingAccountContexts: [],
+    reusedAccountContexts: [],
+    proposedAccountContexts: [],
+    materializationInScope: true,
+  },
+  responsibilityRequirements: [],
 };
 
 const lifecycleAssignment = {
@@ -139,6 +159,41 @@ const completeSuccessfulPreviewAndApply = async (
   ).toBeInTheDocument();
   await waitFor(() => expect(applyButton).toBeEnabled());
   await user.click(applyButton);
+};
+
+const previewMaterializationCopy = async (
+  user: ReturnType<typeof userEvent.setup>,
+  previewData: Record<string, unknown>,
+): Promise<void> => {
+  server.use(
+    http.get('*/admin/employment-profiles', () =>
+      HttpResponse.json({ data: [activeLinkedEmploymentProfile], meta: {} }),
+    ),
+    http.post('*/admin/access-assignments/preview', () =>
+      HttpResponse.json({
+        data: {
+          ...materializationPreviewBase,
+          ...previewData,
+        },
+      }),
+    ),
+  );
+
+  await renderAssignmentTab(user);
+
+  const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+  await user.type(
+    within(userPicker).getByPlaceholderText(i18n.t('role:accessAssignment.userSearchPlaceholder')),
+    'Al',
+  );
+  await user.click(await within(userPicker).findByText(/Alice Linked/u));
+  await user.type(
+    screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
+    'M2 materialization copy coverage',
+  );
+  await user.click(
+    screen.getByRole('button', { name: i18n.t('role:accessAssignment.previewButton') }),
+  );
 };
 
 const activeLinkedEmploymentProfile = {
@@ -385,6 +440,182 @@ describe('role IA-1 surfaces', () => {
       0,
     );
   }, 25_000);
+
+  it('renders proposed Account Context and CREATE_PROPOSED responsibility preview copy truthfully', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    await previewMaterializationCopy(user, {
+      accountContextRequirement: {
+        status: 'PROPOSED_FOR_APPLICATION',
+        requiredAccountContexts: ['MANAGER_CONSOLE'],
+        currentAccountContexts: ['STAFF_CONSOLE'],
+        missingAccountContexts: ['MANAGER_CONSOLE'],
+        reusedAccountContexts: [],
+        proposedAccountContexts: ['MANAGER_CONSOLE'],
+        materializationInScope: true,
+      },
+      responsibilityRequirements: [
+        {
+          status: 'CREATE_PROPOSED',
+          requiredResponsibilityType: 'TALENT_GROUP_MANAGER',
+          targetId: 'group-create',
+        },
+      ],
+    });
+
+    expect(
+      await screen.findByText(i18n.t('role:accessAssignment.accountContextStates.proposed')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.responsibilityStates.createProposed')),
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/màn này không tạo phân công trách nhiệm/u);
+    expect(document.body).not.toHaveTextContent(/không tự cấp điều kiện Console/u);
+  }, 20_000);
+
+  it('renders reused Account Context and responsibility preview copy truthfully', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    await previewMaterializationCopy(user, {
+      accountContextRequirement: {
+        status: 'SATISFIED',
+        requiredAccountContexts: ['MANAGER_CONSOLE'],
+        currentAccountContexts: ['MANAGER_CONSOLE'],
+        missingAccountContexts: [],
+        reusedAccountContexts: ['MANAGER_CONSOLE'],
+        proposedAccountContexts: [],
+        materializationInScope: true,
+      },
+      responsibilityRequirements: [
+        {
+          status: 'SATISFIED',
+          responsibilityAssignmentId: 'responsibility-existing-group-a',
+          requiredResponsibilityType: 'TALENT_GROUP_MANAGER',
+          targetId: 'group-a',
+        },
+      ],
+    });
+
+    expect(
+      await screen.findByText(i18n.t('role:accessAssignment.accountContextStates.reused')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.responsibilityStates.reused')),
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/màn này không tạo phân công trách nhiệm/u);
+  }, 20_000);
+
+  it('renders blocked Account Context and responsibility preview copy truthfully', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    await previewMaterializationCopy(user, {
+      canApply: false,
+      blockers: [
+        {
+          severity: 'BLOCKER',
+          code: 'ACCOUNT_CONTEXT_MATERIALIZATION_NOT_AUTHORIZED',
+          summary: 'Target user is missing required AccountContext.',
+        },
+        {
+          severity: 'BLOCKER',
+          code: 'RESPONSIBILITY_MATERIALIZATION_NOT_AUTHORIZED',
+          summary: 'Matching active management responsibility is required.',
+        },
+      ],
+      accountContextRequirement: {
+        status: 'BLOCKED_UNAUTHORIZED',
+        requiredAccountContexts: ['MANAGER_CONSOLE'],
+        currentAccountContexts: ['STAFF_CONSOLE'],
+        missingAccountContexts: ['MANAGER_CONSOLE'],
+        reusedAccountContexts: [],
+        proposedAccountContexts: [],
+        materializationInScope: true,
+      },
+      responsibilityRequirements: [
+        {
+          status: 'MISSING_RESPONSIBILITY_UNAUTHORIZED',
+          requiredResponsibilityType: 'TALENT_GROUP_MANAGER',
+          targetId: 'group-blocked',
+        },
+      ],
+    });
+
+    expect(
+      await screen.findAllByText(i18n.t('role:accessAssignment.accountContextStates.blocked')),
+    ).not.toHaveLength(0);
+    expect(
+      await screen.findAllByText(i18n.t('role:accessAssignment.responsibilityStates.blocked')),
+    ).not.toHaveLength(0);
+    expect(
+      screen.queryByText(i18n.t('role:accessAssignment.previewCanApply')),
+    ).not.toBeInTheDocument();
+  }, 20_000);
+
+  it('renders not-required materialization states truthfully', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    await previewMaterializationCopy(user, {
+      accountContextRequirement: {
+        status: 'NOT_REQUIRED',
+        requiredAccountContexts: [],
+        currentAccountContexts: ['STAFF_CONSOLE'],
+        missingAccountContexts: [],
+        reusedAccountContexts: [],
+        proposedAccountContexts: [],
+        materializationInScope: true,
+      },
+      responsibilityRequirements: [],
+    });
+    expect(
+      await screen.findByText(i18n.t('role:accessAssignment.accountContextStates.notRequired')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.responsibilityStates.notRequired')),
+    ).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/màn này không tạo phân công trách nhiệm/u);
+  }, 20_000);
+
+  it('renders unknown materialization states without false success copy', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    await previewMaterializationCopy(user, {
+      accountContextRequirement: {
+        status: 'QUEUED_FOR_REVIEW',
+        requiredAccountContexts: ['MANAGER_CONSOLE'],
+        currentAccountContexts: ['STAFF_CONSOLE'],
+        missingAccountContexts: ['MANAGER_CONSOLE'],
+        reusedAccountContexts: [],
+        proposedAccountContexts: [],
+        materializationInScope: true,
+      },
+      responsibilityRequirements: [
+        {
+          status: 'QUEUED_FOR_REVIEW',
+          requiredResponsibilityType: 'TALENT_GROUP_MANAGER',
+          targetId: 'group-queued',
+        },
+      ],
+    });
+
+    expect(
+      await screen.findByText(i18n.t('role:accessAssignment.accountContextStates.unknown')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.responsibilityStates.unknown')),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('role:accessAssignment.accountContextStates.proposed')),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('role:accessAssignment.responsibilityStates.createProposed')),
+    ).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/màn này không tạo phân công trách nhiệm/u);
+  }, 30_000);
 
   it('lists target-user assignments and revokes through the canonical lifecycle endpoint only', async () => {
     await setLocale(DEFAULT_LOCALE);
@@ -1767,6 +1998,131 @@ describe('role IA-1 surfaces', () => {
 });
 
 describe('role MSW access assignment policy behavior', () => {
+  it('returns M2 Account Context proposed and reused states in preview fixtures', async () => {
+    const proposed = await previewAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'TALENT_GROUP_MANAGER',
+      structuredScopeGrants: [{ scopeType: 'managedTalentGroup', targetId: 'group-a' }],
+      reason: 'MSW account context proposed coverage',
+    });
+
+    expect(proposed.canApply).toBe(true);
+    expect(proposed.accountContextRequirement).toMatchObject({
+      status: 'PROPOSED_FOR_APPLICATION',
+      proposedAccountContexts: ['MANAGER_CONSOLE'],
+      materializationInScope: true,
+    });
+
+    const reused = await previewAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'STAFF_CONSOLE_USER',
+      structuredScopeGrants: [{ scopeType: 'self' }],
+      reason: 'MSW account context reused coverage',
+    });
+
+    expect(reused.accountContextRequirement).toMatchObject({
+      status: 'SATISFIED',
+      reusedAccountContexts: ['STAFF_CONSOLE'],
+    });
+  });
+
+  it('returns M2 responsibility reused, CREATE_PROPOSED, and blocked states in preview fixtures', async () => {
+    const reused = await previewAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'TALENT_GROUP_MANAGER',
+      structuredScopeGrants: [{ scopeType: 'managedTalentGroup', targetId: 'group-a' }],
+      reason: 'MSW responsibility reused coverage',
+    });
+
+    expect(reused.responsibilityRequirements?.[0]).toMatchObject({
+      status: 'SATISFIED',
+      operation: 'REUSE_EXISTING',
+    });
+
+    const createProposed = await previewAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'TALENT_GROUP_MANAGER',
+      structuredScopeGrants: [{ scopeType: 'managedTalentGroup', targetId: 'group-create' }],
+      reason: 'MSW responsibility create proposed coverage',
+    });
+
+    expect(createProposed.canApply).toBe(true);
+    expect(createProposed.responsibilityRequirements?.[0]).toMatchObject({
+      status: 'CREATE_PROPOSED',
+      operation: 'CREATE_REQUIRED',
+      proposedResponsibility: {
+        subjectId: 'group-create',
+        responsibilityType: 'TALENT_GROUP_MANAGER',
+      },
+    });
+
+    const originalCapabilities = getMockCurrentActorCapabilities();
+    setMockCurrentActorCapabilities({
+      ...originalCapabilities,
+      permissions: originalCapabilities.permissions.filter(
+        (permission) => permission !== 'role:assign_to_user' && permission !== 'talentGroup.update',
+      ),
+    });
+    try {
+      const blocked = await previewAccessAssignment({
+        targetUserId: 'user-alice',
+        assignmentTargetType: 'ROLE_TEMPLATE',
+        assignmentTargetCode: 'TALENT_GROUP_MANAGER',
+        structuredScopeGrants: [{ scopeType: 'managedTalentGroup', targetId: 'group-create' }],
+        reason: 'MSW blocked materialization coverage',
+      });
+
+      expect(blocked.canApply).toBe(false);
+      expect(blocked.accountContextRequirement).toMatchObject({
+        status: 'BLOCKED_UNAUTHORIZED',
+      });
+      expect(blocked.responsibilityRequirements?.[0]).toMatchObject({
+        status: 'MISSING_RESPONSIBILITY_UNAUTHORIZED',
+      });
+      expect(blocked.blockers.map((blocker) => blocker.code)).toEqual(
+        expect.arrayContaining([
+          'ACCOUNT_CONTEXT_MATERIALIZATION_NOT_AUTHORIZED',
+          'RESPONSIBILITY_MATERIALIZATION_NOT_AUTHORIZED',
+        ]),
+      );
+    } finally {
+      setMockCurrentActorCapabilities(originalCapabilities);
+    }
+  });
+
+  it('returns M2 materialization results from MSW apply fixtures', async () => {
+    resetIdentityAccessMockData();
+
+    const result = await applyAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'TALENT_GROUP_MANAGER',
+      structuredScopeGrants: [{ scopeType: 'managedTalentGroup', targetId: 'group-create' }],
+      reason: 'MSW apply materialization coverage',
+    });
+
+    expect(result.applied).toBe(true);
+    expect(result.accountContextResult).toMatchObject({
+      materialized: true,
+      materializationPolicy: 'APPLIED_FROM_ACCESS_ASSIGNMENT_PREVIEW',
+      appliedAccountContexts: ['MANAGER_CONSOLE'],
+    });
+    expect((result as Record<string, unknown>).responsibilityOperationResult).toMatchObject({
+      materialized: true,
+      items: [
+        expect.objectContaining({
+          operation: 'CREATE',
+          subjectId: 'group-create',
+          responsibilityType: 'TALENT_GROUP_MANAGER',
+        }),
+      ],
+    });
+  });
+
   it('returns REVIEW_AT_EXCEEDS_MAX_WINDOW for global access beyond the 90-day review window', async () => {
     const result = await previewAccessAssignment({
       targetUserId: 'user-alice',

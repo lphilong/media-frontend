@@ -148,9 +148,9 @@ const getRouteModule = (pathname: string): ManagerWorkspaceModuleId =>
       ? 'work'
       : pathname.startsWith(APP_PATHS.managerRevenueSource)
         ? 'revenue'
-      : pathname.startsWith(APP_PATHS.managerEvents)
-        ? 'events'
-        : 'overview';
+        : pathname.startsWith(APP_PATHS.managerEvents)
+          ? 'events'
+          : 'overview';
 
 const isManagerKpiDetailPath = (pathname: string): boolean =>
   pathname.startsWith(`${APP_PATHS.managerKpi}/plans/`);
@@ -232,8 +232,7 @@ const buildManagerWorkspaceModuleItems = (
     const isKpiDisabled = module.id === 'kpi' && !context.modules.kpi.visible;
     const isWorkDisabled = module.id === 'work' && !context.modules.workShifts.visible;
     const isEventsDisabled = module.id === 'events' && !context.modules.events.visible;
-    const isRevenueDisabled =
-      module.id === 'revenue' && !context.modules.revenueSource.visible;
+    const isRevenueDisabled = module.id === 'revenue' && !context.modules.revenueSource.visible;
     const isUnsupported = disabledManagerModuleIds.has(module.id);
     const disabledReason =
       isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled || isRevenueDisabled
@@ -2081,7 +2080,12 @@ const ManagerRevenueSourceSlice = ({
     const sourceDate = parseUtcMidnightDateInputValue(values.sourceDate);
     const [memberEmploymentProfileId, memberTalentId] = values.memberKey.split('|');
     const rawQuantity = Number(values.rawQuantity);
-    if (!sourceDate || !memberEmploymentProfileId || !memberTalentId || !Number.isInteger(rawQuantity)) {
+    if (
+      !sourceDate ||
+      !memberEmploymentProfileId ||
+      !memberTalentId ||
+      !Number.isInteger(rawQuantity)
+    ) {
       return;
     }
     try {
@@ -2160,7 +2164,10 @@ const ManagerRevenueSourceSlice = ({
         />
       ) : null}
 
-      <form className="rounded border border-border bg-panel p-4" onSubmit={(event) => void submitBatchForm(event)}>
+      <form
+        className="rounded border border-border bg-panel p-4"
+        onSubmit={(event) => void submitBatchForm(event)}
+      >
         <h2 className="text-base font-semibold text-text">
           {t('manager-workspace:revenue.createBatchTitle')}
         </h2>

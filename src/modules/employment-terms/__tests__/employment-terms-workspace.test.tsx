@@ -55,9 +55,7 @@ describe('Employment Terms admin workspace', () => {
       await screen.findByRole('heading', { level: 1, name: 'Điều khoản làm việc / lương' }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: 'Điều khoản làm việc / lương' })).toHaveLength(1);
-    expect(
-      await screen.findByText(/liệt kê điều khoản làm việc có cấu trúc/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/liệt kê điều khoản làm việc có cấu trúc/i)).toBeInTheDocument();
     expect(await screen.findByText('Alice')).toBeInTheDocument();
     expect(screen.getByText('EP-000001')).toBeInTheDocument();
     expect(screen.getByText('HRET-2026-000001')).toBeInTheDocument();

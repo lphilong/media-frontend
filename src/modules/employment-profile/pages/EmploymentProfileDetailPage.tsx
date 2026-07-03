@@ -1016,10 +1016,7 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
                 />
               </div>
             </RelatedSectionShell>
-            <ResponsibilitySummarySection
-              subjectType="EMPLOYMENT_PROFILE"
-              subjectId={record.id}
-            />
+            <ResponsibilitySummarySection subjectType="EMPLOYMENT_PROFILE" subjectId={record.id} />
             <RelatedSectionShell title={t('employment-profile:related.reportingTitle')}>
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2">

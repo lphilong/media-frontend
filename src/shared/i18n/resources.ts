@@ -58,9 +58,7 @@ const assertCompleteLocaleRegistry = (locale: AppLocale): void => {
   );
 
   if (missingNamespaces.length > 0) {
-    throw new Error(
-      `Missing locale resources for ${locale}: ${missingNamespaces.join(', ')}`,
-    );
+    throw new Error(`Missing locale resources for ${locale}: ${missingNamespaces.join(', ')}`);
   }
 };
 

@@ -146,9 +146,8 @@ const issueListResponseSchema = z
   })
   .strict();
 
-export const parsePeopleReadinessIssueListResponse = (
-  value: unknown,
-): PeopleReadinessIssueList => issueListResponseSchema.parse(value).data;
+export const parsePeopleReadinessIssueListResponse = (value: unknown): PeopleReadinessIssueList =>
+  issueListResponseSchema.parse(value).data;
 
 export type PeopleReadinessCategory = z.infer<typeof peopleReadinessCategorySchema>;
 export type PeopleReadinessSeverity = z.infer<typeof peopleReadinessSeveritySchema>;

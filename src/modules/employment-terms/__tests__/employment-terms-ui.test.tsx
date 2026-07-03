@@ -69,10 +69,10 @@ describe('employment terms admin UI', () => {
     renderDetail();
 
     const heading = await screen.findByRole(
-        'heading',
-        { name: i18n.t('employment-profile:employmentTerms.title') },
-        { timeout: 3000 },
-      );
+      'heading',
+      { name: i18n.t('employment-profile:employmentTerms.title') },
+      { timeout: 3000 },
+    );
     expect(heading.closest('section')).toHaveAttribute('id', 'employment-terms');
     expect(await screen.findByText(/20\.000\.000/)).toBeInTheDocument();
     expect(

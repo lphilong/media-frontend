@@ -393,7 +393,7 @@ export const WorkShiftGuidedWorkflow = ({
                 ))}
               </select>
               <span className="text-xs text-muted">
-                  {t('work-schedule:task.employmentScopeHelp')}
+                {t('work-schedule:task.employmentScopeHelp')}
               </span>
               {errors.scope ? (
                 <span className="text-xs font-medium text-danger">{errors.scope}</span>

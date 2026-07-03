@@ -19,10 +19,7 @@ import {
   revokeAccessAssignment,
   updateRole,
 } from '@modules/role/api/role.api';
-import {
-  RoleCreateSurface,
-  RoleEditSurface,
-} from '@modules/role/forms/role-mutation-forms';
+import { RoleCreateSurface, RoleEditSurface } from '@modules/role/forms/role-mutation-forms';
 import {
   roleAssignmentRuleReplacementPayloadSchema,
   roleCreatePayloadSchema,
@@ -315,7 +312,6 @@ describe('role IA-1 query and payload shaping', () => {
     expect(roleListParams.get('scope')).toBeNull();
     expect(roleListParams.get('scopeGrants')).toBeNull();
     expect(roleListParams.get('sortBy')).toBeNull();
-
   });
 
   it('does not emit scope, scopeGrants, sort, or unsupported assignment keys through the Role API layer', async () => {
@@ -705,6 +701,109 @@ describe('role IA-1 query and payload shaping', () => {
     expect(applyPayload).not.toHaveProperty('permissionRules');
     expect(applyPayload).not.toHaveProperty('assignmentRules');
     expect(applyPayload).not.toHaveProperty('employmentProfileId');
+  });
+
+  it('parses additive M2 materialization fields on preview and apply responses', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        previewOnly: true,
+        canApply: true,
+        blockers: [],
+        warnings: [],
+        normalizedScope: [{ scopeType: 'managedTalentGroup', targetId: 'group-create' }],
+        effectiveAccessDelta: {
+          addedPermissions: ['workSchedule.read'],
+          removedPermissions: [],
+          unchangedPermissions: [],
+        },
+        proposedAssignments: [{ roleCode: 'TALENT_GROUP_MANAGER' }],
+        accountContextRequirement: {
+          status: 'PROPOSED_FOR_APPLICATION',
+          requiredAccountContexts: ['MANAGER_CONSOLE'],
+          currentAccountContexts: ['STAFF_CONSOLE'],
+          proposedAccountContexts: ['MANAGER_CONSOLE'],
+          futureTrace: { accepted: true },
+        },
+        responsibilityRequirements: [
+          {
+            status: 'CREATE_PROPOSED',
+            requiredResponsibilityType: 'TALENT_GROUP_MANAGER',
+            proposedResponsibility: {
+              subjectType: 'TALENT_GROUP',
+              subjectId: 'group-create',
+              responsibilityType: 'TALENT_GROUP_MANAGER',
+            },
+            futureTrace: { accepted: true },
+          },
+        ],
+        futurePreviewField: { accepted: true },
+      },
+    });
+
+    const preview = await previewAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'TALENT_GROUP_MANAGER',
+      structuredScopeGrants: [{ scopeType: 'managedTalentGroup', targetId: 'group-create' }],
+      reason: 'M2 additive field coverage',
+    });
+
+    expect(preview.accountContextRequirement).toMatchObject({
+      status: 'PROPOSED_FOR_APPLICATION',
+      futureTrace: { accepted: true },
+    });
+    expect(preview.responsibilityRequirements?.[0]).toMatchObject({
+      status: 'CREATE_PROPOSED',
+      futureTrace: { accepted: true },
+    });
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        applied: true,
+        canApply: true,
+        applyStatus: 'APPLIED',
+        blockers: [],
+        warnings: [],
+        normalizedScope: [{ scopeType: 'managedTalentGroup', targetId: 'group-create' }],
+        appliedAssignments: [{ assignmentId: 'assignment-m2' }],
+        accountContextResult: {
+          materialized: true,
+          materializationPolicy: 'APPLIED_FROM_ACCESS_ASSIGNMENT_PREVIEW',
+          appliedAccountContexts: ['MANAGER_CONSOLE'],
+          futureTrace: { accepted: true },
+        },
+        responsibilityRequirements: [
+          {
+            status: 'CREATE_PROPOSED',
+            requiredResponsibilityType: 'TALENT_GROUP_MANAGER',
+          },
+        ],
+        responsibilityOperationResult: {
+          materialized: true,
+          items: [{ operation: 'CREATE', responsibilityAssignmentId: 'responsibility-created' }],
+          futureTrace: { accepted: true },
+        },
+        auditTrace: { assignmentIds: ['assignment-m2'] },
+        effectiveAccessAfterApply: { permissions: ['workSchedule.read'] },
+      },
+    });
+
+    const apply = await applyAccessAssignment({
+      targetUserId: 'user-alice',
+      assignmentTargetType: 'ROLE_TEMPLATE',
+      assignmentTargetCode: 'TALENT_GROUP_MANAGER',
+      structuredScopeGrants: [{ scopeType: 'managedTalentGroup', targetId: 'group-create' }],
+      reason: 'M2 additive field coverage',
+    });
+
+    expect(apply.accountContextResult).toMatchObject({
+      materialized: true,
+      futureTrace: { accepted: true },
+    });
+    expect(apply.responsibilityOperationResult).toMatchObject({
+      materialized: true,
+      futureTrace: { accepted: true },
+    });
   });
 
   it('accepts additive templateCode in Effective Access assignment traces', async () => {

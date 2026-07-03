@@ -89,10 +89,7 @@ const revenueSourceModuleSchema = z.union([
   z
     .object({
       visible: z.literal(false),
-      reason: z.enum([
-        'NO_MANAGED_SCOPE_ASSIGNED',
-        'MISSING_REVENUE_SOURCE_SUBMIT_CAPABILITY',
-      ]),
+      reason: z.enum(['NO_MANAGED_SCOPE_ASSIGNED', 'MISSING_REVENUE_SOURCE_SUBMIT_CAPABILITY']),
     })
     .strict(),
 ]);
@@ -500,7 +497,12 @@ export const createManagerPlatformEarningBatch = async (
 
 export const addManagerPlatformEarningLine = async (
   batchId: string,
-  payload: Required<Pick<ManagerPlatformEarningLinePayload, 'sourceDate' | 'memberTalentId' | 'memberEmploymentProfileId' | 'rawQuantity'>> &
+  payload: Required<
+    Pick<
+      ManagerPlatformEarningLinePayload,
+      'sourceDate' | 'memberTalentId' | 'memberEmploymentProfileId' | 'rawQuantity'
+    >
+  > &
     Pick<ManagerPlatformEarningLinePayload, 'externalSourceRef' | 'notes'>,
 ): Promise<ManagerPlatformEarningLine> => {
   const response = await apiRequest<unknown, typeof payload>({
@@ -582,10 +584,7 @@ export const useManagerPlatformEarningBatchDetail = (
     retry: false,
   });
 
-export const useManagerPlatformEarningLines = (
-  batchId: string | undefined,
-  enabled: boolean,
-) =>
+export const useManagerPlatformEarningLines = (batchId: string | undefined, enabled: boolean) =>
   useQuery({
     queryKey: [...MANAGER_REVENUE_QUERY_KEY, 'lines', batchId ?? 'none'],
     queryFn: () => fetchManagerPlatformEarningLines(batchId ?? ''),

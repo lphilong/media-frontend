@@ -4,10 +4,7 @@ import { useParams } from 'react-router-dom';
 
 import { createUserActionRailItems } from '@modules/user/actions/user-action-rail';
 import { UserBoundaryNotice } from '@modules/user/components/UserBoundaryNotice';
-import {
-  UserAuthLinkageSurface,
-  UserUpdateSurface,
-} from '@modules/user/forms/user-mutation-forms';
+import { UserAuthLinkageSurface, UserUpdateSurface } from '@modules/user/forms/user-mutation-forms';
 import {
   useUpdateUserMutation,
   useUserAuthLinkageUnlinkMutation,
@@ -381,7 +378,7 @@ export const UserDetailPage = (): JSX.Element => {
       }
       summarySection={
         record ? (
-      <MetadataSection title={t('user:detail.identityTitle')}>
+          <MetadataSection title={t('user:detail.identityTitle')}>
             <ReadOnlyFieldGrid
               fields={[
                 {

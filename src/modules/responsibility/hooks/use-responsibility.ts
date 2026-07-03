@@ -16,7 +16,9 @@ const RESPONSIBILITY_QUERY_ROOT = ['responsibility'] as const;
 
 const toQueryToken = (query: ResponsibilityListQuery): string => {
   const entries = Object.entries(query).filter(([, value]) => value !== undefined && value !== '');
-  return JSON.stringify(Object.fromEntries(entries.sort(([left], [right]) => left.localeCompare(right))));
+  return JSON.stringify(
+    Object.fromEntries(entries.sort(([left], [right]) => left.localeCompare(right))),
+  );
 };
 
 export const responsibilityQueryKeys = {
@@ -47,9 +49,7 @@ export const useResponsibilitySummary = (
   });
 };
 
-const invalidateResponsibilityQueries = async (
-  queryClient: ReturnType<typeof useQueryClient>,
-) => {
+const invalidateResponsibilityQueries = async (queryClient: ReturnType<typeof useQueryClient>) => {
   await queryClient.invalidateQueries({ queryKey: RESPONSIBILITY_QUERY_ROOT });
   await queryClient.invalidateQueries({ queryKey: ['talent-group'] });
   await queryClient.invalidateQueries({ queryKey: ['org-unit'] });

@@ -390,9 +390,7 @@ export const shellNavigationGroups: ShellNavigationGroup[] = [
   },
   {
     id: 'performance',
-    items: [
-      { id: 'kpi', moduleId: 'kpi', navItemKey: 'kpi', to: APP_PATHS.kpi },
-    ],
+    items: [{ id: 'kpi', moduleId: 'kpi', navItemKey: 'kpi', to: APP_PATHS.kpi }],
   },
   {
     id: 'commercial',

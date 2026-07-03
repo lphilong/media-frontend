@@ -12,10 +12,9 @@ import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 const useCurrentActorCapabilitiesMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@shared/auth/current-actor-capabilities', async () => {
-  const actual =
-    await vi.importActual<typeof import('@shared/auth/current-actor-capabilities')>(
-      '@shared/auth/current-actor-capabilities',
-    );
+  const actual = await vi.importActual<typeof import('@shared/auth/current-actor-capabilities')>(
+    '@shared/auth/current-actor-capabilities',
+  );
 
   return {
     ...actual,

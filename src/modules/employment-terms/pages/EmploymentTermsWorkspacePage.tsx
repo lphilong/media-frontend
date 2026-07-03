@@ -330,9 +330,7 @@ const ResultsTable = ({ items }: { items: EmploymentTermsAdminListItem[] }): JSX
                     tone={statusTone[item.status]}
                     uppercase={false}
                   />
-                  <p className="text-xs text-muted">
-                    {t(`payFrequencies.${item.payFrequency}`)}
-                  </p>
+                  <p className="text-xs text-muted">{t(`payFrequencies.${item.payFrequency}`)}</p>
                 </div>
               </td>
               <td className="px-4 py-3 align-top">
@@ -504,7 +502,10 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
             <select
               value={filters.payrollEligible}
               onChange={(event) =>
-                updateFilter('payrollEligible', event.target.value as FilterState['payrollEligible'])
+                updateFilter(
+                  'payrollEligible',
+                  event.target.value as FilterState['payrollEligible'],
+                )
               }
               className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
             >

@@ -320,8 +320,20 @@
     "proposedAssignments": "Bản ghi dự kiến",
     "addedPermissions": "Quyền tạo thêm",
     "normalizedScope": "Phạm vi chuẩn hóa",
-    "accountContextReadOnly": "Hệ thống sẽ áp dụng account context cần có sau khi quyền có hiệu lực; màn này không cho chọn hoặc cấp AccountContext.",
-    "responsibilityReadOnly": "Trách nhiệm quản lý là nguồn riêng; màn này không tạo phân công trách nhiệm.",
+    "accountContextStates": {
+      "reused": "Nhân sự đã có account context cần thiết. Hệ thống sẽ dùng context hiện có.",
+      "proposed": "Khi xác nhận, hệ thống sẽ áp dụng account context cần thiết cho nhân sự này.",
+      "blocked": "Cần quyền áp dụng account context trước khi có thể gán gói quyền này.",
+      "notRequired": "Gói quyền này không yêu cầu account context bổ sung.",
+      "unknown": "Bản xem trước chưa trả về trạng thái account context được hỗ trợ; hãy xem lại điều kiện trước khi xác nhận."
+    },
+    "responsibilityStates": {
+      "reused": "Hệ thống sẽ dùng trách nhiệm quản lý hiện có để áp dụng phạm vi quyền này.",
+      "createProposed": "Khi xác nhận, hệ thống sẽ tạo hoặc liên kết trách nhiệm quản lý cần thiết cho phạm vi này.",
+      "blocked": "Cần có trách nhiệm quản lý phù hợp hoặc quyền tạo/liên kết trách nhiệm trước khi áp dụng gói quyền này.",
+      "notRequired": "Gói quyền này không yêu cầu phân công trách nhiệm quản lý.",
+      "unknown": "Bản xem trước chưa trả về trạng thái trách nhiệm quản lý được hỗ trợ; hãy xem lại điều kiện trước khi xác nhận."
+    },
     "resultTitle": "Kết quả gán quyền",
     "resultApplied": "Hệ thống đã ghi nhận gán quyền và audit.",
     "resultBlocked": "Hệ thống không ghi nhận vì còn điều kiện chưa đạt.",

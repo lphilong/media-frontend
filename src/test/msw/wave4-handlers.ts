@@ -278,9 +278,8 @@ let talentGroups: TalentGroupRecord[] = initialTalentGroups.map((record) => ({ .
 let memberships: TalentGroupMembershipRecord[] = initialMemberships.map((record) => ({
   ...record,
 }));
-let responsibilityAssignments: TalentGroupResponsibilityAssignmentRecord[] = initialResponsibilityAssignments.map(
-  (record) => ({ ...record }),
-);
+let responsibilityAssignments: TalentGroupResponsibilityAssignmentRecord[] =
+  initialResponsibilityAssignments.map((record) => ({ ...record }));
 
 const normalizeText = (value: string): string => value.trim().toLowerCase();
 const toPrefixMatch = (value: string, search: string): boolean =>

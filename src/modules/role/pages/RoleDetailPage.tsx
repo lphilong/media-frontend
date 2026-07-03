@@ -15,10 +15,7 @@ import {
   useUpdateRoleMutation,
 } from '@modules/role/hooks/use-role';
 import { formatPermissionCapabilitySummary } from '@modules/role/utils/permission-labels';
-import type {
-  RoleLifecycleAction,
-  RoleTemplateCode,
-} from '@modules/role/types/role.types';
+import type { RoleLifecycleAction, RoleTemplateCode } from '@modules/role/types/role.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
   ActionRail,
@@ -44,11 +41,7 @@ import {
 import { ModuleDetailScreenShell } from '@shared/modules';
 import { useScrollToPanel } from '@shared/hooks/useScrollToPanel';
 
-type ActiveMutationSurface =
-  | 'edit'
-  | 'deactivate'
-  | 'archive'
-  | null;
+type ActiveMutationSurface = 'edit' | 'deactivate' | 'archive' | null;
 
 const statusToneMap = {
   DRAFT: 'neutral',

@@ -581,9 +581,7 @@ const readResponsibilityTypeForSubject = (
   }
 };
 
-const toResponsibilityAssignment = (
-  record: OrgUnitResponsibilityRecord,
-) => {
+const toResponsibilityAssignment = (record: OrgUnitResponsibilityRecord) => {
   const status = record.status === 'REMOVED' ? 'REVOKED' : record.status;
 
   return {
@@ -614,10 +612,7 @@ const toResponsibilityAssignment = (
   };
 };
 
-const readResponsibilityAssignments = (
-  subjectType?: string | null,
-  subjectId?: string | null,
-) => {
+const readResponsibilityAssignments = (subjectType?: string | null, subjectId?: string | null) => {
   if (
     (!subjectType || subjectType === 'TALENT_GROUP') &&
     (!subjectId || subjectId === 'group-001')

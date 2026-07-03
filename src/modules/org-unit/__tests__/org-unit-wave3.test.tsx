@@ -270,8 +270,7 @@ describe('org unit wave 3 surfaces', () => {
       within(section).getByText(textPattern(i18n.t('responsibility:roles.DEPARTMENT_OWNER'))),
     ).toBeInTheDocument();
     expect(
-      within(section).getAllByText(textPattern(i18n.t('responsibility:roles.UNIT_MANAGER')))
-        .length,
+      within(section).getAllByText(textPattern(i18n.t('responsibility:roles.UNIT_MANAGER'))).length,
     ).toBeGreaterThan(0);
     expect(within(section).queryByText('DEPARTMENT_OWNER')).not.toBeInTheDocument();
     expect(within(section).queryByText('managerEmploymentProfileId')).not.toBeInTheDocument();
@@ -296,10 +295,12 @@ describe('org unit wave 3 surfaces', () => {
     expect(
       within(section).getByRole('link', { name: i18n.t('responsibility:summary.openCentral') }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: i18n.t('org-unit:responsibilities.assignTitle') }))
-      .not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: i18n.t('org-unit:responsibilities.editTitle') }))
-      .not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: i18n.t('org-unit:responsibilities.assignTitle') }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: i18n.t('org-unit:responsibilities.editTitle') }),
+    ).not.toBeInTheDocument();
     expect(loadContextualEmploymentProfileReferenceOptions).not.toHaveBeenCalled();
   });
 
@@ -435,8 +436,11 @@ describe('org unit wave 3 surfaces', () => {
     const heading = await screen.findByText(i18n.t('org-unit:responsibilities.title'));
     const section = heading.closest('section') ?? document.body;
     expect(
-      (await within(section).findAllByText(textPattern(i18n.t('responsibility:roles.UNIT_MANAGER'))))
-        .length,
+      (
+        await within(section).findAllByText(
+          textPattern(i18n.t('responsibility:roles.UNIT_MANAGER')),
+        )
+      ).length,
     ).toBeGreaterThan(0);
     expect(
       within(section).queryByRole('button', { name: i18n.t('org-unit:responsibilities.assign') }),

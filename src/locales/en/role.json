@@ -269,7 +269,21 @@
   "accessAssignment": {
     "futureTargetsHidden": "Future-ready and system-controlled packages stay outside the normal assignment selector.",
     "restrictedTargetsTitle": "Restricted sensitive packages",
-    "restrictedTargetsHelp": "These packages require controlled review in a later workflow and are not selectable in the normal M1 assignment path."
+    "restrictedTargetsHelp": "These packages require controlled review in a later workflow and are not selectable in the normal M1 assignment path.",
+    "accountContextStates": {
+      "reused": "The person already has the required account context. The system will reuse the existing context.",
+      "proposed": "On confirmation, the system will apply the required account context for this person.",
+      "blocked": "Permission to apply the account context is required before this access package can be assigned.",
+      "notRequired": "This access package does not require an additional account context.",
+      "unknown": "The preview did not return a supported account context state; review the conditions before confirming."
+    },
+    "responsibilityStates": {
+      "reused": "The system will reuse the existing management responsibility for this access scope.",
+      "createProposed": "On confirmation, the system will create or link the required management responsibility for this scope.",
+      "blocked": "A matching management responsibility or permission to create/link it is required before this access package can be applied.",
+      "notRequired": "This access package does not require a management responsibility assignment.",
+      "unknown": "The preview did not return a supported management responsibility state; review the conditions before confirming."
+    }
   },
   "assignmentTab": {
     "unavailableTitle": "User-first assignment flow is not available",

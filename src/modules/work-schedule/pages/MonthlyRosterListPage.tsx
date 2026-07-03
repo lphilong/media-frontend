@@ -472,9 +472,7 @@ export const MonthlyRosterListPage = (): JSX.Element => {
                   placeholder={t('work-schedule:monthlyRosters.pickers.orgUnitSearch')}
                   clearLabel={t('common:actions.clear')}
                   className="min-w-[240px]"
-                  onSelectedOptionChange={(option) =>
-                    rememberFilterOption('targetOrgUnit', option)
-                  }
+                  onSelectedOptionChange={(option) => rememberFilterOption('targetOrgUnit', option)}
                 />
               ) : null}
               {listQuery.targetType === 'TALENT_GROUP' ? (

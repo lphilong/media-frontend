@@ -231,7 +231,8 @@ const parseCursor = (value: string | null): number => {
   return value === 'opaque-cursor-2' ? 2 : 0;
 };
 
-const encodeCursor = (offset: number): string | null => (offset < issues.length ? `opaque-cursor-${offset}` : null);
+const encodeCursor = (offset: number): string | null =>
+  offset < issues.length ? `opaque-cursor-${offset}` : null;
 
 const filterIssues = (url: URL): PeopleReadinessIssue[] => {
   const category = url.searchParams.get('category');

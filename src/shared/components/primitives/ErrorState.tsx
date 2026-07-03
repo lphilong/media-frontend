@@ -69,7 +69,9 @@ export const ErrorState = ({
       ) : null}
       {formattedTechnicalDetails ? (
         <details className="mt-4 text-left text-xs text-muted">
-          <summary className="cursor-pointer font-medium text-text">{technicalDetailsLabel}</summary>
+          <summary className="cursor-pointer font-medium text-text">
+            {technicalDetailsLabel}
+          </summary>
           <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap rounded border border-border bg-bg p-3">
             {formattedTechnicalDetails}
           </pre>

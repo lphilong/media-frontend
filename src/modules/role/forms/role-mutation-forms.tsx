@@ -24,12 +24,7 @@ import type {
   RoleTemplatePreview,
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
-import {
-  FormGrid,
-  GeneratedCodeNotice,
-  SelectField,
-  TextInputField,
-} from '@shared/forms';
+import { FormGrid, GeneratedCodeNotice, SelectField, TextInputField } from '@shared/forms';
 import { ModuleMutationSurface } from '@shared/modules';
 
 type BaseMutationSurfaceProps = {

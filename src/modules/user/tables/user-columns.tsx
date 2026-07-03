@@ -110,27 +110,27 @@ export const createUserListColumns = (
           {actions
             .filter((action) => handlers.canShowAction?.(action) ?? true)
             .map((action) => (
-            <div key={action} className="space-y-1">
-              <button
-                type="button"
-                className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={
-                  Boolean(handlers.getActionDisabledReason?.(action)) ||
-                  handlers.isActionPending?.(record.id, action)
-                }
-                title={handlers.getActionDisabledReason?.(action)}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handlers.onLifecycleAction(record.id, action);
-                }}
-              >
-                {t(`user:actions.${action}`)}
-              </button>
-              {handlers.getActionDisabledReason?.(action) ? (
-                <p className="text-xs text-muted">{handlers.getActionDisabledReason?.(action)}</p>
-              ) : null}
-            </div>
-          ))}
+              <div key={action} className="space-y-1">
+                <button
+                  type="button"
+                  className="rounded border border-border px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={
+                    Boolean(handlers.getActionDisabledReason?.(action)) ||
+                    handlers.isActionPending?.(record.id, action)
+                  }
+                  title={handlers.getActionDisabledReason?.(action)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handlers.onLifecycleAction(record.id, action);
+                  }}
+                >
+                  {t(`user:actions.${action}`)}
+                </button>
+                {handlers.getActionDisabledReason?.(action) ? (
+                  <p className="text-xs text-muted">{handlers.getActionDisabledReason?.(action)}</p>
+                ) : null}
+              </div>
+            ))}
         </div>
       );
     },

@@ -64,11 +64,7 @@ import {
 } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
-type ActiveMutationSurface =
-  | 'edit'
-  | 'link-employment-profile'
-  | 'commercial-participation'
-  | null;
+type ActiveMutationSurface = 'edit' | 'link-employment-profile' | 'commercial-participation' | null;
 
 const operationalStatusToneMap = {
   ACTIVE: 'success',
@@ -528,117 +524,114 @@ export const TalentDetailPage = (): JSX.Element => {
       relatedSection={
         record ? (
           <div className="space-y-4">
-            <ResponsibilitySummarySection
-              subjectType="TALENT"
-              subjectId={record.id}
-            />
+            <ResponsibilitySummarySection subjectType="TALENT" subjectId={record.id} />
             <RelatedSectionShell title={t('talent:related.navigationTitle')}>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div className="rounded border border-border bg-bg px-3 py-2">
-                <p className="text-xs font-medium uppercase text-muted">
-                  {t('talent:related.talentGroups')}
-                </p>
-                {relatedTalentGroupsHref ? (
-                  <Link
-                    to={relatedTalentGroupsHref}
-                    className="mt-1 inline-flex text-sm text-accent hover:underline"
-                  >
-                    {t('talent:related.openFilteredList')}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
-                )}
-              </div>
-              <div className="rounded border border-border bg-bg px-3 py-2">
-                <p className="text-xs font-medium uppercase text-muted">
-                  {t('talent:related.platformAccounts')}
-                </p>
-                {relatedPlatformAccountsHref ? (
-                  <Link
-                    to={relatedPlatformAccountsHref}
-                    className="mt-1 inline-flex text-sm text-accent hover:underline"
-                  >
-                    {t('talent:related.openFilteredList')}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
-                )}
-              </div>
-              <div className="rounded border border-border bg-bg px-3 py-2">
-                <p className="text-xs font-medium uppercase text-muted">
-                  {t('talent:related.workShifts')}
-                </p>
-                {relatedWorkShiftsHref ? (
-                  <Link
-                    to={relatedWorkShiftsHref}
-                    className="mt-1 inline-flex text-sm text-accent hover:underline"
-                  >
-                    {t('talent:related.openFilteredList')}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
-                )}
-              </div>
-              <div className="rounded border border-border bg-bg px-3 py-2">
-                <p className="text-xs font-medium uppercase text-muted">
-                  {t('talent:related.events')}
-                </p>
-                {relatedEventsHref ? (
-                  <Link
-                    to={relatedEventsHref}
-                    className="mt-1 inline-flex text-sm text-accent hover:underline"
-                  >
-                    {t('talent:related.openFilteredList')}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
-                )}
-              </div>
-              <div className="rounded border border-border bg-bg px-3 py-2">
-                <p className="text-xs font-medium uppercase text-muted">
-                  {t('talent:related.revenueLedger')}
-                </p>
-                {relatedRevenueHref ? (
-                  <Link
-                    to={relatedRevenueHref}
-                    className="mt-1 inline-flex text-sm text-accent hover:underline"
-                  >
-                    {t('talent:related.openFilteredList')}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
-                )}
-              </div>
-              <div className="rounded border border-border bg-bg px-3 py-2">
-                <p className="text-xs font-medium uppercase text-muted">
-                  {t('talent:related.commissionSettlements')}
-                </p>
-                {relatedSettlementsHref ? (
-                  <Link
-                    to={relatedSettlementsHref}
-                    className="mt-1 inline-flex text-sm text-accent hover:underline"
-                  >
-                    {t('talent:related.openFilteredList')}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
-                )}
-              </div>
-              <div className="rounded border border-border bg-bg px-3 py-2">
-                <p className="text-xs font-medium uppercase text-muted">
-                  {t('talent:related.contractRegistry')}
-                </p>
-                {relatedContractsHref ? (
-                  <Link
-                    to={relatedContractsHref}
-                    className="mt-1 inline-flex text-sm text-accent hover:underline"
-                  >
-                    {t('talent:related.openFilteredList')}
-                  </Link>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
-                )}
-              </div>
+                <div className="rounded border border-border bg-bg px-3 py-2">
+                  <p className="text-xs font-medium uppercase text-muted">
+                    {t('talent:related.talentGroups')}
+                  </p>
+                  {relatedTalentGroupsHref ? (
+                    <Link
+                      to={relatedTalentGroupsHref}
+                      className="mt-1 inline-flex text-sm text-accent hover:underline"
+                    >
+                      {t('talent:related.openFilteredList')}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
+                  )}
+                </div>
+                <div className="rounded border border-border bg-bg px-3 py-2">
+                  <p className="text-xs font-medium uppercase text-muted">
+                    {t('talent:related.platformAccounts')}
+                  </p>
+                  {relatedPlatformAccountsHref ? (
+                    <Link
+                      to={relatedPlatformAccountsHref}
+                      className="mt-1 inline-flex text-sm text-accent hover:underline"
+                    >
+                      {t('talent:related.openFilteredList')}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
+                  )}
+                </div>
+                <div className="rounded border border-border bg-bg px-3 py-2">
+                  <p className="text-xs font-medium uppercase text-muted">
+                    {t('talent:related.workShifts')}
+                  </p>
+                  {relatedWorkShiftsHref ? (
+                    <Link
+                      to={relatedWorkShiftsHref}
+                      className="mt-1 inline-flex text-sm text-accent hover:underline"
+                    >
+                      {t('talent:related.openFilteredList')}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
+                  )}
+                </div>
+                <div className="rounded border border-border bg-bg px-3 py-2">
+                  <p className="text-xs font-medium uppercase text-muted">
+                    {t('talent:related.events')}
+                  </p>
+                  {relatedEventsHref ? (
+                    <Link
+                      to={relatedEventsHref}
+                      className="mt-1 inline-flex text-sm text-accent hover:underline"
+                    >
+                      {t('talent:related.openFilteredList')}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
+                  )}
+                </div>
+                <div className="rounded border border-border bg-bg px-3 py-2">
+                  <p className="text-xs font-medium uppercase text-muted">
+                    {t('talent:related.revenueLedger')}
+                  </p>
+                  {relatedRevenueHref ? (
+                    <Link
+                      to={relatedRevenueHref}
+                      className="mt-1 inline-flex text-sm text-accent hover:underline"
+                    >
+                      {t('talent:related.openFilteredList')}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
+                  )}
+                </div>
+                <div className="rounded border border-border bg-bg px-3 py-2">
+                  <p className="text-xs font-medium uppercase text-muted">
+                    {t('talent:related.commissionSettlements')}
+                  </p>
+                  {relatedSettlementsHref ? (
+                    <Link
+                      to={relatedSettlementsHref}
+                      className="mt-1 inline-flex text-sm text-accent hover:underline"
+                    >
+                      {t('talent:related.openFilteredList')}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
+                  )}
+                </div>
+                <div className="rounded border border-border bg-bg px-3 py-2">
+                  <p className="text-xs font-medium uppercase text-muted">
+                    {t('talent:related.contractRegistry')}
+                  </p>
+                  {relatedContractsHref ? (
+                    <Link
+                      to={relatedContractsHref}
+                      className="mt-1 inline-flex text-sm text-accent hover:underline"
+                    >
+                      {t('talent:related.openFilteredList')}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">{t('talent:related.unavailable')}</p>
+                  )}
+                </div>
               </div>
             </RelatedSectionShell>
           </div>

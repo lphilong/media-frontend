@@ -411,7 +411,8 @@ export const AsyncReferencePicker = ({
                 defaultValue: 'No matching options',
               })}
               message={t('common:referencePicker.emptyMessage', {
-                defaultValue: 'Try another search term or clear the filter if this field is optional.',
+                defaultValue:
+                  'Try another search term or clear the filter if this field is optional.',
               })}
               variant="inline"
             />

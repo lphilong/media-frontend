@@ -11,13 +11,15 @@ type TestFormValues = {
   referenceId: string;
 };
 
-const loadOptions = vi.fn(async (): Promise<ReferenceOption[]> => [
-  {
-    id: 'reference-01',
-    label: 'Reference One',
-    code: 'REF-001',
-  },
-]);
+const loadOptions = vi.fn(
+  async (): Promise<ReferenceOption[]> => [
+    {
+      id: 'reference-01',
+      label: 'Reference One',
+      code: 'REF-001',
+    },
+  ],
+);
 
 const ValueProbe = (): JSX.Element => {
   const { control } = useFormContext<TestFormValues>();

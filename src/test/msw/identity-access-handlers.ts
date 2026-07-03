@@ -1919,26 +1919,41 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
     });
   }
   const requiredContext = target?.recommendedAccountContext;
-  if (
-    requiredContext &&
-    targetUser &&
-    !readAssignedAccountContexts(targetUser).includes(requiredContext)
-  ) {
+  const accountContextRequirement = buildAccessAssignmentAccountContextRequirement({
+    requiredContext,
+    targetUser,
+  });
+  if (accountContextRequirement.status === 'BLOCKED_UNAUTHORIZED') {
     blockers.push({
       severity: 'BLOCKER',
-      code: 'REQUIRED_ACCOUNT_CONTEXT_MISSING',
-      summary: 'Target user is missing required AccountContext.',
+      code: 'ACCOUNT_CONTEXT_MATERIALIZATION_NOT_AUTHORIZED',
+      summary:
+        'Target user is missing required AccountContext and the actor is not authorized to materialize it.',
     });
   }
-  if (
-    target?.requiresResponsibility &&
-    !scopeGrants.some((scope) => typeof scope.targetId === 'string' && scope.targetId === 'group-a')
-  ) {
-    blockers.push({
-      severity: 'BLOCKER',
-      code: 'RESPONSIBILITY_REQUIRED',
-      summary: 'Matching active management responsibility is required.',
+  if (accountContextRequirement.status === 'PROPOSED_FOR_APPLICATION') {
+    warnings.push({
+      severity: 'WARNING',
+      code: 'ACCOUNT_CONTEXT_WILL_BE_MATERIALIZED_ON_APPLY',
+      summary:
+        'Required AccountContext is missing and will be applied if this preview is confirmed.',
     });
+  }
+  const responsibilityRequirements = buildAccessAssignmentResponsibilityRequirements({
+    target,
+    targetCode,
+    targetUser,
+    scopeGrants,
+    reason,
+  });
+  for (const requirement of responsibilityRequirements) {
+    if (requirement.status !== 'SATISFIED' && requirement.status !== 'CREATE_PROPOSED') {
+      blockers.push({
+        severity: 'BLOCKER',
+        code: responsibilityBlockerCode(requirement.status),
+        summary: 'Matching active management responsibility is required.',
+      });
+    }
   }
   if (risk.requiresReview && reviewAt === null) {
     blockers.push({
@@ -2059,31 +2074,14 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
             persistedParentBundleAssignment: false,
           }
         : null,
-    accountContextRequirement: {
-      status: blockers.some((blocker) => blocker.code === 'REQUIRED_ACCOUNT_CONTEXT_MISSING')
-        ? 'MISSING_REQUIRED_CONTEXT'
-        : 'SATISFIED',
-      requiredAccountContexts: requiredContext ? [requiredContext] : [],
-      currentAccountContexts: targetUser ? readAssignedAccountContexts(targetUser) : [],
-      materializationInScope: false,
-    },
+    accountContextRequirement,
     consoleEntitlementPreview: {
       previewOnly: true,
       accountContextMutated: false,
+      accountContextMaterializationPreviewed: true,
       grantsAuthorityByItself: false,
     },
-    responsibilityRequirements: target?.requiresResponsibility
-      ? [
-          {
-            roleCode: targetCode,
-            requiredScopeType: 'managedTalentGroup',
-            requiredResponsibilityType: 'TALENT_GROUP_MANAGER',
-            status: blockers.some((blocker) => blocker.code === 'RESPONSIBILITY_REQUIRED')
-              ? 'MISSING_RESPONSIBILITY'
-              : 'SATISFIED',
-          },
-        ]
-      : [],
+    responsibilityRequirements,
     sensitiveAccess: {
       ...risk,
       sensitiveOrGlobal: risk.isSensitive || risk.isGlobalLike,
@@ -2113,6 +2111,299 @@ const buildAccessAssignmentPreview = (body: Record<string, unknown>) => {
     },
   };
 };
+
+const buildAccessAssignmentAccountContextRequirement = ({
+  requiredContext,
+  targetUser,
+}: {
+  requiredContext: AccountContext | undefined;
+  targetUser: UserRecord | undefined;
+}) => {
+  const requiredAccountContexts = requiredContext ? [requiredContext] : [];
+  const currentAccountContexts = targetUser ? readAssignedAccountContexts(targetUser) : [];
+  const missingAccountContexts = requiredAccountContexts.filter(
+    (context) => !currentAccountContexts.includes(context),
+  );
+  const reusedAccountContexts = requiredAccountContexts.filter((context) =>
+    currentAccountContexts.includes(context),
+  );
+  const actorAuthorized = canMaterializeAccountContext();
+  const status =
+    requiredAccountContexts.length === 0
+      ? 'NOT_REQUIRED'
+      : !targetUser
+        ? 'TARGET_USER_UNRESOLVED'
+        : missingAccountContexts.length > 0
+          ? actorAuthorized
+            ? 'PROPOSED_FOR_APPLICATION'
+            : 'BLOCKED_UNAUTHORIZED'
+          : 'SATISFIED';
+
+  return {
+    status,
+    requiredAccountContexts,
+    currentAccountContexts,
+    missingAccountContexts,
+    reusedAccountContexts,
+    proposedAccountContexts: status === 'PROPOSED_FOR_APPLICATION' ? missingAccountContexts : [],
+    materializationInScope: true,
+    actorAuthorized,
+    grantsAuthorityByItself: false,
+  };
+};
+
+const buildAccessAssignmentResponsibilityRequirements = ({
+  target,
+  targetCode,
+  targetUser,
+  scopeGrants,
+  reason,
+}: {
+  target: AccessAssignmentTargetFixture | undefined;
+  targetCode: string;
+  targetUser: UserRecord | undefined;
+  scopeGrants: Array<Record<string, unknown>>;
+  reason: string;
+}) => {
+  const responsibilityType = readPrimaryResponsibilityType(target);
+  if (!target?.requiresResponsibility || !responsibilityType) {
+    return [];
+  }
+
+  const scopeType =
+    responsibilityType === 'ORG_UNIT_MANAGER' ? 'managedOrgUnit' : 'managedTalentGroup';
+  const requiredSubjectType =
+    responsibilityType === 'ORG_UNIT_MANAGER' ? 'ORG_UNIT' : 'TALENT_GROUP';
+  const scope = scopeGrants.find((grant) => grant.scopeType === scopeType);
+  const targetId = typeof scope?.targetId === 'string' ? scope.targetId : undefined;
+  const existingResponsibilityId = readExistingResponsibilityId(requiredSubjectType, targetId);
+  const actorAuthorized = canMaterializeResponsibility(responsibilityType);
+  const subjectStatus = existingResponsibilityId
+    ? 'NOT_EVALUATED'
+    : readResponsibilitySubjectStatus(targetId);
+  const status = existingResponsibilityId
+    ? 'SATISFIED'
+    : !targetUser
+      ? 'MISSING_RESPONSIBILITY_UNAUTHORIZED'
+      : !actorAuthorized
+        ? 'MISSING_RESPONSIBILITY_UNAUTHORIZED'
+        : subjectStatus !== 'ACTIVE'
+          ? 'MISSING_RESPONSIBILITY_TARGET_NOT_ACTIVE'
+          : !reason
+            ? 'CREATE_PROPOSED_REASON_REQUIRED'
+            : 'CREATE_PROPOSED';
+
+  return [
+    {
+      roleCode: targetCode,
+      scopeType,
+      targetId: targetId ?? null,
+      requiredScopeType: scopeType,
+      requiredResponsibilityType: responsibilityType,
+      requiredSubjectType,
+      employmentProfileId: targetUser ? 'ep-001' : null,
+      status,
+      responsibilityAssignmentId: existingResponsibilityId,
+      operation: existingResponsibilityId ? 'REUSE_EXISTING' : 'CREATE_REQUIRED',
+      actorAuthorized,
+      previewOnly: true,
+      reasonRequired: !existingResponsibilityId,
+      reasonSatisfied: Boolean(existingResponsibilityId || reason),
+      subjectStatus,
+      proposedResponsibility: existingResponsibilityId
+        ? null
+        : {
+            subjectType: requiredSubjectType,
+            subjectId: targetId ?? null,
+            responsibleEmploymentProfileId: targetUser ? 'ep-001' : null,
+            responsibilityType,
+            responsibilityRole:
+              responsibilityType === 'TALENT_GROUP_MANAGER' ? 'MANAGER' : 'UNIT_MANAGER',
+            isPrimary: true,
+          },
+    },
+  ];
+};
+
+const readPrimaryResponsibilityType = (
+  target: AccessAssignmentTargetFixture | undefined,
+): 'TALENT_GROUP_MANAGER' | 'ORG_UNIT_MANAGER' | null => {
+  if (!target) {
+    return null;
+  }
+  const value = target.requiredResponsibilityType;
+  if (value === 'TALENT_GROUP_MANAGER' || value === 'ORG_UNIT_MANAGER') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return (
+      value.find((entry) => entry === 'TALENT_GROUP_MANAGER' || entry === 'ORG_UNIT_MANAGER') ??
+      null
+    );
+  }
+  return null;
+};
+
+const readExistingResponsibilityId = (
+  subjectType: 'TALENT_GROUP' | 'ORG_UNIT',
+  targetId: string | undefined,
+): string | null => {
+  if (subjectType === 'TALENT_GROUP' && targetId === 'group-a') {
+    return 'responsibility-existing-group-a';
+  }
+  if (subjectType === 'ORG_UNIT' && targetId === 'org-a') {
+    return 'responsibility-existing-org-a';
+  }
+  return null;
+};
+
+const readResponsibilitySubjectStatus = (
+  targetId: string | undefined,
+): 'ACTIVE' | 'MISSING' | 'INACTIVE' => {
+  if (!targetId) {
+    return 'MISSING';
+  }
+  return targetId.includes('inactive') || targetId.includes('blocked') ? 'INACTIVE' : 'ACTIVE';
+};
+
+const canMaterializeAccountContext = (): boolean =>
+  currentActorCapabilities.context === 'ADMIN' &&
+  currentActorCapabilities.accountContexts?.includes('ADMIN_CONSOLE') === true &&
+  currentActorCapabilities.permissions.includes('role:assign_to_user');
+
+const canMaterializeResponsibility = (responsibilityType: string): boolean => {
+  if (
+    currentActorCapabilities.context !== 'ADMIN' ||
+    currentActorCapabilities.accountContexts?.includes('ADMIN_CONSOLE') !== true
+  ) {
+    return false;
+  }
+  if (responsibilityType === 'TALENT_GROUP_MANAGER') {
+    return currentActorCapabilities.permissions.includes('talentGroup.update');
+  }
+  if (responsibilityType === 'ORG_UNIT_MANAGER') {
+    return currentActorCapabilities.permissions.includes('orgUnit.update');
+  }
+  return false;
+};
+
+const responsibilityBlockerCode = (status: unknown): string => {
+  if (status === 'MISSING_RESPONSIBILITY_UNAUTHORIZED') {
+    return 'RESPONSIBILITY_MATERIALIZATION_NOT_AUTHORIZED';
+  }
+  if (status === 'MISSING_RESPONSIBILITY_TARGET_NOT_ACTIVE') {
+    return 'RESPONSIBILITY_TARGET_NOT_ASSIGNABLE';
+  }
+  if (status === 'CREATE_PROPOSED_REASON_REQUIRED') {
+    return 'REASON_REQUIRED';
+  }
+  return 'RESPONSIBILITY_REQUIRED';
+};
+
+const buildAccessAssignmentAccountContextResult = (
+  preview: ReturnType<typeof buildAccessAssignmentPreview>,
+  applied: boolean,
+) => {
+  const requirement = preview.accountContextRequirement;
+  const previousAccountContexts = requirement.currentAccountContexts;
+  const appliedAccountContexts =
+    applied && requirement.status === 'PROPOSED_FOR_APPLICATION'
+      ? requirement.proposedAccountContexts
+      : [];
+  const resultingAccountContexts = normalizeAccountContextList([
+    ...previousAccountContexts,
+    ...appliedAccountContexts,
+  ]);
+  const materializationPolicy = !applied
+    ? 'NOT_APPLIED_BLOCKED'
+    : requirement.status === 'NOT_REQUIRED'
+      ? 'NOT_REQUIRED'
+      : appliedAccountContexts.length > 0
+        ? 'APPLIED_FROM_ACCESS_ASSIGNMENT_PREVIEW'
+        : 'REUSED_EXISTING';
+
+  return {
+    materialized: appliedAccountContexts.length > 0,
+    materializationPolicy,
+    requirement,
+    previousAccountContexts,
+    appliedAccountContexts,
+    resultingAccountContexts:
+      resultingAccountContexts.length > 0 ? resultingAccountContexts : previousAccountContexts,
+    grantsAuthorityByItself: false,
+  };
+};
+
+const applyAccountContextResultToUser = (
+  targetUserId: string,
+  result: ReturnType<typeof buildAccessAssignmentAccountContextResult>,
+): void => {
+  if (!result.materialized) {
+    return;
+  }
+  const user = readUser(targetUserId);
+  if (!user) {
+    return;
+  }
+  user.accountContexts = result.resultingAccountContexts;
+  user.workspaceAvailability = buildWorkspaceAvailability(result.resultingAccountContexts);
+};
+
+const buildAccessAssignmentResponsibilityOperationResult = (
+  preview: ReturnType<typeof buildAccessAssignmentPreview>,
+  applied: boolean,
+) => {
+  if (!applied) {
+    return { materialized: false, items: [] };
+  }
+
+  const items = preview.responsibilityRequirements.flatMap((requirement, index) => {
+    if (requirement.status === 'SATISFIED') {
+      return [
+        {
+          operation: 'REUSE_EXISTING',
+          responsibilityAssignmentId: requirement.responsibilityAssignmentId,
+          subjectType: requirement.requiredSubjectType,
+          subjectId: requirement.targetId,
+          responsibilityType: requirement.requiredResponsibilityType,
+          source: 'responsibility_assignments',
+        },
+      ];
+    }
+    if (requirement.status !== 'CREATE_PROPOSED') {
+      return [];
+    }
+    const proposed = requirement.proposedResponsibility;
+    if (!proposed) {
+      return [];
+    }
+    return [
+      {
+        operation: 'CREATE',
+        responsibilityAssignmentId: `responsibility-created-${index + 1}`,
+        subjectType: proposed.subjectType,
+        subjectId: proposed.subjectId,
+        responsibilityType: proposed.responsibilityType,
+        source: 'responsibility_assignments',
+      },
+    ];
+  });
+
+  return {
+    materialized: items.some((item) => item.operation === 'CREATE'),
+    items,
+  };
+};
+
+const normalizeAccountContextList = (values: readonly string[]): AccountContext[] => {
+  const set = new Set(values.filter(isAccountContext));
+  return (['STAFF_CONSOLE', 'MANAGER_CONSOLE', 'ADMIN_CONSOLE'] as const).filter((context) =>
+    set.has(context),
+  );
+};
+
+const isAccountContext = (value: string): value is AccountContext =>
+  value === 'STAFF_CONSOLE' || value === 'MANAGER_CONSOLE' || value === 'ADMIN_CONSOLE';
 
 const buildAccessRisk = ({
   roleCode,
@@ -2177,11 +2468,7 @@ const readOptionalTimestamp = (value: unknown): number | null => {
   }
 
   const timestamp =
-    typeof value === 'number'
-      ? value
-      : typeof value === 'string'
-        ? Date.parse(value)
-        : Number.NaN;
+    typeof value === 'number' ? value : typeof value === 'string' ? Date.parse(value) : Number.NaN;
 
   return Number.isFinite(timestamp) ? Math.trunc(timestamp) : null;
 };
@@ -2317,6 +2604,11 @@ export const identityAccessHandlers = [
     const body = await parseJsonBody(request);
     const preview = buildAccessAssignmentPreview(body);
     if (!preview.canApply) {
+      const accountContextResult = buildAccessAssignmentAccountContextResult(preview, false);
+      const responsibilityOperationResult = buildAccessAssignmentResponsibilityOperationResult(
+        preview,
+        false,
+      );
       return HttpResponse.json({
         data: {
           applied: false,
@@ -2330,14 +2622,10 @@ export const identityAccessHandlers = [
           scopeFingerprint: preview.scopeFingerprint,
           proposedAssignments: preview.proposedAssignments,
           bundleExpansion: preview.bundleExpansion,
-          accountContextResult: {
-            materialized: false,
-            materializationPolicy: 'DEFERRED_FAIL_CLOSED',
-            requirement: preview.accountContextRequirement,
-            grantsAuthorityByItself: false,
-          },
+          accountContextResult,
           consoleEntitlementResult: preview.consoleEntitlementPreview,
           responsibilityRequirements: preview.responsibilityRequirements,
+          responsibilityOperationResult,
           sensitiveAccess: preview.sensitiveAccess,
           duplicateConflicts: preview.duplicateConflicts,
           auditTrace: { written: false, reason: 'APPLY_BLOCKED_BEFORE_MUTATION' },
@@ -2354,6 +2642,12 @@ export const identityAccessHandlers = [
       assignedBy: 'user-admin',
       assignedAt: Date.now(),
     }));
+    const accountContextResult = buildAccessAssignmentAccountContextResult(preview, true);
+    const responsibilityOperationResult = buildAccessAssignmentResponsibilityOperationResult(
+      preview,
+      true,
+    );
+    applyAccountContextResultToUser(String(body.targetUserId), accountContextResult);
     return HttpResponse.json({
       data: {
         applied: true,
@@ -2376,14 +2670,10 @@ export const identityAccessHandlers = [
                 ),
               }
             : null,
-        accountContextResult: {
-          materialized: false,
-          materializationPolicy: 'DEFERRED_FAIL_CLOSED',
-          requirement: preview.accountContextRequirement,
-          grantsAuthorityByItself: false,
-        },
+        accountContextResult,
         consoleEntitlementResult: preview.consoleEntitlementPreview,
         responsibilityRequirements: preview.responsibilityRequirements,
+        responsibilityOperationResult,
         sensitiveAccess: preview.sensitiveAccess,
         duplicateConflicts: [],
         auditTrace: {
@@ -2391,6 +2681,10 @@ export const identityAccessHandlers = [
           mutationType: 'role.assign-to-user',
           assignmentIds: appliedAssignments.map((assignment) => String(assignment.assignmentId)),
           targetUserId: String(body.targetUserId),
+          accountContextMaterialized: accountContextResult.materialized,
+          responsibilityOperationIds: responsibilityOperationResult.items.map(
+            (item) => item.responsibilityAssignmentId,
+          ),
         },
         sourceTrace: { ...preview.sourceTrace, mutatesSource: true, auditSource: 'audit_log' },
         effectiveAccessAfterApply: toEffectiveAccessRecord(users[0]),
