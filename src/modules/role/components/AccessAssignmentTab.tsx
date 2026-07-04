@@ -217,6 +217,13 @@ export const AccessAssignmentTab = (): JSX.Element => {
     () => normalizeRequiredScopeTypes(selectedTarget?.requiredScopeTypes ?? []),
     [selectedTarget],
   );
+
+  useEffect(() => {
+    setScopeTargetIds({});
+    setScopeTargetOptions({});
+    setScopePeriodKeys({});
+  }, [targetKey]);
+
   const unsupportedScopeTypes = requiredScopeTypes.filter(
     (scopeType) => !supportedScopeTypes.has(scopeType),
   );
@@ -344,6 +351,34 @@ export const AccessAssignmentTab = (): JSX.Element => {
       notifyError(error as unknown as NormalizedApiError);
     }
   }, [notifyError, notifySuccess, revokeMutation, revokeReason, selectedLifecycleAssignment]);
+
+  const handleScopeTargetChange = useCallback(
+    (scopeType: AccessAssignmentScopeType, value?: string) => {
+      setScopeTargetIds((current) =>
+        current[scopeType] === value ? current : { ...current, [scopeType]: value },
+      );
+    },
+    [],
+  );
+
+  const handleScopeSelectedTargetChange = useCallback(
+    (scopeType: AccessAssignmentScopeType, option?: ReferenceOption) => {
+      setScopeTargetOptions((current) =>
+        current[scopeType]?.id === option?.id ? current : { ...current, [scopeType]: option },
+      );
+    },
+    [],
+  );
+
+  const handleScopePeriodChange = useCallback(
+    (scopeType: AccessAssignmentScopeType, value?: string) => {
+      const nextValue = value || undefined;
+      setScopePeriodKeys((current) =>
+        current[scopeType] === nextValue ? current : { ...current, [scopeType]: nextValue },
+      );
+    },
+    [],
+  );
 
   if (targetsQuery.isLoading) {
     return <LoadingState lines={6} />;
@@ -527,15 +562,9 @@ export const AccessAssignmentTab = (): JSX.Element => {
         unsupportedScopeTypes={unsupportedScopeTypes}
         scopeTargetIds={scopeTargetIds}
         scopePeriodKeys={scopePeriodKeys}
-        onTargetChange={(scopeType, value) =>
-          setScopeTargetIds((current) => ({ ...current, [scopeType]: value }))
-        }
-        onSelectedTargetChange={(scopeType, option) =>
-          setScopeTargetOptions((current) => ({ ...current, [scopeType]: option }))
-        }
-        onPeriodChange={(scopeType, value) =>
-          setScopePeriodKeys((current) => ({ ...current, [scopeType]: value || undefined }))
-        }
+        onTargetChange={handleScopeTargetChange}
+        onSelectedTargetChange={handleScopeSelectedTargetChange}
+        onPeriodChange={handleScopePeriodChange}
       />
 
       <MetadataSection
@@ -653,6 +682,28 @@ const ScopeResolver = ({
   onPeriodChange: (scopeType: AccessAssignmentScopeType, value?: string) => void;
 }): JSX.Element => {
   const { t } = useTranslation('role');
+  const scopeLoadOptionsByType = useMemo(
+    () =>
+      Object.fromEntries(
+        requiredScopeTypes.map((scopeType) => [
+          scopeType,
+          buildAssignmentReferenceLoader(objectScopeLoaders[scopeType] ?? emptyAssignmentOptions),
+        ]),
+      ) as Partial<
+        Record<AccessAssignmentScopeType, (search: string) => Promise<ReferenceOption[]>>
+      >,
+    [requiredScopeTypes],
+  );
+  const scopeSelectedOptionHandlersByType = useMemo(
+    () =>
+      Object.fromEntries(
+        requiredScopeTypes.map((scopeType) => [
+          scopeType,
+          (option: ReferenceOption | undefined) => onSelectedTargetChange(scopeType, option),
+        ]),
+      ) as Partial<Record<AccessAssignmentScopeType, (option?: ReferenceOption) => void>>,
+    [onSelectedTargetChange, requiredScopeTypes],
+  );
 
   return (
     <MetadataSection
@@ -691,10 +742,8 @@ const ScopeResolver = ({
                   pickerId={`role-access-assignment-scope-${scopeType}`}
                   value={scopeTargetIds[scopeType]}
                   onChange={(value) => onTargetChange(scopeType, value)}
-                  onSelectedOptionChange={(option) => onSelectedTargetChange(scopeType, option)}
-                  loadOptions={buildAssignmentReferenceLoader(
-                    objectScopeLoaders[scopeType] ?? (() => Promise.resolve([])),
-                  )}
+                  onSelectedOptionChange={scopeSelectedOptionHandlersByType[scopeType]}
+                  loadOptions={scopeLoadOptionsByType[scopeType] ?? emptyAssignmentOptions}
                   placeholder={t('accessAssignment.scopeSearchPlaceholder')}
                   resourceLabel={formatScopeTypeLabel(scopeType)}
                   showTechnicalMetadata={false}
@@ -1375,7 +1424,26 @@ function formatIssue(issue: AccessAssignmentIssue): string {
     RESPONSIBILITY_TARGET_NOT_ASSIGNABLE:
       'Phạm vi trách nhiệm quản lý chưa ở trạng thái có thể gán.',
     LEGACY_ROLE_BLOCKED: 'Mẫu vai trò cũ không còn được dùng để gán quyền mới.',
+    BUNDLE_CHILD_ROLE_NOT_ACTIVE:
+      'Gói quyền này chưa sẵn sàng để gán. Vui lòng đồng bộ danh mục quyền trước khi thử lại.',
+    BUNDLE_CHILD_ROLE_HAS_NO_PERMISSIONS:
+      'Gói quyền này thiếu cấu hình năng lực cần thiết nên chưa thể gán.',
+    BUNDLE_NOT_FOUND: 'Gói quyền này chưa sẵn sàng để gán hoặc đã ngừng sử dụng.',
+    ROLE_NOT_FOUND: 'Mẫu quyền này chưa sẵn sàng để gán hoặc đã ngừng sử dụng.',
+    ROLE_NOT_ACTIVE: 'Mẫu quyền này chưa ở trạng thái có thể gán.',
+    ROLE_TARGET_HAS_NO_PERMISSIONS:
+      'Mẫu quyền này thiếu cấu hình năng lực cần thiết nên chưa thể gán.',
+    ROLE_TEMPLATE_UNSUPPORTED_SCOPE_SELECTOR:
+      'Phạm vi cần chọn cho quyền này chưa được hỗ trợ trên màn hình gán quyền hiện tại.',
+    ROLE_TEMPLATE_FUTURE_GATED: 'Quyền này đang chờ nguồn dữ liệu hỗ trợ trước khi có thể gán.',
+    ROLE_TEMPLATE_NOT_ASSIGNABLE: 'Quyền này chưa thuộc nhóm có thể gán trong quy trình hiện tại.',
     DUPLICATE_ACTIVE_ASSIGNMENT: 'Quyền này đã được gán trong cùng phạm vi.',
+    SOURCE_CHANGED_AFTER_PREVIEW:
+      'Điều kiện gán quyền đã thay đổi sau bước xem trước. Vui lòng xem trước lại trước khi áp dụng.',
+    APPLY_RESULT_CONFLICT:
+      'Kết quả áp dụng chưa nhất quán với bước xem trước. Vui lòng xem trước lại trước khi áp dụng.',
+    ACCOUNT_CONTEXT_WILL_BE_MATERIALIZED_ON_APPLY:
+      'Điều kiện truy cập còn thiếu sẽ được áp dụng khi xác nhận gán quyền.',
     SELF_ASSIGNMENT_BLOCKED:
       'Không thể tự cấp quyền. Bạn không thể cấp quyền nhạy cảm hoặc quyền toàn cục cho chính mình.',
     REASON_REQUIRED: 'Nhập lý do gán quyền.',
@@ -1390,9 +1458,13 @@ function formatIssue(issue: AccessAssignmentIssue): string {
       'Bị chặn do xung đột phân quyền. Thao tác này bị chặn để tránh một người vừa thực hiện vừa kiểm soát cùng quyền nhạy cảm.',
     SELF_LIFECYCLE_BLOCKED:
       'Không thể tự thu hồi quyền của chính bạn. Thao tác này cần được thực hiện bởi người có thẩm quyền khác để đảm bảo kiểm soát vận hành.',
+    ASSIGNMENT_ALREADY_INACTIVE: 'Quyền này đã không còn hiệu lực nên không cần thu hồi thêm.',
   };
 
-  return friendly[issue.code] ?? issue.summary ?? issue.code;
+  return (
+    friendly[issue.code] ??
+    'Yêu cầu chưa thể hoàn tất. Vui lòng rà soát điều kiện truy cập và thử lại.'
+  );
 }
 
 function getAccountContextPreviewMessageKey(
@@ -1499,6 +1571,10 @@ function sanitizeAssignmentReferenceOptions(options: ReferenceOption[]): Referen
   return options.map(sanitizeAssignmentReferenceOption);
 }
 
+function emptyAssignmentOptions(): Promise<ReferenceOption[]> {
+  return Promise.resolve([]);
+}
+
 function buildAssignmentReferenceLoader(
   loader: (search: string) => Promise<ReferenceOption[]>,
 ): (search: string) => Promise<ReferenceOption[]> {
@@ -1557,32 +1633,40 @@ function readTraceRecords(value: unknown): Record<string, unknown>[] {
 }
 
 function formatTraceRecord(record: Record<string, unknown>): string {
-  const preferredKeys = [
-    'bundleAssignmentId',
-    'bundleCode',
-    'bundleVersion',
-    'assignmentId',
-    'roleCode',
-    'roleName',
-    'operation',
-    'materializationPolicy',
-    'responsibilityAssignmentId',
-    'subjectType',
-    'subjectId',
-    'source',
-    'auditSource',
-    'mutationType',
-  ];
-  const parts = preferredKeys
-    .map((key) => {
-      const value = record[key];
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        return `${key}: ${String(value)}`;
-      }
-      return null;
-    })
-    .filter((value): value is string => Boolean(value));
-  return parts.length > 0 ? parts.join(' · ') : JSON.stringify(record);
+  const parts: string[] = [];
+  const bundleCode = readStringRecordValue(record, 'bundleCode');
+  const roleCode = readStringRecordValue(record, 'roleCode');
+  const roleName = readStringRecordValue(record, 'roleName');
+  const operation =
+    readStringRecordValue(record, 'operation') ??
+    readStringRecordValue(record, 'mutationType') ??
+    readStringRecordValue(record, 'materializationPolicy');
+
+  if (bundleCode) {
+    parts.push(`Gói quyền: ${formatSafeTraceCodeLabel(bundleCode, 'Gói quyền')}`);
+  }
+
+  if (roleCode) {
+    parts.push(`Quyền: ${formatSafeTraceCodeLabel(roleCode, 'Quyền truy cập')}`);
+  } else if (roleName) {
+    parts.push(`Quyền: ${sanitizeInternalAccessLabel(roleName, 'Quyền truy cập')}`);
+  }
+
+  if (operation) {
+    parts.push('Trạng thái: Đã ghi nhận');
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : 'Chi tiết đã được ghi nhận';
+}
+
+function formatSafeTraceCodeLabel(code: string, fallback: string): string {
+  if (internalAccessDisplayLabels[code]) {
+    return internalAccessDisplayLabels[code];
+  }
+
+  return hasInternalAccessTerm(code) || /^[A-Z0-9_]+$/u.test(code)
+    ? fallback
+    : sanitizeInternalAccessLabel(code, fallback);
 }
 
 function formatLifecycleStatus(t: (key: string) => string, status: string): string {

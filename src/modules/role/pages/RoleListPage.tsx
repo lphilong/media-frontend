@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 
-import { APP_PATHS } from '@app/router/paths';
 import { usePageActions } from '@app/store/use-page-actions';
 import { previewRoleTemplate } from '@modules/role/api/role.api';
 import {
@@ -11,25 +9,19 @@ import {
   ReviewDueBadge,
   formatRiskDate,
 } from '@modules/role/components/AccessRiskIndicators';
-import { roleStateValues } from '@modules/role/constants/role.constants';
 import { RoleCreateSurface } from '@modules/role/forms/role-mutation-forms';
 import {
   useCreateRoleFromTemplateMutation,
-  useRoleLifecycleMutation,
   useEffectiveAccess,
   useRoleBundles,
-  useRoleList,
   useRoleTemplates,
 } from '@modules/role/hooks/use-role';
 import { AccessAssignmentTab } from '@modules/role/components/AccessAssignmentTab';
-import { createRoleListColumns } from '@modules/role/tables/role-columns';
 import type {
   CatalogOperatorFlowGroup,
   EffectiveAccessRecord,
   RoleTemplateListItem,
   RoleBundleListItem,
-  RoleLifecycleAction,
-  RoleListQuery,
 } from '@modules/role/types/role.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
@@ -39,35 +31,20 @@ import {
 } from '@shared/auth/current-actor-capabilities';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 import {
-  AppliedFilterChips,
-  type AppliedFilterChipItem,
   AdminTableShell,
-  CursorPager,
   EmptyState,
   ErrorState,
-  FilterToolbar,
   LoadingState,
   MetadataSection,
   useModalHost,
-  PermissionDeniedState,
   ReadOnlyFieldGrid,
   ReferenceChip,
   StatusBadge,
-  SearchBoxSeam,
-  useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { AsyncReferencePicker, type ReferenceOption } from '@shared/components/reference';
 import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
 import { ModuleListScreenShell } from '@shared/modules';
-import {
-  createCursorStack,
-  moveNextCursor,
-  movePreviousCursor,
-  roleFlatListQueryConfig,
-  serializeScreenQueryParams,
-  useRouteQueryState,
-} from '@shared/query';
 
 type RoleScreenTab = 'templates' | 'bundles' | 'assignments' | 'user-access';
 
@@ -103,97 +80,21 @@ const containsRawTechnicalToken = (message: string): boolean =>
   /\b(objectId|uuid|_id|assignmentId|bundleAssignmentId|scopeFingerprint)\b/iu.test(message) ||
   /\bnot found:\s*\S+/iu.test(message);
 
-const readLifecycleConfirmKey = (action: RoleLifecycleAction): string => {
-  switch (action) {
-    case 'activate':
-      return 'role:confirm.activate';
-    case 'deactivate':
-      return 'role:confirm.deactivate';
-    case 'archive':
-      return 'role:confirm.archive';
-    default:
-      return 'role:confirm.archive';
-  }
-};
-
 export const RoleListPage = (): JSX.Element => {
   const { t } = useTranslation(['role', 'common', 'errors']);
-  const navigate = useNavigate();
-  const { query, patchQuery } = useRouteQueryState(roleFlatListQueryConfig);
   const [activeTab, setActiveTab] = useState<RoleScreenTab>('templates');
   const [effectiveAccessUserId, setEffectiveAccessUserId] = useState<string | undefined>();
-  const listQueryResult = useRoleList(query);
   const roleTemplatesQuery = useRoleTemplates();
   const roleBundlesQuery = useRoleBundles();
   const effectiveAccessQuery = useEffectiveAccess(effectiveAccessUserId);
   const capabilitiesQuery = useCurrentActorCapabilities();
   const createFromTemplateMutation = useCreateRoleFromTemplateMutation();
-  const lifecycleMutation = useRoleLifecycleMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
-  const requestDestructiveConfirm = useDestructiveConfirm();
   const modalHost = useModalHost();
-
-  const [, setCursorStack] = useState(createCursorStack);
-
-  const queryShapeSignature = useMemo(
-    () =>
-      serializeScreenQueryParams(
-        {
-          ...query,
-          cursor: undefined,
-        },
-        roleFlatListQueryConfig,
-      ).toString(),
-    [query],
-  );
-  const previousShapeSignatureRef = useRef(queryShapeSignature);
-
-  useEffect(() => {
-    if (previousShapeSignatureRef.current === queryShapeSignature) {
-      return;
-    }
-
-    previousShapeSignatureRef.current = queryShapeSignature;
-    setCursorStack(createCursorStack());
-  }, [queryShapeSignature]);
 
   const canCreateRole = canShowAction(capabilitiesQuery.data, {
     permission: PERMISSIONS.ROLE_CREATE,
   });
-  const canShowLifecycleAction = useCallback(
-    (action: RoleLifecycleAction) => {
-      const permission =
-        action === 'activate'
-          ? PERMISSIONS.ROLE_ACTIVATE
-          : action === 'deactivate'
-            ? PERMISSIONS.ROLE_DEACTIVATE
-            : PERMISSIONS.ROLE_ARCHIVE;
-      return canShowAction(capabilitiesQuery.data, { permission });
-    },
-    [capabilitiesQuery.data],
-  );
-
-  const nextCursor = listQueryResult.data?.meta?.nextCursor;
-  const canGoNext = Boolean(nextCursor);
-  const canGoBack = Boolean(query.cursor);
-
-  const onNext = (): void => {
-    if (!nextCursor) {
-      return;
-    }
-
-    setCursorStack((current) => moveNextCursor(current, nextCursor));
-    patchQuery({ cursor: nextCursor }, { resetCursorOnChange: false });
-  };
-
-  const onPrevious = (): void => {
-    setCursorStack((current) => {
-      const nextStack = movePreviousCursor(current);
-      patchQuery({ cursor: nextStack.current ?? undefined }, { resetCursorOnChange: false });
-
-      return nextStack;
-    });
-  };
 
   const onCreateFromTemplateSubmit = useCallback(
     async (payload: Parameters<typeof createFromTemplateMutation.mutateAsync>[0]) => {
@@ -244,102 +145,6 @@ export const RoleListPage = (): JSX.Element => {
 
   usePageActions(pageActions);
 
-  const onLifecycleAction = useCallback(
-    async (roleId: string, action: RoleLifecycleAction) => {
-      const confirmed = await requestDestructiveConfirm({
-        description: t(readLifecycleConfirmKey(action)),
-      });
-      if (!confirmed) {
-        return;
-      }
-
-      try {
-        await lifecycleMutation.mutateAsync({
-          roleId,
-          action,
-          payload: action === 'activate' ? undefined : { reason: null },
-        });
-        notifySuccess('role:feedback.lifecycleUpdated');
-      } catch (error) {
-        notifyError(error as NormalizedApiError);
-      }
-    },
-    [lifecycleMutation, notifyError, notifySuccess, requestDestructiveConfirm, t],
-  );
-
-  const columns = useMemo(
-    () =>
-      createRoleListColumns(t, {
-        onOpenDetail: (roleId) => navigate(APP_PATHS.roleDetail(roleId)),
-        onLifecycleAction,
-        canShowLifecycleAction,
-        isActionPending: (roleId, action) =>
-          lifecycleMutation.isPending &&
-          lifecycleMutation.variables?.roleId === roleId &&
-          lifecycleMutation.variables?.action === action,
-      }),
-    [
-      canShowLifecycleAction,
-      lifecycleMutation.isPending,
-      lifecycleMutation.variables,
-      navigate,
-      onLifecycleAction,
-      t,
-    ],
-  );
-
-  const listError = listQueryResult.error as NormalizedApiError | null;
-  const shellState = useMemo(() => {
-    if (activeTab !== 'templates') {
-      return 'ready' as const;
-    }
-
-    if (listQueryResult.isPending) {
-      return 'loading' as const;
-    }
-
-    if (listQueryResult.isError) {
-      if (listError?.permissionDenied) {
-        return 'denied' as const;
-      }
-
-      return 'error' as const;
-    }
-
-    return 'ready' as const;
-  }, [activeTab, listError?.permissionDenied, listQueryResult.isError, listQueryResult.isPending]);
-
-  const clearRoleFilters = useCallback(() => {
-    patchQuery({
-      search: undefined,
-      state: undefined,
-    });
-  }, [patchQuery]);
-
-  const appliedFilterChips = useMemo<AppliedFilterChipItem[]>(() => {
-    const items: AppliedFilterChipItem[] = [];
-
-    if (query.search) {
-      items.push({
-        id: 'search',
-        label: t('common:labels.search'),
-        value: query.search,
-        onClear: () => patchQuery({ search: undefined }),
-      });
-    }
-
-    if (query.state) {
-      items.push({
-        id: 'state',
-        label: t('role:filters.state'),
-        value: t(`role:states.${query.state}`),
-        onClear: () => patchQuery({ state: undefined }),
-      });
-    }
-
-    return items;
-  }, [patchQuery, query.search, query.state, t]);
-
   return (
     <ModuleListScreenShell
       banner={
@@ -355,69 +160,16 @@ export const RoleListPage = (): JSX.Element => {
           }}
         />
       }
-      filterBar={
-        activeTab === 'templates' ? (
-          <FilterToolbar
-            searchSlot={
-              <SearchBoxSeam
-                value={query.search ?? ''}
-                placeholder={t('role:filters.searchPlaceholder')}
-                onApply={(value) => patchQuery({ search: value || undefined })}
-              />
-            }
-            appliedFilters={
-              <AppliedFilterChips
-                title={t('common:filters.appliedFilters')}
-                items={appliedFilterChips}
-                clearFilterLabel={t('common:filters.clearFilter')}
-                clearAllLabel={t('common:filters.clearAll')}
-                onClearAll={appliedFilterChips.length > 0 ? clearRoleFilters : undefined}
-              />
-            }
-          >
-            <label className="flex min-w-[180px] flex-col gap-1">
-              <span className="text-xs font-medium uppercase text-muted">
-                {t('role:filters.state')}
-              </span>
-              <select
-                value={query.state ?? ''}
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                onChange={(event) =>
-                  patchQuery({
-                    state: (event.target.value || undefined) as RoleListQuery['state'],
-                  })
-                }
-              >
-                <option value="">{t('role:filters.allStates')}</option>
-                {roleStateValues.map((state) => (
-                  <option key={state} value={state}>
-                    {t(`role:states.${state}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </FilterToolbar>
-        ) : null
-      }
+      filterBar={null}
       interactionSection={null}
       tableSection={
         activeTab === 'templates' ? (
-          <div className="space-y-4">
-            <RoleTemplateCatalogPanel
-              templates={roleTemplatesQuery.data ?? []}
-              isLoading={roleTemplatesQuery.isLoading}
-              error={roleTemplatesQuery.error as NormalizedApiError | null}
-              onRetry={() => void roleTemplatesQuery.refetch()}
-            />
-            <AdminTableShell
-              data={listQueryResult.data?.data ?? []}
-              columns={columns}
-              isLoading={listQueryResult.isFetching && !listQueryResult.data}
-              emptyTitle={t('role:statesView.emptyTitle')}
-              emptyMessage={t('role:statesView.emptyMessage')}
-              caption={t('role:table.caption')}
-            />
-          </div>
+          <RoleTemplateCatalogPanel
+            templates={roleTemplatesQuery.data ?? []}
+            isLoading={roleTemplatesQuery.isLoading}
+            error={roleTemplatesQuery.error as NormalizedApiError | null}
+            onRetry={() => void roleTemplatesQuery.refetch()}
+          />
         ) : activeTab === 'bundles' ? (
           <RoleBundleTab
             bundles={roleBundlesQuery.data ?? []}
@@ -438,29 +190,11 @@ export const RoleListPage = (): JSX.Element => {
           />
         )
       }
-      pager={
-        activeTab === 'templates' ? (
-          <CursorPager
-            canGoBack={canGoBack}
-            canGoNext={canGoNext}
-            displayedCount={listQueryResult.data?.data.length}
-            limit={query.limit ?? 20}
-            onNext={onNext}
-            onPrevious={onPrevious}
-          />
-        ) : null
-      }
-      state={shellState}
+      pager={null}
+      state="ready"
       loadingState={<LoadingState lines={8} />}
-      deniedState={<PermissionDeniedState />}
-      errorState={
-        <ErrorState
-          title={t('role:statesView.loadErrorTitle')}
-          message={readErrorMessage(t, listError, 'role:statesView.loadErrorMessage')}
-          actionLabel={t('common:actions.retry')}
-          onRetry={() => void listQueryResult.refetch()}
-        />
-      }
+      deniedState={null}
+      errorState={null}
     />
   );
 };

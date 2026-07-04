@@ -271,20 +271,39 @@ const suspendedEmploymentProfile = {
 };
 
 describe('role IA-1 surfaces', () => {
-  it('renders the constrained Role list and ignores unsupported scope-shaped query keys', async () => {
+  it('renders the catalog-first Role page without calling the legacy runtime Role table', async () => {
     await setLocale(DEFAULT_LOCALE);
+    let legacyRoleListRequests = 0;
+    server.use(
+      http.get('*/admin/roles', () => {
+        legacyRoleListRequests += 1;
+        return HttpResponse.json(
+          { message: 'Legacy role table is not part of normal UI' },
+          { status: 410 },
+        );
+      }),
+    );
+
     renderRoute('/roles?state=ACTIVE&search=Admin&scope=global&scopeGrants=admin&sortBy=name');
 
     expect(
       await screen.findByRole('heading', { name: i18n.t('role:page.title') }),
     ).toBeInTheDocument();
-    expect(await screen.findByText('ADMIN', {}, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('common:filters.appliedFilters'))).toBeInTheDocument();
-    expect(screen.getAllByText(i18n.t('role:states.ACTIVE')).length).toBeGreaterThan(0);
-    expect(screen.getByText(i18n.t('common:pagination.cursorDisclosure'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('role:templateCatalog.title'), {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:templateCatalog.capabilitySummary'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('common:filters.appliedFilters'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('common:pagination.cursorDisclosure')),
+    ).not.toBeInTheDocument();
     expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
-    expect(screen.getByText('Admin role')).toBeInTheDocument();
+    expect(screen.queryByText('Admin role')).not.toBeInTheDocument();
     expect(screen.queryByText('Archived role')).not.toBeInTheDocument();
+    for (const code of ['ADMIN_FULL', 'TEAM_MANAGER', 'COMMERCIAL_FINANCE', 'TALENT_STAFF_SELF']) {
+      expect(document.body).not.toHaveTextContent(code);
+    }
+    await waitFor(() => expect(legacyRoleListRequests).toBe(0));
     expect(screen.queryByRole('button', { name: /grant scope/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /rename permission/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/credential|token|password|session/i)).not.toBeInTheDocument();
@@ -310,11 +329,19 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByRole('tab', { name: i18n.t('role:tabs.assignments') })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: i18n.t('role:tabs.userAccess') })).toBeInTheDocument();
     expect(screen.queryByText(/role:view/u)).not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:templateCatalog.capabilitySummary'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:templateCatalog.requiredContext'))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('role:bundles.childRoles'))).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: i18n.t('role:tabs.bundles') }));
     await waitFor(() =>
       expect(screen.getAllByText('Quản trị chủ sở hữu').length).toBeGreaterThan(0),
     );
+    expect(screen.getByText(i18n.t('role:bundles.childRoles'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:bundles.recommendedScope'))).toBeInTheDocument();
+    expect(
+      screen.queryByText(i18n.t('role:templateCatalog.capabilitySummary')),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByText(
         'Auditor mặc định chỉ có quyền đọc không nhạy cảm. Dữ liệu lương, phụ cấp hoặc dữ liệu nhạy cảm cần quyền riêng.',
@@ -510,6 +537,105 @@ describe('role IA-1 surfaces', () => {
       screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
     ).toHaveValue('');
   }, 20_000);
+
+  it('keeps the scope picker terminal and clears dependent scope when user or target changes', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+    let scopeLookupRequests = 0;
+
+    server.use(
+      http.get('*/admin/employment-profiles', () =>
+        HttpResponse.json({ data: [activeLinkedEmploymentProfile], meta: {} }),
+      ),
+      http.get('*/admin/reference/talent-groups', ({ request }) => {
+        scopeLookupRequests += 1;
+        const url = new URL(request.url);
+        const search = url.searchParams.get('search') ?? '';
+        return HttpResponse.json({
+          data: {
+            items: search
+              ? [
+                  {
+                    id: 'group-create',
+                    label: 'Creators A',
+                    secondaryLabel: 'Talent group',
+                    code: 'TG-CREATE',
+                    status: 'ACTIVE',
+                  },
+                ]
+              : [],
+          },
+        });
+      }),
+    );
+
+    await renderAssignmentTab(user);
+
+    const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.userSearchPlaceholder'),
+      ),
+      'Al',
+    );
+    await user.click(await within(userPicker).findByText(/Alice Linked/u));
+
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('role:accessAssignment.roleMode') }),
+    );
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel')),
+      'ROLE_TEMPLATE:TALENT_GROUP_MANAGER:',
+    );
+
+    const scopePicker = await findPickerSurface('role-access-assignment-scope-managedTalentGroup');
+    await user.type(
+      within(scopePicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.scopeSearchPlaceholder'),
+      ),
+      'Creators',
+    );
+    expect(await within(scopePicker).findByText('Creators A')).toBeInTheDocument();
+    await user.click(within(scopePicker).getByText('Creators A'));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 900);
+    });
+    expect(scopeLookupRequests).toBeGreaterThan(0);
+    expect(scopeLookupRequests).toBeLessThanOrEqual(2);
+
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel')),
+      'ROLE_TEMPLATE:KPI_OPERATIONS:',
+    );
+    expect(screen.queryByText('Creators A')).not.toBeInTheDocument();
+    expect(
+      screen
+        .getAllByTestId('picker-surface')
+        .some(
+          (surface) =>
+            surface.getAttribute('data-picker-id') ===
+            'role-access-assignment-scope-managedTalentGroup',
+        ),
+    ).toBe(false);
+
+    await user.selectOptions(
+      screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel')),
+      'ROLE_TEMPLATE:TALENT_GROUP_MANAGER:',
+    );
+    const resetScopePicker = await findPickerSurface(
+      'role-access-assignment-scope-managedTalentGroup',
+    );
+    expect(within(resetScopePicker).queryByText('Creators A')).not.toBeInTheDocument();
+
+    const clearButtons = within(userPicker).getAllByRole('button', {
+      name: i18n.t('common:actions.clear'),
+    });
+    await user.click(clearButtons[clearButtons.length - 1]);
+    expect(screen.queryByText('Creators A')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: i18n.t('role:accessAssignment.previewButton') }),
+    ).toBeDisabled();
+  }, 25_000);
 
   it('renders proposed Account Context and CREATE_PROPOSED responsibility preview copy truthfully', async () => {
     await setLocale(DEFAULT_LOCALE);
@@ -862,7 +988,10 @@ describe('role IA-1 surfaces', () => {
       }),
     );
 
-    expect(await screen.findByText('Assignment is already inactive.')).toBeInTheDocument();
+    expect(await screen.findByText(/Quyền này đã không còn hiệu lực/u)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(
+      /Assignment is already inactive|ASSIGNMENT_ALREADY_INACTIVE/u,
+    );
     expect(
       screen.getByText(i18n.t('role:accessAssignment.lifecycle.revokeBlocked')),
     ).toBeInTheDocument();
@@ -1676,6 +1805,69 @@ describe('role IA-1 surfaces', () => {
     expect(previewPayloads).toHaveLength(0);
   }, 20_000);
 
+  it('maps backend assignment blockers and warnings without rendering raw internal summaries', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const user = userEvent.setup();
+
+    server.use(
+      http.get('*/admin/employment-profiles', () =>
+        HttpResponse.json({ data: [activeLinkedEmploymentProfile], meta: {} }),
+      ),
+      http.post('*/admin/access-assignments/preview', () =>
+        HttpResponse.json({
+          data: {
+            previewOnly: true,
+            canApply: false,
+            blockers: [
+              {
+                severity: 'BLOCKER',
+                code: 'BUNDLE_CHILD_ROLE_NOT_ACTIVE',
+                summary: 'Bundle child role must exist and be ACTIVE: STAFF_CONSOLE_USER',
+              },
+            ],
+            warnings: [
+              {
+                severity: 'WARNING',
+                code: 'ACCOUNT_CONTEXT_WILL_BE_MATERIALIZED_ON_APPLY',
+                summary: 'Required AccountContext STAFF_CONSOLE will be materialized on apply.',
+              },
+            ],
+            normalizedScope: [{ scopeType: 'self' }],
+            proposedAssignments: [],
+            bundleExpansion: {
+              bundleCode: 'STAFF_CONSOLE_BUNDLE',
+              proposedChildCount: 0,
+            },
+          },
+        }),
+      ),
+    );
+
+    await renderAssignmentTab(user);
+
+    const userPicker = await findPickerSurface('role-access-assignment-linked-user');
+    await user.type(
+      within(userPicker).getByPlaceholderText(
+        i18n.t('role:accessAssignment.userSearchPlaceholder'),
+      ),
+      'Al',
+    );
+    await user.click(await within(userPicker).findByText(/Alice Linked/u));
+    await user.type(
+      screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
+      'Raw blocker mapping coverage',
+    );
+    await user.click(
+      screen.getByRole('button', { name: i18n.t('role:accessAssignment.previewButton') }),
+    );
+
+    expect(await screen.findByText(/Gói quyền này chưa sẵn sàng/u)).toBeInTheDocument();
+    expect(screen.getByText(/Điều kiện truy cập còn thiếu/u)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(
+      /Bundle child role must exist|Required AccountContext|STAFF_CONSOLE_USER|STAFF_CONSOLE_BUNDLE|BUNDLE_CHILD_ROLE_NOT_ACTIVE|ACCOUNT_CONTEXT_WILL_BE_MATERIALIZED_ON_APPLY/u,
+    );
+  }, 20_000);
+
   it('renders backend apply blockers after a successful preview without showing success', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
@@ -1750,7 +1942,10 @@ describe('role IA-1 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.resultBlocked')),
     ).toBeInTheDocument();
-    expect(screen.getByText('Source changed after preview.')).toBeInTheDocument();
+    expect(screen.getByText(/Điều kiện gán quyền đã thay đổi/u)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(
+      /Source changed after preview|SOURCE_CHANGED_AFTER_PREVIEW/u,
+    );
     expect(
       screen.queryByText(i18n.t('role:accessAssignment.resultApplied')),
     ).not.toBeInTheDocument();
@@ -1890,7 +2085,8 @@ describe('role IA-1 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.resultBlocked')),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Apply result conflict/u)).toBeInTheDocument();
+    expect(screen.getByText(/Kết quả áp dụng chưa nhất quán/u)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/Apply result conflict|APPLY_RESULT_CONFLICT/u);
     expect(
       screen.queryByText(i18n.t('role:accessAssignment.resultApplied')),
     ).not.toBeInTheDocument();
