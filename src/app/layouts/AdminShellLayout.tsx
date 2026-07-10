@@ -13,7 +13,7 @@ import { AppLocaleSwitcher } from '@app/layouts/AppLocaleSwitcher';
 import { SidebarNav } from '@app/layouts/SidebarNav';
 import { ModuleAccessProvider, ModulePageActionsProvider } from '@app/providers/module-runtime';
 import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
-import { ModalHostProvider } from '@shared/components/primitives';
+import { Button, ModalHostProvider } from '@shared/components/primitives';
 import { AppTopBar } from '@shared/components/shell';
 
 type RouteHandle = {
@@ -53,13 +53,9 @@ export const AdminShellLayout = (): JSX.Element => {
   const pageTitle = leafHandle?.titleKey ? t(leafHandle.titleKey) : t('common:app.name');
   const pageSubtitle = leafHandle?.subtitleKey ? t(leafHandle.subtitleKey) : undefined;
   const defaultStubAction = leafHandle?.stubRoute ? (
-    <button
-      type="button"
-      disabled
-      className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted disabled:cursor-not-allowed"
-    >
+    <Button disabled variant="secondary">
       {t('common:actions.stubAction')}
-    </button>
+    </Button>
   ) : null;
 
   const breadcrumbs = matches

@@ -100,13 +100,13 @@ const initialIssues: PeopleReadinessIssue[] = [
     isBlockingForNewOperations: true,
   },
   {
-    id: 'ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY:ORG_UNIT_MANAGER_ASSIGNMENT:ou-assignment',
-    issueCode: 'ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY',
-    category: 'MANAGER_ASSIGNMENT_READY',
+    id: 'ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY:ORG_UNIT_RESPONSIBILITY:ou-assignment',
+    issueCode: 'ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY',
+    category: 'RESPONSIBILITY_READY',
     severity: 'BLOCKER',
-    primaryEntityType: 'ORG_UNIT_MANAGER_ASSIGNMENT',
+    primaryEntityType: 'ORG_UNIT_RESPONSIBILITY',
     primaryEntity: {
-      entityType: 'ORG_UNIT_MANAGER_ASSIGNMENT',
+      entityType: 'ORG_UNIT_RESPONSIBILITY',
       id: 'ou-assignment',
       displayName: 'UNIT_MANAGER assignment',
       status: 'ACTIVE',

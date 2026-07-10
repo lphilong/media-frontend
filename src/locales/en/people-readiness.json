@@ -44,6 +44,7 @@
     "severity": "Severity",
     "category": "Issue category",
     "issueCode": "Diagnostic code",
+    "technicalDetails": "Technical details",
     "generatedAt": "Generated at",
     "relatedEntities": "Related records",
     "repairTarget": "Navigation hint:"
@@ -90,7 +91,7 @@
     "EMPLOYMENT_PROFILE_LIFECYCLE": "Employment profile lifecycle",
     "ORGUNIT_PARTICIPATION": "Operational scope",
     "TALENTGROUP_MEMBER_LINKAGE": "TalentGroup health",
-    "MANAGER_ASSIGNMENT_READY": "Manager readiness",
+    "RESPONSIBILITY_READY": "Responsibility readiness",
     "SELF_SERVICE_READY": "Self-Service risks",
     "WORKSCHEDULE_READY": "WorkSchedule readiness",
     "KPI_READY": "KPI readiness"
@@ -102,8 +103,8 @@
     "ORG_UNIT": "OrgUnit",
     "TALENT_GROUP": "TalentGroup",
     "TALENT_GROUP_MEMBER": "TalentGroup member",
-    "ORG_UNIT_MANAGER_ASSIGNMENT": "OrgUnit manager assignment",
-    "TALENT_GROUP_MANAGER_ASSIGNMENT": "TalentGroup manager assignment"
+    "ORG_UNIT_RESPONSIBILITY": "OrgUnit responsibility",
+    "TALENT_GROUP_RESPONSIBILITY": "TalentGroup responsibility"
   },
   "statuses": {
     "ACTIVE": "Active",
@@ -135,10 +136,10 @@
     "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "Active TalentGroup member points to inactive Talent",
     "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "TalentGroup has no operational members",
     "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "OrgUnit has no active employment profiles",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "OrgUnit manager profile is not ready",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "OrgUnit manager login is not ready",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "TalentGroup manager profile is not ready",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "TalentGroup manager login is not ready",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "OrgUnit responsibility holder profile is not ready",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "OrgUnit responsibility holder login is not ready",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "TalentGroup responsibility holder profile is not ready",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "TalentGroup responsibility holder login is not ready",
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Profile should not use Self-Service"
   },
   "issueDescriptions": {
@@ -161,10 +162,10 @@
     "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "The active membership points to a Talent record that is inactive, archived, or missing.",
     "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "Review group membership and internal profile links before relying on the group operationally.",
     "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "The OrgUnit has no active or on-leave employment profiles.",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "The assigned OrgUnit manager does not have a ready employment profile.",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "The assigned OrgUnit manager does not have an active admin login account.",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "The assigned TalentGroup manager does not have a ready employment profile.",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "The assigned TalentGroup manager does not have an active admin login account.",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "The assigned OrgUnit responsibility holder does not have a ready employment profile.",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "The assigned OrgUnit responsibility holder does not have an active admin login account.",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "The assigned TalentGroup responsibility holder does not have a ready employment profile.",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "The assigned TalentGroup responsibility holder does not have an active admin login account.",
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "The linked employment profile lifecycle is not valid for Self-Service access."
   }
 }

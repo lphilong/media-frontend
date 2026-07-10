@@ -13,13 +13,38 @@ import {
   AccessRiskSummary,
   ReviewDueBadge,
 } from '@modules/role/components/AccessRiskIndicators';
+import { buildAccessAssignmentPayload } from '@modules/role/model/access-assignment-payload';
+import {
+  buildAccessAssignmentRequirementState,
+  buildAccessAssignmentStructuredScopeGrants,
+  getAccessAssignmentRequirementIssueCodes,
+  getUnsupportedAccessAssignmentScopeTypes,
+  isAccessAssignmentPeriodScope,
+  isAccessAssignmentScopeWithoutTarget,
+  normalizeAccessAssignmentRequiredScopeTypes,
+  type AccessAssignmentRequirementState,
+} from '@modules/role/model/access-assignment-requirements';
+import {
+  selectAccessAssignmentTargets,
+  selectDefaultAccessAssignmentTarget,
+  selectHiddenReadinessAccessAssignmentTargets,
+  selectRestrictedAccessAssignmentTargets,
+  toAccessAssignmentTargetKey,
+  type AccessAssignmentMode,
+} from '@modules/role/model/access-assignment-targets';
+import {
+  buildAccessAssignmentWorkflowSteps,
+  deriveAccessAssignmentReadiness,
+  type AccessAssignmentWorkflowStep,
+  type AccessAssignmentWorkflowStepId,
+  type AccessAssignmentWorkflowTone,
+} from '@modules/role/model/access-assignment-workflow';
 import type {
   AccessAssignmentApplyResult,
   AccessAssignmentIssue,
   AccessAssignmentLifecycleItem,
   AccessAssignmentLifecycleResult,
   AccessAssignmentPreviewResult,
-  AccessAssignmentRequestPayload,
   AccessAssignmentScopeGrant,
   AccessAssignmentScopeType,
   AccessAssignmentTargetOption,
@@ -40,36 +65,7 @@ import {
   useReferenceRegistry,
 } from '@shared/components/reference';
 
-type AssignmentMode = 'BUNDLE' | 'ROLE_TEMPLATE';
-type AssignmentWorkflowStepId = 'user' | 'target' | 'conditions' | 'preview';
-type GuidedWorkflowTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
 type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
-
-type GuidedWorkflowStep = {
-  id: AssignmentWorkflowStepId;
-  number: number;
-  title: string;
-  summary: string;
-  note?: string;
-  tone: GuidedWorkflowTone;
-  isActive: boolean;
-  canNavigate: boolean;
-};
-
-type AssignmentRequirementState = {
-  requiresScope: boolean;
-  requiresReason: boolean;
-  requiresReviewDate: boolean;
-  requiresExpiryDate: boolean;
-  requiresSensitiveConfirmation: boolean;
-  unsupportedScopeTypes: AccessAssignmentScopeType[];
-  missingScope: boolean;
-  missingReason: boolean;
-  missingReviewDate: boolean;
-  missingExpiryDate: boolean;
-  missingUnsupportedScope: boolean;
-  canEnterPreview: boolean;
-};
 
 type AccessAssignmentReferenceLoaders = {
   loadAccessAssignmentLinkedUserOptions: (search: string) => Promise<ReferenceOption[]>;
@@ -81,7 +77,7 @@ type AccessAssignmentReferenceLoaders = {
 };
 
 const guidedWorkflowToneMeta: Record<
-  GuidedWorkflowTone,
+  AccessAssignmentWorkflowTone,
   { icon: string; className: string; iconClassName: string }
 > = {
   neutral: {
@@ -113,40 +109,6 @@ const guidedWorkflowToneMeta: Record<
 
 const DEFAULT_USER_SUGGESTION_LIMIT = 10;
 
-const normalSelectableAssignability = new Set([
-  'READY_ASSIGNABLE',
-  'REQUIRES_SCOPE_SELECTION',
-  'RESTRICTED_SENSITIVE',
-  'READ_ONLY_AUDIT',
-]);
-const normalSelectableOperatorFlowGroups = new Set([
-  'READY_TO_ASSIGN',
-  'REQUIRES_SCOPE_SELECTION',
-  'RESTRICTED_SENSITIVE',
-  'READ_ONLY_AUDIT',
-]);
-
-const supportedScopeTypes = new Set<AccessAssignmentScopeType>([
-  'self',
-  'global',
-  'managedTalentGroup',
-  'managedOrgUnit',
-  'assignedPlatformAccount',
-  'financeGlobal',
-  'financePeriod',
-  'assignedEvent',
-  'assignedStudioResource',
-  'payrollPeriod',
-]);
-
-const scopeTypesWithoutTarget = new Set<AccessAssignmentScopeType>([
-  'self',
-  'global',
-  'financeGlobal',
-]);
-
-const periodScopeTypes = new Set<AccessAssignmentScopeType>(['financePeriod', 'payrollPeriod']);
-
 const assignmentPickerGroupOrder = [
   'REQUIRES_SCOPE_SELECTION',
   'READY_TO_ASSIGN',
@@ -170,7 +132,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [selectedUserOption, setSelectedUserOption] = useState<ReferenceOption | undefined>();
   const assignmentsQuery = useAccessAssignmentsForUser(selectedUserId);
-  const [mode, setMode] = useState<AssignmentMode>('BUNDLE');
+  const [mode, setMode] = useState<AccessAssignmentMode>('BUNDLE');
   const [targetKey, setTargetKey] = useState<string>('');
   const [targetSearch, setTargetSearch] = useState('');
   const [scopeTargetIds, setScopeTargetIds] = useState<Record<string, string | undefined>>({});
@@ -189,7 +151,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
     useState<AccessAssignmentLifecycleItem | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
   const [revokeResult, setRevokeResult] = useState<AccessAssignmentLifecycleResult | null>(null);
-  const [activeStepId, setActiveStepId] = useState<AssignmentWorkflowStepId>('user');
+  const [activeStepId, setActiveStepId] = useState<AccessAssignmentWorkflowStepId>('user');
   const [userPickerResetGeneration, setUserPickerResetGeneration] = useState(0);
   const [sensitiveConfirmationOpen, setSensitiveConfirmationOpen] = useState(false);
 
@@ -258,46 +220,23 @@ export const AccessAssignmentTab = (): JSX.Element => {
     () => targetsQuery.data?.assignmentTargets ?? [],
     [targetsQuery.data?.assignmentTargets],
   );
-  const bundleTargets = useMemo(
-    () =>
-      targets.filter(
-        (target) =>
-          target.assignmentKind === 'BUNDLE' && isNormalSelectableAssignmentTarget(target),
-      ),
-    [targets],
-  );
+  const bundleTargets = useMemo(() => selectAccessAssignmentTargets(targets, 'BUNDLE'), [targets]);
   const roleTemplateTargets = useMemo(
-    () =>
-      targets.filter(
-        (target) =>
-          target.assignmentKind === 'ROLE_TEMPLATE' && isNormalSelectableAssignmentTarget(target),
-      ),
+    () => selectAccessAssignmentTargets(targets, 'ROLE_TEMPLATE'),
     [targets],
   );
   const restrictedTargets = useMemo(
-    () =>
-      targets.filter(
-        (target) =>
-          target.assignmentKind === mode &&
-          target.legacyAssignable &&
-          target.assignabilityStatus === 'RESTRICTED_SENSITIVE',
-      ),
+    () => selectRestrictedAccessAssignmentTargets(targets, mode),
     [mode, targets],
   );
   const hiddenReadinessTargets = useMemo(
-    () =>
-      targets.filter(
-        (target) =>
-          target.legacyAssignable &&
-          (target.assignabilityStatus === 'FUTURE_READY_CONDITION' ||
-            target.assignabilityStatus === 'SYSTEM_CONTROLLED' ||
-            target.operatorFlowGroup === 'FUTURE_READINESS' ||
-            target.operatorFlowGroup === 'SYSTEM_CONTROLLED'),
-      ),
+    () => selectHiddenReadinessAccessAssignmentTargets(targets),
     [targets],
   );
   const activeTargets = mode === 'BUNDLE' ? bundleTargets : roleTemplateTargets;
-  const selectedTarget = activeTargets.find((target) => targetKey === toTargetKey(target));
+  const selectedTarget = activeTargets.find(
+    (target) => targetKey === toAccessAssignmentTargetKey(target),
+  );
 
   useEffect(() => {
     if (!selectedUserId) {
@@ -307,18 +246,18 @@ export const AccessAssignmentTab = (): JSX.Element => {
       return;
     }
     const nextTargets = mode === 'BUNDLE' ? bundleTargets : roleTemplateTargets;
-    if (targetKey && nextTargets.some((target) => toTargetKey(target) === targetKey)) {
+    if (
+      targetKey &&
+      nextTargets.some((target) => toAccessAssignmentTargetKey(target) === targetKey)
+    ) {
       return;
     }
-    const defaultTarget =
-      nextTargets.find(isPreferredDefaultTarget) ??
-      nextTargets.find(hasCompleteDefaultScopes) ??
-      nextTargets[0];
-    setTargetKey(defaultTarget ? toTargetKey(defaultTarget) : '');
+    const defaultTarget = selectDefaultAccessAssignmentTarget(nextTargets);
+    setTargetKey(defaultTarget ? toAccessAssignmentTargetKey(defaultTarget) : '');
   }, [bundleTargets, mode, roleTemplateTargets, selectedUserId, targetKey]);
 
   const requiredScopeTypes = useMemo(
-    () => normalizeRequiredScopeTypes(selectedTarget?.requiredScopeTypes ?? []),
+    () => normalizeAccessAssignmentRequiredScopeTypes(selectedTarget?.requiredScopeTypes ?? []),
     [selectedTarget],
   );
 
@@ -329,12 +268,10 @@ export const AccessAssignmentTab = (): JSX.Element => {
     resetPreviewAndApplyState();
   }, [resetPreviewAndApplyState, targetKey]);
 
-  const unsupportedScopeTypes = requiredScopeTypes.filter(
-    (scopeType) => !supportedScopeTypes.has(scopeType),
-  );
+  const unsupportedScopeTypes = getUnsupportedAccessAssignmentScopeTypes(requiredScopeTypes);
   const requirementState = useMemo(
     () =>
-      buildAssignmentRequirementState({
+      buildAccessAssignmentRequirementState({
         selectedTarget,
         requiredScopeTypes,
         scopeTargetIds,
@@ -357,7 +294,12 @@ export const AccessAssignmentTab = (): JSX.Element => {
   );
   const targetNeedsSensitiveConfirmation = requirementState.requiresSensitiveConfirmation;
   const structuredScopeGrants = useMemo(
-    () => buildStructuredScopeGrants(requiredScopeTypes, scopeTargetIds, scopePeriodKeys),
+    () =>
+      buildAccessAssignmentStructuredScopeGrants(
+        requiredScopeTypes,
+        scopeTargetIds,
+        scopePeriodKeys,
+      ),
     [requiredScopeTypes, scopePeriodKeys, scopeTargetIds],
   );
   const targetUnavailable = Boolean(targetKey && !selectedTarget);
@@ -367,7 +309,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
       selectedUserId &&
       selectedTarget &&
       requirementState.canEnterPreview
-        ? buildPayload({
+        ? buildAccessAssignmentPayload({
             selectedUserId,
             selectedTarget,
             structuredScopeGrants,
@@ -388,68 +330,92 @@ export const AccessAssignmentTab = (): JSX.Element => {
   );
   const currentSignature = currentPayload ? JSON.stringify(currentPayload) : '';
   const previewResult = previewMutation.data;
-  const previewMatchesCurrent = Boolean(
-    previewResult && previewSignature && previewSignature === currentSignature,
-  );
-  const previewHasBlockers = (previewResult?.blockers ?? []).length > 0;
-  const canPreview = Boolean(
-    currentPayload &&
-    selectedUserId &&
-    selectedTarget &&
-    requirementState.canEnterPreview &&
-    !previewMutation.isPending,
-  );
-  const canApply = Boolean(
-    currentPayload &&
-    previewMatchesCurrent &&
-    previewResult?.canApply === true &&
-    !previewHasBlockers &&
-    reasonValue &&
-    !applyMutation.isPending,
-  );
   const userStepComplete = Boolean(selectedUserId && selectedUserOption && !selectedUserOption.disabled);
-  const targetStepComplete = Boolean(selectedUserId && selectedTarget);
-  const conditionsStepComplete = Boolean(
-    targetStepComplete && requirementState.canEnterPreview,
-  );
-  const previewStepComplete = Boolean(
-    previewMatchesCurrent && previewResult?.canApply === true && !previewHasBlockers,
-  );
-  const guidedSteps = useMemo<GuidedWorkflowStep[]>(() => buildGuidedWorkflowSteps({
-    activeStepId,
-    conditionsStepComplete,
-    previewStepComplete,
-    previewHasBlockers,
-    previewMatchesCurrent,
-    previewResult,
-    requirementState,
-    scopeTargetOptions,
-    selectedTarget,
-    selectedUserId,
-    selectedUserOption,
-    structuredScopeGrants,
-    targetStepComplete,
-    targetUnavailable,
-    t,
+  const readiness = deriveAccessAssignmentReadiness({
+    currentPayload,
+    hasSelectedUser: Boolean(selectedUserId),
     userStepComplete,
-  }), [
-    activeStepId,
-    conditionsStepComplete,
-    previewHasBlockers,
-    previewMatchesCurrent,
-    previewResult,
-    previewStepComplete,
+    hasSelectedTarget: Boolean(selectedTarget),
     requirementState,
-    scopeTargetOptions,
-    selectedTarget,
-    selectedUserId,
-    selectedUserOption,
-    structuredScopeGrants,
+    previewResult,
+    previewSignature,
+    currentSignature,
+    isPreviewPending: previewMutation.isPending,
+    isApplyPending: applyMutation.isPending,
+    reason: reasonValue,
+  });
+  const {
+    canApply,
+    canPreview,
+    conditionsStepComplete,
+    previewMatchesCurrent,
+    previewStepComplete,
     targetStepComplete,
-    targetUnavailable,
-    t,
-    userStepComplete,
-  ]);
+  } = readiness;
+  const previewHasBlockers = readiness.issues.hasBlockers;
+  const guidedSteps = useMemo<AccessAssignmentWorkflowStep[]>(
+    () =>
+      buildAccessAssignmentWorkflowSteps({
+        activeStepId,
+        user: {
+          id: selectedUserId,
+          label: selectedUserOption?.label,
+          disabled: selectedUserOption?.disabled === true,
+        },
+        target: {
+          selected: Boolean(selectedTarget),
+          complete: targetStepComplete,
+          summary: selectedTarget ? formatAccessTargetLabel(selectedTarget, t) : '',
+          unavailable: targetUnavailable,
+          requiresSensitiveConfirmation: targetNeedsSensitiveConfirmation,
+        },
+        conditions: {
+          complete: conditionsStepComplete,
+          summary: formatScopeSummary(structuredScopeGrants, t, scopeTargetOptions),
+          note: buildConditionsProgressNote(requirementState, t),
+        },
+        preview: {
+          result: previewResult,
+          matchesCurrent: previewMatchesCurrent,
+          hasBlockers: previewHasBlockers,
+          complete: previewStepComplete,
+        },
+        labels: {
+          userTitle: t('role:accessAssignment.workflow.user.title'),
+          userEmptySummary: t('role:accessAssignment.workflow.user.emptySummary'),
+          userInvalidNote: t('role:accessAssignment.workflow.user.invalidNote'),
+          targetTitle: t('role:accessAssignment.workflow.target.title'),
+          targetEmptySummary: t('role:accessAssignment.workflow.target.emptySummary'),
+          targetUnavailableNote: t('role:accessAssignment.workflow.target.unavailableNote'),
+          targetSensitiveNote: t('role:accessAssignment.workflow.target.sensitiveNote'),
+          conditionsTitle: t('role:accessAssignment.workflow.conditions.title'),
+          conditionsIncompleteSummary: t('role:accessAssignment.workflow.conditions.incompleteSummary'),
+          previewTitle: t('role:accessAssignment.workflow.preview.title'),
+          previewReadySummary: t('role:accessAssignment.workflow.preview.readySummary'),
+          previewEmptySummary: t('role:accessAssignment.workflow.preview.emptySummary'),
+          previewSensitiveNote: t('role:accessAssignment.workflow.preview.sensitiveNote'),
+        },
+      }),
+    [
+      activeStepId,
+      conditionsStepComplete,
+      previewHasBlockers,
+      previewMatchesCurrent,
+      previewResult,
+      previewStepComplete,
+      requirementState,
+      scopeTargetOptions,
+      selectedTarget,
+      selectedUserId,
+      selectedUserOption?.disabled,
+      selectedUserOption?.label,
+      structuredScopeGrants,
+      t,
+      targetStepComplete,
+      targetNeedsSensitiveConfirmation,
+      targetUnavailable,
+    ],
+  );
 
   useEffect(() => {
     setPreviewSignature(null);
@@ -657,7 +623,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
     );
   }
 
-  const goToStep = (stepId: AssignmentWorkflowStepId): void => {
+  const goToStep = (stepId: AccessAssignmentWorkflowStepId): void => {
     const step = guidedSteps.find((item) => item.id === stepId);
     if (step?.canNavigate) {
       setActiveStepId(stepId);
@@ -896,7 +862,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {restrictedTargets.map((target) => (
                     <StatusBadge
-                      key={toTargetKey(target)}
+                      key={toAccessAssignmentTargetKey(target)}
                       label={formatAccessTargetLabel(target, t)}
                       tone="warning"
                     />
@@ -1120,9 +1086,9 @@ const ScopeResolver = ({
               <p className="text-sm font-semibold text-text">{formatScopeTypeLabel(scopeType, t)}</p>
               {unsupportedScopeTypes.includes(scopeType) ? (
                 <p className="mt-2 text-sm text-danger">{t('accessAssignment.scopeUnavailable')}</p>
-              ) : scopeTypesWithoutTarget.has(scopeType) ? (
+              ) : isAccessAssignmentScopeWithoutTarget(scopeType) ? (
                 <p className="mt-2 text-sm text-muted">{formatScopeReadOnlyHelp(scopeType, t)}</p>
-              ) : periodScopeTypes.has(scopeType) ? (
+              ) : isAccessAssignmentPeriodScope(scopeType) ? (
                 <label className="mt-2 block">
                   <span className="text-xs font-medium uppercase text-muted">
                     {t('accessAssignment.periodLabel')}
@@ -1162,9 +1128,9 @@ const GuidedWorkflowProgressCards = ({
   activeStepId,
   onStepSelect,
 }: {
-  steps: GuidedWorkflowStep[];
-  activeStepId: AssignmentWorkflowStepId;
-  onStepSelect: (stepId: AssignmentWorkflowStepId) => void;
+  steps: AccessAssignmentWorkflowStep[];
+  activeStepId: AccessAssignmentWorkflowStepId;
+  onStepSelect: (stepId: AccessAssignmentWorkflowStepId) => void;
 }): JSX.Element => {
   const { t } = useTranslation('role');
 
@@ -1403,18 +1369,23 @@ const UserSelectionDetailCard = ({
 const ConditionsGuardrailSummary = ({
   requirementState,
 }: {
-  requirementState: AssignmentRequirementState;
+  requirementState: AccessAssignmentRequirementState;
 }): JSX.Element => {
   const { t } = useTranslation('role');
-  const blockers = [
-    requirementState.missingScope ? t('accessAssignment.guardrail.missingScope') : null,
-    requirementState.missingReason ? t('accessAssignment.guardrail.missingReason') : null,
-    requirementState.missingReviewDate ? t('accessAssignment.guardrail.missingReviewDate') : null,
-    requirementState.missingExpiryDate ? t('accessAssignment.guardrail.missingExpiryDate') : null,
-    requirementState.missingUnsupportedScope
-      ? t('accessAssignment.guardrail.unsupportedScope')
-      : null,
-  ].filter((message): message is string => Boolean(message));
+  const blockers = getAccessAssignmentRequirementIssueCodes(requirementState).map((issue) => {
+    switch (issue) {
+      case 'scope':
+        return t('accessAssignment.guardrail.missingScope');
+      case 'reason':
+        return t('accessAssignment.guardrail.missingReason');
+      case 'reviewDate':
+        return t('accessAssignment.guardrail.missingReviewDate');
+      case 'expiryDate':
+        return t('accessAssignment.guardrail.missingExpiryDate');
+      case 'unsupportedScope':
+        return t('accessAssignment.guardrail.unsupportedScope');
+    }
+  });
 
   if (blockers.length === 0) {
     return (
@@ -1518,7 +1489,7 @@ const GuidedWorkflowActivePanel = ({
   activeStepId,
   children,
 }: {
-  activeStepId: AssignmentWorkflowStepId;
+  activeStepId: AccessAssignmentWorkflowStepId;
   children: JSX.Element;
 }): JSX.Element => (
   <div
@@ -1550,7 +1521,7 @@ const AssignmentTargetPicker = ({
   targets: AccessAssignmentTargetOption[];
   selectedKey: string;
   search: string;
-  mode: AssignmentMode;
+  mode: AccessAssignmentMode;
   onSearchChange: (value: string) => void;
   onSelect: (targetKey: string) => void;
 }): JSX.Element => {
@@ -1583,7 +1554,10 @@ const AssignmentTargetPicker = ({
           {allGroups.map(({ group, items }) => (
             <optgroup key={group} label={formatPickerGroupLabel(group, t)}>
               {items.map((target) => (
-                <option key={toTargetKey(target)} value={toTargetKey(target)}>
+                <option
+                  key={toAccessAssignmentTargetKey(target)}
+                  value={toAccessAssignmentTargetKey(target)}
+                >
                   {formatAccessTargetLabel(target, t)}
                 </option>
               ))}
@@ -1623,7 +1597,7 @@ const AssignmentTargetPicker = ({
             </div>
             <div className="grid gap-2 xl:grid-cols-2">
               {items.map((target) => {
-                const key = toTargetKey(target);
+                const key = toAccessAssignmentTargetKey(target);
                 const selected = key === selectedKey;
                 return (
                   <button
@@ -2154,7 +2128,7 @@ const ValidationSummary = ({
   hasUser: boolean;
   hasTarget: boolean;
   hasReason: boolean;
-  requirementState: AssignmentRequirementState;
+  requirementState: AccessAssignmentRequirementState;
   previewStale: boolean;
 }): JSX.Element => {
   const { t } = useTranslation('role');
@@ -2182,291 +2156,26 @@ const ValidationSummary = ({
   );
 };
 
-function buildAssignmentRequirementState(args: {
-  selectedTarget: AccessAssignmentTargetOption | undefined;
-  requiredScopeTypes: AccessAssignmentScopeType[];
-  scopeTargetIds: Record<string, string | undefined>;
-  scopePeriodKeys: Record<string, string | undefined>;
-  reason: string;
-  reviewAt: string;
-  expiresAt: string;
-  unsupportedScopeTypes: AccessAssignmentScopeType[];
-}): AssignmentRequirementState {
-  const requiresScope = args.requiredScopeTypes.length > 0;
-  const requiresReason = true;
-  const requiresReviewDate = Boolean(
-    args.selectedTarget &&
-      requiresAssignmentReviewDate(args.selectedTarget, args.requiredScopeTypes),
-  );
-  const requiresExpiryDate = Boolean(
-    args.selectedTarget && requiresAssignmentExpiryDate(args.selectedTarget),
-  );
-  const requiresSensitiveConfirmation = Boolean(
-    args.selectedTarget && isSensitiveOrControlledAssignmentTarget(args.selectedTarget),
-  );
-  const missingScope = args.requiredScopeTypes.some(
-    (scopeType) => !isScopeComplete(scopeType, args.scopeTargetIds, args.scopePeriodKeys),
-  );
-  const missingReason = args.reason.trim().length === 0;
-  const missingReviewDate = requiresReviewDate && !args.reviewAt;
-  const missingExpiryDate = requiresExpiryDate && !args.expiresAt;
-  const missingUnsupportedScope = args.unsupportedScopeTypes.length > 0;
-
-  return {
-    requiresScope,
-    requiresReason,
-    requiresReviewDate,
-    requiresExpiryDate,
-    requiresSensitiveConfirmation,
-    unsupportedScopeTypes: args.unsupportedScopeTypes,
-    missingScope,
-    missingReason,
-    missingReviewDate,
-    missingExpiryDate,
-    missingUnsupportedScope,
-    canEnterPreview: Boolean(
-      args.selectedTarget &&
-        !missingScope &&
-        !missingReason &&
-        !missingReviewDate &&
-        !missingExpiryDate &&
-        !missingUnsupportedScope,
-    ),
-  };
-}
-
-function getUserStepTone(input: {
-  selectedUserId: string | undefined;
-  selectedUserOption: ReferenceOption | undefined;
-  userStepComplete: boolean;
-}): GuidedWorkflowTone {
-  if (input.selectedUserId && (!input.selectedUserOption || input.selectedUserOption.disabled)) {
-    return 'danger';
+function buildConditionsProgressNote(
+  requirementState: AccessAssignmentRequirementState,
+  t: TranslationFn,
+): string | undefined {
+  const issues = getAccessAssignmentRequirementIssueCodes(requirementState);
+  const issue = issues.includes('unsupportedScope') ? 'unsupportedScope' : issues[0];
+  switch (issue) {
+    case 'unsupportedScope':
+      return t('accessAssignment.workflow.conditions.unsupportedNote');
+    case 'scope':
+      return t('accessAssignment.workflow.conditions.missingScopeNote');
+    case 'reason':
+      return t('accessAssignment.workflow.conditions.missingReasonNote');
+    case 'reviewDate':
+      return t('accessAssignment.workflow.conditions.missingReviewDateNote');
+    case 'expiryDate':
+      return t('accessAssignment.workflow.conditions.missingExpiryDateNote');
+    default:
+      return undefined;
   }
-  return input.userStepComplete ? 'success' : 'neutral';
-}
-
-function getTargetStepTone(input: {
-  selectedTarget: AccessAssignmentTargetOption | undefined;
-  targetUnavailable: boolean;
-  targetNeedsSensitiveConfirmation: boolean;
-}): GuidedWorkflowTone {
-  if (input.targetUnavailable) {
-    return 'danger';
-  }
-  if (!input.selectedTarget) {
-    return 'neutral';
-  }
-  return input.targetNeedsSensitiveConfirmation ? 'warning' : 'success';
-}
-
-function getConditionStepTone(input: {
-  selectedTarget: AccessAssignmentTargetOption | undefined;
-  conditionsStepComplete: boolean;
-  requirementState: AssignmentRequirementState;
-}): GuidedWorkflowTone {
-  if (!input.selectedTarget) {
-    return 'neutral';
-  }
-  if (input.conditionsStepComplete) {
-    return 'success';
-  }
-  return input.requirementState.canEnterPreview ? 'info' : 'danger';
-}
-
-function getPreviewStepTone(input: {
-  conditionsStepComplete: boolean;
-  previewResult: AccessAssignmentPreviewResult | undefined;
-  previewMatchesCurrent: boolean;
-  previewHasBlockers: boolean;
-  previewStepComplete: boolean;
-  targetNeedsSensitiveConfirmation: boolean;
-}): GuidedWorkflowTone {
-  if (!input.conditionsStepComplete) {
-    return 'neutral';
-  }
-  if (input.previewResult && input.previewMatchesCurrent && input.previewHasBlockers) {
-    return 'danger';
-  }
-  if (input.previewStepComplete) {
-    return input.targetNeedsSensitiveConfirmation ? 'warning' : 'success';
-  }
-  return 'info';
-}
-
-function buildGuidedWorkflowSteps(input: {
-  activeStepId: AssignmentWorkflowStepId;
-  conditionsStepComplete: boolean;
-  previewStepComplete: boolean;
-  previewHasBlockers: boolean;
-  previewMatchesCurrent: boolean;
-  previewResult: AccessAssignmentPreviewResult | undefined;
-  requirementState: AssignmentRequirementState;
-  scopeTargetOptions: Record<string, ReferenceOption | undefined>;
-  selectedTarget: AccessAssignmentTargetOption | undefined;
-  selectedUserId: string | undefined;
-  selectedUserOption: ReferenceOption | undefined;
-  structuredScopeGrants: AccessAssignmentScopeGrant[];
-  targetStepComplete: boolean;
-  targetUnavailable: boolean;
-  t: TranslationFn;
-  userStepComplete: boolean;
-}): GuidedWorkflowStep[] {
-  const targetNeedsSensitiveConfirmation = input.requirementState.requiresSensitiveConfirmation;
-  return [
-    {
-      id: 'user',
-      number: 1,
-      title: input.t('accessAssignment.workflow.user.title'),
-      summary:
-        input.selectedUserOption?.label ?? input.t('accessAssignment.workflow.user.emptySummary'),
-      note:
-        input.selectedUserId && (!input.selectedUserOption || input.selectedUserOption.disabled)
-          ? input.t('accessAssignment.workflow.user.invalidNote')
-          : undefined,
-      tone: getUserStepTone(input),
-      isActive: input.activeStepId === 'user',
-      canNavigate: input.activeStepId === 'user' || input.userStepComplete,
-    },
-    {
-      id: 'target',
-      number: 2,
-      title: input.t('accessAssignment.workflow.target.title'),
-      summary: input.selectedTarget
-        ? formatAccessTargetLabel(input.selectedTarget, input.t)
-        : input.t('accessAssignment.workflow.target.emptySummary'),
-      note: input.targetUnavailable
-        ? input.t('accessAssignment.workflow.target.unavailableNote')
-        : targetNeedsSensitiveConfirmation
-          ? input.t('accessAssignment.workflow.target.sensitiveNote')
-          : undefined,
-      tone: getTargetStepTone({
-        selectedTarget: input.selectedTarget,
-        targetUnavailable: input.targetUnavailable,
-        targetNeedsSensitiveConfirmation,
-      }),
-      isActive: input.activeStepId === 'target',
-      canNavigate: input.activeStepId === 'target' || input.targetStepComplete,
-    },
-    {
-      id: 'conditions',
-      number: 3,
-      title: input.t('accessAssignment.workflow.conditions.title'),
-      summary: input.conditionsStepComplete
-        ? formatScopeSummary(input.structuredScopeGrants, input.t, input.scopeTargetOptions)
-        : input.t('accessAssignment.workflow.conditions.incompleteSummary'),
-      note: buildConditionsProgressNote(input.requirementState, input.t),
-      tone: getConditionStepTone({
-        selectedTarget: input.selectedTarget,
-        conditionsStepComplete: input.conditionsStepComplete,
-        requirementState: input.requirementState,
-      }),
-      isActive: input.activeStepId === 'conditions',
-      canNavigate: input.activeStepId === 'conditions' || input.conditionsStepComplete,
-    },
-    {
-      id: 'preview',
-      number: 4,
-      title: input.t('accessAssignment.workflow.preview.title'),
-      summary: input.previewStepComplete
-        ? input.t('accessAssignment.workflow.preview.readySummary')
-        : input.t('accessAssignment.workflow.preview.emptySummary'),
-      note:
-        targetNeedsSensitiveConfirmation && input.previewStepComplete
-          ? input.t('accessAssignment.workflow.preview.sensitiveNote')
-          : undefined,
-      tone: getPreviewStepTone({
-        conditionsStepComplete: input.conditionsStepComplete,
-        previewResult: input.previewResult,
-        previewMatchesCurrent: input.previewMatchesCurrent,
-        previewHasBlockers: input.previewHasBlockers,
-        previewStepComplete: input.previewStepComplete,
-        targetNeedsSensitiveConfirmation,
-      }),
-      isActive: input.activeStepId === 'preview',
-      canNavigate: input.activeStepId === 'preview' || input.previewStepComplete,
-    },
-  ];
-}
-
-function normalizeRequiredScopeTypes(values: readonly string[]): AccessAssignmentScopeType[] {
-  const seen = new Set<string>();
-  return values
-    .map((value) => value.trim())
-    .filter((value): value is AccessAssignmentScopeType => {
-      if (!value || seen.has(value)) {
-        return false;
-      }
-      seen.add(value);
-      return true;
-    });
-}
-
-function isSensitiveOrControlledAssignmentTarget(target: AccessAssignmentTargetOption): boolean {
-  const risk = readTargetAccessRisk(target);
-  return (
-    target.assignabilityStatus === 'RESTRICTED_SENSITIVE' ||
-    target.operatorFlowGroup === 'RESTRICTED_SENSITIVE' ||
-    target.reviewPolicy === 'REVIEW_REQUIRED' ||
-    target.sensitivityLevel === 'SENSITIVE' ||
-    target.sensitivityLevel === 'HIGH_RISK' ||
-    target.sensitiveLevel === 'SENSITIVE' ||
-    target.sensitiveLevel === 'HIGH_RISK' ||
-    readBooleanTargetValue(target, 'isSensitive') ||
-    readBooleanTargetValue(target, 'isHighRisk') ||
-    risk.requiresReview === true ||
-    risk.isSensitive === true ||
-    risk.isHighRisk === true
-  );
-}
-
-function requiresAssignmentReviewDate(
-  target: AccessAssignmentTargetOption,
-  requiredScopeTypes: readonly AccessAssignmentScopeType[],
-): boolean {
-  const risk = readTargetAccessRisk(target);
-  return (
-    isSensitiveOrControlledAssignmentTarget(target) ||
-    target.requiresResponsibility ||
-    hasRequiredResponsibilityType(target.requiredResponsibilityType) ||
-    readBooleanTargetValue(target, 'requiresReview') ||
-    risk.requiresReview === true ||
-    requiredScopeTypes.some((scopeType) =>
-      ['global', 'financeGlobal', 'financePeriod', 'payrollPeriod'].includes(scopeType),
-    ) ||
-    /OWNER|ACCESS|FINANCE|REVENUE|COMMISSION/u.test(target.code)
-  );
-}
-
-function requiresAssignmentExpiryDate(target: AccessAssignmentTargetOption): boolean {
-  const risk = readTargetAccessRisk(target);
-  return (
-    risk.requiresExpiry === true ||
-    readBooleanTargetValue(target, 'isBreakGlassLike') ||
-    target.code === 'OWNER_ADMIN' ||
-    target.code === 'OWNER_ADMIN_BUNDLE'
-  );
-}
-
-function readTargetAccessRisk(target: AccessAssignmentTargetOption): Partial<{
-  isSensitive: boolean;
-  isHighRisk: boolean;
-  requiresReview: boolean;
-  requiresExpiry: boolean;
-}> {
-  const risk = (target as { accessRisk?: Record<string, unknown> | null }).accessRisk;
-  return risk && typeof risk === 'object' ? (risk as Record<string, boolean>) : {};
-}
-
-function readBooleanTargetValue(
-  target: AccessAssignmentTargetOption,
-  key: string,
-): boolean {
-  return (target as Record<string, unknown>)[key] === true;
-}
-
-function hasRequiredResponsibilityType(value: string | string[] | null | undefined): boolean {
-  return Array.isArray(value) ? value.length > 0 : Boolean(value);
 }
 
 function formatOperatorValue(value: string | undefined, t: TranslationFn): string {
@@ -2485,125 +2194,6 @@ function formatLinkedAccountStatus(value: string | undefined, t: TranslationFn):
   return t(`accessAssignment.linkedAccountStatus.${value}`, {
     defaultValue: t('accessAssignment.linkedAccountStatus.other'),
   });
-}
-
-function buildConditionsProgressNote(
-  input: AssignmentRequirementState,
-  t: TranslationFn,
-): string | undefined {
-  if (input.missingUnsupportedScope) {
-    return t('accessAssignment.workflow.conditions.unsupportedNote');
-  }
-  if (input.missingScope) {
-    return t('accessAssignment.workflow.conditions.missingScopeNote');
-  }
-  if (input.missingReason) {
-    return t('accessAssignment.workflow.conditions.missingReasonNote');
-  }
-  if (input.missingReviewDate) {
-    return t('accessAssignment.workflow.conditions.missingReviewDateNote');
-  }
-  if (input.missingExpiryDate) {
-    return t('accessAssignment.workflow.conditions.missingExpiryDateNote');
-  }
-  return undefined;
-}
-
-function buildStructuredScopeGrants(
-  scopeTypes: readonly AccessAssignmentScopeType[],
-  targetIds: Record<string, string | undefined>,
-  periodKeys: Record<string, string | undefined>,
-): AccessAssignmentScopeGrant[] {
-  return scopeTypes.flatMap((scopeType) => {
-    if (!supportedScopeTypes.has(scopeType)) {
-      return [];
-    }
-    if (scopeTypesWithoutTarget.has(scopeType)) {
-      return [{ scopeType }];
-    }
-    if (periodScopeTypes.has(scopeType)) {
-      const periodKey = periodKeys[scopeType];
-      return periodKey ? [{ scopeType, periodKey }] : [];
-    }
-    const targetId = targetIds[scopeType];
-    return targetId ? [{ scopeType, targetId }] : [];
-  });
-}
-
-function isScopeComplete(
-  scopeType: AccessAssignmentScopeType,
-  targetIds: Record<string, string | undefined>,
-  periodKeys: Record<string, string | undefined>,
-): boolean {
-  if (!supportedScopeTypes.has(scopeType)) {
-    return false;
-  }
-  if (scopeTypesWithoutTarget.has(scopeType)) {
-    return true;
-  }
-  if (periodScopeTypes.has(scopeType)) {
-    return Boolean(periodKeys[scopeType]);
-  }
-  return Boolean(targetIds[scopeType]);
-}
-
-function buildPayload(input: {
-  selectedUserId: string;
-  selectedTarget: AccessAssignmentTargetOption;
-  structuredScopeGrants: AccessAssignmentScopeGrant[];
-  reason: string;
-  reviewAt?: string;
-  expiresAt?: string;
-}): AccessAssignmentRequestPayload {
-  const payload: AccessAssignmentRequestPayload = {
-    targetUserId: input.selectedUserId,
-    assignmentTargetType: input.selectedTarget.assignmentKind,
-    structuredScopeGrants: input.structuredScopeGrants,
-    reason: input.reason,
-    reviewAt: input.reviewAt || undefined,
-    expiresAt: input.expiresAt || undefined,
-  };
-
-  if (input.selectedTarget.assignmentKind === 'ROLE') {
-    if (input.selectedTarget.id) {
-      payload.assignmentTargetId = input.selectedTarget.id;
-    }
-    payload.assignmentTargetCode = input.selectedTarget.code;
-  } else {
-    payload.assignmentTargetCode = input.selectedTarget.code;
-  }
-  if (input.selectedTarget.assignmentKind === 'BUNDLE' && input.selectedTarget.version) {
-    payload.bundleVersion = input.selectedTarget.version;
-  }
-  return payload;
-}
-
-function toTargetKey(target: AccessAssignmentTargetOption): string {
-  return `${target.assignmentKind}:${target.code}:${target.version ?? target.id ?? ''}`;
-}
-
-function isNormalSelectableAssignmentTarget(target: AccessAssignmentTargetOption): boolean {
-  return (
-    target.legacyAssignable &&
-    target.assignabilityStatus !== undefined &&
-    target.operatorFlowGroup !== undefined &&
-    normalSelectableAssignability.has(target.assignabilityStatus) &&
-    normalSelectableOperatorFlowGroups.has(target.operatorFlowGroup)
-  );
-}
-
-function hasCompleteDefaultScopes(target: AccessAssignmentTargetOption): boolean {
-  const requiredScopes = normalizeRequiredScopeTypes(target.requiredScopeTypes ?? []);
-  return requiredScopes.every((scopeType) => isScopeComplete(scopeType, {}, {}));
-}
-
-function isPreferredDefaultTarget(target: AccessAssignmentTargetOption): boolean {
-  if (target.code === 'STAFF_CONSOLE_BUNDLE' || target.code === 'STAFF_CONSOLE_USER') {
-    return true;
-  }
-
-  const requiredScopes = normalizeRequiredScopeTypes(target.requiredScopeTypes ?? []);
-  return requiredScopes.length > 0 && requiredScopes.every((scopeType) => scopeType === 'self');
 }
 
 function isApplySuccess(result: AccessAssignmentApplyResult | null | undefined): boolean {
@@ -2748,7 +2338,7 @@ function formatTargetScopeRequirement(
   target: AccessAssignmentTargetOption,
   t: TranslationFn,
 ): string {
-  const scopes = normalizeRequiredScopeTypes(target.requiredScopeTypes ?? []);
+  const scopes = normalizeAccessAssignmentRequiredScopeTypes(target.requiredScopeTypes ?? []);
   if (scopes.length === 0) {
     return t('accessAssignment.targetPicker.noSeparateScope');
   }

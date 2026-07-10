@@ -44,6 +44,7 @@
     "severity": "严重程度",
     "category": "问题类型",
     "issueCode": "诊断代码",
+    "technicalDetails": "技术详情",
     "generatedAt": "生成时间",
     "relatedEntities": "相关记录",
     "repairTarget": "导航提示:"
@@ -90,7 +91,7 @@
     "EMPLOYMENT_PROFILE_LIFECYCLE": "员工档案生命周期",
     "ORGUNIT_PARTICIPATION": "运营范围",
     "TALENTGROUP_MEMBER_LINKAGE": "TalentGroup 健康",
-    "MANAGER_ASSIGNMENT_READY": "管理者就绪",
+    "RESPONSIBILITY_READY": "职责就绪",
     "SELF_SERVICE_READY": "Self-Service 风险",
     "WORKSCHEDULE_READY": "WorkSchedule 就绪",
     "KPI_READY": "KPI 就绪"
@@ -102,8 +103,8 @@
     "ORG_UNIT": "OrgUnit",
     "TALENT_GROUP": "TalentGroup",
     "TALENT_GROUP_MEMBER": "TalentGroup 成员",
-    "ORG_UNIT_MANAGER_ASSIGNMENT": "OrgUnit 管理者 assignment",
-    "TALENT_GROUP_MANAGER_ASSIGNMENT": "TalentGroup 管理者 assignment"
+    "ORG_UNIT_RESPONSIBILITY": "组织单元职责",
+    "TALENT_GROUP_RESPONSIBILITY": "TalentGroup 职责"
   },
   "statuses": {
     "ACTIVE": "启用",
@@ -135,10 +136,10 @@
     "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "启用的 TalentGroup 成员指向未启用 Talent",
     "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "TalentGroup 没有可运营成员",
     "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "OrgUnit 没有启用的员工档案",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "OrgUnit 管理者档案未就绪",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "OrgUnit 管理者登录未就绪",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "TalentGroup 管理者档案未就绪",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "TalentGroup 管理者登录未就绪",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "OrgUnit 负责人档案未就绪",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "OrgUnit 负责人登录未就绪",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "TalentGroup 负责人档案未就绪",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "TalentGroup 负责人登录未就绪",
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "该档案不应使用 Self-Service"
   },
   "issueDescriptions": {
@@ -161,10 +162,10 @@
     "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "启用 membership 指向了未启用、归档或缺失的 Talent。",
     "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "依赖该组进行运营前，请复核成员和内部档案链接。",
     "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "该 OrgUnit 没有启用或休假的员工档案。",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "被分配的 OrgUnit 管理者没有就绪的员工档案。",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "被分配的 OrgUnit 管理者没有启用的 admin 登录账号。",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "被分配的 TalentGroup 管理者没有就绪的员工档案。",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "被分配的 TalentGroup 管理者没有启用的 admin 登录账号。",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "被分配为 OrgUnit 负责人的人员没有就绪的员工档案。",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "被分配为 OrgUnit 负责人的人员没有启用的 admin 登录账号。",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "被分配为 TalentGroup 负责人的人员没有就绪的员工档案。",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "被分配为 TalentGroup 负责人的人员没有启用的 admin 登录账号。",
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "关联员工档案的生命周期不适合 Self-Service 访问。"
   }
 }

@@ -44,6 +44,7 @@
     "severity": "Mức độ",
     "category": "Luồng ảnh hưởng",
     "issueCode": "Mã vấn đề",
+    "technicalDetails": "Chi tiết kỹ thuật",
     "generatedAt": "Thời điểm tạo",
     "relatedEntities": "Bản ghi liên quan",
     "repairTarget": "Gợi ý mở màn hình"
@@ -90,7 +91,7 @@
     "EMPLOYMENT_PROFILE_LIFECYCLE": "Trạng thái hồ sơ nhân sự",
     "ORGUNIT_PARTICIPATION": "Phạm vi đơn vị tổ chức",
     "TALENTGROUP_MEMBER_LINKAGE": "Tình trạng nhóm Talent",
-    "MANAGER_ASSIGNMENT_READY": "Sẵn sàng quản lý",
+    "RESPONSIBILITY_READY": "Sẵn sàng trách nhiệm",
     "SELF_SERVICE_READY": "Rủi ro truy cập dữ liệu cá nhân",
     "WORKSCHEDULE_READY": "Sẵn sàng lịch làm việc",
     "KPI_READY": "Sẵn sàng KPI"
@@ -102,8 +103,8 @@
     "ORG_UNIT": "Đơn vị tổ chức",
     "TALENT_GROUP": "Nhóm Talent",
     "TALENT_GROUP_MEMBER": "Thành viên nhóm Talent",
-    "ORG_UNIT_MANAGER_ASSIGNMENT": "Phân công quản lý đơn vị",
-    "TALENT_GROUP_MANAGER_ASSIGNMENT": "Phân công quản lý nhóm Talent"
+    "ORG_UNIT_RESPONSIBILITY": "Trách nhiệm đơn vị tổ chức",
+    "TALENT_GROUP_RESPONSIBILITY": "Trách nhiệm nhóm Talent"
   },
   "statuses": {
     "ACTIVE": "Đang hoạt động",
@@ -135,10 +136,10 @@
     "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "Thành viên nhóm Talent trỏ tới Talent không hoạt động",
     "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "Nhóm Talent không có thành viên vận hành phù hợp",
     "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "Đơn vị tổ chức không có hồ sơ nhân sự đang hoạt động",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Người quản lý đơn vị chưa sẵn sàng hồ sơ",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Người quản lý đơn vị chưa sẵn sàng tài khoản",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Người quản lý nhóm Talent chưa sẵn sàng hồ sơ",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Người quản lý nhóm Talent chưa sẵn sàng tài khoản",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "Người phụ trách đơn vị chưa sẵn sàng hồ sơ",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "Người phụ trách đơn vị chưa sẵn sàng tài khoản",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "Người phụ trách nhóm Talent chưa sẵn sàng hồ sơ",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "Người phụ trách nhóm Talent chưa sẵn sàng tài khoản",
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Hồ sơ không đủ điều kiện truy cập dữ liệu cá nhân"
   },
   "issueDescriptions": {
@@ -161,10 +162,10 @@
     "TALENTGROUP_ACTIVE_MEMBER_TALENT_NOT_ACTIVE": "Thành viên đang hoạt động trỏ tới Talent không hoạt động, đã lưu trữ hoặc không tồn tại.",
     "TALENTGROUP_HAS_NO_OPERATIONAL_MEMBERS": "Cần rà soát thành viên và liên kết hồ sơ nội bộ trước khi dùng nhóm cho vận hành.",
     "ORGUNIT_HAS_NO_ACTIVE_EMPLOYMENT_PROFILES": "Đơn vị tổ chức không có hồ sơ nhân sự đang hoạt động hoặc đang nghỉ phép hợp lệ.",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Người được gán quản lý đơn vị chưa có hồ sơ nhân sự sẵn sàng.",
-    "ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Người được gán quản lý đơn vị chưa có tài khoản quản trị đang hoạt động.",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY": "Người được gán quản lý nhóm Talent chưa có hồ sơ nhân sự sẵn sàng.",
-    "TALENTGROUP_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY": "Người được gán quản lý nhóm Talent chưa có tài khoản quản trị đang hoạt động.",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "Người phụ trách đơn vị được gán chưa có hồ sơ nhân sự sẵn sàng.",
+    "ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "Người phụ trách đơn vị được gán chưa có tài khoản quản trị đang hoạt động.",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY": "Người phụ trách nhóm Talent được gán chưa có hồ sơ nhân sự sẵn sàng.",
+    "TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY": "Người phụ trách nhóm Talent được gán chưa có tài khoản quản trị đang hoạt động.",
     "SELF_SERVICE_PROFILE_NOT_ACTIVE": "Trạng thái hồ sơ nhân sự liên kết không đủ điều kiện truy cập dữ liệu cá nhân."
   }
 }

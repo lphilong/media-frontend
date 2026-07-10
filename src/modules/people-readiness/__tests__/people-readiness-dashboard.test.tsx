@@ -7,6 +7,9 @@ import { http, HttpResponse } from 'msw';
 
 import { appRoutes } from '@app/router/router';
 import {
+  PEOPLE_READINESS_CATEGORIES,
+  PEOPLE_READINESS_ENTITY_TYPES,
+  PEOPLE_READINESS_ISSUE_CODES,
   parsePeopleReadinessIssueListResponse,
   type PeopleReadinessIssue,
 } from '@modules/people-readiness/api/people-readiness.api';
@@ -22,7 +25,12 @@ import { setLocale } from '@shared/i18n/i18n';
 type MockCapabilities = Parameters<typeof setMockCurrentActorCapabilities>[0];
 
 const makeCapabilities = (
-  overrides: Partial<Pick<MockCapabilities, 'permissions' | 'roles' | 'scopeGrants' | 'type'>>,
+  overrides: Partial<
+    Pick<
+      MockCapabilities,
+      'permissions' | 'roles' | 'scopeGrants' | 'type' | 'accountContexts' | 'workspaceAvailability'
+    >
+  >,
 ): MockCapabilities => ({
   id: 'people-readiness-test-user',
   type: overrides.type ?? 'admin',
@@ -31,6 +39,8 @@ const makeCapabilities = (
   roles: overrides.roles ?? [],
   permissions: overrides.permissions ?? ['employmentProfile.read'],
   scopeGrants: overrides.scopeGrants ?? {},
+  accountContexts: overrides.accountContexts ?? ['ADMIN_CONSOLE'],
+  workspaceAvailability: overrides.workspaceAvailability,
   generatedAt: '2026-06-07T00:00:00.000Z',
 });
 
@@ -81,7 +91,7 @@ const lastIssuesRequest = (): URL => {
 };
 
 describe('People Profile Check dashboard', () => {
-  it('strictly parses the Employment Terms category and five issue codes while rejecting unknown codes', () => {
+  it('strictly parses the complete backend enum contract and rejects unknown codes', () => {
     const codes = [
       'ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS',
       'EMPLOYMENT_TERMS_PENDING_APPROVAL',
@@ -101,6 +111,65 @@ describe('People Profile Check dashboard', () => {
     };
 
     expect(parsePeopleReadinessIssueListResponse(response).items).toHaveLength(5);
+    for (const category of PEOPLE_READINESS_CATEGORIES) {
+      expect(() =>
+        parsePeopleReadinessIssueListResponse({
+          ...response,
+          data: { ...response.data, items: [{ ...items[0], category }] },
+        }),
+      ).not.toThrow();
+    }
+    for (const entityType of PEOPLE_READINESS_ENTITY_TYPES) {
+      expect(() =>
+        parsePeopleReadinessIssueListResponse({
+          ...response,
+          data: {
+            ...response.data,
+            items: [
+              {
+                ...items[0],
+                primaryEntityType: entityType,
+                primaryEntity: { ...items[0].primaryEntity, entityType },
+                repairTarget: { ...items[0].repairTarget, targetType: entityType },
+              },
+            ],
+          },
+        }),
+      ).not.toThrow();
+    }
+    for (const issueCode of PEOPLE_READINESS_ISSUE_CODES) {
+      expect(() =>
+        parsePeopleReadinessIssueListResponse({
+          ...response,
+          data: { ...response.data, items: [{ ...items[0], issueCode }] },
+        }),
+      ).not.toThrow();
+    }
+    expect(
+      parsePeopleReadinessIssueListResponse({
+        ...response,
+        data: {
+          ...response.data,
+          nextCursor: 'MjA',
+          items: [
+            {
+              ...items[0],
+              issueCode: 'TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY',
+              category: 'RESPONSIBILITY_READY',
+              primaryEntityType: 'TALENT_GROUP_RESPONSIBILITY',
+              primaryEntity: {
+                ...items[0].primaryEntity,
+                entityType: 'TALENT_GROUP_RESPONSIBILITY',
+              },
+              repairTarget: {
+                ...items[0].repairTarget,
+                targetType: 'TALENT_GROUP_RESPONSIBILITY',
+              },
+            },
+          ],
+        },
+      }).nextCursor,
+    ).toBe('MjA');
     expect(() =>
       parsePeopleReadinessIssueListResponse({
         ...response,
@@ -110,6 +179,41 @@ describe('People Profile Check dashboard', () => {
         },
       }),
     ).toThrow();
+  });
+
+  it('provides localized responsibility labels without raw-code fallback', async () => {
+    const expected = {
+      en: {
+        category: 'Responsibility readiness',
+        entity: 'OrgUnit responsibility',
+        issue: 'OrgUnit responsibility holder profile is not ready',
+      },
+      vi: {
+        category: 'Sẵn sàng trách nhiệm',
+        entity: 'Trách nhiệm đơn vị tổ chức',
+        issue: 'Người phụ trách đơn vị chưa sẵn sàng hồ sơ',
+      },
+      zh: {
+        category: '职责就绪',
+        entity: '组织单元职责',
+        issue: 'OrgUnit 负责人档案未就绪',
+      },
+    } as const;
+
+    for (const [locale, labels] of Object.entries(expected) as Array<
+      [keyof typeof expected, (typeof expected)[keyof typeof expected]]
+    >) {
+      await setLocale(locale);
+      expect(i18n.t('people-readiness:categories.RESPONSIBILITY_READY')).toBe(labels.category);
+      expect(i18n.t('people-readiness:entities.ORG_UNIT_RESPONSIBILITY')).toBe(labels.entity);
+      expect(
+        i18n.t('people-readiness:issueTitles.ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY'),
+      ).toBe(labels.issue);
+      expect(
+        i18n.t('people-readiness:issueTitles.TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY'),
+      ).not.toBe('TALENTGROUP_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY');
+    }
+    await setLocale('en');
   });
 
   it('renders the authorized Admin route through the Admin shell and sidebar', async () => {
@@ -149,12 +253,14 @@ describe('People Profile Check dashboard', () => {
           workSchedule: ['self', 'team'],
           kpi: ['managedGroup'],
         },
+        accountContexts: ['MANAGER_CONSOLE'],
       }),
     );
 
     expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-people-readiness')).not.toBeInTheDocument();
     expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
+    expect(peopleReadinessRequestLog).toHaveLength(0);
 
     cleanup();
     await renderPeopleReadinessRoute(
@@ -165,12 +271,14 @@ describe('People Profile Check dashboard', () => {
           workSchedule: ['self'],
           kpi: ['self'],
         },
+        accountContexts: ['STAFF_CONSOLE'],
       }),
     );
 
     expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-people-readiness')).not.toBeInTheDocument();
     expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
+    expect(peopleReadinessRequestLog).toHaveLength(0);
   });
 
   it('consumes summary and issue endpoints with supported params only', async () => {
@@ -201,11 +309,14 @@ describe('People Profile Check dashboard', () => {
     expect(screen.getByRole('option', { name: 'Self-Service risks' })).toHaveValue(
       'SELF_SERVICE_READY',
     );
-    expect(screen.getByRole('option', { name: 'Manager readiness' })).toHaveValue(
-      'MANAGER_ASSIGNMENT_READY',
+    expect(screen.getByRole('option', { name: 'Responsibility readiness' })).toHaveValue(
+      'RESPONSIBILITY_READY',
     );
     expect(await screen.findByText('No Org Person')).toBeInTheDocument();
-    expect(screen.getByText('EMPLOYMENT_PROFILE_MISSING_ORG_UNIT')).toBeInTheDocument();
+    expect(screen.getAllByText('Technical details').length).toBeGreaterThan(0);
+    const firstTechnicalCode = document.querySelector('details pre');
+    expect(firstTechnicalCode).toHaveTextContent('EMPLOYMENT_PROFILE_MISSING_ORG_UNIT');
+    expect(firstTechnicalCode).not.toBeVisible();
     expect(screen.getAllByText('Open related Admin record')[0]).toHaveAttribute(
       'href',
       '/employment-profiles/ep-no-org',
@@ -217,31 +328,31 @@ describe('People Profile Check dashboard', () => {
     expect(issuesUrl.searchParams.get('limit')).toBe('10');
   });
 
-  it('emits exact supported filters and keeps cursor pagination opaque', async () => {
+  it('emits exact supported filters, resets them, and keeps cursor pagination opaque', async () => {
     await renderPeopleReadinessRoute();
     await screen.findByText('No Org Person');
 
     await userEvent.selectOptions(
       screen.getByLabelText('Affected flow'),
-      'MANAGER_ASSIGNMENT_READY',
+      'RESPONSIBILITY_READY',
     );
     await userEvent.selectOptions(screen.getByLabelText('Severity'), 'BLOCKER');
     await userEvent.selectOptions(
       screen.getByLabelText('Primary entity'),
-      'ORG_UNIT_MANAGER_ASSIGNMENT',
+      'ORG_UNIT_RESPONSIBILITY',
     );
     await userEvent.selectOptions(
       screen.getByLabelText('Issue type'),
-      'ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY',
+      'ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY',
     );
     await userEvent.selectOptions(screen.getByLabelText('Rows'), '25');
 
     await waitFor(() => {
       const params = lastIssuesRequest().searchParams;
-      expect(params.get('category')).toBe('MANAGER_ASSIGNMENT_READY');
+      expect(params.get('category')).toBe('RESPONSIBILITY_READY');
       expect(params.get('severity')).toBe('BLOCKER');
-      expect(params.get('entityType')).toBe('ORG_UNIT_MANAGER_ASSIGNMENT');
-      expect(params.get('issueCode')).toBe('ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_LOGIN_READY');
+      expect(params.get('entityType')).toBe('ORG_UNIT_RESPONSIBILITY');
+      expect(params.get('issueCode')).toBe('ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY');
       expect(params.get('limit')).toBe('25');
     });
 
@@ -253,10 +364,13 @@ describe('People Profile Check dashboard', () => {
       'severity',
     ]);
 
-    await userEvent.selectOptions(screen.getByLabelText('Affected flow'), '');
-    await userEvent.selectOptions(screen.getByLabelText('Severity'), '');
-    await userEvent.selectOptions(screen.getByLabelText('Primary entity'), '');
-    await userEvent.selectOptions(screen.getByLabelText('Issue type'), '');
+    await userEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+    await waitFor(() => {
+      const params = lastIssuesRequest().searchParams;
+      expect(Array.from(params.keys()).sort()).toEqual(['limit']);
+      expect(params.get('limit')).toBe('10');
+    });
+
     await userEvent.selectOptions(screen.getByLabelText('Rows'), '2');
 
     await waitFor(() => {
@@ -281,6 +395,71 @@ describe('People Profile Check dashboard', () => {
       expect(params.get('severity')).toBe('WARNING');
       expect(params.has('cursor')).toBe(false);
     });
+  }, 10_000);
+
+  it('enables Clear all for cursor-only history and resets both cursor and filters without mutation', async () => {
+    const requests: URL[] = [];
+    let mutationCount = 0;
+    server.use(
+      http.get('*/admin/people-readiness/issues', ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        const cursor = url.searchParams.get('cursor');
+        return HttpResponse.json({
+          data: {
+            items: [employmentTermsIssue('ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS')],
+            nextCursor: cursor ? null : 'opaque-next-cursor',
+            totalCount: 2,
+            generatedAt: Date.parse('2026-06-07T02:00:00.000Z'),
+            appliedFilters: url.searchParams.get('severity')
+              ? { severity: url.searchParams.get('severity') }
+              : {},
+          },
+        });
+      }),
+      http.post('*/admin/people-readiness/*', () => {
+        mutationCount += 1;
+        return HttpResponse.json({ message: 'unexpected' }, { status: 500 });
+      }),
+    );
+
+    await renderPeopleReadinessRoute();
+    await screen.findByText('Employment Terms Person');
+
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('common:actions.next') }));
+    await waitFor(() => {
+      expect(requests.at(-1)?.searchParams.get('cursor')).toBe('opaque-next-cursor');
+    });
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+    await waitFor(() => {
+      const request = requests.at(-1);
+      expect(request?.searchParams.get('cursor')).toBeNull();
+      expect(request?.searchParams.get('severity')).toBeNull();
+    });
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeDisabled();
+
+    await userEvent.selectOptions(screen.getByLabelText('Severity'), 'BLOCKER');
+    await userEvent.click(screen.getByRole('button', { name: i18n.t('common:actions.next') }));
+    await waitFor(() => {
+      const request = requests.at(-1);
+      expect(request?.searchParams.get('cursor')).toBe('opaque-next-cursor');
+      expect(request?.searchParams.get('severity')).toBe('BLOCKER');
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+    await waitFor(() => {
+      const request = requests.at(-1);
+      expect(request?.searchParams.get('cursor')).toBeNull();
+      expect(request?.searchParams.get('severity')).toBeNull();
+      expect(request?.searchParams.get('limit')).toBe('10');
+    });
+    expect(screen.getByLabelText('Severity')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeDisabled();
+    expect(mutationCount).toBe(0);
   });
 
   it('uses overview cards as backend-supported quick filters and keeps dropdowns in sync', async () => {
@@ -425,6 +604,7 @@ describe('People Profile Check dashboard', () => {
   });
 
   it('renders issue cards with distinct severity/category badges and secondary technical code', async () => {
+    const user = userEvent.setup();
     setPeopleReadinessIssues([
       {
         ...employmentTermsIssue('EMPLOYMENT_TERMS_MISSING_BASE_SALARY'),
@@ -464,8 +644,14 @@ describe('People Profile Check dashboard', () => {
     expect(
       within(article).getByRole('link', { name: 'Open employment terms / pay conditions' }),
     ).toHaveAttribute('href', '/employment-profiles/ep-hret#employment-terms');
-    expect(within(article).getByText('Diagnostic code')).toBeInTheDocument();
-    expect(within(article).getByText('EMPLOYMENT_TERMS_MISSING_BASE_SALARY')).toBeInTheDocument();
+    expect(within(article).getByText('Technical details')).toBeInTheDocument();
+    const technicalDetails = article.querySelector('details');
+    const technicalCode = technicalDetails?.querySelector('pre');
+    expect(technicalDetails).not.toHaveAttribute('open');
+    expect(technicalCode).toHaveTextContent('EMPLOYMENT_TERMS_MISSING_BASE_SALARY');
+    expect(technicalCode).not.toBeVisible();
+    await user.click(within(article).getByText('Technical details'));
+    expect(technicalCode).toBeVisible();
     expect(within(article).queryByText(/allowance amount/i)).not.toBeInTheDocument();
     expect(within(article).queryByText(/VND/)).not.toBeInTheDocument();
     expect(within(article).queryByText('Approved salary source note')).not.toBeInTheDocument();
@@ -497,7 +683,7 @@ describe('People Profile Check dashboard', () => {
     cleanup();
     await setLocale('vi');
     expect(i18n.t('people-readiness:issueTitles.ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS')).toBe(
-      'Thiếu điều khoản lương',
+      'Thiếu điều khoản làm việc / lương',
     );
     await setLocale('zh');
     expect(i18n.t('people-readiness:issueTitles.EMPLOYMENT_TERMS_OVERLAP')).toBe(
@@ -529,24 +715,20 @@ describe('People Profile Check dashboard', () => {
     expect(link).toHaveAttribute('href', '/employment-profiles/ep-001#employment-terms');
     await userEvent.click(link);
 
-    const heading = await screen.findByRole('heading', { name: /Employment Terms/i });
-    expect(heading.closest('section')).toHaveAttribute('id', 'employment-terms');
-    expect(
-      screen.getByText(i18n.t('employment-profile:employmentTerms.accessRequired')),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Employment Profiles' })).toBeInTheDocument();
     expect(employmentTermsFetchCount).toBe(0);
     expect(contractRegistryRequestCount).toBe(0);
   });
 
   it('renders non-actionable repair hints when no safe detail route exists', async () => {
     const unsafeIssue: PeopleReadinessIssue = {
-      id: 'ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY:ORG_UNIT_MANAGER_ASSIGNMENT:bad',
-      issueCode: 'ORGUNIT_MANAGER_ASSIGNMENT_MANAGER_NOT_PROFILE_READY',
-      category: 'MANAGER_ASSIGNMENT_READY',
+      id: 'ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY:ORG_UNIT_RESPONSIBILITY:bad',
+      issueCode: 'ORGUNIT_RESPONSIBILITY_MANAGER_NOT_PROFILE_READY',
+      category: 'RESPONSIBILITY_READY',
       severity: 'BLOCKER',
-      primaryEntityType: 'ORG_UNIT_MANAGER_ASSIGNMENT',
+      primaryEntityType: 'ORG_UNIT_RESPONSIBILITY',
       primaryEntity: {
-        entityType: 'ORG_UNIT_MANAGER_ASSIGNMENT',
+        entityType: 'ORG_UNIT_RESPONSIBILITY',
         id: 'bad',
         displayName: 'UNIT_MANAGER assignment',
         status: 'ACTIVE',
@@ -554,7 +736,7 @@ describe('People Profile Check dashboard', () => {
       relatedEntities: [],
       summary: 'Manager assignment manager is not profile-ready.',
       repairTarget: {
-        targetType: 'ORG_UNIT_MANAGER_ASSIGNMENT',
+        targetType: 'ORG_UNIT_RESPONSIBILITY',
         targetId: 'bad',
         suggestedSurface: 'ADMIN_PEOPLE_READINESS',
         suggestedAction: 'Review manager assignment',
@@ -566,7 +748,7 @@ describe('People Profile Check dashboard', () => {
 
     await renderPeopleReadinessRoute();
     const row = await screen.findByRole('heading', {
-      name: 'OrgUnit manager profile is not ready',
+      name: 'OrgUnit responsibility holder profile is not ready',
     });
     const article = row.closest('article');
 
@@ -574,6 +756,8 @@ describe('People Profile Check dashboard', () => {
       throw new Error('Issue row did not render as an article');
     }
 
+    expect(within(article).getByText('Responsibility readiness')).toBeInTheDocument();
+    expect(within(article).getByText('OrgUnit responsibility')).toBeInTheDocument();
     expect(within(article).getByText(/No safe detail route is available/)).toBeInTheDocument();
     expect(within(article).queryByRole('link', { name: 'Open related Admin record' })).toBeNull();
   });
@@ -605,15 +789,15 @@ describe('People Profile Check dashboard', () => {
     expect(within(peopleSection).getByText('Org Units')).toBeInTheDocument();
     expect(within(peopleSection).getByText('Employment Profiles')).toBeInTheDocument();
 
-    const operationsHeader = screen.getByText('Operations');
-    const operationsSection = operationsHeader.closest('section');
+    const workResourcesHeader = screen.getByText('Work Schedule & Resources');
+    const workResourcesSection = workResourcesHeader.closest('section');
 
-    if (!operationsSection) {
-      throw new Error('Operations nav section did not render');
+    if (!workResourcesSection) {
+      throw new Error('Work Schedule & Resources nav section did not render');
     }
 
-    expect(within(operationsSection).queryByTestId('nav-link-people-readiness')).toBeNull();
-    expect(within(operationsSection).queryByText('Employment Terms')).not.toBeInTheDocument();
+    expect(within(workResourcesSection).queryByTestId('nav-link-people-readiness')).toBeNull();
+    expect(within(workResourcesSection).queryByText('Employment Terms')).not.toBeInTheDocument();
   });
 });
 

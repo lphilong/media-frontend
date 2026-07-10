@@ -24,14 +24,16 @@ import {
 } from '@modules/people-readiness/hooks/use-people-readiness';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  Button,
   CursorPager,
   EmptyState,
   ErrorState,
-  FilterBarShell,
+  FilterToolbar,
   LoadingState,
   PageContainer,
   PermissionDeniedState,
   StatusBadge,
+  TechnicalDetailsDisclosure,
   type StatusBadgeTone,
 } from '@shared/components/primitives';
 import { formatBusinessTimestamp, formatInteger } from '@shared/formatting/formatters';
@@ -44,6 +46,14 @@ type FilterState = {
   severity: '' | PeopleReadinessSeverity;
   entityType: '' | PeopleReadinessEntityType;
   limit: number;
+};
+
+const DEFAULT_FILTERS: FilterState = {
+  category: '',
+  issueCode: '',
+  severity: '',
+  entityType: '',
+  limit: DEFAULT_LIMIT,
 };
 
 type OverviewCard = {
@@ -339,14 +349,15 @@ const IssueRow = ({ issue }: { issue: PeopleReadinessIssue }): JSX.Element => {
 
         <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
           <div>
-            <dt className="font-medium text-muted">{t('fields.issueCode')}</dt>
-            <dd className="mt-1 break-all font-mono text-xs text-muted">{issue.issueCode}</dd>
-          </div>
-          <div>
             <dt className="font-medium text-muted">{t('fields.generatedAt')}</dt>
             <dd className="mt-1 text-muted">{formatBusinessTimestamp(issue.generatedAt)}</dd>
           </div>
         </dl>
+
+        <TechnicalDetailsDisclosure
+          label={t('fields.technicalDetails')}
+          details={{ issueCode: issue.issueCode }}
+        />
       </div>
     </article>
   );
@@ -354,13 +365,7 @@ const IssueRow = ({ issue }: { issue: PeopleReadinessIssue }): JSX.Element => {
 
 export const PeopleReadinessDashboardPage = (): JSX.Element => {
   const { t } = useTranslation(['people-readiness', 'common', 'errors']);
-  const [filters, setFilters] = useState<FilterState>({
-    category: '',
-    issueCode: '',
-    severity: '',
-    entityType: '',
-    limit: DEFAULT_LIMIT,
-  });
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [cursorStack, setCursorStack] = useState<string[]>([]);
   const cursor = cursorStack[cursorStack.length - 1];
   const issueQuery = useMemo(() => buildIssueQuery(filters, cursor), [filters, cursor]);
@@ -368,6 +373,10 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
   const issuesQuery = usePeopleReadinessIssues(issueQuery);
 
   const resetCursor = (): void => setCursorStack([]);
+  const resetFilters = (): void => {
+    setFilters(DEFAULT_FILTERS);
+    resetCursor();
+  };
   const updateFilter = <TKey extends keyof FilterState>(key: TKey, value: FilterState[TKey]) => {
     setFilters((current) => ({ ...current, [key]: value }));
     resetCursor();
@@ -469,7 +478,25 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
           </p>
         </div>
 
-        <FilterBarShell>
+        <FilterToolbar
+          resetAction={
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={resetFilters}
+              disabled={
+                cursorStack.length === 0 &&
+                filters.category === '' &&
+                filters.issueCode === '' &&
+                filters.severity === '' &&
+                filters.entityType === '' &&
+                filters.limit === DEFAULT_LIMIT
+              }
+            >
+              {t('common:filters.clearAll')}
+            </Button>
+          }
+        >
           <SelectFilter
             label={t('people-readiness:filters.category')}
             value={filters.category}
@@ -518,7 +545,7 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
               ))}
             </select>
           </label>
-        </FilterBarShell>
+        </FilterToolbar>
 
         {issuesQuery.isFetching && issues ? (
           <p className="text-sm text-muted">{t('people-readiness:states.refreshingInline')}</p>

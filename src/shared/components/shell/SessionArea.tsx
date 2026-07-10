@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@shared/auth/auth-context';
+import { Button } from '@shared/components/primitives';
 
 export const SessionArea = (): JSX.Element => {
   const { t } = useTranslation('common');
@@ -12,13 +13,9 @@ export const SessionArea = (): JSX.Element => {
         <p className="font-medium text-text">{session?.userName ?? t('session.placeholderUser')}</p>
         <p className="text-muted">{t('session.statusActive')}</p>
       </div>
-      <button
-        type="button"
-        onClick={() => void logout('/')}
-        className="rounded border border-border px-2 py-1 text-xs text-text hover:bg-slate-50"
-      >
+      <Button onClick={() => void logout('/')} size="sm" variant="outline">
         {t('actions.logout')}
-      </button>
+      </Button>
     </div>
   );
 };
