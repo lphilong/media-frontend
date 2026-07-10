@@ -117,7 +117,23 @@ const openAssignmentPreviewStep = async (user: ReturnType<typeof userEvent.setup
 
 const getAssignmentProgressCard = (
   stepId: 'user' | 'target' | 'conditions' | 'condition' | 'preview',
-) => screen.getByTestId(`role-assignment-progress-card-${stepId === 'conditions' ? 'condition' : stepId}`);
+) => {
+  const normalizedStepId = stepId === 'condition' ? 'conditions' : stepId;
+  const title = screen.getByText(
+    i18n.t(`role:accessAssignment.workflow.${normalizedStepId}.title`),
+  );
+  const progressItem = title.closest('li');
+
+  if (!progressItem) {
+    throw new Error(`Workflow progress item not found: ${stepId}`);
+  }
+
+  return progressItem;
+};
+
+const getAssignmentProgressButton = (
+  stepId: 'user' | 'target' | 'conditions' | 'condition' | 'preview',
+) => within(getAssignmentProgressCard(stepId)).getByRole('button');
 
 const escapedPattern = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -551,7 +567,7 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText(i18n.t('role:accessAssignment.sourceTrace'))).toBeInTheDocument();
     await waitFor(() => expect(applyButton).toBeEnabled());
 
-    await user.click(getAssignmentProgressCard('conditions'));
+    await user.click(getAssignmentProgressButton('conditions'));
     const editableReasonInput = screen.getByPlaceholderText(
       i18n.t('role:accessAssignment.reasonPlaceholder'),
     );
@@ -673,18 +689,18 @@ describe('role IA-1 surfaces', () => {
       screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel')),
       'BUNDLE:OWNER_ADMIN_BUNDLE:2026-05-20',
     );
-    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-status-tone', 'warning');
+    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-business-tone', 'warning');
 
     const reasonInput = await advanceAssignmentTargetToConditions(user);
     await user.type(reasonInput, 'Sensitive access confirmation coverage');
     await user.type(screen.getByLabelText(i18n.t('role:accessAssignment.reviewAtLabel')), '2026-08-01');
     await user.type(screen.getByLabelText(i18n.t('role:accessAssignment.expiresAtLabel')), '2026-08-10');
-    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'success');
     await continueAssignmentWorkflowToPreview(user);
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
     ).toBeInTheDocument();
-    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-status-tone', 'warning');
+    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'warning');
 
     const applyButton = screen.getByRole('button', {
       name: i18n.t('role:accessAssignment.applyButton'),
@@ -694,9 +710,13 @@ describe('role IA-1 surfaces', () => {
     expect(applyRequests).toBe(0);
     const dialog = screen.getByRole('dialog', { name: i18n.t('role:accessAssignment.sensitiveConfirm.title') });
     expect(within(dialog).getByText(/Alice Linked/u)).toBeInTheDocument();
-    expect(within(dialog).getByText(accessLabel('ownerAdmin'))).toBeInTheDocument();
-    expect(within(dialog).getByText(i18n.t('role:accessAssignment.scopeTypes.global'))).toBeInTheDocument();
-    expect(within(dialog).getByText('2026-08-01')).toBeInTheDocument();
+    expect(within(dialog).getByText(accessLabelPattern('ownerAdmin'))).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        new RegExp(i18n.t('role:accessAssignment.scopeTypes.global'), 'u'),
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText(/2026-08-01/u)).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: i18n.t('role:accessAssignment.sensitiveConfirm.cancel') }));
     expect(screen.queryByRole('dialog', { name: i18n.t('role:accessAssignment.sensitiveConfirm.title') })).not.toBeInTheDocument();
@@ -757,14 +777,14 @@ describe('role IA-1 surfaces', () => {
       ),
     ).toHaveValue('');
     expect(screen.queryByTestId('role-assignment-selected-user-detail')).not.toBeInTheDocument();
-    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-status-tone', 'neutral');
+    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-business-tone', 'neutral');
     expect(getAssignmentProgressCard('user')).toHaveAttribute('data-active', 'true');
-    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-status-tone', 'neutral');
-    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-status-tone', 'neutral');
-    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-status-tone', 'neutral');
-    expect(getAssignmentProgressCard('target')).toBeDisabled();
-    expect(getAssignmentProgressCard('condition')).toBeDisabled();
-    expect(getAssignmentProgressCard('preview')).toBeDisabled();
+    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-business-tone', 'disabled');
+    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-business-tone', 'disabled');
+    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'disabled');
+    expect(getAssignmentProgressButton('target')).toBeDisabled();
+    expect(getAssignmentProgressButton('condition')).toBeDisabled();
+    expect(getAssignmentProgressButton('preview')).toBeDisabled();
     expect(screen.getByRole('button', { name: i18n.t('role:accessAssignment.footer.continue') })).toBeDisabled();
   }, 20_000);
 
@@ -788,23 +808,21 @@ describe('role IA-1 surfaces', () => {
     await renderAssignmentTab(user);
 
     expect(screen.queryByTestId('role-assignment-summary-strip')).not.toBeInTheDocument();
-    expect(screen.getAllByTestId('role-assignment-progress-cards')).toHaveLength(1);
-    const progressCards = screen.getByTestId('role-assignment-progress-cards');
+    expect(screen.getAllByTestId('role-assignment-workflow-progress')).toHaveLength(1);
+    const progressCards = screen.getByTestId('role-assignment-workflow-progress');
     expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.user.title'))).toBeInTheDocument();
     expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.target.title'))).toBeInTheDocument();
     expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.conditions.title'))).toBeInTheDocument();
     expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.preview.title'))).toBeInTheDocument();
     expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.user.emptySummary'))).toBeInTheDocument();
-    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-status-tone', 'neutral');
+    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-business-tone', 'neutral');
     expect(getAssignmentProgressCard('user')).toHaveAttribute('data-active', 'true');
-    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-status-tone', 'neutral');
-    expect(getAssignmentProgressCard('user')).toHaveAccessibleName(
+    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-business-tone', 'disabled');
+    expect(getAssignmentProgressButton('user')).toHaveAccessibleName(
       new RegExp(i18n.t('role:accessAssignment.workflow.active'), 'u'),
     );
-    expect(progressCards.querySelector('[data-status-tone="active"]')).toBeNull();
-    expect(within(progressCards).getAllByTestId(/role-assignment-progress-card-.*-marker/u)).toHaveLength(
-      4,
-    );
+    expect(progressCards.querySelector('[data-business-tone="active"]')).toBeNull();
+    expect(within(progressCards).getAllByRole('button')).toHaveLength(4);
     expect(screen.getByTestId('role-assignment-footer')).toBeInTheDocument();
     expect(screen.getByTestId('role-assignment-active-step')).toHaveAttribute(
       'data-active-step',
@@ -834,7 +852,7 @@ describe('role IA-1 surfaces', () => {
     ).not.toBeInTheDocument();
 
     await selectAliceForAssignment(user);
-    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-business-tone', 'success');
     expect(screen.getByTestId('role-assignment-selected-user-detail')).toHaveTextContent(
       /Alice Linked/u,
     );
@@ -865,7 +883,7 @@ describe('role IA-1 surfaces', () => {
     );
 
     await continueAssignmentWorkflow(user);
-    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-business-tone', 'success');
     expect(screen.getByTestId('role-assignment-active-step')).toHaveAttribute(
       'data-active-step',
       'target',
@@ -885,8 +903,8 @@ describe('role IA-1 surfaces', () => {
     ).not.toBeInTheDocument();
 
     await continueAssignmentWorkflow(user);
-    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-status-tone', 'danger');
-    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-status-tone', 'neutral');
+    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'danger');
+    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'disabled');
     expect(screen.getByTestId('role-assignment-active-step')).toHaveAttribute(
       'data-active-step',
       'conditions',
@@ -905,15 +923,15 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText(i18n.t('role:accessAssignment.expiresAtLabel'))).toBeInTheDocument();
 
     await user.type(reasonInput, 'Active step only UAT coverage');
-    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'success');
     await continueAssignmentWorkflowToPreview(user);
     expect(['info', 'success', 'warning']).toContain(
-      getAssignmentProgressCard('preview').getAttribute('data-status-tone'),
+      getAssignmentProgressCard('preview').getAttribute('data-business-tone'),
     );
     expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-active', 'true');
-    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-status-tone', 'success');
-    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-status-tone', 'success');
-    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-business-tone', 'success');
+    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-business-tone', 'success');
+    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-business-tone', 'success');
     expect(screen.getByTestId('role-assignment-active-step')).toHaveAttribute(
       'data-active-step',
       'preview',
@@ -933,9 +951,9 @@ describe('role IA-1 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
     ).toBeInTheDocument();
-    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'success');
 
-    await user.click(getAssignmentProgressCard('user'));
+    await user.click(getAssignmentProgressButton('user'));
     expect(screen.getByTestId('role-assignment-active-step')).toHaveAttribute(
       'data-active-step',
       'user',
@@ -947,12 +965,12 @@ describe('role IA-1 surfaces', () => {
     expect(
       screen.queryByRole('heading', { name: i18n.t('role:accessAssignment.lifecycle.title') }),
     ).not.toBeInTheDocument();
-    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-status-tone', 'success');
-    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-status-tone', 'success');
-    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-status-tone', 'success');
-    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('user')).toHaveAttribute('data-business-tone', 'success');
+    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-business-tone', 'success');
+    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-business-tone', 'success');
+    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'success');
 
-    await user.click(getAssignmentProgressCard('condition'));
+    await user.click(getAssignmentProgressButton('condition'));
     expect(screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder'))).toHaveValue(
       'Active step only UAT coverage',
     );
@@ -1025,7 +1043,7 @@ describe('role IA-1 surfaces', () => {
     expect(scopeLookupRequests).toBeGreaterThan(0);
     expect(scopeLookupRequests).toBeLessThanOrEqual(2);
 
-    await user.click(getAssignmentProgressCard('target'));
+    await user.click(getAssignmentProgressButton('target'));
     await user.selectOptions(
       screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel')),
       'ROLE_TEMPLATE:KPI_OPERATIONS:',
@@ -1102,14 +1120,14 @@ describe('role IA-1 surfaces', () => {
       screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel')),
       'ROLE_TEMPLATE:TALENT_GROUP_MANAGER:',
     );
-    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('target')).toHaveAttribute('data-business-tone', 'success');
 
     const reasonInput = await advanceAssignmentTargetToConditions(user);
     const previewStepButton = screen.getByRole('button', {
       name: i18n.t('role:accessAssignment.footer.continueToPreview'),
     });
     expect(previewStepButton).toBeDisabled();
-    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-status-tone', 'danger');
+    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'danger');
     expect(screen.getByText(i18n.t('role:accessAssignment.guardrail.missingScope'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReason'))).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReviewDate'))).toBeInTheDocument();
@@ -1126,11 +1144,11 @@ describe('role IA-1 surfaces', () => {
     await user.type(reasonInput, 'Scoped manager guardrail coverage');
     expect(previewStepButton).toBeDisabled();
     expect(screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReviewDate'))).toBeInTheDocument();
-    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-status-tone', 'neutral');
+    expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'disabled');
 
     await user.type(screen.getByLabelText(i18n.t('role:accessAssignment.reviewAtLabel')), '2026-08-01');
     await waitFor(() => expect(previewStepButton).toBeEnabled());
-    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-status-tone', 'success');
+    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'success');
     await user.click(previewStepButton);
     expect(screen.getByTestId('role-assignment-step-preview')).toBeInTheDocument();
     expect(

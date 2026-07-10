@@ -1,5 +1,11 @@
 import { TriangleAlert } from 'lucide-react';
-import { useEffect, useId, useState } from 'react';
+import {
+  type KeyboardEvent,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from '@shared/components/primitives/Button';
 import {
@@ -21,6 +27,23 @@ type SensitiveActionDialogProps = {
   tone?: Extract<SemanticTone, 'danger' | 'critical' | 'warning'>;
 };
 
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+const getFocusableElements = (container: HTMLElement): HTMLElement[] =>
+  Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) =>
+      !element.hasAttribute('hidden') &&
+      element.getAttribute('aria-hidden') !== 'true' &&
+      element.getClientRects().length > 0,
+  );
+
 export const SensitiveActionDialog = ({
   acknowledgementLabel,
   cancelLabel,
@@ -37,6 +60,7 @@ export const SensitiveActionDialog = ({
   const titleId = useId();
   const summaryId = useId();
   const acknowledgementId = useId();
+  const dialogRef = useRef<HTMLElement>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const toneClasses = getSemanticToneClasses(tone);
   const needsAcknowledgement = Boolean(acknowledgementLabel);
@@ -44,7 +68,19 @@ export const SensitiveActionDialog = ({
   useEffect(() => {
     if (!open) {
       setAcknowledged(false);
+      return;
     }
+
+    const previouslyFocusedElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    dialogRef.current?.focus({ preventScroll: true });
+
+    return () => {
+      if (previouslyFocusedElement && document.contains(previouslyFocusedElement)) {
+        previouslyFocusedElement.focus({ preventScroll: true });
+      }
+    };
   }, [open]);
 
   if (!open) {
@@ -53,13 +89,54 @@ export const SensitiveActionDialog = ({
 
   const canConfirm = !isSubmitting && (!needsAcknowledgement || acknowledged);
 
+  const handleDialogKeyDown = (event: KeyboardEvent<HTMLElement>): void => {
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+
+    const focusableElements = getFocusableElements(dialog);
+
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      dialog.focus({ preventScroll: true });
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    const activeElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    if (event.shiftKey) {
+      if (activeElement === dialog || activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      }
+      return;
+    }
+
+    if (activeElement === dialog || activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black/30 px-4">
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={summaryId}
+        aria-busy={isSubmitting || undefined}
+        tabIndex={-1}
+        onKeyDown={handleDialogKeyDown}
         className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-xl"
       >
         <div className="flex items-start gap-3">

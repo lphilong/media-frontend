@@ -110,5 +110,19 @@ export const continueGuidedAssignment = async (
   await user.click(button);
 };
 
-export const getProgressCard = (stepId: 'user' | 'target' | 'condition' | 'preview'): HTMLElement =>
-  screen.getByTestId(`role-assignment-progress-card-${stepId}`);
+export const getProgressCard = (
+  stepId: 'user' | 'target' | 'condition' | 'preview',
+): HTMLElement => {
+  const titleKey =
+    stepId === 'condition'
+      ? 'role:accessAssignment.workflow.conditions.title'
+      : `role:accessAssignment.workflow.${stepId}.title`;
+  const title = screen.getByText(i18n.t(titleKey));
+  const progressItem = title.closest('li');
+
+  if (!progressItem) {
+    throw new Error(`Workflow progress item not found: ${stepId}`);
+  }
+
+  return progressItem;
+};

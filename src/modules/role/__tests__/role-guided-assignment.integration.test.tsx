@@ -61,7 +61,7 @@ describe('Role guided assignment integration', () => {
       name: i18n.t('role:accessAssignment.footer.continueToPreview'),
     });
     expect(continueToPreview).toBeDisabled();
-    expect(getProgressCard('condition')).toHaveAttribute('data-status-tone', 'danger');
+    expect(getProgressCard('condition')).toHaveAttribute('data-business-tone', 'danger');
     expect(
       screen.getByText(i18n.t('role:accessAssignment.guardrail.missingScope')),
     ).toBeInTheDocument();
@@ -87,14 +87,14 @@ describe('Role guided assignment integration', () => {
     expect(
       screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReviewDate')),
     ).toBeInTheDocument();
-    expect(getProgressCard('preview')).toHaveAttribute('data-status-tone', 'neutral');
+    expect(getProgressCard('preview')).toHaveAttribute('data-business-tone', 'disabled');
 
     await user.type(
       screen.getByLabelText(i18n.t('role:accessAssignment.reviewAtLabel')),
       '2026-08-01',
     );
     await waitFor(() => expect(continueToPreview).toBeEnabled());
-    expect(getProgressCard('condition')).toHaveAttribute('data-status-tone', 'success');
+    expect(getProgressCard('condition')).toHaveAttribute('data-business-tone', 'success');
     await user.click(continueToPreview);
 
     expect(screen.getByTestId('role-assignment-step-preview')).toBeInTheDocument();
@@ -160,7 +160,7 @@ describe('Role guided assignment integration', () => {
       screen.getByLabelText(i18n.t('role:accessAssignment.targetLabel')),
       'BUNDLE:OWNER_ADMIN_BUNDLE:2026-05-20',
     );
-    expect(getProgressCard('target')).toHaveAttribute('data-status-tone', 'warning');
+    expect(getProgressCard('target')).toHaveAttribute('data-business-tone', 'warning');
     await continueGuidedAssignment(user);
 
     await user.type(
@@ -196,9 +196,11 @@ describe('Role guided assignment integration', () => {
       name: i18n.t('role:accessAssignment.sensitiveConfirm.title'),
     });
     expect(within(dialog).getByText(/Alice Linked/u)).toBeInTheDocument();
-    expect(within(dialog).getByText(accessLabel('ownerAdmin'))).toBeInTheDocument();
+    expect(within(dialog).getByText(new RegExp(accessLabel('ownerAdmin'), 'u'))).toBeInTheDocument();
     expect(
-      within(dialog).getByText(i18n.t('role:accessAssignment.scopeTypes.global')),
+      within(dialog).getByText(
+        new RegExp(i18n.t('role:accessAssignment.scopeTypes.global'), 'u'),
+      ),
     ).toBeInTheDocument();
 
     await user.click(

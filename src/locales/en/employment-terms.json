@@ -10,7 +10,8 @@
   },
   "sections": {
     "quickFilters": "Quick filters",
-    "filters": "Employment Terms filters"
+    "filters": "Employment Terms filters",
+    "results": "Employment Terms results"
   },
   "quickFilters": {
     "currentEffective": "Current effective terms",
@@ -84,6 +85,9 @@
   "labels": {
     "openEnded": "Open-ended",
     "notAvailable": "Not available"
+  },
+  "technicalDetails": {
+    "label": "Technical details"
   },
   "actions": {
     "openProfile": "Open profile",

@@ -10,7 +10,8 @@
   },
   "sections": {
     "quickFilters": "Bộ lọc nhanh",
-    "filters": "Bộ lọc điều khoản làm việc"
+    "filters": "Bộ lọc điều khoản làm việc",
+    "results": "Kết quả điều khoản làm việc"
   },
   "quickFilters": {
     "currentEffective": "Điều khoản đang hiệu lực",
@@ -84,6 +85,9 @@
   "labels": {
     "openEnded": "Không giới hạn",
     "notAvailable": "Chưa có"
+  },
+  "technicalDetails": {
+    "label": "Chi tiết kỹ thuật"
   },
   "actions": {
     "openProfile": "Mở hồ sơ",

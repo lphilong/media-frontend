@@ -49,6 +49,7 @@ const emptyListResponse = () => ({
 
 describe('Employment Terms admin workspace', () => {
   it('renders the real workspace route, structured-terms notice, list, and HRET anchor links', async () => {
+    const user = userEvent.setup();
     await renderWorkspace('vi');
 
     expect(
@@ -58,7 +59,9 @@ describe('Employment Terms admin workspace', () => {
     expect(await screen.findByText(/liệt kê điều khoản làm việc có cấu trúc/i)).toBeInTheDocument();
     expect(await screen.findByText('Alice')).toBeInTheDocument();
     expect(screen.getByText('EP-000001')).toBeInTheDocument();
-    expect(screen.getByText('HRET-2026-000001')).toBeInTheDocument();
+    expect(screen.queryByText('HRET-2026-000001')).not.toBeInTheDocument();
+    await user.click(screen.getAllByText('Chi tiết kỹ thuật')[0]);
+    expect(screen.getByText(/HRET-2026-000001/)).toBeVisible();
     expect(screen.getAllByText('Đủ điều kiện làm nguồn bảng lương').length).toBeGreaterThan(0);
     expect(screen.getByText(/20\.000\.000/)).toBeInTheDocument();
     expect(screen.getByText(/Meal allowance: 500\.000/)).toBeInTheDocument();
@@ -163,5 +166,9 @@ describe('Employment Terms admin workspace', () => {
       expect(requests.at(-1)?.searchParams.get('search')).toBe('B');
       expect(requests.at(-1)?.searchParams.get('cursor')).toBeNull();
     });
+
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(screen.getByLabelText('Search')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
   });
 });

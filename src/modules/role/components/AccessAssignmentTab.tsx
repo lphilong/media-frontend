@@ -37,7 +37,6 @@ import {
   deriveAccessAssignmentReadiness,
   type AccessAssignmentWorkflowStep,
   type AccessAssignmentWorkflowStepId,
-  type AccessAssignmentWorkflowTone,
 } from '@modules/role/model/access-assignment-workflow';
 import type {
   AccessAssignmentApplyResult,
@@ -51,13 +50,18 @@ import type {
 } from '@modules/role/types/role.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  Button,
   EmptyState,
   ErrorState,
   LoadingState,
   MetadataSection,
   ReadOnlyFieldGrid,
+  SensitiveActionDialog,
   StatusBadge,
+  TechnicalDetailsDisclosure,
   useMutationFeedback,
+  WorkflowProgress,
+  type WorkflowProgressItem,
 } from '@shared/components/primitives';
 import {
   AsyncReferencePicker,
@@ -74,37 +78,6 @@ type AccessAssignmentReferenceLoaders = {
   loadPlatformAccountReferenceOptions: (search: string) => Promise<ReferenceOption[]>;
   loadStudioResourceReferenceOptions: (search: string) => Promise<ReferenceOption[]>;
   loadTalentGroupReferenceOptions: (search: string) => Promise<ReferenceOption[]>;
-};
-
-const guidedWorkflowToneMeta: Record<
-  AccessAssignmentWorkflowTone,
-  { icon: string; className: string; iconClassName: string }
-> = {
-  neutral: {
-    icon: '...',
-    className: 'border-border bg-bg text-muted',
-    iconClassName: 'border-border bg-panel text-muted',
-  },
-  success: {
-    icon: '✓',
-    className: 'border-success/50 bg-success/10 text-text',
-    iconClassName: 'border-success bg-success text-white',
-  },
-  warning: {
-    icon: '!',
-    className: 'border-warning/60 bg-warning/10 text-text',
-    iconClassName: 'border-warning bg-warning text-text',
-  },
-  danger: {
-    icon: '×',
-    className: 'border-danger/50 bg-rose-50 text-text',
-    iconClassName: 'border-danger bg-danger text-white',
-  },
-  info: {
-    icon: '●',
-    className: 'border-accent/40 bg-accent/10 text-text',
-    iconClassName: 'border-accent bg-accent text-white',
-  },
 };
 
 const DEFAULT_USER_SUGGESTION_LIMIT = 10;
@@ -416,6 +389,26 @@ export const AccessAssignmentTab = (): JSX.Element => {
       targetUnavailable,
     ],
   );
+  const workflowProgressItems = useMemo<WorkflowProgressItem[]>(
+    () =>
+      guidedSteps.map((step) => ({
+        id: step.id,
+        title: step.title,
+        summary: step.summary,
+        note: [
+          t(`role:accessAssignment.workflowTone.${step.tone}`),
+          step.isActive ? t('role:accessAssignment.workflow.active') : undefined,
+          step.note,
+        ]
+          .filter((value): value is string => Boolean(value))
+          .join(' · '),
+        businessTone: step.tone,
+        isActive: step.isActive,
+        isComplete: step.tone === 'success',
+        isDisabled: !step.canNavigate,
+      })),
+    [guidedSteps, t],
+  );
 
   useEffect(() => {
     setPreviewSignature(null);
@@ -632,69 +625,62 @@ export const AccessAssignmentTab = (): JSX.Element => {
 
   const footerActions =
     activeStepId === 'user' ? (
-      <button
-        type="button"
+      <Button
+        variant="primary"
         disabled={!userStepComplete}
         onClick={() => setActiveStepId('target')}
-        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
       >
         {t('role:accessAssignment.footer.continue')}
-      </button>
+      </Button>
     ) : activeStepId === 'target' ? (
       <>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setActiveStepId('user')}
-          className="rounded border border-border bg-panel px-3 py-2 text-sm font-medium text-text"
         >
           {t('role:accessAssignment.footer.back')}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
           disabled={!targetStepComplete}
           onClick={() => setActiveStepId('conditions')}
-          className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           {t('role:accessAssignment.footer.continue')}
-        </button>
+        </Button>
       </>
     ) : activeStepId === 'conditions' ? (
       <>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setActiveStepId('target')}
-          className="rounded border border-border bg-panel px-3 py-2 text-sm font-medium text-text"
         >
           {t('role:accessAssignment.footer.back')}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
           disabled={!conditionsStepComplete}
           onClick={() => setActiveStepId('preview')}
-          className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           {t('role:accessAssignment.footer.continueToPreview')}
-        </button>
+        </Button>
       </>
     ) : (
       <>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setActiveStepId('conditions')}
-          className="rounded border border-border bg-panel px-3 py-2 text-sm font-medium text-text"
         >
           {t('role:accessAssignment.footer.back')}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
           disabled={!canPreview}
           onClick={() => void runPreview()}
-          className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           {t('role:accessAssignment.previewButton')}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           disabled={!canApply}
           onClick={() => {
             if (targetNeedsSensitiveConfirmation) {
@@ -703,22 +689,27 @@ export const AccessAssignmentTab = (): JSX.Element => {
             }
             void runApply();
           }}
-          className="rounded border border-border bg-panel px-3 py-2 text-sm font-medium text-text disabled:cursor-not-allowed disabled:opacity-60"
+          loading={applyMutation.isPending}
+          loadingLabel={t('role:accessAssignment.applyPending')}
         >
-          {applyMutation.isPending
-            ? t('role:accessAssignment.applyPending')
-            : t('role:accessAssignment.applyButton')}
-        </button>
+          {t('role:accessAssignment.applyButton')}
+        </Button>
       </>
     );
 
   return (
     <div className="space-y-4">
-      <GuidedWorkflowProgressCards
-        steps={guidedSteps}
-        activeStepId={activeStepId}
-        onStepSelect={goToStep}
-      />
+      <nav
+        className="rounded border border-border bg-panel p-3"
+        aria-label={t('role:accessAssignment.workflow.ariaLabel')}
+        data-testid="role-assignment-workflow-progress"
+      >
+        <WorkflowProgress
+          ariaLabel={t('role:accessAssignment.workflow.ariaLabel')}
+          items={workflowProgressItems}
+          onItemSelect={(stepId) => goToStep(stepId as AccessAssignmentWorkflowStepId)}
+        />
+      </nav>
       <h2 className="sr-only">{t('role:accessAssignment.userTitle')}</h2>
 
       <GuidedWorkflowActivePanel activeStepId={activeStepId}>
@@ -979,20 +970,30 @@ export const AccessAssignmentTab = (): JSX.Element => {
           scopeTargetOptions={scopeTargetOptions}
         />
       ) : null}
-      {sensitiveConfirmationOpen && selectedTarget ? (
-        <SensitiveAssignmentConfirmDialog
-          recipient={selectedUserOption?.label ?? selectedUserId ?? '-'}
-          target={formatAccessTargetLabel(selectedTarget, t)}
-          scope={formatScopeSummary(structuredScopeGrants, t, scopeTargetOptions)}
-          reviewAt={reviewAt || '-'}
-          isPending={applyMutation.isPending}
-          onCancel={() => setSensitiveConfirmationOpen(false)}
-          onConfirm={() => {
-            setSensitiveConfirmationOpen(false);
-            void runApply();
-          }}
-        />
-      ) : null}
+      <SensitiveActionDialog
+        open={sensitiveConfirmationOpen && Boolean(selectedTarget)}
+        title={t('role:accessAssignment.sensitiveConfirm.title')}
+        summary={t('role:accessAssignment.sensitiveConfirm.message')}
+        riskItems={
+          selectedTarget
+            ? [
+                `${t('role:accessAssignment.sensitiveConfirm.recipient')}: ${selectedUserOption?.label ?? selectedUserId ?? '-'}`,
+                `${t('role:accessAssignment.sensitiveConfirm.target')}: ${formatAccessTargetLabel(selectedTarget, t)}`,
+                `${t('role:accessAssignment.sensitiveConfirm.scope')}: ${formatScopeSummary(structuredScopeGrants, t, scopeTargetOptions)}`,
+                `${t('role:accessAssignment.reviewAtLabel')}: ${reviewAt || '-'}`,
+              ]
+            : []
+        }
+        cancelLabel={t('role:accessAssignment.sensitiveConfirm.cancel')}
+        confirmLabel={t('role:accessAssignment.sensitiveConfirm.confirm')}
+        isSubmitting={applyMutation.isPending}
+        tone="warning"
+        onCancel={() => setSensitiveConfirmationOpen(false)}
+        onConfirm={() => {
+          setSensitiveConfirmationOpen(false);
+          void runApply();
+        }}
+      />
     </div>
   );
 };
@@ -1120,89 +1121,6 @@ const ScopeResolver = ({
         </div>
       )}
     </div>
-  );
-};
-
-const GuidedWorkflowProgressCards = ({
-  steps,
-  activeStepId,
-  onStepSelect,
-}: {
-  steps: AccessAssignmentWorkflowStep[];
-  activeStepId: AccessAssignmentWorkflowStepId;
-  onStepSelect: (stepId: AccessAssignmentWorkflowStepId) => void;
-}): JSX.Element => {
-  const { t } = useTranslation('role');
-
-  return (
-  <nav
-    className="rounded border border-border bg-panel p-3"
-    aria-label={t('accessAssignment.workflow.ariaLabel')}
-    data-testid="role-assignment-progress-cards"
-  >
-    <ol className="grid items-stretch gap-2 md:grid-cols-[repeat(4,minmax(0,1fr))]">
-      {steps.map((step) => {
-        const isActive = step.isActive || activeStepId === step.id;
-        const testId =
-          step.id === 'conditions'
-            ? 'role-assignment-progress-card-condition'
-            : `role-assignment-progress-card-${step.id}`;
-        const toneLabel = t(`accessAssignment.workflowTone.${step.tone}`);
-        const activeLabel = isActive ? t('accessAssignment.workflow.active') : undefined;
-
-        return (
-        <li key={step.id} className="flex min-w-0">
-          <button
-            type="button"
-            disabled={!step.canNavigate}
-            aria-current={isActive ? 'step' : undefined}
-            aria-label={`${step.number}. ${step.title}: ${step.summary}. ${
-              [toneLabel, activeLabel].filter(Boolean).join('. ')
-            }`}
-            title={[toneLabel, activeLabel].filter(Boolean).join(' - ')}
-            data-testid={testId}
-            data-status-tone={step.tone}
-            data-active={isActive ? 'true' : 'false'}
-            onClick={() => onStepSelect(step.id)}
-            className={`flex min-h-36 w-full flex-col rounded border px-3 py-3 text-left text-sm transition hover:border-accent/60 disabled:cursor-not-allowed disabled:hover:border-border ${
-              guidedWorkflowToneMeta[step.tone].className
-            } ${isActive ? 'outline outline-2 outline-offset-0 outline-accent/60 ring-2 ring-accent/20' : ''}`}
-          >
-            <span className="flex items-start justify-between gap-3">
-              <span className="min-w-0">
-                <span className="block text-xs font-semibold uppercase text-muted">
-                  {t('accessAssignment.workflow.stepNumber', { number: step.number })}
-                </span>
-                <span className="mt-1 block line-clamp-2 min-h-10 font-semibold text-text">
-                  {step.title}
-                </span>
-              </span>
-              <span
-                aria-hidden="true"
-                data-testid={`${testId}-marker`}
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold leading-none ${
-                  guidedWorkflowToneMeta[step.tone].iconClassName
-                }`}
-              >
-                {guidedWorkflowToneMeta[step.tone].icon}
-              </span>
-              <span className="sr-only">{toneLabel}</span>
-              {activeLabel ? <span className="sr-only">{activeLabel}</span> : null}
-            </span>
-            <span className="mt-2 block min-h-10 line-clamp-2 text-sm text-text">
-              {step.summary}
-            </span>
-            {step.note ? (
-              <span className="mt-1 block min-h-8 line-clamp-2 text-xs text-muted">
-                {step.note}
-              </span>
-            ) : null}
-          </button>
-        </li>
-        );
-      })}
-    </ol>
-  </nav>
   );
 };
 
@@ -1403,84 +1321,6 @@ const ConditionsGuardrailSummary = ({
           <li key={message}>{message}</li>
         ))}
       </ul>
-    </div>
-  );
-};
-
-const SensitiveAssignmentConfirmDialog = ({
-  recipient,
-  target,
-  scope,
-  reviewAt,
-  isPending,
-  onCancel,
-  onConfirm,
-}: {
-  recipient: string;
-  target: string;
-  scope: string;
-  reviewAt: string;
-  isPending: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}): JSX.Element => {
-  const { t } = useTranslation('role');
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="sensitive-assignment-confirm-title"
-        className="w-full max-w-lg rounded border border-warning/60 bg-panel p-5 shadow-shell"
-      >
-        <h3 id="sensitive-assignment-confirm-title" className="text-base font-semibold text-text">
-          {t('accessAssignment.sensitiveConfirm.title')}
-        </h3>
-        <p className="mt-2 text-sm text-muted">
-          {t('accessAssignment.sensitiveConfirm.message')}
-        </p>
-        <ReadOnlyFieldGrid
-          columns={1}
-          fields={[
-            {
-              key: 'recipient',
-              label: t('accessAssignment.sensitiveConfirm.recipient'),
-              value: recipient,
-            },
-            {
-              key: 'target',
-              label: t('accessAssignment.sensitiveConfirm.target'),
-              value: target,
-            },
-            {
-              key: 'scope',
-              label: t('accessAssignment.sensitiveConfirm.scope'),
-              value: scope,
-            },
-            { key: 'reviewAt', label: t('accessAssignment.reviewAtLabel'), value: reviewAt },
-          ]}
-        />
-        <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded border border-border bg-panel px-3 py-2 text-sm font-medium text-text"
-          >
-            {t('accessAssignment.sensitiveConfirm.cancel')}
-          </button>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={onConfirm}
-            className="rounded border border-warning bg-warning px-3 py-2 text-sm font-medium text-text disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isPending
-              ? t('accessAssignment.sensitiveConfirm.pending')
-              : t('accessAssignment.sensitiveConfirm.confirm')}
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
@@ -2082,14 +1922,11 @@ const AssignmentTraceList = ({
   }
 
   return (
-    <details className="rounded border border-border bg-bg p-3">
-      <summary className="cursor-pointer text-sm font-semibold text-text">{title}</summary>
-      <ul className="mt-2 space-y-1 text-sm text-muted">
-        {records.map((record, index) => (
-          <li key={`${title}-${index}`}>{formatTraceRecord(record, t)}</li>
-        ))}
-      </ul>
-    </details>
+    <TechnicalDetailsDisclosure
+      className="rounded border border-border bg-bg p-3"
+      label={title}
+      details={records.map((record) => formatTraceRecord(record, t))}
+    />
   );
 };
 

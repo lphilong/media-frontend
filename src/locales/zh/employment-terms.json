@@ -10,7 +10,8 @@
   },
   "sections": {
     "quickFilters": "快速筛选",
-    "filters": "工作条款筛选"
+    "filters": "工作条款筛选",
+    "results": "工作条款结果"
   },
   "quickFilters": {
     "currentEffective": "当前生效条款",
@@ -84,6 +85,9 @@
   "labels": {
     "openEnded": "长期有效",
     "notAvailable": "暂无"
+  },
+  "technicalDetails": {
+    "label": "技术详情"
   },
   "actions": {
     "openProfile": "打开档案",
