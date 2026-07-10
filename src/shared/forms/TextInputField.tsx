@@ -5,9 +5,10 @@ type TextInputFieldProps = {
   name: string;
   label: string;
   placeholder?: string;
-  type?: 'text' | 'email' | 'tel' | 'number' | 'date' | 'datetime-local';
+  type?: 'text' | 'email' | 'tel' | 'number' | 'date' | 'datetime-local' | 'month';
   step?: string | number;
   min?: string | number;
+  max?: string | number;
   helperText?: string;
 };
 
@@ -18,6 +19,7 @@ export const TextInputField = ({
   type = 'text',
   step,
   min,
+  max,
   helperText,
 }: TextInputFieldProps): JSX.Element => {
   const id = useId();
@@ -41,6 +43,7 @@ export const TextInputField = ({
         type={type}
         step={step}
         min={min}
+        max={max}
         {...register(name)}
         placeholder={placeholder}
         aria-labelledby={labelId}

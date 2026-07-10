@@ -17,7 +17,7 @@ import type {
   PlatformAccountUpdatePayload,
 } from '@modules/platform-account/types/platform-account.types';
 import { ownerKindValues } from '@modules/platform-account/tables/platform-account-columns';
-import { loadPlatformOwnerReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadPlatformOwnerReferenceOptions } from '@modules/platform-account';
 import {
   CheckboxField,
   FormGrid,

@@ -39,8 +39,8 @@ import {
   revenueLedgerByPlatformQueryConfig,
   revenueLedgerByTalentQueryConfig,
   revenueLedgerFlatListQueryConfig,
-  serializeScreenQueryParams,
-} from '@shared/query';
+} from '@modules/revenue-ledger';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const REVENUE_LEDGER_QUERY_ROOT = ['revenue-ledger'] as const;
 

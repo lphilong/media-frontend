@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 
-import { canAccessModule } from '@app/router/module-access';
+import { useModuleAccessChecker } from '@app/providers/module-runtime';
 import { APP_PATHS } from '@app/router/paths';
 import {
   buildContractRegistryByLinkedEmploymentProfileHref,
@@ -12,7 +12,7 @@ import {
   buildWorkShiftsBySubjectEmploymentProfileHref,
 } from '@app/router/reference-links';
 import { createEmploymentProfileActionRailItems } from '@modules/employment-profile/actions/employment-profile-action-rail';
-import { EmploymentTermsSection } from '@modules/employment-terms/components/EmploymentTermsSection';
+import { EmploymentTermsSection } from '@modules/employment-terms';
 import {
   EmploymentProfileContractStatusSurface,
   EmploymentProfileEditSurface,
@@ -31,7 +31,7 @@ import {
   useEmploymentProfileUserLinkMutation,
   useEmploymentProfileUserUnlinkMutation,
 } from '@modules/employment-profile/hooks/use-employment-profile';
-import { ResponsibilitySummarySection } from '@modules/responsibility/components/ResponsibilitySummarySection';
+import { ResponsibilitySummarySection } from '@modules/responsibility';
 import { createEmploymentDirectReportsColumns } from '@modules/employment-profile/tables/employment-profile-columns';
 import type {
   EmploymentContractStatus,
@@ -66,7 +66,7 @@ import {
   formatBusinessTimestamp,
   readReferenceDisplay,
 } from '@shared/formatting/formatters';
-import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveMutationSurface =
@@ -188,6 +188,7 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
 
   const detailQuery = useEmploymentProfileDetail(employmentProfileId);
   const capabilitiesQuery = useCurrentActorCapabilities();
+  const canAccessModule = useModuleAccessChecker();
 
   const [activeSurface, setActiveSurface] = useState<ActiveMutationSurface>(null);
   const [directReportsCursor, setDirectReportsCursor] = useState<string | undefined>(undefined);
@@ -440,16 +441,13 @@ export const EmploymentProfileDetailPage = (): JSX.Element => {
   const relatedOrgUnitHref = record?.orgUnitId
     ? buildEntityDetailHref('orgUnit', record.orgUnitId)
     : undefined;
-  const canReadUserModule = canAccessModule(capabilitiesQuery.data, 'user');
-  const canReadTalentModule = canAccessModule(capabilitiesQuery.data, 'talent');
-  const canReadTalentGroupModule = canAccessModule(capabilitiesQuery.data, 'talent-group');
-  const canReadKpiModule = canAccessModule(capabilitiesQuery.data, 'kpi');
-  const canReadWorkScheduleModule = canAccessModule(capabilitiesQuery.data, 'work-schedule');
-  const canReadEventModule = canAccessModule(capabilitiesQuery.data, 'event-assignment');
-  const canReadContractRegistryModule = canAccessModule(
-    capabilitiesQuery.data,
-    'contract-registry',
-  );
+  const canReadUserModule = canAccessModule('user');
+  const canReadTalentModule = canAccessModule('talent');
+  const canReadTalentGroupModule = canAccessModule('talent-group');
+  const canReadKpiModule = canAccessModule('kpi');
+  const canReadWorkScheduleModule = canAccessModule('work-schedule');
+  const canReadEventModule = canAccessModule('event-assignment');
+  const canReadContractRegistryModule = canAccessModule('contract-registry');
   const linkedUserHref =
     canReadUserModule && record?.linkedUserId
       ? buildEntityDetailHref('user', record.linkedUserId)

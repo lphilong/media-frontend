@@ -16,7 +16,8 @@ import type {
   OrgUnitMovePayload,
   OrgUnitUpdatePayload,
 } from '@modules/org-unit/types/org-unit.types';
-import { orgUnitFlatListQueryConfig, serializeScreenQueryParams } from '@shared/query';
+import { orgUnitFlatListQueryConfig } from '@modules/org-unit';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const ORG_UNIT_QUERY_ROOT = ['org-unit'] as const;
 const EMPLOYMENT_PROFILE_QUERY_ROOT = ['employment-profile'] as const;

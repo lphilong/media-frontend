@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { PlatformEarningBatchesPanel } from '@modules/revenue-ledger/components/PlatformEarningBatchesPanel';
 import { RevenueEntryCreateSurface } from '@modules/revenue-ledger/forms/revenue-ledger-mutation-forms';
 import {
@@ -43,24 +43,22 @@ import {
   type AppliedFilterChipItem,
 } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
-import {
-  loadEventReferenceOptions,
-  loadPlatformAccountReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadEventReferenceOptions } from '@modules/event-assignment';
+import { loadPlatformAccountReferenceOptions } from '@modules/platform-account';
+import { loadTalentReferenceOptions } from '@modules/talent';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
-  createCursorStack,
-  mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
-  parseScreenQueryParams,
   revenueLedgerByEventQueryConfig,
   revenueLedgerByPlatformQueryConfig,
   revenueLedgerByTalentQueryConfig,
   revenueLedgerFlatListQueryConfig,
+} from '@modules/revenue-ledger';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
+import {
+  mergeScreenQueryParams,
+  parseScreenQueryParams,
   serializeScreenQueryParams,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 import { readReferenceDisplayForId } from '@shared/formatting/reference-display';
 
 type RoutePatchOptions = {
@@ -337,7 +335,7 @@ export const RevenueLedgerListPage = (): JSX.Element => {
     [capabilitiesQuery.data],
   );
 
-  usePageActions(
+  useModulePageActions(
     canCreateRevenueEntry ? (
       <button
         type="button"

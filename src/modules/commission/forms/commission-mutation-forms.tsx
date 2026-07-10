@@ -27,13 +27,11 @@ import {
   commissionSettlementBasisValues,
   commissionSettlementKindValues,
 } from '@modules/commission/types/commission.types';
-import {
-  loadCommissionRuleReferenceOptions,
-  loadContractReferenceOptions,
-  loadEmploymentProfileReferenceOptions,
-  loadRevenueEntryReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadCommissionRuleReferenceOptions } from '@modules/commission';
+import { loadContractReferenceOptions } from '@modules/contract-registry';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
+import { loadRevenueEntryReferenceOptions } from '@modules/revenue-ledger';
+import { loadTalentReferenceOptions } from '@modules/talent';
 import {
   FormGrid,
   GeneratedCodeNotice,

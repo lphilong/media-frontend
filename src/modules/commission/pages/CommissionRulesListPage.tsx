@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { CommissionRuleCreateSurface } from '@modules/commission/forms/commission-mutation-forms';
 import {
   useCommissionRuleLifecycleMutation,
@@ -47,23 +47,21 @@ import {
   type AppliedFilterChipItem,
 } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
-import {
-  loadContractReferenceOptions,
-  loadEmploymentProfileReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadContractReferenceOptions } from '@modules/contract-registry';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
+import { loadTalentReferenceOptions } from '@modules/talent';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   commissionRulesByBeneficiaryQueryConfig,
   commissionRulesByContractQueryConfig,
   commissionRulesFlatListQueryConfig,
-  createCursorStack,
+} from '@modules/commission';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
+import {
   mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 import { readReferenceDisplayForId } from '@shared/formatting/reference-display';
 
 type RouteMode = 'flat' | 'by-beneficiary' | 'by-contract';
@@ -255,7 +253,7 @@ export const CommissionRulesListPage = (): JSX.Element => {
     scope: commissionGlobalScope,
   });
 
-  usePageActions(
+  useModulePageActions(
     canCreateCommissionRule ? (
       <button
         type="button"

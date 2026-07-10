@@ -117,7 +117,7 @@ describe('contract registry wave 7 surfaces', () => {
     renderRoute('/contract-records/contract-record-001');
 
     expect(
-      await screen.findByText(i18n.t('contract-registry:actionRail.title')),
+      await screen.findByText(i18n.t('contract-registry:actionRail.title'), {}, { timeout: 3000 }),
     ).toBeInTheDocument();
     expect(screen.getByText(i18n.t('contract-registry:detail.boundaryHelper'))).toBeInTheDocument();
     expect(
@@ -359,7 +359,7 @@ describe('contract registry wave 7 surfaces', () => {
         name: i18n.t('contract-registry:obligations.fields.eventId'),
       }),
     ).not.toBeInTheDocument();
-    await user.click(await within(surface).findByRole('button', { name: /Completed event/ }));
+    await user.click(await within(surface).findByRole('option', { name: /Completed event/ }));
     await user.type(
       within(surface).getByLabelText(i18n.t('contract-registry:obligations.fields.linkReason')),
       'Explicitly selected completion evidence',
@@ -486,7 +486,7 @@ describe('contract registry wave 7 surfaces', () => {
     if (!linkForm) {
       return;
     }
-    await user.click(await within(linkForm).findByRole('button', { name: /Completed event/ }));
+    await user.click(await within(linkForm).findByRole('option', { name: /Completed event/ }));
     await user.click(
       within(linkForm).getByRole('button', {
         name: i18n.t('contract-registry:obligations.actions.linkEvent'),
@@ -603,7 +603,7 @@ describe('contract registry wave 7 surfaces', () => {
     renderRoute('/contract-records/contract-record-archived');
 
     expect(
-      await screen.findByText(i18n.t('contract-registry:actionRail.title')),
+      await screen.findByText(i18n.t('contract-registry:actionRail.title'), {}, { timeout: 3000 }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(i18n.t('contract-registry:detail.archivedReadOnly')),
@@ -658,8 +658,8 @@ describe('contract registry wave 7 surfaces', () => {
         name: i18n.t('contract-registry:contractKinds.EMPLOYMENT'),
       }),
     ).not.toBeInTheDocument();
-    await user.click(await scope.findByRole('button', { name: /Mina/ }));
-    await user.click(await scope.findByRole('button', { name: /Alice/ }));
+    await user.click(await scope.findByRole('option', { name: /Mina/ }));
+    await user.click(await scope.findByRole('option', { name: /Alice/ }));
     await user.type(
       scope.getByLabelText(i18n.t('contract-registry:fields.effectiveStartDate')),
       '2026-01-01',

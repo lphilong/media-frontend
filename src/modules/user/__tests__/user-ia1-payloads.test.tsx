@@ -26,11 +26,8 @@ import {
 import type { UserDetailRecord } from '@modules/user/types/user.types';
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
-import {
-  parseScreenQueryParams,
-  serializeScreenQueryParams,
-  userFlatListQueryConfig,
-} from '@shared/query';
+import { userFlatListQueryConfig } from '@modules/user';
+import { parseScreenQueryParams, serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),

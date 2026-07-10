@@ -11,7 +11,7 @@ import {
   UserCog,
   UsersRound,
 } from 'lucide-react';
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -37,7 +37,7 @@ import {
   ReadOnlyFieldGrid,
   StatusBadge,
 } from '@shared/components/primitives';
-import { LocaleSwitcher, SessionArea } from '@shared/components/shell';
+import { SessionArea } from '@shared/components/shell';
 import {
   WorkspaceHeader,
   WorkspaceModuleSwitcher,
@@ -547,7 +547,11 @@ const AccountPreferencesForm = ({
   );
 };
 
-export const SelfServicePage = (): JSX.Element => {
+export type SelfServicePageProps = {
+  localeSwitcher?: ReactNode;
+};
+
+export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps): JSX.Element => {
   const { t } = useTranslation(['self-service', 'common', 'errors']);
   const currentPersonQuery = useSelfServiceCurrentPerson();
   const currentPerson = currentPersonQuery.data;
@@ -710,7 +714,7 @@ export const SelfServicePage = (): JSX.Element => {
           actions={
             <>
               <div data-testid="self-service-locale-control">
-                <LocaleSwitcher />
+                {localeSwitcher}
               </div>
               <SessionArea />
             </>

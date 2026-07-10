@@ -27,12 +27,11 @@ import type { WorkShiftRecord } from '@modules/work-schedule/types/work-schedule
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import {
-  parseScreenQueryParams,
-  serializeScreenQueryParams,
   workShiftByResourceQueryConfig,
   workShiftBySubjectQueryConfig,
   workShiftFlatListQueryConfig,
-} from '@shared/query';
+} from '@modules/work-schedule';
+import { parseScreenQueryParams, serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),

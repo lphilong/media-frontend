@@ -50,8 +50,8 @@ import {
   contractRegistryByLinkedEntityQueryConfig,
   contractRegistryByOwnerQueryConfig,
   contractRegistryFlatListQueryConfig,
-  serializeScreenQueryParams,
-} from '@shared/query';
+} from '@modules/contract-registry';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const CONTRACT_REGISTRY_QUERY_ROOT = ['contract-registry'] as const;
 

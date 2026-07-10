@@ -17,7 +17,8 @@ import type {
   PlatformAccountOwnershipTransferPayload,
   PlatformAccountUpdatePayload,
 } from '@modules/platform-account/types/platform-account.types';
-import { platformAccountFlatListQueryConfig, serializeScreenQueryParams } from '@shared/query';
+import { platformAccountFlatListQueryConfig } from '@modules/platform-account';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const PLATFORM_ACCOUNT_QUERY_ROOT = ['platform-account'] as const;
 const TALENT_QUERY_ROOT = ['talent'] as const;

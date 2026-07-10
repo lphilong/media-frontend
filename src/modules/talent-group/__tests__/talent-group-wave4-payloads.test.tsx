@@ -16,7 +16,7 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/talent', () => ({
   loadTalentReferenceOptions: vi.fn(async () => [
     {
       id: 'talent-010',

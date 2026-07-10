@@ -19,7 +19,8 @@ import type {
   UserProvisionPayload,
   UserUpdatePayload,
 } from '@modules/user/types/user.types';
-import { serializeScreenQueryParams, userFlatListQueryConfig } from '@shared/query';
+import { userFlatListQueryConfig } from '@modules/user';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const USER_QUERY_ROOT = ['user'] as const;
 const ROLE_QUERY_ROOT = ['role'] as const;

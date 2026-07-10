@@ -23,11 +23,8 @@ import type {
   TalentGroupUpdateLineupPayload,
   TalentGroupUpdatePayload,
 } from '@modules/talent-group/types/talent-group.types';
-import {
-  serializeScreenQueryParams,
-  talentGroupByTalentQueryConfig,
-  talentGroupFlatListQueryConfig,
-} from '@shared/query';
+import { talentGroupByTalentQueryConfig, talentGroupFlatListQueryConfig } from '@modules/talent-group';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const TALENT_GROUP_QUERY_ROOT = ['talent-group'] as const;
 const TALENT_QUERY_ROOT = ['talent'] as const;

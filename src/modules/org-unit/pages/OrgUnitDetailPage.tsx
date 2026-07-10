@@ -19,7 +19,7 @@ import {
   useOrgUnitLifecycleMutation,
   useUpdateOrgUnitMutation,
 } from '@modules/org-unit/hooks/use-org-unit';
-import { ResponsibilitySummarySection } from '@modules/responsibility/components/ResponsibilitySummarySection';
+import { ResponsibilitySummarySection } from '@modules/responsibility';
 import { createOrgUnitChildrenColumns } from '@modules/org-unit/tables/org-unit-columns';
 import type { OrgUnitLifecycleAction } from '@modules/org-unit/types/org-unit.types';
 import type { NormalizedApiError } from '@shared/api';
@@ -50,7 +50,7 @@ import {
   formatBusinessTimestamp,
   readReferenceDisplay,
 } from '@shared/formatting/formatters';
-import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveMutationSurface = 'edit' | 'move' | null;

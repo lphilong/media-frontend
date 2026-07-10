@@ -378,10 +378,267 @@
       "effectiveAfterRevoke": "Access after revoke",
       "feedback": {
         "revoked": "Access revoked."
-      }
+      },
+      "bundleDirectOrigin": "Access bundle",
+      "directOrigin": "Direct"
     },
     "feedback": {
       "applied": "Access assigned."
+    },
+    "workflow": {
+      "ariaLabel": "Access assignment workflow",
+      "active": "Current step",
+      "stepNumber": "Step {{number}}",
+      "user": {
+        "title": "Choose user",
+        "sectionTitle": "1. Choose user",
+        "emptySummary": "No user selected",
+        "invalidNote": "Choose a valid eligible user again"
+      },
+      "target": {
+        "title": "Choose access package",
+        "sectionTitle": "2. Choose access bundle or role template",
+        "emptySummary": "No access package selected",
+        "unavailableNote": "The current selection is unavailable",
+        "sensitiveNote": "Sensitive access confirmation is required"
+      },
+      "conditions": {
+        "title": "Scope & conditions",
+        "sectionTitle": "3. Choose scope and conditions",
+        "incompleteSummary": "Scope, reason, review date, or expiry is incomplete",
+        "unsupportedNote": "A scope is not supported",
+        "missingScopeNote": "Scope is required",
+        "missingReasonNote": "Reason is required",
+        "missingReviewDateNote": "Review date is missing",
+        "missingExpiryDateNote": "Expiry date is missing"
+      },
+      "preview": {
+        "title": "Preview & confirm",
+        "sectionTitle": "4. Preview and confirm",
+        "readySummary": "Valid impact preview is available",
+        "emptySummary": "No valid impact preview yet",
+        "sensitiveNote": "Sensitive access confirmation will open"
+      }
+    },
+    "workflowTone": {
+      "neutral": "Incomplete",
+      "success": "Complete",
+      "warning": "Needs controlled review",
+      "danger": "Blocked",
+      "info": "Informational",
+      "active": "Current step"
+    },
+    "footer": {
+      "continue": "Continue",
+      "back": "Back",
+      "continueToPreview": "Continue to preview"
+    },
+    "selectedUser": {
+      "emptyTitle": "No user selected",
+      "emptyMessage": "Choose an eligible person from the list to review profile, linked account, and current access.",
+      "title": "Selected person",
+      "clear": "Clear",
+      "account": "Account",
+      "employeeCode": "Employee code",
+      "profileStatus": "Profile status",
+      "linkedAccount": "Linked account",
+      "currentPermissionsTitle": "Current access",
+      "noCurrentPermissions": "No effective current access.",
+      "viewDetails": "View current permission details",
+      "reviewWarning": "Review needed",
+      "moreCurrentPermissions": "+{{count}} more",
+      "eligibleTitle": "Eligible personnel",
+      "defaultSuggestionsHelp": "When search is empty, up to {{count}} eligible linked users are shown."
+    },
+    "guardrail": {
+      "title": "Complete before preview",
+      "ready": "Ready to preview assignment impact.",
+      "missingScope": "Choose the required scope before preview.",
+      "missingReason": "Enter the access assignment reason.",
+      "missingReviewDate": "Review date is missing.",
+      "missingExpiryDate": "Expiry date is missing.",
+      "unsupportedScope": "This scope is not supported on the current assignment screen."
+    },
+    "sensitiveConfirm": {
+      "title": "Confirm sensitive access",
+      "message": "This access is sensitive or controlled. Review the recipient, scope, and review date before applying.",
+      "cancel": "Cancel",
+      "confirm": "Confirm apply",
+      "pending": "Applying",
+      "recipient": "Access recipient",
+      "target": "Access bundle or role",
+      "scope": "Applied scope"
+    },
+    "targetPicker": {
+      "searchBundleLabel": "Search recommended access bundles",
+      "searchTemplateLabel": "Search manual role templates",
+      "searchPlaceholder": "Search by name, scope, or business group",
+      "noMatchTitle": "No matching option",
+      "noMatchMessage": "Try another keyword or switch between bundles and role templates.",
+      "reviewRequired": "Review required",
+      "scopeLabel": "Scope:",
+      "groupLabel": "Group:",
+      "usageLabel": "Usage:",
+      "bundleUsage": "Preferred for new assignments",
+      "templateUsage": "Manual or advanced choice",
+      "noSeparateScope": "No separate scope required"
+    },
+    "targetDescriptions": {
+      "talentGroupManager": "Manage assigned Talent group work; requires group scope and management responsibility.",
+      "orgUnitManager": "Manage assigned org unit work; requires org-unit scope and management responsibility.",
+      "talentGroupManagerBundle": "Recommended package for assigning Talent group management responsibility with matching access.",
+      "orgUnitManagerBundle": "Recommended package for assigning org unit management responsibility with matching access.",
+      "auditorBundle": "Read-only package for operational review without sensitive access by default.",
+      "viewerAuditor": "Read-only template for operational data review and reconciliation.",
+      "staffConsoleUser": "Self-service template for personnel to view their own data.",
+      "staffConsoleBundle": "Self-service package for personnel to view their own data.",
+      "defaultBundle": "Recommended access bundle for quickly assigning a configured capability group.",
+      "defaultTemplate": "Manual role template for directly choosing a specific capability."
+    },
+    "targetAvailability": {
+      "READY_ASSIGNABLE": "Ready",
+      "REQUIRES_SCOPE_SELECTION": "Scope required",
+      "RESTRICTED_SENSITIVE": "Controlled administration",
+      "READ_ONLY_AUDIT": "Read-only",
+      "FUTURE_READY_CONDITION": "Unavailable",
+      "SYSTEM_CONTROLLED": "Unavailable"
+    },
+    "targetBusinessGroups": {
+      "people": "People",
+      "finance": "Finance / Reconciliation",
+      "audit": "Audit / Read-only",
+      "controlledAdmin": "Controlled administration",
+      "selfService": "Self-service",
+      "operations": "Operations"
+    },
+    "pickerGroups": {
+      "REQUIRES_SCOPE_SELECTION": "Requires scope selection",
+      "READY_TO_ASSIGN": "Operations",
+      "READ_ONLY_AUDIT": "Audit / Read-only",
+      "RESTRICTED_SENSITIVE": "Controlled administration"
+    },
+    "pickerGroupHelp": {
+      "REQUIRES_SCOPE_SELECTION": "These options require a specific scope before preview.",
+      "READY_TO_ASSIGN": "Operational options can be previewed after conditions are complete.",
+      "READ_ONLY_AUDIT": "Read-only options for review and audit.",
+      "RESTRICTED_SENSITIVE": "Sensitive or global options require reason and review date when policy requires them."
+    },
+    "operatorStatus": {
+      "ACTIVE": "Active",
+      "ON_LEAVE": "On leave",
+      "SUSPENDED": "Suspended",
+      "INACTIVE": "Inactive",
+      "other": "Other status"
+    },
+    "linkedAccountStatus": {
+      "ACTIVE": "Linked",
+      "SUSPENDED": "Account suspended",
+      "DISABLED": "Account disabled",
+      "other": "Other status"
+    },
+    "scopeReadOnlyHelp": {
+      "self": "No target selection is required; scope is the person's own data.",
+      "default": "No target selection is required; the system checks risk and conditions during preview."
+    },
+    "selectedScopeFallback": "Selected target",
+    "time": {
+      "vietnam": "{{value}}, Vietnam time"
+    },
+    "trace": {
+      "bundle": "Bundle: {{value}}",
+      "role": "Access: {{value}}",
+      "bundleFallback": "Access bundle",
+      "roleFallback": "Assigned access",
+      "recordedState": "Status: recorded",
+      "recordedDetail": "Details recorded",
+      "recorded": "Recorded"
+    },
+    "auditActions": {
+      "assign": "Access assigned",
+      "update": "Access updated"
+    },
+    "reviewAtLabel": "Review date",
+    "expiresAtLabel": "Expiry date",
+    "conditionDateHelp": "Sensitive, controlled, broad, or finance access can require review date; break-glass access can require expiry date. The system checks policy during preview.",
+    "missingReviewDate": "Enter the review date.",
+    "missingExpiryDate": "Enter the expiry date.",
+    "displayLabels": {
+      "ownerAdmin": "Owner administration",
+      "accessAdmin": "Access administration",
+      "hrOperations": "People operations",
+      "hrManagerBundle": "People management operations",
+      "hrTermsApprover": "Employment terms approver",
+      "productionOps": "Production operations",
+      "platformChannelOps": "Platform channel operations",
+      "creativeVisualLead": "Creative visual lead",
+      "contentOps": "Content operations",
+      "talentGroupManager": "Talent group manager",
+      "orgUnitManager": "Org unit manager",
+      "kpiOperations": "Performance / KPI operations",
+      "commercialContractOps": "Commercial contract operations",
+      "revenueFinanceOps": "Revenue finance operations",
+      "financeStaffBundle": "Finance operations and reconciliation",
+      "revenueApprover": "Finance approver",
+      "revenueReconciler": "Finance reconciliation",
+      "commissionOps": "Commission operations",
+      "commissionApprover": "Commission approver",
+      "attendanceOps": "Attendance operations",
+      "leaveReviewer": "Leave reviewer",
+      "attendanceApprover": "Attendance approver",
+      "monthlyCloseOwner": "Monthly close owner",
+      "payrollDraftOps": "Payroll draft operations",
+      "payrollDraftApprover": "Payroll draft approver",
+      "viewerAuditor": "Audit / Read-only",
+      "staffConsoleUser": "Personnel self-service data view",
+      "managerAssignedAccess": "Assigned-work access",
+      "adminOperationalAccess": "Internal operations access",
+      "assignedAccess": "Assigned access",
+      "unknownAccess": "Access requiring review"
+    },
+    "scopeTypes": {
+      "self": "Own personnel data",
+      "global": "Whole system",
+      "managedTalentGroup": "Managed Talent group",
+      "managedOrgUnit": "Managed org unit",
+      "assignedPlatformAccount": "Assigned platform account",
+      "financeGlobal": "Global finance",
+      "financePeriod": "Finance period",
+      "contractPortfolio": "Contract portfolio",
+      "assignedEvent": "Assigned event",
+      "assignedStudioResource": "Assigned studio resource",
+      "payrollPeriod": "Payroll draft period",
+      "attendancePeriodOrg": "Attendance period by org unit"
+    },
+    "issues": {
+      "REQUIRED_ACCOUNT_CONTEXT_MISSING": "The user does not meet the required access condition.",
+      "ACCOUNT_CONTEXT_MATERIALIZATION_NOT_AUTHORIZED": "Permission to apply the required access condition is needed before this package can be assigned.",
+      "RESPONSIBILITY_REQUIRED": "A matching management responsibility is missing.",
+      "RESPONSIBILITY_MATERIALIZATION_NOT_AUTHORIZED": "The request cannot be completed yet. Review access conditions and try again.",
+      "RESPONSIBILITY_TARGET_NOT_ASSIGNABLE": "The request cannot be completed yet. Review access conditions and try again.",
+      "LEGACY_ROLE_BLOCKED": "The request cannot be completed yet. Review access conditions and try again.",
+      "BUNDLE_CHILD_ROLE_NOT_ACTIVE": "The request cannot be completed yet. Review access conditions and try again.",
+      "BUNDLE_CHILD_ROLE_HAS_NO_PERMISSIONS": "The request cannot be completed yet. Review access conditions and try again.",
+      "BUNDLE_NOT_FOUND": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_NOT_FOUND": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_NOT_ACTIVE": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_TARGET_HAS_NO_PERMISSIONS": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_TEMPLATE_UNSUPPORTED_SCOPE_SELECTOR": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_TEMPLATE_FUTURE_GATED": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_TEMPLATE_NOT_ASSIGNABLE": "The request cannot be completed yet. Review access conditions and try again.",
+      "DUPLICATE_ACTIVE_ASSIGNMENT": "The request cannot be completed yet. Review access conditions and try again.",
+      "SOURCE_CHANGED_AFTER_PREVIEW": "The request cannot be completed yet. Review access conditions and try again.",
+      "APPLY_RESULT_CONFLICT": "The request cannot be completed yet. Review access conditions and try again.",
+      "ACCOUNT_CONTEXT_WILL_BE_MATERIALIZED_ON_APPLY": "The request cannot be completed yet. Review access conditions and try again.",
+      "SELF_ASSIGNMENT_BLOCKED": "You cannot grant sensitive or global access to yourself.",
+      "REASON_REQUIRED": "The request cannot be completed yet. Review access conditions and try again.",
+      "REVIEW_AT_REQUIRED": "Review date is missing for sensitive or global access.",
+      "REVIEW_AT_EXCEEDS_MAX_WINDOW": "The request cannot be completed yet. Review access conditions and try again.",
+      "EXPIRES_AT_REQUIRED": "Expiry date is required for emergency access.",
+      "EXPIRES_AT_EXCEEDS_MAX_WINDOW": "The request cannot be completed yet. Review access conditions and try again.",
+      "SOD_CONFLICT_BLOCKED": "The request cannot be completed yet. Review access conditions and try again.",
+      "SELF_LIFECYCLE_BLOCKED": "You cannot revoke your own access; another authorized operator is required.",
+      "ASSIGNMENT_ALREADY_INACTIVE": "The request cannot be completed yet. Review access conditions and try again.",
+      "generic": "The request cannot be completed yet. Review access conditions and try again."
     }
   },
   "assignmentTab": {

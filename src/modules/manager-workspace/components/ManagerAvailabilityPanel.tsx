@@ -14,7 +14,7 @@ import {
   type ManagerWorkScheduleAvailabilityType,
   type ManagerWorkspaceContext,
 } from '@modules/manager-workspace/api/manager-workspace.api';
-import { WorkScheduleDeadlineCue } from '@modules/work-schedule/components/WorkScheduleDeadlineCue';
+import { WorkScheduleDeadlineCue } from '@modules/work-schedule';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type TargetOption = {

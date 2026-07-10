@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import { WorkPatternCreateSurface } from '@modules/work-schedule/forms/work-pattern-mutation-forms';
 import {
@@ -34,15 +34,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ModuleListScreenShell } from '@shared/modules';
+import { workPatternListQueryConfig } from '@modules/work-schedule';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import {
-  createCursorStack,
   mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-  workPatternListQueryConfig,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 
 type RoutePatchOptions = {
   replace?: boolean;
@@ -171,7 +169,7 @@ export const WorkPatternListPage = (): JSX.Element => {
     [closeModal],
   );
 
-  usePageActions(
+  useModulePageActions(
     canCreateWorkPattern ? (
       <button
         type="button"

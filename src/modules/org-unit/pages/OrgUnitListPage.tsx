@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { APP_PATHS } from '@app/router/paths';
 import {
   useCreateOrgUnitMutation,
@@ -34,16 +34,12 @@ import {
 } from '@shared/components/primitives';
 import { useDestructiveConfirm, useMutationFeedback } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
-import { loadOrgUnitReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadOrgUnitReferenceOptions } from '@modules/org-unit';
 import { readReferenceDisplayForId } from '@shared/formatting/reference-display';
-import {
-  createCursorStack,
-  moveNextCursor,
-  movePreviousCursor,
-  orgUnitFlatListQueryConfig,
-  serializeScreenQueryParams,
-  useRouteQueryState,
-} from '@shared/query';
+import { orgUnitFlatListQueryConfig } from '@modules/org-unit';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
+import { useRouteQueryState } from '@shared/query/use-route-query-state';
 import { ModuleListScreenShell } from '@shared/modules';
 
 const readErrorMessage = (
@@ -141,7 +137,7 @@ export const OrgUnitListPage = (): JSX.Element => {
     </button>
   ) : null;
 
-  usePageActions(pageActions);
+  useModulePageActions(pageActions);
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
   const canGoNext = Boolean(nextCursor);

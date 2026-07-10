@@ -25,7 +25,7 @@ import {
   useTalentLifecycleMutation,
   useUpdateTalentMutation,
 } from '@modules/talent/hooks/use-talent';
-import { ResponsibilitySummarySection } from '@modules/responsibility/components/ResponsibilitySummarySection';
+import { ResponsibilitySummarySection } from '@modules/responsibility';
 import type {
   TalentCommercialParticipationStatus,
   TalentLifecycleAction,

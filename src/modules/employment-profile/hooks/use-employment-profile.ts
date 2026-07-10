@@ -27,8 +27,8 @@ import type {
 import {
   employmentProfileDirectReportsQueryConfig,
   employmentProfileFlatListQueryConfig,
-  serializeScreenQueryParams,
-} from '@shared/query';
+} from '@modules/employment-profile';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const EMPLOYMENT_PROFILE_QUERY_ROOT = ['employment-profile'] as const;
 const ORG_UNIT_QUERY_ROOT = ['org-unit'] as const;

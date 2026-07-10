@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, useParams, type RouteObject } from 'reac
 
 import { RequireAuth } from '@app/guards/RequireAuth';
 import { AdminShellLayout } from '@app/layouts/AdminShellLayout';
+import { AppLocaleSwitcher } from '@app/layouts/AppLocaleSwitcher';
 import { ModuleAccessGuard } from '@app/router/ModuleAccessGuard';
 import { WorkspaceAccessGuard } from '@app/router/WorkspaceAccessGuard';
 import {
@@ -394,7 +395,7 @@ function LazyDashboardElement(): JSX.Element {
 function LazySelfServiceElement(): JSX.Element {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
-      <SelfServicePage />
+      <SelfServicePage localeSwitcher={<AppLocaleSwitcher />} />
     </Suspense>
   );
 }
@@ -402,7 +403,7 @@ function LazySelfServiceElement(): JSX.Element {
 function LazyManagerWorkspaceElement(): JSX.Element {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
-      <ManagerWorkspacePage />
+      <ManagerWorkspacePage localeSwitcher={<AppLocaleSwitcher />} />
     </Suspense>
   );
 }

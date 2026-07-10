@@ -4,7 +4,7 @@ import {
   useManagerAvailabilityBatches,
   useManagerRequestBatches,
 } from '@modules/manager-workspace/api/manager-workspace.api';
-import { WorkScheduleDeadlineCue } from '@modules/work-schedule/components/WorkScheduleDeadlineCue';
+import { WorkScheduleDeadlineCue } from '@modules/work-schedule';
 import { StatusBadge } from '@shared/components/primitives';
 
 type ManagerWorkActionTab = 'requests' | 'availability';

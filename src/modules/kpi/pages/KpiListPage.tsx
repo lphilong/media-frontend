@@ -72,11 +72,9 @@ import {
   useCurrentActorCapabilities,
 } from '@shared/auth/current-actor-capabilities';
 import { ReferenceFilterField } from '@shared/components/reference';
-import {
-  loadOrgUnitReferenceOptions,
-  loadTalentGroupReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadOrgUnitReferenceOptions } from '@modules/org-unit';
+import { loadTalentReferenceOptions } from '@modules/talent';
+import { loadTalentGroupReferenceOptions } from '@modules/talent-group';
 
 type TargetDraft = {
   metricCode: KpiMetricCode;

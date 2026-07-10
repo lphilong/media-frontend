@@ -20,9 +20,9 @@ import type {
 } from '@modules/employment-profile/types/employment-profile.types';
 import {
   loadEmploymentProfileReferenceOptions,
-  loadOrgUnitReferenceOptions,
   loadUnlinkedUserReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+} from '@modules/employment-profile';
+import { loadOrgUnitReferenceOptions } from '@modules/org-unit';
 import { ModuleMutationSurface } from '@shared/modules';
 import {
   FormGrid,

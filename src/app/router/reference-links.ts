@@ -24,7 +24,7 @@ import {
   getMissingRelatedIdentityKeys,
   sanitizeScreenQuery,
   serializeScreenQueryParams,
-} from '@shared/query';
+} from '@app/registries/screen-query-registry';
 
 export type DetailReferenceEntity =
   | 'orgUnit'

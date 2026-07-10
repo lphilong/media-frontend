@@ -89,14 +89,14 @@ import type {
   WorkShiftUpdatePayload,
 } from '@modules/work-schedule/types/work-schedule.types';
 import {
-  serializeScreenQueryParams,
   holidayCalendarListQueryConfig,
   monthlyRosterListQueryConfig,
+  workPatternListQueryConfig,
   workShiftByResourceQueryConfig,
   workShiftBySubjectQueryConfig,
   workShiftFlatListQueryConfig,
-  workPatternListQueryConfig,
-} from '@shared/query';
+} from '@modules/work-schedule';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const WORK_SCHEDULE_QUERY_ROOT = ['work-schedule'] as const;
 

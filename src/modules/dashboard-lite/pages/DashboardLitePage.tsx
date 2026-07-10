@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { APP_PATHS } from '@app/router/paths';
 import type { DashboardLiteSnapshot } from '@modules/dashboard-lite/api/dashboard-lite.api';
 import { useDashboardLiteSnapshot } from '@modules/dashboard-lite/hooks/use-dashboard-lite-snapshot';
@@ -28,14 +28,11 @@ import {
   formatInteger,
   formatUtcMidnightDateLike,
 } from '@shared/formatting/formatters';
-import {
-  commissionRulesFlatListQueryConfig,
-  commissionSettlementsFlatListQueryConfig,
-  contractRegistryFlatListQueryConfig,
-  eventFlatListQueryConfig,
-  revenueLedgerFlatListQueryConfig,
-  serializeScreenQueryParams,
-} from '@shared/query';
+import { commissionRulesFlatListQueryConfig, commissionSettlementsFlatListQueryConfig } from '@modules/commission';
+import { contractRegistryFlatListQueryConfig } from '@modules/contract-registry';
+import { eventFlatListQueryConfig } from '@modules/event-assignment';
+import { revenueLedgerFlatListQueryConfig } from '@modules/revenue-ledger';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 type DashboardSourceGroup = 'overview' | 'operations' | 'commercial' | 'attention';
 type DashboardDisplayGroup =
@@ -351,7 +348,7 @@ export const DashboardLitePage = (): JSX.Element => {
     ? t('dashboard-lite:actions.refreshing')
     : t('common:actions.refresh');
 
-  usePageActions(
+  useModulePageActions(
     <button
       type="button"
       onClick={() => void refetch()}

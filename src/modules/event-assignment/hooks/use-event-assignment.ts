@@ -33,8 +33,8 @@ import {
   eventByPlatformQueryConfig,
   eventByResourceQueryConfig,
   eventFlatListQueryConfig,
-  serializeScreenQueryParams,
-} from '@shared/query';
+} from '@modules/event-assignment';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const EVENT_ASSIGNMENT_QUERY_ROOT = ['event-assignment'] as const;
 

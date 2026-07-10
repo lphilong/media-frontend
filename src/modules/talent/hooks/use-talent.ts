@@ -17,7 +17,8 @@ import type {
   TalentListQuery,
   TalentUpdatePayload,
 } from '@modules/talent/types/talent.types';
-import { serializeScreenQueryParams, talentFlatListQueryConfig } from '@shared/query';
+import { talentFlatListQueryConfig } from '@modules/talent';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const TALENT_QUERY_ROOT = ['talent'] as const;
 const TALENT_GROUP_QUERY_ROOT = ['talent-group'] as const;

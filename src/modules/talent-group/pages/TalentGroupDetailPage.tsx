@@ -23,7 +23,7 @@ import {
   useTalentGroupUpdateLineupMutation,
   useUpdateTalentGroupMutation,
 } from '@modules/talent-group/hooks/use-talent-group';
-import { ResponsibilitySummarySection } from '@modules/responsibility/components/ResponsibilitySummarySection';
+import { ResponsibilitySummarySection } from '@modules/responsibility';
 import { createTalentGroupMemberColumns } from '@modules/talent-group/tables/talent-group-columns';
 import type {
   TalentGroupLifecycleAction,
@@ -56,7 +56,7 @@ import {
   type CapabilityMissingReason,
 } from '@shared/auth/current-actor-capabilities';
 import { formatCreatedDate, formatBusinessTimestamp } from '@shared/formatting/formatters';
-import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import { ModuleDetailScreenShell } from '@shared/modules';
 
 type ActiveMutationSurface = 'edit' | 'add-member' | 'update-lineup' | null;

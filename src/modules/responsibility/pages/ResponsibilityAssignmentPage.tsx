@@ -33,12 +33,10 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { AsyncReferencePicker } from '@shared/components/reference';
-import {
-  loadEmploymentProfileReferenceOptions,
-  loadOrgUnitReferenceOptions,
-  loadTalentGroupReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
+import { loadOrgUnitReferenceOptions } from '@modules/org-unit';
+import { loadTalentReferenceOptions } from '@modules/talent';
+import { loadTalentGroupReferenceOptions } from '@modules/talent-group';
 import { ModuleListScreenShell } from '@shared/modules';
 import { formatVietnamTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
 

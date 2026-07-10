@@ -26,12 +26,10 @@ import {
   type EventReschedulePayload,
   type EventUpdatePayload,
 } from '@modules/event-assignment/types/event-assignment.types';
-import {
-  loadEmploymentProfileReferenceOptions,
-  loadPlatformAccountReferenceOptions,
-  loadTalentGroupReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
+import { loadPlatformAccountReferenceOptions } from '@modules/platform-account';
+import { loadTalentReferenceOptions } from '@modules/talent';
+import { loadTalentGroupReferenceOptions } from '@modules/talent-group';
 import {
   FormGrid,
   GeneratedCodeNotice,

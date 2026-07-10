@@ -19,23 +19,66 @@ import { formatVietnamTimestamp } from '@shared/formatting/formatters';
 import { setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/employment-profile', async () => {
+  const actual = await vi.importActual<typeof import('@modules/employment-profile')>(
+    '@modules/employment-profile',
+  );
+
+  return {
+    ...actual,
   loadEmploymentProfileReferenceOptions: vi.fn(async () => [
     { id: 'ep-001', label: 'Employee One - EP-000001' },
   ]),
+  };
+});
+
+vi.mock('@modules/talent', async () => {
+  const actual = await vi.importActual<typeof import('@modules/talent')>('@modules/talent');
+
+  return {
+    ...actual,
   loadTalentReferenceOptions: vi.fn(async (search: string) =>
     search === 'missing-reference' ? [] : [{ id: 'talent-001', label: 'Talent One - TAL-000001' }],
   ),
+  };
+});
+
+vi.mock('@modules/contract-registry', async () => {
+  const actual = await vi.importActual<typeof import('@modules/contract-registry')>(
+    '@modules/contract-registry',
+  );
+
+  return {
+    ...actual,
   loadContractReferenceOptions: vi.fn(async () => [
     { id: 'contract-record-001', label: 'Contract One - CON-2026-000001' },
   ]),
+  };
+});
+
+vi.mock('@modules/commission', async () => {
+  const actual = await vi.importActual<typeof import('@modules/commission')>('@modules/commission');
+
+  return {
+    ...actual,
   loadCommissionRuleReferenceOptions: vi.fn(async () => [
     { id: 'commission-rule-001', label: 'Rule One - CRULE-000001' },
   ]),
+  };
+});
+
+vi.mock('@modules/revenue-ledger', async () => {
+  const actual = await vi.importActual<typeof import('@modules/revenue-ledger')>(
+    '@modules/revenue-ledger',
+  );
+
+  return {
+    ...actual,
   loadRevenueEntryReferenceOptions: vi.fn(async () => [
     { id: 'revenue-entry-001', label: 'Revenue One - REV-202604-000001' },
   ]),
-}));
+  };
+});
 
 const renderRoute = async (path: string) => {
   await setLocale('en');

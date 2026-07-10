@@ -14,7 +14,7 @@ import type {
   OrgUnitMovePayload,
   OrgUnitUpdatePayload,
 } from '@modules/org-unit/types/org-unit.types';
-import { loadOrgUnitReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadOrgUnitReferenceOptions } from '@modules/org-unit';
 import { ModuleMutationSurface } from '@shared/modules';
 import {
   FormGrid,

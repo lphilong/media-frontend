@@ -15,17 +15,20 @@ import {
 } from '@modules/platform-account/api/platform-account.api';
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
-import {
-  parseScreenQueryParams,
-  platformAccountFlatListQueryConfig,
-  serializeScreenQueryParams,
-} from '@shared/query';
+import { platformAccountFlatListQueryConfig } from '@modules/platform-account';
+import { parseScreenQueryParams, serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/platform-account', async () => {
+  const actual = await vi.importActual<typeof import('@modules/platform-account')>(
+    '@modules/platform-account',
+  );
+
+  return {
+    ...actual,
   loadPlatformOwnerReferenceOptions: vi.fn(async (ownerKind: string) => {
     if (ownerKind === 'TALENT') {
       return [
@@ -56,7 +59,8 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
       },
     ];
   }),
-}));
+  };
+});
 
 const renderWithProviders = (ui: JSX.Element) => render(<MemoryRouter>{ui}</MemoryRouter>);
 

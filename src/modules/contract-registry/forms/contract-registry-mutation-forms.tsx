@@ -21,10 +21,8 @@ import type {
   ContractRecord,
   ContractTerminatePayload,
 } from '@modules/contract-registry/types/contract-registry.types';
-import {
-  loadEmploymentProfileReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
+import { loadTalentReferenceOptions } from '@modules/talent';
 import {
   FormGrid,
   GeneratedCodeNotice,

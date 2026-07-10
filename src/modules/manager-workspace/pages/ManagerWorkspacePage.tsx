@@ -12,21 +12,24 @@ import {
   UserRound,
   UsersRound,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { APP_PATHS } from '@app/router/paths';
-import { formatKpiNumber } from '@modules/kpi/formatting/kpi-formatting';
-import { useKpiPlanDetail, useKpiPlans } from '@modules/kpi/hooks/use-kpi';
 import { ManagerAvailabilityPanel } from '@modules/manager-workspace/components/ManagerAvailabilityPanel';
 import { ManagerWorkActionNeeded } from '@modules/manager-workspace/components/ManagerWorkActionNeeded';
 import {
+  formatKpiNumber,
   KpiOrgUnitOperationsSection,
   type KpiOrgUnitOperationsActionPolicy,
-} from '@modules/kpi/pages/KpiDetailPage';
-import type { KpiPlanDetail, KpiPlanListItem, KpiSubjectType } from '@modules/kpi/types/kpi.types';
+  useKpiPlanDetail,
+  useKpiPlans,
+  type KpiPlanDetail,
+  type KpiPlanListItem,
+  type KpiSubjectType,
+} from '@modules/kpi';
 import {
   useManagerWorkspaceContext,
   useCancelManagerRequestBatchMutation,
@@ -63,7 +66,7 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import type { NormalizedApiError } from '@shared/api';
-import { LocaleSwitcher, SessionArea } from '@shared/components/shell';
+import { SessionArea } from '@shared/components/shell';
 import {
   WorkspaceHeader,
   WorkspaceModuleSwitcher,
@@ -2406,7 +2409,13 @@ const ManagerRevenueSourceSlice = ({
   );
 };
 
-export const ManagerWorkspacePage = (): JSX.Element => {
+export type ManagerWorkspacePageProps = {
+  localeSwitcher?: ReactNode;
+};
+
+export const ManagerWorkspacePage = ({
+  localeSwitcher = null,
+}: ManagerWorkspacePageProps): JSX.Element => {
   const { t } = useTranslation(['manager-workspace']);
   const location = useLocation();
   const navigate = useNavigate();
@@ -2491,7 +2500,7 @@ export const ManagerWorkspacePage = (): JSX.Element => {
           subtitle={t('manager-workspace:subtitle')}
           actions={
             <>
-              <LocaleSwitcher />
+              {localeSwitcher}
               <SessionArea />
             </>
           }

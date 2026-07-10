@@ -378,10 +378,267 @@
       "effectiveAfterRevoke": "Quyền sau khi thu hồi",
       "feedback": {
         "revoked": "Đã thu hồi quyền."
-      }
+      },
+      "bundleDirectOrigin": "Access bundle",
+      "directOrigin": "Direct"
     },
     "feedback": {
       "applied": "Đã gán quyền."
+    },
+    "workflow": {
+      "ariaLabel": "Quy trình gán quyền",
+      "active": "Bước hiện tại",
+      "stepNumber": "Bước {{number}}",
+      "user": {
+        "title": "Chọn nhân sự",
+        "sectionTitle": "1. Chọn nhân sự",
+        "emptySummary": "Chưa chọn nhân sự",
+        "invalidNote": "Cần chọn lại nhân sự hợp lệ"
+      },
+      "target": {
+        "title": "Chọn gói quyền",
+        "sectionTitle": "2. Chọn gói quyền hoặc mẫu vai trò",
+        "emptySummary": "Chưa chọn gói quyền",
+        "unavailableNote": "Lựa chọn hiện tại chưa khả dụng",
+        "sensitiveNote": "Cần xác nhận quyền nhạy cảm"
+      },
+      "conditions": {
+        "title": "Phạm vi & điều kiện",
+        "sectionTitle": "3. Chọn phạm vi và điều kiện",
+        "incompleteSummary": "Scope, reason, review date, or expiry is incomplete",
+        "unsupportedNote": "A scope is not supported",
+        "missingScopeNote": "Cần chọn phạm vi",
+        "missingReasonNote": "Cần nhập lý do",
+        "missingReviewDateNote": "Thiếu ngày rà soát",
+        "missingExpiryDateNote": "Thiếu ngày hết hiệu lực"
+      },
+      "preview": {
+        "title": "Xem trước & xác nhận",
+        "sectionTitle": "4. Xem trước và xác nhận",
+        "readySummary": "Valid impact preview is available",
+        "emptySummary": "No valid impact preview yet",
+        "sensitiveNote": "Sensitive access confirmation will open"
+      }
+    },
+    "workflowTone": {
+      "neutral": "Chưa đủ dữ liệu",
+      "success": "Đã đủ điều kiện",
+      "warning": "Cần kiểm soát",
+      "danger": "Đang bị chặn",
+      "info": "Thông tin",
+      "active": "Đang thực hiện"
+    },
+    "footer": {
+      "continue": "Tiếp tục",
+      "back": "Quay lại",
+      "continueToPreview": "Tiếp tục đến xem trước"
+    },
+    "selectedUser": {
+      "emptyTitle": "No user selected",
+      "emptyMessage": "Choose an eligible person from the list to review profile, linked account, and current access.",
+      "title": "Selected person",
+      "clear": "Clear",
+      "account": "Account",
+      "employeeCode": "Employee code",
+      "profileStatus": "Profile status",
+      "linkedAccount": "Linked account",
+      "currentPermissionsTitle": "Current access",
+      "noCurrentPermissions": "No effective current access.",
+      "viewDetails": "View current permission details",
+      "reviewWarning": "Review needed",
+      "moreCurrentPermissions": "+{{count}} more",
+      "eligibleTitle": "Eligible personnel",
+      "defaultSuggestionsHelp": "When search is empty, up to {{count}} eligible linked users are shown."
+    },
+    "guardrail": {
+      "title": "Complete before preview",
+      "ready": "Ready to preview assignment impact.",
+      "missingScope": "Choose the required scope before preview.",
+      "missingReason": "Enter the access assignment reason.",
+      "missingReviewDate": "Review date is missing.",
+      "missingExpiryDate": "Expiry date is missing.",
+      "unsupportedScope": "This scope is not supported on the current assignment screen."
+    },
+    "sensitiveConfirm": {
+      "title": "Confirm sensitive access",
+      "message": "This access is sensitive or controlled. Review the recipient, scope, and review date before applying.",
+      "cancel": "Cancel",
+      "confirm": "Confirm apply",
+      "pending": "Applying",
+      "recipient": "Access recipient",
+      "target": "Access bundle or role",
+      "scope": "Applied scope"
+    },
+    "targetPicker": {
+      "searchBundleLabel": "Search recommended access bundles",
+      "searchTemplateLabel": "Search manual role templates",
+      "searchPlaceholder": "Search by name, scope, or business group",
+      "noMatchTitle": "No matching option",
+      "noMatchMessage": "Try another keyword or switch between bundles and role templates.",
+      "reviewRequired": "Review required",
+      "scopeLabel": "Scope:",
+      "groupLabel": "Group:",
+      "usageLabel": "Usage:",
+      "bundleUsage": "Preferred for new assignments",
+      "templateUsage": "Manual or advanced choice",
+      "noSeparateScope": "No separate scope required"
+    },
+    "targetDescriptions": {
+      "talentGroupManager": "Manage assigned Talent group work; requires group scope and management responsibility.",
+      "orgUnitManager": "Manage assigned org unit work; requires org-unit scope and management responsibility.",
+      "talentGroupManagerBundle": "Recommended package for assigning Talent group management responsibility with matching access.",
+      "orgUnitManagerBundle": "Recommended package for assigning org unit management responsibility with matching access.",
+      "auditorBundle": "Gói chỉ đọc để rà soát vận hành, không mở quyền nhạy cảm mặc định.",
+      "viewerAuditor": "Read-only template for operational data review and reconciliation.",
+      "staffConsoleUser": "Self-service template for personnel to view their own data.",
+      "staffConsoleBundle": "Self-service package for personnel to view their own data.",
+      "defaultBundle": "Recommended access bundle for quickly assigning a configured capability group.",
+      "defaultTemplate": "Manual role template for directly choosing a specific capability."
+    },
+    "targetAvailability": {
+      "READY_ASSIGNABLE": "Ready",
+      "REQUIRES_SCOPE_SELECTION": "Cần chọn phạm vi",
+      "RESTRICTED_SENSITIVE": "Controlled administration",
+      "READ_ONLY_AUDIT": "Chỉ đọc",
+      "FUTURE_READY_CONDITION": "Unavailable",
+      "SYSTEM_CONTROLLED": "Unavailable"
+    },
+    "targetBusinessGroups": {
+      "people": "People",
+      "finance": "Finance / Reconciliation",
+      "audit": "Audit / Chỉ đọc",
+      "controlledAdmin": "Controlled administration",
+      "selfService": "Self-service",
+      "operations": "Operations"
+    },
+    "pickerGroups": {
+      "REQUIRES_SCOPE_SELECTION": "Cần chọn phạm vi",
+      "READY_TO_ASSIGN": "Operations",
+      "READ_ONLY_AUDIT": "Audit / Chỉ đọc",
+      "RESTRICTED_SENSITIVE": "Controlled administration"
+    },
+    "pickerGroupHelp": {
+      "REQUIRES_SCOPE_SELECTION": "These options require a specific scope before preview.",
+      "READY_TO_ASSIGN": "Operational options can be previewed after conditions are complete.",
+      "READ_ONLY_AUDIT": "Read-only options for review and audit.",
+      "RESTRICTED_SENSITIVE": "Sensitive or global options require reason and review date when policy requires them."
+    },
+    "operatorStatus": {
+      "ACTIVE": "Active",
+      "ON_LEAVE": "On leave",
+      "SUSPENDED": "Suspended",
+      "INACTIVE": "Inactive",
+      "other": "Other status"
+    },
+    "linkedAccountStatus": {
+      "ACTIVE": "Linked",
+      "SUSPENDED": "Account suspended",
+      "DISABLED": "Account disabled",
+      "other": "Other status"
+    },
+    "scopeReadOnlyHelp": {
+      "self": "No target selection is required; scope is the person's own data.",
+      "default": "No target selection is required; the system checks risk and conditions during preview."
+    },
+    "selectedScopeFallback": "Selected target",
+    "time": {
+      "vietnam": "{{value}}, Vietnam time"
+    },
+    "trace": {
+      "bundle": "Bundle: {{value}}",
+      "role": "Access: {{value}}",
+      "bundleFallback": "Access bundle",
+      "roleFallback": "Assigned access",
+      "recordedState": "Status: recorded",
+      "recordedDetail": "Details recorded",
+      "recorded": "Recorded"
+    },
+    "auditActions": {
+      "assign": "Gán quyền",
+      "update": "Cập nhật quyền"
+    },
+    "reviewAtLabel": "Review date",
+    "expiresAtLabel": "Expiry date",
+    "conditionDateHelp": "Sensitive, controlled, broad, or finance access can require review date; break-glass access can require expiry date. The system checks policy during preview.",
+    "missingReviewDate": "Enter the review date.",
+    "missingExpiryDate": "Enter the expiry date.",
+    "displayLabels": {
+      "ownerAdmin": "Quản trị chủ sở hữu",
+      "accessAdmin": "Quản trị phân quyền",
+      "hrOperations": "Vận hành nhân sự",
+      "hrManagerBundle": "People management operations",
+      "hrTermsApprover": "Employment terms approver",
+      "productionOps": "Vận hành sản xuất",
+      "platformChannelOps": "Platform channel operations",
+      "creativeVisualLead": "Creative visual lead",
+      "contentOps": "Content operations",
+      "talentGroupManager": "Talent group manager",
+      "orgUnitManager": "Org unit manager",
+      "kpiOperations": "Vận hành hiệu suất / KPI",
+      "commercialContractOps": "Commercial contract operations",
+      "revenueFinanceOps": "Revenue finance operations",
+      "financeStaffBundle": "Finance operations and reconciliation",
+      "revenueApprover": "Finance approver",
+      "revenueReconciler": "Finance reconciliation",
+      "commissionOps": "Commission operations",
+      "commissionApprover": "Commission approver",
+      "attendanceOps": "Attendance operations",
+      "leaveReviewer": "Leave reviewer",
+      "attendanceApprover": "Attendance approver",
+      "monthlyCloseOwner": "Monthly close owner",
+      "payrollDraftOps": "Payroll draft operations",
+      "payrollDraftApprover": "Payroll draft approver",
+      "viewerAuditor": "Audit / Chỉ đọc",
+      "staffConsoleUser": "Nhân sự tự xem dữ liệu",
+      "managerAssignedAccess": "Assigned-work access",
+      "adminOperationalAccess": "Internal operations access",
+      "assignedAccess": "Assigned access",
+      "unknownAccess": "Access requiring review"
+    },
+    "scopeTypes": {
+      "self": "Own personnel data",
+      "global": "Toàn hệ thống",
+      "managedTalentGroup": "Managed Talent group",
+      "managedOrgUnit": "Managed org unit",
+      "assignedPlatformAccount": "Assigned platform account",
+      "financeGlobal": "Global finance",
+      "financePeriod": "Finance period",
+      "contractPortfolio": "Contract portfolio",
+      "assignedEvent": "Assigned event",
+      "assignedStudioResource": "Assigned studio resource",
+      "payrollPeriod": "Payroll draft period",
+      "attendancePeriodOrg": "Attendance period by org unit"
+    },
+    "issues": {
+      "REQUIRED_ACCOUNT_CONTEXT_MISSING": "The user does not meet the required access condition.",
+      "ACCOUNT_CONTEXT_MATERIALIZATION_NOT_AUTHORIZED": "Permission to apply the required access condition is needed before this package can be assigned.",
+      "RESPONSIBILITY_REQUIRED": "A matching management responsibility is missing.",
+      "RESPONSIBILITY_MATERIALIZATION_NOT_AUTHORIZED": "The request cannot be completed yet. Review access conditions and try again.",
+      "RESPONSIBILITY_TARGET_NOT_ASSIGNABLE": "The request cannot be completed yet. Review access conditions and try again.",
+      "LEGACY_ROLE_BLOCKED": "The request cannot be completed yet. Review access conditions and try again.",
+      "BUNDLE_CHILD_ROLE_NOT_ACTIVE": "Gói quyền này chưa sẵn sàng.",
+      "BUNDLE_CHILD_ROLE_HAS_NO_PERMISSIONS": "The request cannot be completed yet. Review access conditions and try again.",
+      "BUNDLE_NOT_FOUND": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_NOT_FOUND": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_NOT_ACTIVE": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_TARGET_HAS_NO_PERMISSIONS": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_TEMPLATE_UNSUPPORTED_SCOPE_SELECTOR": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_TEMPLATE_FUTURE_GATED": "The request cannot be completed yet. Review access conditions and try again.",
+      "ROLE_TEMPLATE_NOT_ASSIGNABLE": "The request cannot be completed yet. Review access conditions and try again.",
+      "DUPLICATE_ACTIVE_ASSIGNMENT": "The request cannot be completed yet. Review access conditions and try again.",
+      "SOURCE_CHANGED_AFTER_PREVIEW": "Điều kiện gán quyền đã thay đổi.",
+      "APPLY_RESULT_CONFLICT": "Kết quả áp dụng chưa nhất quán.",
+      "ACCOUNT_CONTEXT_WILL_BE_MATERIALIZED_ON_APPLY": "Điều kiện truy cập còn thiếu.",
+      "SELF_ASSIGNMENT_BLOCKED": "Không thể tự cấp quyền nhạy cảm hoặc quyền toàn cục cho chính mình.",
+      "REASON_REQUIRED": "The request cannot be completed yet. Review access conditions and try again.",
+      "REVIEW_AT_REQUIRED": "Review date is missing for sensitive or global access.",
+      "REVIEW_AT_EXCEEDS_MAX_WINDOW": "Ngày rà soát vượt giới hạn.",
+      "EXPIRES_AT_REQUIRED": "Expiry date is required for emergency access.",
+      "EXPIRES_AT_EXCEEDS_MAX_WINDOW": "The request cannot be completed yet. Review access conditions and try again.",
+      "SOD_CONFLICT_BLOCKED": "The request cannot be completed yet. Review access conditions and try again.",
+      "SELF_LIFECYCLE_BLOCKED": "Không thể tự thu hồi quyền của chính bạn; cần người có thẩm quyền khác thực hiện.",
+      "ASSIGNMENT_ALREADY_INACTIVE": "Quyền này đã không còn hiệu lực.",
+      "generic": "Yêu cầu chưa thể hoàn tất. Vui lòng rà soát điều kiện truy cập và thử lại."
     }
   },
   "assignmentTab": {

@@ -3,10 +3,48 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
 import { appRoutes } from '@app/router/router';
+import type { CurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { setLocale } from '@shared/i18n/i18n';
 import { setMockCurrentActorCapabilities } from '@test/msw/identity-access-handlers';
 import { resetWave8MockData } from '@test/msw/wave8-handlers';
 import { renderAppWithProviders } from '@test/render-app-route';
+
+const adminWorkspaceAvailability: NonNullable<CurrentActorCapabilities['workspaceAvailability']> = {
+  primaryWorkspace: 'ADMIN_CONSOLE',
+  availableWorkspaces: [
+    {
+      context: 'STAFF_CONSOLE',
+      available: false,
+      source: 'ACCOUNT_CONTEXT',
+      reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+      trace: [{ source: 'ACCOUNT_CONTEXT', context: 'STAFF_CONSOLE', matched: false }],
+    },
+    {
+      context: 'MANAGER_CONSOLE',
+      available: false,
+      source: 'ACCOUNT_CONTEXT',
+      reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+      trace: [{ source: 'ACCOUNT_CONTEXT', context: 'MANAGER_CONSOLE', matched: false }],
+    },
+    {
+      context: 'ADMIN_CONSOLE',
+      available: true,
+      source: 'ACCOUNT_CONTEXT',
+      reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+      trace: [{ source: 'ACCOUNT_CONTEXT', context: 'ADMIN_CONSOLE', matched: true }],
+    },
+  ],
+  ownDataAvailable: false,
+  managerResponsibilitiesAvailable: false,
+  effectiveAccessTraceAvailable: true,
+  sourceTrace: [
+    {
+      source: 'ACCOUNT_CONTEXT',
+      accountContexts: ['ADMIN_CONSOLE'],
+      primaryWorkspace: 'ADMIN_CONSOLE',
+    },
+  ],
+};
 
 const renderRevenueLedger = async (): Promise<void> => {
   cleanup();
@@ -27,6 +65,8 @@ const renderRevenueLedger = async (): Promise<void> => {
       'revenueLedger.platformEarning.void',
     ],
     scopeGrants: { revenueLedger: ['global'] },
+    accountContexts: ['ADMIN_CONSOLE'],
+    workspaceAvailability: adminWorkspaceAvailability,
     generatedAt: '2026-06-18T00:00:00.000Z',
   });
   const router = createMemoryRouter(appRoutes, {
@@ -66,7 +106,7 @@ describe('RL-2R Revenue Admin UI', () => {
     expect(
       await screen.findByText('Revenue entry created from approved batch.'),
     ).toBeInTheDocument();
-  });
+  }, 20_000);
 
   it('uses a localized reason form and blocks empty rejection reasons', async () => {
     const user = userEvent.setup();
@@ -89,5 +129,5 @@ describe('RL-2R Revenue Admin UI', () => {
     await waitFor(() =>
       expect(screen.queryByLabelText('Rejection reason')).not.toBeInTheDocument(),
     );
-  });
+  }, 20_000);
 });

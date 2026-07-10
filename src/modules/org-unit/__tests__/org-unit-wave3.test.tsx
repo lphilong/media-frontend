@@ -11,12 +11,18 @@ import {
   OrgUnitEditSurface,
   OrgUnitMoveSurface,
 } from '@modules/org-unit/forms/org-unit-mutation-forms';
-import { loadContextualEmploymentProfileReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadContextualEmploymentProfileReferenceOptions } from '@modules/employment-profile';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { renderAppWithProviders } from '@test/render-app-route';
 import { server } from '@test/msw/server';
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/employment-profile', async () => {
+  const actual = await vi.importActual<typeof import('@modules/employment-profile')>(
+    '@modules/employment-profile',
+  );
+
+  return {
+    ...actual,
   loadEmploymentProfileReferenceOptions: vi.fn(async () => [
     {
       id: 'ep-001',
@@ -39,6 +45,14 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
       href: '/employment-profiles/ep-001',
     },
   ]),
+  };
+});
+
+vi.mock('@modules/org-unit', async () => {
+  const actual = await vi.importActual<typeof import('@modules/org-unit')>('@modules/org-unit');
+
+  return {
+    ...actual,
   loadOrgUnitReferenceOptions: vi.fn(async () => [
     {
       id: 'ou-parent',
@@ -53,7 +67,8 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
       href: '/org-units/ou-new-parent',
     },
   ]),
-}));
+  };
+});
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {

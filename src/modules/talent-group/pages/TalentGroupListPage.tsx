@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { TalentGroupCreateSurface } from '@modules/talent-group/forms/talent-group-mutation-forms';
 import {
   useCreateTalentGroupMutation,
@@ -42,17 +42,14 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
-import { loadTalentReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadTalentReferenceOptions } from '@modules/talent';
+import { talentGroupByTalentQueryConfig, talentGroupFlatListQueryConfig } from '@modules/talent-group';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import {
-  createCursorStack,
   mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-  talentGroupByTalentQueryConfig,
-  talentGroupFlatListQueryConfig,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   readReferenceDisplay,
@@ -238,7 +235,7 @@ export const TalentGroupListPage = (): JSX.Element => {
     </div>
   );
 
-  usePageActions(pageActions);
+  useModulePageActions(pageActions);
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
   const canGoNext = Boolean(nextCursor);

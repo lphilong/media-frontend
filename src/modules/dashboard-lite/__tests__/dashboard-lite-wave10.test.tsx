@@ -160,7 +160,9 @@ describe('Dashboard Lite hardening', () => {
       expect(
         await screen.findByText(i18n.t('errors:permission.title'), {}, { timeout: 3000 }),
       ).toBeInTheDocument();
-      expect(screen.getByText(i18n.t('errors:permission.message'))).toBeInTheDocument();
+      const main = screen.getByTestId('admin-shell-main');
+      expect(main).toHaveTextContent(i18n.t('errors:permission.reason.unknown'));
+      expect(main).toHaveTextContent(/You can:\s*- check access in the role and permission screen/i);
     },
   );
 

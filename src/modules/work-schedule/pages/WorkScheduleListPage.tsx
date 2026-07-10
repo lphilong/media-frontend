@@ -61,16 +61,16 @@ import {
 } from '@shared/components/primitives';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
-  createCursorStack,
-  mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
-  parseScreenQueryParams,
-  serializeScreenQueryParams,
   workShiftByResourceQueryConfig,
   workShiftBySubjectQueryConfig,
   workShiftFlatListQueryConfig,
-} from '@shared/query';
+} from '@modules/work-schedule';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
+import {
+  mergeScreenQueryParams,
+  parseScreenQueryParams,
+  serializeScreenQueryParams,
+} from '@shared/query/screen-query-config';
 
 type RoutePatchOptions = {
   replace?: boolean;

@@ -27,20 +27,25 @@ import {
   contractRegistryByLinkedEntityQueryConfig,
   contractRegistryByOwnerQueryConfig,
   contractRegistryFlatListQueryConfig,
+} from '@modules/contract-registry';
+import {
   mergeScreenQueryParams,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/employment-profile', () => ({
   loadEmploymentProfileReferenceOptions: vi.fn(async () => [
     { id: 'ep-001', label: 'Employee One - EP-000001' },
     { id: 'ep-002', label: 'Employee Two - EP-000002' },
   ]),
+}));
+
+vi.mock('@modules/talent', () => ({
   loadTalentReferenceOptions: vi.fn(async () => [
     { id: 'talent-001', label: 'Talent One - TAL-000001' },
   ]),
@@ -481,8 +486,8 @@ describe('contract registry wave 7 query and payload shaping', () => {
         { name: i18n.t('contract-registry:contractKinds.EMPLOYMENT') },
       ),
     ).not.toBeInTheDocument();
-    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
-    await user.click(await screen.findByRole('button', { name: /Employee One/ }));
+    await user.click(await screen.findByRole('option', { name: /Talent One/ }));
+    await user.click(await screen.findByRole('option', { name: /Employee One/ }));
     await user.type(
       screen.getByLabelText(i18n.t('contract-registry:fields.effectiveStartDate')),
       '2026-01-01',

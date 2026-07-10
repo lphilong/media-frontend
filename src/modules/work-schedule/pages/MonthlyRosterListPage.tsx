@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import {
   loadMonthlyRosterHolidayCalendarFilterOptions,
@@ -41,15 +41,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ModuleListScreenShell } from '@shared/modules';
+import { monthlyRosterListQueryConfig } from '@modules/work-schedule';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import {
-  createCursorStack,
   mergeScreenQueryParams,
-  monthlyRosterListQueryConfig,
-  moveNextCursor,
-  movePreviousCursor,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 
 type RoutePatchOptions = {
   replace?: boolean;
@@ -124,7 +122,7 @@ export const MonthlyRosterListPage = (): JSX.Element => {
     scope: { module: 'workSchedule', value: 'global' },
   });
 
-  usePageActions(
+  useModulePageActions(
     canCreateMonthlyRoster ? (
       <button
         type="button"

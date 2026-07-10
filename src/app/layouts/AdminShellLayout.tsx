@@ -1,11 +1,20 @@
 import { Menu } from 'lucide-react';
+import { useCallback, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useMatches } from 'react-router-dom';
 
+import {
+  canAccessModule as canAccessAppModule,
+  type ModuleAccessModuleId,
+} from '@app/router/module-access';
 import { usePageChromeStore } from '@app/store/page-chrome-store';
 import { useShellStore } from '@app/store/shell-store';
+import { AppLocaleSwitcher } from '@app/layouts/AppLocaleSwitcher';
+import { SidebarNav } from '@app/layouts/SidebarNav';
+import { ModuleAccessProvider, ModulePageActionsProvider } from '@app/providers/module-runtime';
+import { useCurrentActorCapabilities } from '@shared/auth/current-actor-capabilities';
 import { ModalHostProvider } from '@shared/components/primitives';
-import { AppTopBar, SidebarNav } from '@shared/components/shell';
+import { AppTopBar } from '@shared/components/shell';
 
 type RouteHandle = {
   breadcrumbKey?: string;
@@ -26,6 +35,19 @@ export const AdminShellLayout = (): JSX.Element => {
   const sidebarCollapsed = useShellStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useShellStore((state) => state.toggleSidebar);
   const pageActions = usePageChromeStore((state) => state.pageActions);
+  const setPageActions = usePageChromeStore((state) => state.setPageActions);
+  const capabilitiesQuery = useCurrentActorCapabilities();
+  const registerPageActions = useCallback(
+    (actions: ReactNode | null) => {
+      setPageActions(actions);
+    },
+    [setPageActions],
+  );
+  const canAccessRuntimeModule = useCallback(
+    (moduleId: string) =>
+      canAccessAppModule(capabilitiesQuery.data, moduleId as ModuleAccessModuleId),
+    [capabilitiesQuery.data],
+  );
 
   const leafHandle = matches.at(-1)?.handle;
   const pageTitle = leafHandle?.titleKey ? t(leafHandle.titleKey) : t('common:app.name');
@@ -75,9 +97,14 @@ export const AdminShellLayout = (): JSX.Element => {
             pageTitle={pageTitle}
             pageSubtitle={pageSubtitle}
             pageActions={pageActions ?? defaultStubAction}
+            utilityArea={<AppLocaleSwitcher />}
           />
           <div className="flex-1">
-            <Outlet />
+            <ModuleAccessProvider canAccessModule={canAccessRuntimeModule}>
+              <ModulePageActionsProvider registerPageActions={registerPageActions}>
+                <Outlet />
+              </ModulePageActionsProvider>
+            </ModuleAccessProvider>
           </div>
         </main>
       </div>

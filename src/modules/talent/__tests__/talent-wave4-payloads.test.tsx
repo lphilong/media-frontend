@@ -11,7 +11,7 @@ import {
 } from '@modules/talent/forms/talent-mutation-forms';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/employment-profile', () => ({
   loadEmploymentProfileReferenceOptions: vi.fn(async () => [
     {
       id: 'ep-001',

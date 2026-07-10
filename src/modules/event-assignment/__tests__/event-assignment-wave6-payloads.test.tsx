@@ -34,28 +34,39 @@ import {
   eventByPlatformQueryConfig,
   eventByResourceQueryConfig,
   eventFlatListQueryConfig,
-  parseScreenQueryParams,
-  serializeScreenQueryParams,
-} from '@shared/query';
+} from '@modules/event-assignment';
+import { parseScreenQueryParams, serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/employment-profile', () => ({
   loadEmploymentProfileReferenceOptions: vi.fn(async () => [
     { id: 'ep-001', label: 'Employee One - EP-000001' },
   ]),
+}));
+
+vi.mock('@modules/talent', () => ({
   loadTalentReferenceOptions: vi.fn(async () => [
     { id: 'talent-001', label: 'Talent One - TAL-000001' },
   ]),
+}));
+
+vi.mock('@modules/talent-group', () => ({
   loadTalentGroupReferenceOptions: vi.fn(async () => [
     { id: 'group-001', label: 'Group One - TG-000001' },
   ]),
+}));
+
+vi.mock('@modules/studio-resource', () => ({
   loadStudioResourceReferenceOptions: vi.fn(async () => [
     { id: 'studio-001', label: 'Studio One - SR-000001' },
     { id: 'studio-002', label: 'Studio Two - SR-000002' },
   ]),
+}));
+
+vi.mock('@modules/platform-account', () => ({
   loadPlatformAccountReferenceOptions: vi.fn(async () => [
     { id: 'platform-001', label: 'Platform One - PA-000001' },
     { id: 'platform-003', label: 'Platform Three - PA-000003' },

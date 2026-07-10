@@ -10,7 +10,7 @@ import {
   EmploymentProfileOrgAssignmentSurface,
   EmploymentProfileUserLinkSurface,
 } from '@modules/employment-profile/forms/employment-profile-mutation-forms';
-import { loadUnlinkedUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadUnlinkedUserReferenceOptions } from '@modules/employment-profile';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import {
   getMockCurrentActorCapabilities,
@@ -18,7 +18,11 @@ import {
 } from '@test/msw/identity-access-handlers';
 import { renderAppWithProviders } from '@test/render-app-route';
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/org-unit', async () => {
+  const actual = await vi.importActual<typeof import('@modules/org-unit')>('@modules/org-unit');
+
+  return {
+    ...actual,
   loadOrgUnitReferenceOptions: vi.fn(async () => [
     {
       id: 'ou-sales',
@@ -27,20 +31,22 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
       href: '/org-units/ou-sales',
     },
   ]),
+  };
+});
+
+vi.mock('@modules/employment-profile', async () => {
+  const actual = await vi.importActual<typeof import('@modules/employment-profile')>(
+    '@modules/employment-profile',
+  );
+
+  return {
+    ...actual,
   loadEmploymentProfileReferenceOptions: vi.fn(async () => [
     {
       id: 'ep-manager',
       label: 'Manager Display - EMPMGR',
       description: 'ACTIVE',
       href: '/employment-profiles/ep-manager',
-    },
-  ]),
-  loadUserReferenceOptions: vi.fn(async () => [
-    {
-      id: 'user-admin',
-      label: 'Admin User - admin@example.com',
-      description: 'ACTIVE',
-      href: '/users/user-admin',
     },
   ]),
   loadUnlinkedUserReferenceOptions: vi.fn(async () => [
@@ -51,7 +57,24 @@ vi.mock('@shared/components/reference/admin-reference-options', () => ({
       href: '/users/user-admin',
     },
   ]),
-}));
+  };
+});
+
+vi.mock('@modules/user', async () => {
+  const actual = await vi.importActual<typeof import('@modules/user')>('@modules/user');
+
+  return {
+    ...actual,
+    loadUserReferenceOptions: vi.fn(async () => [
+      {
+        id: 'user-admin',
+        label: 'Admin User - admin@example.com',
+        description: 'ACTIVE',
+        href: '/users/user-admin',
+      },
+    ]),
+  };
+});
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(appRoutes, {

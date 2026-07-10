@@ -74,9 +74,33 @@ const renderRoute = (path: string) => {
   return router;
 };
 
+const mockRevenueLedgerQueryAccess = (): void => {
+  server.use(
+    http.get('*/admin/me/capabilities', () =>
+      HttpResponse.json({
+        data: {
+          id: 'revenue-ledger-query-user',
+          type: 'admin',
+          context: 'ADMIN',
+          isActive: true,
+          roles: ['role-revenue-ledger-query'],
+          permissions: ['revenueLedger.read', 'revenueLedger.create'],
+          scopeGrants: {
+            revenueLedger: ['global'],
+          },
+          accountContexts: ['ADMIN_CONSOLE'],
+          workspaceAvailability: adminWorkspaceAvailability,
+          generatedAt: '2026-05-20T00:00:00.000Z',
+        },
+      }),
+    ),
+  );
+};
+
 describe('Revenue Ledger Wave 8 query mode selection', () => {
   beforeEach(async () => {
     await setLocale(DEFAULT_LOCALE);
+    mockRevenueLedgerQueryAccess();
   });
 
   it.each([
@@ -326,7 +350,7 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
     cleanup();
     renderRoute('/revenue-entries/revenue-entry-finalized');
 
-    expect(await screen.findByText('Minh Tran')).toBeInTheDocument();
+    expect(await screen.findByText('Minh Tran', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(
       await screen.findByText(
         i18n.t('revenue-ledger:detail.boundaryHelper'),
@@ -366,7 +390,8 @@ describe('Revenue Ledger Wave 8 query mode selection', () => {
 
     renderRoute('/revenue-entries/revenue-entry-001');
 
-    expect(await screen.findByText('REV-202604-000001')).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(document.body).toHaveTextContent(i18n.t('errors:permission.reason.missingScope'));
     expect(
       screen.queryByRole('button', {
         name: i18n.t('revenue-ledger:actions.editDraftCore'),

@@ -23,13 +23,19 @@ vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock('@shared/components/reference/admin-reference-options', () => ({
+vi.mock('@modules/talent', () => ({
   loadTalentReferenceOptions: vi.fn(async () => [
     { id: 'talent-001', label: 'Talent One - TAL-000001' },
   ]),
+}));
+
+vi.mock('@modules/platform-account', () => ({
   loadPlatformAccountReferenceOptions: vi.fn(async () => [
     { id: 'platform-001', label: 'Platform One - PLA001' },
   ]),
+}));
+
+vi.mock('@modules/event-assignment', () => ({
   loadEventReferenceOptions: vi.fn(async () => [
     { id: 'event-001', label: 'Event One - EVT-202605-000001' },
   ]),
@@ -83,7 +89,7 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
       screen.getByText(i18n.t('revenue-ledger:generatedCode.description')),
     ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.title')), 'Bad revenue');
-    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
+    await user.click(await screen.findByRole('option', { name: /Talent One/ }));
     await user.clear(screen.getByLabelText(i18n.t('revenue-ledger:fields.currencyCode')));
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.currencyCode')), 'usd');
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAmount')), '0');
@@ -115,8 +121,8 @@ describe('Revenue Ledger Wave 8 payloads and lifecycle seams', () => {
     render(<RevenueEntryCreateSurface onCancel={() => undefined} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.title')), 'Good revenue');
-    await user.click(await screen.findByRole('button', { name: /Talent One/ }));
-    await user.click(await screen.findByRole('button', { name: /Platform One/ }));
+    await user.click(await screen.findByRole('option', { name: /Talent One/ }));
+    await user.click(await screen.findByRole('option', { name: /Platform One/ }));
     await user.type(screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAmount')), '100');
     await user.type(
       screen.getByLabelText(i18n.t('revenue-ledger:fields.recognizedAt')),

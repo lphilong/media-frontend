@@ -15,7 +15,7 @@ import type {
   TalentGroupUpdateLineupPayload,
   TalentGroupUpdatePayload,
 } from '@modules/talent-group/types/talent-group.types';
-import { loadTalentReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadTalentReferenceOptions } from '@modules/talent';
 import { ModuleMutationSurface } from '@shared/modules';
 import { FormGrid, GeneratedCodeNotice, ReferencePickerField, TextInputField } from '@shared/forms';
 

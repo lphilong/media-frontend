@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import { HolidayCalendarCreateSurface } from '@modules/work-schedule/forms/holiday-calendar-mutation-forms';
 import {
@@ -34,15 +34,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ModuleListScreenShell } from '@shared/modules';
+import { holidayCalendarListQueryConfig } from '@modules/work-schedule';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import {
-  createCursorStack,
-  holidayCalendarListQueryConfig,
   mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 
 type RoutePatchOptions = {
   replace?: boolean;
@@ -169,7 +167,7 @@ export const HolidayCalendarListPage = (): JSX.Element => {
     [closeModal],
   );
 
-  usePageActions(
+  useModulePageActions(
     canCreateHolidayCalendar ? (
       <button
         type="button"

@@ -1,12 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import {
-  loadPlatformAccountReferenceOptions,
-  loadPlatformOwnerReferenceOptions,
-  loadStudioResourceReferenceOptionsByIds,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { adminReferenceLoaders } from '@app/registries/admin-reference-options';
 import { fetchReferenceLookupOptions } from '@shared/components/reference/reference-lookup.api';
 import { server } from '@test/msw/server';
 
@@ -32,7 +27,7 @@ describe('reference lookup API', () => {
       }),
     );
 
-    await expect(loadTalentReferenceOptions('Mina')).resolves.toEqual([
+    await expect(adminReferenceLoaders.loadTalentReferenceOptions('Mina')).resolves.toEqual([
       expect.objectContaining({
         id: 'talent-finance-1',
         label: 'Mina',
@@ -66,7 +61,9 @@ describe('reference lookup API', () => {
       }),
     );
 
-    await expect(loadStudioResourceReferenceOptionsByIds(['studio-hr-1'])).resolves.toEqual([
+    await expect(
+      adminReferenceLoaders.loadStudioResourceReferenceOptionsByIds(['studio-hr-1']),
+    ).resolves.toEqual([
       expect.objectContaining({
         id: 'studio-hr-1',
         label: 'Main Studio',
@@ -101,7 +98,7 @@ describe('reference lookup API', () => {
       }),
     );
 
-    await expect(loadPlatformAccountReferenceOptions('Mina')).resolves.toEqual([
+    await expect(adminReferenceLoaders.loadPlatformAccountReferenceOptions('Mina')).resolves.toEqual([
       expect.objectContaining({
         id: 'platform-ops-1',
         label: 'Mina Live',
@@ -135,7 +132,9 @@ describe('reference lookup API', () => {
       }),
     );
 
-    await expect(loadPlatformOwnerReferenceOptions('ORG_UNIT', 'Production')).resolves.toEqual([
+    await expect(
+      adminReferenceLoaders.loadPlatformOwnerReferenceOptions('ORG_UNIT', 'Production'),
+    ).resolves.toEqual([
       expect.objectContaining({
         id: 'ou-production',
         label: 'Production',

@@ -17,11 +17,9 @@ import type {
   RevenueKind,
 } from '@modules/revenue-ledger/types/revenue-ledger.types';
 import { revenueKindValues } from '@modules/revenue-ledger/types/revenue-ledger.types';
-import {
-  loadEventReferenceOptions,
-  loadPlatformAccountReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadEventReferenceOptions } from '@modules/event-assignment';
+import { loadPlatformAccountReferenceOptions } from '@modules/platform-account';
+import { loadTalentReferenceOptions } from '@modules/talent';
 import {
   FormGrid,
   GeneratedCodeNotice,

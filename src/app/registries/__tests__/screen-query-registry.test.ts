@@ -25,12 +25,12 @@ import {
   type QueryParamSchema,
   type QueryShape,
   type ScreenQueryConfig,
-} from '@shared/query';
-import * as sharedQuery from '@shared/query';
+} from '@app/registries/screen-query-registry';
+import * as sharedQuery from '@app/registries/screen-query-registry';
 import {
   workShiftByResourceQueryConfig,
   workShiftFlatListQueryConfig,
-} from '@modules/work-schedule/screen-query/work-schedule-query';
+} from '@modules/work-schedule';
 
 describe('shared query seam hardening', () => {
   it('drops unsupported params and related-route search during parse/build', () => {

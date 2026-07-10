@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 
-import { LocaleSwitcher } from '@shared/components/shell/LocaleSwitcher';
 import { SessionArea } from '@shared/components/shell/SessionArea';
 import { BreadcrumbTrail } from '@shared/components/shell/BreadcrumbTrail';
 
@@ -14,6 +13,7 @@ type AppTopBarProps = {
   pageTitle: string;
   pageSubtitle?: string;
   pageActions?: ReactNode;
+  utilityArea?: ReactNode;
 };
 
 export const AppTopBar = ({
@@ -21,13 +21,14 @@ export const AppTopBar = ({
   pageTitle,
   pageSubtitle,
   pageActions,
+  utilityArea,
 }: AppTopBarProps): JSX.Element => {
   return (
     <div className="sticky top-0 z-20 border-b border-border bg-panel/95 px-4 py-3 backdrop-blur">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <BreadcrumbTrail items={breadcrumbs} />
         <div className="flex items-center gap-2">
-          <LocaleSwitcher />
+          {utilityArea}
           <SessionArea />
         </div>
       </div>

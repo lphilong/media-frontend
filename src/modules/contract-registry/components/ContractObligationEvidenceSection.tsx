@@ -18,7 +18,7 @@ import {
   useRemoveContractObligationEventEvidenceMutation,
   useUpdateContractObligationMutation,
 } from '@modules/contract-registry/hooks/use-contract-registry';
-import { fetchEvents } from '@modules/event-assignment/api/event-assignment.api';
+import { loadCompletedEventReferenceOptions } from '@modules/event-assignment';
 import type {
   ContractEvidenceRefType,
   ContractObligation,
@@ -53,7 +53,7 @@ import {
   type StatusBadgeTone,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { loadEmploymentProfileReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
 import { FormGrid, ReferencePickerField, SelectField, TextInputField } from '@shared/forms';
 import {
   formatBusinessTimestamp,
@@ -173,22 +173,6 @@ const toNullable = (value: string): string | null => {
 const readApiErrorMessage = (error: unknown): string | undefined => {
   const apiError = error as NormalizedApiError | undefined;
   return apiError?.message;
-};
-
-const loadCompletedEventReferenceOptions = async (search: string) => {
-  const response = await fetchEvents({
-    status: 'COMPLETED',
-    search: search.trim() || undefined,
-    limit: 25,
-    sortBy: 'eventCode',
-    sortDirection: 'desc',
-  });
-
-  return response.data.map((event) => ({
-    id: event.id,
-    label: `${event.eventCode} - ${event.title}`,
-    description: event.status,
-  }));
 };
 
 const buildObligationPayload = (values: ObligationFormValues): ContractObligationPayload => ({

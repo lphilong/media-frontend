@@ -21,7 +21,7 @@ import type {
   TalentOrigin,
   TalentUpdatePayload,
 } from '@modules/talent/types/talent.types';
-import { loadEmploymentProfileReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
 import { ModuleMutationSurface } from '@shared/modules';
 import {
   CheckboxField,

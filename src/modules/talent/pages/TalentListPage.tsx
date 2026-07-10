@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { TalentCreateSurface } from '@modules/talent/forms/talent-mutation-forms';
 import {
   useCreateTalentMutation,
@@ -38,14 +38,10 @@ import {
   useModalHost,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import {
-  createCursorStack,
-  moveNextCursor,
-  movePreviousCursor,
-  serializeScreenQueryParams,
-  talentFlatListQueryConfig,
-  useRouteQueryState,
-} from '@shared/query';
+import { talentFlatListQueryConfig } from '@modules/talent';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
+import { useRouteQueryState } from '@shared/query/use-route-query-state';
 import { ModuleListScreenShell } from '@shared/modules';
 
 const readErrorMessage = (
@@ -148,7 +144,7 @@ export const TalentListPage = (): JSX.Element => {
     </button>
   ) : null;
 
-  usePageActions(pageActions);
+  useModulePageActions(pageActions);
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
   const canGoNext = Boolean(nextCursor);

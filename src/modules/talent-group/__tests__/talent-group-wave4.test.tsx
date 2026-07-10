@@ -209,7 +209,7 @@ describe('talent-group wave 4 surfaces', () => {
     const picker = await findPicker('talent-group-filter-contains-talent');
     expect(await within(picker).findAllByText(/TAL-000001/)).not.toHaveLength(0);
 
-    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await user.click(await within(picker).findByRole('option', { name: /TAL-000001/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBe(
         'talent-001',
@@ -230,7 +230,7 @@ describe('talent-group wave 4 surfaces', () => {
       expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBeNull();
     });
 
-    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await user.click(await within(picker).findByRole('option', { name: /TAL-000001/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBe(
         'talent-001',
@@ -248,7 +248,7 @@ describe('talent-group wave 4 surfaces', () => {
       expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBeNull();
     });
 
-    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await user.click(await within(picker).findByRole('option', { name: /TAL-000001/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('containsTalentId')).toBe(
         'talent-001',

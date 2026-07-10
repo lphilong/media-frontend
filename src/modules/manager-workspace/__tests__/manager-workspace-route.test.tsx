@@ -167,7 +167,7 @@ describe('/manager workspace route', () => {
       await screen.findByRole('heading', { name: 'Công việc được phân công' }),
     ).toBeInTheDocument();
     expect(screen.getAllByText('Mina Manager').length).toBeGreaterThan(0);
-    expect(screen.getByText('Hồ sơ nhân sự · EP-MGR-001')).toBeInTheDocument();
+    expect(await screen.findByText('Hồ sơ nhân sự · EP-MGR-001')).toBeInTheDocument();
     expect(screen.getAllByText('Phạm vi được phân công').length).toBeGreaterThan(0);
     expect(screen.getByTestId('manager-module-overview')).toHaveTextContent('Chỉ đọc');
     expect(screen.getByTestId('manager-module-kpi')).toHaveTextContent('Có thể thao tác');

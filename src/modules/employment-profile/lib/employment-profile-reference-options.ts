@@ -1,20 +1,16 @@
 import { z } from 'zod';
 
-import { APP_PATHS } from '@app/router/paths';
 import { fetchEmploymentProfiles } from '@modules/employment-profile/api/employment-profile.api';
 import type {
   EmploymentProfileListItem,
   EmploymentStatus,
 } from '@modules/employment-profile/types/employment-profile.types';
-import type { PlatformAccountOwnerKind } from '@modules/platform-account/types/platform-account.types';
-import { fetchUsers } from '@modules/user/api/user.api';
 import type { UserListItem } from '@modules/user/types/user.types';
 import { apiRequest } from '@shared/api';
 import type { ReferenceOption } from '@shared/components/reference/AsyncReferencePicker';
 import {
   fetchReferenceLookupOptions,
   type ReferenceLookupItem,
-  type ReferenceLookupResource,
 } from '@shared/components/reference/reference-lookup.api';
 
 const OPTION_LIMIT = 20;
@@ -52,10 +48,7 @@ const compactDescription = (values: Array<string | null | undefined>): string | 
   return items.length > 0 ? items.join(' - ') : undefined;
 };
 
-const toLookupOption = (
-  item: ReferenceLookupItem,
-  href: (id: string) => string,
-): ReferenceOption => ({
+const toEmploymentProfileLookupOption = (item: ReferenceLookupItem): ReferenceOption => ({
   id: item.id,
   label: item.label,
   description: item.secondaryLabel,
@@ -64,41 +57,15 @@ const toLookupOption = (
   type: item.type,
   status: item.status,
   state: item.state,
-  href: href(item.id),
+  href: `/employment-profiles/${item.id}`,
 });
-
-const loadLookupReferenceOptions = async (
-  resource: ReferenceLookupResource,
-  search: string,
-  href: (id: string) => string,
-): Promise<ReferenceOption[]> => {
-  const items = await fetchReferenceLookupOptions(resource, {
-    search: search || undefined,
-    limit: OPTION_LIMIT,
-  });
-
-  return items.map((item) => toLookupOption(item, href));
-};
-
-const loadLookupReferenceOptionsByIds = async (
-  resource: ReferenceLookupResource,
-  ids: readonly string[],
-  href: (id: string) => string,
-): Promise<ReferenceOption[]> => {
-  const items = await fetchReferenceLookupOptions(resource, {
-    ids,
-    limit: Math.min(ids.length || 1, OPTION_LIMIT),
-  });
-
-  return items.map((item) => toLookupOption(item, href));
-};
 
 const toUserOption = (item: UserListItem): ReferenceOption => ({
   id: item.id,
   label: item.displayName,
   description: item.email ?? undefined,
   status: item.accountStatus,
-  href: APP_PATHS.userDetail(item.id),
+  href: `/users/${item.id}`,
 });
 
 const toEmploymentProfileOption = (item: EmploymentProfileListItem): ReferenceOption => ({
@@ -110,7 +77,7 @@ const toEmploymentProfileOption = (item: EmploymentProfileListItem): ReferenceOp
     employeeCode: item.employeeCode,
     employmentStatus: item.employmentStatus,
   },
-  href: APP_PATHS.employmentProfileDetail(item.id),
+  href: `/employment-profiles/${item.id}`,
 });
 
 const toAccessAssignmentLinkedUserOption = (item: EmploymentProfileListItem): ReferenceOption => {
@@ -134,7 +101,7 @@ const toAccessAssignmentLinkedUserOption = (item: EmploymentProfileListItem): Re
       item.orgUnitRef?.name ?? item.orgUnitRef?.displayName ?? item.orgUnitRef?.code,
     ]),
     status: item.employmentStatus,
-    href: APP_PATHS.employmentProfileDetail(item.id),
+    href: `/employment-profiles/${item.id}`,
     disabled,
     meta: {
       employmentProfileId: item.id,
@@ -145,37 +112,35 @@ const toAccessAssignmentLinkedUserOption = (item: EmploymentProfileListItem): Re
   };
 };
 
-export const loadOrgUnitReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('org-units', search, APP_PATHS.orgUnitDetail);
-};
-
 export const loadEmploymentProfileReferenceOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions(
-    'employment-profiles',
-    search,
-    APP_PATHS.employmentProfileDetail,
-  );
-};
-
-export const loadTalentReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('talents', search, APP_PATHS.talentDetail);
-};
-
-export const loadTalentGroupReferenceOptions = async (
-  search: string,
-): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('talent-groups', search, APP_PATHS.talentGroupDetail);
-};
-
-export const loadUserReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  const response = await fetchUsers({
+  const items = await fetchReferenceLookupOptions('employment-profiles', {
     search: search || undefined,
     limit: OPTION_LIMIT,
   });
 
-  return response.data.map(toUserOption);
+  return items.map(toEmploymentProfileLookupOption);
+};
+
+export const loadEmploymentProfileReferenceOptionById = async (
+  employmentProfileId: string,
+): Promise<ReferenceOption> => {
+  const items = await fetchReferenceLookupOptions('employment-profiles', {
+    ids: [employmentProfileId],
+    limit: 1,
+  });
+  const option = items
+    .map(toEmploymentProfileLookupOption)
+    .find((candidate) => candidate.id === employmentProfileId);
+
+  return (
+    option ?? {
+      id: employmentProfileId,
+      label: employmentProfileId,
+      href: `/employment-profiles/${employmentProfileId}`,
+    }
+  );
 };
 
 export const loadAccessAssignmentLinkedUserOptions = async (
@@ -261,56 +226,4 @@ export const loadContextualEmploymentProfileReferenceOptions = async (
     })
     .slice(0, OPTION_LIMIT)
     .map(toEmploymentProfileOption);
-};
-
-export const loadPlatformAccountReferenceOptions = async (
-  search: string,
-): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('platform-accounts', search, APP_PATHS.platformAccountDetail);
-};
-
-export const loadStudioResourceReferenceOptions = async (
-  search: string,
-): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('studio-resources', search, APP_PATHS.studioResourceDetail);
-};
-
-export const loadStudioResourceReferenceOptionsByIds = async (
-  ids: readonly string[],
-): Promise<ReferenceOption[]> =>
-  loadLookupReferenceOptionsByIds('studio-resources', ids, APP_PATHS.studioResourceDetail);
-
-export const loadEventReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('events', search, APP_PATHS.eventDetail);
-};
-
-export const loadContractReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('contract-records', search, APP_PATHS.contractRecordDetail);
-};
-
-export const loadRevenueEntryReferenceOptions = async (
-  search: string,
-): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('revenue-entries', search, APP_PATHS.revenueEntryDetail);
-};
-
-export const loadCommissionRuleReferenceOptions = async (
-  search: string,
-): Promise<ReferenceOption[]> => {
-  return loadLookupReferenceOptions('commission-rules', search, APP_PATHS.commissionRuleDetail);
-};
-
-export const loadPlatformOwnerReferenceOptions = (
-  ownerKind: PlatformAccountOwnerKind,
-  search: string,
-): Promise<ReferenceOption[]> => {
-  if (ownerKind === 'ORG_UNIT') {
-    return loadOrgUnitReferenceOptions(search);
-  }
-
-  if (ownerKind === 'TALENT') {
-    return loadTalentReferenceOptions(search);
-  }
-
-  return loadTalentGroupReferenceOptions(search);
 };

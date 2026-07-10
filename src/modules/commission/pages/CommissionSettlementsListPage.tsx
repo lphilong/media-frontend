@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { CommissionSettlementCreateSurface } from '@modules/commission/forms/commission-mutation-forms';
 import {
   useCommissionSettlementLifecycleMutation,
@@ -48,25 +48,23 @@ import {
   type AppliedFilterChipItem,
 } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
-import {
-  loadCommissionRuleReferenceOptions,
-  loadEmploymentProfileReferenceOptions,
-  loadRevenueEntryReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadCommissionRuleReferenceOptions } from '@modules/commission';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
+import { loadRevenueEntryReferenceOptions } from '@modules/revenue-ledger';
+import { loadTalentReferenceOptions } from '@modules/talent';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   commissionSettlementsByBeneficiaryQueryConfig,
   commissionSettlementsByRevenueEntryQueryConfig,
   commissionSettlementsBySubjectTalentQueryConfig,
   commissionSettlementsFlatListQueryConfig,
-  createCursorStack,
+} from '@modules/commission';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
+import {
   mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 import { readReferenceDisplayForId } from '@shared/formatting/reference-display';
 
 type RouteMode = 'flat' | 'by-beneficiary' | 'by-subject-talent' | 'by-revenue-entry';
@@ -290,7 +288,7 @@ export const CommissionSettlementsListPage = (): JSX.Element => {
     scope: commissionGlobalScope,
   });
 
-  usePageActions(
+  useModulePageActions(
     canCreateCommissionSettlement ? (
       <button
         type="button"

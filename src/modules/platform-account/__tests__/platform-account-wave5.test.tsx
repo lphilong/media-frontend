@@ -103,7 +103,7 @@ describe('platform-account wave 5 surfaces', () => {
     const picker = await findPicker('platform-account-filter-owner-talent');
     expect(await within(picker).findAllByText(/TAL-000001/)).not.toHaveLength(0);
 
-    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await user.click(await within(picker).findByRole('option', { name: /TAL-000001/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('ownerTalentId')).toBe(
         'talent-001',
@@ -126,7 +126,7 @@ describe('platform-account wave 5 surfaces', () => {
       expect(params.get('ownerKind')).toBe('TALENT');
     });
 
-    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await user.click(await within(picker).findByRole('option', { name: /TAL-000001/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('ownerTalentId')).toBe(
         'talent-001',
@@ -146,7 +146,7 @@ describe('platform-account wave 5 surfaces', () => {
       expect(params.get('ownerKind')).toBe('TALENT');
     });
 
-    await user.click(await within(picker).findByRole('button', { name: /TAL-000001/ }));
+    await user.click(await within(picker).findByRole('option', { name: /TAL-000001/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('ownerTalentId')).toBe(
         'talent-001',
@@ -301,7 +301,7 @@ describe('platform-account wave 5 surfaces', () => {
       return;
     }
     await user.click(
-      await within(ownerPicker as HTMLElement).findByRole('button', { name: /TAL-000001/ }),
+      await within(ownerPicker as HTMLElement).findByRole('option', { name: /TAL-000001/ }),
     );
     await user.type(
       createSurfaceScope.getByLabelText(i18n.t('platform-account:fields.handle')),

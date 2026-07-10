@@ -42,11 +42,18 @@ import {
   StatusBadge,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import { AsyncReferencePicker, type ReferenceOption } from '@shared/components/reference';
-import { loadUserReferenceOptions } from '@shared/components/reference/admin-reference-options';
+import {
+  AsyncReferencePicker,
+  type ReferenceOption,
+  useReferenceRegistry,
+} from '@shared/components/reference';
 import { ModuleListScreenShell } from '@shared/modules';
 
 type RoleScreenTab = 'templates' | 'bundles' | 'assignments' | 'user-access';
+
+type RoleReferenceLoaders = {
+  loadUserReferenceOptions: (search: string) => Promise<ReferenceOption[]>;
+};
 
 const roleScreenTabs: Array<{ id: RoleScreenTab; labelKey: string }> = [
   { id: 'templates', labelKey: 'role:tabs.templates' },
@@ -374,6 +381,74 @@ const RoleBundleTab = ({
     );
   }
 
+  return (
+    <div className="space-y-4">
+      {groupCatalogItems(bundles).map(({ group, items }) => (
+        <MetadataSection
+          key={group}
+          title={t(`role:catalogGroups.${group}`)}
+          subtitle={t(`role:catalogGroupHelp.${group}`)}
+        >
+          <div className="grid gap-3 xl:grid-cols-2">
+            {items.map((bundle) => (
+              <article key={bundle.code} className="rounded border border-border bg-bg p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-text">
+                      {formatBundleCodeLabel(bundle.code)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      {formatBundlePurpose(bundle.code, bundle.businessPurpose)}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    <StatusBadge label="Gói đề xuất" tone="info" uppercase={false} />
+                    <StatusBadge
+                      label={formatCatalogStatusLabel(bundle.assignabilityStatus)}
+                      tone={bundle.assignabilityStatus === 'RESTRICTED_SENSITIVE' ? 'warning' : 'success'}
+                      uppercase={false}
+                    />
+                  </div>
+                </div>
+                <ReadOnlyFieldGrid
+                  columns={2}
+                  fields={[
+                    {
+                      key: 'who',
+                      label: 'Dành cho',
+                      value: formatBundleAudience(bundle.code),
+                    },
+                    {
+                      key: 'scope',
+                      label: t('role:bundles.recommendedScope'),
+                      value: formatScopeTypeList(bundle.recommendedScopes),
+                    },
+                    {
+                      key: 'included',
+                      label: t('role:bundles.childRoles'),
+                      value: bundle.childRoles.map(formatRoleCodeLabel).join(', '),
+                    },
+                    {
+                      key: 'review',
+                      label: 'Kiểm soát',
+                      value:
+                        bundle.reviewPolicy === 'REVIEW_REQUIRED' || bundle.sensitive
+                          ? 'Cần lý do và rà soát theo chính sách'
+                          : 'Theo quy trình gán quyền thông thường',
+                    },
+                  ]}
+                />
+                <p className="mt-3 text-xs text-muted">
+                  Khuyến nghị dùng gói này trước khi chọn mẫu vai trò thủ công.
+                </p>
+              </article>
+            ))}
+          </div>
+        </MetadataSection>
+      ))}
+    </div>
+  );
+
   const columns: Array<ColumnDef<RoleBundleListItem>> = [
     {
       accessorKey: 'code',
@@ -487,6 +562,7 @@ const RoleUserAccessTab = ({
   onRetry: () => void;
 }): JSX.Element => {
   const { t } = useTranslation(['role', 'common']);
+  const { loadUserReferenceOptions } = useReferenceRegistry<RoleReferenceLoaders>();
   const loadSearchFirstUserOptions = useCallback(
     (search: string): ReturnType<typeof loadUserReferenceOptions> => {
       if (search.trim().length < 2) {
@@ -495,7 +571,7 @@ const RoleUserAccessTab = ({
 
       return loadUserReferenceOptions(search).then(sanitizeUserAccessReferenceOptions);
     },
-    [],
+    [loadUserReferenceOptions],
   );
 
   return (
@@ -825,7 +901,8 @@ const bundlePurposeLabels: Record<string, string> = {
   FINANCE_STAFF_BUNDLE: 'Dành cho nhân sự vận hành dữ liệu tài chính hiện tại.',
   FINANCE_APPROVER_BUNDLE: 'Dành cho người được giao duyệt doanh thu.',
   STAFF_CONSOLE_BUNDLE: 'Dành cho nhân sự tự xem dữ liệu của chính mình.',
-  AUDITOR_BUNDLE: 'Dành cho người rà soát chỉ đọc và theo dõi lịch sử thay đổi.',
+  AUDITOR_BUNDLE:
+    'Auditor mặc định chỉ có quyền đọc không nhạy cảm. Dữ liệu lương, phụ cấp hoặc dữ liệu nhạy cảm cần quyền riêng.',
 };
 
 const catalogGroupOrder: CatalogOperatorFlowGroup[] = [
@@ -914,6 +991,66 @@ const formatBundleCodeLabel = (bundleCode: string): string =>
 
 const formatBundlePurpose = (bundleCode: string, fallback: string): string =>
   bundlePurposeLabels[bundleCode] ?? fallback;
+
+const formatBundleAudience = (bundleCode: string): string => {
+  if (/TALENT_GROUP_MANAGER/u.test(bundleCode)) {
+    return 'Nhân sự quản lý nhóm Talent được chỉ định';
+  }
+  if (/ORG_UNIT_MANAGER/u.test(bundleCode)) {
+    return 'Nhân sự quản lý phòng ban được chỉ định';
+  }
+  if (/FINANCE|COMMISSION/u.test(bundleCode)) {
+    return 'Nhân sự tài chính, phê duyệt hoặc đối soát';
+  }
+  if (/AUDITOR/u.test(bundleCode)) {
+    return 'Người rà soát chỉ đọc';
+  }
+  if (/STAFF_CONSOLE/u.test(bundleCode)) {
+    return 'Nhân sự tự xem dữ liệu cá nhân';
+  }
+  if (/OWNER|ACCESS/u.test(bundleCode)) {
+    return 'Người quản trị phân quyền có kiểm soát';
+  }
+  return 'Nhân sự vận hành nội bộ';
+};
+
+const scopeTypeLabels: Record<string, string> = {
+  self: 'Dữ liệu của chính nhân sự',
+  global: 'Toàn hệ thống',
+  managedTalentGroup: 'Nhóm Talent được quản lý',
+  managedOrgUnit: 'Phòng ban được quản lý',
+  assignedPlatformAccount: 'Tài khoản nền tảng được phân công',
+  financeGlobal: 'Tài chính toàn cục',
+  financePeriod: 'Kỳ tài chính',
+  assignedEvent: 'Sự kiện được phân công',
+  assignedStudioResource: 'Tài nguyên studio được phân công',
+  contractPortfolio: 'Danh mục hợp đồng',
+  attendancePeriodOrg: 'Kỳ chấm công theo phòng ban',
+  payrollPeriod: 'Kỳ nháp lương',
+};
+
+const formatScopeTypeList = (scopes: string[]): string =>
+  scopes.length > 0
+    ? scopes.map((scope) => scopeTypeLabels[scope] ?? 'Phạm vi cần rà soát').join(', ')
+    : 'Không cần chọn phạm vi riêng';
+
+const formatCatalogStatusLabel = (status: CatalogOperatorFlowGroup | string): string => {
+  switch (status) {
+    case 'READY_ASSIGNABLE':
+    case 'READY_TO_ASSIGN':
+      return 'Sẵn sàng';
+    case 'REQUIRES_SCOPE_SELECTION':
+      return 'Cần chọn phạm vi';
+    case 'RESTRICTED_SENSITIVE':
+      return 'Quản trị có kiểm soát';
+    case 'READ_ONLY_AUDIT':
+      return 'Chỉ đọc';
+    case 'FUTURE_READINESS':
+    case 'FUTURE_READY_CONDITION':
+    default:
+      return 'Chưa khả dụng';
+  }
+};
 
 const formatAssignmentOrigin = (
   origin: EffectiveAccessRecord['activeRoleAssignments'][number]['origin'],

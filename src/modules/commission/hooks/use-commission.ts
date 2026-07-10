@@ -43,8 +43,8 @@ import {
   commissionSettlementsByRevenueEntryQueryConfig,
   commissionSettlementsBySubjectTalentQueryConfig,
   commissionSettlementsFlatListQueryConfig,
-  serializeScreenQueryParams,
-} from '@shared/query';
+} from '@modules/commission';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const COMMISSION_QUERY_ROOT = ['commission'] as const;
 

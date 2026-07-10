@@ -1,19 +1,19 @@
 import { useTranslation } from 'react-i18next';
 
-import { useShellStore } from '@app/store/shell-store';
-import { setLocale } from '@shared/i18n/i18n';
 import type { AppLocale } from '@shared/i18n/constants';
 
 const localeOrder: AppLocale[] = ['vi', 'en', 'zh'];
 
-export const LocaleSwitcher = (): JSX.Element => {
+type LocaleSwitcherProps = {
+  locale: AppLocale;
+  onLocaleChange: (locale: AppLocale) => void | Promise<void>;
+};
+
+export const LocaleSwitcher = ({ locale, onLocaleChange }: LocaleSwitcherProps): JSX.Element => {
   const { t } = useTranslation('common');
-  const locale = useShellStore((state) => state.locale);
-  const updateLocale = useShellStore((state) => state.setLocale);
 
   const onChange = async (nextLocale: AppLocale): Promise<void> => {
-    updateLocale(nextLocale);
-    await setLocale(nextLocale);
+    await onLocaleChange(nextLocale);
   };
 
   return (

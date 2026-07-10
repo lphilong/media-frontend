@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import {
   ContractCreateSurface,
   ContractDateActionSurface,
@@ -44,22 +44,20 @@ import {
   type AppliedFilterChipItem,
 } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
-import {
-  loadEmploymentProfileReferenceOptions,
-  loadTalentReferenceOptions,
-} from '@shared/components/reference/admin-reference-options';
+import { loadEmploymentProfileReferenceOptions } from '@modules/employment-profile';
+import { loadTalentReferenceOptions } from '@modules/talent';
 import { ModuleListScreenShell } from '@shared/modules';
 import {
   contractRegistryByLinkedEntityQueryConfig,
   contractRegistryByOwnerQueryConfig,
   contractRegistryFlatListQueryConfig,
-  createCursorStack,
+} from '@modules/contract-registry';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
+import {
   mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 
 type RoutePatchOptions = {
   replace?: boolean;
@@ -275,7 +273,7 @@ export const ContractRegistryListPage = (): JSX.Element => {
     scope: contractRegistryGlobalScope,
   });
 
-  usePageActions(
+  useModulePageActions(
     canCreateContractRecord ? (
       <button
         type="button"

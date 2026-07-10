@@ -51,7 +51,7 @@ import {
   readReferenceDisplay,
 } from '@shared/formatting/formatters';
 import { ModuleDetailScreenShell } from '@shared/modules';
-import { parseWorkScheduleScope } from '@shared/query';
+import { parseWorkScheduleScope } from '@modules/work-schedule';
 
 type ActiveSurface = 'edit' | 'reschedule' | 'reassign-subject' | 'replace-resources' | null;
 

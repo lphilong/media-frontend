@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { StudioResourceCreateSurface } from '@modules/studio-resource/forms/studio-resource-mutation-forms';
 import {
   useCreateStudioResourceMutation,
@@ -41,16 +41,13 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ModuleListScreenShell } from '@shared/modules';
+import { studioResourceAvailabilityQueryConfig, studioResourceFlatListQueryConfig } from '@modules/studio-resource';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import {
-  createCursorStack,
   mergeScreenQueryParams,
-  moveNextCursor,
-  movePreviousCursor,
   parseScreenQueryParams,
   serializeScreenQueryParams,
-  studioResourceAvailabilityQueryConfig,
-  studioResourceFlatListQueryConfig,
-} from '@shared/query';
+} from '@shared/query/screen-query-config';
 
 type RoutePatchOptions = {
   replace?: boolean;
@@ -302,7 +299,7 @@ export const StudioResourceListPage = (): JSX.Element => {
     </div>
   );
 
-  usePageActions(pageActions);
+  useModulePageActions(pageActions);
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
   const canGoNext = Boolean(nextCursor);

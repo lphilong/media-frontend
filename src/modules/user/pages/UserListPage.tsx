@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
-import { usePageActions } from '@app/store/use-page-actions';
+import { useModulePageActions } from '@app/providers/module-runtime';
 import { userAccountStatusValues } from '@modules/user/constants/user.constants';
 import { UserProvisionSurface } from '@modules/user/forms/user-mutation-forms';
 import {
@@ -40,14 +40,10 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ModuleListScreenShell } from '@shared/modules';
-import {
-  createCursorStack,
-  moveNextCursor,
-  movePreviousCursor,
-  serializeScreenQueryParams,
-  useRouteQueryState,
-  userFlatListQueryConfig,
-} from '@shared/query';
+import { userFlatListQueryConfig } from '@modules/user';
+import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
+import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
+import { useRouteQueryState } from '@shared/query/use-route-query-state';
 import { useScrollToPanel } from '@shared/hooks/useScrollToPanel';
 
 const readErrorMessage = (
@@ -160,7 +156,7 @@ export const UserListPage = (): JSX.Element => {
     </div>
   );
 
-  usePageActions(pageActions);
+  useModulePageActions(pageActions);
 
   const nextCursor = listQueryResult.data?.meta?.nextCursor;
   const canGoNext = Boolean(nextCursor);
