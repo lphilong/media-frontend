@@ -43,26 +43,43 @@ import {
   useManagerPlatformEarningLines,
   useManagerPlatformEarningScope,
   useManagerRequestBatchDetail,
-  useManagerRequestBatches,
-  useManagerWorkShifts,
+  useManagerRequestBatchPages,
+  useManagerWorkShiftPages,
   useSubmitManagerPlatformEarningBatchMutation,
   useUpdateManagerPlatformEarningLineMutation,
   type ManagerEventSummary,
   type ManagerPlatformEarningLine,
   useSubmitManagerRequestBatchMutation,
-  type ManagerRequestBatchLine,
-  type ManagerSubmitRequestBatchLinePayload,
   type ManagerWorkShiftList,
-  type ManagerWorkScheduleRequestType,
   type ManagerWorkspaceContext,
   type ManagerWorkspaceOrgUnitScope,
 } from '@modules/manager-workspace/api/manager-workspace.api';
 import {
+  createDraftRequestLine,
+  type DraftRequestLine,
+  formatManagerRequestTimestamp,
+  getAllowedRequestMonths,
+  getHcmMonth,
+  hcmLocalToTimestamp,
+  managerRequestLineDecisionText,
+  managerRequestStatusTone,
+  requestLineStatusLabelKey,
+  requestTypeOptions,
+  requestTypeLabelKey,
+  timestampToDateTimeLocal,
+  type ManagerSchedulingCancellation,
+  type ManagerWorkScheduleRequestType,
+  type ManagerWorkTab,
+} from '@modules/manager-workspace/manager-scheduling.model';
+import {
+  Button,
   EmptyState,
   ErrorState,
   DetailBackLink,
   LoadingState,
   StatusBadge,
+  SensitiveActionDialog,
+  TechnicalDetailsDisclosure,
   useMutationFeedback,
 } from '@shared/components/primitives';
 import type { NormalizedApiError } from '@shared/api';
@@ -120,15 +137,6 @@ const statusTone = {
   DEPARTMENT_OWNER: 'info',
   UNIT_MANAGER: 'success',
   UNIT_OPERATOR: 'neutral',
-} as const;
-
-const batchStatusTone = {
-  PENDING: 'warning',
-  PARTIALLY_APPROVED: 'info',
-  APPROVED: 'success',
-  REJECTED: 'danger',
-  CANCELLED: 'muted',
-  FAILED_TO_APPLY: 'danger',
 } as const;
 
 const revenueBatchStatusTone = {
@@ -343,89 +351,6 @@ const KpiPlanTable = ({
     </div>
   );
 };
-
-type ManagerWorkTab = 'published' | 'requests' | 'availability';
-type DraftRequestLine = ManagerSubmitRequestBatchLinePayload & {
-  localId: string;
-  startLocal: string;
-  endLocal: string;
-};
-
-const requestTypeOptions: readonly ManagerWorkScheduleRequestType[] = [
-  'CREATE_SHIFT',
-  'RESCHEDULE_SHIFT',
-  'CANCEL_SHIFT',
-];
-
-const getHcmMonth = (timestamp = Date.now()): string => {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    year: 'numeric',
-    month: '2-digit',
-  }).formatToParts(new Date(timestamp));
-  return `${parts.find((part) => part.type === 'year')?.value}-${
-    parts.find((part) => part.type === 'month')?.value
-  }`;
-};
-
-const getAllowedRequestMonths = (): string[] => {
-  const [yearText, monthText] = getHcmMonth().split('-');
-  const year = Number(yearText);
-  const month = Number(monthText);
-  return [0, 1, 2].map((offset) => {
-    const monthIndex = month - 1 + offset;
-    const nextYear = year + Math.floor(monthIndex / 12);
-    const nextMonth = (monthIndex % 12) + 1;
-    return `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
-  });
-};
-
-const hcmLocalToTimestamp = (value: string): number | null => {
-  if (!value) {
-    return null;
-  }
-  const timestamp = Date.parse(`${value}:00+07:00`);
-  return Number.isFinite(timestamp) ? timestamp : null;
-};
-
-const timestampToDateTimeLocal = (value: number): string => {
-  const date = new Date(value + 7 * 60 * 60 * 1000);
-  return date.toISOString().slice(0, 16);
-};
-
-const createDraftLine = (
-  requestType: ManagerWorkScheduleRequestType,
-  memberEmploymentProfileId: string,
-  workShiftId?: string,
-): DraftRequestLine => ({
-  localId: `line-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  requestType,
-  memberEmploymentProfileId,
-  ...(workShiftId ? { workShiftId } : {}),
-  requestedStartAt: null,
-  requestedEndAt: null,
-  timezone: 'Asia/Ho_Chi_Minh',
-  title: requestType === 'CREATE_SHIFT' ? 'Schedule change request' : null,
-  reason: '',
-  startLocal: '',
-  endLocal: '',
-});
-
-const formatManagerRequestTimestamp = (value: number | null, timezone = 'Asia/Ho_Chi_Minh') =>
-  value === null
-    ? '-'
-    : new Intl.DateTimeFormat(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-        timeZone: timezone,
-      }).format(value);
-
-const lineDecisionText = (line: ManagerRequestBatchLine): string | null =>
-  line.failureReason ??
-  line.rejectionReason ??
-  line.cancellationReason ??
-  line.approvalNote ??
-  null;
 
 const canViewPlanForManagerContext = (
   context: ManagerWorkspaceContext,
@@ -785,24 +710,52 @@ const ManagerKpiSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX
 
 const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace']);
+  const location = useLocation();
+  const deepLinkedTab = new URLSearchParams(location.search).get('tab');
   const [month, setMonth] = useState('');
-  const [activeTab, setActiveTab] = useState<ManagerWorkTab>('published');
+  const [activeTab, setActiveTab] = useState<ManagerWorkTab>(
+    deepLinkedTab === 'requests' || deepLinkedTab === 'availability'
+      ? deepLinkedTab
+      : 'published',
+  );
   const [periodMonth, setPeriodMonth] = useState(getHcmMonth());
   const [batchNote, setBatchNote] = useState('');
   const [draftLines, setDraftLines] = useState<DraftRequestLine[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
   const [cancelReason, setCancelReason] = useState('');
+  const [cancellation, setCancellation] = useState<ManagerSchedulingCancellation | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
-  const workShiftsQuery = useManagerWorkShifts(
+  const workShiftsQuery = useManagerWorkShiftPages(
     month || undefined,
     context.modules.workShifts.visible && activeTab !== 'availability',
   );
-  const data = workShiftsQuery.data;
-  const requestBatchesQuery = useManagerRequestBatches(
+  const data = useMemo<ManagerWorkShiftList | undefined>(() => {
+    const pages = workShiftsQuery.data?.pages;
+    const lastPage = pages?.at(-1);
+    if (!pages || !lastPage) {
+      return undefined;
+    }
+    const items = pages.flatMap((page) => page.items);
+    return {
+      items,
+      meta: {
+        ...lastPage.meta,
+        returnedShiftCount: items.length,
+        representedMemberCount: new Set(
+          items.map((item) => item.member.employmentProfileId),
+        ).size,
+      },
+    };
+  }, [workShiftsQuery.data?.pages]);
+  const requestBatchesQuery = useManagerRequestBatchPages(
     { periodMonth: periodMonth || undefined },
     context.modules.workShifts.visible && activeTab === 'requests',
   );
-  const selectedBatchIdOrFirst = selectedBatchId ?? requestBatchesQuery.data?.items[0]?.id;
+  const requestBatches = useMemo(
+    () => requestBatchesQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [requestBatchesQuery.data?.pages],
+  );
+  const selectedBatchIdOrFirst = selectedBatchId ?? requestBatches[0]?.id;
   const requestBatchDetailQuery = useManagerRequestBatchDetail(
     selectedBatchIdOrFirst,
     context.modules.workShifts.visible && activeTab === 'requests',
@@ -820,6 +773,16 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
   }, [data]);
   const activeShiftOptions = data?.items ?? [];
 
+  useEffect(() => {
+    if (
+      deepLinkedTab === 'published' ||
+      deepLinkedTab === 'requests' ||
+      deepLinkedTab === 'availability'
+    ) {
+      setActiveTab(deepLinkedTab);
+    }
+  }, [deepLinkedTab]);
+
   if (!context.modules.workShifts.visible) {
     return (
       <EmptyState
@@ -836,9 +799,10 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
       return;
     }
     const firstShift = activeShiftOptions[0];
-    const line = createDraftLine(
+    const line = createDraftRequestLine(
       requestType,
       firstMember.employmentProfileId,
+      t('manager-workspace:requests.defaults.title'),
       requestType === 'CREATE_SHIFT' ? undefined : firstShift?.workShiftId,
     );
     if (firstShift && requestType === 'RESCHEDULE_SHIFT') {
@@ -933,6 +897,35 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
     setBatchNote('');
   };
 
+  const requestCancellation = (
+    next: ManagerSchedulingCancellation,
+  ): void => {
+    if (cancelReason.trim().length < 10) {
+      setValidationMessage(t('manager-workspace:availability.validation.cancelReasonRequired'));
+      return;
+    }
+    setCancellation(next);
+  };
+
+  const confirmCancellation = async (): Promise<void> => {
+    if (cancellation?.kind === 'request-batch') {
+      await cancelBatchMutation.mutateAsync({
+        batchId: cancellation.batchId,
+        payload: { cancellationReason: cancelReason },
+      });
+    } else if (cancellation?.kind === 'request-line') {
+      await cancelLineMutation.mutateAsync({
+        batchId: cancellation.batchId,
+        lineId: cancellation.lineId,
+        payload: { cancellationReason: cancelReason },
+      });
+    } else {
+      return;
+    }
+    setCancellation(null);
+    setCancelReason('');
+  };
+
   return (
     <section
       className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm"
@@ -951,9 +944,9 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
 
       <div className="flex flex-wrap gap-2" role="tablist">
         {(['published', 'requests', 'availability'] as const).map((tab) => (
-          <button
+          <Link
             key={tab}
-            type="button"
+            to={{ pathname: location.pathname, search: `?tab=${tab}` }}
             role="tab"
             aria-selected={activeTab === tab}
             className={`inline-flex items-center gap-2 rounded border px-3 py-2 text-sm font-medium ${
@@ -971,7 +964,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
               <Send className="h-4 w-4" aria-hidden="true" />
             )}
             {t(`manager-workspace:work.tabs.${tab}`)}
-          </button>
+          </Link>
         ))}
       </div>
 
@@ -1000,6 +993,8 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
         <ErrorState
           title={t('manager-workspace:errors.workTitle')}
           message={t('manager-workspace:errors.workMessage')}
+          actionLabel={t('manager-workspace:actions.retry')}
+          onRetry={() => void workShiftsQuery.refetch()}
         />
       ) : null}
 
@@ -1088,10 +1083,18 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
             </div>
           )}
           <p className="text-xs text-muted">{t('manager-workspace:work.draftNotice')}</p>
+          {workShiftsQuery.hasNextPage ? (
+            <Button
+              loading={workShiftsQuery.isFetchingNextPage}
+              onClick={() => void workShiftsQuery.fetchNextPage()}
+            >
+              {t('manager-workspace:requests.pagination.loadMore')}
+            </Button>
+          ) : null}
         </>
       ) : null}
 
-      {data && activeTab === 'requests' ? (
+      {activeTab === 'requests' ? (
         <div className="space-y-4" data-testid="manager-work-requests">
           <div className="rounded border border-border bg-bg p-3 text-sm text-muted">
             <p>{t('manager-workspace:requests.copy.approval')}</p>
@@ -1330,13 +1333,22 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                 {t('manager-workspace:requests.ownBatches')}
               </h3>
               {requestBatchesQuery.isLoading ? <LoadingState lines={3} /> : null}
-              {requestBatchesQuery.data?.items.length === 0 ? (
+              {requestBatchesQuery.isError ? (
+                <ErrorState
+                  variant="inline"
+                  title={t('manager-workspace:requests.states.listError')}
+                  message={t('manager-workspace:requests.states.listError')}
+                  actionLabel={t('manager-workspace:actions.retry')}
+                  onRetry={() => void requestBatchesQuery.refetch()}
+                />
+              ) : null}
+              {requestBatches.length === 0 ? (
                 <EmptyState
                   title={t('manager-workspace:requests.empty.noBatchesTitle')}
                   message={t('manager-workspace:requests.empty.noBatchesMessage')}
                 />
               ) : null}
-              {requestBatchesQuery.data?.items.map((batch) => (
+              {requestBatches.map((batch) => (
                 <button
                   key={batch.id}
                   type="button"
@@ -1352,7 +1364,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                     <StatusBadge
                       label={t(`manager-workspace:requests.statuses.${batch.status}`)}
                       status={batch.status}
-                      toneByStatus={batchStatusTone}
+                      toneByStatus={managerRequestStatusTone}
                     />
                   </div>
                   <div className="mt-1 text-xs text-muted">
@@ -1360,10 +1372,28 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                   </div>
                 </button>
               ))}
+              {requestBatchesQuery.hasNextPage ? (
+                <Button
+                  className="w-full"
+                  loading={requestBatchesQuery.isFetchingNextPage}
+                  onClick={() => void requestBatchesQuery.fetchNextPage()}
+                >
+                  {t('manager-workspace:requests.pagination.loadMore')}
+                </Button>
+              ) : null}
             </div>
 
             <div className="space-y-3 rounded border border-border bg-bg p-3">
               {requestBatchDetailQuery.isLoading ? <LoadingState lines={4} /> : null}
+              {requestBatchDetailQuery.isError ? (
+                <ErrorState
+                  variant="inline"
+                  title={t('manager-workspace:requests.states.detailError')}
+                  message={t('manager-workspace:requests.states.detailError')}
+                  actionLabel={t('manager-workspace:actions.retry')}
+                  onRetry={() => void requestBatchDetailQuery.refetch()}
+                />
+              ) : null}
               {requestBatchDetailQuery.data ? (
                 <>
                   <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -1380,7 +1410,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                         `manager-workspace:requests.statuses.${requestBatchDetailQuery.data.status}`,
                       )}
                       status={requestBatchDetailQuery.data.status}
-                      toneByStatus={batchStatusTone}
+                      toneByStatus={managerRequestStatusTone}
                     />
                   </div>
                   {requestBatchDetailQuery.data.status === 'PENDING' ? (
@@ -1393,19 +1423,18 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                           onChange={(event) => setCancelReason(event.target.value)}
                         />
                       </label>
-                      <button
-                        type="button"
-                        className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
+                      <Button
+                        variant="danger"
                         disabled={cancelReason.trim().length < 10 || cancelBatchMutation.isPending}
                         onClick={() =>
-                          void cancelBatchMutation.mutateAsync({
+                          requestCancellation({
+                            kind: 'request-batch',
                             batchId: requestBatchDetailQuery.data.id,
-                            payload: { cancellationReason: cancelReason },
                           })
                         }
                       >
                         {t('manager-workspace:requests.actions.cancelBatch')}
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
                   <div className="overflow-x-auto">
@@ -1415,7 +1444,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                           <tr key={line.id} data-testid="manager-request-line">
                             <td className="px-3 py-3">
                               <div className="font-medium text-text">
-                                {t(`manager-workspace:requests.types.${line.requestType}`)}
+                                {t(requestTypeLabelKey(line.requestType))}
                               </div>
                               <div className="text-xs text-muted">{line.member.displayName}</div>
                               <div className="text-xs text-muted">
@@ -1427,34 +1456,34 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                             </td>
                             <td className="px-3 py-3">
                               <StatusBadge
-                                label={t(`manager-workspace:requests.lineStatuses.${line.status}`)}
+                                label={t(requestLineStatusLabelKey(line.status))}
                                 status={line.status}
-                                toneByStatus={batchStatusTone}
+                                toneByStatus={managerRequestStatusTone}
                               />
-                              {lineDecisionText(line) ? (
+                              {managerRequestLineDecisionText(line) ? (
                                 <div className="mt-1 text-xs text-muted">
-                                  {lineDecisionText(line)}
+                                  {managerRequestLineDecisionText(line)}
                                 </div>
                               ) : null}
                             </td>
                             <td className="px-3 py-3 text-right">
                               {line.status === 'PENDING' ? (
-                                <button
-                                  type="button"
-                                  className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
+                                <Button
+                                  size="sm"
+                                  variant="danger"
                                   disabled={
                                     cancelReason.trim().length < 10 || cancelLineMutation.isPending
                                   }
                                   onClick={() =>
-                                    void cancelLineMutation.mutateAsync({
+                                    requestCancellation({
+                                      kind: 'request-line',
                                       batchId: requestBatchDetailQuery.data.id,
                                       lineId: line.id,
-                                      payload: { cancellationReason: cancelReason },
                                     })
                                   }
                                 >
                                   {t('manager-workspace:requests.actions.cancelLine')}
-                                </button>
+                                </Button>
                               ) : null}
                             </td>
                           </tr>
@@ -1462,6 +1491,13 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                       </tbody>
                     </table>
                   </div>
+                  <TechnicalDetailsDisclosure
+                    label={t('manager-workspace:technical.label')}
+                    details={{
+                      batchId: requestBatchDetailQuery.data.id,
+                      clientToken: requestBatchDetailQuery.data.clientToken,
+                    }}
+                  />
                 </>
               ) : null}
             </div>
@@ -1472,6 +1508,16 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
       {activeTab === 'availability' ? (
         <ManagerAvailabilityPanel context={context} allowedMonths={allowedMonths} />
       ) : null}
+      <SensitiveActionDialog
+        open={cancellation !== null}
+        title={t('manager-workspace:requests.confirmation.title')}
+        summary={t('manager-workspace:requests.confirmation.summary')}
+        confirmLabel={t('manager-workspace:requests.confirmation.confirm')}
+        cancelLabel={t('manager-workspace:requests.confirmation.keep')}
+        isSubmitting={cancelBatchMutation.isPending || cancelLineMutation.isPending}
+        onCancel={() => setCancellation(null)}
+        onConfirm={() => void confirmCancellation()}
+      />
     </section>
   );
 };

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import { apiRequest } from '@shared/api';
@@ -634,11 +634,16 @@ const managerWorkShiftListResponseSchema = z
 
 export type ManagerWorkShiftList = z.infer<typeof managerWorkShiftListResponseSchema>['data'];
 
-export const fetchManagerWorkShifts = async (month?: string): Promise<ManagerWorkShiftList> => {
+export const fetchManagerWorkShifts = async (
+  month?: string,
+  cursor?: string,
+): Promise<ManagerWorkShiftList> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/admin/manager-workspace/work-schedule/work-shifts',
-    params: month ? { month } : undefined,
+    params: Object.fromEntries(
+      Object.entries({ month, cursor }).filter(([, value]) => Boolean(value)),
+    ),
   });
 
   return managerWorkShiftListResponseSchema.parse(response).data;
@@ -648,6 +653,16 @@ export const useManagerWorkShifts = (month: string | undefined, enabled: boolean
   useQuery({
     queryKey: ['manager-workspace', 'work-shifts', month ?? 'current'],
     queryFn: () => fetchManagerWorkShifts(month),
+    enabled,
+    retry: false,
+  });
+
+export const useManagerWorkShiftPages = (month: string | undefined, enabled: boolean) =>
+  useInfiniteQuery({
+    queryKey: ['manager-workspace', 'work-shifts', 'pages', month ?? 'current'],
+    queryFn: ({ pageParam }) => fetchManagerWorkShifts(month, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.meta.nextCursor,
     enabled,
     retry: false,
   });
@@ -1060,7 +1075,7 @@ const sanitizeSubmitAvailabilityBatchPayload = (
 });
 
 export const fetchManagerRequestBatches = async (
-  query: { status?: string; periodMonth?: string } = {},
+  query: { status?: string; periodMonth?: string; cursor?: string } = {},
 ): Promise<ManagerRequestBatchList> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
@@ -1126,7 +1141,7 @@ export const cancelManagerRequestLine = async (
 };
 
 export const fetchManagerAvailabilityBatches = async (
-  query: { status?: string; periodMonth?: string } = {},
+  query: { status?: string; periodMonth?: string; cursor?: string } = {},
 ): Promise<ManagerAvailabilityBatchList> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
@@ -1223,6 +1238,25 @@ export const useManagerRequestBatches = (
     retry: false,
   });
 
+export const useManagerRequestBatchPages = (
+  query: { status?: string; periodMonth?: string },
+  enabled: boolean,
+) =>
+  useInfiniteQuery({
+    queryKey: [
+      ...MANAGER_REQUEST_BATCHES_QUERY_KEY,
+      'pages',
+      query.status ?? 'all',
+      query.periodMonth ?? 'all',
+    ],
+    queryFn: ({ pageParam }) =>
+      fetchManagerRequestBatches({ ...query, cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    enabled,
+    retry: false,
+  });
+
 export const useManagerRequestBatchDetail = (batchId: string | undefined, enabled: boolean) =>
   useQuery({
     queryKey: [...MANAGER_REQUEST_BATCHES_QUERY_KEY, 'detail', batchId ?? 'none'],
@@ -1242,6 +1276,25 @@ export const useManagerAvailabilityBatches = (
       query.periodMonth ?? 'all',
     ],
     queryFn: () => fetchManagerAvailabilityBatches(query),
+    enabled,
+    retry: false,
+  });
+
+export const useManagerAvailabilityBatchPages = (
+  query: { status?: string; periodMonth?: string },
+  enabled: boolean,
+) =>
+  useInfiniteQuery({
+    queryKey: [
+      ...MANAGER_AVAILABILITY_BATCHES_QUERY_KEY,
+      'pages',
+      query.status ?? 'all',
+      query.periodMonth ?? 'all',
+    ],
+    queryFn: ({ pageParam }) =>
+      fetchManagerAvailabilityBatches({ ...query, cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled,
     retry: false,
   });
@@ -1443,6 +1496,19 @@ export const parseManagerWorkShiftListForTest = (response: unknown): ManagerWork
 export const parseManagerAvailabilityBatchListForTest = (
   response: unknown,
 ): ManagerAvailabilityBatchList => managerAvailabilityBatchListResponseSchema.parse(response).data;
+
+export const parseManagerAvailabilityBatchDetailForTest = (
+  response: unknown,
+): ManagerAvailabilityBatchDetail =>
+  managerAvailabilityBatchDetailResponseSchema.parse(response).data;
+
+export const parseManagerRequestBatchListForTest = (
+  response: unknown,
+): ManagerRequestBatchList => managerRequestBatchListResponseSchema.parse(response).data;
+
+export const parseManagerRequestBatchDetailForTest = (
+  response: unknown,
+): ManagerRequestBatchDetail => managerRequestBatchDetailResponseSchema.parse(response).data;
 
 export const parseManagerAvailabilityTargetMembersForTest = (
   response: unknown,

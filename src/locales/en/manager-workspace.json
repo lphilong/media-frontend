@@ -12,6 +12,9 @@
     "backToKpi": "Back to managed KPI",
     "retry": "Retry"
   },
+  "technical": {
+    "label": "Technical identifiers"
+  },
   "status": {
     "scopeLabel": "Assigned scope",
     "readOnly": "Read-only",
@@ -273,6 +276,32 @@
     }
   },
   "availability": {
+    "pagination": { "loadMore": "Load more" },
+    "loadErrors": {
+      "batch": "Availability history could not be loaded.",
+      "detail": "Availability details could not be loaded."
+    },
+    "statuses": {
+      "PENDING": "Pending",
+      "PARTIALLY_APPROVED": "Partially approved",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    },
+    "applyStatuses": {
+      "NOT_APPLIED": "Not applied to a draft roster",
+      "ADVISORY_ONLY": "Advisory only",
+      "APPLIED": "Applied to a draft roster"
+    },
+    "policyStatuses": {
+      "NOT_EVALUATED": "Not evaluated"
+    },
+    "confirmation": {
+      "title": "Cancel pending availability?",
+      "summary": "This cancels only your pending planning submission and does not change an official shift.",
+      "confirm": "Confirm cancellation",
+      "keep": "Keep availability"
+    },
     "copy": {
       "planning": "Availability is a pre-roster planning signal for Admin/Ops.",
       "noAttendance": "It is not attendance, payroll, paid leave, or unpaid leave evidence.",
@@ -310,7 +339,8 @@
       "removeLine": "Remove",
       "submit": "Submit availability batch",
       "cancelBatch": "Cancel pending batch",
-      "cancelLine": "Cancel pending line"
+      "cancelLine": "Cancel pending line",
+      "loadMore": "Load more"
     },
     "lineTitle": "Availability line {{index}}",
     "batches": {
@@ -345,10 +375,24 @@
       "selectBatch": "Select an availability batch.",
       "emptyMembersMessage": "No eligible managed members were returned for the selected exact target.",
       "loadingMembers": "Loading eligible members for the selected target...",
-      "memberLoadError": "Eligible members could not be loaded. Availability submission is blocked."
+      "memberLoadError": "Eligible members could not be loaded. Availability submission is blocked.",
+      "batchLoadError": "Availability history could not be loaded.",
+      "detailLoadError": "Availability details could not be loaded."
     }
   },
   "requests": {
+    "pagination": { "loadMore": "Load more" },
+    "defaults": { "title": "Schedule change request" },
+    "confirmation": {
+      "title": "Cancel pending schedule request?",
+      "summary": "This cancels only your pending request and does not directly change an official shift.",
+      "confirm": "Confirm cancellation",
+      "keep": "Keep request"
+    },
+    "states": {
+      "listError": "Request history could not be loaded.",
+      "detailError": "Request details could not be loaded."
+    },
     "copy": {
       "approval": "Requests do not change official shifts until Admin/Ops approval.",
       "draftRoster": "Draft roster rows are not requestable.",
@@ -391,6 +435,7 @@
       "removeLine": "Remove line",
       "cancelBatch": "Cancel batch",
       "cancelLine": "Cancel line",
+      "loadMore": "Load more",
       "add": {
         "CREATE_SHIFT": "Add create",
         "RESCHEDULE_SHIFT": "Add reschedule",
@@ -409,7 +454,8 @@
       "windowOrder": "Requested end must be after requested start.",
       "lineMonth": "Requested line dates must be inside the selected request month.",
       "periodWindow": "Choose the current month or one of the next two months.",
-      "duplicate": "Remove duplicate request lines before submitting."
+      "duplicate": "Remove duplicate request lines before submitting.",
+      "cancelReason": "Enter a cancellation reason of at least 10 characters."
     },
     "feedback": {
       "submitFailed": "Request batch could not be submitted."

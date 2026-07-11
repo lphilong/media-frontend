@@ -12,6 +12,9 @@
     "backToKpi": "Quay lại KPI được phân công",
     "retry": "Thử lại"
   },
+  "technical": {
+    "label": "Chi tiết kỹ thuật"
+  },
   "status": {
     "scopeLabel": "Phạm vi được phân công",
     "readOnly": "Chỉ đọc",
@@ -285,6 +288,32 @@
     }
   },
   "availability": {
+    "pagination": { "loadMore": "Xem thêm" },
+    "loadErrors": {
+      "batch": "Chưa tải được lịch sử lịch rảnh/bận.",
+      "detail": "Chưa tải được chi tiết lịch rảnh/bận."
+    },
+    "statuses": {
+      "PENDING": "Đang chờ xử lý",
+      "PARTIALLY_APPROVED": "Đã duyệt một phần",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Đã từ chối",
+      "CANCELLED": "Đã hủy"
+    },
+    "applyStatuses": {
+      "NOT_APPLIED": "Chưa áp dụng vào lịch nháp",
+      "ADVISORY_ONLY": "Chỉ để tham khảo",
+      "APPLIED": "Đã áp dụng vào lịch nháp"
+    },
+    "policyStatuses": {
+      "NOT_EVALUATED": "Chưa đánh giá"
+    },
+    "confirmation": {
+      "title": "Xác nhận hủy lịch rảnh/bận đang chờ?",
+      "summary": "Thao tác chỉ hủy nội dung lập kế hoạch đang chờ và không thay đổi ca làm chính thức.",
+      "confirm": "Xác nhận hủy",
+      "keep": "Giữ lịch rảnh/bận"
+    },
     "copy": {
       "planning": "Lịch rảnh/bận là tín hiệu lập kế hoạch trước khi công bố Lịch tháng.",
       "noAttendance": "Đây không phải dữ liệu chấm công, bảng lương, nghỉ có lương hoặc nghỉ không lương.",
@@ -361,6 +390,18 @@
     }
   },
   "requests": {
+    "pagination": { "loadMore": "Xem thêm" },
+    "defaults": { "title": "Yêu cầu đổi lịch làm việc" },
+    "confirmation": {
+      "title": "Xác nhận hủy yêu cầu đổi lịch đang chờ?",
+      "summary": "Thao tác chỉ hủy yêu cầu đang chờ và không trực tiếp thay đổi ca làm chính thức.",
+      "confirm": "Xác nhận hủy",
+      "keep": "Giữ yêu cầu"
+    },
+    "states": {
+      "listError": "Chưa tải được lịch sử yêu cầu đổi lịch.",
+      "detailError": "Chưa tải được chi tiết yêu cầu đổi lịch."
+    },
     "copy": {
       "approval": "Yêu cầu không thay đổi ca làm chính thức cho đến khi Admin/Ops phê duyệt.",
       "draftRoster": "Dòng Lịch tháng nháp không thể gửi yêu cầu.",

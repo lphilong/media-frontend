@@ -6,7 +6,7 @@ import {
   useCancelManagerAvailabilityBatchMutation,
   useCancelManagerAvailabilityLineMutation,
   useManagerAvailabilityBatchDetail,
-  useManagerAvailabilityBatches,
+  useManagerAvailabilityBatchPages,
   useManagerAvailabilityTargetMembers,
   useSubmitManagerAvailabilityBatchMutation,
   type ManagerSubmitAvailabilityBatchLinePayload,
@@ -14,7 +14,21 @@ import {
   type ManagerWorkScheduleAvailabilityType,
   type ManagerWorkspaceContext,
 } from '@modules/manager-workspace/api/manager-workspace.api';
+import {
+  availabilityApplyStatusLabelKey,
+  availabilityPolicyLabelKey,
+  availabilityStatusLabelKey,
+  availabilityTaxonomyLabelKey,
+  availabilityTypeLabelKey,
+  type ManagerSchedulingCancellation,
+} from '@modules/manager-workspace/manager-scheduling.model';
 import { WorkScheduleDeadlineCue } from '@modules/work-schedule';
+import {
+  Button,
+  ErrorState,
+  SensitiveActionDialog,
+  TechnicalDetailsDisclosure,
+} from '@shared/components/primitives';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type TargetOption = {
@@ -88,6 +102,7 @@ export const ManagerAvailabilityPanel = ({
   const [draftLines, setDraftLines] = useState<DraftAvailabilityLine[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
   const [cancelReason, setCancelReason] = useState('');
+  const [cancellation, setCancellation] = useState<ManagerSchedulingCancellation | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const targetOptions = useMemo<TargetOption[]>(() => {
@@ -125,11 +140,15 @@ export const ManagerAvailabilityPanel = ({
     () => new Set(managedMembers.map((member) => member.employmentProfileId)),
     [managedMembers],
   );
-  const batchesQuery = useManagerAvailabilityBatches(
+  const batchesQuery = useManagerAvailabilityBatchPages(
     { periodMonth: periodMonth || undefined },
     context.modules.workShifts.visible,
   );
-  const selectedBatchIdOrFirst = selectedBatchId ?? batchesQuery.data?.items[0]?.id;
+  const batches = useMemo(
+    () => batchesQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [batchesQuery.data?.pages],
+  );
+  const selectedBatchIdOrFirst = selectedBatchId ?? batches[0]?.id;
   const detailQuery = useManagerAvailabilityBatchDetail(
     selectedBatchIdOrFirst,
     context.modules.workShifts.visible,
@@ -250,31 +269,40 @@ export const ManagerAvailabilityPanel = ({
     setBatchNote('');
   };
 
-  const cancelSelectedBatch = async (): Promise<void> => {
+  const requestBatchCancellation = (): void => {
     const batchId = detailQuery.data?.id;
-    if (!batchId || !cancelReason.trim()) {
+    if (!batchId || cancelReason.trim().length < 10) {
       setValidationMessage(t('manager-workspace:availability.validation.cancelReasonRequired'));
       return;
     }
-    await cancelBatchMutation.mutateAsync({
-      batchId,
-      payload: { cancellationReason: cancelReason },
-    });
-    setCancelReason('');
-    setValidationMessage(null);
+    setCancellation({ kind: 'availability-batch', batchId });
   };
 
-  const cancelSelectedLine = async (lineId: string): Promise<void> => {
+  const requestLineCancellation = (lineId: string): void => {
     const batchId = detailQuery.data?.id;
-    if (!batchId || !cancelReason.trim()) {
+    if (!batchId || cancelReason.trim().length < 10) {
       setValidationMessage(t('manager-workspace:availability.validation.cancelReasonRequired'));
       return;
     }
-    await cancelLineMutation.mutateAsync({
-      batchId,
-      lineId,
-      payload: { cancellationReason: cancelReason },
-    });
+    setCancellation({ kind: 'availability-line', batchId, lineId });
+  };
+
+  const confirmCancellation = async (): Promise<void> => {
+    if (cancellation?.kind === 'availability-batch') {
+      await cancelBatchMutation.mutateAsync({
+        batchId: cancellation.batchId,
+        payload: { cancellationReason: cancelReason },
+      });
+    } else if (cancellation?.kind === 'availability-line') {
+      await cancelLineMutation.mutateAsync({
+        batchId: cancellation.batchId,
+        lineId: cancellation.lineId,
+        payload: { cancellationReason: cancelReason },
+      });
+    } else {
+      return;
+    }
+    setCancellation(null);
     setCancelReason('');
     setValidationMessage(null);
   };
@@ -311,9 +339,13 @@ export const ManagerAvailabilityPanel = ({
           {t('manager-workspace:availability.states.loadingMembers')}
         </div>
       ) : membersQuery.isError ? (
-        <div className="rounded border border-danger bg-danger/10 px-3 py-6 text-center text-sm text-danger">
-          {t('manager-workspace:availability.states.memberLoadError')}
-        </div>
+        <ErrorState
+          variant="inline"
+          title={t('manager-workspace:availability.states.memberLoadError')}
+          message={t('manager-workspace:availability.states.memberLoadError')}
+          actionLabel={t('manager-workspace:actions.retry')}
+          onRetry={() => void membersQuery.refetch()}
+        />
       ) : managedMembers.length === 0 ? (
         <div className="rounded border border-border bg-bg px-3 py-6 text-center text-sm text-muted">
           {t('manager-workspace:availability.states.emptyMembersMessage')}
@@ -356,23 +388,18 @@ export const ManagerAvailabilityPanel = ({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium"
-              onClick={addLine}
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
+            <Button onClick={addLine} leftIcon={<Plus className="h-4 w-4" aria-hidden="true" />}>
               {t('manager-workspace:availability.actions.addLine')}
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            </Button>
+            <Button
+              variant="primary"
               disabled={draftLines.length === 0 || submitMutation.isPending}
+              loading={submitMutation.isPending}
               onClick={() => void submitDraft()}
+              leftIcon={<Send className="h-4 w-4" aria-hidden="true" />}
             >
-              <Send className="h-4 w-4" aria-hidden="true" />
               {t('manager-workspace:availability.actions.submit')}
-            </button>
+            </Button>
           </div>
 
           {validationMessage ? (
@@ -539,7 +566,16 @@ export const ManagerAvailabilityPanel = ({
               {t('manager-workspace:availability.states.loading')}
             </div>
           ) : null}
-          {(batchesQuery.data?.items ?? []).map((batch) => (
+          {batchesQuery.isError ? (
+            <ErrorState
+              variant="inline"
+              title={t('manager-workspace:availability.loadErrors.batch')}
+              message={t('manager-workspace:availability.loadErrors.batch')}
+              actionLabel={t('manager-workspace:actions.retry')}
+              onRetry={() => void batchesQuery.refetch()}
+            />
+          ) : null}
+          {batches.map((batch) => (
             <button
               key={batch.id}
               type="button"
@@ -551,7 +587,7 @@ export const ManagerAvailabilityPanel = ({
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium text-text">{batch.availabilityBatchCode}</span>
                 <span className={`rounded border px-2 py-0.5 text-xs ${badgeClass(batch.status)}`}>
-                  {batch.status}
+                  {t(`manager-workspace:availability.statuses.${batch.status}`)}
                 </span>
               </div>
               <div className="mt-1 text-xs text-muted">
@@ -565,7 +601,18 @@ export const ManagerAvailabilityPanel = ({
               ) : null}
             </button>
           ))}
-          {!batchesQuery.isLoading && (batchesQuery.data?.items ?? []).length === 0 ? (
+          {batchesQuery.hasNextPage ? (
+            <div className="p-3">
+              <Button
+                className="w-full"
+                loading={batchesQuery.isFetchingNextPage}
+                onClick={() => void batchesQuery.fetchNextPage()}
+              >
+                {t('manager-workspace:availability.pagination.loadMore')}
+              </Button>
+            </div>
+          ) : null}
+          {!batchesQuery.isLoading && batches.length === 0 ? (
             <div className="px-3 py-6 text-sm text-muted">
               {t('manager-workspace:availability.states.emptyBatches')}
             </div>
@@ -573,7 +620,15 @@ export const ManagerAvailabilityPanel = ({
         </div>
 
         <div className="rounded border border-border bg-bg p-3">
-          {detailQuery.data ? (
+          {detailQuery.isError ? (
+            <ErrorState
+              variant="inline"
+              title={t('manager-workspace:availability.loadErrors.detail')}
+              message={t('manager-workspace:availability.loadErrors.detail')}
+              actionLabel={t('manager-workspace:actions.retry')}
+              onRetry={() => void detailQuery.refetch()}
+            />
+          ) : detailQuery.data ? (
             <div className="space-y-3">
               <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div>
@@ -587,7 +642,7 @@ export const ManagerAvailabilityPanel = ({
                 <span
                   className={`rounded border px-2 py-1 text-xs ${badgeClass(detailQuery.data.status)}`}
                 >
-                  {detailQuery.data.status}
+                  {t(`manager-workspace:availability.statuses.${detailQuery.data.status}`)}
                 </span>
               </div>
               <label className="block text-sm font-medium text-text">
@@ -598,14 +653,17 @@ export const ManagerAvailabilityPanel = ({
                   onChange={(event) => setCancelReason(event.target.value)}
                 />
               </label>
-              <button
-                type="button"
-                className="rounded border border-danger px-3 py-2 text-sm font-medium text-danger disabled:opacity-50"
-                disabled={detailQuery.data.status !== 'PENDING' || cancelBatchMutation.isPending}
-                onClick={() => void cancelSelectedBatch()}
+              <Button
+                variant="danger"
+                disabled={
+                  detailQuery.data.status !== 'PENDING' ||
+                  cancelReason.trim().length < 10 ||
+                  cancelBatchMutation.isPending
+                }
+                onClick={requestBatchCancellation}
               >
                 {t('manager-workspace:availability.actions.cancelBatch')}
-              </button>
+              </Button>
               <div className="overflow-x-auto rounded border border-border">
                 <table className="min-w-full divide-y divide-border text-left text-sm">
                   <thead className="bg-panel text-xs uppercase text-muted">
@@ -638,8 +696,10 @@ export const ManagerAvailabilityPanel = ({
                       <tr key={line.id}>
                         <td className="px-3 py-2">{line.member.displayName}</td>
                         <td className="px-3 py-2">
-                          <div>{line.availabilityType}</div>
-                          <div className="text-xs text-muted">{line.taxonomyCode}</div>
+                          <div>{t(availabilityTypeLabelKey(line.availabilityType))}</div>
+                          <div className="text-xs text-muted">
+                            {t(availabilityTaxonomyLabelKey(line.taxonomyCode))}
+                          </div>
                         </td>
                         <td className="px-3 py-2">
                           {line.dateRangeStart ?? line.availabilityDate} -{' '}
@@ -654,32 +714,45 @@ export const ManagerAvailabilityPanel = ({
                           <span
                             className={`rounded border px-2 py-0.5 text-xs ${badgeClass(line.status)}`}
                           >
-                            {line.status}
+                            {t(availabilityStatusLabelKey(line.status))}
                           </span>
                         </td>
                         <td className="px-3 py-2">
                           <span
                             className={`rounded border px-2 py-0.5 text-xs ${badgeClass(line.applyStatus)}`}
                           >
-                            {line.applyStatus}
+                            {t(availabilityApplyStatusLabelKey(line.applyStatus))}
                           </span>
                         </td>
-                        <td className="px-3 py-2">{line.policyEvaluationStatus}</td>
                         <td className="px-3 py-2">
-                          <button
-                            type="button"
-                            className="rounded border border-danger px-2 py-1 text-xs text-danger disabled:opacity-50"
-                            disabled={line.status !== 'PENDING' || cancelLineMutation.isPending}
-                            onClick={() => void cancelSelectedLine(line.id)}
+                          {t(availabilityPolicyLabelKey(line.policyEvaluationStatus))}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            disabled={
+                              line.status !== 'PENDING' ||
+                              cancelReason.trim().length < 10 ||
+                              cancelLineMutation.isPending
+                            }
+                            onClick={() => requestLineCancellation(line.id)}
                           >
                             {t('manager-workspace:availability.actions.cancelLine')}
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              <TechnicalDetailsDisclosure
+                label={t('manager-workspace:technical.label')}
+                details={{
+                  batchId: detailQuery.data.id,
+                  clientToken: detailQuery.data.clientToken,
+                }}
+              />
             </div>
           ) : (
             <div className="py-8 text-center text-sm text-muted">
@@ -688,6 +761,16 @@ export const ManagerAvailabilityPanel = ({
           )}
         </div>
       </div>
+      <SensitiveActionDialog
+        open={cancellation !== null}
+        title={t('manager-workspace:availability.confirmation.title')}
+        summary={t('manager-workspace:availability.confirmation.summary')}
+        confirmLabel={t('manager-workspace:availability.confirmation.confirm')}
+        cancelLabel={t('manager-workspace:availability.confirmation.keep')}
+        isSubmitting={cancelBatchMutation.isPending || cancelLineMutation.isPending}
+        onCancel={() => setCancellation(null)}
+        onConfirm={() => void confirmCancellation()}
+      />
     </div>
   );
 };

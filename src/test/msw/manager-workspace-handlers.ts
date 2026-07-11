@@ -436,6 +436,10 @@ let managerRequestBatchSeed = 1;
 let managerRequestBatches: ManagerRequestBatchDetail[] = [];
 let managerAvailabilityBatchSeed = 1;
 let managerAvailabilityBatches: ManagerAvailabilityBatchDetail[] = [];
+let managerSchedulingAccountContextEligible = true;
+let managerSchedulingResponsibilityEligible = true;
+let managerSchedulingStructuredScopeEligible = true;
+let managerSchedulingPageSize = 100;
 let managerPlatformEarningBatchSeed = 1;
 let managerPlatformEarningLineSeed = 1;
 let managerPlatformAccountEligible = true;
@@ -474,6 +478,44 @@ const isManagerBatchPlatformAccountEligible = (batch: ManagerPlatformEarningBatc
       account.ownerTalentGroupId === batch.talentGroupId &&
       account.platform === batch.platform,
   );
+
+const managerSchedulingAuthorized = (): boolean =>
+  managerSchedulingAccountContextEligible &&
+  managerSchedulingResponsibilityEligible &&
+  managerSchedulingStructuredScopeEligible &&
+  managerWorkspaceContext.readiness.canUseManagerWorkspace &&
+  managerWorkspaceContext.employmentProfile !== null &&
+  (managerWorkspaceContext.employmentProfile.employmentStatus === 'ACTIVE' ||
+    managerWorkspaceContext.employmentProfile.employmentStatus === 'ON_LEAVE') &&
+  managerWorkspaceContext.modules.workShifts.visible &&
+  (managerWorkspaceContext.scopes.orgUnits.length > 0 ||
+    managerWorkspaceContext.scopes.talentGroups.length > 0);
+
+const managerSchedulingForbidden = (): Response =>
+  HttpResponse.json({ message: 'Assigned scheduling access is unavailable' }, { status: 403 });
+
+const managerContextHasTarget = (
+  targetType: 'ORG_UNIT' | 'TALENT_GROUP',
+  targetId: string,
+): boolean =>
+  targetType === 'ORG_UNIT'
+    ? managerWorkspaceContext.scopes.orgUnits.some((scope) => scope.orgUnitId === targetId)
+    : managerWorkspaceContext.scopes.talentGroups.some(
+        (scope) => scope.talentGroupId === targetId,
+      );
+
+const paginateManagerItems = <T>(items: readonly T[], cursor: string | null) => {
+  const offset = cursor ? Number(cursor) : 0;
+  if (!Number.isInteger(offset) || offset < 0) {
+    return null;
+  }
+  const pageItems = items.slice(offset, offset + managerSchedulingPageSize);
+  const nextOffset = offset + pageItems.length;
+  return {
+    items: pageItems,
+    ...(nextOffset < items.length ? { nextCursor: String(nextOffset) } : {}),
+  };
+};
 
 const recalculateManagerPlatformEarningBatch = (
   batch: ManagerPlatformEarningBatch,
@@ -798,6 +840,10 @@ export const resetManagerWorkspaceMockData = (): void => {
   managerRequestBatches = seedManagerRequestBatches();
   managerAvailabilityBatchSeed = 1;
   managerAvailabilityBatches = seedManagerAvailabilityBatches();
+  managerSchedulingAccountContextEligible = true;
+  managerSchedulingResponsibilityEligible = true;
+  managerSchedulingStructuredScopeEligible = true;
+  managerSchedulingPageSize = 100;
   managerPlatformEarningBatchSeed = 1;
   managerPlatformEarningLineSeed = 1;
   managerPlatformAccountEligible = true;
@@ -815,6 +861,20 @@ export const setMockManagerWorkShifts = (value: ManagerWorkShiftList): void => {
     items: value.items.map((item) => ({ ...item, member: { ...item.member } })),
     meta: { ...value.meta },
   };
+};
+
+export const setMockManagerSchedulingAuthority = (input: {
+  readonly accountContext?: boolean;
+  readonly responsibility?: boolean;
+  readonly structuredScope?: boolean;
+}): void => {
+  managerSchedulingAccountContextEligible = input.accountContext ?? true;
+  managerSchedulingResponsibilityEligible = input.responsibility ?? true;
+  managerSchedulingStructuredScopeEligible = input.structuredScope ?? true;
+};
+
+export const setMockManagerSchedulingPageSize = (pageSize: number): void => {
+  managerSchedulingPageSize = pageSize;
 };
 
 export const setMockManagerWorkspaceContext = (context: ManagerWorkspaceContext): void => {
@@ -1101,10 +1161,33 @@ export const managerWorkspaceHandlers = [
     }
     return HttpResponse.json({ data: batch });
   }),
-  http.get('*/admin/manager-workspace/work-schedule/work-shifts', () =>
-    HttpResponse.json({ data: managerWorkShifts }),
-  ),
+  http.get('*/admin/manager-workspace/work-schedule/work-shifts', ({ request }) => {
+    if (!managerSchedulingAuthorized()) {
+      return managerSchedulingForbidden();
+    }
+    const cursor = new URL(request.url).searchParams.get('cursor');
+    const page = paginateManagerItems(managerWorkShifts.items, cursor);
+    if (!page) {
+      return HttpResponse.json({ message: 'invalid cursor' }, { status: 422 });
+    }
+    return HttpResponse.json({
+      data: {
+        items: page.items,
+        meta: {
+          ...managerWorkShifts.meta,
+          returnedShiftCount: page.items.length,
+          representedMemberCount: new Set(
+            page.items.map((item) => item.member.employmentProfileId),
+          ).size,
+          ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
+        },
+      },
+    });
+  }),
   http.get('*/admin/manager-workspace/work-schedule/availability-members', ({ request }) => {
+    if (!managerSchedulingAuthorized()) {
+      return managerSchedulingForbidden();
+    }
     const url = new URL(request.url);
     const targetType = url.searchParams.get('targetType');
     const targetId = url.searchParams.get('targetId');
@@ -1114,7 +1197,7 @@ export const managerWorkspaceHandlers = [
     const data = managerAvailabilityTargets.find(
       (target) => target.target.targetType === targetType && target.target.targetId === targetId,
     );
-    if (!data) {
+    if (!data || !managerContextHasTarget(targetType, targetId)) {
       return HttpResponse.json(
         { message: 'target has no eligible availability members' },
         { status: 422 },
@@ -1123,6 +1206,9 @@ export const managerWorkspaceHandlers = [
     return HttpResponse.json({ data });
   }),
   http.get('*/admin/manager-workspace/work-schedule/availability-batches', ({ request }) => {
+    if (!managerSchedulingAuthorized()) {
+      return managerSchedulingForbidden();
+    }
     const url = new URL(request.url);
     const periodMonth = url.searchParams.get('periodMonth');
     const status = url.searchParams.get('status');
@@ -1130,11 +1216,17 @@ export const managerWorkspaceHandlers = [
       .filter((batch) => !periodMonth || batch.periodMonth === periodMonth)
       .filter((batch) => !status || batch.status === status)
       .map(managerAvailabilityBatchToListItem);
-    return HttpResponse.json({ data: { items } });
+    const page = paginateManagerItems(items, url.searchParams.get('cursor'));
+    return page
+      ? HttpResponse.json({ data: page })
+      : HttpResponse.json({ message: 'invalid cursor' }, { status: 422 });
   }),
   http.get(
     '*/admin/manager-workspace/work-schedule/availability-batches/:batchId',
     ({ params }) => {
+      if (!managerSchedulingAuthorized()) {
+        return managerSchedulingForbidden();
+      }
       const batch = managerAvailabilityBatches.find((item) => item.id === String(params.batchId));
       if (!batch) {
         return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
@@ -1143,6 +1235,9 @@ export const managerWorkspaceHandlers = [
     },
   ),
   http.post('*/admin/manager-workspace/work-schedule/availability-batches', async ({ request }) => {
+    if (!managerSchedulingAuthorized()) {
+      return managerSchedulingForbidden();
+    }
     const body = (await request.json()) as {
       periodMonth?: string;
       targetType?: 'ORG_UNIT' | 'TALENT_GROUP';
@@ -1173,6 +1268,7 @@ export const managerWorkspaceHandlers = [
     );
     if (
       !availabilityTarget ||
+      !managerContextHasTarget(body.targetType!, String(targetId)) ||
       body.lines.some((line) => !membersById.has(String(line.memberEmploymentProfileId)))
     ) {
       return HttpResponse.json(
@@ -1257,6 +1353,9 @@ export const managerWorkspaceHandlers = [
   http.post(
     '*/admin/manager-workspace/work-schedule/availability-batches/:batchId/cancel',
     async ({ params, request }) => {
+      if (!managerSchedulingAuthorized()) {
+        return managerSchedulingForbidden();
+      }
       const body = (await request.json()) as { cancellationReason?: string };
       const batchIndex = managerAvailabilityBatches.findIndex(
         (item) => item.id === String(params.batchId),
@@ -1288,6 +1387,9 @@ export const managerWorkspaceHandlers = [
   http.post(
     '*/admin/manager-workspace/work-schedule/availability-batches/:batchId/lines/:lineId/cancel',
     async ({ params, request }) => {
+      if (!managerSchedulingAuthorized()) {
+        return managerSchedulingForbidden();
+      }
       const body = (await request.json()) as { cancellationReason?: string };
       const batchIndex = managerAvailabilityBatches.findIndex(
         (item) => item.id === String(params.batchId),
@@ -1315,6 +1417,9 @@ export const managerWorkspaceHandlers = [
     },
   ),
   http.get('*/admin/manager-workspace/work-schedule/request-batches', ({ request }) => {
+    if (!managerSchedulingAuthorized()) {
+      return managerSchedulingForbidden();
+    }
     const url = new URL(request.url);
     const periodMonth = url.searchParams.get('periodMonth');
     const status = url.searchParams.get('status');
@@ -1322,9 +1427,15 @@ export const managerWorkspaceHandlers = [
       .filter((batch) => !periodMonth || batch.periodMonth === periodMonth)
       .filter((batch) => !status || batch.status === status)
       .map(managerBatchToListItem);
-    return HttpResponse.json({ data: { items } });
+    const page = paginateManagerItems(items, url.searchParams.get('cursor'));
+    return page
+      ? HttpResponse.json({ data: page })
+      : HttpResponse.json({ message: 'invalid cursor' }, { status: 422 });
   }),
   http.get('*/admin/manager-workspace/work-schedule/request-batches/:batchId', ({ params }) => {
+    if (!managerSchedulingAuthorized()) {
+      return managerSchedulingForbidden();
+    }
     const batch = managerRequestBatches.find((item) => item.id === String(params.batchId));
     if (!batch) {
       return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
@@ -1332,6 +1443,9 @@ export const managerWorkspaceHandlers = [
     return HttpResponse.json({ data: batch });
   }),
   http.post('*/admin/manager-workspace/work-schedule/request-batches', async ({ request }) => {
+    if (!managerSchedulingAuthorized()) {
+      return managerSchedulingForbidden();
+    }
     const body = (await request.json()) as {
       periodMonth?: string;
       clientToken?: string;
@@ -1346,6 +1460,19 @@ export const managerWorkspaceHandlers = [
     );
     if (missingReason) {
       return HttpResponse.json({ message: 'reason must be 10-1000 characters' }, { status: 422 });
+    }
+    const eligibleMemberIds = new Set(
+      managerWorkShifts.items.map((shift) => shift.member.employmentProfileId),
+    );
+    if (
+      body.lines.some(
+        (line) => !eligibleMemberIds.has(String(line.memberEmploymentProfileId)),
+      )
+    ) {
+      return HttpResponse.json(
+        { message: 'request member is not eligible for assigned scheduling scope' },
+        { status: 422 },
+      );
     }
     managerRequestBatchSeed += 1;
     const now = Date.now();
@@ -1372,9 +1499,9 @@ export const managerWorkspaceHandlers = [
       updatedAt: now,
       lines: body.lines.map((line, index) => {
         const memberId = String(line.memberEmploymentProfileId);
-        const member =
-          managerWorkShifts.items.find((shift) => shift.member.employmentProfileId === memberId)
-            ?.member ?? managerWorkShifts.items[0].member;
+        const member = managerWorkShifts.items.find(
+          (shift) => shift.member.employmentProfileId === memberId,
+        )!.member;
         return {
           id: `manager-line-${managerRequestBatchSeed}-${index + 1}`,
           lineNo: index + 1,
@@ -1412,6 +1539,9 @@ export const managerWorkspaceHandlers = [
   http.post(
     '*/admin/manager-workspace/work-schedule/request-batches/:batchId/cancel',
     async ({ params, request }) => {
+      if (!managerSchedulingAuthorized()) {
+        return managerSchedulingForbidden();
+      }
       const body = (await request.json()) as { cancellationReason?: string };
       const batchIndex = managerRequestBatches.findIndex(
         (item) => item.id === String(params.batchId),
@@ -1443,6 +1573,9 @@ export const managerWorkspaceHandlers = [
   http.post(
     '*/admin/manager-workspace/work-schedule/request-batches/:batchId/lines/:lineId/cancel',
     async ({ params, request }) => {
+      if (!managerSchedulingAuthorized()) {
+        return managerSchedulingForbidden();
+      }
       const body = (await request.json()) as { cancellationReason?: string };
       const batchIndex = managerRequestBatches.findIndex(
         (item) => item.id === String(params.batchId),

@@ -30,6 +30,8 @@ import {
   managerWorkspaceTalentGroupOnlyContext,
   managerWorkspaceWorkEnabledContext,
   resetManagerWorkspaceMockData,
+  setMockManagerSchedulingAuthority,
+  setMockManagerSchedulingPageSize,
   setMockManagerWorkShifts,
   setMockManagerWorkspaceContext,
 } from '@test/msw/manager-workspace-handlers';
@@ -975,6 +977,35 @@ describe('/manager workspace route', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('preserves scheduling tab deep links and cursor continuation, then resets cursor on month change', async () => {
+    const user = userEvent.setup();
+    await renderRoute('/manager/work-shifts?tab=published', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+      setMockManagerSchedulingPageSize(1);
+    });
+
+    expect(await screen.findAllByTestId('manager-work-shift-row')).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Load more' }));
+    await waitFor(() => expect(screen.getAllByTestId('manager-work-shift-row')).toHaveLength(2));
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-07' } });
+    await waitFor(() => expect(screen.getAllByTestId('manager-work-shift-row')).toHaveLength(1));
+
+    const availabilityTab = screen.getByRole('tab', { name: 'Availability' });
+    expect(availabilityTab).toHaveAttribute('href', '/manager/work-shifts?tab=availability');
+    await user.click(availabilityTab);
+    expect(await screen.findByTestId('manager-work-availability')).toBeInTheDocument();
+  });
+
+  it('shows a denied scheduling state when the MSW authority intersection is incomplete', async () => {
+    await renderRoute('/manager/work-shifts', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+      setMockManagerSchedulingAuthority({ structuredScope: false });
+    });
+    expect(await screen.findByText('Managed published shifts could not be loaded.')).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-work-shift-row')).not.toBeInTheDocument();
+  });
+
   it('counts partial-batch Manager lines, discloses bounded results, and keeps card CTAs read-only', async () => {
     const user = userEvent.setup();
     let mutationCalls = 0;
@@ -1370,28 +1401,25 @@ describe('/manager workspace route', () => {
     await user.click(await screen.findByRole('tab', { name: 'Availability' }));
     expect((await screen.findAllByText('AVB-000001')).length).toBeGreaterThan(0);
 
-    const cancelLine = screen
-      .getAllByRole('button', { name: 'Cancel pending line' })
-      .find((button) => !button.hasAttribute('disabled'));
+    const cancelLine = screen.getAllByRole('button', { name: 'Cancel pending line' })[0];
     expect(cancelLine).toBeDefined();
     if (!cancelLine) {
       return;
     }
-    await user.click(cancelLine);
-    expect(await screen.findByText('Cancellation reason is required.')).toBeInTheDocument();
-    expect(cancelLineCalls).toBe(0);
-
     const reason = screen.getByLabelText('Cancellation reason');
     await user.type(reason, 'Manager cancels this pending availability line.');
     await user.click(cancelLine);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Keep availability' }));
+    expect(cancelLineCalls).toBe(0);
+    await user.click(cancelLine);
+    await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
     await waitFor(() => expect(cancelLineCalls).toBe(1));
 
     const cancelBatch = screen.getByRole('button', { name: 'Cancel pending batch' });
-    await user.click(cancelBatch);
-    expect(await screen.findByText('Cancellation reason is required.')).toBeInTheDocument();
-    expect(cancelBatchCalls).toBe(0);
     await user.type(reason, 'Manager cancels remaining pending availability.');
     await user.click(cancelBatch);
+    await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
     await waitFor(() => expect(cancelBatchCalls).toBe(1));
 
     expect(rawAdminAvailabilityCalls).toBe(0);
@@ -1536,11 +1564,17 @@ describe('/manager workspace route', () => {
     expect(cancelLine[0]).toBeDisabled();
     await user.type(cancellationReason, 'Manager cancellation reason.');
     await user.click(cancelLine[0]);
-
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Keep request' }));
+    expect(screen.queryByText('Cancelled')).not.toBeInTheDocument();
+    await user.click(cancelLine[0]);
+    await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
     expect(await screen.findByText('Manager cancellation reason.')).toBeInTheDocument();
 
     const cancelBatch = await screen.findByRole('button', { name: 'Cancel batch' });
+    await user.type(cancellationReason, 'Cancel the remaining pending request batch.');
     await user.click(cancelBatch);
+    await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
 
     expect(await screen.findAllByText('Cancelled')).not.toHaveLength(0);
     expect(rawAdminBatchCalls).toBe(0);
