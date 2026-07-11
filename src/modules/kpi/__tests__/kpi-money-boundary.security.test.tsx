@@ -58,9 +58,7 @@ describe('KPI money-boundary and security regression coverage', () => {
     await waitForKpiPlanList();
     await user.click(await findTabByText([/Progress & Actuals/u]));
 
-    expect(
-      await screen.findByText(/KPI actuals do not automatically decide/u),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/KPI actuals do not automatically decide/u)).toBeInTheDocument();
 
     for (const unsafeAction of [
       /create revenue/i,
@@ -118,7 +116,9 @@ describe('KPI money-boundary and security regression coverage', () => {
     await user.clear(actualDate);
     await user.type(actualDate, '2026-06-15');
     await user.click(screen.getByRole('button', { name: 'Load grid' }));
-    const actualInput = await screen.findByLabelText(/Actual value for An Nguyen Revenue VND/u);
+    const actualInput = await screen.findByLabelText(
+      /Actual value for An Nguyen Operational revenue KPI/u,
+    );
     await user.clear(actualInput);
     await user.type(actualInput, '1000');
     await user.click(screen.getByRole('button', { name: /Save changed cells/u }));

@@ -715,7 +715,9 @@ describe('/manager workspace route', () => {
     expect(actualDate).toHaveValue('2026-06-15');
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
     expect(readLastKpiOrgUnitActualGridDate()).toBe('2026-06-15');
-    const anActual = await within(operations).findByLabelText('An Nguyen Revenue VND actual');
+    const anActual = await within(operations).findByLabelText(
+      'An Nguyen Operational revenue KPI actual',
+    );
     await userEvent.clear(anActual);
     await userEvent.type(anActual, '0');
     await userEvent.click(within(operations).getByRole('button', { name: 'Save changed cells' }));
@@ -726,7 +728,7 @@ describe('/manager workspace route', () => {
     });
 
     const updatedAnActual = await within(operations).findByLabelText(
-      'An Nguyen Revenue VND actual',
+      'An Nguyen Operational revenue KPI actual',
     );
     await userEvent.clear(updatedAnActual);
     await userEvent.type(updatedAnActual, '100.000');
@@ -757,7 +759,9 @@ describe('/manager workspace route', () => {
       await within(operations).findByRole('button', { name: 'Submit Allocation' }),
     ).toBeEnabled();
 
-    const targetInput = await within(operations).findByLabelText('An Nguyen Revenue VND');
+    const targetInput = await within(operations).findByLabelText(
+      'An Nguyen Operational revenue KPI',
+    );
     expect(targetInput).toHaveValue('1.000.000');
     const firstMemberSelect = within(operations).getByRole('combobox', {
       name: 'Managed member 1',
@@ -771,11 +775,15 @@ describe('/manager workspace route', () => {
       name: 'Managed member 2',
     });
     await userEvent.selectOptions(secondMemberSelect, 'employment-profile-ops-002');
-    const baoTargetInput = await within(operations).findByLabelText('Bao Le Revenue VND');
+    const baoTargetInput = await within(operations).findByLabelText(
+      'Bao Le Operational revenue KPI',
+    );
     await userEvent.clear(baoTargetInput);
     await userEvent.type(baoTargetInput, '1.000.000');
     await userEvent.click(within(operations).getByRole('button', { name: 'Remove member 1' }));
-    expect(within(operations).queryByLabelText('An Nguyen Revenue VND')).not.toBeInTheDocument();
+    expect(
+      within(operations).queryByLabelText('An Nguyen Operational revenue KPI'),
+    ).not.toBeInTheDocument();
 
     await userEvent.click(
       within(operations).getByRole('button', { name: 'Save Allocation Draft' }),
@@ -790,6 +798,16 @@ describe('/manager workspace route', () => {
     expect(parsedDraft.allocations[0]?.targetMetrics[0]?.targetValue).toBe(1000000);
 
     await userEvent.click(within(operations).getByRole('button', { name: 'Submit Allocation' }));
+    const confirmationDialog = screen.getByRole('dialog');
+    expect(confirmationDialog).toBeInTheDocument();
+    await userEvent.click(
+      within(confirmationDialog).getByLabelText(
+        'I understand this operational KPI workflow action.',
+      ),
+    );
+    await userEvent.click(
+      within(confirmationDialog).getByRole('button', { name: 'Submit Allocation' }),
+    );
     expect(await screen.findByText('Allocation submitted for approval.')).toBeInTheDocument();
     expect(await within(operations).findAllByText('Pending Approval')).not.toHaveLength(0);
   }, 10000);
@@ -897,7 +915,9 @@ describe('/manager workspace route', () => {
     ).not.toBeInTheDocument();
 
     await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
-    expect(await within(operations).findByLabelText('An Nguyen Revenue VND actual')).toBeDisabled();
+    expect(
+      await within(operations).findByLabelText('An Nguyen Operational revenue KPI actual'),
+    ).toBeDisabled();
   });
 
   it('renders finalized ORG_UNIT finalResult and keeps manager mutation UI absent', async () => {
@@ -910,7 +930,9 @@ describe('/manager workspace route', () => {
     expect(
       within(finalResult).getByRole('heading', { name: 'Finalized result' }),
     ).toBeInTheDocument();
-    expect(within(finalResult).getAllByText(/Revenue actual/).length).toBeGreaterThan(0);
+    expect(
+      within(finalResult).getAllByText(/Operational revenue KPI actual/).length,
+    ).toBeGreaterThan(0);
     expect(
       within(operations).queryByRole('button', { name: 'Save Allocation Draft' }),
     ).not.toBeInTheDocument();
@@ -1002,7 +1024,9 @@ describe('/manager workspace route', () => {
       setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
       setMockManagerSchedulingAuthority({ structuredScope: false });
     });
-    expect(await screen.findByText('Managed published shifts could not be loaded.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Managed published shifts could not be loaded.'),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('manager-work-shift-row')).not.toBeInTheDocument();
   });
 

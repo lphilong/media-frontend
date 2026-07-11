@@ -86,7 +86,8 @@
     "subjectPlaceholder": "Tìm theo tên hoặc mã",
     "talentGroupSubjectPlaceholder": "Tìm nhóm Talent",
     "orgUnitSubjectPlaceholder": "Tìm đơn vị tổ chức",
-    "managedMemberPlaceholder": "Tìm thành viên quản lý"
+    "managedMemberPlaceholder": "Tìm thành viên quản lý",
+    "selectedSubject": "Đối tượng đã chọn"
   },
   "subjectTypes": {
     "TALENT": "Talent",
@@ -95,7 +96,7 @@
     "ORG_UNIT": "Đơn vị tổ chức"
   },
   "metricCodes": {
-    "REVENUE_VND": "Doanh thu",
+    "REVENUE_VND": "KPI doanh thu vận hành",
     "CONTENT_OUTPUT_COUNT": "Số nội dung hoàn thành",
     "LIVE_HOURS": "Số giờ livestream",
     "EVENT_COMPLETION_COUNT": "Số sự kiện hoàn thành",
@@ -195,8 +196,8 @@
     "title": "Nhập số thực đạt",
     "policy": "Có thể nhập trực tiếp từ 00:00 ngày D đến 10:00 ngày D+1 theo giờ Việt Nam, tính cả hai mốc. Mỗi mục được sửa trực tiếp tối đa 3 lần.",
     "boundaryHelper": "Số thực đạt không tự quyết định doanh thu, hoa hồng hoặc bảng lương.",
-    "revenueTarget": "Mục tiêu doanh thu",
-    "revenueActual": "Doanh thu thực đạt",
+    "revenueTarget": "Mục tiêu KPI doanh thu vận hành",
+    "revenueActual": "Số thực đạt KPI doanh thu vận hành",
     "achievement": "Tiến độ %",
     "allocationCoverage": "Độ bao phủ phân bổ KPI",
     "sortBy": "Sắp xếp theo",
@@ -204,7 +205,7 @@
     "sortFields": {
       "periodMonth": "Tháng KPI",
       "planCode": "Mã kế hoạch",
-      "revenueActual": "Doanh thu thực đạt",
+      "revenueActual": "Số thực đạt KPI doanh thu vận hành",
       "achievementPercent": "Tiến độ %"
     },
     "sortDirections": {
@@ -359,7 +360,13 @@
   "confirm": {
     "publish": "Công bố kế hoạch KPI này? Mục tiêu và phân bổ sẽ bị khóa.",
     "archive": "Lưu trữ kế hoạch KPI này?",
-    "finalize": "Chốt kế hoạch KPI này? Việc chốt sẽ khóa số thực đạt và điều chỉnh."
+    "finalize": "Chốt kế hoạch KPI này? Việc chốt sẽ khóa số thực đạt và điều chỉnh.",
+    "submitAllocation": "Gửi phân bổ này để duyệt?",
+    "approveAllocation": "Phê duyệt phân bổ này để công bố?",
+    "rejectAllocation": "Từ chối phân bổ này?",
+    "publishAllocation": "Công bố phân bổ đã được duyệt này?",
+    "operationalOnly": "Thao tác này chỉ thay đổi luồng KPI vận hành; không tạo doanh thu, hoa hồng, bảng lương hoặc chứng từ kế toán.",
+    "acknowledge": "Tôi hiểu đây là thao tác trong luồng KPI vận hành."
   },
   "feedback": {
     "created": "Đã tạo kế hoạch KPI.",

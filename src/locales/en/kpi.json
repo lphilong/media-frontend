@@ -86,7 +86,8 @@
     "subjectPlaceholder": "Search by name or code",
     "talentGroupSubjectPlaceholder": "Search media/talent groups",
     "orgUnitSubjectPlaceholder": "Search company operational units",
-    "managedMemberPlaceholder": "Search managed members"
+    "managedMemberPlaceholder": "Search managed members",
+    "selectedSubject": "Selected subject"
   },
   "subjectTypes": {
     "TALENT": "Talent",
@@ -95,7 +96,7 @@
     "ORG_UNIT": "Org Unit"
   },
   "metricCodes": {
-    "REVENUE_VND": "Revenue VND",
+    "REVENUE_VND": "Operational revenue KPI",
     "CONTENT_OUTPUT_COUNT": "Content output count",
     "LIVE_HOURS": "Live hours",
     "EVENT_COMPLETION_COUNT": "Event completion count",
@@ -195,8 +196,8 @@
     "title": "Actual Workspace",
     "policy": "Direct entry is available from D 00:00 through D+1 10:00 Asia/Ho_Chi_Minh, inclusive. Up to 3 direct edits are allowed per entry.",
     "boundaryHelper": "KPI actuals do not automatically decide revenue, commission, or payroll.",
-    "revenueTarget": "Revenue target",
-    "revenueActual": "Revenue actual",
+    "revenueTarget": "Operational revenue KPI target",
+    "revenueActual": "Operational revenue KPI actual",
     "achievement": "Achievement %",
     "allocationCoverage": "Allocation workflow coverage",
     "sortBy": "Sort by",
@@ -204,7 +205,7 @@
     "sortFields": {
       "periodMonth": "Period month",
       "planCode": "Plan code",
-      "revenueActual": "Revenue actual",
+      "revenueActual": "Operational revenue KPI actual",
       "achievementPercent": "Achievement %"
     },
     "sortDirections": {
@@ -359,7 +360,13 @@
   "confirm": {
     "publish": "Publish this KPI plan? Targets and allocations will be locked.",
     "archive": "Archive this KPI plan?",
-    "finalize": "Finalize this KPI plan? Finalizing locks actuals and corrections."
+    "finalize": "Finalize this KPI plan? Finalizing locks actuals and corrections.",
+    "submitAllocation": "Submit this allocation for review?",
+    "approveAllocation": "Approve this allocation for publication?",
+    "rejectAllocation": "Reject this allocation?",
+    "publishAllocation": "Publish this approved allocation?",
+    "operationalOnly": "This changes operational KPI workflow only; it creates no revenue, commission, payroll, or accounting record.",
+    "acknowledge": "I understand this operational KPI workflow action."
   },
   "feedback": {
     "created": "KPI plan created.",

@@ -244,7 +244,7 @@
     "OFFICIAL_FINALIZED": "Official finalized"
   },
   "kpiMetric": {
-    "REVENUE_VND": "Operational revenue",
+    "REVENUE_VND": "Operational revenue KPI",
     "CONTENT_OUTPUT_COUNT": "Content output",
     "LIVE_HOURS": "Live hours",
     "EVENT_COMPLETION_COUNT": "Event completion",

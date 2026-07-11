@@ -5,6 +5,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { APP_PATHS } from '@app/router/paths';
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import {
+  readKpiPlanQuery,
+  readKpiSafeErrorMessage,
+  readKpiSubjectFilterLabel,
+} from '@modules/kpi/presentation/kpi-read-models';
+import {
   formatKpiDate,
   formatKpiDateTime,
   formatKpiMetricInput,
@@ -224,24 +229,6 @@ const metricOptionsForRow = (
   );
 };
 
-const readPlanQuery = (searchParams: URLSearchParams): KpiPlanQuery => {
-  const subjectType = searchParams.get('subjectType');
-  const status = searchParams.get('status');
-  const metricCode = searchParams.get('metricCode');
-  return {
-    search: searchParams.get('search') || undefined,
-    subjectType: kpiSubjectTypes.includes(subjectType as never)
-      ? (subjectType as never)
-      : undefined,
-    subjectId: searchParams.get('subjectId') || undefined,
-    groupId: searchParams.get('groupId') || undefined,
-    periodMonth: searchParams.get('periodMonth') || undefined,
-    status: kpiPlanStatuses.includes(status as never) ? (status as never) : undefined,
-    metricCode: kpiMetricCodes.includes(metricCode as never) ? (metricCode as never) : undefined,
-    limit: 50,
-  };
-};
-
 const toMonthBounds = (periodMonth: string): { start: number; end: number } | undefined => {
   const match = /^(\d{4})-(\d{2})$/.exec(periodMonth);
   if (!match) {
@@ -273,39 +260,6 @@ const formatPeriodMonth = (value: string | null | undefined): string => {
   return match ? `${match[2]}-${match[1]}` : (value ?? '-');
 };
 
-const readErrorMessage = (
-  t: (key: string) => string,
-  error: NormalizedApiError | null | undefined,
-  fallbackKey: string,
-): string => {
-  if (!error?.message) {
-    return t(fallbackKey);
-  }
-  return error.message.includes(':') ? t(error.message) : error.message;
-};
-
-const readKpiSafeErrorMessage = (
-  t: (key: string) => string,
-  error: NormalizedApiError | null | undefined,
-  fallbackKey: string,
-): string => {
-  const message = error?.message ?? '';
-  const normalized = message.toLowerCase();
-  if (
-    normalized.includes('use direct edit before cutoff') ||
-    normalized.includes('allowed only after the direct edit window')
-  ) {
-    return t('kpi:errors.correctionDirectEditWindow');
-  }
-  if (normalized.includes('active excuse') || normalized.includes('not-required')) {
-    return t('kpi:errors.correctionActiveExcuse');
-  }
-  if (normalized.includes('finalized kpi') || normalized.includes('plan_finalized')) {
-    return t('kpi:errors.finalizedReadOnly');
-  }
-  return readErrorMessage(t, error, fallbackKey);
-};
-
 const isConflict = (error: unknown): boolean => {
   const apiError = error as NormalizedApiError | undefined;
   return apiError?.status === 409;
@@ -315,7 +269,7 @@ export const KpiListPage = (): JSX.Element => {
   const { t } = useTranslation(['kpi', 'common']);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const query = useMemo(() => readPlanQuery(searchParams), [searchParams]);
+  const query = useMemo(() => readKpiPlanQuery(searchParams), [searchParams]);
   const capabilitiesQuery = useCurrentActorCapabilities();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const createMutation = useCreateKpiPlanMutation();
@@ -329,7 +283,7 @@ export const KpiListPage = (): JSX.Element => {
     'TALENT_GROUP',
   );
   const [subjectId, setSubjectId] = useState('');
-  const [title, setTitle] = useState('May KPI plan');
+  const [title, setTitle] = useState('');
   const [periodMonth, setPeriodMonth] = useState(() => currentHcmMonth());
   const [description, setDescription] = useState('');
   const [targets, setTargets] = useState<TargetDraft[]>(defaultTargets);
@@ -375,7 +329,7 @@ export const KpiListPage = (): JSX.Element => {
   const capabilityCopy = useMemo(
     () => ({
       loading: t('common:capabilities.checkingPermissions'),
-      unavailable: 'KPI permissions could not be verified. Try again.',
+      unavailable: t('kpi:states.capabilityUnavailable'),
       'missing-permission': t('common:capabilities.missingPermission'),
       'missing-scope': t('common:capabilities.missingScope'),
     }),
@@ -662,7 +616,7 @@ export const KpiListPage = (): JSX.Element => {
       items.push({
         id: 'subjectId',
         label: t('kpi:fields.subject'),
-        value: query.subjectId,
+        value: readKpiSubjectFilterLabel(t),
         onClear: () => patchQuery({ subjectId: undefined }),
       });
     }
@@ -738,7 +692,7 @@ export const KpiListPage = (): JSX.Element => {
       items.push({
         id: 'actual-subjectId',
         label: t('kpi:fields.subject'),
-        value: query.subjectId,
+        value: readKpiSubjectFilterLabel(t),
         onClear: () => patchQuery({ subjectId: undefined }),
       });
     }
@@ -925,7 +879,7 @@ export const KpiListPage = (): JSX.Element => {
       notifySuccess('kpi:feedback.actualExcuseMarked');
     } catch (error) {
       setActualError(
-        readErrorMessage(
+        readKpiSafeErrorMessage(
           t,
           error as NormalizedApiError,
           'kpi:states.actualExcuseMutationErrorMessage',
@@ -954,7 +908,7 @@ export const KpiListPage = (): JSX.Element => {
       notifySuccess('kpi:feedback.actualExcuseUnmarked');
     } catch (error) {
       setActualError(
-        readErrorMessage(
+        readKpiSafeErrorMessage(
           t,
           error as NormalizedApiError,
           'kpi:states.actualExcuseMutationErrorMessage',
@@ -1025,7 +979,11 @@ export const KpiListPage = (): JSX.Element => {
         } catch (error) {
           if (isConflict(error)) {
             setActualError(
-              readErrorMessage(t, error as NormalizedApiError, 'kpi:validation.duplicateConflict'),
+              readKpiSafeErrorMessage(
+                t,
+                error as NormalizedApiError,
+                'kpi:validation.duplicateConflict',
+              ),
             );
           } else {
             notifyError(error as NormalizedApiError);
@@ -1613,7 +1571,11 @@ export const KpiListPage = (): JSX.Element => {
           {allocationQueueIsError ? (
             <ErrorState
               title={t('kpi:states.loadErrorTitle')}
-              message={readErrorMessage(t, allocationQueueError, 'kpi:states.loadErrorMessage')}
+              message={readKpiSafeErrorMessage(
+                t,
+                allocationQueueError,
+                'kpi:states.loadErrorMessage',
+              )}
               actionLabel={t('common:actions.retry')}
               onRetry={() => void refetchAllocationQueue()}
             />
@@ -1672,7 +1634,7 @@ export const KpiListPage = (): JSX.Element => {
           {plansQuery.isError && !listError?.permissionDenied ? (
             <ErrorState
               title={t('kpi:states.loadErrorTitle')}
-              message={readErrorMessage(t, listError, 'kpi:states.loadErrorMessage')}
+              message={readKpiSafeErrorMessage(t, listError, 'kpi:states.loadErrorMessage')}
               actionLabel={t('common:actions.retry')}
               onRetry={() => void plansQuery.refetch()}
             />
@@ -1905,7 +1867,7 @@ export const KpiListPage = (): JSX.Element => {
           {actualWorkspacePlansQuery.isError ? (
             <ErrorState
               title={t('kpi:states.actualWorkspaceLoadErrorTitle')}
-              message={readErrorMessage(
+              message={readKpiSafeErrorMessage(
                 t,
                 actualWorkspacePlansQuery.error as unknown as NormalizedApiError,
                 'kpi:states.actualWorkspaceLoadErrorMessage',
@@ -2017,7 +1979,7 @@ export const KpiListPage = (): JSX.Element => {
           {actualWorkspaceDetailQuery.isError ? (
             <ErrorState
               title={t('kpi:states.actualWorkspaceDetailLoadErrorTitle')}
-              message={readErrorMessage(
+              message={readKpiSafeErrorMessage(
                 t,
                 actualWorkspaceDetailQuery.error as unknown as NormalizedApiError,
                 'kpi:states.actualWorkspaceDetailLoadErrorMessage',
@@ -2283,7 +2245,7 @@ export const KpiListPage = (): JSX.Element => {
               {actualGridQuery.isError ? (
                 <ErrorState
                   title={t('kpi:states.actualGridLoadErrorTitle')}
-                  message={readErrorMessage(
+                  message={readKpiSafeErrorMessage(
                     t,
                     actualGridQuery.error as unknown as NormalizedApiError,
                     'kpi:states.actualGridLoadErrorMessage',

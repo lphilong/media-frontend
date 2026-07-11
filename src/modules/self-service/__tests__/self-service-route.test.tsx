@@ -945,7 +945,7 @@ describe('/self-service route', () => {
     expect(await screen.findByRole('heading', { name: 'My KPI' })).toBeInTheDocument();
     expect(await screen.findByText('June operations KPI')).toBeInTheDocument();
     expect(await screen.findByText('Official published')).toBeInTheDocument();
-    expect(await screen.findByText('Operational revenue')).toBeInTheDocument();
+    expect(await screen.findByText('Operational revenue KPI')).toBeInTheDocument();
     expect(screen.queryByText(/Talent KPI/i)).not.toBeInTheDocument();
     expect(screen.queryByText('TikTok Diamond count')).not.toBeInTheDocument();
     expect(screen.queryByText('TIKTOK_DIAMOND')).not.toBeInTheDocument();

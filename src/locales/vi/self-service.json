@@ -132,7 +132,7 @@
     "OFFICIAL_FINALIZED": "Đã chốt chính thức"
   },
   "kpiMetric": {
-    "REVENUE_VND": "Doanh thu vận hành",
+    "REVENUE_VND": "KPI doanh thu vận hành",
     "CONTENT_OUTPUT_COUNT": "Số nội dung hoàn thành",
     "LIVE_HOURS": "Số giờ phát trực tiếp",
     "EVENT_COMPLETION_COUNT": "Số sự kiện hoàn thành",

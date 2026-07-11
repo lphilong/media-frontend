@@ -5,6 +5,8 @@ import { useParams } from 'react-router-dom';
 
 import { APP_PATHS } from '@app/router/paths';
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
+import { readKpiSafeErrorMessage } from '@modules/kpi/presentation/kpi-read-models';
+import { useKpiSensitiveConfirm } from '@modules/kpi/presentation/use-kpi-sensitive-confirm';
 import { fetchKpiManagedMembers } from '@modules/kpi/api/kpi.api';
 import {
   createActionCapabilityHint,
@@ -67,7 +69,6 @@ import {
   PermissionDeniedState,
   ReadOnlyFieldGrid,
   StatusBadge,
-  useDestructiveConfirm,
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { AsyncReferencePicker, type ReferenceOption } from '@shared/components/reference';
@@ -407,6 +408,7 @@ export const KpiOrgUnitOperationsSection = ({
 }): JSX.Element => {
   const { t } = useTranslation(['kpi', 'common']);
   const { notifyError, notifySuccess } = useMutationFeedback();
+  const sensitiveConfirm = useKpiSensitiveConfirm();
   const [actualDate, setActualDate] = useState(() => currentHcmDate());
   const [loadedActualDate, setLoadedActualDate] = useState<string>();
   const [cellDrafts, setCellDrafts] = useState<Record<string, string>>({});
@@ -605,7 +607,9 @@ export const KpiOrgUnitOperationsSection = ({
       await allocationDraftMutation.mutateAsync({ kpiPlanId: plan.id, allocations: rows });
       notifySuccess('kpi:feedback.allocationDraftSaved');
     } catch (error) {
-      setAllocationError((error as Error | NormalizedApiError).message);
+      setAllocationError(
+        readKpiSafeErrorMessage(t, error as NormalizedApiError, 'kpi:states.loadErrorMessage'),
+      );
     }
   };
 
@@ -621,16 +625,24 @@ export const KpiOrgUnitOperationsSection = ({
       );
       return;
     }
+    if (!(await sensitiveConfirm.confirm('submitAllocation'))) {
+      return;
+    }
     try {
       await allocationSubmitMutation.mutateAsync({ kpiPlanId: plan.id });
       notifySuccess('kpi:feedback.allocationSubmitted');
     } catch (error) {
-      setAllocationError((error as Error | NormalizedApiError).message);
+      setAllocationError(
+        readKpiSafeErrorMessage(t, error as NormalizedApiError, 'kpi:states.loadErrorMessage'),
+      );
     }
   };
 
   const approveAllocation = async (): Promise<void> => {
     setAllocationError(null);
+    if (!(await sensitiveConfirm.confirm('approveAllocation'))) {
+      return;
+    }
     try {
       await allocationApproveMutation.mutateAsync({
         kpiPlanId: plan.id,
@@ -648,6 +660,9 @@ export const KpiOrgUnitOperationsSection = ({
       setAllocationError(t('kpi:validation.reasonRequired'));
       return;
     }
+    if (!(await sensitiveConfirm.confirm('rejectAllocation'))) {
+      return;
+    }
     try {
       await allocationRejectMutation.mutateAsync({
         kpiPlanId: plan.id,
@@ -661,6 +676,9 @@ export const KpiOrgUnitOperationsSection = ({
 
   const publishAllocation = async (): Promise<void> => {
     setAllocationError(null);
+    if (!(await sensitiveConfirm.confirm('publishAllocation'))) {
+      return;
+    }
     try {
       await allocationPublishMutation.mutateAsync({ kpiPlanId: plan.id });
       notifySuccess('kpi:feedback.allocationPublished');
@@ -807,6 +825,7 @@ export const KpiOrgUnitOperationsSection = ({
   return (
     <MetadataSection title={t('kpi:orgUnitOperations.title')}>
       <div className="space-y-5" data-testid="org-unit-operations">
+        {sensitiveConfirm.dialog}
         <div className="grid gap-3 md:grid-cols-4">
           <div className="rounded border border-border p-3 text-sm">
             <div className="text-xs uppercase text-muted">{t('kpi:orgUnitOperations.context')}</div>
@@ -1653,7 +1672,7 @@ export const KpiDetailPage = (): JSX.Element => {
   const allocationPublishMutation = usePublishKpiAllocationMutation();
   const capabilitiesQuery = useCurrentActorCapabilities();
   const { notifyError, notifySuccess } = useMutationFeedback();
-  const requestConfirm = useDestructiveConfirm();
+  const sensitiveConfirm = useKpiSensitiveConfirm();
   const [allocationError, setAllocationError] = useState<string | null>(null);
   const [allocationDraftRows, setAllocationDraftRows] = useState<AllocationDraftRow[]>([]);
   const [approvalNote, setApprovalNote] = useState('');
@@ -1709,7 +1728,7 @@ export const KpiDetailPage = (): JSX.Element => {
     ) : (
       <ErrorState
         title={t('kpi:states.loadErrorTitle')}
-        message={detailError?.message ?? t('kpi:states.loadErrorMessage')}
+        message={readKpiSafeErrorMessage(t, detailError, 'kpi:states.loadErrorMessage')}
         actionLabel={t('common:actions.retry')}
         onRetry={() => void detailQuery.refetch()}
       />
@@ -1784,10 +1803,7 @@ export const KpiDetailPage = (): JSX.Element => {
   );
 
   const runLifecycle = async (action: 'publish' | 'finalize' | 'archive'): Promise<void> => {
-    const confirmed = await requestConfirm({
-      description: t(`kpi:confirm.${action}`),
-    });
-    if (!confirmed) {
+    if (!(await sensitiveConfirm.confirm(action))) {
       return;
     }
     try {
@@ -1865,7 +1881,9 @@ export const KpiDetailPage = (): JSX.Element => {
       await allocationDraftMutation.mutateAsync({ kpiPlanId: plan.id, allocations: rows });
       notifySuccess('kpi:feedback.allocationDraftSaved');
     } catch (error) {
-      setAllocationError((error as Error | NormalizedApiError).message);
+      setAllocationError(
+        readKpiSafeErrorMessage(t, error as NormalizedApiError, 'kpi:states.loadErrorMessage'),
+      );
     }
   };
 
@@ -1877,15 +1895,23 @@ export const KpiDetailPage = (): JSX.Element => {
       );
       return;
     }
+    if (!(await sensitiveConfirm.confirm('submitAllocation'))) {
+      return;
+    }
     try {
       await allocationSubmitMutation.mutateAsync({ kpiPlanId: plan.id });
       notifySuccess('kpi:feedback.allocationSubmitted');
     } catch (error) {
-      setAllocationError((error as Error | NormalizedApiError).message);
+      setAllocationError(
+        readKpiSafeErrorMessage(t, error as NormalizedApiError, 'kpi:states.loadErrorMessage'),
+      );
     }
   };
 
   const approveAllocation = async (): Promise<void> => {
+    if (!(await sensitiveConfirm.confirm('approveAllocation'))) {
+      return;
+    }
     try {
       await allocationApproveMutation.mutateAsync({
         kpiPlanId: plan.id,
@@ -1902,6 +1928,9 @@ export const KpiDetailPage = (): JSX.Element => {
       setAllocationError(t('kpi:validation.reasonRequired'));
       return;
     }
+    if (!(await sensitiveConfirm.confirm('rejectAllocation'))) {
+      return;
+    }
     try {
       await allocationRejectMutation.mutateAsync({
         kpiPlanId: plan.id,
@@ -1914,6 +1943,9 @@ export const KpiDetailPage = (): JSX.Element => {
   };
 
   const publishAllocation = async (): Promise<void> => {
+    if (!(await sensitiveConfirm.confirm('publishAllocation'))) {
+      return;
+    }
     try {
       await allocationPublishMutation.mutateAsync({ kpiPlanId: plan.id });
       notifySuccess('kpi:feedback.allocationPublished');
@@ -2023,19 +2055,23 @@ export const KpiDetailPage = (): JSX.Element => {
   return (
     <DetailPageShell
       banner={
-        <section className="rounded-lg border border-border bg-panel p-4 shadow-shell">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-2">
-              <DetailBackLink to={APP_PATHS.kpi} label={t('kpi:actions.backToKpi')} />
-              <p className="text-sm text-muted">{plan.planCode}</p>
-              <h1 className="text-xl font-semibold">{plan.title}</h1>
-              <p className="text-sm text-muted">
-                {t(`kpi:subjectTypes.${plan.subjectType}`)} - {subjectDisplay} - {plan.periodMonth}
-              </p>
+        <>
+          {sensitiveConfirm.dialog}
+          <section className="rounded-lg border border-border bg-panel p-4 shadow-shell">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-2">
+                <DetailBackLink to={APP_PATHS.kpi} label={t('kpi:actions.backToKpi')} />
+                <p className="text-sm text-muted">{plan.planCode}</p>
+                <h1 className="text-xl font-semibold">{plan.title}</h1>
+                <p className="text-sm text-muted">
+                  {t(`kpi:subjectTypes.${plan.subjectType}`)} - {subjectDisplay} -{' '}
+                  {plan.periodMonth}
+                </p>
+              </div>
+              <StatusBadge label={t(`kpi:statuses.${plan.status}`)} />
             </div>
-            <StatusBadge label={t(`kpi:statuses.${plan.status}`)} />
-          </div>
-        </section>
+          </section>
+        </>
       }
       metadataSection={
         <div className="space-y-4">
@@ -2445,7 +2481,13 @@ export const KpiDetailPage = (): JSX.Element => {
                       });
                       notifySuccess('kpi:feedback.allocationsUpdated');
                     } catch (error) {
-                      setAllocationError((error as NormalizedApiError).message);
+                      setAllocationError(
+                        readKpiSafeErrorMessage(
+                          t,
+                          error as NormalizedApiError,
+                          'kpi:states.loadErrorMessage',
+                        ),
+                      );
                     }
                   }}
                 >

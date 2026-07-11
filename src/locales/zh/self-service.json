@@ -132,7 +132,7 @@
     "OFFICIAL_FINALIZED": "Official finalized"
   },
   "kpiMetric": {
-    "REVENUE_VND": "Operational revenue",
+    "REVENUE_VND": "运营收入 KPI",
     "CONTENT_OUTPUT_COUNT": "Content output",
     "LIVE_HOURS": "Live hours",
     "EVENT_COMPLETION_COUNT": "Event completion",
