@@ -44,7 +44,9 @@ const openAddSurface = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 const selectEmploymentProfile = async (user: ReturnType<typeof userEvent.setup>) => {
-  await user.click(await screen.findByRole('button', { name: /EP-000001/ }, { timeout: 5000 }));
+  const picker = await findPicker('monthly-roster-exception-employment-profile');
+  const options = await within(picker).findAllByRole('option', {}, { timeout: 5000 });
+  await user.click(options[0]);
 };
 
 const findPicker = async (pickerId: string): Promise<HTMLElement> => {
@@ -496,6 +498,10 @@ const baseRosterDetail = (overrides: Partial<MonthlyRosterRecord> = {}): Monthly
   timezone: 'Asia/Ho_Chi_Minh',
   targetSubjectKind: 'EMPLOYMENT_PROFILE',
   targetOrgUnitMode: 'EXACT_ONLY',
+  targetType: 'ORG_UNIT',
+  targetMode: 'EXACT_ONLY',
+  targetOrgUnitId: 'ou-sales',
+  targetTalentGroupId: null,
   departmentOrgUnitId: 'ou-sales',
   workPatternId: 'pattern-active',
   holidayCalendarId: 'holiday-calendar-active',

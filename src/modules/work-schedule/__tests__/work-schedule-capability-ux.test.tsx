@@ -62,6 +62,37 @@ const mockCapabilities = ({
           scopeGrants: {
             workSchedule: workScheduleScopes,
           },
+          accountContexts: ['ADMIN_CONSOLE'],
+          workspaceAvailability: {
+            primaryWorkspace: 'ADMIN_CONSOLE',
+            availableWorkspaces: [
+              {
+                context: 'STAFF_CONSOLE',
+                available: false,
+                source: 'ACCOUNT_CONTEXT',
+                reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+                trace: [],
+              },
+              {
+                context: 'MANAGER_CONSOLE',
+                available: false,
+                source: 'ACCOUNT_CONTEXT',
+                reasonCodes: ['ACCOUNT_CONTEXT_MISSING'],
+                trace: [],
+              },
+              {
+                context: 'ADMIN_CONSOLE',
+                available: true,
+                source: 'ACCOUNT_CONTEXT',
+                reasonCodes: ['ACCOUNT_CONTEXT_ACTIVE'],
+                trace: [],
+              },
+            ],
+            ownDataAvailable: false,
+            managerResponsibilitiesAvailable: false,
+            effectiveAccessTraceAvailable: true,
+            sourceTrace: [],
+          },
           generatedAt: '2026-05-21T00:00:00.000Z',
         },
       });
@@ -387,8 +418,12 @@ describe('work schedule capability UX hints', () => {
     expect(screen.queryByLabelText(i18n.t('common:pagination.goToPage'))).not.toBeInTheDocument();
     expect(screen.queryByText(/Trang\s+\d+\s*\/\s*\d+/)).not.toBeInTheDocument();
     expect(
-      await screen.findByText('Official WorkShift was no longer active at approval time.'),
-    ).toBeInTheDocument();
+      (await screen.findAllByText(i18n.t('work-schedule:requestBatches.copy.failedToApply')))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.queryByText('Official WorkShift was no longer active at approval time.'),
+    ).not.toBeInTheDocument();
     await user.click(
       screen.getByRole('button', {
         name: `${i18n.t('common:filters.clearFilter')}: ${i18n.t(
@@ -408,6 +443,17 @@ describe('work schedule capability UX hints', () => {
         name: i18n.t('work-schedule:requestBatches.actions.approveSelected'),
       }),
     );
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByRole('heading', {
+        name: i18n.t('work-schedule:requestBatches.dialogs.approve.title'),
+      }),
+    ).toBeInTheDocument();
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: i18n.t('work-schedule:requestBatches.actions.approveSelected'),
+      }),
+    );
 
     expect(
       await screen.findByText(
@@ -422,6 +468,125 @@ describe('work schedule capability UX hints', () => {
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:requests.actions.requestChange'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('cancels request approval confirmation without calling the decision endpoint', async () => {
+    const user = userEvent.setup();
+    let approveCalls = 0;
+    mockCapabilities({
+      id: 'production-ops-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: ['workSchedule.read', 'workSchedule.update'],
+      workScheduleScopes: ['global'],
+    });
+    server.use(
+      http.post('*/admin/work-schedule/request-batches/:batchId/approve-lines', () => {
+        approveCalls += 1;
+        return HttpResponse.json({ data: {} });
+      }),
+    );
+
+    renderRoute('/work-schedule/request-batches');
+
+    await user.click(
+      await screen.findByRole('checkbox', {
+        name: i18n.t('work-schedule:requestBatches.actions.selectLine', { lineNo: 1 }),
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requestBatches.actions.approveSelected'),
+      }),
+    );
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: i18n.t('common:actions.cancel'),
+      }),
+    );
+
+    expect(approveCalls).toBe(0);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['reject', 'rejectSelected', 'reject-lines'],
+    ['cancel', 'cancelSelected', 'cancel-lines'],
+  ] as const)(
+    'confirms and safely cancels Admin %s decisions before calling the endpoint',
+    async (action, actionKey, endpoint) => {
+      const user = userEvent.setup();
+      let decisionCalls = 0;
+      mockCapabilities({
+        id: 'production-ops-user-1',
+        roles: ['PRODUCTION_OPS'],
+        permissions: ['workSchedule.read', 'workSchedule.update'],
+        workScheduleScopes: ['global'],
+      });
+      server.use(
+        http.post(`*/admin/work-schedule/request-batches/:batchId/${endpoint}`, () => {
+          decisionCalls += 1;
+          return HttpResponse.json({ data: {} });
+        }),
+      );
+
+      renderRoute('/work-schedule/request-batches');
+
+      await user.click(
+        await screen.findByRole('checkbox', {
+          name: i18n.t('work-schedule:requestBatches.actions.selectLine', { lineNo: 1 }),
+        }),
+      );
+      await user.type(
+        screen.getByLabelText(i18n.t('work-schedule:requestBatches.decisions.reason')),
+        'Current operations no longer require this schedule change',
+      );
+      const actionButton = screen.getByRole('button', {
+        name: i18n.t(`work-schedule:requestBatches.actions.${actionKey}`),
+      });
+      await user.click(actionButton);
+      expect(
+        within(screen.getByRole('dialog')).getByRole('heading', {
+          name: i18n.t(`work-schedule:requestBatches.dialogs.${action}.title`),
+        }),
+      ).toBeInTheDocument();
+      await user.click(
+        within(screen.getByRole('dialog')).getByRole('button', {
+          name: i18n.t('common:actions.cancel'),
+        }),
+      );
+      expect(decisionCalls).toBe(0);
+
+      await user.click(actionButton);
+      await user.click(
+        within(screen.getByRole('dialog')).getByRole('button', {
+          name: i18n.t(`work-schedule:requestBatches.actions.${actionKey}`),
+        }),
+      );
+      await waitFor(() => expect(decisionCalls).toBe(1));
+    },
+  );
+
+  it('does not expose Admin request-batch decision controls to a Manager', async () => {
+    mockCapabilities({
+      id: 'manager-user-1',
+      roles: ['TEAM_MANAGER'],
+      permissions: ['workSchedule.read', 'workSchedule.update'],
+      workScheduleScopes: ['team'],
+    });
+
+    renderRoute('/work-schedule/request-batches');
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requestBatches.actions.approveSelected'),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requestBatches.actions.rejectSelected'),
       }),
     ).not.toBeInTheDocument();
   });
@@ -633,25 +798,27 @@ describe('work schedule capability UX hints', () => {
     expect(
       await screen.findByText(
         new RegExp(
-          `admin-availability-line-approved: ${i18n.t(
-            'work-schedule:availabilityBatches.apply.outcomes.APPLIED',
-          )}`,
+          `${i18n.t('work-schedule:availabilityBatches.apply.resultLine', {
+            number: 1,
+          })}: ${i18n.t('work-schedule:availabilityBatches.apply.outcomes.APPLIED')}`,
         ),
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
         new RegExp(
-          `admin-availability-line-advisory: ${i18n.t(
-            'work-schedule:availabilityBatches.apply.outcomes.ADVISORY_ONLY',
-          )}`,
+          `${i18n.t('work-schedule:availabilityBatches.apply.resultLine', {
+            number: 2,
+          })}: ${i18n.t('work-schedule:availabilityBatches.apply.outcomes.ADVISORY_ONLY')}`,
         ),
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
         new RegExp(
-          `admin-availability-line-applied: ${i18n.t(
+          `${i18n.t('work-schedule:availabilityBatches.apply.resultLine', {
+            number: 3,
+          })}: ${i18n.t(
             'work-schedule:availabilityBatches.apply.outcomes.SKIPPED_ALREADY_APPLIED',
           )}`,
         ),
@@ -659,9 +826,11 @@ describe('work schedule capability UX hints', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        `missing-line: ${i18n.t(
-          'work-schedule:availabilityBatches.apply.outcomes.FAILED',
-        )} - Line not found`,
+        new RegExp(
+          `${i18n.t('work-schedule:availabilityBatches.apply.resultLine', {
+            number: 4,
+          })}: ${i18n.t('work-schedule:availabilityBatches.apply.outcomes.FAILED')}`,
+        ),
       ),
     ).toBeInTheDocument();
   });
@@ -671,7 +840,7 @@ describe('work schedule capability UX hints', () => {
     ['reject', 'reject-lines', 'reject', true],
     ['cancel', 'cancel-lines', 'cancel', true],
   ] as const)(
-    'calls the Admin availability %s selected-line endpoint with required reason handling',
+    'confirms Admin availability %s and keeps dialog cancellation mutation-free',
     async (_action, endpoint, actionKey, requiresReason) => {
       const user = userEvent.setup();
       let endpointCalls = 0;
@@ -740,6 +909,20 @@ describe('work schedule capability UX hints', () => {
       }
 
       await user.click(actionButton);
+      const dialog = await screen.findByRole('dialog');
+      await user.click(
+        within(dialog).getByRole('button', {
+          name: i18n.t('common:actions.cancel'),
+        }),
+      );
+      expect(endpointCalls).toBe(0);
+
+      await user.click(actionButton);
+      await user.click(
+        within(await screen.findByRole('dialog')).getByRole('button', {
+          name: i18n.t(`work-schedule:availabilityBatches.actions.${actionKey}`),
+        }),
+      );
       await waitFor(() => expect(endpointCalls).toBe(1));
     },
   );
@@ -1128,7 +1311,7 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-schedule/patterns/pattern-draft');
 
-    expect(await screen.findByText('Không có quyền truy cập')).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:patterns.actions.edit'),

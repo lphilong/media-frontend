@@ -20,6 +20,7 @@ import {
   type SelfServiceAccountPreferencesPayload,
   type SelfServiceCurrentPerson,
   type SelfServiceWorkShift,
+  type SelfServiceWorkShiftFilters,
   type SelfServiceKpiActualEntryStatusSummary,
   type SelfServiceKpiItem,
   type SelfServiceKpiMetric,
@@ -30,10 +31,13 @@ import {
   useUpdateSelfServiceAccountPreferences,
   useSelfServiceWorkShifts,
 } from '@modules/self-service/api/self-service.api';
+import type { NormalizedApiError } from '@shared/api';
 import {
+  Button,
   EmptyState,
   ErrorState,
   LoadingState,
+  PermissionDeniedState,
   ReadOnlyFieldGrid,
   StatusBadge,
 } from '@shared/components/primitives';
@@ -559,12 +563,23 @@ export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps)
   const [workShiftCursor, setWorkShiftCursor] = useState<string | undefined>(undefined);
   const [workShiftPages, setWorkShiftPages] = useState<SelfServiceWorkShift[]>([]);
   const [workShiftNextCursor, setWorkShiftNextCursor] = useState<string | undefined>(undefined);
+  const [workShiftStatus, setWorkShiftStatus] = useState<SelfServiceWorkShift['status'] | ''>('');
   const [selectedKpiHistoryPeriod, setSelectedKpiHistoryPeriod] = useState<string | undefined>(
     undefined,
   );
-  const workShiftsQuery = useSelfServiceWorkShifts(currentPersonQuery.isSuccess, workShiftCursor);
+  const workShiftFilters = useMemo<SelfServiceWorkShiftFilters | undefined>(
+    () => (workShiftStatus ? { status: workShiftStatus } : undefined),
+    [workShiftStatus],
+  );
+  const workShiftsQuery = useSelfServiceWorkShifts(
+    currentPersonQuery.isSuccess,
+    workShiftCursor,
+    workShiftFilters,
+  );
   const workShifts = workShiftPages;
   const isLoadingMoreWorkShifts = workShiftCursor !== undefined && workShiftsQuery.isFetching;
+  const workShiftPermissionDenied =
+    (workShiftsQuery.error as NormalizedApiError | null)?.permissionDenied === true;
   const kpiQuery = useSelfServiceKpi(currentPersonQuery.isSuccess);
   const kpiData = kpiQuery.data;
   const hasCurrentKpiField =
@@ -643,6 +658,13 @@ export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps)
       setWorkShiftNextCursor(undefined);
     }
   }, [currentPersonQuery.isSuccess]);
+
+  const changeWorkShiftStatus = (status: SelfServiceWorkShift['status'] | ''): void => {
+    setWorkShiftStatus(status);
+    setWorkShiftCursor(undefined);
+    setWorkShiftPages([]);
+    setWorkShiftNextCursor(undefined);
+  };
 
   useEffect(() => {
     const page = workShiftsQuery.data;
@@ -1347,14 +1369,35 @@ export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps)
                 </p>
               </div>
 
+              <label className="mb-4 block max-w-xs text-sm font-medium text-text">
+                {t('self-service:workShiftFilters.status')}
+                <select
+                  className="mt-1 w-full rounded border border-border bg-panel px-3 py-2 text-sm text-text"
+                  value={workShiftStatus}
+                  onChange={(event) =>
+                    changeWorkShiftStatus(event.target.value as SelfServiceWorkShift['status'] | '')
+                  }
+                >
+                  <option value="">{t('self-service:workShiftFilters.allStatuses')}</option>
+                  <option value="ACTIVE">{t('self-service:workShiftStatus.ACTIVE')}</option>
+                  <option value="CANCELLED">{t('self-service:workShiftStatus.CANCELLED')}</option>
+                </select>
+              </label>
+
               {workShiftsQuery.isLoading && workShifts.length === 0 ? (
                 <LoadingState lines={4} />
               ) : null}
 
-              {workShiftsQuery.isError ? (
+              {workShiftsQuery.isError && workShiftPermissionDenied ? (
+                <PermissionDeniedState />
+              ) : null}
+
+              {workShiftsQuery.isError && !workShiftPermissionDenied ? (
                 <ErrorState
                   title={t('self-service:errors.workShiftsTitle')}
                   message={t('self-service:errors.workShiftsMessage')}
+                  actionLabel={t('common:actions.retry')}
+                  onRetry={() => void workShiftsQuery.refetch()}
                 />
               ) : null}
 
@@ -1412,17 +1455,17 @@ export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps)
                   </table>
                   {workShiftNextCursor ? (
                     <div className="mt-3 flex justify-center">
-                      <button
-                        type="button"
+                      <Button
+                        variant="outline"
                         onClick={() => setWorkShiftCursor(workShiftNextCursor)}
                         disabled={isLoadingMoreWorkShifts}
-                        className="inline-flex items-center gap-2 rounded border border-border px-3 py-2 text-sm font-medium text-text hover:bg-bg disabled:cursor-not-allowed disabled:opacity-60"
+                        loading={isLoadingMoreWorkShifts}
                       >
                         <ChevronDown className="h-4 w-4" aria-hidden="true" />
                         {isLoadingMoreWorkShifts
                           ? t('self-service:actions.loadingMore')
                           : t('self-service:actions.loadMore')}
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
                 </div>

@@ -338,7 +338,11 @@
       "subtitle": "Admin/Ops duyệt yêu cầu đổi lịch của quản lý theo từng dòng đang chờ."
     },
     "copy": {
-      "adminAuthority": "Duyệt bởi Admin/Ops"
+      "adminAuthority": "Duyệt bởi Admin/Ops",
+      "referenceUnavailable": "Chưa có thông tin tham chiếu",
+      "requestTitleUnavailable": "Yêu cầu điều chỉnh lịch",
+      "failedToApply": "Không thể áp dụng phê duyệt sau khi kiểm tra lại lịch hiện tại.",
+      "technicalDetails": "Chi tiết kỹ thuật"
     },
     "filters": {
       "status": "Trạng thái",
@@ -358,7 +362,7 @@
     "statuses": {
       "PENDING": "Đang chờ duyệt",
       "PARTIALLY_APPROVED": "Duyệt một phần",
-      "APPROVED": "Đã duyệt",
+      "APPROVED": "Đã duyệt và áp dụng",
       "REJECTED": "Bị từ chối",
       "CANCELLED": "Đã hủy"
     },
@@ -385,6 +389,15 @@
       "cancelSelected": "Hủy yêu cầu đã chọn",
       "selectLine": "Chọn dòng {{lineNo}}"
     },
+    "dialogs": {
+      "summary": "Xác nhận quyết định cho {{count}} yêu cầu đã chọn.",
+      "approve": { "title": "Phê duyệt và áp dụng các yêu cầu đã chọn?" },
+      "reject": { "title": "Từ chối các yêu cầu đã chọn?" },
+      "cancel": { "title": "Hủy các yêu cầu đã chọn?" },
+      "approvalRevalidation": "Khi phê duyệt, hệ thống kiểm tra lại lịch chính thức hiện tại trước khi áp dụng thay đổi ca làm.",
+      "noShiftMutation": "Từ chối hoặc hủy không thay đổi ca làm chính thức.",
+      "backendAuthority": "Backend quyết định cuối cùng; trường hợp không áp dụng được được ghi nhận riêng với phê duyệt."
+    },
     "table": {
       "caption": "Dòng yêu cầu đổi lịch",
       "line": "Dòng yêu cầu",
@@ -399,7 +412,9 @@
       "listErrorTitle": "Không tải được hàng đợi",
       "listErrorMessage": "Hệ thống không thể tải dữ liệu đợt yêu cầu.",
       "detailErrorTitle": "Không tải được chi tiết đợt yêu cầu",
-      "detailErrorMessage": "Không tải được yêu cầu đổi lịch đã chọn."
+      "detailErrorMessage": "Không tải được yêu cầu đổi lịch đã chọn.",
+      "decisionErrorTitle": "Chưa thể hoàn tất quyết định",
+      "decisionErrorMessage": "Hãy xem lại trạng thái yêu cầu và lịch hiện tại rồi thử lại. Hệ thống không mặc định là đã áp dụng thành công."
     }
   },
   "availabilityBatches": {
@@ -476,6 +491,8 @@
       "selectRoster": "Chọn lịch nháp",
       "note": "Ghi chú áp dụng",
       "resultTitle": "Kết quả áp dụng",
+      "resultLine": "Dòng đã chọn {{number}}",
+      "technicalDetails": "Chi tiết kỹ thuật",
       "applied": "Đã áp dụng",
       "advisory": "Chỉ ghi chú",
       "skipped": "Bỏ qua",
@@ -492,6 +509,20 @@
       "reject": "Từ chối đã chọn",
       "cancel": "Hủy đã chọn",
       "apply": "Áp dụng vào lịch nháp"
+    },
+    "dialogs": {
+      "summary": "Kiểm tra quyết định cho {{count}} dòng rảnh/bận đã chọn.",
+      "availabilityOnly": "Quyết định này chỉ thay đổi trạng thái rảnh/bận.",
+      "noScheduleMutation": "Quyết định này không thay đổi lịch nháp hoặc ca làm chính thức.",
+      "approve": {
+        "title": "Phê duyệt lịch rảnh/bận đã chọn?"
+      },
+      "reject": {
+        "title": "Từ chối lịch rảnh/bận đã chọn?"
+      },
+      "cancel": {
+        "title": "Hủy lịch rảnh/bận đã chọn?"
+      }
     },
     "table": {
       "review": "Duyệt",
@@ -854,7 +885,7 @@
     },
     "appliedAvailability": {
       "title": "Lịch rảnh/bận đã áp dụng",
-      "previewLabel": "Lịch rảnh/bận đã được áp dụng vào lịch nháp: {{effect}} - {{type}} / {{taxonomy}} (dòng {{lineId}})",
+      "previewLabel": "Lịch rảnh/bận đã được áp dụng vào lịch nháp: {{effect}} - {{type}} / {{taxonomy}}",
       "effects": {
         "workingToOff": "nghỉ do lịch rảnh/bận đã áp dụng",
         "changeTime": "đổi giờ do lịch rảnh/bận đã áp dụng",
@@ -970,7 +1001,11 @@
         "shiftEndAt": "Kết thúc ca UTC",
         "slotKey": "Khóa ô lịch",
         "warnings": "Cảnh báo",
-        "blockers": "Điểm chặn"
+        "blockers": "Điểm chặn",
+        "conflicts": "Xung đột",
+        "technicalDetails": "Chi tiết kỹ thuật",
+        "blockersFallback": "Một quy tắc xếp lịch đang chặn dòng này.",
+        "warningsFallback": "Dòng này cần người vận hành xem xét."
       },
       "admin": {
         "title": "Thông tin quản trị xem trước",
@@ -1019,7 +1054,7 @@
     "publish": {
       "title": "Rà soát công bố",
       "copy": {
-        "createShifts": "Công bố sẽ tạo ca làm chính thức cho Hồ sơ nhân sự đủ điều kiện.",
+        "createShifts": "Công bố sẽ tạo ca làm chính thức đã lên kế hoạch cho nhân sự đủ điều kiện. Đây không phải dữ liệu chấm công hoặc bảng lương.",
         "draftPlanningOnly": "Bảng lịch nháp chỉ dùng để lập kế hoạch và không hiển thị cho Quản lý hoặc Nhân viên.",
         "reviewPreview": "Rà soát bản xem trước trước khi công bố.",
         "noUndo": "Không thể hoàn tác công bố từ màn hình này."
@@ -1033,7 +1068,8 @@
           "previewLoaded": "Bản xem trước đã tải thành công",
           "eligible": "{{count}} thành viên đủ điều kiện",
           "candidates": "{{count}} ca dự kiến có thể công bố",
-          "issues": "{{count}} xung đột hoặc điểm chặn"
+          "issues": "{{count}} xung đột hoặc điểm chặn",
+          "warnings": "{{count}} cảnh báo; chỉ có cảnh báo không ngăn công bố"
         }
       },
       "disabledReasons": {
@@ -1055,7 +1091,11 @@
         "generatedCandidates": "Ca làm dự kiến được tạo",
         "exceptionCount": "Ngoại lệ",
         "conflictBlockerCount": "Xung đột và điểm chặn",
-        "issueCount": "{{conflicts}} xung đột, {{blockers}} điểm chặn"
+        "issueCount": "{{conflicts}} xung đột, {{blockers}} điểm chặn",
+        "month": "Tháng của bảng lịch: {{month}}",
+        "candidateSummary": "{{eligible}} nhân sự đủ điều kiện, {{candidates}} ca làm chính thức dự kiến",
+        "issueSummary": "{{conflicts}} xung đột, {{blockers}} điểm chặn, {{warnings}} cảnh báo",
+        "plannedScheduleBoundary": "Ca làm sau công bố là lịch làm việc dự kiến, không phải dữ liệu chấm công hoặc bảng lương."
       },
       "actions": {
         "openConfirmation": "Xem xét & công bố",
@@ -1092,17 +1132,19 @@
     },
     "generated": {
       "title": "Ca làm được tạo",
-      "copy": "Ca làm được tạo là ca làm thông thường với thông tin nguồn bảng phân ca tháng chỉ đọc.",
+      "copy": "Ca làm được tạo là lịch làm việc chính thức đã lên kế hoạch với thông tin nguồn bảng lịch tháng chỉ đọc; đây không phải dữ liệu chấm công hoặc bảng lương.",
       "states": {
         "unavailable": "Ca làm được tạo sẽ hiển thị sau khi công bố."
       },
       "fields": {
         "source": "Nguồn",
         "sourceRosterId": "Bảng phân ca tháng",
-        "generatedShiftIds": "ID ca làm được tạo"
+        "generatedShiftIds": "Ca làm được tạo",
+        "technicalDetails": "Chi tiết kỹ thuật"
       },
       "actions": {
-        "openList": "Mở ca làm được tạo"
+        "openList": "Mở danh sách ca làm được tạo",
+        "openShift": "Mở ca làm được tạo {{number}}"
       }
     },
     "mutations": {

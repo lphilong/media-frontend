@@ -575,13 +575,29 @@ describe('/self-service route', () => {
 
   it('preserves My Work Shifts cursor metadata and loads the next page', async () => {
     const user = userEvent.setup();
-    const requestedCursors: Array<string | null> = [];
+    const requestedQueries: Array<{ cursor: string | null; status: string | null }> = [];
 
     setMockSelfServiceWorkShifts([]);
     server.use(
       http.get('*/self-service/work-shifts', ({ request }) => {
         const cursor = new URL(request.url).searchParams.get('cursor');
-        requestedCursors.push(cursor);
+        const status = new URL(request.url).searchParams.get('status');
+        requestedQueries.push({ cursor, status });
+
+        if (status === 'CANCELLED') {
+          return HttpResponse.json({
+            data: [
+              {
+                workShiftId: 'shift-filtered-cancelled',
+                title: 'Cancelled filtered shift',
+                status: 'CANCELLED',
+                startsAt: Date.UTC(2026, 4, 29, 2, 0),
+                endsAt: Date.UTC(2026, 4, 29, 6, 0),
+                sourceType: 'MANUAL',
+              },
+            ],
+          });
+        }
 
         if (cursor === 'cursor-page-2') {
           return HttpResponse.json({
@@ -624,9 +640,89 @@ describe('/self-service route', () => {
     expect(await screen.findByText('Second page shift')).toBeInTheDocument();
     expect(screen.getAllByTestId('self-service-work-shift-row')).toHaveLength(2);
 
+    await user.selectOptions(screen.getByLabelText('Official shift status'), 'CANCELLED');
+    expect(await screen.findByText('Cancelled filtered shift')).toBeInTheDocument();
+    expect(screen.queryByText('First page shift')).not.toBeInTheDocument();
+    expect(screen.queryByText('Second page shift')).not.toBeInTheDocument();
+
     await waitFor(() => {
-      expect(requestedCursors).toEqual([null, 'cursor-page-2']);
+      expect(requestedQueries).toEqual([
+        { cursor: null, status: null },
+        { cursor: 'cursor-page-2', status: null },
+        { cursor: null, status: 'CANCELLED' },
+      ]);
     });
+  });
+
+  it('renders empty Work Shifts and retries a recoverable own-data failure without mutation', async () => {
+    const user = userEvent.setup();
+    let calls = 0;
+
+    setMockSelfServiceWorkShifts([]);
+    server.use(
+      http.get('*/self-service/work-shifts', () => {
+        calls += 1;
+        if (calls === 1) {
+          return HttpResponse.json(
+            { error: { code: 'UNAVAILABLE', message: 'Temporary failure' } },
+            { status: 503 },
+          );
+        }
+
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+
+    await renderRoute('/self-service');
+    await switchSelfServiceModule('work');
+
+    expect(await screen.findByText('Work shifts unavailable')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText('No work shifts')).toBeInTheDocument();
+    expect(calls).toBe(2);
+    expect(screen.queryByRole('button', { name: /create|edit|approve|request/i })).toBeNull();
+  });
+
+  it('fails closed for denied and malformed WorkShift responses', async () => {
+    server.use(
+      http.get('*/self-service/work-shifts', () =>
+        HttpResponse.json(
+          { error: { code: 'FORBIDDEN', message: 'Permission denied' } },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await renderRoute('/self-service');
+    await switchSelfServiceModule('work');
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByTestId('self-service-work-shift-row')).not.toBeInTheDocument();
+
+    server.use(
+      http.get('*/self-service/work-shifts', () =>
+        HttpResponse.json({
+          data: [
+            {
+              workShiftId: 'shift-unsafe',
+              title: 'Unsafe shift',
+              status: 'ACTIVE',
+              startsAt: Date.UTC(2026, 4, 26, 2, 0),
+              endsAt: Date.UTC(2026, 4, 26, 6, 0),
+              sourceType: 'MANUAL',
+              subjectEmploymentProfileId: 'ep-other',
+            },
+          ],
+        }),
+      ),
+    );
+
+    await renderRoute('/self-service');
+    await switchSelfServiceModule('work');
+
+    expect(await screen.findByText('Work shifts unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('Unsafe shift')).not.toBeInTheDocument();
+    expect(screen.queryByText('ep-other')).not.toBeInTheDocument();
   });
 
   it('does not render forbidden person, HR, Auth0, password setup, or role data', async () => {

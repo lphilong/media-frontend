@@ -326,7 +326,7 @@
     "label": "排班模块分区",
     "workShifts": "工作班次",
     "requestBatches": "请求审批队列",
-    "availabilityBatches": "Availability Planning",
+    "availabilityBatches": "可用性规划",
     "monthlyRosters": "月度排班",
     "workPatterns": "工作模式",
     "holidayCalendars": "假期日历",
@@ -335,36 +335,40 @@
   "requestBatches": {
     "page": {
       "title": "请求审批队列",
-      "subtitle": "Admin/Ops review for Manager WorkSchedule request batches and selected pending lines."
+      "subtitle": "管理员和运营人员审核管理者提交的排班申请批次及所选待处理申请。"
     },
     "copy": {
-      "adminAuthority": "Admin/Ops approval"
+      "adminAuthority": "管理员/运营审批",
+      "referenceUnavailable": "暂无关联信息",
+      "requestTitleUnavailable": "排班调整申请",
+      "failedToApply": "审批后重新检查当前排班时未能应用变更。",
+      "technicalDetails": "技术详情"
     },
     "filters": {
       "status": "状态",
-      "allStatuses": "All statuses",
-      "periodMonth": "Period month"
+      "allStatuses": "全部状态",
+      "periodMonth": "月份"
     },
     "fields": {
-      "periodMonth": "Period month",
-      "scopeSummary": "Scope",
-      "pending": "Pending lines"
+      "periodMonth": "月份",
+      "scopeSummary": "范围",
+      "pending": "待处理申请"
     },
     "scopeSummaries": {
-      "ORG_UNIT": "Org Unit",
-      "TALENT_GROUP": "Talent Group",
-      "MIXED": "Mixed"
+      "ORG_UNIT": "组织单位",
+      "TALENT_GROUP": "人才组",
+      "MIXED": "混合范围"
     },
     "statuses": {
-      "PENDING": "Pending",
-      "PARTIALLY_APPROVED": "Partially approved",
-      "APPROVED": "Approved",
-      "REJECTED": "Rejected",
-      "CANCELLED": "Cancelled"
+      "PENDING": "待处理",
+      "PARTIALLY_APPROVED": "部分批准",
+      "APPROVED": "已批准",
+      "REJECTED": "已拒绝",
+      "CANCELLED": "已取消"
     },
     "lineStatuses": {
       "PENDING": "待处理",
-      "APPROVED": "已批准",
+      "APPROVED": "已批准并应用",
       "REJECTED": "已拒绝",
       "CANCELLED": "已取消",
       "FAILED_TO_APPLY": "应用失败"
@@ -385,6 +389,15 @@
       "cancelSelected": "取消已选择",
       "selectLine": "选择第 {{lineNo}} 行"
     },
+    "dialogs": {
+      "summary": "确认对已选择的 {{count}} 条申请作出决定。",
+      "approve": { "title": "批准并应用所选申请？" },
+      "reject": { "title": "拒绝所选申请？" },
+      "cancel": { "title": "取消所选申请？" },
+      "approvalRevalidation": "批准时会重新检查当前正式排班，确认后才应用班次变更。",
+      "noShiftMutation": "拒绝或取消不会更改正式班次。",
+      "backendAuthority": "后端权限为最终依据；应用失败会与批准结果分开记录。"
+    },
     "table": {
       "caption": "请求批次行",
       "line": "行",
@@ -399,7 +412,9 @@
       "listErrorTitle": "无法加载请求队列",
       "listErrorMessage": "系统拒绝或未返回请求批次数据。",
       "detailErrorTitle": "无法加载请求批次详情",
-      "detailErrorMessage": "无法加载所选请求批次。"
+      "detailErrorMessage": "无法加载所选请求批次。",
+      "decisionErrorTitle": "未能完成决定",
+      "decisionErrorMessage": "请检查当前申请和排班状态后重试。系统不会视为已成功应用。"
     }
   },
   "availabilityBatches": {
@@ -476,6 +491,8 @@
       "selectRoster": "选择草稿排班",
       "note": "应用备注",
       "resultTitle": "应用结果",
+      "resultLine": "已选记录 {{number}}",
+      "technicalDetails": "技术详情",
       "applied": "已应用",
       "advisory": "仅提示",
       "skipped": "已跳过",
@@ -493,6 +510,20 @@
       "cancel": "取消已选择",
       "apply": "应用到草稿排班"
     },
+    "dialogs": {
+      "summary": "请复核对 {{count}} 条已选可用性记录的决定。",
+      "availabilityOnly": "此决定只会更改可用性状态。",
+      "noScheduleMutation": "此决定不会更改草稿排班或正式工作班次。",
+      "approve": {
+        "title": "批准已选可用性记录？"
+      },
+      "reject": {
+        "title": "拒绝已选可用性记录？"
+      },
+      "cancel": {
+        "title": "取消已选可用性记录？"
+      }
+    },
     "table": {
       "review": "审核",
       "apply": "应用",
@@ -505,15 +536,15 @@
       "refs": "排班引用"
     },
     "types": {
-      "UNAVAILABLE_FULL_DAY": "Unavailable full day",
-      "PREFERRED_TIME": "Preferred time",
-      "OTHER_AVAILABILITY_NOTE": "Other availability note"
+      "UNAVAILABLE_FULL_DAY": "全天不可用",
+      "PREFERRED_TIME": "偏好时段",
+      "OTHER_AVAILABILITY_NOTE": "其他可用性备注"
     },
     "taxonomy": {
-      "SICK_LEAVE": "Sick leave",
-      "AUTHORIZED_LEAVE": "Authorized leave",
-      "SHIFT_CHANGE": "Shift change",
-      "OTHER": "Other"
+      "SICK_LEAVE": "病假",
+      "AUTHORIZED_LEAVE": "已批准休假",
+      "SHIFT_CHANGE": "换班",
+      "OTHER": "其他"
     },
     "validation": {
       "reasonRequired": "拒绝或取消必须填写原因。",
@@ -854,7 +885,7 @@
     },
     "appliedAvailability": {
       "title": "已应用可用性",
-      "previewLabel": "已应用可用性：{{effect}} - {{type}} / {{taxonomy}}（行 {{lineId}}）",
+      "previewLabel": "已应用可用性：{{effect}} - {{type}} / {{taxonomy}}",
       "effects": {
         "workingToOff": "因已应用可用性改为休息",
         "changeTime": "因已应用可用性调整时间",
@@ -970,7 +1001,11 @@
         "shiftEndAt": "班次结束 UTC",
         "slotKey": "排班槽键",
         "warnings": "警告",
-        "blockers": "阻断项"
+        "blockers": "阻断项",
+        "conflicts": "冲突",
+        "technicalDetails": "技术详情",
+        "blockersFallback": "排班规则阻止了此记录。",
+        "warningsFallback": "此记录需要操作人员复核。"
       },
       "admin": {
         "title": "预览管理信息",
@@ -1019,8 +1054,8 @@
     "publish": {
       "title": "发布审核",
       "copy": {
-        "createShifts": "发布会为符合条件的 EmploymentProfile 创建正式 WorkShift。",
-        "draftPlanningOnly": "草稿排班仅用于规划，Manager 和 Staff 不可见。",
+        "createShifts": "发布会为符合条件的员工创建正式计划班次；这些班次不是考勤或工资记录。",
+        "draftPlanningOnly": "草稿排班仅用于规划，管理人员和员工不可见。",
         "reviewPreview": "发布前请先审核预览。",
         "noUndo": "不能从此屏幕撤销发布。"
       },
@@ -1033,7 +1068,8 @@
           "previewLoaded": "预览已成功加载",
           "eligible": "{{count}} 名符合条件的成员",
           "candidates": "{{count}} 个可发布候选班次",
-          "issues": "{{count}} 个冲突或阻断问题"
+          "issues": "{{count}} 个冲突或阻断问题",
+          "warnings": "{{count}} 个警告；只有警告不会阻止发布"
         }
       },
       "disabledReasons": {
@@ -1055,7 +1091,11 @@
         "generatedCandidates": "生成班次候选",
         "exceptionCount": "例外",
         "conflictBlockerCount": "冲突和阻断项",
-        "issueCount": "{{conflicts}} 个冲突，{{blockers}} 个阻断项"
+        "issueCount": "{{conflicts}} 个冲突，{{blockers}} 个阻断项",
+        "month": "排班月份：{{month}}",
+        "candidateSummary": "{{eligible}} 名符合条件的员工，{{candidates}} 个正式计划班次候选",
+        "issueSummary": "{{conflicts}} 个冲突，{{blockers}} 个阻断项，{{warnings}} 个警告",
+        "plannedScheduleBoundary": "发布后的工作班次是计划安排，不是考勤或工资记录。"
       },
       "actions": {
         "openConfirmation": "审核并发布",
@@ -1092,17 +1132,19 @@
     },
     "generated": {
       "title": "生成的工作班次",
-      "copy": "生成的工作班次是普通工作班次，并带有只读的月度排班来源信息。",
+      "copy": "生成的工作班次是正式计划安排，并带有只读的月度排班来源信息；它们不是考勤或工资记录。",
       "states": {
         "unavailable": "发布后可查看生成的工作班次。"
       },
       "fields": {
         "source": "来源",
         "sourceRosterId": "月度排班",
-        "generatedShiftIds": "生成的工作班次 ID"
+        "generatedShiftIds": "生成的工作班次",
+        "technicalDetails": "技术详情"
       },
       "actions": {
-        "openList": "打开生成的工作班次"
+        "openList": "打开生成的工作班次列表",
+        "openShift": "打开生成的工作班次 {{number}}"
       }
     },
     "mutations": {

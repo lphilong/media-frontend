@@ -95,6 +95,9 @@ const selfServiceWorkShiftsResponseSchema = z
   .strict();
 
 export type SelfServiceWorkShift = z.infer<typeof selfServiceWorkShiftSchema>;
+export type SelfServiceWorkShiftFilters = {
+  readonly status?: SelfServiceWorkShift['status'];
+};
 export type SelfServiceListEnvelope<TItem, TMeta = Record<string, unknown>> = {
   items: TItem[];
   meta?: TMeta;
@@ -309,21 +312,32 @@ export const useUpdateSelfServiceAccountPreferences = () => {
 
 export const fetchSelfServiceWorkShifts = async (
   cursor?: string,
+  filters?: SelfServiceWorkShiftFilters,
 ): Promise<SelfServiceListEnvelope<SelfServiceWorkShift, SelfServiceWorkShiftsMeta>> => {
   const response = await apiRequest<unknown>({
     method: 'GET',
     url: '/self-service/work-shifts',
-    params: cursor ? { cursor } : undefined,
+    params:
+      cursor || filters?.status
+        ? {
+            ...(cursor ? { cursor } : {}),
+            ...(filters?.status ? { status: filters.status } : {}),
+          }
+        : undefined,
   });
   const parsed = selfServiceWorkShiftsResponseSchema.parse(response);
 
   return { items: parsed.data, meta: parsed.meta };
 };
 
-export const useSelfServiceWorkShifts = (enabled = true, cursor?: string) =>
+export const useSelfServiceWorkShifts = (
+  enabled = true,
+  cursor?: string,
+  filters?: SelfServiceWorkShiftFilters,
+) =>
   useQuery({
-    queryKey: [...SELF_SERVICE_WORK_SHIFTS_QUERY_KEY, cursor ?? null],
-    queryFn: () => fetchSelfServiceWorkShifts(cursor),
+    queryKey: [...SELF_SERVICE_WORK_SHIFTS_QUERY_KEY, cursor ?? null, filters?.status ?? null],
+    queryFn: () => fetchSelfServiceWorkShifts(cursor, filters),
     enabled,
     retry: false,
   });

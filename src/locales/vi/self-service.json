@@ -233,6 +233,10 @@
     "CANCELLED": "Đã hủy",
     "ARCHIVED": "Đã lưu trữ"
   },
+  "workShiftFilters": {
+    "status": "Trạng thái ca làm chính thức",
+    "allStatuses": "Tất cả trạng thái ca làm chính thức"
+  },
   "eventStatus": {
     "PLANNED": "Đã lên kế hoạch",
     "CONFIRMED": "Đã xác nhận",

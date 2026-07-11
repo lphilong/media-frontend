@@ -25,13 +25,17 @@ import {
 } from '@shared/auth/current-actor-capabilities';
 import {
   AppliedFilterChips,
+  Button,
   CursorPager,
   EmptyState,
   ErrorState,
   FilterToolbar,
   LoadingState,
   PageContainer,
+  PageHeader,
+  SensitiveActionDialog,
   StatusBadge,
+  TechnicalDetailsDisclosure,
 } from '@shared/components/primitives';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
@@ -83,6 +87,9 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
   const [monthlyRosterId, setMonthlyRosterId] = useState('');
   const [applyNote, setApplyNote] = useState('');
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [pendingDecisionAction, setPendingDecisionAction] = useState<
+    'approve' | 'reject' | 'cancel' | null
+  >(null);
   const [applyResult, setApplyResult] =
     useState<ApplyAvailabilityLinesToMonthlyRosterResult | null>(null);
   const resetQueueSelection = (): void => {
@@ -209,7 +216,20 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
     } else {
       await cancelMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
     }
+    setPendingDecisionAction(null);
     resetDecisionInputs();
+  };
+
+  const requestDecision = (action: 'approve' | 'reject' | 'cancel'): void => {
+    if (selectedReviewLineIds.length === 0) {
+      return;
+    }
+    if ((action === 'reject' || action === 'cancel') && !decisionReason.trim()) {
+      setValidationMessage(t('work-schedule:availabilityBatches.validation.reasonRequired'));
+      return;
+    }
+    setValidationMessage(null);
+    setPendingDecisionAction(action);
   };
 
   const runApply = async (): Promise<void> => {
@@ -238,17 +258,16 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
       <div className="space-y-4">
         <WorkScheduleSubnavigation active="availability-batches" />
         <section className="rounded border border-border bg-panel p-4 shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-text">
-                {t('work-schedule:availabilityBatches.page.title')}
-              </h1>
-              <p className="text-sm text-muted">
-                {t('work-schedule:availabilityBatches.page.subtitle')}
-              </p>
-            </div>
-            <StatusBadge label={t('work-schedule:availabilityBatches.badges.global')} tone="info" />
-          </div>
+          <PageHeader
+            title={t('work-schedule:availabilityBatches.page.title')}
+            subtitle={t('work-schedule:availabilityBatches.page.subtitle')}
+            actions={
+              <StatusBadge
+                label={t('work-schedule:availabilityBatches.badges.global')}
+                tone="info"
+              />
+            }
+          />
 
           <div className="mt-4 rounded border border-border bg-bg p-3 text-sm text-muted">
             <p>{t('work-schedule:availabilityBatches.copy.planning')}</p>
@@ -335,6 +354,8 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
             <ErrorState
               title={t('work-schedule:availabilityBatches.states.loadErrorTitle')}
               message={t('work-schedule:availabilityBatches.states.loadErrorMessage')}
+              actionLabel={t('common:actions.retry')}
+              onRetry={() => void listQuery.refetch()}
             />
           ) : null}
 
@@ -498,30 +519,27 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                           />
                         </label>
                         <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            className="rounded bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                          <Button
+                            variant="primary"
                             disabled={selectedReviewLines.length === 0 || approveMutation.isPending}
-                            onClick={() => void runDecision('approve')}
+                            onClick={() => requestDecision('approve')}
                           >
                             {t('work-schedule:availabilityBatches.actions.approve')}
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded border border-danger px-3 py-2 text-sm font-medium text-danger disabled:opacity-50"
+                          </Button>
+                          <Button
+                            variant="danger"
                             disabled={selectedReviewLines.length === 0 || rejectMutation.isPending}
-                            onClick={() => void runDecision('reject')}
+                            onClick={() => requestDecision('reject')}
                           >
                             {t('work-schedule:availabilityBatches.actions.reject')}
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded border border-border px-3 py-2 text-sm font-medium disabled:opacity-50"
+                          </Button>
+                          <Button
+                            variant="outline"
                             disabled={selectedReviewLines.length === 0 || cancelMutation.isPending}
-                            onClick={() => void runDecision('cancel')}
+                            onClick={() => requestDecision('cancel')}
                           >
                             {t('work-schedule:availabilityBatches.actions.cancel')}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       <div className="space-y-3">
@@ -563,14 +581,14 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                             onChange={(event) => setApplyNote(event.target.value)}
                           />
                         </label>
-                        <button
-                          type="button"
-                          className="rounded bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                        <Button
+                          variant="primary"
                           disabled={selectedApplyLines.length === 0 || applyMutation.isPending}
+                          loading={applyMutation.isPending}
                           onClick={() => void runApply()}
                         >
                           {t('work-schedule:availabilityBatches.actions.apply')}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : null}
@@ -602,9 +620,6 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                           </th>
                           <th className="px-3 py-2">
                             {t('work-schedule:availabilityBatches.table.policy')}
-                          </th>
-                          <th className="px-3 py-2">
-                            {t('work-schedule:availabilityBatches.table.refs')}
                           </th>
                         </tr>
                       </thead>
@@ -691,14 +706,6 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                                 `work-schedule:availabilityBatches.policyStatuses.${line.policyEvaluationStatus}`,
                               )}
                             </td>
-                            <td className="px-3 py-2">
-                              {line.appliedRosterId ?? '-'}
-                              {line.appliedRosterExceptionIds.length > 0 ? (
-                                <div className="text-xs text-muted">
-                                  {line.appliedRosterExceptionIds.join(', ')}
-                                </div>
-                              ) : null}
-                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -729,16 +736,26 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                         />
                       </div>
                       <ul className="mt-3 space-y-1 text-sm text-muted">
-                        {applyResult.results.map((result) => (
+                        {applyResult.results.map((result, index) => (
                           <li key={`${result.availabilityLineId}-${result.outcome}`}>
-                            {result.availabilityLineId}:{' '}
-                            {t(
-                              `work-schedule:availabilityBatches.apply.outcomes.${result.outcome}`,
-                            )}
-                            {result.rosterExceptionIds.length > 0
-                              ? ` (${result.rosterExceptionIds.join(', ')})`
-                              : ''}
-                            {result.reason ? ` - ${result.reason}` : ''}
+                            <span>
+                              {t('work-schedule:availabilityBatches.apply.resultLine', {
+                                number: index + 1,
+                              })}
+                              :{' '}
+                              {t(
+                                `work-schedule:availabilityBatches.apply.outcomes.${result.outcome}`,
+                              )}
+                            </span>
+                            <TechnicalDetailsDisclosure
+                              className="mt-1 text-left text-xs text-muted"
+                              label={t('work-schedule:availabilityBatches.apply.technicalDetails')}
+                              details={{
+                                availabilityLineId: result.availabilityLineId,
+                                rosterExceptionIds: result.rosterExceptionIds,
+                                reason: result.reason,
+                              }}
+                            />
                           </li>
                         ))}
                       </ul>
@@ -754,6 +771,37 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
             </div>
           </div>
         </section>
+        <SensitiveActionDialog
+          open={pendingDecisionAction !== null}
+          title={
+            pendingDecisionAction
+              ? t(`work-schedule:availabilityBatches.dialogs.${pendingDecisionAction}.title`)
+              : ''
+          }
+          summary={t('work-schedule:availabilityBatches.dialogs.summary', {
+            count: selectedReviewLines.length,
+          })}
+          riskItems={[
+            t('work-schedule:availabilityBatches.dialogs.availabilityOnly'),
+            t('work-schedule:availabilityBatches.dialogs.noScheduleMutation'),
+          ]}
+          confirmLabel={
+            pendingDecisionAction
+              ? t(`work-schedule:availabilityBatches.actions.${pendingDecisionAction}`)
+              : ''
+          }
+          cancelLabel={t('common:actions.cancel')}
+          tone={pendingDecisionAction === 'approve' ? 'warning' : 'critical'}
+          isSubmitting={
+            approveMutation.isPending || rejectMutation.isPending || cancelMutation.isPending
+          }
+          onCancel={() => setPendingDecisionAction(null)}
+          onConfirm={() => {
+            if (pendingDecisionAction) {
+              void runDecision(pendingDecisionAction);
+            }
+          }}
+        />
       </div>
     </PageContainer>
   );

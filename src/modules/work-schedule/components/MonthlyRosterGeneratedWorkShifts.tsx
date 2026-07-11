@@ -7,7 +7,11 @@ import type {
   MonthlyRosterRecord,
   MonthlyRosterScope,
 } from '@modules/work-schedule/types/work-schedule.types';
-import { MetadataSection, ReadOnlyFieldGrid } from '@shared/components/primitives';
+import {
+  MetadataSection,
+  ReadOnlyFieldGrid,
+  TechnicalDetailsDisclosure,
+} from '@shared/components/primitives';
 import { readReferenceDisplay } from '@shared/formatting/formatters';
 
 type MonthlyRosterGeneratedWorkShiftsProps = {
@@ -29,7 +33,7 @@ const buildGeneratedWorkShiftsHref = (
     params.set('scope', scope);
   }
 
-  return `${APP_PATHS.workShifts}?${params.toString()}`;
+  return `${APP_PATHS.workScheduleGlobalOps}?${params.toString()}`;
 };
 
 const formatNullable = (value?: string | number | null): string =>
@@ -82,14 +86,6 @@ export const MonthlyRosterGeneratedWorkShifts = ({
               ),
             },
             {
-              key: 'generation-run',
-              label: t('work-schedule:monthlyRosters.publish.summary.generationRunId'),
-              value: formatNullable(
-                publishResult?.sourceGenerationRunId ?? roster.publishGenerationRunId,
-              ),
-              monospace: true,
-            },
-            {
               key: 'generated',
               label: t('work-schedule:monthlyRosters.publish.summary.generatedCount'),
               value: formatNullable(publishResult?.generatedWorkShiftCount),
@@ -109,18 +105,29 @@ export const MonthlyRosterGeneratedWorkShifts = ({
               {t('work-schedule:monthlyRosters.generated.fields.generatedShiftIds')}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {generatedIds.map((workShiftId) => (
+              {generatedIds.map((workShiftId, index) => (
                 <Link
                   key={workShiftId}
                   to={APP_PATHS.workShiftDetail(workShiftId)}
-                  className="rounded border border-border px-2 py-1 font-mono text-xs text-accent hover:underline"
+                  className="rounded border border-border px-2 py-1 text-xs text-accent hover:underline"
                 >
-                  {workShiftId}
+                  {t('work-schedule:monthlyRosters.generated.actions.openShift', {
+                    number: index + 1,
+                  })}
                 </Link>
               ))}
             </div>
           </div>
         ) : null}
+        <TechnicalDetailsDisclosure
+          label={t('work-schedule:monthlyRosters.generated.fields.technicalDetails')}
+          details={{
+            sourceRosterId: roster.monthlyRosterId,
+            sourceGenerationRunId:
+              publishResult?.sourceGenerationRunId ?? roster.publishGenerationRunId,
+            generatedWorkShiftIds: generatedIds,
+          }}
+        />
       </div>
     </MetadataSection>
   );

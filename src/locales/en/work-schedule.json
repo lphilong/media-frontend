@@ -338,7 +338,11 @@
       "subtitle": "Admin/Ops review for Manager WorkSchedule request batches and selected pending lines."
     },
     "copy": {
-      "adminAuthority": "Admin/Ops approval"
+      "adminAuthority": "Admin/Ops approval",
+      "referenceUnavailable": "Reference unavailable",
+      "requestTitleUnavailable": "Schedule request",
+      "failedToApply": "Approval could not be applied after current schedule checks.",
+      "technicalDetails": "Technical details"
     },
     "filters": {
       "status": "Status",
@@ -358,7 +362,7 @@
     "statuses": {
       "PENDING": "Pending",
       "PARTIALLY_APPROVED": "Partially approved",
-      "APPROVED": "Approved",
+      "APPROVED": "Approved and applied",
       "REJECTED": "Rejected",
       "CANCELLED": "Cancelled"
     },
@@ -385,6 +389,15 @@
       "cancelSelected": "Cancel selected",
       "selectLine": "Select line {{lineNo}}"
     },
+    "dialogs": {
+      "summary": "Review the decision for {{count}} selected request lines.",
+      "approve": { "title": "Approve and apply selected requests?" },
+      "reject": { "title": "Reject selected requests?" },
+      "cancel": { "title": "Cancel selected requests?" },
+      "approvalRevalidation": "Approval rechecks the current official schedule before applying any Work Shift change.",
+      "noShiftMutation": "Rejection and cancellation do not change the official Work Shift.",
+      "backendAuthority": "Backend authority remains final; a failed application is recorded separately from approval."
+    },
     "table": {
       "caption": "Request batch lines",
       "line": "Line",
@@ -399,7 +412,9 @@
       "listErrorTitle": "Request queue could not be loaded",
       "listErrorMessage": "The system rejected or did not return request batch data.",
       "detailErrorTitle": "Request batch detail could not be loaded",
-      "detailErrorMessage": "The selected request batch could not be loaded."
+      "detailErrorMessage": "The selected request batch could not be loaded.",
+      "decisionErrorTitle": "Decision could not be completed",
+      "decisionErrorMessage": "Review the current request and schedule state, then retry. No successful application is assumed."
     }
   },
   "availabilityBatches": {
@@ -476,6 +491,8 @@
       "selectRoster": "Select draft roster",
       "note": "Apply note",
       "resultTitle": "Apply result",
+      "resultLine": "Selected line {{number}}",
+      "technicalDetails": "Technical details",
       "applied": "Applied",
       "advisory": "Advisory only",
       "skipped": "Skipped",
@@ -492,6 +509,20 @@
       "reject": "Reject selected",
       "cancel": "Cancel selected",
       "apply": "Apply to draft roster"
+    },
+    "dialogs": {
+      "summary": "Review the decision for {{count}} selected availability lines.",
+      "availabilityOnly": "This decision changes availability status only.",
+      "noScheduleMutation": "No roster or official Work Shift is changed by this decision.",
+      "approve": {
+        "title": "Approve selected availability?"
+      },
+      "reject": {
+        "title": "Reject selected availability?"
+      },
+      "cancel": {
+        "title": "Cancel selected availability?"
+      }
     },
     "table": {
       "review": "Review",
@@ -858,7 +889,7 @@
     },
     "appliedAvailability": {
       "title": "Applied availability",
-      "previewLabel": "Applied availability: {{effect}} - {{type}} / {{taxonomy}} (line {{lineId}})",
+      "previewLabel": "Applied availability: {{effect}} - {{type}} / {{taxonomy}}",
       "effects": {
         "workingToOff": "off due to applied availability",
         "changeTime": "changed time due to applied availability",
@@ -974,7 +1005,11 @@
         "shiftEndAt": "Shift end UTC",
         "slotKey": "Roster slot key",
         "warnings": "Warnings",
-        "blockers": "Blockers"
+        "blockers": "Blockers",
+        "conflicts": "Conflicts",
+        "technicalDetails": "Technical details",
+        "blockersFallback": "A scheduling rule blocks this row.",
+        "warningsFallback": "This row needs operator review."
       },
       "admin": {
         "title": "Preview admin metadata",
@@ -1023,7 +1058,7 @@
     "publish": {
       "title": "Publish review",
       "copy": {
-        "createShifts": "Publishing creates official WorkShifts for eligible EmploymentProfiles.",
+        "createShifts": "Publishing creates official planned Work Shifts for eligible employees. These are not Attendance or Payroll records.",
         "draftPlanningOnly": "Draft rosters are planning-only and are not visible to Manager or Staff.",
         "reviewPreview": "Review the preview before publishing.",
         "noUndo": "Publishing cannot be undone from this screen."
@@ -1037,7 +1072,8 @@
           "previewLoaded": "Preview loaded successfully",
           "eligible": "{{count}} eligible member(s)",
           "candidates": "{{count}} publishable candidate shift(s)",
-          "issues": "{{count}} conflict or blocker issue(s)"
+          "issues": "{{count}} conflict or blocker issue(s)",
+          "warnings": "{{count}} warning(s); warnings alone do not block publication"
         }
       },
       "disabledReasons": {
@@ -1059,7 +1095,11 @@
         "generatedCandidates": "Generated shift candidates",
         "exceptionCount": "Exceptions",
         "conflictBlockerCount": "Conflicts and blockers",
-        "issueCount": "{{conflicts}} conflict(s), {{blockers}} blocker(s)"
+        "issueCount": "{{conflicts}} conflict(s), {{blockers}} blocker(s)",
+        "month": "Roster month: {{month}}",
+        "candidateSummary": "{{eligible}} eligible employee(s), {{candidates}} official planned shift candidate(s)",
+        "issueSummary": "{{conflicts}} conflict(s), {{blockers}} blocker(s), {{warnings}} warning(s)",
+        "plannedScheduleBoundary": "Published Work Shifts are planned schedules, not Attendance or Payroll records."
       },
       "actions": {
         "openConfirmation": "Review & publish",
@@ -1096,17 +1136,19 @@
     },
     "generated": {
       "title": "Generated Work Shifts",
-      "copy": "Generated Work Shifts are normal Work Shifts with read-only monthly roster source metadata.",
+      "copy": "Generated Work Shifts are official planned schedules with read-only monthly roster source metadata. They are not Attendance or Payroll records.",
       "states": {
         "unavailable": "Generated Work Shifts are available after publish."
       },
       "fields": {
         "source": "Source",
         "sourceRosterId": "Monthly Roster",
-        "generatedShiftIds": "Generated Work Shift IDs"
+        "generatedShiftIds": "Generated Work Shifts",
+        "technicalDetails": "Technical details"
       },
       "actions": {
-        "openList": "Open generated Work Shifts"
+        "openList": "Open generated Work Shifts",
+        "openShift": "Open generated Work Shift {{number}}"
       }
     },
     "exceptions": {

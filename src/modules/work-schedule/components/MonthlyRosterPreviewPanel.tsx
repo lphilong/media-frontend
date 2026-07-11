@@ -18,6 +18,7 @@ import {
   PermissionDeniedState,
   ReadOnlyFieldGrid,
   StatusBadge,
+  TechnicalDetailsDisclosure,
 } from '@shared/components/primitives';
 import { readReferenceDisplay } from '@shared/formatting/formatters';
 
@@ -87,20 +88,6 @@ const resolveFreshness = (preview: MonthlyRosterPreview): 'generatedReady' | 'st
   return 'generatedReady';
 };
 
-const truncateFingerprint = (value?: string | null): string => {
-  if (!value) {
-    return '-';
-  }
-
-  return value.length > 20 ? `${value.slice(0, 10)}...${value.slice(-8)}` : value;
-};
-
-const Fingerprint = ({ value }: { value?: string | null }): JSX.Element => (
-  <span className="block max-w-full break-all font-mono" title={value ?? undefined}>
-    {truncateFingerprint(value)}
-  </span>
-);
-
 const memberStatus = (summary: MemberSummary): 'blocked' | 'warnings' | 'exceptions' | 'ready' => {
   if (summary.blockerCount > 0 || summary.conflictCount > 0) {
     return 'blocked';
@@ -148,8 +135,21 @@ const describeAvailabilitySource = (
   return t('work-schedule:monthlyRosters.appliedAvailability.previewLabel')
     .replace('{{effect}}', effect)
     .replace('{{type}}', sourceType)
-    .replace('{{taxonomy}}', sourceTaxonomy)
-    .replace('{{lineId}}', exception.sourceAvailabilityLineId);
+    .replace('{{taxonomy}}', sourceTaxonomy);
+};
+
+const describePreviewIssue = (
+  t: (key: string, options?: Record<string, unknown>) => string,
+  kind: 'blockers' | 'warnings',
+  value: string,
+): string => {
+  if (!/^[A-Z0-9_]+$/u.test(value)) {
+    return value;
+  }
+
+  return t(`work-schedule:monthlyRosters.preview.${kind}.${value}`, {
+    defaultValue: t(`work-schedule:monthlyRosters.preview.detail.${kind}Fallback`),
+  });
 };
 
 const MemberDayDetails = ({
@@ -221,22 +221,64 @@ const MemberDayDetails = ({
                   {availabilityDescription ? (
                     <div className="space-y-1">
                       <div>{availabilityDescription}</div>
-                      <div className="text-xs text-muted">{row.sourceExceptionId}</div>
+                      <TechnicalDetailsDisclosure
+                        label={t('work-schedule:monthlyRosters.preview.detail.technicalDetails')}
+                        details={{
+                          previewRowId: row.previewRowId,
+                          sourceExceptionId: row.sourceExceptionId,
+                          sourceAvailabilityLineId: availabilityLineId,
+                        }}
+                      />
                     </div>
                   ) : (
                     (row.holidayName ??
                     row.holidayEntryType ??
-                    row.sourceExceptionId ??
                     t('work-schedule:monthlyRosters.preview.rows.reason.standard'))
                   )}
                 </td>
                 <td className="px-3 py-2">
-                  {[...row.blockers, ...row.warnings].join(', ') ||
-                    (row.conflicts.length > 0
-                      ? t('work-schedule:monthlyRosters.preview.rows.hasIssues', {
-                          count: row.conflicts.length,
-                        })
-                      : t('work-schedule:monthlyRosters.preview.rows.noIssues'))}
+                  {row.blockers.length > 0 ? (
+                    <div className="text-danger">
+                      {t('work-schedule:monthlyRosters.preview.detail.blockers')}:{' '}
+                      {row.blockers
+                        .map((issue) => describePreviewIssue(t, 'blockers', issue))
+                        .join(', ')}
+                    </div>
+                  ) : null}
+                  {row.conflicts.length > 0 ? (
+                    <div className="text-danger">
+                      {t('work-schedule:monthlyRosters.preview.detail.conflicts')}:{' '}
+                      {t('work-schedule:monthlyRosters.preview.rows.hasIssues', {
+                        count: row.conflicts.length,
+                      })}
+                    </div>
+                  ) : null}
+                  {row.warnings.length > 0 ? (
+                    <div className="text-warning">
+                      {t('work-schedule:monthlyRosters.preview.detail.warnings')}:{' '}
+                      {row.warnings
+                        .map((issue) => describePreviewIssue(t, 'warnings', issue))
+                        .join(', ')}
+                    </div>
+                  ) : null}
+                  {row.blockers.length === 0 &&
+                  row.conflicts.length === 0 &&
+                  row.warnings.length === 0
+                    ? t('work-schedule:monthlyRosters.preview.rows.noIssues')
+                    : null}
+                  {row.blockers.length > 0 ||
+                  row.conflicts.length > 0 ||
+                  row.warnings.length > 0 ? (
+                    <TechnicalDetailsDisclosure
+                      className="mt-1 text-left text-xs text-muted"
+                      label={t('work-schedule:monthlyRosters.preview.detail.technicalDetails')}
+                      details={{
+                        blockers: row.blockers,
+                        warnings: row.warnings,
+                        conflicts: row.conflicts,
+                      }}
+                    />
+                  ) : null}
                 </td>
               </tr>
             );
@@ -318,6 +360,7 @@ export const MonthlyRosterPreviewPanel = ({
   }, [roster.exceptions]);
   const expandedSummary = summaries.find((member) => member.memberId === expandedMemberId);
   const blockerCount = summaries.reduce((total, member) => total + member.blockerCount, 0);
+  const warningCount = summaries.reduce((total, member) => total + member.warningCount, 0);
   const visibleSummaries = summaries.filter((member) => {
     const matchesSearch =
       !search.trim() ||
@@ -427,9 +470,19 @@ export const MonthlyRosterPreviewPanel = ({
                   ),
                 },
                 {
-                  key: 'issues',
+                  key: 'conflicts',
                   label: t('work-schedule:monthlyRosters.preview.summary.conflicts'),
-                  value: String(preview.summary.totalConflicts + blockerCount),
+                  value: String(preview.summary.totalConflicts),
+                },
+                {
+                  key: 'blockers',
+                  label: t('work-schedule:monthlyRosters.preview.detail.blockers'),
+                  value: String(blockerCount),
+                },
+                {
+                  key: 'warnings',
+                  label: t('work-schedule:monthlyRosters.preview.detail.warnings'),
+                  value: String(warningCount),
                 },
               ]}
               columns={3}
@@ -567,40 +620,18 @@ export const MonthlyRosterPreviewPanel = ({
               ) : null}
             </div>
 
-            <details className="rounded border border-border bg-panel p-4 shadow-shell">
-              <summary className="cursor-pointer text-sm font-semibold text-text">
-                {t('work-schedule:monthlyRosters.preview.admin.title')}
-              </summary>
-              <div className="pt-3">
-                <ReadOnlyFieldGrid
-                  fields={[
-                    {
-                      key: 'freshness',
-                      label: t('work-schedule:monthlyRosters.preview.admin.freshness'),
-                      value: t(
-                        `work-schedule:monthlyRosters.preview.freshness.${resolveFreshness(preview)}`,
-                      ),
-                    },
-                    {
-                      key: 'stored',
-                      label: t('work-schedule:monthlyRosters.preview.admin.storedFingerprint'),
-                      value: <Fingerprint value={preview.currentPreviewHash} />,
-                    },
-                    {
-                      key: 'computed',
-                      label: t('work-schedule:monthlyRosters.preview.admin.computedFingerprint'),
-                      value: <Fingerprint value={preview.computedPreviewHash} />,
-                    },
-                    {
-                      key: 'expected',
-                      label: t('work-schedule:monthlyRosters.preview.admin.expectedFingerprint'),
-                      value: <Fingerprint value={preview.computedPreviewHash} />,
-                    },
-                  ]}
-                  columns={2}
-                />
-              </div>
-            </details>
+            <TechnicalDetailsDisclosure
+              className="rounded border border-border bg-panel p-4 text-left text-xs text-muted shadow-shell"
+              label={t('work-schedule:monthlyRosters.preview.admin.title')}
+              details={{
+                freshness: t(
+                  `work-schedule:monthlyRosters.preview.freshness.${resolveFreshness(preview)}`,
+                ),
+                storedPreviewFingerprint: preview.currentPreviewHash,
+                computedPreviewFingerprint: preview.computedPreviewHash,
+                expectedPublishFingerprint: preview.computedPreviewHash,
+              }}
+            />
           </>
         ) : null}
       </div>

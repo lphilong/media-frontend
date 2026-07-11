@@ -88,14 +88,15 @@ describe('monthly roster slice D preview', () => {
     expect(within(detailTable).getByText(pt('rowKinds.HOLIDAY_SUPPRESSED'))).toBeInTheDocument();
 
     const computedHash = 'computed-roster-draft-1';
-    expect(screen.getAllByTitle(computedHash)).toHaveLength(2);
-    for (const fingerprint of screen.getAllByTitle(computedHash)) {
-      expect(fingerprint).not.toBeVisible();
+    const fingerprintDetails = screen.getByText(pt('admin.title')).closest('details');
+    expect(fingerprintDetails).not.toBeNull();
+    if (!fingerprintDetails) {
+      return;
     }
+    const fingerprintContent = within(fingerprintDetails).getByText(new RegExp(computedHash));
+    expect(fingerprintContent).not.toBeVisible();
     await user.click(screen.getByText(pt('admin.title')));
-    for (const fingerprint of screen.getAllByTitle(computedHash)) {
-      expect(fingerprint).toBeVisible();
-    }
+    expect(fingerprintContent).toBeVisible();
     expect(screen.getAllByText(pt('freshness.generatedReady')).length).toBeGreaterThan(0);
 
     expect(
@@ -183,9 +184,13 @@ describe('monthly roster slice D preview', () => {
     const detailTable = screen.getByRole('table', {
       name: pt('detail.memberCaption', { member: 'Alice Nguyen' }),
     });
-    expect(within(detailTable).getByText(/availability-line-off/)).toBeInTheDocument();
-    expect(within(detailTable).getByText('roster-exception-001')).toBeInTheDocument();
-    expect(within(detailTable).getByText('roster-exception-change')).toBeInTheDocument();
+    const technicalDetails = within(detailTable).getAllByText(pt('detail.technicalDetails'));
+    expect(technicalDetails.length).toBeGreaterThan(0);
+    expect(within(detailTable).getByText(/availability-line-off/)).not.toBeVisible();
+    expect(within(detailTable).getByText(/roster-exception-001/)).not.toBeVisible();
+    await user.click(technicalDetails[0]);
+    expect(within(detailTable).getByText(/availability-line-off/)).toBeVisible();
+    expect(within(detailTable).getByText(/roster-exception-001/)).toBeVisible();
     expect(
       within(detailTable).getByText(/Lịch rảnh\/bận đã được áp dụng vào lịch nháp/),
     ).toBeInTheDocument();

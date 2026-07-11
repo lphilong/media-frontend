@@ -15,12 +15,15 @@ import type {
 } from '@modules/work-schedule/types/work-schedule.types';
 import type { NormalizedApiError } from '@shared/api';
 import {
+  Button,
   ErrorState,
   LoadingState,
   MetadataSection,
   PermissionDeniedState,
   ReadOnlyFieldGrid,
+  SensitiveActionDialog,
   StatusBadge,
+  TechnicalDetailsDisclosure,
   useMutationFeedback,
 } from '@shared/components/primitives';
 import {
@@ -28,7 +31,7 @@ import {
   useCurrentActorCapabilities,
   type CapabilityMissingReason,
 } from '@shared/auth/current-actor-capabilities';
-import { formatBusinessTimestamp, readReferenceDisplay } from '@shared/formatting/formatters';
+import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type MonthlyRosterPublishReviewProps = {
   roster: MonthlyRosterRecord;
@@ -37,9 +40,6 @@ type MonthlyRosterPublishReviewProps = {
 };
 
 type Freshness = 'generatedReady' | 'staleRefresh';
-
-const formatNullable = (value?: string | number | null): string =>
-  value === null || value === undefined || value === '' ? '-' : String(value);
 
 const formatNullableTimestamp = (value?: string | number | null): string =>
   value ? formatBusinessTimestamp(value) : '-';
@@ -52,22 +52,11 @@ const resolveFreshness = (preview: MonthlyRosterPreview): Freshness => {
   return 'generatedReady';
 };
 
-const truncateFingerprint = (value?: string | null): string => {
-  if (!value) {
-    return '-';
-  }
-
-  return value.length > 20 ? `${value.slice(0, 10)}...${value.slice(-8)}` : value;
-};
-
-const Fingerprint = ({ value }: { value?: string | null }): JSX.Element => (
-  <span className="block max-w-full break-all font-mono" title={value ?? undefined}>
-    {truncateFingerprint(value)}
-  </span>
-);
-
 const countBlockers = (preview?: MonthlyRosterPreview): number =>
   (preview?.rows ?? []).reduce((total, row) => total + row.blockers.length, 0);
+
+const countWarnings = (preview?: MonthlyRosterPreview): number =>
+  (preview?.rows ?? []).reduce((total, row) => total + row.warnings.length, 0);
 
 const countExceptions = (preview?: MonthlyRosterPreview): number =>
   preview
@@ -132,6 +121,7 @@ export const MonthlyRosterPublishReview = ({
 
   const preview = previewQuery.data;
   const blockerCount = countBlockers(preview);
+  const warningCount = countWarnings(preview);
   const exceptionCount = countExceptions(preview);
   const freshness = preview ? resolveFreshness(preview) : undefined;
   const publishError = publishMutation.error as NormalizedApiError | null;
@@ -257,13 +247,9 @@ export const MonthlyRosterPublishReview = ({
 
   const renderDisabledPublishButton = (): JSX.Element => (
     <div className="mt-3 flex justify-end">
-      <button
-        type="button"
-        className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-        disabled
-      >
+      <Button variant="primary" disabled>
         {t('work-schedule:monthlyRosters.publish.actions.openConfirmation')}
-      </button>
+      </Button>
     </div>
   );
 
@@ -285,19 +271,15 @@ export const MonthlyRosterPublishReview = ({
                 label: t('work-schedule:monthlyRosters.publish.summary.publishedAt'),
                 value: formatNullableTimestamp(roster.publishedAt),
               },
-              {
-                key: 'published-by',
-                label: t('work-schedule:monthlyRosters.publish.summary.publishedBy'),
-                value: formatNullable(roster.publishedByUserId),
-              },
-              {
-                key: 'generation-run',
-                label: t('work-schedule:monthlyRosters.publish.summary.generationRunId'),
-                value: formatNullable(roster.publishGenerationRunId),
-                monospace: true,
-              },
             ]}
-            columns={3}
+            columns={1}
+          />
+          <TechnicalDetailsDisclosure
+            label={t('work-schedule:monthlyRosters.publish.summary.adminMetadata')}
+            details={{
+              publishedByUserId: roster.publishedByUserId,
+              publishGenerationRunId: roster.publishGenerationRunId,
+            }}
           />
           <div className="rounded border border-border bg-panel px-3 py-2 text-sm text-muted">
             {publishDisabledReason}
@@ -382,11 +364,18 @@ export const MonthlyRosterPublishReview = ({
               },
               {
                 key: 'conflicts',
-                label: t('work-schedule:monthlyRosters.publish.confirmation.conflictBlockerCount'),
-                value: t('work-schedule:monthlyRosters.publish.confirmation.issueCount', {
-                  conflicts: preview.summary.totalConflicts,
-                  blockers: blockerCount,
-                }),
+                label: t('work-schedule:monthlyRosters.preview.detail.conflicts'),
+                value: String(preview.summary.totalConflicts),
+              },
+              {
+                key: 'blockers',
+                label: t('work-schedule:monthlyRosters.preview.detail.blockers'),
+                value: String(blockerCount),
+              },
+              {
+                key: 'warnings',
+                label: t('work-schedule:monthlyRosters.preview.detail.warnings'),
+                value: String(warningCount),
               },
               {
                 key: 'readiness',
@@ -430,6 +419,11 @@ export const MonthlyRosterPublishReview = ({
               <li>
                 {t('work-schedule:monthlyRosters.publish.readiness.checklist.issues', {
                   count: preview.summary.totalConflicts + blockerCount,
+                })}
+              </li>
+              <li>
+                {t('work-schedule:monthlyRosters.publish.readiness.checklist.warnings', {
+                  count: warningCount,
                 })}
               </li>
             </ul>
@@ -481,134 +475,64 @@ export const MonthlyRosterPublishReview = ({
               ]}
               columns={2}
             />
-            <details className="mt-3">
-              <summary className="cursor-pointer text-sm font-semibold text-text">
-                {t('work-schedule:monthlyRosters.publish.summary.adminMetadata')}
-              </summary>
-              <div className="pt-3">
-                <ReadOnlyFieldGrid
-                  fields={[
-                    {
-                      key: 'generation-run',
-                      label: t('work-schedule:monthlyRosters.publish.summary.generationRunId'),
-                      value: formatNullable(lastPublishResult.sourceGenerationRunId),
-                      monospace: true,
-                    },
-                    {
-                      key: 'computed-preview-hash',
-                      label: t('work-schedule:monthlyRosters.preview.admin.expectedFingerprint'),
-                      value: <Fingerprint value={lastPublishResult.computedPreviewHash} />,
-                    },
-                  ]}
-                  columns={2}
-                />
-              </div>
-            </details>
-          </div>
-        ) : null}
-
-        {confirming && preview ? (
-          <div className="rounded border border-accent bg-panel p-4">
-            <h3 className="text-sm font-semibold text-text">
-              {t('work-schedule:monthlyRosters.publish.confirmation.title')}
-            </h3>
-            <p className="mt-1 text-sm text-muted">
-              {t('work-schedule:monthlyRosters.publish.confirmation.copy')}
-            </p>
-            <ReadOnlyFieldGrid
-              fields={[
-                {
-                  key: 'month',
-                  label: t('work-schedule:monthlyRosters.fields.rosterMonth'),
-                  value: roster.rosterMonth,
-                },
-                {
-                  key: 'target',
-                  label: t('work-schedule:monthlyRosters.fields.target'),
-                  value: `${t(
-                    `work-schedule:monthlyRosters.targetTypes.${roster.targetType}`,
-                  )}: ${readReferenceDisplay(
-                    roster.targetRef,
-                    roster.targetOrgUnitId ?? roster.targetTalentGroupId,
-                  )}`,
-                },
-                {
-                  key: 'pattern',
-                  label: t('work-schedule:monthlyRosters.fields.workPatternId'),
-                  value: roster.workPatternId,
-                  monospace: true,
-                },
-                {
-                  key: 'calendar',
-                  label: t('work-schedule:monthlyRosters.fields.holidayCalendarId'),
-                  value: roster.holidayCalendarId,
-                  monospace: true,
-                },
-                {
-                  key: 'eligible',
-                  label: t('work-schedule:monthlyRosters.publish.confirmation.eligibleEmployees'),
-                  value: String(preview.summary.totalEligibleProfiles),
-                },
-                {
-                  key: 'generated',
-                  label: t('work-schedule:monthlyRosters.publish.confirmation.generatedCandidates'),
-                  value: String(preview.summary.totalCandidateShiftsAfterExceptions),
-                },
-                {
-                  key: 'exceptions',
-                  label: t('work-schedule:monthlyRosters.publish.confirmation.exceptionCount'),
-                  value: String(exceptionCount),
-                },
-                {
-                  key: 'issues',
-                  label: t(
-                    'work-schedule:monthlyRosters.publish.confirmation.conflictBlockerCount',
-                  ),
-                  value: t('work-schedule:monthlyRosters.publish.confirmation.issueCount', {
-                    conflicts: preview.summary.totalConflicts,
-                    blockers: blockerCount,
-                  }),
-                },
-                {
-                  key: 'freshness',
-                  label: t('work-schedule:monthlyRosters.publish.readiness.previewFreshness'),
-                  value: t(`work-schedule:monthlyRosters.preview.freshness.${freshness}`),
-                },
-              ]}
-              columns={3}
+            <TechnicalDetailsDisclosure
+              className="mt-3 text-left text-xs text-muted"
+              label={t('work-schedule:monthlyRosters.publish.summary.adminMetadata')}
+              details={{
+                sourceGenerationRunId: lastPublishResult.sourceGenerationRunId,
+                computedPreviewHash: lastPublishResult.computedPreviewHash,
+              }}
             />
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                className="rounded border border-border px-3 py-2 text-sm"
-                onClick={() => setConfirming(false)}
-              >
-                {t('common:actions.cancel')}
-              </button>
-              <button
-                type="button"
-                className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
-                disabled={!isPublishAllowed || publishMutation.isPending}
-                onClick={() => void handlePublish()}
-              >
-                {publishMutation.isPending
-                  ? t('work-schedule:monthlyRosters.publish.actions.publishing')
-                  : t('work-schedule:monthlyRosters.publish.actions.confirm')}
-              </button>
-            </div>
           </div>
         ) : null}
 
         <div className="flex justify-end">
-          <button
-            type="button"
-            className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          <Button
+            variant="primary"
             disabled={!isPublishAllowed || publishMutation.isPending}
             onClick={() => setConfirming(true)}
           >
             {t('work-schedule:monthlyRosters.publish.actions.openConfirmation')}
-          </button>
+          </Button>
         </div>
+        <TechnicalDetailsDisclosure
+          label={t('work-schedule:monthlyRosters.preview.detail.technicalDetails')}
+          details={{
+            workPatternId: roster.workPatternId,
+            holidayCalendarId: roster.holidayCalendarId,
+            expectedPreviewHash: preview?.computedPreviewHash,
+          }}
+        />
+        <SensitiveActionDialog
+          open={confirming && Boolean(preview)}
+          title={t('work-schedule:monthlyRosters.publish.confirmation.title')}
+          summary={t('work-schedule:monthlyRosters.publish.confirmation.copy')}
+          riskItems={
+            preview
+              ? [
+                  t('work-schedule:monthlyRosters.publish.confirmation.month', {
+                    month: roster.rosterMonth,
+                  }),
+                  t('work-schedule:monthlyRosters.publish.confirmation.candidateSummary', {
+                    eligible: preview.summary.totalEligibleProfiles,
+                    candidates: preview.summary.totalCandidateShiftsAfterExceptions,
+                  }),
+                  t('work-schedule:monthlyRosters.publish.confirmation.issueSummary', {
+                    conflicts: preview.summary.totalConflicts,
+                    blockers: blockerCount,
+                    warnings: warningCount,
+                  }),
+                  t('work-schedule:monthlyRosters.publish.confirmation.plannedScheduleBoundary'),
+                ]
+              : []
+          }
+          confirmLabel={t('work-schedule:monthlyRosters.publish.actions.confirm')}
+          cancelLabel={t('common:actions.cancel')}
+          tone="critical"
+          isSubmitting={publishMutation.isPending}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => void handlePublish()}
+        />
       </div>
     </MetadataSection>
   );

@@ -301,6 +301,7 @@ describe('monthly roster slice B shell surfaces', () => {
 
   it('submits backend-shaped create draft payload with fixed timezone', async () => {
     const user = userEvent.setup();
+    const { current: planningMonth } = rosterPlanningWindow();
     let capturedBody: Record<string, unknown> | null = null;
     const capturedReferenceKeys: Record<string, string[]> = {
       orgUnit: [],
@@ -350,7 +351,7 @@ describe('monthly roster slice B shell surfaces', () => {
 
     await user.type(
       form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
-      '2026-06',
+      planningMonth,
     );
     await selectPickerOption(user, 'monthly-roster-org-unit', /SALES/);
     await selectPickerOption(user, 'monthly-roster-work-pattern', /PATTERN_ACTIVE/);
@@ -363,7 +364,7 @@ describe('monthly roster slice B shell surfaces', () => {
 
     await waitFor(() => expect(capturedBody).not.toBeNull());
     expect(capturedBody).toMatchObject({
-      rosterMonth: '2026-06',
+      rosterMonth: planningMonth,
       timezone: 'Asia/Ho_Chi_Minh',
       targetType: 'ORG_UNIT',
       targetMode: 'EXACT_ONLY',
@@ -389,6 +390,7 @@ describe('monthly roster slice B shell surfaces', () => {
 
   it('switches Monthly Roster target type and submits Talent Group target payload', async () => {
     const user = userEvent.setup();
+    const { current: planningMonth } = rosterPlanningWindow();
     let capturedBody: Record<string, unknown> | null = null;
     useRosterReferenceHandlers();
     server.use(
@@ -437,7 +439,7 @@ describe('monthly roster slice B shell surfaces', () => {
 
     await user.type(
       form.getByLabelText(i18n.t('work-schedule:monthlyRosters.fields.rosterMonth')),
-      '2026-06',
+      planningMonth,
     );
     await selectPickerOption(user, 'monthly-roster-org-unit', /SALES/);
     await user.selectOptions(targetType, 'TALENT_GROUP');
@@ -453,7 +455,7 @@ describe('monthly roster slice B shell surfaces', () => {
 
     await waitFor(() => expect(capturedBody).not.toBeNull());
     expect(capturedBody).toMatchObject({
-      rosterMonth: '2026-06',
+      rosterMonth: planningMonth,
       targetType: 'TALENT_GROUP',
       targetMode: 'EXACT_ONLY',
       targetTalentGroupId: 'tg-prime',

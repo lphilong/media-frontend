@@ -13,6 +13,7 @@ import type {
   WorkScheduleRequestBatchLine,
   WorkScheduleRequestBatchStatus,
 } from '@modules/work-schedule/types/work-schedule.types';
+import type { NormalizedApiError } from '@shared/api';
 import {
   hasPermission,
   hasScopeGrant,
@@ -21,13 +22,18 @@ import {
 } from '@shared/auth/current-actor-capabilities';
 import {
   AppliedFilterChips,
+  Button,
   CursorPager,
   EmptyState,
   ErrorState,
   FilterToolbar,
   LoadingState,
   PageContainer,
+  PageHeader,
+  PermissionDeniedState,
+  SensitiveActionDialog,
   StatusBadge,
+  TechnicalDetailsDisclosure,
 } from '@shared/components/primitives';
 
 const QUEUE_LIMIT = 50;
@@ -55,6 +61,8 @@ const getReferenceLabel = (
   fallback: string,
 ): string => ref?.displayName ?? ref?.name ?? ref?.title ?? ref?.code ?? fallback;
 
+type DecisionAction = 'approve' | 'reject' | 'cancel';
+
 export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
   const { t } = useTranslation(['work-schedule']);
   const capabilitiesQuery = useCurrentActorCapabilities();
@@ -69,6 +77,7 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
   const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
   const [approvalNote, setApprovalNote] = useState('');
   const [decisionReason, setDecisionReason] = useState('');
+  const [pendingDecisionAction, setPendingDecisionAction] = useState<DecisionAction | null>(null);
   const resetQueueSelection = (): void => {
     setSelectedBatchId(undefined);
     setSelectedLineIds([]);
@@ -90,6 +99,12 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
   const approveMutation = useApproveWorkScheduleRequestBatchLinesMutation();
   const rejectMutation = useRejectWorkScheduleRequestBatchLinesMutation();
   const cancelMutation = useCancelWorkScheduleRequestBatchLinesMutation();
+  const isDecisionPending =
+    approveMutation.isPending || rejectMutation.isPending || cancelMutation.isPending;
+  const decisionError =
+    (approveMutation.error as NormalizedApiError | null) ??
+    (rejectMutation.error as NormalizedApiError | null) ??
+    (cancelMutation.error as NormalizedApiError | null);
   const pendingLines = useMemo(
     () => detailQuery.data?.lines.filter((line) => line.status === 'PENDING') ?? [],
     [detailQuery.data],
@@ -132,7 +147,7 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
     setSelectedLineIds([]);
   };
 
-  const runDecision = async (action: 'approve' | 'reject' | 'cancel'): Promise<void> => {
+  const runDecision = async (action: DecisionAction): Promise<void> => {
     if (!detailQuery.data || selectedPendingLineIds.length === 0) {
       return;
     }
@@ -145,14 +160,32 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
       ...(action === 'reject' ? { rejectionReason: decisionReason } : {}),
       ...(action === 'cancel' ? { cancellationReason: decisionReason } : {}),
     };
-    if (action === 'approve') {
-      await approveMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
-    } else if (action === 'reject') {
-      await rejectMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
-    } else {
-      await cancelMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
+    try {
+      if (action === 'approve') {
+        await approveMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
+      } else if (action === 'reject') {
+        await rejectMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
+      } else {
+        await cancelMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
+      }
+      setPendingDecisionAction(null);
+      resetDecisionInputs();
+    } catch {
+      // The mutation state renders a business-readable recoverable error and keeps review context.
     }
-    resetDecisionInputs();
+  };
+
+  const requestDecision = (action: DecisionAction): void => {
+    if (selectedPendingLineIds.length === 0) {
+      return;
+    }
+    if ((action === 'reject' || action === 'cancel') && decisionReason.trim().length < 10) {
+      return;
+    }
+    approveMutation.reset();
+    rejectMutation.reset();
+    cancelMutation.reset();
+    setPendingDecisionAction(action);
   };
 
   return (
@@ -160,21 +193,17 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
       <div className="space-y-4">
         <WorkScheduleSubnavigation active="request-batches" />
         <section className="rounded border border-border bg-panel p-4 shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-text">
-                {t('work-schedule:requestBatches.page.title')}
-              </h1>
-              <p className="text-sm text-muted">
-                {t('work-schedule:requestBatches.page.subtitle')}
-              </p>
-            </div>
-            <StatusBadge
-              label={t('work-schedule:requestBatches.copy.adminAuthority')}
-              tone={canDecide ? 'success' : 'neutral'}
-              uppercase={false}
-            />
-          </div>
+          <PageHeader
+            title={t('work-schedule:requestBatches.page.title')}
+            subtitle={t('work-schedule:requestBatches.page.subtitle')}
+            actions={
+              <StatusBadge
+                label={t('work-schedule:requestBatches.copy.adminAuthority')}
+                tone={canDecide ? 'success' : 'neutral'}
+                uppercase={false}
+              />
+            }
+          />
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[minmax(280px,360px)_1fr]">
@@ -234,10 +263,15 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
             </FilterToolbar>
 
             {listQuery.isLoading ? <LoadingState lines={4} /> : null}
-            {listQuery.isError ? (
+            {listQuery.isError &&
+            (listQuery.error as unknown as NormalizedApiError | null)?.permissionDenied ? (
+              <PermissionDeniedState />
+            ) : listQuery.isError ? (
               <ErrorState
                 title={t('work-schedule:requestBatches.states.listErrorTitle')}
                 message={t('work-schedule:requestBatches.states.listErrorMessage')}
+                actionLabel={t('common:actions.retry')}
+                onRetry={() => void listQuery.refetch()}
               />
             ) : null}
             {listQuery.data?.data.length === 0 ? (
@@ -299,10 +333,15 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
 
           <div className="space-y-4 rounded border border-border bg-panel p-4 shadow-sm">
             {detailQuery.isLoading ? <LoadingState lines={5} /> : null}
-            {detailQuery.isError ? (
+            {detailQuery.isError &&
+            (detailQuery.error as unknown as NormalizedApiError | null)?.permissionDenied ? (
+              <PermissionDeniedState />
+            ) : detailQuery.isError ? (
               <ErrorState
                 title={t('work-schedule:requestBatches.states.detailErrorTitle')}
                 message={t('work-schedule:requestBatches.states.detailErrorMessage')}
+                actionLabel={t('common:actions.retry')}
+                onRetry={() => void detailQuery.refetch()}
               />
             ) : null}
             {detailQuery.data ? (
@@ -315,7 +354,7 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                     <p className="text-sm text-muted">
                       {getReferenceLabel(
                         detailQuery.data.submittedByEmploymentProfileRef,
-                        detailQuery.data.submittedByEmploymentProfileId,
+                        t('work-schedule:requestBatches.copy.referenceUnavailable'),
                       )}
                     </p>
                   </div>
@@ -376,35 +415,46 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                         />
                       </label>
                     </div>
+                    {decisionError ? (
+                      <div role="alert" className="rounded border border-danger bg-panel p-3">
+                        <p className="text-sm font-semibold text-danger">
+                          {t('work-schedule:requestBatches.states.decisionErrorTitle')}
+                        </p>
+                        <p className="text-xs text-muted">
+                          {t('work-schedule:requestBatches.states.decisionErrorMessage')}
+                        </p>
+                      </div>
+                    ) : null}
                     <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="rounded bg-accent px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                        disabled={selectedPendingLineIds.length === 0 || approveMutation.isPending}
-                        onClick={() => void runDecision('approve')}
+                      <Button
+                        variant="primary"
+                        disabled={selectedPendingLineIds.length === 0 || isDecisionPending}
+                        onClick={() => requestDecision('approve')}
                       >
                         {t('work-schedule:requestBatches.actions.approveSelected')}
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
+                      </Button>
+                      <Button
+                        variant="secondary"
                         disabled={
-                          selectedPendingLineIds.length === 0 || decisionReason.trim().length < 10
+                          selectedPendingLineIds.length === 0 ||
+                          decisionReason.trim().length < 10 ||
+                          isDecisionPending
                         }
-                        onClick={() => void runDecision('reject')}
+                        onClick={() => requestDecision('reject')}
                       >
                         {t('work-schedule:requestBatches.actions.rejectSelected')}
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded border border-border px-3 py-2 text-sm font-medium text-text disabled:opacity-50"
+                      </Button>
+                      <Button
+                        variant="secondary"
                         disabled={
-                          selectedPendingLineIds.length === 0 || decisionReason.trim().length < 10
+                          selectedPendingLineIds.length === 0 ||
+                          decisionReason.trim().length < 10 ||
+                          isDecisionPending
                         }
-                        onClick={() => void runDecision('cancel')}
+                        onClick={() => requestDecision('cancel')}
                       >
                         {t('work-schedule:requestBatches.actions.cancelSelected')}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : null}
@@ -462,13 +512,15 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                             <td className="px-3 py-3">
                               {getReferenceLabel(
                                 line.memberEmploymentProfileRef,
-                                line.memberEmploymentProfileId,
+                                t('work-schedule:requestBatches.copy.referenceUnavailable'),
                               )}
                             </td>
                             <td className="px-3 py-3">
                               <div>{t(`work-schedule:requests.types.${line.requestType}`)}</div>
                               <div className="text-xs text-muted">
-                                {line.title ?? line.workShiftRef?.title ?? line.workShiftId ?? '-'}
+                                {line.title ??
+                                  line.workShiftRef?.title ??
+                                  t('work-schedule:requestBatches.copy.requestTitleUnavailable')}
                               </div>
                               <div className="text-xs text-muted">
                                 {formatTimestamp(line.requestedStartAt, line.timezone)}
@@ -494,9 +546,22 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                               {line.cancellationReason ? (
                                 <div className="text-xs text-muted">{line.cancellationReason}</div>
                               ) : null}
-                              {line.failureReason ? (
-                                <div className="text-xs text-danger">{line.failureReason}</div>
+                              {line.status === 'FAILED_TO_APPLY' ? (
+                                <div className="text-xs text-danger">
+                                  {t('work-schedule:requestBatches.copy.failedToApply')}
+                                </div>
                               ) : null}
+                              <TechnicalDetailsDisclosure
+                                className="mt-2 text-left text-xs text-muted"
+                                label={t('work-schedule:requestBatches.copy.technicalDetails')}
+                                details={{
+                                  requestBatchLineId: line.id,
+                                  memberEmploymentProfileId: line.memberEmploymentProfileId,
+                                  workShiftId: line.workShiftId,
+                                  appliedWorkShiftId: line.appliedWorkShiftId,
+                                  failureReason: line.failureReason,
+                                }}
+                              />
                             </td>
                           </tr>
                         );
@@ -508,6 +573,37 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
             ) : null}
           </div>
         </section>
+        <SensitiveActionDialog
+          open={pendingDecisionAction !== null}
+          title={
+            pendingDecisionAction
+              ? t(`work-schedule:requestBatches.dialogs.${pendingDecisionAction}.title`)
+              : ''
+          }
+          summary={t('work-schedule:requestBatches.dialogs.summary', {
+            count: selectedPendingLineIds.length,
+          })}
+          riskItems={[
+            pendingDecisionAction === 'approve'
+              ? t('work-schedule:requestBatches.dialogs.approvalRevalidation')
+              : t('work-schedule:requestBatches.dialogs.noShiftMutation'),
+            t('work-schedule:requestBatches.dialogs.backendAuthority'),
+          ]}
+          confirmLabel={
+            pendingDecisionAction
+              ? t(`work-schedule:requestBatches.actions.${pendingDecisionAction}Selected`)
+              : ''
+          }
+          cancelLabel={t('common:actions.cancel')}
+          tone={pendingDecisionAction === 'approve' ? 'warning' : 'critical'}
+          isSubmitting={isDecisionPending}
+          onCancel={() => setPendingDecisionAction(null)}
+          onConfirm={() => {
+            if (pendingDecisionAction) {
+              void runDecision(pendingDecisionAction);
+            }
+          }}
+        />
       </div>
     </PageContainer>
   );

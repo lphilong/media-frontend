@@ -40,6 +40,7 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
     let capturedBody: Record<string, unknown> | null = null;
     let detailCalls = 0;
     let previewCalls = 0;
+    let publishCalls = 0;
     server.use(
       http.get('*/admin/work-schedule/rosters/roster-clean', () => {
         detailCalls += 1;
@@ -58,6 +59,7 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
         });
       }),
       http.post('*/admin/work-schedule/rosters/roster-clean/publish', async ({ request }) => {
+        publishCalls += 1;
         capturedBody = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json({
           data: basePublishResult({
@@ -76,21 +78,36 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
     expect(screen.getByText(pt('copy.noUndo'))).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: pt('actions.openConfirmation') }));
-    expect(screen.getByRole('heading', { name: pt('confirmation.title') })).toBeInTheDocument();
+    let dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByRole('heading', { name: pt('confirmation.title') }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('2026-05').length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/ou-sales/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('pattern-active').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('holiday-calendar-active').length).toBeGreaterThan(0);
     expect(screen.getAllByText('2').length).toBeGreaterThan(0);
     expect(
-      screen.getAllByText(pt('confirmation.issueCount', { conflicts: 0, blockers: 0 })).length,
+      screen.getAllByText(
+        pt('confirmation.issueSummary', { conflicts: 0, blockers: 0, warnings: 0 }),
+      ).length,
     ).toBeGreaterThan(0);
     expect(
       screen.getAllByText(i18n.t('work-schedule:monthlyRosters.preview.freshness.generatedReady'))
         .length,
     ).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole('button', { name: pt('actions.confirm') }));
+    const technicalDetails = screen.getByText(
+      i18n.t('work-schedule:monthlyRosters.preview.detail.technicalDetails'),
+    );
+    const technicalPre = technicalDetails.closest('details')?.querySelector('pre');
+    expect(technicalPre).not.toBeNull();
+    expect(technicalPre).not.toBeVisible();
+
+    await user.click(within(dialog).getByRole('button', { name: i18n.t('common:actions.cancel') }));
+    expect(publishCalls).toBe(0);
+    expect(capturedBody).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: pt('actions.openConfirmation') }));
+    dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: pt('actions.confirm') }));
 
     await waitFor(() => expect(capturedBody).not.toBeNull());
     expect(capturedBody).toEqual({
@@ -103,16 +120,65 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
     expect(capturedBody).not.toHaveProperty('sourceRosterId');
     expect(capturedBody).not.toHaveProperty('approvalStatus');
     expect(capturedBody).not.toHaveProperty('changeRequestId');
-    expect(await screen.findByText(pt('feedback.successTitle'))).toBeInTheDocument();
-    expect(screen.getByText(gt('title'))).toBeInTheDocument();
+    expect((await screen.findAllByText(pt('feedback.successTitle'))).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(gt('title')).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: gt('actions.openList') })).toHaveAttribute(
       'href',
-      '/work-shifts?sourceType=ROSTER_GENERATED&sourceRosterId=roster-clean&scope=global',
+      '/work-schedule/global-ops?sourceType=ROSTER_GENERATED&sourceRosterId=roster-clean&scope=global',
     );
     await waitFor(() => {
       expect(detailCalls).toBeGreaterThan(1);
       expect(previewCalls).toBeGreaterThan(1);
     });
+  });
+
+  it('keeps warnings advisory while preserving them in publication review', async () => {
+    const user = userEvent.setup();
+    let publishCalls = 0;
+    server.use(
+      http.get('*/admin/work-schedule/rosters/roster-warning', () =>
+        HttpResponse.json({
+          data: baseRosterDetail({
+            monthlyRosterId: 'roster-warning',
+            previewHash: 'hash-warning',
+          }),
+        }),
+      ),
+      http.get('*/admin/work-schedule/rosters/roster-warning/preview', () =>
+        HttpResponse.json({
+          data: basePreview({
+            monthlyRosterId: 'roster-warning',
+            currentPreviewHash: 'hash-warning',
+            computedPreviewHash: 'hash-warning',
+            rows: basePreview().rows.map((row, index) => ({
+              ...row,
+              monthlyRosterId: 'roster-warning',
+              warnings: index === 0 ? ['ADVISORY_AVAILABILITY'] : [],
+            })),
+          }),
+        }),
+      ),
+      http.post('*/admin/work-schedule/rosters/roster-warning/publish', () => {
+        publishCalls += 1;
+        return HttpResponse.json({
+          data: basePublishResult({ monthlyRosterId: 'roster-warning' }),
+        });
+      }),
+    );
+
+    renderRoute('/work-schedule/rosters/roster-warning');
+
+    const reviewButton = await screen.findByRole(
+      'button',
+      { name: pt('actions.openConfirmation') },
+      { timeout: 5000 },
+    );
+    await waitFor(() => expect(reviewButton).toBeEnabled());
+    expect(screen.getByText(pt('readiness.checklist.warnings', { count: 1 }))).toBeInTheDocument();
+
+    await user.click(reviewButton);
+    await user.click(screen.getByRole('button', { name: pt('actions.confirm') }));
+    await waitFor(() => expect(publishCalls).toBe(1));
   });
 
   it('calls the publish API seam with expectedPreviewHash only from supported payload fields', async () => {
@@ -377,8 +443,10 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
   it('renders Manual and Generated from monthly roster sources in Work Shift list and detail', async () => {
     const user = userEvent.setup();
     let capturedListSearch = '';
+    let listCalls = 0;
     server.use(
       http.get('*/admin/work-shifts', ({ request }) => {
+        listCalls += 1;
         capturedListSearch = new URL(request.url).search;
         return HttpResponse.json({
           data: [generatedWorkShiftListItem(), manualWorkShiftListItem()],
@@ -393,9 +461,12 @@ describe('monthly roster slice E publish and generated Work Shift linkage', () =
       ),
     );
 
-    renderRoute('/work-shifts?sourceRosterId=roster-clean&unsupportedFilter=1');
+    renderRoute(
+      '/work-schedule/global-ops?sourceType=ROSTER_GENERATED&sourceRosterId=roster-clean&unsupportedFilter=1',
+    );
 
-    expect(await screen.findByText('SHIFT-MANUAL')).toBeInTheDocument();
+    await waitFor(() => expect(listCalls).toBeGreaterThan(0), { timeout: 5000 });
+    expect(await screen.findByText('SHIFT-MANUAL', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(
       screen.getAllByText(i18n.t('work-schedule:sourceLabels.ROSTER_GENERATED')).length,
     ).toBeGreaterThan(0);

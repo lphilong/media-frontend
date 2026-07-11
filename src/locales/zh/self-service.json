@@ -233,6 +233,10 @@
     "CANCELLED": "已取消",
     "ARCHIVED": "已归档"
   },
+  "workShiftFilters": {
+    "status": "正式班次状态",
+    "allStatuses": "全部正式班次状态"
+  },
   "eventStatus": {
     "PLANNED": "已计划",
     "CONFIRMED": "已确认",

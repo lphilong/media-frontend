@@ -216,6 +216,10 @@
     "CANCELLED": "Cancelled",
     "ARCHIVED": "Archived"
   },
+  "workShiftFilters": {
+    "status": "Official shift status",
+    "allStatuses": "All official shift statuses"
+  },
   "eventStatus": {
     "PLANNED": "Planned",
     "CONFIRMED": "Confirmed",
