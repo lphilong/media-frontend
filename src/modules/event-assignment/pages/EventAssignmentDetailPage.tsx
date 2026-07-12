@@ -108,7 +108,7 @@ const readErrorMessage = (
     return t(error.message);
   }
 
-  return error.message;
+  return t(fallbackKey);
 };
 
 const createReferenceMap = (
@@ -158,8 +158,9 @@ export const EventAssignmentDetailPage = (): JSX.Element => {
 
   const detailQuery = useEventDetail(eventId);
   const capabilitiesQuery = useCurrentActorCapabilities();
-  const assignmentsQuery = useEventAssignments(eventId);
-  const bookingsQuery = useEventStudioBookings(eventId);
+  const canLoadChildSections = detailQuery.isSuccess && Boolean(detailQuery.data);
+  const assignmentsQuery = useEventAssignments(eventId, { enabled: canLoadChildSections });
+  const bookingsQuery = useEventStudioBookings(eventId, { enabled: canLoadChildSections });
   const updateMutation = useUpdateEventMutation();
   const rescheduleMutation = useRescheduleEventMutation();
   const replaceAssignmentsMutation = useReplaceEventAssignmentsMutation();

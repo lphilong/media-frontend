@@ -75,7 +75,7 @@ const readErrorMessage = (
     return t(error.message);
   }
 
-  return error.message;
+  return t(fallbackKey);
 };
 
 const readLifecycleConfirmKey = (action: PlatformAccountLifecycleAction): string => {

@@ -1,5 +1,5 @@
 import { Plus, Send, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -29,6 +29,7 @@ import {
   SensitiveActionDialog,
   TechnicalDetailsDisclosure,
 } from '@shared/components/primitives';
+import type { NormalizedApiError } from '@shared/api';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
 type TargetOption = {
@@ -104,6 +105,8 @@ export const ManagerAvailabilityPanel = ({
   const [cancelReason, setCancelReason] = useState('');
   const [cancellation, setCancellation] = useState<ManagerSchedulingCancellation | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<NormalizedApiError | null>(null);
+  const submitInFlight = useRef(false);
 
   const targetOptions = useMemo<TargetOption[]>(() => {
     const orgUnitOptions = context.scopes.orgUnits.map((scope) => ({
@@ -160,6 +163,7 @@ export const ManagerAvailabilityPanel = ({
   useEffect(() => {
     setDraftLines([]);
     setValidationMessage(null);
+    setSubmitError(null);
   }, [targetKey]);
 
   const updateLine = (localId: string, patch: Partial<DraftAvailabilityLine>): void => {
@@ -236,37 +240,59 @@ export const ManagerAvailabilityPanel = ({
   };
 
   const submitDraft = async (): Promise<void> => {
+    if (submitInFlight.current) {
+      return;
+    }
     const validLines = validateDraft();
     if (!validLines || !selectedTarget) {
       return;
     }
-    const batch = await submitMutation.mutateAsync({
-      payload: {
-        periodMonth,
-        targetType: selectedTarget.targetType,
-        targetMode: 'EXACT_ONLY',
-        targetOrgUnitId: selectedTarget.targetOrgUnitId,
-        targetTalentGroupId: selectedTarget.targetTalentGroupId,
-        clientToken: `manager-availability-ui-${Date.now()}`,
-        note: batchNote,
-        lines: validLines.map((line) => ({
-          memberEmploymentProfileId: line.memberEmploymentProfileId,
-          availabilityType: line.availabilityType,
-          taxonomyCode: line.taxonomyCode,
-          availabilityDate: line.dateRangeStart === line.dateRangeEnd ? line.dateRangeStart : null,
-          dateRangeStart: line.dateRangeStart,
-          dateRangeEnd: line.dateRangeEnd,
-          preferredStartLocalTime:
-            line.availabilityType === 'PREFERRED_TIME' ? line.preferredStartLocalTime : null,
-          preferredEndLocalTime:
-            line.availabilityType === 'PREFERRED_TIME' ? line.preferredEndLocalTime : null,
-          reason: line.reason,
-        })),
-      },
-    });
-    setSelectedBatchId(batch.id);
-    setDraftLines([]);
-    setBatchNote('');
+    submitInFlight.current = true;
+    setSubmitError(null);
+    try {
+      const batch = await submitMutation.mutateAsync({
+        payload: {
+          periodMonth,
+          targetType: selectedTarget.targetType,
+          targetMode: 'EXACT_ONLY',
+          targetOrgUnitId: selectedTarget.targetOrgUnitId,
+          targetTalentGroupId: selectedTarget.targetTalentGroupId,
+          clientToken: `manager-availability-ui-${Date.now()}`,
+          note: batchNote,
+          lines: validLines.map((line) => ({
+            memberEmploymentProfileId: line.memberEmploymentProfileId,
+            availabilityType: line.availabilityType,
+            taxonomyCode: line.taxonomyCode,
+            ...(line.dateRangeStart === line.dateRangeEnd
+              ? { availabilityDate: line.dateRangeStart }
+              : {
+                  dateRangeStart: line.dateRangeStart,
+                  dateRangeEnd: line.dateRangeEnd,
+                }),
+            ...(line.availabilityType === 'PREFERRED_TIME'
+              ? {
+                  preferredStartLocalTime: line.preferredStartLocalTime,
+                  preferredEndLocalTime: line.preferredEndLocalTime,
+                }
+              : {}),
+            reason: line.reason,
+          })),
+        },
+      });
+      setSelectedBatchId(batch.id);
+      setDraftLines([]);
+      setBatchNote('');
+    } catch (error) {
+      const normalized = error as NormalizedApiError;
+      setSubmitError(normalized);
+      setValidationMessage(
+        normalized.code === 'WORK_SCHEDULE_VALIDATION_ERROR'
+          ? t('manager-workspace:availability.validation.dateRepresentation')
+          : t('manager-workspace:availability.validation.submitFailed'),
+      );
+    } finally {
+      submitInFlight.current = false;
+    }
   };
 
   const requestBatchCancellation = (): void => {
@@ -403,9 +429,18 @@ export const ManagerAvailabilityPanel = ({
           </div>
 
           {validationMessage ? (
-            <div className="rounded border border-danger bg-danger/10 px-3 py-2 text-sm text-danger">
+            <div
+              className="rounded border border-danger bg-danger/10 px-3 py-2 text-sm text-danger"
+              role="alert"
+            >
               {validationMessage}
             </div>
+          ) : null}
+          {submitError?.requestId ? (
+            <TechnicalDetailsDisclosure
+              label={t('manager-workspace:technical.label')}
+              details={{ requestId: submitError.requestId, code: submitError.code ?? null }}
+            />
           ) : null}
 
           {draftLines.map((line, index) => (
@@ -502,7 +537,7 @@ export const ManagerAvailabilityPanel = ({
                       updateLine(line.localId, {
                         dateRangeStart: event.target.value,
                         availabilityDate:
-                          event.target.value === line.dateRangeEnd ? event.target.value : null,
+                          event.target.value === line.dateRangeEnd ? event.target.value : undefined,
                       })
                     }
                   />
@@ -517,7 +552,9 @@ export const ManagerAvailabilityPanel = ({
                       updateLine(line.localId, {
                         dateRangeEnd: event.target.value,
                         availabilityDate:
-                          event.target.value === line.dateRangeStart ? event.target.value : null,
+                          event.target.value === line.dateRangeStart
+                            ? event.target.value
+                            : undefined,
                       })
                     }
                   />

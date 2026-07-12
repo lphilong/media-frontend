@@ -339,7 +339,8 @@
       "removeLine": "Remove",
       "submit": "Submit availability batch",
       "cancelBatch": "取消待处理批次",
-      "cancelLine": "取消待处理行"
+      "cancelLine": "取消待处理行",
+      "loadMore": "加载更多"
     },
     "lineTitle": "Availability line {{index}}",
     "batches": {
@@ -363,7 +364,9 @@
       "memberRequired": "Choose a managed member.",
       "reasonRequired": "Reason is required.",
       "dateRequired": "Start and end date are required.",
-      "dateOrder": "End date must be the same as or after start date.",
+      "dateOrder": "结束日期必须与开始日期相同或晚于开始日期。",
+      "dateRepresentation": "单日可用性请使用一个日期；日期范围请使用开始和结束日期。",
+      "submitFailed": "无法提交可用性。请检查该行详细信息后重试。",
       "preferredTime": "Preferred time lines need a valid start and end time.",
       "cancelReasonRequired": "Cancellation reason is required.",
       "memberTargetMismatch": "每条可用性行都必须使用所选精确目标中的成员。"
@@ -374,7 +377,9 @@
       "selectBatch": "Select an availability batch.",
       "emptyMembersMessage": "所选精确目标没有返回符合条件的管理成员。",
       "loadingMembers": "Loading eligible members for the selected target...",
-      "memberLoadError": "无法加载符合条件的成员。可用性提交已被阻止。"
+      "memberLoadError": "无法加载符合条件的成员。可用性提交已被阻止。",
+      "batchLoadError": "无法加载可用性历史记录。",
+      "detailLoadError": "无法加载可用性详情。"
     }
   },
   "requests": {
@@ -432,6 +437,7 @@
       "removeLine": "Remove line",
       "cancelBatch": "取消批次",
       "cancelLine": "取消行",
+      "loadMore": "加载更多",
       "add": {
         "CREATE_SHIFT": "Add create",
         "RESCHEDULE_SHIFT": "Add reschedule",
@@ -450,7 +456,8 @@
       "windowOrder": "Requested end must be after requested start.",
       "lineMonth": "Requested line dates must be inside the selected request month.",
       "periodWindow": "Choose the current month or one of the next two months.",
-      "duplicate": "Remove duplicate request lines before submitting."
+      "duplicate": "提交前请删除重复的请求行。",
+      "cancelReason": "请输入至少 10 个字符的取消原因。"
     },
     "feedback": {
       "submitFailed": "Request batch could not be submitted."
@@ -486,6 +493,8 @@
     "contextMessage": "无法加载你的分配工作访问状态。",
     "kpiTitle": "管理 KPI 不可用",
     "kpiMessage": "无法加载管理范围内 KPI 计划。",
+    "kpiDeniedTitle": "管理 KPI 不可用",
+    "kpiDeniedMessage": "你当前的管理分配没有访问这些 KPI 计划的权限。",
     "kpiDetailTitle": "管理 KPI 详情不可用",
     "kpiDetailMessage": "无法加载所选 KPI 计划。"
   }

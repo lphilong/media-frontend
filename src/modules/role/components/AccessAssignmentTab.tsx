@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRef } from 'react';
 
 import {
   useAccessAssignmentApplyMutation,
@@ -71,6 +72,14 @@ import {
 
 type TranslationFn = (key: string, options?: Record<string, unknown>) => string;
 
+type AccessAssignmentApplyOutcome =
+  | 'conflict'
+  | 'noOp'
+  | 'stale'
+  | 'validation'
+  | 'retryable'
+  | 'unexpected';
+
 type AccessAssignmentReferenceLoaders = {
   loadAccessAssignmentLinkedUserOptions: (search: string) => Promise<ReferenceOption[]>;
   loadEventReferenceOptions: (search: string) => Promise<ReferenceOption[]>;
@@ -91,9 +100,8 @@ const assignmentPickerGroupOrder = [
 
 export const AccessAssignmentTab = (): JSX.Element => {
   const { t } = useTranslation(['role', 'common']);
-  const {
-    loadAccessAssignmentLinkedUserOptions,
-  } = useReferenceRegistry<AccessAssignmentReferenceLoaders>();
+  const { loadAccessAssignmentLinkedUserOptions } =
+    useReferenceRegistry<AccessAssignmentReferenceLoaders>();
   const targetsQuery = useAccessAssignmentTargets();
   const previewMutation = useAccessAssignmentPreviewMutation();
   const applyMutation = useAccessAssignmentApplyMutation();
@@ -120,6 +128,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const [previewRequestSignature, setPreviewRequestSignature] = useState<string | null>(null);
   const [autoPreviewSignature, setAutoPreviewSignature] = useState<string | null>(null);
   const [applyResult, setApplyResult] = useState<AccessAssignmentApplyResult | null>(null);
+  const [applyOutcome, setApplyOutcome] = useState<AccessAssignmentApplyOutcome | null>(null);
   const [selectedLifecycleAssignment, setSelectedLifecycleAssignment] =
     useState<AccessAssignmentLifecycleItem | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
@@ -127,12 +136,14 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const [activeStepId, setActiveStepId] = useState<AccessAssignmentWorkflowStepId>('user');
   const [userPickerResetGeneration, setUserPickerResetGeneration] = useState(0);
   const [sensitiveConfirmationOpen, setSensitiveConfirmationOpen] = useState(false);
+  const applyInFlightRef = useRef(false);
 
   const resetPreviewAndApplyState = useCallback(() => {
     setPreviewSignature(null);
     setPreviewRequestSignature(null);
     setAutoPreviewSignature(null);
     setApplyResult(null);
+    setApplyOutcome(null);
     setSensitiveConfirmationOpen(false);
     resetPreviewMutation();
     resetApplyMutation();
@@ -150,6 +161,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
     setPreviewRequestSignature(null);
     setAutoPreviewSignature(null);
     setApplyResult(null);
+    setApplyOutcome(null);
     setSensitiveConfirmationOpen(false);
     setSelectedLifecycleAssignment(null);
     setRevokeReason('');
@@ -279,9 +291,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
   const reasonValue = reason.trim();
   const currentPayload = useMemo(
     () =>
-      selectedUserId &&
-      selectedTarget &&
-      requirementState.canEnterPreview
+      selectedUserId && selectedTarget && requirementState.canEnterPreview
         ? buildAccessAssignmentPayload({
             selectedUserId,
             selectedTarget,
@@ -303,7 +313,10 @@ export const AccessAssignmentTab = (): JSX.Element => {
   );
   const currentSignature = currentPayload ? JSON.stringify(currentPayload) : '';
   const previewResult = previewMutation.data;
-  const userStepComplete = Boolean(selectedUserId && selectedUserOption && !selectedUserOption.disabled);
+  const workflowCompleted = isApplySuccess(applyResult);
+  const userStepComplete = Boolean(
+    selectedUserId && selectedUserOption && !selectedUserOption.disabled,
+  );
   const readiness = deriveAccessAssignmentReadiness({
     currentPayload,
     hasSelectedUser: Boolean(selectedUserId),
@@ -362,7 +375,9 @@ export const AccessAssignmentTab = (): JSX.Element => {
           targetUnavailableNote: t('role:accessAssignment.workflow.target.unavailableNote'),
           targetSensitiveNote: t('role:accessAssignment.workflow.target.sensitiveNote'),
           conditionsTitle: t('role:accessAssignment.workflow.conditions.title'),
-          conditionsIncompleteSummary: t('role:accessAssignment.workflow.conditions.incompleteSummary'),
+          conditionsIncompleteSummary: t(
+            'role:accessAssignment.workflow.conditions.incompleteSummary',
+          ),
           previewTitle: t('role:accessAssignment.workflow.preview.title'),
           previewReadySummary: t('role:accessAssignment.workflow.preview.readySummary'),
           previewEmptySummary: t('role:accessAssignment.workflow.preview.emptySummary'),
@@ -394,20 +409,24 @@ export const AccessAssignmentTab = (): JSX.Element => {
       guidedSteps.map((step) => ({
         id: step.id,
         title: step.title,
-        summary: step.summary,
+        summary: workflowCompleted
+          ? t('role:accessAssignment.workflow.completedSummary')
+          : step.summary,
         note: [
           t(`role:accessAssignment.workflowTone.${step.tone}`),
-          step.isActive ? t('role:accessAssignment.workflow.active') : undefined,
+          step.isActive && !workflowCompleted
+            ? t('role:accessAssignment.workflow.active')
+            : undefined,
           step.note,
         ]
           .filter((value): value is string => Boolean(value))
           .join(' · '),
-        businessTone: step.tone,
-        isActive: step.isActive,
-        isComplete: step.tone === 'success',
+        businessTone: workflowCompleted ? 'success' : step.tone,
+        isActive: workflowCompleted ? false : step.isActive,
+        isComplete: workflowCompleted || step.tone === 'success',
         isDisabled: !step.canNavigate,
       })),
-    [guidedSteps, t],
+    [guidedSteps, t, workflowCompleted],
   );
 
   useEffect(() => {
@@ -415,6 +434,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
     setPreviewRequestSignature(null);
     setAutoPreviewSignature(null);
     setApplyResult(null);
+    setApplyOutcome(null);
     resetPreviewMutation();
   }, [currentSignature, resetPreviewMutation]);
 
@@ -444,11 +464,10 @@ export const AccessAssignmentTab = (): JSX.Element => {
       if (normalizedSearch.length > 0 && normalizedSearch.length < 2) {
         return Promise.resolve([]);
       }
-      return loadAccessAssignmentLinkedUserOptions(normalizedSearch).then(
-        (options) =>
-          sanitizeAssignmentReferenceOptions(
-            normalizedSearch ? options : options.slice(0, DEFAULT_USER_SUGGESTION_LIMIT),
-          ),
+      return loadAccessAssignmentLinkedUserOptions(normalizedSearch).then((options) =>
+        sanitizeAssignmentReferenceOptions(
+          normalizedSearch ? options : options.slice(0, DEFAULT_USER_SUGGESTION_LIMIT),
+        ),
       );
     },
     [loadAccessAssignmentLinkedUserOptions],
@@ -467,9 +486,7 @@ export const AccessAssignmentTab = (): JSX.Element => {
     } catch (error) {
       notifyError(error as unknown as NormalizedApiError);
     } finally {
-      setPreviewRequestSignature((current) =>
-        current === requestSignature ? null : current,
-      );
+      setPreviewRequestSignature((current) => (current === requestSignature ? null : current));
     }
   }, [canPreview, currentPayload, currentSignature, notifyError, previewMutation]);
 
@@ -500,19 +517,26 @@ export const AccessAssignmentTab = (): JSX.Element => {
   ]);
 
   const runApply = useCallback(async () => {
-    if (!currentPayload || !canApply) {
+    if (!currentPayload || !canApply || workflowCompleted || applyInFlightRef.current) {
       return;
     }
+
+    applyInFlightRef.current = true;
     try {
       const result = await applyMutation.mutateAsync(currentPayload);
       setApplyResult(result);
       if (isApplySuccess(result)) {
+        setApplyOutcome(null);
         notifySuccess('role:accessAssignment.feedback.applied');
+      } else {
+        setApplyOutcome(getApplyResultOutcome(result));
       }
     } catch (error) {
-      notifyError(error as unknown as NormalizedApiError);
+      setApplyOutcome(getApplyErrorOutcome(error as NormalizedApiError));
+    } finally {
+      applyInFlightRef.current = false;
     }
-  }, [applyMutation, canApply, currentPayload, notifyError, notifySuccess]);
+  }, [applyMutation, canApply, currentPayload, notifySuccess, workflowCompleted]);
 
   const runRevoke = useCallback(async () => {
     const reasonText = revokeReason.trim();
@@ -623,79 +647,91 @@ export const AccessAssignmentTab = (): JSX.Element => {
     }
   };
 
-  const footerActions =
-    activeStepId === 'user' ? (
+  const startAnotherAssignment = (): void => {
+    applyInFlightRef.current = false;
+    setSelectedUserId(undefined);
+    setSelectedUserOption(undefined);
+    setMode('BUNDLE');
+    resetUserBoundState();
+    setActiveStepId('user');
+    setUserPickerResetGeneration((generation) => generation + 1);
+  };
+
+  const footerActions = workflowCompleted ? (
+    <>
+      <Button variant="primary" onClick={startAnotherAssignment}>
+        {t('role:accessAssignment.completion.assignAnother')}
+      </Button>
+      <Button
+        variant="secondary"
+        onClick={() =>
+          document
+            .getElementById('role-assignment-selected-user-detail')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      >
+        {t('role:accessAssignment.completion.viewEffectiveAccess')}
+      </Button>
+    </>
+  ) : activeStepId === 'user' ? (
+    <Button
+      variant="primary"
+      disabled={!userStepComplete}
+      onClick={() => setActiveStepId('target')}
+    >
+      {t('role:accessAssignment.footer.continue')}
+    </Button>
+  ) : activeStepId === 'target' ? (
+    <>
+      <Button variant="secondary" onClick={() => setActiveStepId('user')}>
+        {t('role:accessAssignment.footer.back')}
+      </Button>
       <Button
         variant="primary"
-        disabled={!userStepComplete}
-        onClick={() => setActiveStepId('target')}
+        disabled={!targetStepComplete}
+        onClick={() => setActiveStepId('conditions')}
       >
         {t('role:accessAssignment.footer.continue')}
       </Button>
-    ) : activeStepId === 'target' ? (
-      <>
-        <Button
-          variant="secondary"
-          onClick={() => setActiveStepId('user')}
-        >
-          {t('role:accessAssignment.footer.back')}
-        </Button>
-        <Button
-          variant="primary"
-          disabled={!targetStepComplete}
-          onClick={() => setActiveStepId('conditions')}
-        >
-          {t('role:accessAssignment.footer.continue')}
-        </Button>
-      </>
-    ) : activeStepId === 'conditions' ? (
-      <>
-        <Button
-          variant="secondary"
-          onClick={() => setActiveStepId('target')}
-        >
-          {t('role:accessAssignment.footer.back')}
-        </Button>
-        <Button
-          variant="primary"
-          disabled={!conditionsStepComplete}
-          onClick={() => setActiveStepId('preview')}
-        >
-          {t('role:accessAssignment.footer.continueToPreview')}
-        </Button>
-      </>
-    ) : (
-      <>
-        <Button
-          variant="secondary"
-          onClick={() => setActiveStepId('conditions')}
-        >
-          {t('role:accessAssignment.footer.back')}
-        </Button>
-        <Button
-          variant="primary"
-          disabled={!canPreview}
-          onClick={() => void runPreview()}
-        >
-          {t('role:accessAssignment.previewButton')}
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={!canApply}
-          onClick={() => {
-            if (targetNeedsSensitiveConfirmation) {
-              setSensitiveConfirmationOpen(true);
-              return;
-            }
-            void runApply();
-          }}
-          loading={applyMutation.isPending}
-          loadingLabel={t('role:accessAssignment.applyPending')}
-        >
-          {t('role:accessAssignment.applyButton')}
-        </Button>
-      </>
-    );
+    </>
+  ) : activeStepId === 'conditions' ? (
+    <>
+      <Button variant="secondary" onClick={() => setActiveStepId('target')}>
+        {t('role:accessAssignment.footer.back')}
+      </Button>
+      <Button
+        variant="primary"
+        disabled={!conditionsStepComplete}
+        onClick={() => setActiveStepId('preview')}
+      >
+        {t('role:accessAssignment.footer.continueToPreview')}
+      </Button>
+    </>
+  ) : (
+    <>
+      <Button variant="secondary" onClick={() => setActiveStepId('conditions')}>
+        {t('role:accessAssignment.footer.back')}
+      </Button>
+      <Button variant="primary" disabled={!canPreview} onClick={() => void runPreview()}>
+        {t('role:accessAssignment.previewButton')}
+      </Button>
+      <Button
+        variant="secondary"
+        disabled={!canApply || applyMutation.isPending}
+        onClick={() => {
+          if (targetNeedsSensitiveConfirmation) {
+            setSensitiveConfirmationOpen(true);
+            return;
+          }
+          void runApply();
+        }}
+        loading={applyMutation.isPending}
+        loadingLabel={t('role:accessAssignment.applyPending')}
+      >
+        {t('role:accessAssignment.applyButton')}
+      </Button>
+    </>
+  );
 
   return (
     <div className="space-y-4">
@@ -790,77 +826,77 @@ export const AccessAssignmentTab = (): JSX.Element => {
               title={t('role:accessAssignment.workflow.target.sectionTitle')}
               subtitle={t('role:accessAssignment.targetSubtitle')}
             >
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setMode('BUNDLE')}
-                className={`rounded border px-3 py-2 text-sm font-medium ${
-                  mode === 'BUNDLE'
-                    ? 'border-accent bg-accent text-white'
-                    : 'border-border bg-panel text-text'
-                }`}
-              >
-                {t('role:accessAssignment.bundleMode')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('ROLE_TEMPLATE')}
-                className={`rounded border px-3 py-2 text-sm font-medium ${
-                  mode === 'ROLE_TEMPLATE'
-                    ? 'border-accent bg-accent text-white'
-                    : 'border-border bg-panel text-text'
-                }`}
-              >
-                {t('role:accessAssignment.roleMode')}
-              </button>
-            </div>
-
-            {activeTargets.length === 0 ? (
-              <EmptyState
-                variant="inline"
-                title={t('role:accessAssignment.noTargetsTitle')}
-                message={t('role:accessAssignment.noTargetsMessage')}
-              />
-            ) : (
-              <AssignmentTargetPicker
-                targets={activeTargets}
-                selectedKey={targetKey}
-                search={targetSearch}
-                mode={mode}
-                onSearchChange={setTargetSearch}
-                onSelect={handleTargetSelect}
-              />
-            )}
-
-            {targets.some((target) => !target.legacyAssignable) ? (
-              <p className="mt-2 text-xs text-muted">
-                {t('role:accessAssignment.legacyTargetsHidden')}
-              </p>
-            ) : null}
-            {hiddenReadinessTargets.length > 0 ? (
-              <p className="mt-2 text-xs text-muted">
-                {t('role:accessAssignment.futureTargetsHidden')}
-              </p>
-            ) : null}
-            {restrictedTargets.length > 0 ? (
-              <div className="mt-3 rounded border border-border bg-bg p-3">
-                <p className="text-sm font-semibold text-text">
-                  {t('role:accessAssignment.restrictedTargetsTitle')}
-                </p>
-                <p className="mt-1 text-xs text-muted">
-                  {t('role:accessAssignment.restrictedTargetsHelp')}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {restrictedTargets.map((target) => (
-                    <StatusBadge
-                      key={toAccessAssignmentTargetKey(target)}
-                      label={formatAccessTargetLabel(target, t)}
-                      tone="warning"
-                    />
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMode('BUNDLE')}
+                  className={`rounded border px-3 py-2 text-sm font-medium ${
+                    mode === 'BUNDLE'
+                      ? 'border-accent bg-accent text-white'
+                      : 'border-border bg-panel text-text'
+                  }`}
+                >
+                  {t('role:accessAssignment.bundleMode')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('ROLE_TEMPLATE')}
+                  className={`rounded border px-3 py-2 text-sm font-medium ${
+                    mode === 'ROLE_TEMPLATE'
+                      ? 'border-accent bg-accent text-white'
+                      : 'border-border bg-panel text-text'
+                  }`}
+                >
+                  {t('role:accessAssignment.roleMode')}
+                </button>
               </div>
-            ) : null}
+
+              {activeTargets.length === 0 ? (
+                <EmptyState
+                  variant="inline"
+                  title={t('role:accessAssignment.noTargetsTitle')}
+                  message={t('role:accessAssignment.noTargetsMessage')}
+                />
+              ) : (
+                <AssignmentTargetPicker
+                  targets={activeTargets}
+                  selectedKey={targetKey}
+                  search={targetSearch}
+                  mode={mode}
+                  onSearchChange={setTargetSearch}
+                  onSelect={handleTargetSelect}
+                />
+              )}
+
+              {targets.some((target) => !target.legacyAssignable) ? (
+                <p className="mt-2 text-xs text-muted">
+                  {t('role:accessAssignment.legacyTargetsHidden')}
+                </p>
+              ) : null}
+              {hiddenReadinessTargets.length > 0 ? (
+                <p className="mt-2 text-xs text-muted">
+                  {t('role:accessAssignment.futureTargetsHidden')}
+                </p>
+              ) : null}
+              {restrictedTargets.length > 0 ? (
+                <div className="mt-3 rounded border border-border bg-bg p-3">
+                  <p className="text-sm font-semibold text-text">
+                    {t('role:accessAssignment.restrictedTargetsTitle')}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    {t('role:accessAssignment.restrictedTargetsHelp')}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {restrictedTargets.map((target) => (
+                      <StatusBadge
+                        key={toAccessAssignmentTargetKey(target)}
+                        label={formatAccessTargetLabel(target, t)}
+                        tone="warning"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </MetadataSection>
           </div>
         ) : activeStepId === 'conditions' ? (
@@ -869,93 +905,101 @@ export const AccessAssignmentTab = (): JSX.Element => {
               title={t('role:accessAssignment.workflow.conditions.sectionTitle')}
               subtitle={t('role:accessAssignment.reasonHelp')}
             >
-            <ScopeResolver
-              requiredScopeTypes={requiredScopeTypes}
-              unsupportedScopeTypes={unsupportedScopeTypes}
-              scopeTargetIds={scopeTargetIds}
-              scopePeriodKeys={scopePeriodKeys}
-              onTargetChange={handleScopeTargetChange}
-              onSelectedTargetChange={handleScopeSelectedTargetChange}
-              onPeriodChange={handleScopePeriodChange}
-            />
-            <label className="mt-4 block">
-              <span className="text-xs font-medium uppercase text-muted">
-                {t('role:accessAssignment.reasonLabel')}
-              </span>
-              <textarea
-                value={reason}
-                onChange={(event) => handleReasonChange(event.target.value)}
-                className="mt-1 min-h-24 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
-                placeholder={t('role:accessAssignment.reasonPlaceholder')}
+              <ScopeResolver
+                requiredScopeTypes={requiredScopeTypes}
+                unsupportedScopeTypes={unsupportedScopeTypes}
+                scopeTargetIds={scopeTargetIds}
+                scopePeriodKeys={scopePeriodKeys}
+                onTargetChange={handleScopeTargetChange}
+                onSelectedTargetChange={handleScopeSelectedTargetChange}
+                onPeriodChange={handleScopePeriodChange}
               />
-            </label>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <label className="block">
+              <label className="mt-4 block">
                 <span className="text-xs font-medium uppercase text-muted">
-                  {t('role:accessAssignment.reviewAtLabel')}
+                  {t('role:accessAssignment.reasonLabel')}
                 </span>
-                <input
-                  type="date"
-                  value={reviewAt}
-                  onChange={(event) => handleReviewAtChange(event.target.value)}
-                  className="mt-1 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+                <textarea
+                  value={reason}
+                  onChange={(event) => handleReasonChange(event.target.value)}
+                  className="mt-1 min-h-24 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+                  placeholder={t('role:accessAssignment.reasonPlaceholder')}
                 />
               </label>
-              <label className="block">
-                <span className="text-xs font-medium uppercase text-muted">
-                  {t('role:accessAssignment.expiresAtLabel')}
-                </span>
-                <input
-                  type="date"
-                  value={expiresAt}
-                  onChange={(event) => handleExpiresAtChange(event.target.value)}
-                  className="mt-1 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
-                />
-              </label>
-            </div>
-            <p className="mt-2 text-xs text-muted">
-              {t('role:accessAssignment.conditionDateHelp')}
-            </p>
-            <ConditionsGuardrailSummary
-              requirementState={requirementState}
-            />
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-medium uppercase text-muted">
+                    {t('role:accessAssignment.reviewAtLabel')}
+                  </span>
+                  <input
+                    type="date"
+                    value={reviewAt}
+                    onChange={(event) => handleReviewAtChange(event.target.value)}
+                    className="mt-1 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-medium uppercase text-muted">
+                    {t('role:accessAssignment.expiresAtLabel')}
+                  </span>
+                  <input
+                    type="date"
+                    value={expiresAt}
+                    onChange={(event) => handleExpiresAtChange(event.target.value)}
+                    className="mt-1 w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+                  />
+                </label>
+              </div>
+              <p className="mt-2 text-xs text-muted">
+                {t('role:accessAssignment.conditionDateHelp')}
+              </p>
+              <ConditionsGuardrailSummary requirementState={requirementState} />
             </MetadataSection>
           </div>
+        ) : workflowCompleted && applyResult ? (
+          <CompletionSummary
+            result={applyResult}
+            selectedUserLabel={selectedUserOption?.label ?? selectedUserId ?? '-'}
+            selectedTargetLabel={selectedTarget ? formatAccessTargetLabel(selectedTarget, t) : '-'}
+            scopeSummary={formatScopeSummary(structuredScopeGrants, t, scopeTargetOptions)}
+          />
         ) : (
           <div data-testid="role-assignment-step-preview">
             <MetadataSection title={t('role:accessAssignment.workflow.preview.sectionTitle')}>
-            <ValidationSummary
-              hasUser={Boolean(selectedUserId)}
-              hasTarget={Boolean(selectedTarget)}
-              hasReason={Boolean(reasonValue)}
-              requirementState={requirementState}
-              previewStale={Boolean(previewResult && !previewMatchesCurrent)}
-            />
-
-            {previewMutation.isPending ? (
-              <div className="mt-3 rounded border border-border bg-bg p-3">
-                <p className="text-sm font-medium text-text">
-                  {t('role:accessAssignment.previewPending')}
-                </p>
-                <LoadingState lines={2} variant="inline" />
-              </div>
-            ) : null}
-
-            {previewMutation.error ? (
-              <ErrorState
-                title={t('role:accessAssignment.previewBlocked')}
-                message={readErrorMessage(t, previewMutation.error as unknown as NormalizedApiError)}
-                variant="inline"
+              <ValidationSummary
+                hasUser={Boolean(selectedUserId)}
+                hasTarget={Boolean(selectedTarget)}
+                hasReason={Boolean(reasonValue)}
+                requirementState={requirementState}
+                previewStale={Boolean(previewResult && !previewMatchesCurrent)}
               />
-            ) : null}
 
-            {previewResult ? (
-              <PreviewSummary
-                result={previewResult}
-                previewMatchesCurrent={previewMatchesCurrent}
-                scopeTargetOptions={scopeTargetOptions}
-              />
-            ) : null}
+              {previewMutation.isPending ? (
+                <div className="mt-3 rounded border border-border bg-bg p-3">
+                  <p className="text-sm font-medium text-text">
+                    {t('role:accessAssignment.previewPending')}
+                  </p>
+                  <LoadingState lines={2} variant="inline" />
+                </div>
+              ) : null}
+
+              {previewMutation.error ? (
+                <ErrorState
+                  title={t('role:accessAssignment.previewBlocked')}
+                  message={readErrorMessage(
+                    t,
+                    previewMutation.error as unknown as NormalizedApiError,
+                  )}
+                  variant="inline"
+                />
+              ) : null}
+
+              {previewResult ? (
+                <PreviewSummary
+                  result={previewResult}
+                  previewMatchesCurrent={previewMatchesCurrent}
+                  scopeTargetOptions={scopeTargetOptions}
+                />
+              ) : null}
             </MetadataSection>
           </div>
         )}
@@ -963,13 +1007,16 @@ export const AccessAssignmentTab = (): JSX.Element => {
 
       <GuidedWorkflowFooter>{footerActions}</GuidedWorkflowFooter>
 
-      {applyResult ? (
+      {applyResult && !workflowCompleted ? (
         <ApplySummary
           result={applyResult}
           reason={reasonValue}
           scopeTargetOptions={scopeTargetOptions}
+          selectedUserLabel={selectedUserOption?.label ?? selectedUserId ?? '-'}
+          selectedTargetLabel={selectedTarget ? formatAccessTargetLabel(selectedTarget, t) : '-'}
         />
       ) : null}
+      {applyOutcome && !workflowCompleted ? <ApplyOutcomeNotice outcome={applyOutcome} /> : null}
       <SensitiveActionDialog
         open={sensitiveConfirmationOpen && Boolean(selectedTarget)}
         title={t('role:accessAssignment.sensitiveConfirm.title')}
@@ -1029,14 +1076,13 @@ const ScopeResolver = ({
   const objectScopeLoaders = useMemo<
     Partial<Record<AccessAssignmentScopeType, (search: string) => Promise<ReferenceOption[]>>>
   >(
-    () =>
-      ({
-        managedTalentGroup: loadTalentGroupReferenceOptions,
-        managedOrgUnit: loadOrgUnitReferenceOptions,
-        assignedPlatformAccount: loadPlatformAccountReferenceOptions,
-        assignedEvent: loadEventReferenceOptions,
-        assignedStudioResource: loadStudioResourceReferenceOptions,
-      }),
+    () => ({
+      managedTalentGroup: loadTalentGroupReferenceOptions,
+      managedOrgUnit: loadOrgUnitReferenceOptions,
+      assignedPlatformAccount: loadPlatformAccountReferenceOptions,
+      assignedEvent: loadEventReferenceOptions,
+      assignedStudioResource: loadStudioResourceReferenceOptions,
+    }),
     [
       loadEventReferenceOptions,
       loadOrgUnitReferenceOptions,
@@ -1084,7 +1130,9 @@ const ScopeResolver = ({
         <div className="grid gap-3 md:grid-cols-2">
           {requiredScopeTypes.map((scopeType) => (
             <div key={scopeType} className="rounded border border-border bg-bg p-3">
-              <p className="text-sm font-semibold text-text">{formatScopeTypeLabel(scopeType, t)}</p>
+              <p className="text-sm font-semibold text-text">
+                {formatScopeTypeLabel(scopeType, t)}
+              </p>
               {unsupportedScopeTypes.includes(scopeType) ? (
                 <p className="mt-2 text-sm text-danger">{t('accessAssignment.scopeUnavailable')}</p>
               ) : isAccessAssignmentScopeWithoutTarget(scopeType) ? (
@@ -1164,11 +1212,14 @@ const UserSelectionDetailCard = ({
   const hasReviewIssue = assignments.some(
     (assignment) =>
       assignment.requiresReview &&
-      (assignment.reviewAt === null || assignment.reviewAt === undefined || assignment.reviewAt === ''),
+      (assignment.reviewAt === null ||
+        assignment.reviewAt === undefined ||
+        assignment.reviewAt === ''),
   );
 
   return (
     <aside
+      id="role-assignment-selected-user-detail"
       className="h-full rounded border border-border bg-bg p-4"
       data-testid="role-assignment-selected-user-detail"
     >
@@ -1452,7 +1503,9 @@ const AssignmentTargetPicker = ({
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-semibold text-text">{formatAccessTargetLabel(target, t)}</p>
+                        <p className="font-semibold text-text">
+                          {formatAccessTargetLabel(target, t)}
+                        </p>
                         <p className="mt-1 text-xs text-muted">
                           {formatTargetOperationalDescription(target, t)}
                         </p>
@@ -1830,10 +1883,14 @@ const ApplySummary = ({
   result,
   reason,
   scopeTargetOptions,
+  selectedUserLabel,
+  selectedTargetLabel,
 }: {
   result: AccessAssignmentApplyResult;
   reason: string;
   scopeTargetOptions: Record<string, ReferenceOption | undefined>;
+  selectedUserLabel: string;
+  selectedTargetLabel: string;
 }): JSX.Element => {
   const { t } = useTranslation('role');
   const appliedAssignments = result.appliedAssignments ?? [];
@@ -1850,6 +1907,16 @@ const ApplySummary = ({
       <ReadOnlyFieldGrid
         columns={3}
         fields={[
+          {
+            key: 'assignee',
+            label: t('accessAssignment.completion.assignee'),
+            value: selectedUserLabel,
+          },
+          {
+            key: 'target',
+            label: t('accessAssignment.completion.accessTarget'),
+            value: selectedTargetLabel,
+          },
           {
             key: 'count',
             label: t('accessAssignment.appliedCount'),
@@ -1905,6 +1972,81 @@ const ApplySummary = ({
         records={readTraceRecords(result.sourceTrace)}
       />
     </MetadataSection>
+  );
+};
+
+const CompletionSummary = ({
+  result,
+  selectedUserLabel,
+  selectedTargetLabel,
+  scopeSummary,
+}: {
+  result: AccessAssignmentApplyResult;
+  selectedUserLabel: string;
+  selectedTargetLabel: string;
+  scopeSummary: string;
+}): JSX.Element => {
+  const { t } = useTranslation('role');
+
+  return (
+    <div className="rounded-lg border border-success/40 bg-success/10 p-5" role="status">
+      <p className="text-lg font-semibold text-success">{t('accessAssignment.completion.title')}</p>
+      <p className="mt-1 text-sm text-muted">{t('accessAssignment.completion.message')}</p>
+      <p className="mt-2 text-sm font-medium text-text">{t('accessAssignment.resultApplied')}</p>
+      <div className="mt-4">
+        <ReadOnlyFieldGrid
+          columns={2}
+          fields={[
+            {
+              key: 'assignee',
+              label: t('accessAssignment.completion.assignee'),
+              value: selectedUserLabel,
+            },
+            {
+              key: 'target',
+              label: t('accessAssignment.completion.accessTarget'),
+              value: selectedTargetLabel,
+            },
+            {
+              key: 'scope',
+              label: t('accessAssignment.normalizedScope'),
+              value: scopeSummary,
+            },
+            {
+              key: 'count',
+              label: t('accessAssignment.appliedCount'),
+              value: String(result.appliedAssignments?.length ?? 0),
+            },
+          ]}
+        />
+      </div>
+      <p className="mt-4 text-sm text-muted">{t('accessAssignment.completion.nextActions')}</p>
+    </div>
+  );
+};
+
+const ApplyOutcomeNotice = ({
+  outcome,
+}: {
+  outcome: AccessAssignmentApplyOutcome;
+}): JSX.Element => {
+  const { t } = useTranslation('role');
+  const danger = outcome === 'retryable' || outcome === 'unexpected';
+
+  return (
+    <div
+      className={`rounded border p-4 ${
+        danger ? 'border-danger/30 bg-panel' : 'border-warning/30 bg-warning/10'
+      }`}
+      role="alert"
+    >
+      <p className={danger ? 'font-semibold text-danger' : 'font-semibold text-text'}>
+        {t(`accessAssignment.applyOutcomes.${outcome}.title`)}
+      </p>
+      <p className="mt-1 text-sm text-muted">
+        {t(`accessAssignment.applyOutcomes.${outcome}.message`)}
+      </p>
+    </div>
   );
 };
 
@@ -2041,6 +2183,30 @@ function isApplySuccess(result: AccessAssignmentApplyResult | null | undefined):
   return result.applied === true && result.applyStatus === 'APPLIED' && blockers.length === 0;
 }
 
+function getApplyResultOutcome(result: AccessAssignmentApplyResult): AccessAssignmentApplyOutcome {
+  const issueCodes = new Set((result.blockers ?? []).map((issue) => issue.code));
+  if (issueCodes.has('DUPLICATE_ACTIVE_ASSIGNMENT')) {
+    return 'noOp';
+  }
+  if (issueCodes.has('SOURCE_CHANGED_AFTER_PREVIEW')) {
+    return 'stale';
+  }
+  if (issueCodes.has('REASON_REQUIRED') || issueCodes.has('REVIEW_AT_REQUIRED')) {
+    return 'validation';
+  }
+  return 'conflict';
+}
+
+function getApplyErrorOutcome(error: NormalizedApiError): AccessAssignmentApplyOutcome {
+  if (error.status === 409) {
+    return 'conflict';
+  }
+  if (error.status === 400 || error.status === 422) {
+    return 'validation';
+  }
+  return error.retryable ? 'retryable' : 'unexpected';
+}
+
 function isLifecycleRevokeSuccess(
   result: AccessAssignmentLifecycleResult | null | undefined,
 ): boolean {
@@ -2140,10 +2306,9 @@ function sanitizeInternalAccessLabel(
 
 function formatAccessTargetLabel(target: AccessAssignmentTargetOption, t: TranslationFn): string {
   const label = readAccessDisplayLabel(target.code, t);
-  return label ?? sanitizeInternalAccessLabel(
-    target.name,
-    t('accessAssignment.displayLabels.unknownAccess'),
-    t,
+  return (
+    label ??
+    sanitizeInternalAccessLabel(target.name, t('accessAssignment.displayLabels.unknownAccess'), t)
   );
 }
 
@@ -2182,19 +2347,13 @@ function formatTargetScopeRequirement(
   return scopes.map((scopeType) => formatScopeTypeLabel(scopeType, t)).join(', ');
 }
 
-function formatTargetAvailability(
-  target: AccessAssignmentTargetOption,
-  t: TranslationFn,
-): string {
+function formatTargetAvailability(target: AccessAssignmentTargetOption, t: TranslationFn): string {
   return t(`accessAssignment.targetAvailability.${target.assignabilityStatus}`, {
     defaultValue: t('accessAssignment.targetAvailability.SYSTEM_CONTROLLED'),
   });
 }
 
-function formatTargetBusinessGroup(
-  target: AccessAssignmentTargetOption,
-  t: TranslationFn,
-): string {
+function formatTargetBusinessGroup(target: AccessAssignmentTargetOption, t: TranslationFn): string {
   if (/TALENT_GROUP_MANAGER|ORG_UNIT_MANAGER|HR_/u.test(target.code)) {
     return t('accessAssignment.targetBusinessGroups.people');
   }
@@ -2480,10 +2639,7 @@ function formatAssignmentAudit(
   return `${action} · ${time} · ${reason}`;
 }
 
-function formatTimestamp(
-  value: number | string | null | undefined,
-  t: TranslationFn,
-): string {
+function formatTimestamp(value: number | string | null | undefined, t: TranslationFn): string {
   if (value === null || value === undefined || value === '') {
     return '-';
   }

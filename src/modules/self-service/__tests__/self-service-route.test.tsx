@@ -497,9 +497,7 @@ describe('/self-service route', () => {
     expect(document.body).not.toHaveTextContent('Không gian nhân sự');
     expect(document.body).not.toHaveTextContent(/workspace|console|account context/i);
     expect(screen.getByTestId('self-service-nav-profile')).toHaveTextContent('Chỉ đọc');
-    expect(screen.getByTestId('self-service-nav-account')).toHaveTextContent(
-      'Chỉ chỉnh tùy chọn',
-    );
+    expect(screen.getByTestId('self-service-nav-account')).toHaveTextContent('Chỉ chỉnh tùy chọn');
     expect(screen.getByTestId('self-service-nav-overview')).toHaveAttribute(
       'aria-selected',
       'true',
@@ -1921,4 +1919,32 @@ describe('/self-service route', () => {
       expect(adminKpiCalls).toBe(0);
     });
   });
+
+  it.each(['en', 'vi', 'zh'] as const)(
+    'uses the localized %s language name for the stored locale without changing its value',
+    async (locale) => {
+      await renderRoute('/self-service', () =>
+        setMockSelfServiceCurrentPerson({
+          employmentProfileId: `ep-locale-${locale}`,
+          employeeCode: `EP-LOCALE-${locale.toUpperCase()}`,
+          displayName: 'Locale Display Staff',
+          employmentStatus: 'ACTIVE',
+          accountEmail: 'locale.display@example.test',
+          accountStatus: 'ACTIVE',
+          accountLinkStatus: 'LINKED',
+          locale,
+          timezone: 'Asia/Saigon',
+        }),
+      );
+
+      await act(async () => {
+        await setLocale(locale);
+      });
+
+      const overview = await screen.findByTestId('self-service-overview');
+      const expectedLabel = i18n.t(`self-service:localeOptions.${locale}`);
+      expect(overview).toHaveTextContent(expectedLabel);
+      expect(overview.textContent ?? '').not.toMatch(new RegExp(`\\b${locale}\\b`, 'u'));
+    },
+  );
 });

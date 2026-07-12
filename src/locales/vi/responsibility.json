@@ -46,17 +46,40 @@
     "reason": "Lý do",
     "reasonPlaceholder": "Ghi chú nghiệp vụ hoặc lý do phân công",
     "helper": "Màn hình này chỉ gán trách nhiệm quản lý và không thay thế gán vai trò.",
+    "accessBoundaryTitle": "Trách nhiệm không phải là quyền truy cập",
+    "reviewHelper": "Kiểm tra các tham chiếu đã chọn và chi tiết trách nhiệm trước khi xác nhận.",
+    "chooseSubjectFirst": "Chọn đối tượng được quản lý trước khi chọn hồ sơ nhân sự phụ trách.",
+    "selectedReference": "Tham chiếu đã chọn",
+    "selectedReferenceUnavailable": "Bản ghi đã chọn không có trong kết quả hiện tại.",
+    "required": "Bắt buộc",
+    "optional": "Tùy chọn",
+    "conditional": "Có điều kiện",
     "permissionHint": "Tài khoản hiện tại không có quyền gán trách nhiệm cho loại đối tượng đang chọn."
   },
   "actions": {
     "create": "Gán trách nhiệm quản lý",
     "creating": "Đang gán...",
+    "review": "Xem lại phân công",
+    "assignAnother": "Gán trách nhiệm khác",
+    "clearSelection": "Xóa lựa chọn",
     "revoke": "Thu hồi",
     "clearSubject": "Bỏ lọc đối tượng"
   },
   "feedback": {
     "created": "Đã gán trách nhiệm quản lý.",
-    "revoked": "Đã thu hồi trách nhiệm quản lý."
+    "revoked": "Đã thu hồi trách nhiệm quản lý.",
+    "createFailed": "Chưa gán được trách nhiệm. Hãy kiểm tra chi tiết và thử lại."
+  },
+  "review": {
+    "title": "Xem lại phân công trách nhiệm",
+    "subject": "Đối tượng được quản lý",
+    "responsible": "Hồ sơ nhân sự phụ trách",
+    "type": "Trách nhiệm",
+    "period": "Thời hạn hiệu lực"
+  },
+  "completion": {
+    "title": "Đã hoàn tất phân công trách nhiệm",
+    "message": "Trách nhiệm đã được ghi nhận. Việc này không cấp quyền truy cập ứng dụng. Chỉ dùng luồng Vai trò/Quyền truy cập riêng khi cần cấp quyền."
   },
   "confirm": {
     "revoke": "Thu hồi phân công quản lý này?",
@@ -77,6 +100,7 @@
     "type": "Loại trách nhiệm",
     "effective": "Hiệu lực",
     "state": "Trạng thái",
+    "actions": "Thao tác",
     "readOnly": "Chỉ đọc"
   },
   "summary": {
@@ -89,6 +113,7 @@
     "inheritedTitle": "Trách nhiệm kế thừa từ nhóm hoặc đơn vị",
     "effectiveRange": "{{from}} đến {{to}}",
     "openEnded": "Không giới hạn",
+    "unavailableRole": "Vai trò trách nhiệm không xác định",
     "primary": "Chính",
     "descendants": "Bao gồm cấp dưới",
     "reviewNeeded": "Cần rà soát",

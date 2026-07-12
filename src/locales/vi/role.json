@@ -343,6 +343,41 @@
     "resultTitle": "Kết quả gán quyền",
     "resultApplied": "Hệ thống đã ghi nhận gán quyền và audit.",
     "resultBlocked": "Hệ thống không ghi nhận vì còn điều kiện chưa đạt.",
+    "completion": {
+      "title": "Đã hoàn tất gán quyền",
+      "message": "Phân quyền đã được ghi nhận. Luồng đã hoàn tất này không thể gửi lại.",
+      "assignee": "Người nhận quyền",
+      "accessTarget": "Gói quyền truy cập",
+      "nextActions": "Xem quyền hiện tại đã được làm mới hoặc bắt đầu một lần gán mới với người dùng và gói quyền mới.",
+      "assignAnother": "Gán gói quyền khác",
+      "viewEffectiveAccess": "Xem quyền hiện tại"
+    },
+    "applyOutcomes": {
+      "conflict": {
+        "title": "Quyền truy cập đã thay đổi trước khi xác nhận",
+        "message": "Chưa ghi nhận phân quyền. Hãy làm mới xem trước và kiểm tra quyền hiện tại trước khi thử lại."
+      },
+      "noOp": {
+        "title": "Quyền truy cập đã có hiệu lực",
+        "message": "Không tạo phân quyền mới vì cùng quyền truy cập đã đang hiệu lực."
+      },
+      "stale": {
+        "title": "Bản xem trước không còn hiện hành",
+        "message": "Chưa ghi nhận phân quyền. Hãy làm mới xem trước và kiểm tra điều kiện đã cập nhật."
+      },
+      "validation": {
+        "title": "Kiểm tra chi tiết phân quyền",
+        "message": "Chưa ghi nhận phân quyền. Các chi tiết hợp lệ được giữ lại; hãy sửa điều kiện cần thiết."
+      },
+      "retryable": {
+        "title": "Chưa thể ghi nhận quyền truy cập",
+        "message": "Chưa ghi nhận phân quyền. Thông tin đã được giữ lại; hãy thử lại sau ít phút."
+      },
+      "unexpected": {
+        "title": "Không thể ghi nhận quyền truy cập",
+        "message": "Chưa ghi nhận phân quyền. Thông tin đã được giữ lại; hãy liên hệ quản trị viên nếu lỗi tiếp diễn."
+      }
+    },
     "appliedCount": "Số bản ghi đã gán",
     "auditTrace": "Audit",
     "effectiveAccessAfterApply": "Quyền sau khi gán",
@@ -388,6 +423,7 @@
     "workflow": {
       "ariaLabel": "Quy trình gán quyền",
       "active": "Bước hiện tại",
+      "completedSummary": "Đã hoàn tất",
       "stepNumber": "Bước {{number}}",
       "user": {
         "title": "Chọn nhân sự",
@@ -462,7 +498,7 @@
     "sensitiveConfirm": {
       "title": "Confirm sensitive access",
       "message": "This access is sensitive or controlled. Review the recipient, scope, and review date before applying.",
-      "cancel": "Cancel",
+      "cancel": "Hủy",
       "confirm": "Confirm apply",
       "pending": "Applying",
       "recipient": "Access recipient",
@@ -470,9 +506,9 @@
       "scope": "Applied scope"
     },
     "targetPicker": {
-      "searchBundleLabel": "Search recommended access bundles",
-      "searchTemplateLabel": "Search manual role templates",
-      "searchPlaceholder": "Search by name, scope, or business group",
+      "searchBundleLabel": "Tìm gói quyền được đề xuất",
+      "searchTemplateLabel": "Tìm mẫu vai trò thủ công",
+      "searchPlaceholder": "Tìm theo tên, phạm vi hoặc nhóm nghiệp vụ",
       "noMatchTitle": "No matching option",
       "noMatchMessage": "Try another keyword or switch between bundles and role templates.",
       "reviewRequired": "Review required",
@@ -489,7 +525,7 @@
       "talentGroupManagerBundle": "Recommended package for assigning Talent group management responsibility with matching access.",
       "orgUnitManagerBundle": "Recommended package for assigning org unit management responsibility with matching access.",
       "auditorBundle": "Gói chỉ đọc để rà soát vận hành, không mở quyền nhạy cảm mặc định.",
-      "viewerAuditor": "Read-only template for operational data review and reconciliation.",
+      "viewerAuditor": "Mẫu chỉ đọc để rà soát và đối soát dữ liệu vận hành.",
       "staffConsoleUser": "Self-service template for personnel to view their own data.",
       "staffConsoleBundle": "Self-service package for personnel to view their own data.",
       "defaultBundle": "Recommended access bundle for quickly assigning a configured capability group.",
@@ -520,7 +556,7 @@
     "pickerGroupHelp": {
       "REQUIRES_SCOPE_SELECTION": "These options require a specific scope before preview.",
       "READY_TO_ASSIGN": "Operational options can be previewed after conditions are complete.",
-      "READ_ONLY_AUDIT": "Read-only options for review and audit.",
+      "READ_ONLY_AUDIT": "Tùy chọn chỉ đọc dành cho rà soát và kiểm toán.",
       "RESTRICTED_SENSITIVE": "Sensitive or global options require reason and review date when policy requires them."
     },
     "operatorStatus": {
@@ -549,7 +585,7 @@
       "role": "Access: {{value}}",
       "bundleFallback": "Access bundle",
       "roleFallback": "Assigned access",
-      "recordedState": "Status: recorded",
+      "recordedState": "Trạng thái: đã ghi nhận",
       "recordedDetail": "Details recorded",
       "recorded": "Recorded"
     },

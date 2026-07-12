@@ -343,6 +343,41 @@
     "resultTitle": "Access assignment result",
     "resultApplied": "The system recorded the access assignment and audit trace.",
     "resultBlocked": "The system did not record changes because blocking conditions remain.",
+    "completion": {
+      "title": "Access assignment complete",
+      "message": "The assignment was recorded. This completed workflow cannot be submitted again.",
+      "assignee": "Access recipient",
+      "accessTarget": "Access package",
+      "nextActions": "Review the refreshed current access, or start a new assignment with a new user and access package.",
+      "assignAnother": "Assign another access package",
+      "viewEffectiveAccess": "Review current access"
+    },
+    "applyOutcomes": {
+      "conflict": {
+        "title": "Access changed before confirmation",
+        "message": "The assignment was not recorded. Refresh the preview and review current access before trying again."
+      },
+      "noOp": {
+        "title": "Access is already effective",
+        "message": "No new assignment was recorded because the same access is already active."
+      },
+      "stale": {
+        "title": "Preview is no longer current",
+        "message": "The assignment was not recorded. Refresh the preview and review the updated conditions."
+      },
+      "validation": {
+        "title": "Review the assignment details",
+        "message": "The assignment was not recorded. Keep the valid details and correct the highlighted conditions."
+      },
+      "retryable": {
+        "title": "Unable to record access right now",
+        "message": "The assignment was not recorded. Your details are preserved; try again shortly."
+      },
+      "unexpected": {
+        "title": "Unable to record access",
+        "message": "The assignment was not recorded. Your details are preserved; contact an administrator if the problem continues."
+      }
+    },
     "appliedCount": "Assigned records",
     "auditTrace": "Audit",
     "effectiveAccessAfterApply": "Access after assignment",
@@ -388,6 +423,7 @@
     "workflow": {
       "ariaLabel": "Access assignment workflow",
       "active": "Current step",
+      "completedSummary": "Completed",
       "stepNumber": "Step {{number}}",
       "user": {
         "title": "Choose user",

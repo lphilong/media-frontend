@@ -62,6 +62,7 @@ export type AsyncReferencePickerProps = {
   clearLabel?: string;
   onValidityChange?: (isValid: boolean) => void;
   onSelectedOptionChange?: (option: ReferenceOption | undefined) => void;
+  selectedLabelFallback?: string;
   debounceMs?: number;
   showTechnicalMetadata?: boolean;
 };
@@ -106,6 +107,7 @@ export const AsyncReferencePicker = ({
   clearLabel,
   onValidityChange,
   onSelectedOptionChange,
+  selectedLabelFallback,
   debounceMs = DEFAULT_SEARCH_DEBOUNCE_MS,
   showTechnicalMetadata = true,
 }: AsyncReferencePickerProps): JSX.Element => {
@@ -226,7 +228,7 @@ export const AsyncReferencePicker = ({
   }, [abortCurrentRequest, clearDebounceTimer]);
 
   const showEmpty = state === 'ready' && options.length === 0;
-  const selectedLabel = selected?.label ?? value;
+  const selectedLabel = value ? (selected?.label ?? selectedLabelFallback ?? value) : undefined;
   const selectedHref = selected?.href;
   const canClear = clearable === true && Boolean(value) && !disabled;
   const listboxId = `${pickerId}-reference-options`;

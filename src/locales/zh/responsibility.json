@@ -46,17 +46,40 @@
     "reason": "原因",
     "reasonPlaceholder": "业务说明",
     "helper": "此界面仅分配业务管理职责，不授予访问权限。",
+    "accessBoundaryTitle": "职责不等于访问权限",
+    "reviewHelper": "确认前请检查所选引用和职责详情。",
+    "chooseSubjectFirst": "请选择被管理对象后再选择负责的员工档案。",
+    "selectedReference": "已选引用",
+    "selectedReferenceUnavailable": "当前结果中没有所选记录。",
+    "required": "必填",
+    "optional": "可选",
+    "conditional": "条件字段",
     "permissionHint": "当前账号无法为所选对象类型分配职责。"
   },
   "actions": {
     "create": "分配职责",
     "creating": "正在分配...",
+    "review": "检查分配",
+    "assignAnother": "分配其他职责",
+    "clearSelection": "清除选择",
     "revoke": "撤销",
     "clearSubject": "清除对象筛选"
   },
   "feedback": {
     "created": "管理职责已分配。",
-    "revoked": "管理职责已撤销。"
+    "revoked": "管理职责已撤销。",
+    "createFailed": "职责未分配。请检查详情后重试。"
+  },
+  "review": {
+    "title": "检查职责分配",
+    "subject": "被管理对象",
+    "responsible": "负责的员工档案",
+    "type": "职责",
+    "period": "生效期间"
+  },
+  "completion": {
+    "title": "职责分配已完成",
+    "message": "职责已记录，但不会授予应用访问权限。只有需要访问权限时才使用单独的角色/访问流程。"
   },
   "confirm": {
     "revoke": "撤销此管理职责分配？",
@@ -77,6 +100,7 @@
     "type": "职责",
     "effective": "生效",
     "state": "状态",
+    "actions": "操作",
     "readOnly": "只读"
   },
   "summary": {
@@ -89,6 +113,7 @@
     "inheritedTitle": "来自组或组织单元的职责",
     "effectiveRange": "{{from}} - {{to}}",
     "openEnded": "不限期",
+    "unavailableRole": "未指定职责角色",
     "primary": "主要",
     "descendants": "包含下级",
     "reviewNeeded": "需复核",

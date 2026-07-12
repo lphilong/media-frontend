@@ -210,7 +210,7 @@
     "backendAuthorityWarning": "Khi lưu, hệ thống sẽ kiểm tra quyền truy cập, nhân sự được chọn, tài nguyên studio, trạng thái ca và lịch trùng. Quy trình này chỉ gửi các thông tin xếp lịch hiển thị ở trên.",
     "none": "Không có",
     "localReviewValue": "{{value}} {{timezone}} ({{offset}})",
-    "utcReviewValue": "{{mốc thời gian}} UTC ({{value}})",
+    "utcReviewValue": "{{timestamp}} UTC ({{value}})",
     "validation": {
       "localDateTime": "Chọn đầy đủ ngày và giờ theo giờ Việt Nam."
     },

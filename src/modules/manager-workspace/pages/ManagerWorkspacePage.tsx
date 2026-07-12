@@ -77,6 +77,8 @@ import {
   ErrorState,
   DetailBackLink,
   LoadingState,
+  NotFoundState,
+  PermissionDeniedState,
   StatusBadge,
   SensitiveActionDialog,
   TechnicalDetailsDisclosure,
@@ -636,6 +638,7 @@ const ManagerKpiSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX
 
   const activeQuery = selectedTab === 'unit' ? unitPlansQuery : talentGroupPlansQuery;
   const plans = activeQuery.data ?? [];
+  const queryError = activeQuery.error as NormalizedApiError | null;
 
   return (
     <section className="rounded border border-border bg-panel p-4 shadow-sm">
@@ -685,10 +688,19 @@ const ManagerKpiSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX
       ) : null}
 
       {activeQuery.isError ? (
-        <ErrorState
-          title={t('manager-workspace:errors.kpiTitle')}
-          message={t('manager-workspace:errors.kpiMessage')}
-        />
+        queryError?.permissionDenied ? (
+          <EmptyState
+            title={t('manager-workspace:errors.kpiDeniedTitle')}
+            message={t('manager-workspace:errors.kpiDeniedMessage')}
+          />
+        ) : (
+          <ErrorState
+            title={t('manager-workspace:errors.kpiTitle')}
+            message={t('manager-workspace:errors.kpiMessage')}
+            actionLabel={t('manager-workspace:actions.retry')}
+            onRetry={() => void activeQuery.refetch()}
+          />
+        )
       ) : null}
 
       {!activeQuery.isLoading && !activeQuery.isError && plans.length === 0 ? (
@@ -714,9 +726,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
   const deepLinkedTab = new URLSearchParams(location.search).get('tab');
   const [month, setMonth] = useState('');
   const [activeTab, setActiveTab] = useState<ManagerWorkTab>(
-    deepLinkedTab === 'requests' || deepLinkedTab === 'availability'
-      ? deepLinkedTab
-      : 'published',
+    deepLinkedTab === 'requests' || deepLinkedTab === 'availability' ? deepLinkedTab : 'published',
   );
   const [periodMonth, setPeriodMonth] = useState(getHcmMonth());
   const [batchNote, setBatchNote] = useState('');
@@ -741,9 +751,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
       meta: {
         ...lastPage.meta,
         returnedShiftCount: items.length,
-        representedMemberCount: new Set(
-          items.map((item) => item.member.employmentProfileId),
-        ).size,
+        representedMemberCount: new Set(items.map((item) => item.member.employmentProfileId)).size,
       },
     };
   }, [workShiftsQuery.data?.pages]);
@@ -897,9 +905,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
     setBatchNote('');
   };
 
-  const requestCancellation = (
-    next: ManagerSchedulingCancellation,
-  ): void => {
+  const requestCancellation = (next: ManagerSchedulingCancellation): void => {
     if (cancelReason.trim().length < 10) {
       setValidationMessage(t('manager-workspace:availability.validation.cancelReasonRequired'));
       return;
@@ -1796,6 +1802,8 @@ const ManagerEventsSlice = ({ context }: { context: ManagerWorkspaceContext }): 
     enabled: canReadEvents && Boolean(eventId),
   });
   const detail = detailQuery.data;
+  const listError = listQuery.error as NormalizedApiError | null;
+  const detailError = detailQuery.error as NormalizedApiError | null;
 
   if (!canReadEvents) {
     return (
@@ -1821,10 +1829,16 @@ const ManagerEventsSlice = ({ context }: { context: ManagerWorkspaceContext }): 
             label={t('manager-workspace:events.backToList')}
           />
           {detailQuery.isLoading ? <LoadingState lines={5} /> : null}
-          {detailQuery.isError ? (
+          {detailQuery.isError && detailError?.permissionDenied ? <PermissionDeniedState /> : null}
+          {detailQuery.isError && detailError?.notFound ? (
+            <NotFoundState message={t('manager-workspace:events.notFoundMessage')} />
+          ) : null}
+          {detailQuery.isError && !detailError?.permissionDenied && !detailError?.notFound ? (
             <ErrorState
-              title={t('manager-workspace:events.notFoundTitle')}
-              message={t('manager-workspace:events.notFoundMessage')}
+              title={t('manager-workspace:events.loadErrorTitle')}
+              message={t('manager-workspace:events.loadErrorMessage')}
+              actionLabel={t('manager-workspace:actions.retry')}
+              onRetry={() => void detailQuery.refetch()}
             />
           ) : null}
           {detail ? <ManagerEventSummaryCard event={detail} /> : null}
@@ -1832,7 +1846,8 @@ const ManagerEventsSlice = ({ context }: { context: ManagerWorkspaceContext }): 
       ) : (
         <>
           {listQuery.isLoading ? <LoadingState lines={5} /> : null}
-          {listQuery.isError ? (
+          {listQuery.isError && listError?.permissionDenied ? <PermissionDeniedState /> : null}
+          {listQuery.isError && !listError?.permissionDenied ? (
             <ErrorState
               title={t('manager-workspace:events.loadErrorTitle')}
               message={t('manager-workspace:events.loadErrorMessage')}

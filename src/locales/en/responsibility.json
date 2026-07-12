@@ -46,17 +46,40 @@
     "reason": "Reason",
     "reasonPlaceholder": "Business note",
     "helper": "This screen assigns business management responsibility only; it does not grant access.",
+    "accessBoundaryTitle": "Responsibility is not access",
+    "reviewHelper": "Review the selected references and responsibility details before confirming.",
+    "chooseSubjectFirst": "Choose the managed subject before selecting the responsible employment profile.",
+    "selectedReference": "Selected reference",
+    "selectedReferenceUnavailable": "Selected record is not available in the current result set.",
+    "required": "Required",
+    "optional": "Optional",
+    "conditional": "Conditional",
     "permissionHint": "Your account cannot assign responsibility for the selected subject type."
   },
   "actions": {
     "create": "Assign responsibility",
     "creating": "Assigning...",
+    "review": "Review assignment",
+    "assignAnother": "Assign another responsibility",
+    "clearSelection": "Clear selection",
     "revoke": "Revoke",
     "clearSubject": "Clear subject filter"
   },
   "feedback": {
     "created": "Management responsibility assigned.",
-    "revoked": "Management responsibility revoked."
+    "revoked": "Management responsibility revoked.",
+    "createFailed": "The responsibility was not assigned. Review the details and try again."
+  },
+  "review": {
+    "title": "Review responsibility assignment",
+    "subject": "Managed subject",
+    "responsible": "Responsible employment profile",
+    "type": "Responsibility",
+    "period": "Effective period"
+  },
+  "completion": {
+    "title": "Responsibility assignment complete",
+    "message": "The responsibility was recorded. It does not grant application access. Start a separate Role/Access assignment only when access is required."
   },
   "confirm": {
     "revoke": "Revoke this management responsibility assignment?",
@@ -77,6 +100,7 @@
     "type": "Responsibility",
     "effective": "Effective",
     "state": "State",
+    "actions": "Actions",
     "readOnly": "Read-only"
   },
   "summary": {
@@ -89,6 +113,7 @@
     "inheritedTitle": "Responsibilities from groups or org units",
     "effectiveRange": "{{from}} - {{to}}",
     "openEnded": "Open-ended",
+    "unavailableRole": "Unspecified responsibility role",
     "primary": "Primary",
     "descendants": "Includes descendants",
     "reviewNeeded": "Review needed",

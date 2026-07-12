@@ -185,7 +185,8 @@
   "localeOptions": {
     "en": "英语",
     "vi": "越南语",
-    "zh": "中文"
+    "zh": "中文",
+    "configured": "已设置的语言"
   },
   "timezoneOptions": {
     "vietnam": "越南时间",

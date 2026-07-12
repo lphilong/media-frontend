@@ -93,7 +93,7 @@ const readErrorMessage = (
     return t(error.message);
   }
 
-  return error.message;
+  return t(fallbackKey);
 };
 
 export const MonthlyRosterDetailPage = (): JSX.Element => {

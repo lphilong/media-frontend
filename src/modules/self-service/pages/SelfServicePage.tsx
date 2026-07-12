@@ -66,6 +66,21 @@ const timezoneLabelKeys: Record<string, string> = {
   'America/Los_Angeles': 'self-service:timezoneOptions.losAngeles',
 };
 
+const localeLabelKeys: Record<string, string> = {
+  en: 'self-service:localeOptions.en',
+  vi: 'self-service:localeOptions.vi',
+  zh: 'self-service:localeOptions.zh',
+};
+
+const getLocaleDisplayLabel = (
+  locale: string | null | undefined,
+  translate: (key: string) => string,
+  notAvailable: string,
+): string =>
+  locale
+    ? translate(localeLabelKeys[locale] ?? 'self-service:localeOptions.configured')
+    : notAvailable;
+
 const getTimezoneDisplayLabel = (
   timezone: string | null | undefined,
   translate: (key: string) => string,
@@ -348,13 +363,11 @@ const formatPreferenceError = (error: unknown, fallback: string): string => {
   }
 
   const code = typeof error.code === 'string' ? error.code : undefined;
-  const message = typeof error.message === 'string' ? error.message : undefined;
-
   if (code === SELF_SERVICE_VALIDATION_ERROR) {
     return fallback;
   }
 
-  return message && !message.startsWith('errors:') ? message : fallback;
+  return fallback;
 };
 
 type AccountPreferencesFormProps = {
@@ -735,9 +748,7 @@ export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps)
           subtitle={t('self-service:page.subtitle')}
           actions={
             <>
-              <div data-testid="self-service-locale-control">
-                {localeSwitcher}
-              </div>
+              <div data-testid="self-service-locale-control">{localeSwitcher}</div>
               <SessionArea />
             </>
           }
@@ -856,7 +867,7 @@ export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps)
                   {t('self-service:overview.preferences')}
                 </dt>
                 <dd className="mt-1 text-sm font-medium text-text">
-                  {emptyValue(currentPerson.locale, notAvailable)} /{' '}
+                  {getLocaleDisplayLabel(currentPerson.locale, (key) => t(key), notAvailable)} /{' '}
                   {getTimezoneDisplayLabel(currentPerson.timezone, (key) => t(key), notAvailable)}
                 </dd>
               </div>

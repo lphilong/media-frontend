@@ -168,7 +168,8 @@
   "localeOptions": {
     "en": "English",
     "vi": "Vietnamese",
-    "zh": "Chinese"
+    "zh": "Chinese",
+    "configured": "Configured language"
   },
   "timezoneOptions": {
     "vietnam": "Vietnam time",

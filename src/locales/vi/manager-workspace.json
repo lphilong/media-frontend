@@ -351,7 +351,8 @@
       "removeLine": "Xóa",
       "submit": "Gửi lịch rảnh/bận",
       "cancelBatch": "Hủy đợt đang chờ",
-      "cancelLine": "Hủy dòng đang chờ"
+      "cancelLine": "Hủy dòng đang chờ",
+      "loadMore": "Tải thêm"
     },
     "lineTitle": "Dòng lịch rảnh/bận {{index}}",
     "batches": {
@@ -376,6 +377,8 @@
       "reasonRequired": "Cần nhập lý do.",
       "dateRequired": "Cần ngày bắt đầu và ngày kết thúc.",
       "dateOrder": "Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.",
+      "dateRepresentation": "Dùng một ngày cho lịch rảnh/bận một ngày, hoặc ngày bắt đầu và ngày kết thúc cho một khoảng ngày.",
+      "submitFailed": "Không thể gửi lịch rảnh/bận. Hãy kiểm tra chi tiết dòng và thử lại.",
       "preferredTime": "Dòng giờ mong muốn cần giờ bắt đầu và kết thúc hợp lệ.",
       "cancelReasonRequired": "Cần lý do hủy.",
       "memberTargetMismatch": "Mỗi dòng lịch rảnh/bận phải dùng thành viên thuộc đúng mục tiêu đã chọn."
@@ -386,7 +389,9 @@
       "selectBatch": "Chọn một đợt lịch rảnh/bận.",
       "emptyMembersMessage": "Không có thành viên đủ điều kiện trong đúng mục tiêu đã chọn.",
       "loadingMembers": "Đang tải thành viên đủ điều kiện cho mục tiêu đã chọn...",
-      "memberLoadError": "Không thể tải thành viên đủ điều kiện. Không thể gửi lịch rảnh/bận."
+      "memberLoadError": "Không thể tải thành viên đủ điều kiện. Không thể gửi lịch rảnh/bận.",
+      "batchLoadError": "Không thể tải lịch sử lịch rảnh/bận.",
+      "detailLoadError": "Không thể tải chi tiết lịch rảnh/bận."
     }
   },
   "requests": {
@@ -444,6 +449,7 @@
       "removeLine": "Xóa dòng",
       "cancelBatch": "Hủy đợt yêu cầu",
       "cancelLine": "Hủy dòng",
+      "loadMore": "Tải thêm",
       "add": {
         "CREATE_SHIFT": "Thêm yêu cầu tạo ca",
         "RESCHEDULE_SHIFT": "Thêm yêu cầu đổi lịch",
@@ -462,7 +468,8 @@
       "windowOrder": "Thời gian kết thúc phải sau thời gian bắt đầu.",
       "lineMonth": "Ngày của dòng yêu cầu phải nằm trong tháng đã chọn.",
       "periodWindow": "Chọn tháng hiện tại hoặc một trong hai tháng tiếp theo.",
-      "duplicate": "Xóa dòng yêu cầu trùng lặp trước khi gửi."
+      "duplicate": "Xóa dòng yêu cầu trùng lặp trước khi gửi.",
+      "cancelReason": "Nhập lý do hủy có ít nhất 10 ký tự."
     },
     "feedback": {
       "submitFailed": "Không gửi được đợt yêu cầu."
@@ -496,6 +503,8 @@
     "contextMessage": "Không tải được thông tin phân công của bạn.",
     "kpiTitle": "Không tải được KPI được phân công",
     "kpiMessage": "Không tải được các Kế hoạch KPI trong phạm vi được phân công.",
+    "kpiDeniedTitle": "KPI được phân công không khả dụng",
+    "kpiDeniedMessage": "Phân công quản lý hiện tại của bạn không có quyền truy cập các kế hoạch KPI này.",
     "kpiDetailTitle": "Không tải được chi tiết KPI",
     "kpiDetailMessage": "Không tải được Kế hoạch KPI đã chọn.",
     "workTitle": "Không tải được Lịch làm việc",

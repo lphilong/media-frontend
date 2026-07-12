@@ -109,6 +109,21 @@ describe('AsyncReferencePicker', () => {
     expect(screen.queryByRole('link', { name: 'ORG-01' })).not.toBeInTheDocument();
   });
 
+  it('uses an explicit safe fallback when a selected option is absent from the result set', async () => {
+    render(
+      <AsyncReferencePicker
+        pickerId="safe-fallback"
+        onChange={vi.fn()}
+        loadOptions={async () => []}
+        value="3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        selectedLabelFallback="Selected record is unavailable"
+      />,
+    );
+
+    expect(await screen.findByText('Selected record is unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('3fa85f64-5717-4562-b3fc-2c963f66afa6')).not.toBeInTheDocument();
+  });
+
   it('renders loading state while options are being fetched', async () => {
     let resolveOptions: (options: Array<{ id: string; label: string }>) => void = () => {};
     const loadOptions = vi.fn(

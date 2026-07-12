@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import { apiRequest } from '@shared/api';
+import { apiRequest, normalizeApiError } from '@shared/api';
 
 export const MANAGER_WORKSPACE_CONTEXT_QUERY_KEY = ['manager-workspace', 'context'] as const;
 const MANAGER_REQUEST_BATCHES_QUERY_KEY = [
@@ -21,6 +21,9 @@ const MANAGER_AVAILABILITY_MEMBERS_QUERY_KEY = [
 ] as const;
 const MANAGER_EVENTS_QUERY_KEY = ['manager-workspace', 'events'] as const;
 const MANAGER_REVENUE_QUERY_KEY = ['manager-workspace', 'revenue-source'] as const;
+
+const retryManagerEventsQuery = (failureCount: number, error: unknown): boolean =>
+  normalizeApiError(error).retryable && failureCount < 1;
 
 const referenceNameSchema = z
   .object({
@@ -420,7 +423,8 @@ export const useManagerEvents = (options?: { enabled?: boolean }) =>
     queryKey: MANAGER_EVENTS_QUERY_KEY,
     queryFn: fetchManagerEvents,
     enabled: options?.enabled ?? true,
-    retry: false,
+    retry: retryManagerEventsQuery,
+    retryDelay: 100,
   });
 
 export const useManagerEventDetail = (eventId?: string, options?: { enabled?: boolean }) =>
@@ -430,7 +434,8 @@ export const useManagerEventDetail = (eventId?: string, options?: { enabled?: bo
       : [...MANAGER_EVENTS_QUERY_KEY, 'detail'],
     queryFn: () => fetchManagerEventDetail(eventId ?? ''),
     enabled: Boolean(eventId) && (options?.enabled ?? true),
-    retry: false,
+    retry: retryManagerEventsQuery,
+    retryDelay: 100,
   });
 
 export const fetchManagerPlatformEarningScope = async (): Promise<ManagerPlatformEarningScope> => {
@@ -1249,8 +1254,7 @@ export const useManagerRequestBatchPages = (
       query.status ?? 'all',
       query.periodMonth ?? 'all',
     ],
-    queryFn: ({ pageParam }) =>
-      fetchManagerRequestBatches({ ...query, cursor: pageParam }),
+    queryFn: ({ pageParam }) => fetchManagerRequestBatches({ ...query, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled,
@@ -1291,8 +1295,7 @@ export const useManagerAvailabilityBatchPages = (
       query.status ?? 'all',
       query.periodMonth ?? 'all',
     ],
-    queryFn: ({ pageParam }) =>
-      fetchManagerAvailabilityBatches({ ...query, cursor: pageParam }),
+    queryFn: ({ pageParam }) => fetchManagerAvailabilityBatches({ ...query, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled,
@@ -1502,9 +1505,8 @@ export const parseManagerAvailabilityBatchDetailForTest = (
 ): ManagerAvailabilityBatchDetail =>
   managerAvailabilityBatchDetailResponseSchema.parse(response).data;
 
-export const parseManagerRequestBatchListForTest = (
-  response: unknown,
-): ManagerRequestBatchList => managerRequestBatchListResponseSchema.parse(response).data;
+export const parseManagerRequestBatchListForTest = (response: unknown): ManagerRequestBatchList =>
+  managerRequestBatchListResponseSchema.parse(response).data;
 
 export const parseManagerRequestBatchDetailForTest = (
   response: unknown,

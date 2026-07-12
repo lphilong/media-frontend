@@ -365,6 +365,8 @@
       "reasonRequired": "Reason is required.",
       "dateRequired": "Start and end date are required.",
       "dateOrder": "End date must be the same as or after start date.",
+      "dateRepresentation": "Use one date for a single-day availability line, or a start and end date for a range.",
+      "submitFailed": "Availability could not be submitted. Check the line details and try again.",
       "preferredTime": "Preferred time lines need a valid start and end time.",
       "cancelReasonRequired": "Cancellation reason is required.",
       "memberTargetMismatch": "Every availability line must use a member from the selected exact target."
@@ -489,6 +491,8 @@
     "contextMessage": "Your assigned work access could not be loaded.",
     "kpiTitle": "Managed KPI unavailable",
     "kpiMessage": "Managed KPI plans could not be loaded.",
+    "kpiDeniedTitle": "Managed KPI is unavailable",
+    "kpiDeniedMessage": "Your current manager assignment does not have access to these KPI plans.",
     "kpiDetailTitle": "Managed KPI detail unavailable",
     "kpiDetailMessage": "The selected KPI plan could not be loaded.",
     "workTitle": "Managed Work unavailable",

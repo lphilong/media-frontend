@@ -396,6 +396,124 @@ describe('/manager workspace route', () => {
     });
   });
 
+  it('renders a localized permission-denied state for a Manager Events list 403', async () => {
+    server.use(
+      http.get('*/admin/manager-workspace/events', () =>
+        HttpResponse.json(
+          { error: { code: 'EVENT_SCOPE_DENIED', message: 'raw list denial must stay hidden' } },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await renderRoute('/manager/events');
+
+    expect(
+      await screen.findByText('You do not have the required access or scope for this data'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Managed events unavailable')).not.toBeInTheDocument();
+    expect(screen.queryByText('raw list denial must stay hidden')).not.toBeInTheDocument();
+  });
+
+  it('retries a retryable Manager Events list failure once and then settles into Error with Retry', async () => {
+    let calls = 0;
+    server.use(
+      http.get('*/admin/manager-workspace/events', () => {
+        calls += 1;
+        return HttpResponse.json(
+          { error: { code: 'EVENT_SOURCE_FAILED', message: 'raw list failure must stay hidden' } },
+          { status: 500 },
+        );
+      }),
+    );
+
+    await renderRoute('/manager/events');
+
+    expect(await screen.findByText('Managed events unavailable')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    expect(screen.queryByText('raw list failure must stay hidden')).not.toBeInTheDocument();
+    await waitFor(() => expect(calls).toBe(2));
+    expect(document.querySelector('.animate-pulse')).not.toBeInTheDocument();
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(calls).toBe(3));
+  });
+
+  it('renders a valid empty state for an empty Manager Events list', async () => {
+    server.use(
+      http.get('*/admin/manager-workspace/events', () =>
+        HttpResponse.json({ data: { items: [] } }),
+      ),
+    );
+
+    await renderRoute('/manager/events');
+
+    expect(await screen.findByText('No scoped events')).toBeInTheDocument();
+  });
+
+  it('renders a localized permission-denied state for a Manager Event detail 403', async () => {
+    server.use(
+      http.get('*/admin/manager-workspace/events/:eventId', () =>
+        HttpResponse.json(
+          { error: { code: 'EVENT_SCOPE_DENIED', message: 'raw detail denial must stay hidden' } },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await renderRoute('/manager/events/manager-event-denied');
+
+    expect(
+      await screen.findByText('You do not have the required access or scope for this data'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Event unavailable')).not.toBeInTheDocument();
+    expect(screen.queryByText('raw detail denial must stay hidden')).not.toBeInTheDocument();
+  });
+
+  it('renders Not Found for a Manager Event detail 404', async () => {
+    server.use(
+      http.get('*/admin/manager-workspace/events/:eventId', () =>
+        HttpResponse.json(
+          { error: { code: 'EVENT_NOT_FOUND', message: 'raw missing detail must stay hidden' } },
+          { status: 404 },
+        ),
+      ),
+    );
+
+    await renderRoute('/manager/events/manager-event-missing');
+
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(
+      screen.getByText('This event is not visible through your assigned manager scope.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('raw missing detail must stay hidden')).not.toBeInTheDocument();
+  });
+
+  it('retries a retryable Manager Event detail failure once and then settles into Error with Retry', async () => {
+    let calls = 0;
+    server.use(
+      http.get('*/admin/manager-workspace/events/:eventId', () => {
+        calls += 1;
+        return HttpResponse.json(
+          {
+            error: { code: 'EVENT_SOURCE_FAILED', message: 'raw detail failure must stay hidden' },
+          },
+          { status: 500 },
+        );
+      }),
+    );
+
+    await renderRoute('/manager/events/manager-event-retry');
+
+    expect(await screen.findByText('Managed events unavailable')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    expect(screen.queryByText('raw detail failure must stay hidden')).not.toBeInTheDocument();
+    await waitFor(() => expect(calls).toBe(2));
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(calls).toBe(3));
+  });
+
   it('accepts Manager Event completion evidence at the read-only client boundary', () => {
     const event = parseManagerEventForTest({
       id: 'manager-event-test',
@@ -609,7 +727,7 @@ describe('/manager workspace route', () => {
 
     await renderRoute('/manager/events/out-of-scope-event');
 
-    expect(await screen.findByText('Event unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
     expect(
       screen.getByText('This event is not visible through your assigned manager scope.'),
     ).toBeInTheDocument();
@@ -636,6 +754,30 @@ describe('/manager workspace route', () => {
     await waitFor(() => {
       expect(subjectTypes).toEqual(['ORG_UNIT']);
     });
+  });
+
+  it('settles an unexpected Manager KPI 403 into a localized denied state', async () => {
+    server.use(
+      http.get('*/admin/kpi/plans', () =>
+        HttpResponse.json(
+          {
+            error: { code: 'KPI_SCOPE_DENIED', message: 'backend scope details must stay hidden' },
+          },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await renderRoute('/manager/kpi', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
+    });
+
+    expect(
+      await screen.findByText('Managed KPI is unavailable', {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/does not have access to these KPI plans/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('manager-kpi-loading')).not.toBeInTheDocument();
+    expect(screen.queryByText('backend scope details must stay hidden')).not.toBeInTheDocument();
   });
 
   it('links Unit KPI Open to the Manager route and renders detail outside Admin shell', async () => {
@@ -1248,6 +1390,21 @@ describe('/manager workspace route', () => {
             targetMode: 'EXACT_ONLY',
           });
           expect(Array.isArray(body.lines)).toBe(true);
+          const availabilityLines = body.lines as Array<Record<string, unknown>>;
+          expect(availabilityLines[0]).toMatchObject({
+            availabilityDate: '2026-06-01',
+          });
+          expect(availabilityLines[0]).not.toHaveProperty('dateRangeStart');
+          expect(availabilityLines[0]).not.toHaveProperty('dateRangeEnd');
+          expect(
+            availabilityLines.find((line) => line.availabilityType === 'OTHER_AVAILABILITY_NOTE'),
+          ).toMatchObject({
+            dateRangeStart: '2026-06-02',
+            dateRangeEnd: '2026-06-03',
+          });
+          expect(
+            availabilityLines.find((line) => line.availabilityType === 'OTHER_AVAILABILITY_NOTE'),
+          ).not.toHaveProperty('availabilityDate');
           expect(body.lines).toEqual(
             expect.arrayContaining([
               expect.objectContaining({ availabilityType: 'UNAVAILABLE_FULL_DAY' }),
@@ -1333,6 +1490,12 @@ describe('/manager workspace route', () => {
       'OTHER_AVAILABILITY_NOTE',
     );
     await user.type(screen.getAllByLabelText('Reason')[2], 'Advisory planning note.');
+    fireEvent.change(screen.getAllByLabelText('Start date')[2], {
+      target: { value: '2026-06-02' },
+    });
+    fireEvent.change(screen.getAllByLabelText('End date')[2], {
+      target: { value: '2026-06-03' },
+    });
     await user.click(screen.getByRole('button', { name: 'Submit availability batch' }));
 
     await waitFor(() => expect(managerSubmitCalls).toBe(1));

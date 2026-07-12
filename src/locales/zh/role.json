@@ -343,6 +343,35 @@
     "resultTitle": "访问分配结果",
     "resultApplied": "系统已记录访问分配和审计。",
     "resultBlocked": "仍有阻断条件，系统未记录变更。",
+    "completion": {
+      "title": "访问分配已完成",
+      "message": "分配已记录。此已完成流程不能再次提交。",
+      "assignee": "访问接收人",
+      "accessTarget": "访问包",
+      "nextActions": "查看已刷新的当前访问权限，或使用新的用户和访问包开始新的分配。",
+      "assignAnother": "分配其他访问包",
+      "viewEffectiveAccess": "查看当前访问权限"
+    },
+    "applyOutcomes": {
+      "conflict": {
+        "title": "确认前访问权限已更改",
+        "message": "分配未记录。请刷新预览并检查当前访问权限后再试。"
+      },
+      "noOp": { "title": "访问权限已生效", "message": "相同访问权限已生效，因此未记录新的分配。" },
+      "stale": { "title": "预览已过期", "message": "分配未记录。请刷新预览并检查更新后的条件。" },
+      "validation": {
+        "title": "检查分配详情",
+        "message": "分配未记录。有效详情会被保留；请更正所需条件。"
+      },
+      "retryable": {
+        "title": "暂时无法记录访问权限",
+        "message": "分配未记录。详情已保留；请稍后再试。"
+      },
+      "unexpected": {
+        "title": "无法记录访问权限",
+        "message": "分配未记录。详情已保留；若问题持续，请联系管理员。"
+      }
+    },
     "appliedCount": "已分配记录数",
     "auditTrace": "审计",
     "effectiveAccessAfterApply": "分配后的访问",
@@ -386,8 +415,9 @@
       "applied": "访问已分配。"
     },
     "workflow": {
-      "ariaLabel": "Access assignment workflow",
-      "active": "Current step",
+      "ariaLabel": "访问分配流程",
+      "active": "当前步骤",
+      "completedSummary": "已完成",
       "stepNumber": "Step {{number}}",
       "user": {
         "title": "Choose user",
@@ -462,7 +492,7 @@
     "sensitiveConfirm": {
       "title": "Confirm sensitive access",
       "message": "This access is sensitive or controlled. Review the recipient, scope, and review date before applying.",
-      "cancel": "Cancel",
+      "cancel": "取消",
       "confirm": "Confirm apply",
       "pending": "Applying",
       "recipient": "Access recipient",
@@ -470,9 +500,9 @@
       "scope": "Applied scope"
     },
     "targetPicker": {
-      "searchBundleLabel": "Search recommended access bundles",
-      "searchTemplateLabel": "Search manual role templates",
-      "searchPlaceholder": "Search by name, scope, or business group",
+      "searchBundleLabel": "搜索推荐访问包",
+      "searchTemplateLabel": "搜索手动角色模板",
+      "searchPlaceholder": "按名称、范围或业务组搜索",
       "noMatchTitle": "No matching option",
       "noMatchMessage": "Try another keyword or switch between bundles and role templates.",
       "reviewRequired": "Review required",
@@ -488,8 +518,8 @@
       "orgUnitManager": "Manage assigned org unit work; requires org-unit scope and management responsibility.",
       "talentGroupManagerBundle": "Recommended package for assigning Talent group management responsibility with matching access.",
       "orgUnitManagerBundle": "Recommended package for assigning org unit management responsibility with matching access.",
-      "auditorBundle": "Read-only package for operational review without sensitive access by default.",
-      "viewerAuditor": "Read-only template for operational data review and reconciliation.",
+      "auditorBundle": "用于运营审查的只读包，默认不授予敏感访问权限。",
+      "viewerAuditor": "用于运营数据审查和对账的只读模板。",
       "staffConsoleUser": "Self-service template for personnel to view their own data.",
       "staffConsoleBundle": "Self-service package for personnel to view their own data.",
       "defaultBundle": "Recommended access bundle for quickly assigning a configured capability group.",
@@ -499,14 +529,14 @@
       "READY_ASSIGNABLE": "Ready",
       "REQUIRES_SCOPE_SELECTION": "Scope required",
       "RESTRICTED_SENSITIVE": "Controlled administration",
-      "READ_ONLY_AUDIT": "Read-only",
+      "READ_ONLY_AUDIT": "只读",
       "FUTURE_READY_CONDITION": "Unavailable",
       "SYSTEM_CONTROLLED": "Unavailable"
     },
     "targetBusinessGroups": {
       "people": "People",
       "finance": "Finance / Reconciliation",
-      "audit": "Audit / Read-only",
+      "audit": "审计 / 只读",
       "controlledAdmin": "Controlled administration",
       "selfService": "Self-service",
       "operations": "Operations"
@@ -514,13 +544,13 @@
     "pickerGroups": {
       "REQUIRES_SCOPE_SELECTION": "Requires scope selection",
       "READY_TO_ASSIGN": "Operations",
-      "READ_ONLY_AUDIT": "Audit / Read-only",
+      "READ_ONLY_AUDIT": "审计 / 只读",
       "RESTRICTED_SENSITIVE": "Controlled administration"
     },
     "pickerGroupHelp": {
       "REQUIRES_SCOPE_SELECTION": "These options require a specific scope before preview.",
       "READY_TO_ASSIGN": "Operational options can be previewed after conditions are complete.",
-      "READ_ONLY_AUDIT": "Read-only options for review and audit.",
+      "READ_ONLY_AUDIT": "用于审查和审计的只读选项。",
       "RESTRICTED_SENSITIVE": "Sensitive or global options require reason and review date when policy requires them."
     },
     "operatorStatus": {
@@ -549,7 +579,7 @@
       "role": "Access: {{value}}",
       "bundleFallback": "Access bundle",
       "roleFallback": "Assigned access",
-      "recordedState": "Status: recorded",
+      "recordedState": "状态：已记录",
       "recordedDetail": "Details recorded",
       "recorded": "Recorded"
     },
@@ -588,7 +618,7 @@
       "monthlyCloseOwner": "Monthly close owner",
       "payrollDraftOps": "Payroll draft operations",
       "payrollDraftApprover": "Payroll draft approver",
-      "viewerAuditor": "Audit / Read-only",
+      "viewerAuditor": "审计 / 只读",
       "staffConsoleUser": "Personnel self-service data view",
       "managerAssignedAccess": "Assigned-work access",
       "adminOperationalAccess": "Internal operations access",
@@ -636,7 +666,7 @@
       "EXPIRES_AT_REQUIRED": "Expiry date is required for emergency access.",
       "EXPIRES_AT_EXCEEDS_MAX_WINDOW": "The request cannot be completed yet. Review access conditions and try again.",
       "SOD_CONFLICT_BLOCKED": "The request cannot be completed yet. Review access conditions and try again.",
-      "SELF_LIFECYCLE_BLOCKED": "You cannot revoke your own access; another authorized operator is required.",
+      "SELF_LIFECYCLE_BLOCKED": "不能撤销自己的访问权限；需要另一位获授权操作员执行。",
       "ASSIGNMENT_ALREADY_INACTIVE": "The request cannot be completed yet. Review access conditions and try again.",
       "generic": "The request cannot be completed yet. Review access conditions and try again."
     }

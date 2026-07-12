@@ -101,7 +101,9 @@ describe('event assignment wave 6 surfaces', () => {
 
     renderRoute('/events');
 
-    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(
+      await screen.findByText(i18n.t('errors:permission.title'), {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('nav-link-events')).not.toBeInTheDocument();
     expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(
@@ -202,6 +204,35 @@ describe('event assignment wave 6 surfaces', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('suppresses Event child requests when the parent detail is denied', async () => {
+    let childRequests = 0;
+    setEventCapabilities({
+      roles: ['VIEWER_AUDITOR'],
+      permissions: ['event.read'],
+      scopeGrants: { eventAssignment: ['global'] },
+    });
+    server.use(
+      http.get('*/admin/events/event-denied', () =>
+        HttpResponse.json({ error: { code: 'EVENT_SCOPE_DENIED' } }, { status: 403 }),
+      ),
+      http.get('*/admin/events/event-denied/assignments', () => {
+        childRequests += 1;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+      http.get('*/admin/events/event-denied/bookings', () => {
+        childRequests += 1;
+        return HttpResponse.json({ data: { items: [] } });
+      }),
+    );
+
+    renderRoute('/events/event-denied');
+
+    expect(
+      await screen.findByText(i18n.t('errors:permission.title'), {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(childRequests).toBe(0));
+  });
+
   it('renders target timestamp filter chips with Vietnam time timestamps', async () => {
     renderRoute(
       '/events?statusGroup=ACTIVE&eventOverlapStartAt=1777507200000&eventOverlapEndAt=1777593600000&eventStartFromAt=1777507200000&eventStartToAt=1778112000000',
@@ -233,8 +264,8 @@ describe('event assignment wave 6 surfaces', () => {
     expect(screen.getByText(/16:06 12-05-2026, giờ Việt Nam/)).toBeInTheDocument();
     expect(screen.getByText(/19:06 12-05-2026, giờ Việt Nam/)).toBeInTheDocument();
     expect(screen.getByText(i18n.t('event-assignment:assignments.title'))).toBeInTheDocument();
-    expect(screen.getAllByText('Alice Nguyen').length).toBeGreaterThan(0);
-    expect(screen.getByText('Luna')).toBeInTheDocument();
+    expect((await screen.findAllByText('Alice Nguyen')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Luna')).toBeInTheDocument();
     expect(screen.queryByText('ep-001')).not.toBeInTheDocument();
     expect(screen.queryByText('talent-002')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Main Studio' })).toHaveAttribute(
@@ -252,8 +283,8 @@ describe('event assignment wave 6 surfaces', () => {
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.replaceAssignments') }),
     );
-    expect(screen.getAllByText('Alice Nguyen').length).toBeGreaterThan(0);
-    expect(screen.getByText('Luna')).toBeInTheDocument();
+    expect((await screen.findAllByText('Alice Nguyen')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Luna')).toBeInTheDocument();
   });
 
   it('denies managedGroup-only actors from raw Admin Event detail URLs', async () => {

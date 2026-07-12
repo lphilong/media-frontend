@@ -116,23 +116,23 @@ export const useEventDetail = (eventId?: string) => {
   });
 };
 
-export const useEventAssignments = (eventId?: string) => {
+export const useEventAssignments = (eventId?: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: eventId
       ? eventAssignmentQueryKeys.assignments(eventId)
       : [...EVENT_ASSIGNMENT_QUERY_ROOT, 'assignments'],
     queryFn: () => fetchEventAssignments(eventId ?? ''),
-    enabled: Boolean(eventId),
+    enabled: Boolean(eventId) && (options?.enabled ?? true),
   });
 };
 
-export const useEventStudioBookings = (eventId?: string) => {
+export const useEventStudioBookings = (eventId?: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: eventId
       ? eventAssignmentQueryKeys.studioBookings(eventId)
       : [...EVENT_ASSIGNMENT_QUERY_ROOT, 'studio-bookings'],
     queryFn: () => fetchEventStudioBookings(eventId ?? ''),
-    enabled: Boolean(eventId),
+    enabled: Boolean(eventId) && (options?.enabled ?? true),
   });
 };
 

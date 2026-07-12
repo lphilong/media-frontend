@@ -185,7 +185,8 @@
   "localeOptions": {
     "en": "Tiếng Anh",
     "vi": "Tiếng Việt",
-    "zh": "Tiếng Trung"
+    "zh": "Tiếng Trung",
+    "configured": "Ngôn ngữ đã thiết lập"
   },
   "timezoneOptions": {
     "vietnam": "Giờ Việt Nam",
