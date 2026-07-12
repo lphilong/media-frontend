@@ -216,6 +216,24 @@ describe('People Profile Check dashboard', () => {
     await setLocale('en');
   });
 
+  it('provides distinct EN, VI, and ZH queue, applied-filter, and page-size semantics', async () => {
+    const expected = {
+      en: ['Applied filters', 'Rows per page', 'No readiness issues'],
+      vi: ['Bộ lọc đang áp dụng', 'Số dòng mỗi trang', 'Không có vấn đề sẵn sàng'],
+      zh: ['已应用筛选', '每页行数', '暂无就绪问题'],
+    } as const;
+
+    for (const [locale, values] of Object.entries(expected) as Array<
+      [keyof typeof expected, (typeof expected)[keyof typeof expected]]
+    >) {
+      await setLocale(locale);
+      expect(i18n.t('people-readiness:filters.applied')).toBe(values[0]);
+      expect(i18n.t('people-readiness:filters.rowsPerPage')).toBe(values[1]);
+      expect(i18n.t('people-readiness:states.initialEmptyTitle')).toBe(values[2]);
+    }
+    await setLocale('en');
+  });
+
   it('renders the authorized Admin route through the Admin shell and sidebar', async () => {
     await renderPeopleReadinessRoute();
 
@@ -225,7 +243,7 @@ describe('People Profile Check dashboard', () => {
       await screen.findByRole('heading', { name: 'People Profile Check' }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: 'People Profile Check' })).toHaveLength(1);
-    expect(await screen.findByText('Issue Inbox')).toBeInTheDocument();
+    expect(await screen.findByText('Issue Inbox', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('Read-only.')).toBeInTheDocument();
     expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expect(screen.queryByTestId('self-service-shell')).not.toBeInTheDocument();
@@ -332,10 +350,7 @@ describe('People Profile Check dashboard', () => {
     await renderPeopleReadinessRoute();
     await screen.findByText('No Org Person');
 
-    await userEvent.selectOptions(
-      screen.getByLabelText('Affected flow'),
-      'RESPONSIBILITY_READY',
-    );
+    await userEvent.selectOptions(screen.getByLabelText('Affected flow'), 'RESPONSIBILITY_READY');
     await userEvent.selectOptions(screen.getByLabelText('Severity'), 'BLOCKER');
     await userEvent.selectOptions(
       screen.getByLabelText('Primary entity'),
@@ -345,7 +360,7 @@ describe('People Profile Check dashboard', () => {
       screen.getByLabelText('Issue type'),
       'ORGUNIT_RESPONSIBILITY_MANAGER_NOT_LOGIN_READY',
     );
-    await userEvent.selectOptions(screen.getByLabelText('Rows'), '25');
+    await userEvent.selectOptions(screen.getByLabelText('Rows per page'), '25');
 
     await waitFor(() => {
       const params = lastIssuesRequest().searchParams;
@@ -371,7 +386,7 @@ describe('People Profile Check dashboard', () => {
       expect(params.get('limit')).toBe('10');
     });
 
-    await userEvent.selectOptions(screen.getByLabelText('Rows'), '2');
+    await userEvent.selectOptions(screen.getByLabelText('Rows per page'), '2');
 
     await waitFor(() => {
       expect(lastIssuesRequest().searchParams.get('limit')).toBe('2');
@@ -527,18 +542,26 @@ describe('People Profile Check dashboard', () => {
     expect(screen.queryByRole('button', { name: /Employment terms/i })).not.toBeInTheDocument();
   });
 
-  it('renders empty and backend forbidden states cleanly', async () => {
+  it('distinguishes the initial empty queue from a filtered empty result', async () => {
     setPeopleReadinessIssues([]);
     await renderPeopleReadinessRoute();
 
-    expect(await screen.findByText('No issues in this filter')).toBeInTheDocument();
+    expect(await screen.findByText('No readiness issues')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'No backend readiness issues match the current filter. This is not a production or runtime readiness claim.',
+        'No backend readiness issues are currently in this review queue. This is not a production or runtime readiness claim.',
       ),
     ).toBeInTheDocument();
 
-    cleanup();
+    await userEvent.selectOptions(screen.getByLabelText('Severity'), 'BLOCKER');
+
+    expect(await screen.findByText('No issues match these filters')).toBeInTheDocument();
+    expect(
+      screen.getByText('Clear one or more filters to widen the review queue.'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders backend forbidden states cleanly', async () => {
     server.use(
       http.get('*/admin/people-readiness/summary', () =>
         HttpResponse.json({ error: { code: 'FORBIDDEN', message: 'Denied' } }, { status: 403 }),
@@ -603,11 +626,15 @@ describe('People Profile Check dashboard', () => {
     expect(screen.queryByText('internalDiagnostic')).not.toBeInTheDocument();
   });
 
-  it('renders issue cards with distinct severity/category badges and secondary technical code', async () => {
+  it('renders a dense operational queue with identity before issue detail and no raw values', async () => {
     const user = userEvent.setup();
     setPeopleReadinessIssues([
       {
         ...employmentTermsIssue('EMPLOYMENT_TERMS_MISSING_BASE_SALARY'),
+        primaryEntity: {
+          ...employmentTermsIssue('EMPLOYMENT_TERMS_MISSING_BASE_SALARY').primaryEntity,
+          lifecycleStatus: 'RAW_INTERNAL_STATUS',
+        },
         metadata: {
           allowanceAmount: 16000000,
           currency: 'VND',
@@ -625,13 +652,16 @@ describe('People Profile Check dashboard', () => {
       throw new Error('Issue row did not render as an article');
     }
 
+    expect(article).toHaveAttribute('data-layout', 'dense-operational-row');
+
     const affectedProfile = within(article).getByTestId('people-readiness-affected-profile');
-    expect(affectedProfile).toHaveAttribute('data-layout', 'compact-header');
+    expect(affectedProfile).toHaveAttribute('data-layout', 'primary-identity');
     expect(affectedProfile.querySelector('.rounded.border')).toBeNull();
     expect(within(affectedProfile).getByText('Affected profile')).toBeInTheDocument();
     expect(within(article).getByText('Employment Terms Person')).toBeInTheDocument();
     expect(within(article).getByText('EP-HRET')).toBeInTheDocument();
-    expect(within(article).getByText('Active')).toBeInTheDocument();
+    expect(within(article).getByText('Status unavailable')).toBeInTheDocument();
+    expect(within(article).queryByText('RAW_INTERNAL_STATUS')).not.toBeInTheDocument();
     expect(within(article).getByText('Issue')).toBeInTheDocument();
     expect(within(article).getByText('Description')).toBeInTheDocument();
     expect(
@@ -656,6 +686,20 @@ describe('People Profile Check dashboard', () => {
     expect(within(article).queryByText(/VND/)).not.toBeInTheDocument();
     expect(within(article).queryByText('Approved salary source note')).not.toBeInTheDocument();
     expect(within(article).queryByText('hret-raw-secret-1')).not.toBeInTheDocument();
+  });
+
+  it('keeps applied filters inspectable and owns page size with pagination', async () => {
+    await renderPeopleReadinessRoute();
+    await screen.findByText('No Org Person');
+
+    await userEvent.selectOptions(screen.getByLabelText('Affected flow'), 'RESPONSIBILITY_READY');
+    await userEvent.selectOptions(screen.getByLabelText('Severity'), 'WARNING');
+
+    const applied = screen.getByRole('region', { name: 'Applied filters' });
+    expect(within(applied).getByText('Responsibility readiness')).toBeInTheDocument();
+    expect(within(applied).getByText('Warning')).toBeInTheDocument();
+    expect(screen.getByLabelText('Rows per page')).toHaveValue('10');
+    expect(screen.queryByLabelText('Rows')).not.toBeInTheDocument();
   });
 
   it('renders localized titles and descriptions for all five HRET issue codes', async () => {

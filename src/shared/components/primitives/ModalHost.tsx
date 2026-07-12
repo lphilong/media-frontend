@@ -3,6 +3,7 @@ import {
   createContext,
   useContext,
   useMemo,
+  useEffect,
   useRef,
   useState,
   type PropsWithChildren,
@@ -33,8 +34,13 @@ export const ModalHostProvider = ({ children }: PropsWithChildren): JSX.Element 
   const { t } = useTranslation('common');
   const [modal, setModal] = useState<ModalPayload | null>(null);
   const modalRef = useRef<ModalPayload | null>(null);
+  const modalContentRef = useRef<HTMLDivElement | null>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
   const open = useCallback((payload: ModalOpenPayload, variant: ModalVariant): void => {
+    if (!modalRef.current && document.activeElement instanceof HTMLElement) {
+      previousActiveElementRef.current = document.activeElement;
+    }
     const nextModal = { ...payload, variant };
     modalRef.current = nextModal;
     setModal(nextModal);
@@ -49,7 +55,18 @@ export const ModalHostProvider = ({ children }: PropsWithChildren): JSX.Element 
     modalRef.current = null;
     setModal(null);
     currentModal.onDismiss?.();
+    const previousActiveElement = previousActiveElementRef.current;
+    previousActiveElementRef.current = null;
+    globalThis.queueMicrotask(() => previousActiveElement?.focus());
   }, []);
+
+  useEffect(() => {
+    if (!modal) return;
+    const firstTaskControl = modalContentRef.current?.querySelector<HTMLElement>(
+      'input:not(:disabled), select:not(:disabled), textarea:not(:disabled), button:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])',
+    );
+    firstTaskControl?.focus();
+  }, [modal]);
 
   const value = useMemo<ModalHostContextValue>(
     () => ({
@@ -75,6 +92,12 @@ export const ModalHostProvider = ({ children }: PropsWithChildren): JSX.Element 
             aria-modal="true"
             aria-label={modal.title}
             className={`bg-panel p-5 shadow-xl ${panelClass}`}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                value.close();
+              }
+            }}
           >
             <div className="mb-4 flex items-center justify-end">
               <button
@@ -85,7 +108,7 @@ export const ModalHostProvider = ({ children }: PropsWithChildren): JSX.Element 
                 {t('actions.close')}
               </button>
             </div>
-            <div>{modal.content}</div>
+            <div ref={modalContentRef}>{modal.content}</div>
           </div>
         </div>
       ) : null}

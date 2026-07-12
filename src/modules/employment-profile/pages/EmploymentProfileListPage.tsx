@@ -4,11 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useModulePageActions } from '@app/providers/module-runtime';
 import { APP_PATHS } from '@app/router/paths';
-import { EmploymentProfileCreateSurface } from '@modules/employment-profile/forms/employment-profile-mutation-forms';
-import {
-  useCreateEmploymentProfileMutation,
-  useEmploymentProfileList,
-} from '@modules/employment-profile/hooks/use-employment-profile';
+import { useEmploymentProfileList } from '@modules/employment-profile/hooks/use-employment-profile';
 import { createEmploymentProfileListColumns } from '@modules/employment-profile/tables/employment-profile-columns';
 import type { NormalizedApiError } from '@shared/api';
 import {
@@ -28,9 +24,7 @@ import {
   PermissionDeniedState,
   SearchBoxSeam,
   SortControlSeam,
-  useModalHost,
 } from '@shared/components/primitives';
-import { useMutationFeedback } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import { loadOrgUnitReferenceOptions } from '@modules/org-unit';
 import { employmentProfileFlatListQueryConfig } from '@modules/employment-profile';
@@ -89,11 +83,6 @@ export const EmploymentProfileListPage = (): JSX.Element => {
 
   const listQueryResult = useEmploymentProfileList(listQuery);
   const capabilitiesQuery = useCurrentActorCapabilities();
-  const createMutation = useCreateEmploymentProfileMutation();
-  const { notifyError, notifySuccess } = useMutationFeedback();
-  const { close: closeModal, openDrawer } = useModalHost();
-
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isMoreFiltersOpen, setIsMoreFiltersOpen] = useState(false);
   const [filterOptionLabels, setFilterOptionLabels] = useState<Record<string, string>>({});
   const [, setCursorStack] = useState(createCursorStack);
@@ -125,12 +114,10 @@ export const EmploymentProfileListPage = (): JSX.Element => {
   const pageActions = canCreateEmploymentProfile ? (
     <button
       type="button"
-      onClick={() => setIsCreateOpen((current) => !current)}
+      onClick={() => navigate(APP_PATHS.employmentProfileCreate)}
       className="rounded border border-accent bg-accent px-3 py-2 text-sm font-medium text-white"
     >
-      {isCreateOpen
-        ? t('employment-profile:actions.closeCreate')
-        : t('employment-profile:actions.create')}
+      {t('employment-profile:actions.create')}
     </button>
   ) : null;
 
@@ -167,54 +154,6 @@ export const EmploymentProfileListPage = (): JSX.Element => {
       return nextStack;
     });
   };
-
-  const onCreateSubmit = useCallback(
-    async (payload: Parameters<typeof createMutation.mutateAsync>[0]) => {
-      try {
-        await createMutation.mutateAsync(payload);
-        notifySuccess('employment-profile:feedback.created');
-        setIsCreateOpen(false);
-      } catch (error) {
-        notifyError(error as NormalizedApiError);
-      }
-    },
-    [createMutation, notifyError, notifySuccess],
-  );
-
-  useEffect(() => {
-    if (!isCreateOpen || !canCreateEmploymentProfile) {
-      closeModal();
-      return;
-    }
-
-    openDrawer({
-      title: t('employment-profile:mutations.create.title'),
-      onDismiss: () => setIsCreateOpen(false),
-      content: (
-        <EmploymentProfileCreateSurface
-          presentation="drawer"
-          isPending={createMutation.isPending}
-          onCancel={() => setIsCreateOpen(false)}
-          onSubmit={onCreateSubmit}
-        />
-      ),
-    });
-  }, [
-    canCreateEmploymentProfile,
-    closeModal,
-    createMutation.isPending,
-    isCreateOpen,
-    onCreateSubmit,
-    openDrawer,
-    t,
-  ]);
-
-  useEffect(
-    () => () => {
-      closeModal();
-    },
-    [closeModal],
-  );
 
   const columns = useMemo(
     () =>

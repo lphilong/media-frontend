@@ -144,6 +144,9 @@ const resolveSafeRepairLink = (
 const readEntityStatus = (entity: PeopleReadinessSafeEntitySummary): string | undefined =>
   entity.lifecycleStatus ?? entity.status;
 
+const hasBusinessFilters = (filters: FilterState): boolean =>
+  Boolean(filters.category || filters.issueCode || filters.severity || filters.entityType);
+
 const isOverviewCardActive = (card: OverviewCard, filters: FilterState): boolean =>
   filters.severity === card.filter.value;
 
@@ -252,7 +255,9 @@ const EntitySummary = ({ entity }: { entity: PeopleReadinessSafeEntitySummary })
       <p className="font-medium text-text">{entity.displayName}</p>
       <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted">
         {entity.code ? <span>{entity.code}</span> : null}
-        {status ? <span>{t(`statuses.${status}`, { defaultValue: status })}</span> : null}
+        {status ? (
+          <span>{t(`statuses.${status}`, { defaultValue: t('statuses.unknown') })}</span>
+        ) : null}
         <span>{t(`entities.${entity.entityType}`)}</span>
       </div>
     </div>
@@ -265,12 +270,15 @@ const IssueRow = ({ issue }: { issue: PeopleReadinessIssue }): JSX.Element => {
   const repairActionKey = getRepairActionKey(issue, repairLink);
 
   return (
-    <article className="rounded border border-border bg-panel p-4 shadow-shell">
-      <div className="space-y-4">
-        <header className="border-b border-border pb-3">
+    <article
+      data-layout="dense-operational-row"
+      className="rounded border border-border bg-panel p-3 shadow-shell"
+    >
+      <div className="grid gap-3 md:grid-cols-[minmax(12rem,1fr)_minmax(18rem,2fr)_minmax(11rem,auto)] md:items-start">
+        <header>
           <div
             aria-label={t('fields.affectedProfile')}
-            data-layout="compact-header"
+            data-layout="primary-identity"
             data-testid="people-readiness-affected-profile"
           >
             <p className="text-xs font-medium uppercase text-muted">
@@ -282,46 +290,69 @@ const IssueRow = ({ issue }: { issue: PeopleReadinessIssue }): JSX.Element => {
           </div>
         </header>
 
-        <section aria-label={t('fields.issue')}>
-          <p className="text-xs font-medium uppercase text-muted">{t('fields.issue')}</p>
-          <h3 className="mt-1 text-base font-semibold text-text">
-            {t(`issueTitles.${issue.issueCode}`)}
-          </h3>
-        </section>
+        <div className="space-y-2">
+          <section aria-label={t('fields.issue')}>
+            <p className="text-xs font-medium uppercase text-muted">{t('fields.issue')}</p>
+            <h3 className="mt-1 text-sm font-semibold text-text">
+              {t(`issueTitles.${issue.issueCode}`)}
+            </h3>
+          </section>
+          <section aria-label={t('fields.description')}>
+            <p className="text-xs font-medium uppercase text-muted">{t('fields.description')}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-text">
+              {t(`issueDescriptions.${issue.issueCode}`)}
+            </p>
+          </section>
+          <dl className="flex flex-wrap gap-3 text-sm">
+            <div>
+              <dt className="sr-only">{t('fields.severity')}</dt>
+              <dd>
+                <StatusBadge
+                  label={t(`severities.${issue.severity}`)}
+                  tone={severityTone[issue.severity]}
+                  uppercase={false}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt className="sr-only">{t('fields.category')}</dt>
+              <dd>
+                <StatusBadge
+                  label={t(`categories.${issue.category}`)}
+                  tone="info"
+                  uppercase={false}
+                />
+              </dd>
+            </div>
+          </dl>
+          {issue.isBlockingForNewOperations ? (
+            <p className="text-xs text-muted">{t('badges.blockingHelper')}</p>
+          ) : null}
+        </div>
 
-        <section aria-label={t('fields.description')}>
-          <p className="text-xs font-medium uppercase text-muted">{t('fields.description')}</p>
-          <p className="mt-1 text-sm text-text">{t(`issueDescriptions.${issue.issueCode}`)}</p>
-        </section>
-
-        <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
-          <div>
-            <dt className="font-medium text-muted">{t('fields.severity')}</dt>
-            <dd className="mt-1">
-              <StatusBadge
-                label={t(`severities.${issue.severity}`)}
-                tone={severityTone[issue.severity]}
-                uppercase={false}
-              />
-              {issue.isBlockingForNewOperations ? (
-                <p className="mt-2 text-xs text-muted">{t('badges.blockingHelper')}</p>
-              ) : null}
-            </dd>
+        <div className="space-y-2 text-sm">
+          <div className="rounded border border-dashed border-border bg-bg px-3 py-2">
+            <span className="font-medium text-muted">{t('fields.repairTarget')} </span>
+            {repairLink ? (
+              <Link className="font-medium text-accent hover:underline" to={repairLink}>
+                {t(repairActionKey)}
+              </Link>
+            ) : (
+              <span className="text-muted">{t(repairActionKey)}</span>
+            )}
           </div>
-          <div>
-            <dt className="font-medium text-muted">{t('fields.category')}</dt>
-            <dd className="mt-1">
-              <StatusBadge
-                label={t(`categories.${issue.category}`)}
-                tone="info"
-                uppercase={false}
-              />
-            </dd>
-          </div>
-        </dl>
+          <p className="text-xs text-muted">
+            <span className="font-medium">{t('fields.generatedAt')} </span>
+            {formatBusinessTimestamp(issue.generatedAt)}
+          </p>
+          <TechnicalDetailsDisclosure
+            label={t('fields.technicalDetails')}
+            details={{ issueCode: issue.issueCode }}
+          />
+        </div>
 
         {issue.relatedEntities.length > 0 ? (
-          <div>
+          <div className="md:col-span-3">
             <p className="text-sm font-medium text-muted">{t('fields.relatedEntities')}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {issue.relatedEntities.map((entity) => (
@@ -335,29 +366,6 @@ const IssueRow = ({ issue }: { issue: PeopleReadinessIssue }): JSX.Element => {
             </div>
           </div>
         ) : null}
-
-        <div className="rounded border border-dashed border-border bg-bg px-3 py-2 text-sm">
-          <span className="font-medium text-muted">{t('fields.repairTarget')} </span>
-          {repairLink ? (
-            <Link className="font-medium text-accent hover:underline" to={repairLink}>
-              {t(repairActionKey)}
-            </Link>
-          ) : (
-            <span className="text-muted">{t(repairActionKey)}</span>
-          )}
-        </div>
-
-        <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
-          <div>
-            <dt className="font-medium text-muted">{t('fields.generatedAt')}</dt>
-            <dd className="mt-1 text-muted">{formatBusinessTimestamp(issue.generatedAt)}</dd>
-          </div>
-        </dl>
-
-        <TechnicalDetailsDisclosure
-          label={t('fields.technicalDetails')}
-          details={{ issueCode: issue.issueCode }}
-        />
       </div>
     </article>
   );
@@ -430,6 +438,13 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
 
   const summary = summaryQuery.data;
   const issues = issuesQuery.data;
+  const businessFiltersActive = hasBusinessFilters(filters);
+  const appliedFilters = [
+    filters.category ? t(`people-readiness:categories.${filters.category}`) : null,
+    filters.severity ? t(`people-readiness:severities.${filters.severity}`) : null,
+    filters.entityType ? t(`people-readiness:entities.${filters.entityType}`) : null,
+    filters.issueCode ? t(`people-readiness:issueTitles.${filters.issueCode}`) : null,
+  ].filter((value): value is string => Boolean(value));
   const cards: OverviewCard[] = [
     {
       id: 'blocker',
@@ -529,23 +544,22 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
             getLabel={(value) => t(`people-readiness:issueTitles.${value}`)}
             onChange={(value) => updateFilter('issueCode', value)}
           />
-          <label className="w-32 text-sm">
-            <span className="mb-1 block font-medium text-text">
-              {t('people-readiness:filters.limit')}
-            </span>
-            <select
-              value={filters.limit}
-              onChange={(event) => updateFilter('limit', Number(event.target.value))}
-              className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
-            >
-              {[2, 10, 25, 50, 100].map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
         </FilterToolbar>
+
+        {appliedFilters.length > 0 ? (
+          <div
+            role="region"
+            aria-label={t('people-readiness:filters.applied')}
+            className="flex flex-wrap items-center gap-2 text-sm"
+          >
+            <span className="font-medium text-muted">{t('people-readiness:filters.applied')}:</span>
+            {appliedFilters.map((label) => (
+              <span key={label} className="rounded-full bg-accent/10 px-2 py-1 text-accent">
+                {label}
+              </span>
+            ))}
+          </div>
+        ) : null}
 
         {issuesQuery.isFetching && issues ? (
           <p className="text-sm text-muted">{t('people-readiness:states.refreshingInline')}</p>
@@ -564,8 +578,16 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
 
         {issues && issues.items.length === 0 ? (
           <EmptyState
-            title={t('people-readiness:states.emptyTitle')}
-            message={t('people-readiness:states.emptyMessage')}
+            title={t(
+              businessFiltersActive
+                ? 'people-readiness:states.filteredEmptyTitle'
+                : 'people-readiness:states.initialEmptyTitle',
+            )}
+            message={t(
+              businessFiltersActive
+                ? 'people-readiness:states.filteredEmptyMessage'
+                : 'people-readiness:states.initialEmptyMessage',
+            )}
           />
         ) : null}
 
@@ -580,16 +602,34 @@ export const PeopleReadinessDashboardPage = (): JSX.Element => {
             <p className="text-sm text-muted">
               {t('people-readiness:pagination.total', { count: issues.totalCount })}
             </p>
-            <CursorPager
-              canGoBack={cursorStack.length > 0}
-              canGoNext={Boolean(issues.nextCursor)}
-              onPrevious={() => setCursorStack((current) => current.slice(0, -1))}
-              onNext={() =>
-                setCursorStack((current) =>
-                  issues.nextCursor ? [...current, issues.nextCursor] : current,
-                )
-              }
-            />
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="w-36 text-sm">
+                <span className="mb-1 block font-medium text-text">
+                  {t('people-readiness:filters.rowsPerPage')}
+                </span>
+                <select
+                  value={filters.limit}
+                  onChange={(event) => updateFilter('limit', Number(event.target.value))}
+                  className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+                >
+                  {[2, 10, 25, 50, 100].map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <CursorPager
+                canGoBack={cursorStack.length > 0}
+                canGoNext={Boolean(issues.nextCursor)}
+                onPrevious={() => setCursorStack((current) => current.slice(0, -1))}
+                onNext={() =>
+                  setCursorStack((current) =>
+                    issues.nextCursor ? [...current, issues.nextCursor] : current,
+                  )
+                }
+              />
+            </div>
           </div>
         ) : null}
       </section>

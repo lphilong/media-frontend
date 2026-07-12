@@ -620,9 +620,10 @@ export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps)
         (item) =>
           !item.isCurrentPeriod &&
           item.isPreviousPeriod !== false &&
-          !currentKpiPeriods.has(item.periodMonth),
+          !currentKpiPeriods.has(item.periodMonth) &&
+          (currentKpi || item.kpiPlanId !== latestPreviousKpi?.kpiPlanId),
       ),
-    [currentKpiPeriods, kpiData?.history],
+    [currentKpi, currentKpiPeriods, kpiData?.history, latestPreviousKpi?.kpiPlanId],
   );
   const kpiHistoryPeriodOptions = useMemo(
     () =>
@@ -764,6 +765,7 @@ export const SelfServicePage = ({ localeSwitcher = null }: SelfServicePageProps)
           selectedLabel={t('self-service:status.selectedModule')}
           onSelect={setActiveModule}
           getTestId={(moduleId) => `self-service-nav-${moduleId}`}
+          presentation={activeModule === 'overview' ? 'cards' : 'compact'}
         />
 
         {currentPersonQuery.isLoading && !currentPerson ? <LoadingState lines={6} /> : null}

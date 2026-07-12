@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import type userEvent from '@testing-library/user-event';
 
 import { PERMISSIONS } from '@shared/auth/current-actor-capabilities';
@@ -79,11 +79,15 @@ export const findRolePicker = async (pickerId: string): Promise<HTMLElement> => 
 export const openGuidedAssignment = async (
   user: ReturnType<typeof userEvent.setup>,
 ): Promise<void> => {
-  renderRoleRoute();
+  await act(async () => {
+    renderRoleRoute();
+  });
   expect(
     await screen.findByRole('heading', { name: i18n.t('role:page.title') }),
   ).toBeInTheDocument();
-  await user.click(await screen.findByRole('tab', { name: i18n.t('role:tabs.assignments') }));
+  await user.click(
+    await screen.findByRole('tab', { name: i18n.t('role:tabs.assignments') }, { timeout: 5000 }),
+  );
   expect(
     await screen.findByRole('heading', { name: i18n.t('role:accessAssignment.userTitle') }),
   ).toBeInTheDocument();

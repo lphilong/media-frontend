@@ -32,6 +32,8 @@
     "entityType": "主对象",
     "issueCode": "问题类型",
     "limit": "行数",
+    "rowsPerPage": "每页行数",
+    "applied": "已应用筛选",
     "allCategories": "全部流程",
     "allSeverities": "全部严重程度",
     "allEntityTypes": "全部对象",
@@ -54,8 +56,10 @@
     "openEmploymentTerms": "打开雇佣条款 / 薪酬条件"
   },
   "states": {
-    "emptyTitle": "当前筛选没有问题",
-    "emptyMessage": "没有后端 readiness issue 匹配当前筛选。这不是生产或运行时就绪声明。",
+    "initialEmptyTitle": "暂无就绪问题",
+    "initialEmptyMessage": "当前复核队列中没有后端就绪问题。这不是生产或运行时就绪声明。",
+    "filteredEmptyTitle": "没有问题符合这些筛选",
+    "filteredEmptyMessage": "清除一个或多个筛选以扩大复核队列。",
     "loadErrorTitle": "无法加载人员档案检查",
     "loadErrorMessage": "无法加载看板数据。",
     "refreshingInline": "正在刷新人员档案检查数据...",
@@ -114,7 +118,8 @@
     "ARCHIVED": "归档",
     "INACTIVE": "停用",
     "DISABLED": "禁用",
-    "PENDING": "待处理"
+    "PENDING": "待处理",
+    "unknown": "状态不可用"
   },
   "issueTitles": {
     "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "缺少雇佣条款",

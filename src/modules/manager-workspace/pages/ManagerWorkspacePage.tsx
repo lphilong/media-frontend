@@ -2586,6 +2586,7 @@ export const ManagerWorkspacePage = ({
             selectedLabel={t('manager-workspace:status.selectedModule')}
             onSelect={handleSelectModule}
             getTestId={(moduleId) => `manager-module-${moduleId}`}
+            presentation={activeModule === 'overview' ? 'cards' : 'compact'}
           />
 
           {activeModule === 'overview' ? (

@@ -146,6 +146,7 @@ let records: Terms[] = [];
 let conflictNextAction = false;
 let mutationErrorNext: 'permission' | 'validation' | null = null;
 let adminListErrorNext = false;
+let adminListErrorMessage = 'List failed';
 
 const adminProfiles: Record<
   string,
@@ -215,6 +216,7 @@ export const resetEmploymentTermsMockData = (): void => {
   conflictNextAction = false;
   mutationErrorNext = null;
   adminListErrorNext = false;
+  adminListErrorMessage = 'List failed';
 };
 
 export const setEmploymentTermsRedacted = (redacted: boolean): void => {
@@ -250,8 +252,9 @@ export const setEmploymentTermsEmpty = (): void => {
   records = [];
 };
 
-export const setEmploymentTermsAdminListErrorNext = (): void => {
+export const setEmploymentTermsAdminListErrorNext = (message = 'List failed'): void => {
   adminListErrorNext = true;
+  adminListErrorMessage = message;
 };
 
 resetEmploymentTermsMockData();
@@ -374,7 +377,7 @@ export const employmentTermsHandlers = [
     if (adminListErrorNext) {
       adminListErrorNext = false;
       return HttpResponse.json(
-        { error: { code: 'EMPLOYMENT_TERMS_LIST_FAILED', message: 'List failed' } },
+        { error: { code: 'EMPLOYMENT_TERMS_LIST_FAILED', message: adminListErrorMessage } },
         { status: 500 },
       );
     }

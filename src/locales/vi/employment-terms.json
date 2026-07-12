@@ -37,7 +37,8 @@
     "allReadiness": "Tất cả trạng thái sẵn sàng",
     "effectiveOn": "Hiệu lực vào ngày",
     "expiringBefore": "Hết hiệu lực trước",
-    "limit": "Số dòng"
+    "limit": "Số dòng",
+    "rowsPerPage": "Số dòng mỗi trang"
   },
   "table": {
     "profile": "Hồ sơ nhân sự",
@@ -99,8 +100,10 @@
     "refreshingInline": "Đang cập nhật điều khoản làm việc...",
     "refreshErrorTitle": "Không cập nhật được dữ liệu",
     "refreshErrorMessage": "Kết quả hiện tại vẫn được giữ lại.",
-    "emptyTitle": "Không có điều khoản phù hợp bộ lọc",
-    "emptyMessage": "Không có điều khoản phù hợp bộ lọc hiện tại."
+    "initialEmptyTitle": "Chưa có điều khoản làm việc",
+    "initialEmptyMessage": "Chưa có điều khoản làm việc trong không gian này.",
+    "filteredEmptyTitle": "Không có điều khoản phù hợp bộ lọc",
+    "filteredEmptyMessage": "Không có điều khoản phù hợp bộ lọc hiện tại."
   },
   "pagination": {
     "loaded": "Đang hiển thị tối đa {{count}} kết quả đã tải."

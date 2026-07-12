@@ -277,6 +277,7 @@ describe('/self-service route', () => {
     expect(profileTab).toHaveAttribute('aria-selected', 'false');
     expect(profileTab.tagName).toBe('BUTTON');
     expect(profileTab).not.toHaveAttribute('href');
+    expect(profileTab.closest('nav')).toHaveAttribute('data-presentation', 'cards');
 
     await user.click(profileTab);
 
@@ -284,6 +285,10 @@ describe('/self-service route', () => {
     expect(overviewTab).toHaveAttribute('aria-selected', 'false');
     expect(await screen.findByTestId('self-service-panel-profile')).toBeInTheDocument();
     expect(screen.queryByTestId('self-service-overview')).not.toBeInTheDocument();
+    expect(profileTab.closest('nav')).toHaveAttribute('data-presentation', 'compact');
+    expect(screen.getByRole('button', { name: i18n.t('common:actions.logout') })).toHaveClass(
+      'focus-visible:outline-accent',
+    );
   });
 
   it('parses nullable current-person locale and renders My Profile instead of not-linked state', async () => {
@@ -797,7 +802,10 @@ describe('/self-service route', () => {
 
     await switchSelfServiceModule('work');
 
-    expect(await screen.findByTestId('self-service-nav-work')).toHaveTextContent('Selected');
+    expect(await screen.findByTestId('self-service-nav-work')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     expect(await screen.findByTestId('self-service-nav-kpi')).toHaveTextContent('Read-only');
     expect(await screen.findByRole('heading', { name: 'My Events' })).toBeInTheDocument();
     expect(await screen.findByText('EVT-SELF-TAL')).toBeInTheDocument();
@@ -1265,6 +1273,9 @@ describe('/self-service route', () => {
     expect(screen.getByTestId('self-service-kpi-latest-previous')).toHaveTextContent(
       'May operations KPI',
     );
+    expect(
+      within(screen.getByTestId('self-service-kpi-history')).queryByText('May operations KPI'),
+    ).not.toBeInTheDocument();
     expect(screen.getAllByText('Previous period').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Not current KPI').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Read-only').length).toBeGreaterThanOrEqual(1);
@@ -1362,8 +1373,9 @@ describe('/self-service route', () => {
 
     await switchSelfServiceModule('talentGroups');
 
-    expect(await screen.findByTestId('self-service-nav-talentGroups')).toHaveTextContent(
-      'Selected',
+    expect(await screen.findByTestId('self-service-nav-talentGroups')).toHaveAttribute(
+      'aria-selected',
+      'true',
     );
     expect(await screen.findByRole('heading', { name: 'My Talent Groups' })).toBeInTheDocument();
     expect(await screen.findByText('Creator Team')).toBeInTheDocument();
@@ -1617,7 +1629,10 @@ describe('/self-service route', () => {
     expect(await screen.findByTestId('self-service-account-card')).toBeInTheDocument();
     const preferencesForm = await screen.findByTestId('self-service-account-preferences-form');
     expect(preferencesForm).toBeInTheDocument();
-    expect(await screen.findByTestId('self-service-nav-account')).toHaveTextContent('Selected');
+    expect(await screen.findByTestId('self-service-nav-account')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument();
     expect(await screen.findByText('mina.staff@example.test')).toBeInTheDocument();
     expect((await screen.findAllByText('Linked')).length).toBeGreaterThanOrEqual(1);
@@ -1947,4 +1962,26 @@ describe('/self-service route', () => {
       expect(overview.textContent ?? '').not.toMatch(new RegExp(`\\b${locale}\\b`, 'u'));
     },
   );
+
+  it('keeps targeted ZH overview and KPI semantics localized without English islands', async () => {
+    await act(async () => {
+      await setLocale('zh');
+    });
+
+    for (const key of [
+      'overview.title',
+      'overview.summary',
+      'overview.profileReadiness',
+      'overview.accountLink',
+      'overview.todayWork',
+      'overview.preferences',
+      'kpiSections.current',
+      'kpiSections.latestPrevious',
+      'kpiSections.history',
+    ]) {
+      const value = i18n.t(`self-service:${key}`);
+      expect(value).not.toMatch(/Overview|Readiness|Account link|Today|Locale|Current|Previous/i);
+      expect(value).not.toMatch(/^self-service:/);
+    }
+  });
 });

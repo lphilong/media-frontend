@@ -12,6 +12,7 @@ import { fetchResponsibilitySummary } from '@modules/responsibility/api/responsi
 import { fetchTalentGroupsByTalent } from '@modules/talent-group/api/talent-group.api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import {
+  getMockCurrentActorCapabilities,
   resetIdentityAccessMockData,
   setMockCurrentActorCapabilities,
 } from '@test/msw/identity-access-handlers';
@@ -152,7 +153,11 @@ describe('talent-group wave 4 surfaces', () => {
     renderRoute('/talent-groups');
 
     await user.click(
-      await screen.findByRole('button', { name: i18n.t('talent-group:actions.create') }),
+      await screen.findByRole(
+        'button',
+        { name: i18n.t('talent-group:actions.create') },
+        { timeout: 3000 },
+      ),
     );
     const dialog = await screen.findByRole('dialog', {
       name: i18n.t('talent-group:mutations.create.title'),
@@ -176,6 +181,42 @@ describe('talent-group wave 4 surfaces', () => {
         name: i18n.t('talent-group:mutations.create.title'),
       }),
     ).toBeInTheDocument();
+  });
+
+  it('keeps the real create-drawer focus, Escape restoration, reopen, and unmounted-trigger contract', async () => {
+    await setLocale(DEFAULT_LOCALE);
+    const baseCapabilities = getMockCurrentActorCapabilities();
+    setMockCurrentActorCapabilities({
+      ...baseCapabilities,
+      permissions: [
+        ...new Set([...baseCapabilities.permissions, 'talentGroup.read', 'talentGroup.create']),
+      ],
+    });
+    const user = userEvent.setup();
+    renderRoute('/talent-groups');
+    await screen.findByText('TG-000001', {}, { timeout: 3_000 });
+
+    const trigger = await screen.findByRole('button', {
+      name: i18n.t('talent-group:actions.create'),
+    });
+    await user.click(trigger);
+    const dialog = await screen.findByRole('dialog', {
+      name: i18n.t('talent-group:mutations.create.title'),
+    });
+    expect(within(dialog).getByLabelText(i18n.t('talent-group:fields.name'))).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+
+    await user.click(trigger);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    trigger.remove();
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(document.activeElement?.isConnected).toBe(true);
+    expect(screen.getByText('TG-000001')).toBeInTheDocument();
   });
 
   it('uses a talent selector for the contains-talent relationship filter', async () => {

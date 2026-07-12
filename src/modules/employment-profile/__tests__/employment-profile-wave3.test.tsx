@@ -23,14 +23,14 @@ vi.mock('@modules/org-unit', async () => {
 
   return {
     ...actual,
-  loadOrgUnitReferenceOptions: vi.fn(async () => [
-    {
-      id: 'ou-sales',
-      label: 'Sales - OU-SALES',
-      description: 'ACTIVE',
-      href: '/org-units/ou-sales',
-    },
-  ]),
+    loadOrgUnitReferenceOptions: vi.fn(async () => [
+      {
+        id: 'ou-sales',
+        label: 'Sales - OU-SALES',
+        description: 'ACTIVE',
+        href: '/org-units/ou-sales',
+      },
+    ]),
   };
 });
 
@@ -41,22 +41,22 @@ vi.mock('@modules/employment-profile', async () => {
 
   return {
     ...actual,
-  loadEmploymentProfileReferenceOptions: vi.fn(async () => [
-    {
-      id: 'ep-manager',
-      label: 'Manager Display - EMPMGR',
-      description: 'ACTIVE',
-      href: '/employment-profiles/ep-manager',
-    },
-  ]),
-  loadUnlinkedUserReferenceOptions: vi.fn(async () => [
-    {
-      id: 'user-admin',
-      label: 'Admin User - admin@example.com',
-      description: 'ACTIVE',
-      href: '/users/user-admin',
-    },
-  ]),
+    loadEmploymentProfileReferenceOptions: vi.fn(async () => [
+      {
+        id: 'ep-manager',
+        label: 'Manager Display - EMPMGR',
+        description: 'ACTIVE',
+        href: '/employment-profiles/ep-manager',
+      },
+    ]),
+    loadUnlinkedUserReferenceOptions: vi.fn(async () => [
+      {
+        id: 'user-admin',
+        label: 'Admin User - admin@example.com',
+        description: 'ACTIVE',
+        href: '/users/user-admin',
+      },
+    ]),
   };
 });
 
@@ -137,63 +137,60 @@ describe('employment profile wave 3 surfaces', () => {
     expect(screen.queryByText('managerEmploymentProfileId')).not.toBeInTheDocument();
   });
 
-  it('opens Employment Profile create in a drawer without replacing the list', async () => {
+  it('opens Employment Profile create as a dedicated workflow route', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
-    renderRoute('/employment-profiles');
+    const router = renderRoute('/employment-profiles');
 
     await user.click(
-      await screen.findByRole('button', {
-        name: i18n.t('employment-profile:actions.create'),
-      }),
+      await screen.findByRole(
+        'button',
+        {
+          name: i18n.t('employment-profile:actions.create'),
+        },
+        { timeout: 3000 },
+      ),
     );
-    const heading = await screen.findByRole('heading', {
-      name: i18n.t('employment-profile:mutations.create.title'),
-    });
-    const surface = heading.closest('section');
-    expect(surface).toHaveAttribute('data-mutation-presentation', 'drawer');
-    expect(screen.getByText('EP-000001')).toBeInTheDocument();
-
-    await user.click(within(surface as HTMLElement).getByRole('button', { name: /hủy|cancel/i }));
-    expect(
-      screen.queryByRole('heading', {
-        name: i18n.t('employment-profile:mutations.create.title'),
-      }),
-    ).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/employment-profiles/create');
+    const workflow = await screen.findByTestId('employment-profile-complex-create');
+    expect(workflow).toHaveAttribute('data-container', 'dedicated-page');
+    expect(workflow).not.toHaveAttribute('data-mutation-presentation', 'drawer');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('resets Employment Profile create state after host close and reopens in one click', async () => {
+  it('returns from create without mutation and reopens with clean state', async () => {
     await setLocale(DEFAULT_LOCALE);
     const user = userEvent.setup();
-    renderRoute('/employment-profiles');
+    const router = renderRoute('/employment-profiles');
 
     await user.click(
-      await screen.findByRole('button', {
-        name: i18n.t('employment-profile:actions.create'),
-      }),
+      await screen.findByRole(
+        'button',
+        {
+          name: i18n.t('employment-profile:actions.create'),
+        },
+        { timeout: 3000 },
+      ),
     );
-    const dialog = await screen.findByRole('dialog', {
-      name: i18n.t('employment-profile:mutations.create.title'),
-    });
+    await screen.findByTestId('employment-profile-complex-create');
+    await user.type(
+      screen.getByLabelText(new RegExp(i18n.t('employment-profile:fields.legalName'), 'i')),
+      'Temporary value',
+    );
+    await user.click(screen.getByRole('link', { name: i18n.t('common:actions.cancel') }));
+    expect(router.state.location.pathname).toBe('/employment-profiles');
 
-    await user.click(within(dialog).getByRole('button', { name: i18n.t('common:actions.close') }));
-
-    const createTrigger = await screen.findByRole('button', {
-      name: i18n.t('employment-profile:actions.create'),
-    });
+    await user.click(
+      await screen.findByRole(
+        'button',
+        { name: i18n.t('employment-profile:actions.create') },
+        { timeout: 3000 },
+      ),
+    );
+    expect(await screen.findByTestId('employment-profile-complex-create')).toBeInTheDocument();
     expect(
-      screen.queryByRole('dialog', {
-        name: i18n.t('employment-profile:mutations.create.title'),
-      }),
-    ).not.toBeInTheDocument();
-
-    await user.click(createTrigger);
-
-    expect(
-      await screen.findByRole('dialog', {
-        name: i18n.t('employment-profile:mutations.create.title'),
-      }),
-    ).toBeInTheDocument();
+      screen.getByLabelText(new RegExp(i18n.t('employment-profile:fields.legalName'), 'i')),
+    ).toHaveValue('');
   });
 
   it('uses readable org unit selectors and drops the deprecated manager filter', async () => {
@@ -275,9 +272,11 @@ describe('employment profile wave 3 surfaces', () => {
     renderRoute('/employment-profiles/ep-001');
 
     expect(
-      await screen.findByRole('heading', {
-        name: i18n.t('employment-profile:detail.hubTitle'),
-      }),
+      await screen.findByRole(
+        'heading',
+        { name: i18n.t('employment-profile:detail.hubTitle') },
+        { timeout: 3000 },
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(i18n.t('employment-profile:detail.externalContractHelper')),

@@ -241,6 +241,58 @@
     "terminated": "Employment terminated successfully.",
     "lifecycleUpdated": "Employment lifecycle updated successfully."
   },
+  "createWorkflow": {
+    "pageTitle": "Create Employment Profile",
+    "pageSubtitle": "Create a people record through an ordered, reviewable workflow.",
+    "progressLabel": "Employment Profile create progress",
+    "steps": {
+      "identity": "Profile identity",
+      "relationship": "Employment relationship",
+      "attribution": "HR attribution",
+      "review": "Review"
+    },
+    "sections": {
+      "identityHelp": "Enter the person's business identity and role information.",
+      "relationshipHelp": "Choose organizational placement, employment dates, and an optional login link.",
+      "attributionHelp": "Optionally record the people responsible for recruiting and onboarding."
+    },
+    "fieldState": {
+      "required": "Required",
+      "optional": "Optional",
+      "requiredGroup": "Required fields",
+      "requiredHelp": "must be completed before review.",
+      "optionalGroup": "Optional fields",
+      "optionalHelp": "may be left blank.",
+      "derived": "System-generated"
+    },
+    "review": {
+      "title": "Review Employment Profile",
+      "help": "Confirm the business identity and placement before creating the record.",
+      "notProvided": "Not provided"
+    },
+    "actions": {
+      "continue": "Continue",
+      "continueToReview": "Continue to review",
+      "back": "Back",
+      "confirm": "Confirm and create",
+      "pending": "Creating Employment Profile...",
+      "viewProfile": "View Profile",
+      "createAnother": "Create Another",
+      "returnToPeople": "Return to People",
+      "clearOrgUnit": "Clear organization unit"
+    },
+    "errors": {
+      "validationSummary": "Review the highlighted fields before trying again.",
+      "retryableSummary": "The Employment Profile could not be created. Your entries are preserved; try again.",
+      "backendField": "The server could not accept this field."
+    },
+    "completion": { "title": "Employment Profile created" },
+    "fallback": { "referenceUnavailable": "Selected reference unavailable" },
+    "boundary": {
+      "noAutomaticAccess": "Creating an Employment Profile does not assign a Role, grant access, provision payroll, create a work schedule, or add unrelated records."
+    },
+    "technicalDetails": "Technical details"
+  },
   "confirm": {
     "unlinkUser": "Unlink user from this employment profile?",
     "place-on-leave": "Place this profile on leave?",

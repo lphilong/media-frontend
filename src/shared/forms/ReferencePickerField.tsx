@@ -14,6 +14,8 @@ type ReferencePickerFieldProps = {
   clearable?: boolean;
   clearLabel?: string;
   onSelectedOptionChange?: (option: ReferenceOption | undefined) => void;
+  selectedLabelFallback?: string;
+  showTechnicalMetadata?: boolean;
 };
 
 export const ReferencePickerField = ({
@@ -27,6 +29,8 @@ export const ReferencePickerField = ({
   clearable = false,
   clearLabel,
   onSelectedOptionChange,
+  selectedLabelFallback,
+  showTechnicalMetadata,
 }: ReferencePickerFieldProps): JSX.Element => {
   const fieldId = useId();
   const errorId = `${fieldId}-error`;
@@ -75,6 +79,8 @@ export const ReferencePickerField = ({
         placeholder={placeholder}
         resourceLabel={label}
         onSelectedOptionChange={onSelectedOptionChange}
+        selectedLabelFallback={selectedLabelFallback}
+        showTechnicalMetadata={showTechnicalMetadata}
       />
       {clearable && value ? (
         <button

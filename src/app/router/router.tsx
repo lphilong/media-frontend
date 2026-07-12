@@ -211,6 +211,12 @@ const moduleDetailPageMap: Record<string, LazyExoticComponent<LazyModuleRoute>> 
   ),
 };
 
+const EmploymentProfileCreatePage = lazy(() =>
+  import('@modules/employment-profile/pages/EmploymentProfileCreatePage').then((module) => ({
+    default: module.EmploymentProfileCreatePage,
+  })),
+);
+
 const DashboardLitePage = lazy(() =>
   import('@modules/dashboard-lite/pages/DashboardLitePage').then((module) => ({
     default: module.DashboardLitePage,
@@ -380,6 +386,14 @@ function LazyModuleDetailElement({
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <LazyDetailPage />
+    </Suspense>
+  );
+}
+
+function LazyEmploymentProfileCreateElement(): JSX.Element {
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <EmploymentProfileCreatePage />
     </Suspense>
   );
 }
@@ -747,6 +761,15 @@ export const appRoutes: RouteObject[] = [
           breadcrumbKey: 'nav:items.kpi',
           titleKey: 'kpi:page.title',
           subtitleKey: 'kpi:page.subtitle',
+        } satisfies ModuleRouteHandle,
+      },
+      {
+        path: APP_PATHS.employmentProfileCreate.replace(/^\//, ''),
+        element: withModuleAccess('employment-profile', <LazyEmploymentProfileCreateElement />),
+        handle: {
+          breadcrumbKey: 'employment-profile:createWorkflow.pageTitle',
+          titleKey: 'employment-profile:createWorkflow.pageTitle',
+          subtitleKey: 'employment-profile:createWorkflow.pageSubtitle',
         } satisfies ModuleRouteHandle,
       },
       ...standardModuleDefinitions.map((definition) => {

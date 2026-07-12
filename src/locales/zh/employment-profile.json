@@ -241,6 +241,58 @@
     "terminated": "员工档案已终止。",
     "lifecycleUpdated": "员工生命周期已更新。"
   },
+  "createWorkflow": {
+    "pageTitle": "创建员工档案",
+    "pageSubtitle": "通过有序且可复核的流程创建人员记录。",
+    "progressLabel": "员工档案创建进度",
+    "steps": {
+      "identity": "档案身份",
+      "relationship": "雇佣关系",
+      "attribution": "人力归属",
+      "review": "复核"
+    },
+    "sections": {
+      "identityHelp": "输入人员业务身份和岗位信息。",
+      "relationshipHelp": "选择组织归属、任职日期和可选登录账号。",
+      "attributionHelp": "可选记录招聘和入职负责人。"
+    },
+    "fieldState": {
+      "required": "必填",
+      "optional": "可选",
+      "requiredGroup": "必填字段",
+      "requiredHelp": "必须在复核前完成。",
+      "optionalGroup": "可选字段",
+      "optionalHelp": "可以留空。",
+      "derived": "系统生成"
+    },
+    "review": {
+      "title": "复核员工档案",
+      "help": "创建记录前确认业务身份和组织归属。",
+      "notProvided": "未提供"
+    },
+    "actions": {
+      "continue": "继续",
+      "continueToReview": "继续复核",
+      "back": "返回",
+      "confirm": "确认并创建",
+      "pending": "正在创建员工档案...",
+      "viewProfile": "查看档案",
+      "createAnother": "继续创建",
+      "returnToPeople": "返回人员列表",
+      "clearOrgUnit": "清除组织单元"
+    },
+    "errors": {
+      "validationSummary": "请检查标记的字段后重试。",
+      "retryableSummary": "无法创建员工档案。输入内容已保留，请重试。",
+      "backendField": "服务器无法接受此字段。"
+    },
+    "completion": { "title": "员工档案已创建" },
+    "fallback": { "referenceUnavailable": "所选引用不可用" },
+    "boundary": {
+      "noAutomaticAccess": "创建员工档案不会自动分配角色、授予访问权限、设置工资、创建工作计划或添加无关记录。"
+    },
+    "technicalDetails": "技术详情"
+  },
   "confirm": {
     "unlinkUser": "从此员工档案解除用户关联？",
     "place-on-leave": "将此档案置为休假？",

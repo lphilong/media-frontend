@@ -9,13 +9,13 @@
     "label": "自助服务区域"
   },
   "overview": {
-    "title": "Overview",
-    "summary": "Readiness and today's own-data snapshot from Self-Service.",
-    "profileReadiness": "Profile readiness",
-    "accountLink": "Account link",
-    "todayWork": "Today snapshot",
-    "todayWorkValue": "{{workShiftCount}} shifts / {{eventCount}} events",
-    "preferences": "Locale / timezone"
+    "title": "概览",
+    "summary": "查看个人档案就绪状态与今日自助服务数据摘要。",
+    "profileReadiness": "档案就绪状态",
+    "accountLink": "账号关联",
+    "todayWork": "今日摘要",
+    "todayWorkValue": "{{workShiftCount}} 个班次 / {{eventCount}} 个活动",
+    "preferences": "语言 / 时区"
   },
   "sections": {
     "profile": {
@@ -84,38 +84,38 @@
     "assignmentStatus": "分配状态"
   },
   "kpiFields": {
-    "period": "Period",
-    "periodMonth": "Period month",
-    "lastUpdatedAt": "Updated",
-    "metric": "Metric",
-    "target": "Official target",
-    "actual": "Actual / effective actual",
-    "progress": "Progress"
+    "period": "周期",
+    "periodMonth": "KPI 月份",
+    "lastUpdatedAt": "更新时间",
+    "metric": "指标",
+    "target": "正式目标",
+    "actual": "实际值 / 生效实际值",
+    "progress": "进度"
   },
   "kpiSections": {
-    "current": "Current KPI",
-    "latestPrevious": "Latest previous KPI",
-    "history": "Previous KPI history"
+    "current": "当前 KPI",
+    "latestPrevious": "最近一期 KPI",
+    "history": "历史 KPI"
   },
   "kpiPeriod": {
-    "current": "Current period",
-    "previous": "Previous period",
-    "notCurrent": "Not current KPI"
+    "current": "当前周期",
+    "previous": "上一周期",
+    "notCurrent": "非当前 KPI"
   },
   "kpiStatusSummary": {
-    "title": "Actual status summary",
+    "title": "实际值状态摘要",
     "readOnlySource": "状态基于管理者录入的每日实际值，只读。",
-    "expected": "Expected",
-    "entered": "Entered",
-    "enteredZero": "Entered zero",
-    "dueOpen": "Due open",
-    "overdue": "Overdue",
-    "excused": "Excused",
-    "notRequired": "Not required",
-    "notDue": "Not due"
+    "expected": "待录入",
+    "entered": "已录入",
+    "enteredZero": "已录入零值",
+    "dueOpen": "到期开放",
+    "overdue": "已逾期",
+    "excused": "已豁免",
+    "notRequired": "无需录入",
+    "notDue": "尚未到期"
   },
   "kpiHistory": {
-    "selectedPeriodCopy": "Showing {{count}} previous KPI record(s) for {{periodMonth}}."
+    "selectedPeriodCopy": "正在显示 {{periodMonth}} 的 {{count}} 条历史 KPI 记录。"
   },
   "talentGroupFields": {
     "managers": "经理",

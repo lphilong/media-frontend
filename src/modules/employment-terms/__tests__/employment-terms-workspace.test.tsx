@@ -1,5 +1,7 @@
+import i18n from 'i18next';
+import { QueryClient } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -10,6 +12,7 @@ import {
   setMockCurrentActorCapabilities,
 } from '@test/msw/identity-access-handlers';
 import {
+  setEmploymentTermsAdminListErrorNext,
   setEmploymentTermsEmpty,
   setEmploymentTermsRedacted,
 } from '@test/msw/employment-terms-handlers';
@@ -30,13 +33,20 @@ const grantEmploymentTermsAccess = (): void => {
   });
 };
 
-const renderWorkspace = async (locale: 'en' | 'vi' = 'en'): Promise<void> => {
+const renderWorkspace = async (locale: 'en' | 'vi' | 'zh' = 'en'): Promise<QueryClient> => {
   await setLocale(locale);
   grantEmploymentTermsAccess();
   const router = createMemoryRouter(appRoutes, { initialEntries: ['/employment-terms'] });
-  await act(async () => {
-    renderAppWithProviders(<RouterProvider router={router} />);
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, refetchOnWindowFocus: false },
+      mutations: { retry: false },
+    },
   });
+  await act(async () => {
+    renderAppWithProviders(<RouterProvider router={router} />, { queryClient });
+  });
+  return queryClient;
 };
 
 const emptyListResponse = () => ({
@@ -48,6 +58,21 @@ const emptyListResponse = () => ({
 });
 
 describe('Employment Terms admin workspace', () => {
+  it('provides distinct EN, VI, and ZH pagination and empty-state semantics', async () => {
+    const expected = {
+      en: ['Rows per page', 'No employment terms yet'],
+      vi: ['Số dòng mỗi trang', 'Chưa có điều khoản làm việc'],
+      zh: ['每页行数', '暂无工作条款'],
+    } as const;
+
+    for (const [locale, values] of Object.entries(expected) as Array<
+      [keyof typeof expected, (typeof expected)[keyof typeof expected]]
+    >) {
+      await setLocale(locale);
+      expect(i18n.t('employment-terms:filters.rowsPerPage')).toBe(values[0]);
+      expect(i18n.t('employment-terms:states.initialEmptyTitle')).toBe(values[1]);
+    }
+  });
   it('renders the real workspace route, structured-terms notice, list, and HRET anchor links', async () => {
     const user = userEvent.setup();
     await renderWorkspace('vi');
@@ -87,27 +112,99 @@ describe('Employment Terms admin workspace', () => {
     expect(screen.queryByText(/^0$/)).not.toBeInTheDocument();
   });
 
-  it('renders the empty state', async () => {
+  it('distinguishes the initial empty state from a filtered empty result', async () => {
     setEmploymentTermsEmpty();
-    await renderWorkspace('vi');
+    await renderWorkspace('en');
 
-    expect(await screen.findByText('Không có điều khoản phù hợp bộ lọc')).toBeInTheDocument();
+    expect(await screen.findByText('No employment terms yet')).toBeInTheDocument();
+    expect(
+      screen.getByText('No employment terms are available in this workspace.'),
+    ).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText('Search'), 'missing');
+
+    expect(await screen.findByText('No matching employment terms')).toBeInTheDocument();
+    expect(screen.getByText('No terms match the current filters.')).toBeInTheDocument();
   });
 
   it('renders the initial load error state', async () => {
+    let requestCount = 0;
     server.use(
-      http.get('*/admin/employment-terms', () =>
-        HttpResponse.json(
-          { error: { code: 'EMPLOYMENT_TERMS_LIST_FAILED', message: 'List failed' } },
-          { status: 500 },
-        ),
-      ),
+      http.get('*/admin/employment-terms', () => {
+        requestCount += 1;
+        return requestCount === 1
+          ? HttpResponse.json(
+              { error: { code: 'EMPLOYMENT_TERMS_LIST_FAILED', message: 'List failed' } },
+              { status: 500 },
+            )
+          : HttpResponse.json(emptyListResponse());
+      }),
     );
     await renderWorkspace('en');
 
     expect(
       await screen.findByText('Employment Terms could not be loaded', {}, { timeout: 5000 }),
     ).toBeInTheDocument();
+    expect(screen.queryByText('List failed')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText('No employment terms yet')).toBeInTheDocument();
+    expect(requestCount).toBe(2);
+  }, 10_000);
+
+  it('keeps retained results and shows only safe localized copy when a refresh fails', async () => {
+    const rawBackendMessage =
+      'SQLSTATE[42P01]: select * from employment_terms at https://api.example.test/admin/employment-terms';
+    const queryClient = await renderWorkspace('en');
+
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    setEmploymentTermsAdminListErrorNext(rawBackendMessage);
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employment-terms'] });
+    });
+
+    expect(await screen.findByText('Refresh failed')).toBeInTheDocument();
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.queryByText(rawBackendMessage)).not.toBeInTheDocument();
+    expect(screen.queryByText(/SQLSTATE|api\.example\.test/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: ['employment-terms'] });
+    });
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    expect(screen.queryByText('Refresh failed')).not.toBeInTheDocument();
+  });
+
+  it('maps an initial 404 to the terminal localized Not Found state without Retry', async () => {
+    const rawBackendMessage = 'Employment terms table missing for tenant 8d3d0507-ae86-42fc-a9c3';
+    server.use(
+      http.get('*/admin/employment-terms', () =>
+        HttpResponse.json(
+          { error: { code: 'EMPLOYMENT_TERMS_NOT_FOUND', message: rawBackendMessage } },
+          { status: 404 },
+        ),
+      ),
+    );
+    await renderWorkspace('en');
+
+    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(screen.queryByText('Employment Terms could not be loaded')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+    expect(screen.queryByText(rawBackendMessage)).not.toBeInTheDocument();
+  });
+
+  it('settles a backend permission denial without leaking the backend message', async () => {
+    server.use(
+      http.get('*/admin/employment-terms', () =>
+        HttpResponse.json(
+          { error: { code: 'FORBIDDEN', message: 'Raw backend denial' } },
+          { status: 403 },
+        ),
+      ),
+    );
+    await renderWorkspace('en');
+
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.queryByText('Raw backend denial')).not.toBeInTheDocument();
   });
 
   it('sends backend-supported filters from quick filters and filter controls', async () => {
@@ -120,6 +217,12 @@ describe('Employment Terms admin workspace', () => {
     );
     const user = userEvent.setup();
     await renderWorkspace('en');
+
+    const quickFilters = await screen.findByRole('region', { name: 'Quick filters' });
+    expect(quickFilters).toHaveAttribute('data-layout', 'compact-filter-strip');
+    const filterRegion = screen.getByRole('region', { name: 'Employment Terms filters' });
+    expect(within(filterRegion).queryByLabelText('Rows per page')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Rows per page')).toHaveValue('20');
 
     await user.click(await screen.findByRole('button', { name: 'Has overlap' }));
     await user.type(screen.getByLabelText('Search'), 'A');
@@ -136,6 +239,16 @@ describe('Employment Terms admin workspace', () => {
       expect(capturedUrl?.searchParams.get('effectiveOn')).toBe('2026-01-01');
       expect(capturedUrl?.searchParams.get('expiringBefore')).toBe('2026-12-31');
     });
+  });
+
+  it('formats result dates with the active locale', async () => {
+    await renderWorkspace('en');
+    expect((await screen.findAllByText('Jan 1, 2026')).length).toBeGreaterThan(0);
+
+    cleanup();
+    await renderWorkspace('zh');
+    expect((await screen.findAllByText('2026年1月1日')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Jan 1, 2026')).not.toBeInTheDocument();
   });
 
   it('uses nextCursor for the next page and resets cursor when filters change', async () => {

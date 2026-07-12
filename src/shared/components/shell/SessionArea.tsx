@@ -13,7 +13,12 @@ export const SessionArea = (): JSX.Element => {
         <p className="font-medium text-text">{session?.userName ?? t('session.placeholderUser')}</p>
         <p className="text-muted">{t('session.statusActive')}</p>
       </div>
-      <Button onClick={() => void logout('/')} size="sm" variant="outline">
+      <Button
+        className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        onClick={() => void logout('/')}
+        size="sm"
+        variant="outline"
+      >
         {t('actions.logout')}
       </Button>
     </div>

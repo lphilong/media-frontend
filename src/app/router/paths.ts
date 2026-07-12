@@ -26,6 +26,7 @@ export const APP_PATHS = {
   orgUnitDetailPattern: '/org-units/:orgUnitId',
   orgUnitDetail: (orgUnitId: string) => joinDetailPath('/org-units', orgUnitId),
   employmentProfiles: '/employment-profiles',
+  employmentProfileCreate: '/employment-profiles/create',
   employmentProfileDetailPattern: '/employment-profiles/:employmentProfileId',
   employmentProfileDetail: (employmentProfileId: string) =>
     joinDetailPath('/employment-profiles', employmentProfileId),
@@ -55,7 +56,8 @@ export const APP_PATHS = {
   workScheduleAvailabilityBatches: '/work-schedule/availability-batches',
   workPatterns: '/work-schedule/patterns',
   workPatternDetailPattern: '/work-schedule/patterns/:workPatternId',
-  workPatternDetail: (workPatternId: string) => joinDetailPath('/work-schedule/patterns', workPatternId),
+  workPatternDetail: (workPatternId: string) =>
+    joinDetailPath('/work-schedule/patterns', workPatternId),
   holidayCalendars: '/work-schedule/holiday-calendars',
   holidayCalendarDetailPattern: '/work-schedule/holiday-calendars/:holidayCalendarId',
   holidayCalendarDetail: (holidayCalendarId: string) =>

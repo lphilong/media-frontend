@@ -21,15 +21,17 @@ import {
   ErrorState,
   FilterToolbar,
   LoadingState,
+  NotFoundState,
   PageContainer,
   PageHeader,
+  PermissionDeniedState,
   StatusBadge,
   TechnicalDetailsDisclosure,
   type StatusBadgeTone,
 } from '@shared/components/primitives';
 import {
   formatCurrency,
-  formatUtcMidnightDateLike,
+  formatLocalizedUtcMidnightDateLike,
   readReferenceDisplay,
 } from '@shared/formatting/formatters';
 
@@ -111,6 +113,19 @@ const trimOrUndefined = (value: string): string | undefined => {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
 };
+
+const hasBusinessFilters = (filters: FilterState): boolean =>
+  Boolean(
+    filters.employmentProfileId ||
+    filters.orgUnitId ||
+    filters.employmentStatus ||
+    filters.status ||
+    filters.payrollEligible ||
+    filters.readiness ||
+    filters.effectiveOn ||
+    filters.expiringBefore ||
+    filters.search,
+  );
 
 const toApiFilters = (filters: FilterState, cursor?: string): EmploymentTermsAdminFilters => ({
   ...(trimOrUndefined(filters.employmentProfileId)
@@ -288,7 +303,12 @@ const EmploymentProfileSummary = ({
 };
 
 const ResultsTable = ({ items }: { items: EmploymentTermsAdminListItem[] }): JSX.Element => {
-  const { t } = useTranslation('employment-terms');
+  const { t, i18n } = useTranslation('employment-terms');
+  const locale = i18n.language.startsWith('zh')
+    ? 'zh-CN'
+    : i18n.language.startsWith('vi')
+      ? 'vi-VN'
+      : 'en-US';
 
   return (
     <div className="overflow-x-auto rounded border border-border bg-panel shadow-shell">
@@ -342,11 +362,17 @@ const ResultsTable = ({ items }: { items: EmploymentTermsAdminListItem[] }): JSX
                 </div>
               </td>
               <td className="px-4 py-3 align-top">
-                {formatUtcMidnightDateLike(item.effectiveFrom)}
+                <time dateTime={new Date(item.effectiveFrom).toISOString()}>
+                  {formatLocalizedUtcMidnightDateLike(item.effectiveFrom, locale)}
+                </time>
                 <span className="text-muted"> - </span>
-                {item.effectiveTo === null
-                  ? t('labels.openEnded')
-                  : formatUtcMidnightDateLike(item.effectiveTo)}
+                {item.effectiveTo === null ? (
+                  t('labels.openEnded')
+                ) : (
+                  <time dateTime={new Date(item.effectiveTo).toISOString()}>
+                    {formatLocalizedUtcMidnightDateLike(item.effectiveTo, locale)}
+                  </time>
+                )}
               </td>
               <td className="px-4 py-3 align-top">
                 <StatusBadge
@@ -404,6 +430,7 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
   };
 
   const data = query.data;
+  const businessFiltersActive = hasBusinessFilters(filters);
 
   return (
     <PageContainer className="space-y-5">
@@ -417,10 +444,12 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
       </div>
 
       {query.isPending && !data ? <LoadingState lines={10} /> : null}
-      {query.isError && !data ? (
+      {query.isError && !data && apiError?.permissionDenied ? <PermissionDeniedState /> : null}
+      {query.isError && !data && apiError?.notFound ? <NotFoundState /> : null}
+      {query.isError && !data && !apiError?.permissionDenied && !apiError?.notFound ? (
         <ErrorState
           title={t('employment-terms:states.loadErrorTitle')}
-          message={apiError?.message ?? t('employment-terms:states.loadErrorMessage')}
+          message={t('employment-terms:states.loadErrorMessage')}
           actionLabel={t('common:actions.retry')}
           onRetry={() => void query.refetch()}
         />
@@ -428,11 +457,16 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
 
       {data ? (
         <>
-          <section className="space-y-3" aria-labelledby="employment-terms-quick-filters">
+          <section
+            role="region"
+            aria-label={t('employment-terms:sections.quickFilters')}
+            data-layout="compact-filter-strip"
+            className="space-y-2"
+          >
             <h2 id="employment-terms-quick-filters" className="text-base font-semibold text-text">
               {t('employment-terms:sections.quickFilters')}
             </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="flex flex-wrap gap-2">
               {quickFilters.map((filter) => {
                 const active = filters.readiness === filter.readiness;
                 return (
@@ -441,7 +475,7 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
                     type="button"
                     aria-pressed={active}
                     onClick={() => toggleQuickFilter(filter.readiness)}
-                    className={`rounded border p-3 text-left text-sm shadow-shell transition focus:outline-none focus:ring-2 focus:ring-accent ${
+                    className={`rounded-full border px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-accent ${
                       active
                         ? 'border-accent bg-accent/10 text-accent'
                         : 'border-border bg-panel text-text hover:border-accent/50'
@@ -535,22 +569,6 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
                 value={filters.expiringBefore}
                 onChange={(value) => updateFilter('expiringBefore', value)}
               />
-              <label className="w-32 text-sm">
-                <span className="mb-1 block font-medium text-text">
-                  {t('employment-terms:filters.limit')}
-                </span>
-                <select
-                  value={filters.limit}
-                  onChange={(event) => updateFilter('limit', Number(event.target.value))}
-                  className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
-                >
-                  {[10, 20, 50, 100].map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </label>
             </FilterToolbar>
           </section>
 
@@ -561,14 +579,22 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
             <ErrorState
               variant="inline"
               title={t('employment-terms:states.refreshErrorTitle')}
-              message={apiError?.message ?? t('employment-terms:states.refreshErrorMessage')}
+              message={t('employment-terms:states.refreshErrorMessage')}
             />
           ) : null}
 
           {data.items.length === 0 ? (
             <EmptyState
-              title={t('employment-terms:states.emptyTitle')}
-              message={t('employment-terms:states.emptyMessage')}
+              title={t(
+                businessFiltersActive
+                  ? 'employment-terms:states.filteredEmptyTitle'
+                  : 'employment-terms:states.initialEmptyTitle',
+              )}
+              message={t(
+                businessFiltersActive
+                  ? 'employment-terms:states.filteredEmptyMessage'
+                  : 'employment-terms:states.initialEmptyMessage',
+              )}
             />
           ) : null}
 
@@ -585,16 +611,34 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
             <p className="text-sm text-muted">
               {t('employment-terms:pagination.loaded', { count: data.items.length })}
             </p>
-            <CursorPager
-              canGoBack={cursorStack.length > 0}
-              canGoNext={Boolean(data.nextCursor)}
-              onPrevious={() => setCursorStack((current) => current.slice(0, -1))}
-              onNext={() =>
-                setCursorStack((current) =>
-                  data.nextCursor ? [...current, data.nextCursor] : current,
-                )
-              }
-            />
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="w-36 text-sm">
+                <span className="mb-1 block font-medium text-text">
+                  {t('employment-terms:filters.rowsPerPage')}
+                </span>
+                <select
+                  value={filters.limit}
+                  onChange={(event) => updateFilter('limit', Number(event.target.value))}
+                  className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+                >
+                  {[10, 20, 50, 100].map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <CursorPager
+                canGoBack={cursorStack.length > 0}
+                canGoNext={Boolean(data.nextCursor)}
+                onPrevious={() => setCursorStack((current) => current.slice(0, -1))}
+                onNext={() =>
+                  setCursorStack((current) =>
+                    data.nextCursor ? [...current, data.nextCursor] : current,
+                  )
+                }
+              />
+            </div>
           </div>
         </>
       ) : null}

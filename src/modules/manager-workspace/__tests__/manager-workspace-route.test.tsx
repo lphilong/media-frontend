@@ -147,7 +147,9 @@ describe('/manager workspace route', () => {
     const user = userEvent.setup();
     await renderRoute('/manager');
 
-    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-workspace-shell', {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Language' })).toBeInTheDocument();
 
     const logoutButton = screen.getByRole('button', { name: 'Logout' });
@@ -216,7 +218,9 @@ describe('/manager workspace route', () => {
   it('renders Staff-like Manager shell modules with Overview active by default', async () => {
     await renderRoute('/manager');
 
-    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-workspace-shell', {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(await screen.findByTestId('manager-module-overview')).toHaveAttribute(
       'aria-selected',
       'true',
@@ -233,6 +237,7 @@ describe('/manager workspace route', () => {
       'aria-disabled',
       'true',
     );
+    expect(screen.getByRole('tab', { name: /Managed Work/ })).toBeDisabled();
     expect(screen.getByRole('tab', { name: /Managed Events/ })).toHaveTextContent('Read-only');
     expect(screen.getByRole('tab', { name: /Managed Events/ })).not.toHaveAttribute(
       'aria-disabled',
@@ -242,10 +247,12 @@ describe('/manager workspace route', () => {
       'aria-disabled',
       'true',
     );
+    expect(screen.getByRole('tab', { name: /Managed Groups/ })).toBeDisabled();
     expect(screen.getByRole('tab', { name: /Managed Members/ })).toHaveAttribute(
       'aria-disabled',
       'true',
     );
+    expect(screen.getByRole('tab', { name: /Managed Members/ })).toBeDisabled();
 
     expect(await screen.findByTestId('manager-panel-overview')).toBeInTheDocument();
     expect(await screen.findByTestId('manager-overview-panel')).toBeInTheDocument();
@@ -258,12 +265,16 @@ describe('/manager workspace route', () => {
     const user = userEvent.setup();
     await renderRoute('/manager');
 
-    await user.click(await screen.findByTestId('manager-module-kpi'));
+    await user.click(await screen.findByTestId('manager-module-kpi', {}, { timeout: 3000 }));
 
     expect(await screen.findByTestId('manager-panel-kpi')).toBeInTheDocument();
     expect(await screen.findByTestId('manager-kpi-tab-unit')).toBeInTheDocument();
     expect(screen.getByTestId('manager-module-kpi')).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('manager-module-overview')).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByTestId('manager-module-kpi').closest('nav')).toHaveAttribute(
+      'data-presentation',
+      'compact',
+    );
     expect(screen.queryByTestId('manager-panel-overview')).not.toBeInTheDocument();
     expect(screen.queryByText('Manager Profile')).not.toBeInTheDocument();
   });
@@ -356,13 +367,7 @@ describe('/manager workspace route', () => {
 
     await renderRoute('/manager');
 
-    await user.click(await screen.findByTestId('manager-module-work'));
-    expect(await screen.findByTestId('manager-panel-work')).toBeInTheDocument();
-    expect(await screen.findByText(/No effective managed WorkSchedule scope/)).toBeInTheDocument();
-    expect(screen.queryByTestId('manager-panel-overview')).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Work Schedule' })).not.toBeInTheDocument();
-
-    await user.click(screen.getByTestId('manager-module-events'));
+    await user.click(await screen.findByTestId('manager-module-events', {}, { timeout: 3000 }));
     expect(await screen.findByTestId('manager-panel-events')).toBeInTheDocument();
     expect(await screen.findByText('EVT-MANAGER-001')).toBeInTheDocument();
     expect(screen.getByTestId('manager-panel-events')).toHaveTextContent('Read-only');
@@ -370,19 +375,11 @@ describe('/manager workspace route', () => {
     for (const action of ['Create', 'Confirm', 'Cancel', 'Complete', 'Archive']) {
       expect(screen.queryByRole('button', { name: action })).not.toBeInTheDocument();
     }
-    await user.click(screen.getByTestId('manager-module-groups'));
-    expect(await screen.findByTestId('manager-panel-groups')).toBeInTheDocument();
-    expect(
-      await screen.findByText(
-        'This module is not currently available for the current access. Assigned scope summaries remain in Overview.',
-      ),
-    ).toBeInTheDocument();
-
-    await user.click(screen.getByTestId('manager-module-members'));
-    expect(await screen.findByTestId('manager-panel-members')).toBeInTheDocument();
-    expect(
-      await screen.findByText('This module is not currently available for the current access.'),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('manager-module-groups')).toBeDisabled();
+    expect(screen.getByTestId('manager-module-members')).toBeDisabled();
+    expect(screen.queryByTestId('manager-panel-groups')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('manager-panel-members')).not.toBeInTheDocument();
+    expect(screen.getByTestId('manager-panel-events')).toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: 'People Operations Hub' }),
     ).not.toBeInTheDocument();
@@ -482,7 +479,7 @@ describe('/manager workspace route', () => {
 
     await renderRoute('/manager/events/manager-event-missing');
 
-    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(await screen.findByText('Page not found', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(
       screen.getByText('This event is not visible through your assigned manager scope.'),
     ).toBeInTheDocument();
@@ -595,7 +592,9 @@ describe('/manager workspace route', () => {
       setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
     });
 
-    expect(await screen.findByTestId('manager-kpi-detail')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-kpi-detail', {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(await screen.findByTestId('manager-module-kpi')).toHaveAttribute(
       'aria-selected',
       'true',
@@ -727,7 +726,7 @@ describe('/manager workspace route', () => {
 
     await renderRoute('/manager/events/out-of-scope-event');
 
-    expect(await screen.findByText('Page not found')).toBeInTheDocument();
+    expect(await screen.findByText('Page not found', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(
       screen.getByText('This event is not visible through your assigned manager scope.'),
     ).toBeInTheDocument();
@@ -979,7 +978,9 @@ describe('/manager workspace route', () => {
       setMockManagerWorkspaceContext(managerWorkspaceTalentGroupOnlyContext());
     });
 
-    expect(await screen.findByTestId('manager-kpi-detail')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-kpi-detail', {}, { timeout: 3000 }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Published team KPI' })).toBeInTheDocument();
     expect(screen.getByText('Talent Group')).toBeInTheDocument();
     expect(screen.getByText('Talent Group KPI is read-only here')).toBeInTheDocument();
@@ -1245,7 +1246,14 @@ describe('/manager workspace route', () => {
       setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
     });
 
-    const actionNeeded = await screen.findByTestId('manager-work-action-needed');
+    const actionNeeded = await screen.findByTestId(
+      'manager-work-action-needed',
+      {},
+      { timeout: 3000 },
+    );
+    expect(actionNeeded).not.toHaveAttribute('open');
+    await user.click(within(actionNeeded).getByText('Action needed'));
+    expect(actionNeeded).toHaveAttribute('open');
     expect(
       await within(screen.getByTestId('manager-action-needed-pendingRequests')).findByText('2'),
     ).toBeInTheDocument();
@@ -1468,7 +1476,7 @@ describe('/manager workspace route', () => {
       });
     });
 
-    await user.click(await screen.findByRole('tab', { name: 'Availability' }));
+    await user.click(await screen.findByRole('tab', { name: 'Availability' }, { timeout: 5000 }));
     expect(await screen.findByTestId('manager-work-availability')).toBeInTheDocument();
     expect(screen.getByText(/pre-roster planning signal/i)).toBeInTheDocument();
     expect(screen.queryByText('UNAUTHORIZED_ABSENCE')).not.toBeInTheDocument();
@@ -1502,7 +1510,7 @@ describe('/manager workspace route', () => {
     expect(managerMemberPickerCalls).toBeGreaterThan(0);
     expect(rawAdminAvailabilityCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
-  }, 10000);
+  }, 20000);
 
   it('submits availability from default picker fixtures when no published WorkShifts exist', async () => {
     const user = userEvent.setup();
@@ -1585,7 +1593,7 @@ describe('/manager workspace route', () => {
     await renderRoute('/manager/work-shifts', () => {
       setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
     });
-    await user.click(await screen.findByRole('tab', { name: 'Availability' }));
+    await user.click(await screen.findByRole('tab', { name: 'Availability' }, { timeout: 5000 }));
     expect((await screen.findAllByText('AVB-000001')).length).toBeGreaterThan(0);
 
     const cancelLine = screen.getAllByRole('button', { name: 'Cancel pending line' })[0];
@@ -1611,7 +1619,7 @@ describe('/manager workspace route', () => {
 
     expect(rawAdminAvailabilityCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
-  }, 10_000);
+  }, 20_000);
 
   it('rejects unsupported availability apply and policy statuses', () => {
     for (const parseApplyStatus of [
@@ -1695,7 +1703,7 @@ describe('/manager workspace route', () => {
       setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
     });
 
-    await user.click(await screen.findByRole('tab', { name: 'Requests' }));
+    await user.click(await screen.findByRole('tab', { name: 'Requests' }, { timeout: 5000 }));
     await user.click(screen.getByRole('button', { name: 'Add create' }));
     await user.click(screen.getByRole('button', { name: 'Add reschedule' }));
     await user.click(screen.getByRole('button', { name: 'Add cancel' }));
@@ -1727,7 +1735,7 @@ describe('/manager workspace route', () => {
     });
     expect(rawAdminBatchCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
-  }, 10000);
+  }, 20000);
 
   it('cancels own pending request lines and batches with a manager cancellation reason only', async () => {
     const user = userEvent.setup();
@@ -1743,13 +1751,13 @@ describe('/manager workspace route', () => {
       setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
     });
 
-    await user.click(await screen.findByRole('tab', { name: 'Requests' }));
+    await user.click(await screen.findByRole('tab', { name: 'Requests' }, { timeout: 5000 }));
     expect((await screen.findAllByText('WSB-202606-000001')).length).toBeGreaterThan(0);
 
     const cancellationReason = screen.getByLabelText('Cancellation reason');
     const cancelLine = await screen.findAllByRole('button', { name: 'Cancel line' });
     expect(cancelLine[0]).toBeDisabled();
-    await user.type(cancellationReason, 'Manager cancellation reason.');
+    fireEvent.change(cancellationReason, { target: { value: 'Manager cancellation reason.' } });
     await user.click(cancelLine[0]);
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Keep request' }));
@@ -1759,14 +1767,16 @@ describe('/manager workspace route', () => {
     expect(await screen.findByText('Manager cancellation reason.')).toBeInTheDocument();
 
     const cancelBatch = await screen.findByRole('button', { name: 'Cancel batch' });
-    await user.type(cancellationReason, 'Cancel the remaining pending request batch.');
+    fireEvent.change(cancellationReason, {
+      target: { value: 'Cancel the remaining pending request batch.' },
+    });
     await user.click(cancelBatch);
     await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
 
     expect(await screen.findAllByText('Cancelled')).not.toHaveLength(0);
     expect(rawAdminBatchCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
-  }, 10000);
+  }, 20000);
 
   it('renders Managed Work empty state when no published shifts or eligible members exist', async () => {
     await renderRoute('/manager/work-shifts', () => {

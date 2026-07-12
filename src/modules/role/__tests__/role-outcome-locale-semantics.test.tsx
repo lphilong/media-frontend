@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 
@@ -37,6 +37,12 @@ const applySuccess = () => ({
   effectiveAccessAfterApply: { permissions: ['role.view'] },
 });
 
+const setTestLocale = async (locale: 'en' | 'vi' | 'zh'): Promise<void> => {
+  await act(async () => {
+    await setLocale(locale);
+  });
+};
+
 const reachApply = async (user: ReturnType<typeof userEvent.setup>): Promise<void> => {
   await openGuidedAssignment(user);
   await selectAliceForAssignment(user);
@@ -66,13 +72,13 @@ const reachApply = async (user: ReturnType<typeof userEvent.setup>): Promise<voi
 
 describe('Role assignment outcome locale semantics', () => {
   afterEach(async () => {
-    await setLocale('en');
+    await setTestLocale('en');
   });
 
   it.each(['en', 'vi', 'zh'] as const)(
     'has distinct, localized outcome copy and actions in %s',
     async (locale) => {
-      await setLocale(locale);
+      await setTestLocale(locale);
       const translate = i18n.getFixedT(locale, 'role');
       const messages = outcomeKeys.map((outcome) =>
         translate(`accessAssignment.applyOutcomes.${outcome}.message`),
@@ -139,7 +145,7 @@ describe('Role assignment outcome locale semantics', () => {
   )(
     'renders the structured %s outcome in %s without backend leakage',
     async (locale, outcome, code) => {
-      await setLocale(locale);
+      await setTestLocale(locale);
       const user = userEvent.setup();
       server.use(
         http.get('*/admin/employment-profiles', () =>
@@ -175,7 +181,7 @@ describe('Role assignment outcome locale semantics', () => {
   it.each(['en', 'vi', 'zh'] as const)(
     'renders successful assignment completion and localized next actions in %s',
     async (locale) => {
-      await setLocale(locale);
+      await setTestLocale(locale);
       const user = userEvent.setup();
       server.use(
         http.get('*/admin/employment-profiles', () =>

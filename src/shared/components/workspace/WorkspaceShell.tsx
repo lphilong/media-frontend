@@ -69,6 +69,7 @@ type WorkspaceModuleSwitcherProps<ModuleId extends string> = {
   selectedLabel: string;
   onSelect: (moduleId: ModuleId) => void;
   getTestId?: (moduleId: ModuleId) => string;
+  presentation?: 'cards' | 'compact';
 };
 
 export const WorkspaceModuleSwitcher = <ModuleId extends string>({
@@ -78,8 +79,18 @@ export const WorkspaceModuleSwitcher = <ModuleId extends string>({
   selectedLabel,
   onSelect,
   getTestId,
+  presentation = 'cards',
 }: WorkspaceModuleSwitcherProps<ModuleId>): JSX.Element => (
-  <nav aria-label={label} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" role="tablist">
+  <nav
+    aria-label={label}
+    className={
+      presentation === 'compact'
+        ? 'flex flex-wrap gap-2'
+        : 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3'
+    }
+    data-presentation={presentation}
+    role="tablist"
+  >
     {items.map((item) => (
       <WorkspaceModuleCard
         key={item.id}
@@ -88,6 +99,7 @@ export const WorkspaceModuleSwitcher = <ModuleId extends string>({
         selectedLabel={selectedLabel}
         onSelect={onSelect}
         testId={getTestId?.(item.id)}
+        presentation={presentation}
       />
     ))}
   </nav>
@@ -99,6 +111,7 @@ type WorkspaceModuleCardProps<ModuleId extends string> = {
   selectedLabel: string;
   onSelect: (moduleId: ModuleId) => void;
   testId?: string;
+  presentation: 'cards' | 'compact';
 };
 
 export const WorkspaceModuleCard = <ModuleId extends string>({
@@ -107,6 +120,7 @@ export const WorkspaceModuleCard = <ModuleId extends string>({
   selectedLabel,
   onSelect,
   testId,
+  presentation,
 }: WorkspaceModuleCardProps<ModuleId>): JSX.Element => {
   const Icon = item.icon;
 
@@ -118,10 +132,11 @@ export const WorkspaceModuleCard = <ModuleId extends string>({
       aria-pressed={active}
       aria-disabled={item.disabled ? true : undefined}
       aria-describedby={item.disabledReason ? `${item.id}-disabled-reason` : undefined}
+      disabled={item.disabled}
       onClick={() => onSelect(item.id)}
-      className={`min-h-32 rounded border p-4 text-left transition ${
+      className={`${presentation === 'compact' ? 'min-h-10 px-3 py-2' : 'min-h-32 p-4'} rounded border text-left transition ${
         active ? 'border-text bg-text text-bg' : 'border-border bg-panel text-text hover:bg-bg'
-      }`}
+      } disabled:cursor-not-allowed disabled:opacity-60`}
       data-testid={testId}
     >
       <span className="flex items-start justify-between gap-3">
@@ -135,12 +150,14 @@ export const WorkspaceModuleCard = <ModuleId extends string>({
           </span>
           <span className="min-w-0">
             <span className="block text-sm font-semibold">{item.label}</span>
-            <span className={`mt-1 block text-xs ${active ? 'text-bg/80' : 'text-muted'}`}>
-              {item.description}
-            </span>
+            {presentation === 'cards' ? (
+              <span className={`mt-1 block text-xs ${active ? 'text-bg/80' : 'text-muted'}`}>
+                {item.description}
+              </span>
+            ) : null}
           </span>
         </span>
-        <span className="shrink-0">
+        <span className={presentation === 'compact' ? 'sr-only' : 'shrink-0'}>
           <StatusBadge
             label={item.statusLabel}
             tone={item.statusTone ?? (item.disabled ? 'warning' : 'success')}
@@ -148,12 +165,12 @@ export const WorkspaceModuleCard = <ModuleId extends string>({
           />
         </span>
       </span>
-      {active ? (
+      {active && presentation === 'cards' ? (
         <span className="mt-3 block text-xs font-semibold" data-testid={`${item.id}-active-label`}>
           {selectedLabel}
         </span>
       ) : null}
-      {item.disabledReason ? (
+      {item.disabledReason && presentation === 'cards' ? (
         <span
           id={`${item.id}-disabled-reason`}
           className={`mt-3 block text-xs ${active ? 'text-bg/80' : 'text-muted'}`}

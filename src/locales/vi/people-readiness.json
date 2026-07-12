@@ -32,6 +32,8 @@
     "entityType": "Đối tượng chính",
     "issueCode": "Loại vấn đề",
     "limit": "Số dòng",
+    "rowsPerPage": "Số dòng mỗi trang",
+    "applied": "Bộ lọc đang áp dụng",
     "allCategories": "Tất cả luồng",
     "allSeverities": "Tất cả mức độ",
     "allEntityTypes": "Tất cả đối tượng",
@@ -54,8 +56,10 @@
     "openEmploymentTerms": "Mở điều khoản làm việc / lương"
   },
   "states": {
-    "emptyTitle": "Không có vấn đề trong bộ lọc này",
-    "emptyMessage": "Không có vấn đề nào khớp với bộ lọc hiện tại. Điều này không đồng nghĩa toàn bộ hệ thống đã sẵn sàng vận hành.",
+    "initialEmptyTitle": "Không có vấn đề sẵn sàng",
+    "initialEmptyMessage": "Hiện không có vấn đề nào trong hàng đợi rà soát. Điều này không đồng nghĩa toàn bộ hệ thống đã sẵn sàng vận hành.",
+    "filteredEmptyTitle": "Không có vấn đề khớp bộ lọc",
+    "filteredEmptyMessage": "Xóa một hoặc nhiều bộ lọc để mở rộng hàng đợi rà soát.",
     "loadErrorTitle": "Không tải được kiểm tra hồ sơ nhân sự",
     "loadErrorMessage": "Không tải được dữ liệu kiểm tra hồ sơ nhân sự.",
     "refreshingInline": "Đang làm mới dữ liệu kiểm tra hồ sơ nhân sự...",
@@ -114,7 +118,8 @@
     "ARCHIVED": "Lưu trữ",
     "INACTIVE": "Không hoạt động",
     "DISABLED": "Đã vô hiệu hóa",
-    "PENDING": "Đang chờ"
+    "PENDING": "Đang chờ",
+    "unknown": "Chưa có trạng thái"
   },
   "issueTitles": {
     "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "Thiếu điều khoản làm việc / lương",

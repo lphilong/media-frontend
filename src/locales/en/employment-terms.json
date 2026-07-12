@@ -37,7 +37,8 @@
     "allReadiness": "All readiness states",
     "effectiveOn": "Effective on",
     "expiringBefore": "Expiring before",
-    "limit": "Limit"
+    "limit": "Limit",
+    "rowsPerPage": "Rows per page"
   },
   "table": {
     "profile": "EmploymentProfile",
@@ -99,8 +100,10 @@
     "refreshingInline": "Refreshing Employment Terms...",
     "refreshErrorTitle": "Refresh failed",
     "refreshErrorMessage": "The current results remain visible.",
-    "emptyTitle": "No matching employment terms",
-    "emptyMessage": "No terms match the current filters."
+    "initialEmptyTitle": "No employment terms yet",
+    "initialEmptyMessage": "No employment terms are available in this workspace.",
+    "filteredEmptyTitle": "No matching employment terms",
+    "filteredEmptyMessage": "No terms match the current filters."
   },
   "pagination": {
     "loaded": "Showing up to {{count}} loaded results."

@@ -17,7 +17,12 @@ const ModalHarness = ({ onDismiss }: { onDismiss: () => void }): JSX.Element => 
           setIsOpen(true);
           openDrawer({
             title: 'Create record',
-            content: <div>Drawer content</div>,
+            content: (
+              <label>
+                Record name
+                <input name="recordName" />
+              </label>
+            ),
             onDismiss: () => {
               setIsOpen(false);
               onDismiss();
@@ -50,5 +55,22 @@ describe('ModalHostProvider', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'Open create' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'Create record' })).not.toBeInTheDocument();
+  });
+
+  it('focuses the first task control, closes on Escape, and restores the trigger', async () => {
+    const user = userEvent.setup();
+    render(
+      <ModalHostProvider>
+        <ModalHarness onDismiss={vi.fn()} />
+      </ModalHostProvider>,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Open create' });
+    await user.click(trigger);
+
+    expect(screen.getByLabelText('Record name')).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Create record' })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 });

@@ -73,48 +73,56 @@ export const ManagerWorkActionNeeded = ({
   ];
 
   return (
-    <section
+    <details
       className="rounded border border-border bg-bg p-3"
       data-testid="manager-work-action-needed"
     >
-      <h3 className="text-sm font-semibold text-text">
+      <summary className="cursor-pointer text-sm font-semibold text-text">
         {t('manager-workspace:work.actionNeeded.title')}
-      </h3>
-      <p className="mt-1 text-sm text-muted">{t('manager-workspace:work.actionNeeded.summary')}</p>
-      <p className="mt-1 text-xs text-muted">{t('manager-workspace:work.actionNeeded.bounded')}</p>
+      </summary>
       <div className="mt-3">
-        <WorkScheduleDeadlineCue targetMonth={periodMonth} cueType="AVAILABILITY_CUTOFF" compact />
-      </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <div
-            key={card.id}
-            className="rounded border border-border bg-panel p-3"
-            data-testid={`manager-action-needed-${card.id}`}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="text-xs font-medium uppercase text-muted">
-                  {t(`manager-workspace:work.actionNeeded.cards.${card.id}.label`)}
-                </div>
-                <div className="mt-1 text-xl font-semibold text-text">{card.count}</div>
-              </div>
-              <StatusBadge
-                label={t(`manager-workspace:work.actionNeeded.severity.${card.severity}`)}
-                tone={toneBySeverity[card.severity]}
-                uppercase={false}
-              />
-            </div>
-            <button
-              type="button"
-              className="mt-3 rounded border border-border px-3 py-2 text-sm font-medium text-text"
-              onClick={() => onSelectTab(card.tab)}
+        <p className="text-sm text-muted">{t('manager-workspace:work.actionNeeded.summary')}</p>
+        <p className="mt-1 text-xs text-muted">
+          {t('manager-workspace:work.actionNeeded.bounded')}
+        </p>
+        <div className="mt-3">
+          <WorkScheduleDeadlineCue
+            targetMonth={periodMonth}
+            cueType="AVAILABILITY_CUTOFF"
+            compact
+          />
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {cards.map((card) => (
+            <div
+              key={card.id}
+              className="rounded border border-border bg-panel p-3"
+              data-testid={`manager-action-needed-${card.id}`}
             >
-              {t(`manager-workspace:work.actionNeeded.cards.${card.id}.cta`)}
-            </button>
-          </div>
-        ))}
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-xs font-medium uppercase text-muted">
+                    {t(`manager-workspace:work.actionNeeded.cards.${card.id}.label`)}
+                  </div>
+                  <div className="mt-1 text-xl font-semibold text-text">{card.count}</div>
+                </div>
+                <StatusBadge
+                  label={t(`manager-workspace:work.actionNeeded.severity.${card.severity}`)}
+                  tone={toneBySeverity[card.severity]}
+                  uppercase={false}
+                />
+              </div>
+              <button
+                type="button"
+                className="mt-3 rounded border border-border px-3 py-2 text-sm font-medium text-text"
+                onClick={() => onSelectTab(card.tab)}
+              >
+                {t(`manager-workspace:work.actionNeeded.cards.${card.id}.cta`)}
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
-    </section>
+    </details>
   );
 };

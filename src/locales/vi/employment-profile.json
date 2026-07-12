@@ -241,6 +241,58 @@
     "terminated": "Đã kết thúc hồ sơ nhân sự.",
     "lifecycleUpdated": "Đã cập nhật trạng thái hồ sơ nhân sự."
   },
+  "createWorkflow": {
+    "pageTitle": "Tạo hồ sơ nhân sự",
+    "pageSubtitle": "Tạo hồ sơ nhân sự theo quy trình có thứ tự và bước rà soát.",
+    "progressLabel": "Tiến trình tạo hồ sơ nhân sự",
+    "steps": {
+      "identity": "Thông tin định danh",
+      "relationship": "Quan hệ làm việc",
+      "attribution": "Phân công nhân sự",
+      "review": "Rà soát"
+    },
+    "sections": {
+      "identityHelp": "Nhập thông tin định danh và vai trò công việc.",
+      "relationshipHelp": "Chọn đơn vị tổ chức, ngày làm việc và tài khoản đăng nhập nếu có.",
+      "attributionHelp": "Có thể ghi nhận người phụ trách tuyển dụng và hội nhập."
+    },
+    "fieldState": {
+      "required": "Bắt buộc",
+      "optional": "Không bắt buộc",
+      "requiredGroup": "Trường bắt buộc",
+      "requiredHelp": "phải hoàn tất trước khi rà soát.",
+      "optionalGroup": "Trường không bắt buộc",
+      "optionalHelp": "có thể để trống.",
+      "derived": "Hệ thống tự tạo"
+    },
+    "review": {
+      "title": "Rà soát hồ sơ nhân sự",
+      "help": "Xác nhận thông tin định danh và đơn vị trước khi tạo hồ sơ.",
+      "notProvided": "Chưa cung cấp"
+    },
+    "actions": {
+      "continue": "Tiếp tục",
+      "continueToReview": "Tiếp tục rà soát",
+      "back": "Quay lại",
+      "confirm": "Xác nhận và tạo",
+      "pending": "Đang tạo hồ sơ nhân sự...",
+      "viewProfile": "Xem hồ sơ",
+      "createAnother": "Tạo hồ sơ khác",
+      "returnToPeople": "Quay lại danh sách nhân sự",
+      "clearOrgUnit": "Xóa đơn vị tổ chức"
+    },
+    "errors": {
+      "validationSummary": "Kiểm tra các trường được đánh dấu trước khi thử lại.",
+      "retryableSummary": "Không tạo được hồ sơ nhân sự. Dữ liệu đã nhập vẫn được giữ; hãy thử lại.",
+      "backendField": "Máy chủ không chấp nhận giá trị của trường này."
+    },
+    "completion": { "title": "Đã tạo hồ sơ nhân sự" },
+    "fallback": { "referenceUnavailable": "Không tải được bản ghi đã chọn" },
+    "boundary": {
+      "noAutomaticAccess": "Tạo hồ sơ nhân sự không tự động gán vai trò, cấp quyền, thiết lập bảng lương, tạo lịch làm việc hoặc thêm bản ghi không liên quan."
+    },
+    "technicalDetails": "Chi tiết kỹ thuật"
+  },
   "confirm": {
     "unlinkUser": "Bỏ liên kết tài khoản đăng nhập khỏi hồ sơ nhân sự này?",
     "place-on-leave": "Đưa hồ sơ này vào nghỉ phép?",

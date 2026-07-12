@@ -7,6 +7,7 @@ import {
   formatCurrency,
   formatDecimal,
   formatInteger,
+  formatLocalizedUtcMidnightDateLike,
   formatPercent,
   formatTimestamp,
   formatUtcDateInputValue,
@@ -90,6 +91,15 @@ describe('formatters', () => {
       });
     },
   );
+
+  it('formats UTC-midnight date-like values with the requested UI locale', () => {
+    const value = '2026-01-01T00:00:00.000Z';
+
+    expect(formatLocalizedUtcMidnightDateLike(value, 'en')).toBe('Jan 1, 2026');
+    expect(formatLocalizedUtcMidnightDateLike(value, 'vi')).toBe('1 thg 1, 2026');
+    expect(formatLocalizedUtcMidnightDateLike(value, 'zh')).toBe('2026年1月1日');
+    expect(formatLocalizedUtcMidnightDateLike('invalid', 'en')).toBe('-');
+  });
 
   it.each(['America/Los_Angeles', 'Asia/Ho_Chi_Minh'])(
     'formats UTC timestamps without local timezone drift in %s',

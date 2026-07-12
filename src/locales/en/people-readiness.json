@@ -32,6 +32,8 @@
     "entityType": "Primary entity",
     "issueCode": "Issue type",
     "limit": "Rows",
+    "rowsPerPage": "Rows per page",
+    "applied": "Applied filters",
     "allCategories": "All flows",
     "allSeverities": "All severities",
     "allEntityTypes": "All entities",
@@ -54,8 +56,10 @@
     "openEmploymentTerms": "Open employment terms / pay conditions"
   },
   "states": {
-    "emptyTitle": "No issues in this filter",
-    "emptyMessage": "No backend readiness issues match the current filter. This is not a production or runtime readiness claim.",
+    "initialEmptyTitle": "No readiness issues",
+    "initialEmptyMessage": "No backend readiness issues are currently in this review queue. This is not a production or runtime readiness claim.",
+    "filteredEmptyTitle": "No issues match these filters",
+    "filteredEmptyMessage": "Clear one or more filters to widen the review queue.",
     "loadErrorTitle": "Could not load People Profile Check",
     "loadErrorMessage": "The dashboard data could not be loaded.",
     "refreshingInline": "Refreshing People Profile Check data...",
@@ -114,7 +118,8 @@
     "ARCHIVED": "Archived",
     "INACTIVE": "Inactive",
     "DISABLED": "Disabled",
-    "PENDING": "Pending"
+    "PENDING": "Pending",
+    "unknown": "Status unavailable"
   },
   "issueTitles": {
     "ACTIVE_PROFILE_MISSING_EMPLOYMENT_TERMS": "Missing Employment Terms",

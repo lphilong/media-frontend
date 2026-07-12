@@ -281,6 +281,17 @@ export const formatUtcMidnightDateLike = (value: number | string | Date): string
   return safeFormat(value, formatUtcDate);
 };
 
+export const formatLocalizedUtcMidnightDateLike = (
+  value: number | string | Date,
+  locale: string,
+): string =>
+  safeFormat(value, (date) =>
+    new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium',
+      timeZone: 'UTC',
+    }).format(date),
+  );
+
 export const formatCurrency = (value: number, currencyCode = 'VND', locale = 'vi-VN'): string => {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
