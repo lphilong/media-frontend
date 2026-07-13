@@ -9,10 +9,7 @@ import {
   loadActiveOrgUnitReferenceOptions,
   loadOrgUnitReferenceOptionById,
 } from '@modules/org-unit';
-import {
-  loadTalentReferenceOptionById,
-  loadTalentReferenceOptions,
-} from '@modules/talent';
+import { loadTalentReferenceOptionById, loadTalentReferenceOptions } from '@modules/talent';
 import {
   loadActiveTalentGroupReferenceOptions,
   loadTalentGroupReferenceOptionById,
@@ -165,9 +162,8 @@ export const loadMonthlyRosterDepartmentOptions = async (
   search: string,
 ): Promise<ReferenceOption[]> => loadActiveDepartmentReferenceOptions(search);
 
-export const loadMonthlyRosterOrgUnitOptions = async (
-  search: string,
-): Promise<ReferenceOption[]> => loadActiveOrgUnitReferenceOptions(search);
+export const loadMonthlyRosterOrgUnitOptions = async (search: string): Promise<ReferenceOption[]> =>
+  loadActiveOrgUnitReferenceOptions(search);
 
 export const loadMonthlyRosterOrgUnitOptionById = async (
   orgUnitId: string,

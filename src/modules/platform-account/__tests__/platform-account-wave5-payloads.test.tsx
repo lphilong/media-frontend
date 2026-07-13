@@ -16,7 +16,10 @@ import {
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
 import { platformAccountFlatListQueryConfig } from '@modules/platform-account';
-import { parseScreenQueryParams, serializeScreenQueryParams } from '@shared/query/screen-query-config';
+import {
+  parseScreenQueryParams,
+  serializeScreenQueryParams,
+} from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
@@ -29,36 +32,36 @@ vi.mock('@modules/platform-account', async () => {
 
   return {
     ...actual,
-  loadPlatformOwnerReferenceOptions: vi.fn(async (ownerKind: string) => {
-    if (ownerKind === 'TALENT') {
+    loadPlatformOwnerReferenceOptions: vi.fn(async (ownerKind: string) => {
+      if (ownerKind === 'TALENT') {
+        return [
+          {
+            id: 'talent-001',
+            label: 'Mina - TAL-000001',
+            description: 'ACTIVE',
+            href: '/talents/talent-001',
+          },
+        ];
+      }
+      if (ownerKind === 'TALENT_GROUP') {
+        return [
+          {
+            id: 'group-001',
+            label: 'Main Group - TG-000001',
+            description: 'ACTIVE',
+            href: '/talent-groups/group-001',
+          },
+        ];
+      }
       return [
         {
-          id: 'talent-001',
-          label: 'Mina - TAL-000001',
+          id: 'ou-sales',
+          label: 'Sales - OU-SALES',
           description: 'ACTIVE',
-          href: '/talents/talent-001',
+          href: '/org-units/ou-sales',
         },
       ];
-    }
-    if (ownerKind === 'TALENT_GROUP') {
-      return [
-        {
-          id: 'group-001',
-          label: 'Main Group - TG-000001',
-          description: 'ACTIVE',
-          href: '/talent-groups/group-001',
-        },
-      ];
-    }
-    return [
-      {
-        id: 'ou-sales',
-        label: 'Sales - OU-SALES',
-        description: 'ACTIVE',
-        href: '/org-units/ou-sales',
-      },
-    ];
-  }),
+    }),
   };
 });
 

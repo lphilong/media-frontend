@@ -50,9 +50,7 @@ describe('operator-safe state feedback primitives', () => {
     expect(screen.getByText(/chưa có phạm vi dữ liệu phù hợp/u)).toBeInTheDocument();
     expect(screen.getByText(/Quyền thao tác: event.read/u)).toBeInTheDocument();
     expect(screen.getByText(/Phạm vi dữ liệu: eventAssignment:global/u)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Điều kiện truy cập phù hợp cho chức năng này/u),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Điều kiện truy cập phù hợp cho chức năng này/u)).toBeInTheDocument();
     expect(screen.queryByText(/ADMIN_CONSOLE/u)).not.toBeInTheDocument();
   });
 

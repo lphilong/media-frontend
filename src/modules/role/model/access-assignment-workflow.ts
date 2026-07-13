@@ -61,8 +61,8 @@ export const deriveAccessAssignmentReadiness = (input: {
 } => {
   const previewMatchesCurrent = Boolean(
     input.previewResult &&
-      input.previewSignature &&
-      input.previewSignature === input.currentSignature,
+    input.previewSignature &&
+    input.previewSignature === input.currentSignature,
   );
   const issues = deriveAccessAssignmentIssueState(input.previewResult);
   const targetStepComplete = Boolean(input.hasSelectedUser && input.hasSelectedTarget);
@@ -78,18 +78,18 @@ export const deriveAccessAssignmentReadiness = (input: {
     issues,
     canPreview: Boolean(
       input.currentPayload &&
-        input.hasSelectedUser &&
-        input.hasSelectedTarget &&
-        input.requirementState.canEnterPreview &&
-        !input.isPreviewPending,
+      input.hasSelectedUser &&
+      input.hasSelectedTarget &&
+      input.requirementState.canEnterPreview &&
+      !input.isPreviewPending,
     ),
     canApply: Boolean(
       input.currentPayload &&
-        previewMatchesCurrent &&
-        input.previewResult?.canApply === true &&
-        !issues.hasBlockers &&
-        input.reason &&
-        !input.isApplyPending,
+      previewMatchesCurrent &&
+      input.previewResult?.canApply === true &&
+      !issues.hasBlockers &&
+      input.reason &&
+      !input.isApplyPending,
     ),
     userStepComplete: input.userStepComplete,
     targetStepComplete,
@@ -164,11 +164,12 @@ export const buildAccessAssignmentWorkflowSteps = (input: {
         input.user.id && (!input.user.label || input.user.disabled)
           ? input.labels.userInvalidNote
           : undefined,
-      tone: input.user.id && (!input.user.label || input.user.disabled)
-        ? 'danger'
-        : userComplete
-          ? 'success'
-          : 'neutral',
+      tone:
+        input.user.id && (!input.user.label || input.user.disabled)
+          ? 'danger'
+          : userComplete
+            ? 'success'
+            : 'neutral',
       isActive: input.activeStepId === 'user',
       canNavigate: input.activeStepId === 'user' || userComplete,
     },

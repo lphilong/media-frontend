@@ -1,18 +1,11 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, type ReactNode } from 'react';
 
 export type ModulePageActionsRegistrar = (actions: ReactNode | null) => void;
 
 const noopPageActionsRegistrar: ModulePageActionsRegistrar = () => undefined;
 
-const ModulePageActionsContext = createContext<ModulePageActionsRegistrar>(
-  noopPageActionsRegistrar,
-);
+const ModulePageActionsContext =
+  createContext<ModulePageActionsRegistrar>(noopPageActionsRegistrar);
 
 export const ModulePageActionsProvider = ({
   children,

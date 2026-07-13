@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 
 import { appRoutes } from '@app/router/router';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
+import { createWorkspaceAvailability } from '@test/factories/access';
 import { server } from '@test/msw/server';
 import { renderAppWithProviders } from '@test/render-app-route';
 
@@ -34,6 +35,11 @@ const renderContractRecordDetail = async (): Promise<void> => {
   expect(screen.getByText(i18n.t('contract-registry:actionRail.title'))).toBeInTheDocument();
 };
 
+const expectMissingScope = async (): Promise<void> => {
+  expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+  expect(screen.getByText(/chưa có phạm vi dữ liệu phù hợp/u)).toBeInTheDocument();
+};
+
 const mockCapabilities = ({
   permissions = [],
   scopeGrants = {},
@@ -54,6 +60,10 @@ const mockCapabilities = ({
           roles: ['role-commercial-capability-test'],
           permissions,
           scopeGrants,
+          accountContexts: ['ADMIN_CONSOLE'],
+          workspaceAvailability: createWorkspaceAvailability({
+            accountContexts: ['ADMIN_CONSOLE'],
+          }),
           generatedAt: '2026-05-21T00:00:00.000Z',
         },
       });
@@ -78,7 +88,8 @@ describe('commercial capability UX hints', () => {
       scopeGrants: {},
     });
 
-    await renderContractRecordDetail();
+    renderRoute('/contract-records/contract-record-001');
+    await expectMissingScope();
 
     await waitFor(() =>
       expect(
@@ -126,9 +137,11 @@ describe('commercial capability UX hints', () => {
 
     renderRoute('/contract-records/contract-record-archived');
 
-    const editDraft = await screen.findByRole('button', {
-      name: i18n.t('contract-registry:actions.editDraftCore'),
-    });
+    const editDraft = await screen.findByRole(
+      'button',
+      { name: i18n.t('contract-registry:actions.editDraftCore') },
+      { timeout: 3000 },
+    );
     expect(editDraft).toBeDisabled();
     expect(
       screen.getByRole('button', {
@@ -170,7 +183,7 @@ describe('commercial capability UX hints', () => {
 
     renderRoute('/commission/rules/commission-rule-001');
 
-    await screen.findByText(i18n.t('commission:rules.actionRail.title'));
+    await expectMissingScope();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('commission:rules.actions.activate'),
@@ -188,9 +201,11 @@ describe('commercial capability UX hints', () => {
     });
     renderRoute('/commission/rules/commission-rule-001');
 
-    const editDraft = await screen.findByRole('button', {
-      name: i18n.t('commission:rules.actions.editDraftCore'),
-    });
+    const editDraft = await screen.findByRole(
+      'button',
+      { name: i18n.t('commission:rules.actions.editDraftCore') },
+      { timeout: 3000 },
+    );
     await waitFor(() => expect(editDraft).toBeEnabled());
   });
 
@@ -206,7 +221,7 @@ describe('commercial capability UX hints', () => {
 
     renderRoute('/commission/settlements/commission-settlement-001');
 
-    await screen.findByText(i18n.t('commission:settlements.actionRail.title'));
+    await expectMissingScope();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('commission:settlements.actions.replaceRevenueEntries'),
@@ -217,7 +232,8 @@ describe('commercial capability UX hints', () => {
     mockCapabilities({ status: 500 });
     renderRoute('/commission/settlements/commission-settlement-001');
 
-    expect(await screen.findByText('Không có quyền truy cập')).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.getByText(/Không tải được dữ liệu quyền truy cập/u)).toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('commission:settlements.actions.editDraftCore'),

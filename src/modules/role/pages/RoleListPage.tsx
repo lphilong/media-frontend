@@ -405,7 +405,11 @@ const RoleBundleTab = ({
                     <StatusBadge label="Gói đề xuất" tone="info" uppercase={false} />
                     <StatusBadge
                       label={formatCatalogStatusLabel(bundle.assignabilityStatus)}
-                      tone={bundle.assignabilityStatus === 'RESTRICTED_SENSITIVE' ? 'warning' : 'success'}
+                      tone={
+                        bundle.assignabilityStatus === 'RESTRICTED_SENSITIVE'
+                          ? 'warning'
+                          : 'success'
+                      }
                       uppercase={false}
                     />
                   </div>

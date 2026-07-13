@@ -1,6 +1,4 @@
-export {
-  orgUnitFlatListQueryConfig,
-} from '@modules/org-unit';
+export { orgUnitFlatListQueryConfig } from '@modules/org-unit';
 export {
   employmentProfileDirectReportsQueryConfig,
   employmentProfileFlatListQueryConfig,

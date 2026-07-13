@@ -196,11 +196,11 @@ describe('Role guided assignment integration', () => {
       name: i18n.t('role:accessAssignment.sensitiveConfirm.title'),
     });
     expect(within(dialog).getByText(/Alice Linked/u)).toBeInTheDocument();
-    expect(within(dialog).getByText(new RegExp(accessLabel('ownerAdmin'), 'u'))).toBeInTheDocument();
     expect(
-      within(dialog).getByText(
-        new RegExp(i18n.t('role:accessAssignment.scopeTypes.global'), 'u'),
-      ),
+      within(dialog).getByText(new RegExp(accessLabel('ownerAdmin'), 'u')),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(new RegExp(i18n.t('role:accessAssignment.scopeTypes.global'), 'u')),
     ).toBeInTheDocument();
 
     await user.click(

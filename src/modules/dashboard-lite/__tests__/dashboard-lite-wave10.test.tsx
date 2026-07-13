@@ -162,7 +162,9 @@ describe('Dashboard Lite hardening', () => {
       ).toBeInTheDocument();
       const main = screen.getByTestId('admin-shell-main');
       expect(main).toHaveTextContent(i18n.t('errors:permission.reason.unknown'));
-      expect(main).toHaveTextContent(/You can:\s*- check access in the role and permission screen/i);
+      expect(main).toHaveTextContent(
+        /You can:\s*- check access in the role and permission screen/i,
+      );
     },
   );
 

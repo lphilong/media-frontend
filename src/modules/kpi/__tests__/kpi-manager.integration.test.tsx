@@ -19,7 +19,11 @@ const managerKpiCapabilities = () =>
   createActorCapabilities({
     id: 'kpi-manager',
     accountContexts: ['MANAGER_CONSOLE'],
-    permissions: [PERMISSIONS.KPI_READ, PERMISSIONS.KPI_READ_PROGRESS, PERMISSIONS.KPI_ENTER_ACTUAL],
+    permissions: [
+      PERMISSIONS.KPI_READ,
+      PERMISSIONS.KPI_READ_PROGRESS,
+      PERMISSIONS.KPI_ENTER_ACTUAL,
+    ],
     scopeGrants: { kpi: ['managedGroup'] },
   });
 
@@ -42,7 +46,9 @@ describe('KPI Manager integration replacement coverage', () => {
     expect(
       await screen.findByTestId('manager-workspace-shell', {}, lazyRouteContentWait),
     ).toBeInTheDocument();
-    expect(await screen.findByTestId('manager-panel-kpi', {}, lazyRouteContentWait)).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-panel-kpi', {}, lazyRouteContentWait),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('manager-module-kpi')).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'KPI Management' })).not.toBeInTheDocument();
@@ -55,7 +61,9 @@ describe('KPI Manager integration replacement coverage', () => {
 
     renderRouteWithAccess('/kpi', { capabilities: managerKpiCapabilities() });
 
-    expect(await screen.findByTestId('manager-kpi-tab-unit', {}, lazyRouteContentWait)).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-kpi-tab-unit', {}, lazyRouteContentWait),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('manager-kpi-tab-talentGroup')).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId('manager-kpi-tab-unit'));
@@ -69,10 +77,16 @@ describe('KPI Manager integration replacement coverage', () => {
       capabilities: managerKpiCapabilities(),
     });
 
-    expect(await screen.findByTestId('manager-kpi-detail', {}, lazyRouteContentWait)).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: /Operations Unit KPI|KPI/u })).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-kpi-detail', {}, lazyRouteContentWait),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /Operations Unit KPI|KPI/u }),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('Assigned scope')).not.toHaveLength(0);
     expectNoRawIdsInNormalUi(document.body, ['employment-profile-ops-001', 'talent-001']);
-    expect(screen.queryByRole('button', { name: /Finalize|Archive|Create revenue/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Finalize|Archive|Create revenue/i }),
+    ).not.toBeInTheDocument();
   });
 });

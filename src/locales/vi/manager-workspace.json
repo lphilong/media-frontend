@@ -19,8 +19,20 @@
     "scopeLabel": "Phạm vi được phân công",
     "readOnly": "Chỉ đọc",
     "actionable": "Có thể thao tác",
-    "unavailable": "Chưa mở cho chức năng này",
+    "unavailable": "Không khả dụng cho chức năng này",
+    "notReleased": "Chưa mở cho chức năng này",
     "selectedModule": "Đang xem"
+  },
+  "capabilityReasons": {
+    "AVAILABLE_READ_ONLY": "Mô-đun này khả dụng ở chế độ chỉ đọc.",
+    "AVAILABLE_ACTIONABLE": "Mô-đun này có thao tác trong phạm vi được giao.",
+    "NOT_RELEASED": "Mô-đun Quản lý này chưa được phát hành.",
+    "UNAUTHORIZED": "Quyền backend cần thiết chưa có trong quyền truy cập hiện tại.",
+    "MISSING_SCOPE": "Cần ScopeGrant có cấu trúc đang hiệu lực và khớp phạm vi.",
+    "MISSING_RESPONSIBILITY": "Cần trách nhiệm Quản lý trung tâm đang hiệu lực.",
+    "MISSING_PROFILE": "Cần Hồ sơ nhân sự đang hoạt động được liên kết.",
+    "MISSING_PREREQUISITE_DATA": "Hồ sơ hoặc dữ liệu phạm vi được giao chưa sẵn sàng.",
+    "LOAD_ERROR": "Không tải được trạng thái năng lực."
   },
   "modules": {
     "overview": {
@@ -91,6 +103,10 @@
     "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Hồ sơ nhân sự không ở trạng thái hoạt động phù hợp",
     "NO_MANAGED_SCOPE_ASSIGNED": "Chưa có phạm vi được phân công",
     "MISSING_KPI_MANAGER_CAPABILITY": "Chưa có quyền quản lý KPI"
+  },
+  "readinessProvenance": {
+    "NO_MANAGER_RESPONSIBILITY_ASSIGNED": "Chưa có trách nhiệm Quản lý đang hiệu lực",
+    "NO_STRUCTURED_SCOPE_ASSIGNED": "Chưa có ScopeGrant có cấu trúc phù hợp"
   },
   "overview": {
     "readinessTitle": "Trạng thái quyền truy cập",
@@ -240,7 +256,41 @@
     "noBookings": "Chưa có lịch đặt tài nguyên cho sự kiện này.",
     "resource": "Tài nguyên studio",
     "bookingStatus": "Trạng thái đặt",
-    "bookingWindow": "Khung đặt"
+    "bookingWindow": "Khung đặt",
+    "errors": {
+      "SESSION_FAILURE": {
+        "title": "Cần đăng nhập",
+        "message": "Hãy đăng nhập lại trước khi tải sự kiện được quản lý."
+      },
+      "FORBIDDEN": {
+        "title": "Không được phép xem sự kiện",
+        "message": "Quyền truy cập hiện tại không thể đọc sự kiện được quản lý."
+      },
+      "NOT_FOUND": {
+        "title": "Sự kiện không khả dụng",
+        "message": "Sự kiện không hiển thị trong phạm vi được giao."
+      },
+      "VALIDATION_CONFLICT": {
+        "title": "Yêu cầu sự kiện xung đột",
+        "message": "Yêu cầu xung đột với trạng thái vòng đời hoặc xác thực hiện tại."
+      },
+      "MALFORMED_RESPONSE": {
+        "title": "Phản hồi sự kiện không hợp lệ",
+        "message": "Phản hồi máy chủ không khớp hợp đồng Sự kiện Quản lý."
+      },
+      "NETWORK_FAILURE": {
+        "title": "Lỗi mạng khi tải sự kiện",
+        "message": "Yêu cầu mạng không nhận được phản hồi hợp lệ."
+      },
+      "SERVER_FAILURE": {
+        "title": "Lỗi máy chủ khi tải sự kiện",
+        "message": "Máy chủ không thể tải sự kiện được quản lý."
+      },
+      "UNKNOWN_FAILURE": {
+        "title": "Sự kiện chưa khả dụng",
+        "message": "Không thể tải sự kiện được quản lý."
+      }
+    }
   },
   "revenue": {
     "title": "Dữ liệu nguồn hằng ngày",

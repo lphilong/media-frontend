@@ -35,7 +35,10 @@ import {
   eventByResourceQueryConfig,
   eventFlatListQueryConfig,
 } from '@modules/event-assignment';
-import { parseScreenQueryParams, serializeScreenQueryParams } from '@shared/query/screen-query-config';
+import {
+  parseScreenQueryParams,
+  serializeScreenQueryParams,
+} from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),
@@ -740,7 +743,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
       screen.getByText(i18n.t('event-assignment:generatedCode.description')),
     ).toBeInTheDocument();
     await user.type(screen.getByLabelText(i18n.t('event-assignment:fields.title')), 'Wave 6 event');
-    const employeeOptions = await screen.findAllByRole('button', { name: /Employee One/ });
+    const employeeOptions = await screen.findAllByRole('option', { name: /Employee One/ });
     await user.click(employeeOptions[0]);
     await user.click(employeeOptions[1]);
     await user.type(
@@ -754,7 +757,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.addPlatformAccount') }),
     );
-    await user.click(await screen.findByRole('button', { name: /Platform One/ }));
+    await user.click(await screen.findByRole('option', { name: /Platform One/ }));
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:mutations.create.submit') }),
     );
@@ -850,7 +853,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
       screen.getByLabelText(i18n.t('event-assignment:fields.assignmentKindIndexed', { index: 2 })),
       'TALENT_GROUP',
     );
-    const groupOptions = await screen.findAllByRole('button', { name: /Group One/ });
+    const groupOptions = await screen.findAllByRole('option', { name: /Group One/ });
     await user.click(groupOptions[0]);
     await user.click(
       screen.getByRole('button', {
@@ -889,7 +892,7 @@ describe('event assignment wave 6 query and payload shaping', () => {
     await user.click(
       screen.getByRole('button', { name: i18n.t('event-assignment:actions.addPlatformAccount') }),
     );
-    await user.click(await screen.findByRole('button', { name: /Platform Three/ }));
+    await user.click(await screen.findByRole('option', { name: /Platform Three/ }));
     await user.click(
       screen.getByRole('button', {
         name: i18n.t('event-assignment:mutations.replacePlatformAccounts.submit'),

@@ -77,11 +77,17 @@ describe('Access assignment model', () => {
       'self',
     ]);
 
-    expect(buildAccessAssignmentStructuredScopeGrants(scopeTypes, {
-      managedTalentGroup: 'group-a',
-    }, {
-      financePeriod: '2026-08',
-    })).toEqual([
+    expect(
+      buildAccessAssignmentStructuredScopeGrants(
+        scopeTypes,
+        {
+          managedTalentGroup: 'group-a',
+        },
+        {
+          financePeriod: '2026-08',
+        },
+      ),
+    ).toEqual([
       { scopeType: 'self' },
       { scopeType: 'managedTalentGroup', targetId: 'group-a' },
       { scopeType: 'financePeriod', periodKey: '2026-08' },

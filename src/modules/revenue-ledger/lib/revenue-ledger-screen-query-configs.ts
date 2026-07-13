@@ -104,19 +104,19 @@ export const revenueLedgerFlatListQueryConfig = defineScreenQueryConfig({
     const normalized = sanitizeWindowRange(next, 'reconciledFromAt', 'reconciledToAt');
     const hasNarrowSortBlocker = Boolean(
       hasPresentValue(normalized.subjectTalentId) ||
-        hasPresentValue(normalized.attributionPlatformAccountId) ||
-        hasPresentValue(normalized.attributionEventId) ||
-        hasPresentValue(normalized.revenueKind) ||
-        hasPresentValue(normalized.entrySource) ||
-        hasPresentValue(normalized.currencyCode) ||
-        hasPresentValue(normalized.windowStartAt) ||
-        hasPresentValue(normalized.windowEndAt) ||
-        hasPresentValue(normalized.createdBeforeAt) ||
-        hasPresentValue(normalized.finalizedFromAt) ||
-        hasPresentValue(normalized.finalizedToAt) ||
-        hasPresentValue(normalized.reconciledFromAt) ||
-        hasPresentValue(normalized.reconciledToAt) ||
-        hasPresentValue(normalized.search),
+      hasPresentValue(normalized.attributionPlatformAccountId) ||
+      hasPresentValue(normalized.attributionEventId) ||
+      hasPresentValue(normalized.revenueKind) ||
+      hasPresentValue(normalized.entrySource) ||
+      hasPresentValue(normalized.currencyCode) ||
+      hasPresentValue(normalized.windowStartAt) ||
+      hasPresentValue(normalized.windowEndAt) ||
+      hasPresentValue(normalized.createdBeforeAt) ||
+      hasPresentValue(normalized.finalizedFromAt) ||
+      hasPresentValue(normalized.finalizedToAt) ||
+      hasPresentValue(normalized.reconciledFromAt) ||
+      hasPresentValue(normalized.reconciledToAt) ||
+      hasPresentValue(normalized.search),
     );
     const hasExplicitStatus = normalized.status !== undefined;
     const usesNarrowSort =

@@ -25,7 +25,10 @@ describe('KPI MSW test-double coverage', () => {
   it('paginates Actual Workspace with opaque cursor behavior as a test double', async () => {
     const first = await requestJson('/admin/kpi/actual-workspace/plans?limit=1&sortBy=planCode');
     expect(first.status).toBe(200);
-    const firstBody = first.body as { data: Array<{ planId: string }>; meta?: { nextCursor?: string } };
+    const firstBody = first.body as {
+      data: Array<{ planId: string }>;
+      meta?: { nextCursor?: string };
+    };
     expect(firstBody.data).toHaveLength(1);
     expect(firstBody.meta?.nextCursor).toEqual(expect.any(String));
 

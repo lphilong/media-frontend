@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import { QueryClient } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
-import { act, cleanup, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 
@@ -127,6 +127,48 @@ describe('Employment Terms admin workspace', () => {
     expect(screen.getByText('No terms match the current filters.')).toBeInTheDocument();
   });
 
+  it('keeps filters and applied values mounted while a cold filter loads, then reuses warm data', async () => {
+    let resolveCold: (() => void) | undefined;
+    let coldRequests = 0;
+    server.use(
+      http.get('*/admin/employment-terms', ({ request }) => {
+        const search = new URL(request.url).searchParams.get('search');
+        if (search !== 'cold-filter') {
+          return HttpResponse.json(emptyListResponse());
+        }
+
+        coldRequests += 1;
+        return new Promise<Response>((resolve) => {
+          resolveCold = () => resolve(HttpResponse.json(emptyListResponse()));
+        });
+      }),
+    );
+    await renderWorkspace('en');
+
+    expect(await screen.findByText('No employment terms yet')).toBeInTheDocument();
+    const search = screen.getByLabelText('Search');
+    fireEvent.change(search, { target: { value: 'cold-filter' } });
+
+    await waitFor(() => expect(coldRequests).toBe(1));
+    expect(screen.getByRole('region', { name: 'Quick filters' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Employment Terms filters' })).toBeInTheDocument();
+    expect(search).toHaveValue('cold-filter');
+    expect(screen.queryByText('No employment terms yet')).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Employment Terms results' })).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
+
+    await act(async () => resolveCold?.());
+    expect(await screen.findByText('No matching employment terms')).toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: '' } });
+    expect(await screen.findByText('No employment terms yet')).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: 'cold-filter' } });
+    expect(await screen.findByText('No matching employment terms')).toBeInTheDocument();
+    expect(search).toHaveValue('cold-filter');
+  });
+
   it('renders the initial load error state', async () => {
     let requestCount = 0;
     server.use(
@@ -222,7 +264,7 @@ describe('Employment Terms admin workspace', () => {
     expect(quickFilters).toHaveAttribute('data-layout', 'compact-filter-strip');
     const filterRegion = screen.getByRole('region', { name: 'Employment Terms filters' });
     expect(within(filterRegion).queryByLabelText('Rows per page')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Rows per page')).toHaveValue('20');
+    expect(await screen.findByLabelText('Rows per page')).toHaveValue('20');
 
     await user.click(await screen.findByRole('button', { name: 'Has overlap' }));
     await user.type(screen.getByLabelText('Search'), 'A');

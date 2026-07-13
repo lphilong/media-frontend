@@ -20,7 +20,19 @@
     "readOnly": "Read-only",
     "actionable": "Action available",
     "unavailable": "Not available for this feature",
+    "notReleased": "Not released",
     "selectedModule": "Selected"
+  },
+  "capabilityReasons": {
+    "AVAILABLE_READ_ONLY": "This module is available as read-only.",
+    "AVAILABLE_ACTIONABLE": "This module has actions available within your assigned scope.",
+    "NOT_RELEASED": "This Manager module has not been released.",
+    "UNAUTHORIZED": "The required backend capability is not available for your current access.",
+    "MISSING_SCOPE": "A matching active structured scope grant is required.",
+    "MISSING_RESPONSIBILITY": "An active central Manager responsibility is required.",
+    "MISSING_PROFILE": "An active linked Employment Profile is required.",
+    "MISSING_PREREQUISITE_DATA": "Required profile or assigned-scope data is not ready.",
+    "LOAD_ERROR": "Capability status could not be loaded."
   },
   "modules": {
     "overview": {
@@ -91,6 +103,10 @@
     "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "Employment Profile is not active",
     "NO_MANAGED_SCOPE_ASSIGNED": "No managed scope assigned",
     "MISSING_KPI_MANAGER_CAPABILITY": "KPI manager capability is missing"
+  },
+  "readinessProvenance": {
+    "NO_MANAGER_RESPONSIBILITY_ASSIGNED": "No active Manager responsibility assigned",
+    "NO_STRUCTURED_SCOPE_ASSIGNED": "No matching structured scope grant assigned"
   },
   "overview": {
     "readinessTitle": "Access status",
@@ -226,6 +242,40 @@
     "completionBoundaryHelper": "This evidence is read-only operational context and does not create revenue, commission, attendance, payroll, payment, or payout.",
     "bookings": "Resource bookings",
     "noBookings": "No resource bookings are exposed for this event.",
+    "errors": {
+      "SESSION_FAILURE": {
+        "title": "Session required",
+        "message": "Sign in again before loading managed events."
+      },
+      "FORBIDDEN": {
+        "title": "Managed events forbidden",
+        "message": "Your current access cannot read managed events."
+      },
+      "NOT_FOUND": {
+        "title": "Event unavailable",
+        "message": "This event is not visible through your assigned scope."
+      },
+      "VALIDATION_CONFLICT": {
+        "title": "Event request conflict",
+        "message": "The event request conflicts with the current lifecycle or validation state."
+      },
+      "MALFORMED_RESPONSE": {
+        "title": "Unexpected event response",
+        "message": "The server response did not match the Manager Event contract."
+      },
+      "NETWORK_FAILURE": {
+        "title": "Managed events network error",
+        "message": "The network request did not reach a valid response."
+      },
+      "SERVER_FAILURE": {
+        "title": "Managed events server error",
+        "message": "The server could not load managed events."
+      },
+      "UNKNOWN_FAILURE": {
+        "title": "Managed events unavailable",
+        "message": "Managed events could not be loaded."
+      }
+    },
     "resource": "Studio resource",
     "bookingStatus": "Booking status",
     "bookingWindow": "Booking window"

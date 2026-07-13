@@ -173,7 +173,7 @@ describe('/manager workspace route', () => {
     expect(screen.getAllByText('Mina Manager').length).toBeGreaterThan(0);
     expect(await screen.findByText('Hồ sơ nhân sự · EP-MGR-001')).toBeInTheDocument();
     expect(screen.getAllByText('Phạm vi được phân công').length).toBeGreaterThan(0);
-    expect(screen.getByTestId('manager-module-overview')).toHaveTextContent('Chỉ đọc');
+    expect(screen.getByTestId('manager-module-overview')).toHaveTextContent('Có thể thao tác');
     expect(screen.getByTestId('manager-module-kpi')).toHaveTextContent('Có thể thao tác');
     expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent(
       'Có thể thao tác',
@@ -232,7 +232,7 @@ describe('/manager workspace route', () => {
     }
 
     expect(screen.getByRole('tab', { name: /Overview/ })).toHaveTextContent('Selected');
-    expect(screen.getByRole('tab', { name: /Overview/ })).toHaveTextContent('Read-only');
+    expect(screen.getByRole('tab', { name: /Overview/ })).toHaveTextContent('Action available');
     expect(screen.getByRole('tab', { name: /Managed Work/ })).toHaveAttribute(
       'aria-disabled',
       'true',
@@ -426,7 +426,7 @@ describe('/manager workspace route', () => {
 
     await renderRoute('/manager/events');
 
-    expect(await screen.findByText('Managed events unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Managed events server error')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
     expect(screen.queryByText('raw list failure must stay hidden')).not.toBeInTheDocument();
     await waitFor(() => expect(calls).toBe(2));
@@ -502,7 +502,7 @@ describe('/manager workspace route', () => {
 
     await renderRoute('/manager/events/manager-event-retry');
 
-    expect(await screen.findByText('Managed events unavailable')).toBeInTheDocument();
+    expect(await screen.findByText('Managed events server error')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
     expect(screen.queryByText('raw detail failure must stay hidden')).not.toBeInTheDocument();
     await waitFor(() => expect(calls).toBe(2));
@@ -519,8 +519,8 @@ describe('/manager workspace route', () => {
       status: 'COMPLETED',
       eventStartAt: Date.parse('2026-06-15T09:00:00+07:00'),
       eventEndAt: Date.parse('2026-06-15T12:00:00+07:00'),
-      owner: { id: 'ep-owner', displayName: 'Event Owner' },
-      participants: [{ id: 'ep-member', displayName: 'Scoped Member' }],
+      owner: { id: 'ep-owner', displayName: 'Event Owner', status: 'ACTIVE' },
+      participants: [{ id: 'ep-member', displayName: 'Scoped Member', status: 'ON_LEAVE' }],
       completionEvidence: {
         completedAt: Date.parse('2026-06-15T12:30:00+07:00'),
         completedByActorId: 'admin-ops',
@@ -540,6 +540,15 @@ describe('/manager workspace route', () => {
       'Delivered manager-visible recap evidence.',
     );
     expect(event.completionEvidence?.evidenceRefs[0]?.referenceId).toBe('OPS-456');
+    expect(event.owner?.status).toBe('ACTIVE');
+    expect(event.participants[0]?.status).toBe('ON_LEAVE');
+
+    expect(() =>
+      parseManagerEventForTest({
+        ...event,
+        owner: { id: 'ep-owner', displayName: 'Event Owner', unsupportedField: true },
+      }),
+    ).toThrow();
   });
 
   it('does not replace Self-Service root routing for staff actors', async () => {
@@ -686,7 +695,9 @@ describe('/manager workspace route', () => {
     expect(await screen.findByText('No managed scope assigned')).toBeInTheDocument();
     expect(await screen.findByText('No managed assignments')).toBeInTheDocument();
     expect(screen.getByTestId('manager-workspace-shell')).toBeInTheDocument();
-    expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent('Read-only');
+    expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent(
+      'Not available for this feature',
+    );
     expect(document.body).not.toHaveTextContent('Action available');
 
     await act(async () => {
@@ -696,7 +707,9 @@ describe('/manager workspace route', () => {
     expect((await screen.findAllByText('Chưa có phạm vi được phân công')).length).toBeGreaterThan(
       0,
     );
-    expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent('Chỉ đọc');
+    expect(screen.getByTestId('manager-overview-readiness-card')).toHaveTextContent(
+      'Không khả dụng cho chức năng này',
+    );
     expect(document.body).not.toHaveTextContent('Có thể thao tác');
   });
 
@@ -710,7 +723,7 @@ describe('/manager workspace route', () => {
       'Managed Events read-only',
     );
     expect(screen.getByTestId('manager-panel-events')).toHaveTextContent(
-      'No active Org Unit or Talent Group manager assignment',
+      'A matching active structured scope grant is required',
     );
     expect(screen.getByTestId('manager-panel-events')).not.toHaveTextContent('Action available');
   });

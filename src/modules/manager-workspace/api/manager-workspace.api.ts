@@ -1,7 +1,8 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import { apiRequest, normalizeApiError } from '@shared/api';
+import { apiRequest } from '@shared/api';
+import { classifyManagerEventError } from '@modules/manager-workspace/manager-event-error';
 
 export const MANAGER_WORKSPACE_CONTEXT_QUERY_KEY = ['manager-workspace', 'context'] as const;
 const MANAGER_REQUEST_BATCHES_QUERY_KEY = [
@@ -23,7 +24,7 @@ const MANAGER_EVENTS_QUERY_KEY = ['manager-workspace', 'events'] as const;
 const MANAGER_REVENUE_QUERY_KEY = ['manager-workspace', 'revenue-source'] as const;
 
 const retryManagerEventsQuery = (failureCount: number, error: unknown): boolean =>
-  normalizeApiError(error).retryable && failureCount < 1;
+  classifyManagerEventError(error).retryable && failureCount < 1;
 
 const referenceNameSchema = z
   .object({
@@ -72,7 +73,12 @@ const workShiftsModuleSchema = z.union([
   z
     .object({
       visible: z.literal(false),
-      reason: z.enum(['NO_MANAGED_SCOPE_ASSIGNED', 'MISSING_WORK_SCHEDULE_READ_CAPABILITY']),
+      reason: z.enum([
+        'NO_MANAGED_SCOPE_ASSIGNED',
+        'NO_MANAGER_RESPONSIBILITY_ASSIGNED',
+        'NO_STRUCTURED_SCOPE_ASSIGNED',
+        'MISSING_WORK_SCHEDULE_READ_CAPABILITY',
+      ]),
     })
     .strict(),
 ]);
@@ -82,7 +88,12 @@ const eventsModuleSchema = z.union([
   z
     .object({
       visible: z.literal(false),
-      reason: z.enum(['NO_MANAGED_SCOPE_ASSIGNED', 'MISSING_EVENT_READ_CAPABILITY']),
+      reason: z.enum([
+        'NO_MANAGED_SCOPE_ASSIGNED',
+        'NO_MANAGER_RESPONSIBILITY_ASSIGNED',
+        'NO_STRUCTURED_SCOPE_ASSIGNED',
+        'MISSING_EVENT_READ_CAPABILITY',
+      ]),
     })
     .strict(),
 ]);
@@ -92,7 +103,13 @@ const revenueSourceModuleSchema = z.union([
   z
     .object({
       visible: z.literal(false),
-      reason: z.enum(['NO_MANAGED_SCOPE_ASSIGNED', 'MISSING_REVENUE_SOURCE_SUBMIT_CAPABILITY']),
+      reason: z.enum([
+        'NO_MANAGED_SCOPE_ASSIGNED',
+        'NO_MANAGER_RESPONSIBILITY_ASSIGNED',
+        'NO_STRUCTURED_SCOPE_ASSIGNED',
+        'MISSING_TALENT_GROUP_PREREQUISITE',
+        'MISSING_REVENUE_SOURCE_SUBMIT_CAPABILITY',
+      ]),
     })
     .strict(),
 ]);
@@ -120,6 +137,7 @@ const managerEventReferenceSummarySchema = z
     name: z.string().optional(),
     title: z.string().optional(),
     displayName: z.string().optional(),
+    status: z.string().trim().min(1).optional(),
   })
   .strict();
 

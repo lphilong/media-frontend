@@ -400,6 +400,50 @@ describe('route and sidebar permission model', () => {
     expect(screen.queryByText('Labor Contract')).not.toBeInTheDocument();
   });
 
+  it.each([
+    [
+      '/employment-terms',
+      'employment-terms:page.title',
+      ['orgUnit.read', 'employmentProfile.read', 'employmentTerms.read'],
+      {},
+    ],
+    [
+      '/employment-profiles/create',
+      'employment-profile:createWorkflow.pageTitle',
+      ['employmentProfile.read', 'employmentProfile.create'],
+      {},
+    ],
+    [
+      '/work-schedule/request-batches',
+      'work-schedule:requestBatches.page.title',
+      ['workSchedule.read', 'workSchedule.manageRequests'],
+      { workSchedule: ['global'] },
+    ],
+    [
+      '/work-schedule/availability-batches',
+      'work-schedule:availabilityBatches.page.title',
+      ['workSchedule.read', 'workSchedule.manageAvailability'],
+      { workSchedule: ['global'] },
+    ],
+  ] as const)(
+    'renders one shell-owned h1 for %s',
+    async (path, titleKey, permissions, scopeGrants) => {
+      await renderRoute(
+        path,
+        makeCapabilities({
+          roles: ['ADMIN_FULL'],
+          permissions: [...permissions],
+          scopeGrants:
+            'workSchedule' in scopeGrants ? { workSchedule: [...scopeGrants.workSchedule] } : {},
+        }),
+      );
+
+      const title = i18n.t(titleKey);
+      expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    },
+  );
+
   it('groups key Admin modules under the UIX sidebar sections without changing access', async () => {
     await renderRoute(
       '/dashboard',

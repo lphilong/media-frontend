@@ -98,9 +98,7 @@ export const formatManagerRequestTimestamp = (
         timeZone: timezone,
       }).format(value);
 
-export const managerRequestLineDecisionText = (
-  line: ManagerRequestBatchLine,
-): string | null =>
+export const managerRequestLineDecisionText = (line: ManagerRequestBatchLine): string | null =>
   line.failureReason ??
   line.rejectionReason ??
   line.cancellationReason ??

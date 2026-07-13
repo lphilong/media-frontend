@@ -86,6 +86,53 @@ describe('AsyncReferencePicker', () => {
     expect(screen.getByText('Internal')).toBeInTheDocument();
   });
 
+  it('deduplicates identical semantic badges without duplicate React keys', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    render(
+      <AsyncReferencePicker
+        pickerId="deduplicated-badges"
+        onChange={vi.fn()}
+        loadOptions={vi.fn(async () => [
+          {
+            id: 'profile-01',
+            label: 'Profile 01',
+            badges: [
+              { label: 'Internal', tone: 'info' as const },
+              { label: 'Internal', tone: 'info' as const },
+            ],
+          },
+        ])}
+      />,
+    );
+
+    expect(await screen.findByRole('option', { name: /Profile 01/i })).toBeInTheDocument();
+    expect(screen.getAllByText('Internal')).toHaveLength(1);
+    expect(consoleError.mock.calls.some((call) => String(call[0]).includes('same key'))).toBe(
+      false,
+    );
+    consoleError.mockRestore();
+  });
+
+  it('keeps same-label badges from different semantic sources distinct', async () => {
+    render(
+      <AsyncReferencePicker
+        pickerId="semantic-badges"
+        onChange={vi.fn()}
+        loadOptions={vi.fn(async () => [
+          {
+            id: 'profile-01',
+            label: 'Profile 01',
+            status: 'ACTIVE',
+            meta: { employmentStatus: 'ACTIVE' },
+          },
+        ])}
+      />,
+    );
+
+    expect(await screen.findByRole('option', { name: /Profile 01/i })).toBeInTheDocument();
+    expect(screen.getAllByText('ACTIVE')).toHaveLength(2);
+  });
+
   it('renders safe plain-text fallback for selected value without href', async () => {
     const loadOptions = vi.fn(async () => {
       return [

@@ -31,7 +31,10 @@ import {
   workShiftBySubjectQueryConfig,
   workShiftFlatListQueryConfig,
 } from '@modules/work-schedule';
-import { parseScreenQueryParams, serializeScreenQueryParams } from '@shared/query/screen-query-config';
+import {
+  parseScreenQueryParams,
+  serializeScreenQueryParams,
+} from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),

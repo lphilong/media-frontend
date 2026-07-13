@@ -35,16 +35,15 @@ describe('Manager scheduling API and presentation contracts', () => {
     setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
   });
 
-  it.each([
-    { accountContext: false },
-    { responsibility: false },
-    { structuredScope: false },
-  ])('MSW scheduling endpoints fail closed for missing authority: %o', async (authority) => {
-    setMockManagerSchedulingAuthority(authority);
-    await expect(fetchManagerWorkShifts()).rejects.toBeDefined();
-    await expect(fetchManagerAvailabilityBatches()).rejects.toBeDefined();
-    await expect(fetchManagerRequestBatches()).rejects.toBeDefined();
-  });
+  it.each([{ accountContext: false }, { responsibility: false }, { structuredScope: false }])(
+    'MSW scheduling endpoints fail closed for missing authority: %o',
+    async (authority) => {
+      setMockManagerSchedulingAuthority(authority);
+      await expect(fetchManagerWorkShifts()).rejects.toBeDefined();
+      await expect(fetchManagerAvailabilityBatches()).rejects.toBeDefined();
+      await expect(fetchManagerRequestBatches()).rejects.toBeDefined();
+    },
+  );
 
   it('continues assigned shift reads with the opaque next cursor', async () => {
     setMockManagerSchedulingPageSize(1);
@@ -62,9 +61,7 @@ describe('Manager scheduling API and presentation contracts', () => {
     const requestList = await fetchManagerRequestBatches();
     const availabilityList = await fetchManagerAvailabilityBatches();
     const request = await fetchManagerRequestBatchDetail(requestList.items[0]!.id);
-    const availability = await fetchManagerAvailabilityBatchDetail(
-      availabilityList.items[0]!.id,
-    );
+    const availability = await fetchManagerAvailabilityBatchDetail(availabilityList.items[0]!.id);
 
     expect(() =>
       parseManagerRequestBatchDetailForTest({ data: { ...request, rawGrant: 'unsafe' } }),

@@ -1,11 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
-import {
-  type KeyboardEvent,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from 'react';
+import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 
 import { Button } from '@shared/components/primitives/Button';
 import {

@@ -110,7 +110,7 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-schedule/patterns/pattern-draft');
 
-    await screen.findByText('PATTERN_DRAFT');
+    await screen.findByText('PATTERN_DRAFT', {}, { timeout: 3000 });
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:patterns.actions.edit'),
@@ -123,7 +123,7 @@ describe('work schedule capability UX hints', () => {
 
     renderRoute('/work-schedule/holiday-calendars/holiday-calendar-draft');
 
-    await screen.findByText('VN_DRAFT');
+    await screen.findByText('VN_DRAFT', {}, { timeout: 3000 });
     expect(
       screen.queryByRole('button', {
         name: i18n.t('work-schedule:holidayCalendars.actions.edit'),

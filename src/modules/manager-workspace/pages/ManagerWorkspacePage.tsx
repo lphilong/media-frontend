@@ -72,6 +72,14 @@ import {
   type ManagerWorkTab,
 } from '@modules/manager-workspace/manager-scheduling.model';
 import {
+  deriveManagerCapabilityStatuses,
+  isManagerCapabilityAvailable,
+  type ManagerCapabilityStatus,
+  type ManagerWorkspaceModuleId,
+} from '@modules/manager-workspace/manager-capability-status';
+import { classifyManagerEventError } from '@modules/manager-workspace/manager-event-error';
+import type { NormalizedApiError } from '@shared/api';
+import {
   Button,
   EmptyState,
   ErrorState,
@@ -84,7 +92,6 @@ import {
   TechnicalDetailsDisclosure,
   useMutationFeedback,
 } from '@shared/components/primitives';
-import type { NormalizedApiError } from '@shared/api';
 import { SessionArea } from '@shared/components/shell';
 import {
   WorkspaceHeader,
@@ -104,15 +111,6 @@ import {
 } from '@shared/formatting/formatters';
 
 type KpiTabId = 'unit' | 'talentGroup';
-
-type ManagerWorkspaceModuleId =
-  | 'overview'
-  | 'kpi'
-  | 'work'
-  | 'revenue'
-  | 'events'
-  | 'groups'
-  | 'members';
 
 type ManagerWorkspaceModuleConfig = {
   id: ManagerWorkspaceModuleId;
@@ -179,109 +177,46 @@ const getEnabledKpiTabs = (context: ManagerWorkspaceContext): KpiTabId[] => {
   return tabs;
 };
 
-const disabledManagerModuleIds: ReadonlySet<ManagerWorkspaceModuleId> = new Set([
-  'groups',
-  'members',
-]);
-
-type ManagerModuleStatusKey = 'actionable' | 'readOnly' | 'unavailable';
-
-const hasManagerAssignedScope = (context: ManagerWorkspaceContext): boolean =>
-  !context.readiness.reasons.includes('NO_MANAGED_SCOPE_ASSIGNED') &&
-  (context.scopes.orgUnits.length > 0 || context.scopes.talentGroups.length > 0);
-
-const getManagerKpiStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey => {
-  if (!context.modules.kpi.visible || !hasManagerAssignedScope(context)) {
-    return 'unavailable';
-  }
-
-  const hasKpiMutation = context.scopes.orgUnits.some(
-    (scope) =>
-      scope.role === 'UNIT_MANAGER' &&
-      scope.includeDescendants === false &&
-      (scope.capabilities.kpi.manageAllocation ||
-        scope.capabilities.kpi.enterActual ||
-        scope.capabilities.kpi.correctActual),
-  );
-
-  return hasKpiMutation ? 'actionable' : 'readOnly';
-};
-
-const getManagerWorkStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey =>
-  context.modules.workShifts.visible && hasManagerAssignedScope(context)
+const capabilityStatusLabelKey = (status: ManagerCapabilityStatus): string =>
+  status === 'AVAILABLE_ACTIONABLE'
     ? 'actionable'
-    : 'unavailable';
+    : status === 'AVAILABLE_READ_ONLY'
+      ? 'readOnly'
+      : status === 'NOT_RELEASED'
+        ? 'notReleased'
+        : 'unavailable';
 
-const getManagerEventsStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey =>
-  context.modules.events.visible && hasManagerAssignedScope(context) ? 'readOnly' : 'unavailable';
-
-const getManagerRevenueStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey =>
-  context.modules.revenueSource.visible && context.scopes.talentGroups.length > 0
-    ? 'actionable'
-    : 'unavailable';
-
-const getManagerOverviewStatusKey = (context: ManagerWorkspaceContext): ManagerModuleStatusKey => {
-  const hasActionableModule =
-    getManagerKpiStatusKey(context) === 'actionable' ||
-    getManagerWorkStatusKey(context) === 'actionable';
-
-  if (hasManagerAssignedScope(context) && hasActionableModule) {
-    return 'actionable';
-  }
-
-  return context.readiness.canUseManagerWorkspace ? 'readOnly' : 'unavailable';
-};
+const readinessReasonLabelKey = (reason: string): string =>
+  reason === 'NO_MANAGER_RESPONSIBILITY_ASSIGNED' || reason === 'NO_STRUCTURED_SCOPE_ASSIGNED'
+    ? `readinessProvenance.${reason}`
+    : `readiness.${reason}`;
 
 const buildManagerWorkspaceModuleItems = (
   context: ManagerWorkspaceContext,
   t: (key: string) => string,
 ): Array<WorkspaceModuleItem<ManagerWorkspaceModuleId>> => {
-  const kpiStatusKey = getManagerKpiStatusKey(context);
-  const workStatusKey = getManagerWorkStatusKey(context);
-  const eventStatusKey = getManagerEventsStatusKey(context);
-  const revenueStatusKey = getManagerRevenueStatusKey(context);
+  const statuses = deriveManagerCapabilityStatuses({ context });
 
   return managerWorkspaceModules.map((module) => {
-    const isKpiDisabled = module.id === 'kpi' && !context.modules.kpi.visible;
-    const isWorkDisabled = module.id === 'work' && !context.modules.workShifts.visible;
-    const isEventsDisabled = module.id === 'events' && !context.modules.events.visible;
-    const isRevenueDisabled = module.id === 'revenue' && !context.modules.revenueSource.visible;
-    const isUnsupported = disabledManagerModuleIds.has(module.id);
-    const disabledReason =
-      isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled || isRevenueDisabled
-        ? t(`manager-workspace:modules.${module.id}.disabledReason`)
-        : undefined;
+    const status = statuses[module.id];
+    const available = isManagerCapabilityAvailable(status);
+    const disabled = module.id !== 'overview' && !available;
+    const disabledReason = disabled
+      ? t(`manager-workspace:capabilityReasons.${status}`)
+      : undefined;
 
     return {
       id: module.id,
       icon: module.icon,
       label: t(`manager-workspace:modules.${module.id}.title`),
       description: t(`manager-workspace:modules.${module.id}.summary`),
-      statusLabel: t(
-        `manager-workspace:status.${
-          isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled || isRevenueDisabled
-            ? 'unavailable'
-            : module.id === 'kpi'
-              ? kpiStatusKey
-              : module.id === 'work'
-                ? workStatusKey
-                : module.id === 'revenue'
-                  ? revenueStatusKey
-                  : module.id === 'events'
-                    ? eventStatusKey
-                    : 'readOnly'
-        }`,
-      ),
-      statusTone:
-        isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled || isRevenueDisabled
-          ? 'warning'
-          : (module.id === 'work' && workStatusKey === 'actionable') ||
-              (module.id === 'kpi' && kpiStatusKey === 'actionable') ||
-              (module.id === 'revenue' && revenueStatusKey === 'actionable')
-            ? 'success'
-            : 'neutral',
-      disabled:
-        isUnsupported || isKpiDisabled || isWorkDisabled || isEventsDisabled || isRevenueDisabled,
+      statusLabel: t(`manager-workspace:status.${capabilityStatusLabelKey(status)}`),
+      statusTone: !available
+        ? 'warning'
+        : status === 'AVAILABLE_ACTIONABLE'
+          ? 'success'
+          : 'neutral',
+      disabled,
       disabledReason,
     };
   });
@@ -292,8 +227,8 @@ const getDisabledModulePanelCopy = (
   t: (key: string) => string,
 ): { title: string; message: string; badgeLabel: string } => ({
   title: t(`manager-workspace:modules.${moduleId}.title`),
-  message: t(`manager-workspace:modules.${moduleId}.readinessMessage`),
-  badgeLabel: t('manager-workspace:status.unavailable'),
+  message: t('manager-workspace:capabilityReasons.NOT_RELEASED'),
+  badgeLabel: t('manager-workspace:status.notReleased'),
 });
 
 const KpiPlanTable = ({
@@ -1541,9 +1476,10 @@ const ManagerWorkspaceOverview = ({
   context: ManagerWorkspaceContext;
 }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace', 'common']);
-  const disabledModules: ManagerWorkspaceModuleId[] = ['events', 'groups', 'members'];
-  const kpiStatusKey = getManagerKpiStatusKey(context);
-  const overviewStatusKey = getManagerOverviewStatusKey(context);
+  const disabledModules: ManagerWorkspaceModuleId[] = ['groups', 'members'];
+  const statuses = deriveManagerCapabilityStatuses({ context });
+  const kpiStatusKey = capabilityStatusLabelKey(statuses.kpi);
+  const overviewStatusKey = capabilityStatusLabelKey(statuses.overview);
 
   return (
     <div className="space-y-4" data-testid="manager-overview-panel">
@@ -1578,7 +1514,7 @@ const ManagerWorkspaceOverview = ({
               {context.readiness.reasons.map((reason) => (
                 <StatusBadge
                   key={reason}
-                  label={t(`manager-workspace:readiness.${reason}`)}
+                  label={t(`manager-workspace:${readinessReasonLabelKey(reason)}`)}
                   tone="warning"
                   uppercase={false}
                 />
@@ -1792,25 +1728,61 @@ const managerBookingStatusTone = {
   CANCELLED: 'danger',
 } as const;
 
+const ManagerEventErrorState = ({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}): JSX.Element => {
+  const { t } = useTranslation(['manager-workspace']);
+  const state = classifyManagerEventError(error);
+
+  if (state.kind === 'FORBIDDEN') {
+    return <PermissionDeniedState />;
+  }
+  if (state.kind === 'NOT_FOUND') {
+    return <NotFoundState message={t('manager-workspace:events.notFoundMessage')} />;
+  }
+
+  return (
+    <div className="space-y-2">
+      <ErrorState
+        title={t(`manager-workspace:events.errors.${state.kind}.title`)}
+        message={t(`manager-workspace:events.errors.${state.kind}.message`)}
+        {...(state.retryable
+          ? {
+              actionLabel: t('manager-workspace:actions.retry'),
+              onRetry,
+            }
+          : {})}
+      />
+      <TechnicalDetailsDisclosure
+        label={t('manager-workspace:technical.label')}
+        details={state.technicalDetails}
+      />
+    </div>
+  );
+};
+
 const ManagerEventsSlice = ({ context }: { context: ManagerWorkspaceContext }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace']);
   const navigate = useNavigate();
   const { eventId } = useParams<{ eventId?: string }>();
-  const canReadEvents = context.modules.events.visible && hasManagerAssignedScope(context);
+  const eventCapability = deriveManagerCapabilityStatuses({ context }).events;
+  const canReadEvents = isManagerCapabilityAvailable(eventCapability);
   const listQuery = useManagerEvents({ enabled: canReadEvents });
   const detailQuery = useManagerEventDetail(eventId, {
     enabled: canReadEvents && Boolean(eventId),
   });
   const detail = detailQuery.data;
-  const listError = listQuery.error as NormalizedApiError | null;
-  const detailError = detailQuery.error as NormalizedApiError | null;
 
   if (!canReadEvents) {
     return (
       <WorkspaceReadinessCard
         title={t('manager-workspace:events.noScopeTitle')}
-        message={t('manager-workspace:events.noScopeMessage')}
-        badgeLabel={t('manager-workspace:status.readOnly')}
+        message={t(`manager-workspace:capabilityReasons.${eventCapability}`)}
+        badgeLabel={t('manager-workspace:status.unavailable')}
       />
     );
   }
@@ -1829,15 +1801,9 @@ const ManagerEventsSlice = ({ context }: { context: ManagerWorkspaceContext }): 
             label={t('manager-workspace:events.backToList')}
           />
           {detailQuery.isLoading ? <LoadingState lines={5} /> : null}
-          {detailQuery.isError && detailError?.permissionDenied ? <PermissionDeniedState /> : null}
-          {detailQuery.isError && detailError?.notFound ? (
-            <NotFoundState message={t('manager-workspace:events.notFoundMessage')} />
-          ) : null}
-          {detailQuery.isError && !detailError?.permissionDenied && !detailError?.notFound ? (
-            <ErrorState
-              title={t('manager-workspace:events.loadErrorTitle')}
-              message={t('manager-workspace:events.loadErrorMessage')}
-              actionLabel={t('manager-workspace:actions.retry')}
+          {detailQuery.isError ? (
+            <ManagerEventErrorState
+              error={detailQuery.error}
               onRetry={() => void detailQuery.refetch()}
             />
           ) : null}
@@ -1846,12 +1812,9 @@ const ManagerEventsSlice = ({ context }: { context: ManagerWorkspaceContext }): 
       ) : (
         <>
           {listQuery.isLoading ? <LoadingState lines={5} /> : null}
-          {listQuery.isError && listError?.permissionDenied ? <PermissionDeniedState /> : null}
-          {listQuery.isError && !listError?.permissionDenied ? (
-            <ErrorState
-              title={t('manager-workspace:events.loadErrorTitle')}
-              message={t('manager-workspace:events.loadErrorMessage')}
-              actionLabel={t('manager-workspace:actions.retry')}
+          {listQuery.isError ? (
+            <ManagerEventErrorState
+              error={listQuery.error}
               onRetry={() => void listQuery.refetch()}
             />
           ) : null}
@@ -2619,7 +2582,7 @@ export const ManagerWorkspacePage = ({
               <ManagerEventsSlice context={context} />
             </WorkspacePanel>
           ) : null}
-          {disabledManagerModuleIds.has(activeModule) ? (
+          {activeModule === 'groups' || activeModule === 'members' ? (
             <WorkspacePanel testId={`manager-panel-${activeModule}`}>
               <ManagerUnsupportedModulePanel moduleId={activeModule} />
             </WorkspacePanel>

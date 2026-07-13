@@ -2,7 +2,10 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { PERMISSIONS } from '@shared/auth/current-actor-capabilities';
-import { expectNoRawAccountContextCodes, expectPermissionDeniedBusinessCopy } from '@test/assertions';
+import {
+  expectNoRawAccountContextCodes,
+  expectPermissionDeniedBusinessCopy,
+} from '@test/assertions';
 import { createActorCapabilities, createFailClosedActorCapabilities } from '@test/factories/access';
 import {
   managerWorkspaceOrgUnitOnlyContext,
@@ -55,7 +58,9 @@ describe('KPI route and access replacement coverage', () => {
     setupMswScenario({ capabilities });
     renderRouteWithAccess('/kpi', { capabilities });
 
-    expect(await screen.findAllByText(kpiPlanCodePattern, {}, lazyRouteContentWait)).not.toHaveLength(0);
+    expect(
+      await screen.findAllByText(kpiPlanCodePattern, {}, lazyRouteContentWait),
+    ).not.toHaveLength(0);
     expect(screen.queryByTestId('manager-workspace-shell')).not.toBeInTheDocument();
     expectNoRawAccountContextCodes();
   }, 15000);
@@ -71,10 +76,9 @@ describe('KPI route and access replacement coverage', () => {
     expect(
       await screen.findByTestId('manager-workspace-shell', {}, lazyRouteContentWait),
     ).toBeInTheDocument();
-    expect(await screen.findByTestId('manager-module-kpi', {}, lazyRouteContentWait)).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    expect(
+      await screen.findByTestId('manager-module-kpi', {}, lazyRouteContentWait),
+    ).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByText(kpiPlanCodePattern)).not.toBeInTheDocument();
     expectNoRawAccountContextCodes();
   });

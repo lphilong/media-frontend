@@ -12,8 +12,14 @@ import {
 } from '@modules/studio-resource/api/studio-resource.api';
 import { apiRequest } from '@shared/api';
 import { DEFAULT_LOCALE, setLocale } from '@shared/i18n/i18n';
-import { studioResourceAvailabilityQueryConfig, studioResourceFlatListQueryConfig } from '@modules/studio-resource';
-import { parseScreenQueryParams, serializeScreenQueryParams } from '@shared/query/screen-query-config';
+import {
+  studioResourceAvailabilityQueryConfig,
+  studioResourceFlatListQueryConfig,
+} from '@modules/studio-resource';
+import {
+  parseScreenQueryParams,
+  serializeScreenQueryParams,
+} from '@shared/query/screen-query-config';
 
 vi.mock('@shared/api', () => ({
   apiRequest: vi.fn(),

@@ -17,7 +17,10 @@ import type {
   StudioResourceListQuery,
   StudioResourceUpdatePayload,
 } from '@modules/studio-resource/types/studio-resource.types';
-import { studioResourceAvailabilityQueryConfig, studioResourceFlatListQueryConfig } from '@modules/studio-resource';
+import {
+  studioResourceAvailabilityQueryConfig,
+  studioResourceFlatListQueryConfig,
+} from '@modules/studio-resource';
 import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const STUDIO_RESOURCE_QUERY_ROOT = ['studio-resource'] as const;

@@ -509,7 +509,7 @@ describe('event assignment wave 6 surfaces', () => {
       scope.getByText(i18n.t('event-assignment:generatedCode.description')),
     ).toBeInTheDocument();
     await user.type(scope.getByLabelText(i18n.t('event-assignment:fields.title')), 'Wave 6 event');
-    const aliceOptions = await scope.findAllByRole('button', { name: /Alice/ });
+    const aliceOptions = await scope.findAllByRole('option', { name: /Alice/ });
     await user.click(aliceOptions[0]);
     await user.click(aliceOptions[1]);
     await user.type(
@@ -523,7 +523,7 @@ describe('event assignment wave 6 surfaces', () => {
     await user.click(
       scope.getByRole('button', { name: i18n.t('event-assignment:actions.addPlatformAccount') }),
     );
-    await user.click(await scope.findByRole('button', { name: /Mina Live/ }));
+    await user.click(await scope.findByRole('option', { name: /Mina Live/ }));
     await user.click(
       scope.getByRole('button', { name: i18n.t('event-assignment:mutations.create.submit') }),
     );

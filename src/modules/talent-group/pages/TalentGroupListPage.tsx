@@ -43,7 +43,10 @@ import {
 } from '@shared/components/primitives';
 import { ReferenceFilterField, type ReferenceOption } from '@shared/components/reference';
 import { loadTalentReferenceOptions } from '@modules/talent';
-import { talentGroupByTalentQueryConfig, talentGroupFlatListQueryConfig } from '@modules/talent-group';
+import {
+  talentGroupByTalentQueryConfig,
+  talentGroupFlatListQueryConfig,
+} from '@modules/talent-group';
 import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import {
   mergeScreenQueryParams,

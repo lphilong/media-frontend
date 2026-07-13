@@ -16,6 +16,20 @@ export type ReferenceOptionBadge = {
   title?: string;
 };
 
+type ReferenceBadgeSource =
+  | 'custom'
+  | 'type'
+  | 'status'
+  | 'state'
+  | 'employment-status'
+  | 'linked-user-status';
+
+type NormalizedReferenceBadge = {
+  source: ReferenceBadgeSource;
+  canonicalValue: string;
+  badge: ReferenceOptionBadge;
+};
+
 export type ReferenceOption = {
   id: string;
   label: string;
@@ -89,6 +103,17 @@ const addUniqueMetadata = (items: string[], value: string | undefined): void => 
 
   items.push(normalized);
 };
+
+const normalizeBadgeIdentityPart = (value: string | undefined): string =>
+  value?.trim().toLocaleLowerCase('en-US') ?? '';
+
+const referenceBadgeKey = ({ source, canonicalValue, badge }: NormalizedReferenceBadge): string =>
+  [
+    source,
+    normalizeBadgeIdentityPart(canonicalValue),
+    badge.tone ?? 'neutral',
+    normalizeBadgeIdentityPart(badge.title),
+  ].join('::');
 
 export const AsyncReferencePicker = ({
   pickerId,
@@ -293,27 +318,55 @@ export const AsyncReferencePicker = ({
   );
 
   const renderOptionBadges = (option: ReferenceOption): ReactNode => {
-    const badges: ReferenceOptionBadge[] = [...(option.badges ?? [])];
+    const candidates: NormalizedReferenceBadge[] = (option.badges ?? []).map((badge) => ({
+      source: 'custom',
+      canonicalValue: badge.title ?? badge.label,
+      badge,
+    }));
 
     if (option.type) {
-      badges.push({ label: option.type, tone: 'neutral' });
+      candidates.push({
+        source: 'type',
+        canonicalValue: option.type,
+        badge: { label: option.type, tone: 'neutral' },
+      });
     }
 
     if (option.status) {
-      badges.push({ label: option.status, tone: 'info' });
+      candidates.push({
+        source: 'status',
+        canonicalValue: option.status,
+        badge: { label: option.status, tone: 'info' },
+      });
     }
 
-    if (option.state && option.state !== option.status) {
-      badges.push({ label: option.state, tone: 'muted' });
+    if (option.state) {
+      candidates.push({
+        source: 'state',
+        canonicalValue: option.state,
+        badge: { label: option.state, tone: 'muted' },
+      });
     }
 
     if (option.meta?.employmentStatus) {
-      badges.push({ label: option.meta.employmentStatus, tone: 'info' });
+      candidates.push({
+        source: 'employment-status',
+        canonicalValue: option.meta.employmentStatus,
+        badge: { label: option.meta.employmentStatus, tone: 'info' },
+      });
     }
 
     if (option.meta?.linkedUserStatus) {
-      badges.push({ label: option.meta.linkedUserStatus, tone: 'neutral' });
+      candidates.push({
+        source: 'linked-user-status',
+        canonicalValue: option.meta.linkedUserStatus,
+        badge: { label: option.meta.linkedUserStatus, tone: 'neutral' },
+      });
     }
+
+    const badges = Array.from(
+      new Map(candidates.map((candidate) => [referenceBadgeKey(candidate), candidate])).values(),
+    );
 
     if (badges.length === 0) {
       return null;
@@ -321,12 +374,12 @@ export const AsyncReferencePicker = ({
 
     return (
       <div className="flex flex-wrap gap-1" aria-label={t('common:referencePicker.badges')}>
-        {badges.map((badge) => (
+        {badges.map((entry) => (
           <StatusBadge
-            key={`${badge.label}-${badge.title ?? ''}`}
-            label={badge.label}
-            tone={badge.tone ?? 'neutral'}
-            title={badge.title}
+            key={referenceBadgeKey(entry)}
+            label={entry.badge.label}
+            tone={entry.badge.tone ?? 'neutral'}
+            title={entry.badge.title}
             uppercase={false}
             className="py-0.5"
           />

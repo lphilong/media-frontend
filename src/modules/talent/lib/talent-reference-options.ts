@@ -27,9 +27,7 @@ export const loadTalentReferenceOptions = async (search: string): Promise<Refere
   return items.map(toTalentOption);
 };
 
-export const loadTalentReferenceOptionById = async (
-  talentId: string,
-): Promise<ReferenceOption> => {
+export const loadTalentReferenceOptionById = async (talentId: string): Promise<ReferenceOption> => {
   const items = await fetchReferenceLookupOptions('talents', {
     ids: [talentId],
     limit: 1,

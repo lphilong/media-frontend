@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 
 import {
   applyAccessAssignment,
@@ -33,10 +33,58 @@ import type {
   RoleUpdatePayload,
 } from '@modules/role/types/role.types';
 import { roleFlatListQueryConfig } from '@modules/role';
+import {
+  CURRENT_ACTOR_CAPABILITIES_QUERY_KEY,
+  type CurrentActorCapabilities,
+} from '@shared/auth/current-actor-capabilities';
 import { serializeScreenQueryParams } from '@shared/query/screen-query-config';
 
 const ROLE_QUERY_ROOT = ['role'] as const;
 const USER_QUERY_ROOT = ['user'] as const;
+
+const AUTHORITY_DEPENDENT_PROTECTED_QUERY_ROOTS = new Set<string>([
+  'commission',
+  'contract-registry',
+  'dashboard-lite',
+  'employment-profile',
+  'employment-terms',
+  'event-assignment',
+  'kpi',
+  'manager-workspace',
+  'org-unit',
+  'people-readiness',
+  'platform-account',
+  'responsibility',
+  'revenue-ledger',
+  'role',
+  'self-service',
+  'studio-resource',
+  'talent',
+  'talent-group',
+  'user',
+  'work-schedule',
+]);
+
+export type AuthorityReductionQueryClassification =
+  | 'CURRENT_ACTOR_CAPABILITY'
+  | 'PROTECTED_AUTHORITY_DEPENDENT'
+  | 'RETAIN_UNCLASSIFIED';
+
+export const classifyAuthorityReductionQuery = (
+  queryKey: QueryKey,
+): AuthorityReductionQueryClassification => {
+  if (
+    queryKey.length === CURRENT_ACTOR_CAPABILITIES_QUERY_KEY.length &&
+    queryKey.every((part, index) => part === CURRENT_ACTOR_CAPABILITIES_QUERY_KEY[index])
+  ) {
+    return 'CURRENT_ACTOR_CAPABILITY';
+  }
+
+  const queryRoot = queryKey[0];
+  return typeof queryRoot === 'string' && AUTHORITY_DEPENDENT_PROTECTED_QUERY_ROOTS.has(queryRoot)
+    ? 'PROTECTED_AUTHORITY_DEPENDENT'
+    : 'RETAIN_UNCLASSIFIED';
+};
 
 const toListQueryToken = (query: RoleListQuery): string =>
   serializeScreenQueryParams(query, roleFlatListQueryConfig).toString();
@@ -135,13 +183,39 @@ const invalidateRoleLaneQueries = async (queryClient: ReturnType<typeof useQuery
   await queryClient.invalidateQueries({ queryKey: USER_QUERY_ROOT });
 };
 
+const currentActorId = (queryClient: ReturnType<typeof useQueryClient>): string | undefined =>
+  queryClient.getQueryData<CurrentActorCapabilities>(CURRENT_ACTOR_CAPABILITIES_QUERY_KEY)?.id;
+
+const invalidateCurrentActorCapabilities = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+): Promise<void> => {
+  await queryClient.invalidateQueries({
+    queryKey: CURRENT_ACTOR_CAPABILITIES_QUERY_KEY,
+    exact: true,
+  });
+};
+
+const clearProtectedQueryData = (queryClient: ReturnType<typeof useQueryClient>): void => {
+  queryClient.removeQueries({
+    predicate: (query) =>
+      classifyAuthorityReductionQuery(query.queryKey) === 'PROTECTED_AUTHORITY_DEPENDENT',
+  });
+};
+
+const invalidateRoleCatalogAndCurrentActor = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+): Promise<void> => {
+  await invalidateRoleLaneQueries(queryClient);
+  await invalidateCurrentActorCapabilities(queryClient);
+};
+
 export const useCreateRoleMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (payload: RoleCreatePayload) => createRole(payload),
     onSuccess: async () => {
-      await invalidateRoleLaneQueries(queryClient);
+      await invalidateRoleCatalogAndCurrentActor(queryClient);
     },
   });
 };
@@ -152,7 +226,7 @@ export const useCreateRoleFromTemplateMutation = () => {
   return useMutation({
     mutationFn: (payload: RoleCreateFromTemplatePayload) => createRoleFromTemplate(payload),
     onSuccess: async () => {
-      await invalidateRoleLaneQueries(queryClient);
+      await invalidateRoleCatalogAndCurrentActor(queryClient);
     },
   });
 };
@@ -164,7 +238,7 @@ export const useUpdateRoleMutation = () => {
     mutationFn: ({ roleId, payload }: { roleId: string; payload: RoleUpdatePayload }) =>
       updateRole(roleId, payload),
     onSuccess: async () => {
-      await invalidateRoleLaneQueries(queryClient);
+      await invalidateRoleCatalogAndCurrentActor(queryClient);
     },
   });
 };
@@ -182,8 +256,11 @@ export const useRoleLifecycleMutation = () => {
       action: RoleLifecycleAction;
       payload?: RoleLifecyclePayload;
     }) => performRoleLifecycleAction(roleId, action, payload),
-    onSuccess: async () => {
-      await invalidateRoleLaneQueries(queryClient);
+    onSuccess: async (_result, variables) => {
+      await invalidateRoleCatalogAndCurrentActor(queryClient);
+      if (variables.action !== 'activate') {
+        clearProtectedQueryData(queryClient);
+      }
     },
   });
 };
@@ -200,7 +277,8 @@ export const useRolePermissionReplacementMutation = () => {
       payload: RolePermissionReplacementPayload;
     }) => replaceRolePermissions(roleId, payload),
     onSuccess: async () => {
-      await invalidateRoleLaneQueries(queryClient);
+      await invalidateRoleCatalogAndCurrentActor(queryClient);
+      clearProtectedQueryData(queryClient);
     },
   });
 };
@@ -217,7 +295,8 @@ export const useRoleAssignmentRuleReplacementMutation = () => {
       payload: RoleAssignmentRuleReplacementPayload;
     }) => replaceRoleAssignmentRules(roleId, payload),
     onSuccess: async () => {
-      await invalidateRoleLaneQueries(queryClient);
+      await invalidateRoleCatalogAndCurrentActor(queryClient);
+      clearProtectedQueryData(queryClient);
     },
   });
 };
@@ -244,6 +323,11 @@ export const useAccessAssignmentRevokeMutation = () => {
           queryKey: roleQueryKeys.accessAssignmentsForUser(targetUserId),
         });
       }
+      const actorId = currentActorId(queryClient);
+      if (!actorId || !targetUserId || actorId === targetUserId) {
+        await invalidateCurrentActorCapabilities(queryClient);
+        clearProtectedQueryData(queryClient);
+      }
     },
   });
 };
@@ -267,6 +351,10 @@ export const useAccessAssignmentApplyMutation = () => {
       await queryClient.invalidateQueries({
         queryKey: roleQueryKeys.accessAssignmentsForUser(payload.targetUserId),
       });
+      const actorId = currentActorId(queryClient);
+      if (!actorId || actorId === payload.targetUserId) {
+        await invalidateCurrentActorCapabilities(queryClient);
+      }
     },
   });
 };

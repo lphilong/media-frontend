@@ -19,8 +19,20 @@
     "scopeLabel": "已分配范围",
     "readOnly": "只读",
     "actionable": "可操作",
-    "unavailable": "此功能尚未开放",
+    "unavailable": "此功能不可用",
+    "notReleased": "尚未发布",
     "selectedModule": "已选择"
+  },
+  "capabilityReasons": {
+    "AVAILABLE_READ_ONLY": "此模块以只读方式可用。",
+    "AVAILABLE_ACTIONABLE": "此模块可在已分配范围内执行操作。",
+    "NOT_RELEASED": "此经理模块尚未发布。",
+    "UNAUTHORIZED": "当前访问缺少所需的后端能力。",
+    "MISSING_SCOPE": "需要匹配且有效的结构化 ScopeGrant。",
+    "MISSING_RESPONSIBILITY": "需要有效的中央经理职责。",
+    "MISSING_PROFILE": "需要已关联且有效的雇佣档案。",
+    "MISSING_PREREQUISITE_DATA": "所需档案或已分配范围数据尚未就绪。",
+    "LOAD_ERROR": "无法加载能力状态。"
   },
   "modules": {
     "overview": {
@@ -91,6 +103,10 @@
     "EMPLOYMENT_PROFILE_NOT_ACTIVE_OR_ON_LEAVE": "雇佣档案未处于有效状态",
     "NO_MANAGED_SCOPE_ASSIGNED": "未分配管理范围",
     "MISSING_KPI_MANAGER_CAPABILITY": "缺少 KPI 管理能力"
+  },
+  "readinessProvenance": {
+    "NO_MANAGER_RESPONSIBILITY_ASSIGNED": "未分配有效的经理职责",
+    "NO_STRUCTURED_SCOPE_ASSIGNED": "未分配匹配的结构化 ScopeGrant"
   },
   "overview": {
     "readinessTitle": "工作台就绪状态",
@@ -228,7 +244,23 @@
     "noBookings": "此活动没有公开的资源预订。",
     "resource": "演播室资源",
     "bookingStatus": "预订状态",
-    "bookingWindow": "预订时间"
+    "bookingWindow": "预订时间",
+    "errors": {
+      "SESSION_FAILURE": { "title": "需要登录", "message": "请重新登录后再加载经理活动。" },
+      "FORBIDDEN": { "title": "禁止访问经理活动", "message": "当前访问无法读取经理活动。" },
+      "NOT_FOUND": { "title": "活动不可用", "message": "此活动不在已分配的经理范围内。" },
+      "VALIDATION_CONFLICT": {
+        "title": "活动请求冲突",
+        "message": "请求与当前生命周期或验证状态冲突。"
+      },
+      "MALFORMED_RESPONSE": {
+        "title": "活动响应异常",
+        "message": "服务器响应不符合经理活动契约。"
+      },
+      "NETWORK_FAILURE": { "title": "经理活动网络错误", "message": "网络请求未获得有效响应。" },
+      "SERVER_FAILURE": { "title": "经理活动服务器错误", "message": "服务器无法加载经理活动。" },
+      "UNKNOWN_FAILURE": { "title": "经理活动不可用", "message": "无法加载经理活动。" }
+    }
   },
   "revenue": {
     "title": "\u6bcf\u65e5\u5e73\u53f0\u6765\u6e90",

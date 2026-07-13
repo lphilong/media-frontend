@@ -23,7 +23,6 @@ import {
   LoadingState,
   NotFoundState,
   PageContainer,
-  PageHeader,
   PermissionDeniedState,
   StatusBadge,
   TechnicalDetailsDisclosure,
@@ -434,214 +433,212 @@ export const EmploymentTermsWorkspacePage = (): JSX.Element => {
 
   return (
     <PageContainer className="space-y-5">
-      <PageHeader
-        title={t('employment-terms:page.title')}
-        subtitle={t('employment-terms:page.subtitle')}
-      />
       <div className="rounded border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
         <span className="font-semibold">{t('employment-terms:notices.readOnlyTitle')}.</span>{' '}
         {t('employment-terms:notices.structuredTerms')}
       </div>
 
-      {query.isPending && !data ? <LoadingState lines={10} /> : null}
-      {query.isError && !data && apiError?.permissionDenied ? <PermissionDeniedState /> : null}
-      {query.isError && !data && apiError?.notFound ? <NotFoundState /> : null}
-      {query.isError && !data && !apiError?.permissionDenied && !apiError?.notFound ? (
-        <ErrorState
-          title={t('employment-terms:states.loadErrorTitle')}
-          message={t('employment-terms:states.loadErrorMessage')}
-          actionLabel={t('common:actions.retry')}
-          onRetry={() => void query.refetch()}
-        />
-      ) : null}
+      <section
+        role="region"
+        aria-label={t('employment-terms:sections.quickFilters')}
+        data-layout="compact-filter-strip"
+        className="space-y-2"
+      >
+        <h2 id="employment-terms-quick-filters" className="text-base font-semibold text-text">
+          {t('employment-terms:sections.quickFilters')}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {quickFilters.map((filter) => {
+            const active = filters.readiness === filter.readiness;
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => toggleQuickFilter(filter.readiness)}
+                className={`rounded-full border px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-accent ${
+                  active
+                    ? 'border-accent bg-accent/10 text-accent'
+                    : 'border-border bg-panel text-text hover:border-accent/50'
+                }`}
+              >
+                <span className="font-medium">{t(`employment-terms:${filter.labelKey}`)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
-      {data ? (
-        <>
-          <section
-            role="region"
-            aria-label={t('employment-terms:sections.quickFilters')}
-            data-layout="compact-filter-strip"
-            className="space-y-2"
-          >
-            <h2 id="employment-terms-quick-filters" className="text-base font-semibold text-text">
-              {t('employment-terms:sections.quickFilters')}
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {quickFilters.map((filter) => {
-                const active = filters.readiness === filter.readiness;
-                return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => toggleQuickFilter(filter.readiness)}
-                    className={`rounded-full border px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-2 focus:ring-accent ${
-                      active
-                        ? 'border-accent bg-accent/10 text-accent'
-                        : 'border-border bg-panel text-text hover:border-accent/50'
-                    }`}
-                  >
-                    <span className="font-medium">{t(`employment-terms:${filter.labelKey}`)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section aria-label={t('employment-terms:sections.filters')}>
-            <FilterToolbar
-              resetAction={
-                <button
-                  type="button"
-                  className="rounded border border-border px-3 py-2 text-sm"
-                  onClick={clearFilters}
-                >
-                  {t('employment-terms:actions.clearFilters')}
-                </button>
-              }
+      <section aria-label={t('employment-terms:sections.filters')}>
+        <FilterToolbar
+          resetAction={
+            <button
+              type="button"
+              className="rounded border border-border px-3 py-2 text-sm"
+              onClick={clearFilters}
             >
-              <TextFilter
-                label={t('employment-terms:filters.search')}
-                placeholder={t('employment-terms:filters.searchPlaceholder')}
-                value={filters.search}
-                onChange={(value) => updateFilter('search', value)}
+              {t('employment-terms:actions.clearFilters')}
+            </button>
+          }
+        >
+          <TextFilter
+            label={t('employment-terms:filters.search')}
+            placeholder={t('employment-terms:filters.searchPlaceholder')}
+            value={filters.search}
+            onChange={(value) => updateFilter('search', value)}
+          />
+          <TextFilter
+            label={t('employment-terms:filters.employmentProfileId')}
+            value={filters.employmentProfileId}
+            onChange={(value) => updateFilter('employmentProfileId', value)}
+          />
+          <TextFilter
+            label={t('employment-terms:filters.orgUnitId')}
+            value={filters.orgUnitId}
+            onChange={(value) => updateFilter('orgUnitId', value)}
+          />
+          <SelectFilter
+            label={t('employment-terms:filters.employmentStatus')}
+            value={filters.employmentStatus}
+            values={EMPLOYMENT_PROFILE_EMPLOYMENT_STATUSES}
+            allLabel={t('employment-terms:filters.allEmploymentStatuses')}
+            getLabel={(value) => t(`employment-terms:employmentStatuses.${value}`)}
+            onChange={(value) => updateFilter('employmentStatus', value)}
+          />
+          <SelectFilter
+            label={t('employment-terms:filters.status')}
+            value={filters.status}
+            values={EMPLOYMENT_TERMS_STATUSES}
+            allLabel={t('employment-terms:filters.allStatuses')}
+            getLabel={(value) => t(`employment-terms:statuses.${value}`)}
+            onChange={(value) => updateFilter('status', value)}
+          />
+          <label className="min-w-[180px] flex-1 text-sm">
+            <span className="mb-1 block font-medium text-text">
+              {t('employment-terms:filters.payrollEligible')}
+            </span>
+            <select
+              value={filters.payrollEligible}
+              onChange={(event) =>
+                updateFilter(
+                  'payrollEligible',
+                  event.target.value as FilterState['payrollEligible'],
+                )
+              }
+              className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+            >
+              <option value="">{t('employment-terms:filters.allPayrollSource')}</option>
+              <option value="true">{t('employment-terms:payrollSource.eligible')}</option>
+              <option value="false">{t('employment-terms:payrollSource.ineligible')}</option>
+            </select>
+          </label>
+          <SelectFilter
+            label={t('employment-terms:filters.readiness')}
+            value={filters.readiness}
+            values={EMPLOYMENT_TERMS_ADMIN_READINESS_FILTERS}
+            allLabel={t('employment-terms:filters.allReadiness')}
+            getLabel={(value) => t(`employment-terms:readiness.${value}`)}
+            onChange={(value) => updateFilter('readiness', value)}
+          />
+          <DateFilter
+            label={t('employment-terms:filters.effectiveOn')}
+            value={filters.effectiveOn}
+            onChange={(value) => updateFilter('effectiveOn', value)}
+          />
+          <DateFilter
+            label={t('employment-terms:filters.expiringBefore')}
+            value={filters.expiringBefore}
+            onChange={(value) => updateFilter('expiringBefore', value)}
+          />
+        </FilterToolbar>
+      </section>
+
+      <section aria-live="polite" aria-label={t('employment-terms:sections.results')}>
+        {query.isPending && !data ? <LoadingState lines={10} /> : null}
+        {query.isError && !data && apiError?.permissionDenied ? <PermissionDeniedState /> : null}
+        {query.isError && !data && apiError?.notFound ? <NotFoundState /> : null}
+        {query.isError && !data && !apiError?.permissionDenied && !apiError?.notFound ? (
+          <ErrorState
+            title={t('employment-terms:states.loadErrorTitle')}
+            message={t('employment-terms:states.loadErrorMessage')}
+            actionLabel={t('common:actions.retry')}
+            onRetry={() => void query.refetch()}
+          />
+        ) : null}
+
+        {data ? (
+          <div className="space-y-5">
+            {query.isFetching && data ? (
+              <p className="text-sm text-muted">{t('employment-terms:states.refreshingInline')}</p>
+            ) : null}
+            {query.isError && data ? (
+              <ErrorState
+                variant="inline"
+                title={t('employment-terms:states.refreshErrorTitle')}
+                message={t('employment-terms:states.refreshErrorMessage')}
               />
-              <TextFilter
-                label={t('employment-terms:filters.employmentProfileId')}
-                value={filters.employmentProfileId}
-                onChange={(value) => updateFilter('employmentProfileId', value)}
+            ) : null}
+
+            {data.items.length === 0 ? (
+              <EmptyState
+                title={t(
+                  businessFiltersActive
+                    ? 'employment-terms:states.filteredEmptyTitle'
+                    : 'employment-terms:states.initialEmptyTitle',
+                )}
+                message={t(
+                  businessFiltersActive
+                    ? 'employment-terms:states.filteredEmptyMessage'
+                    : 'employment-terms:states.initialEmptyMessage',
+                )}
               />
-              <TextFilter
-                label={t('employment-terms:filters.orgUnitId')}
-                value={filters.orgUnitId}
-                onChange={(value) => updateFilter('orgUnitId', value)}
-              />
-              <SelectFilter
-                label={t('employment-terms:filters.employmentStatus')}
-                value={filters.employmentStatus}
-                values={EMPLOYMENT_PROFILE_EMPLOYMENT_STATUSES}
-                allLabel={t('employment-terms:filters.allEmploymentStatuses')}
-                getLabel={(value) => t(`employment-terms:employmentStatuses.${value}`)}
-                onChange={(value) => updateFilter('employmentStatus', value)}
-              />
-              <SelectFilter
-                label={t('employment-terms:filters.status')}
-                value={filters.status}
-                values={EMPLOYMENT_TERMS_STATUSES}
-                allLabel={t('employment-terms:filters.allStatuses')}
-                getLabel={(value) => t(`employment-terms:statuses.${value}`)}
-                onChange={(value) => updateFilter('status', value)}
-              />
-              <label className="min-w-[180px] flex-1 text-sm">
-                <span className="mb-1 block font-medium text-text">
-                  {t('employment-terms:filters.payrollEligible')}
-                </span>
-                <select
-                  value={filters.payrollEligible}
-                  onChange={(event) =>
-                    updateFilter(
-                      'payrollEligible',
-                      event.target.value as FilterState['payrollEligible'],
+            ) : null}
+
+            {data.items.length > 0 ? (
+              <section aria-labelledby="employment-terms-results" className="space-y-3">
+                <h2 id="employment-terms-results" className="text-base font-semibold text-text">
+                  {t('employment-terms:sections.results')}
+                </h2>
+                <ResultsTable items={data.items} />
+              </section>
+            ) : null}
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted">
+                {t('employment-terms:pagination.loaded', { count: data.items.length })}
+              </p>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="w-36 text-sm">
+                  <span className="mb-1 block font-medium text-text">
+                    {t('employment-terms:filters.rowsPerPage')}
+                  </span>
+                  <select
+                    value={filters.limit}
+                    onChange={(event) => updateFilter('limit', Number(event.target.value))}
+                    className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
+                  >
+                    {[10, 20, 50, 100].map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <CursorPager
+                  canGoBack={cursorStack.length > 0}
+                  canGoNext={Boolean(data.nextCursor)}
+                  onPrevious={() => setCursorStack((current) => current.slice(0, -1))}
+                  onNext={() =>
+                    setCursorStack((current) =>
+                      data.nextCursor ? [...current, data.nextCursor] : current,
                     )
                   }
-                  className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
-                >
-                  <option value="">{t('employment-terms:filters.allPayrollSource')}</option>
-                  <option value="true">{t('employment-terms:payrollSource.eligible')}</option>
-                  <option value="false">{t('employment-terms:payrollSource.ineligible')}</option>
-                </select>
-              </label>
-              <SelectFilter
-                label={t('employment-terms:filters.readiness')}
-                value={filters.readiness}
-                values={EMPLOYMENT_TERMS_ADMIN_READINESS_FILTERS}
-                allLabel={t('employment-terms:filters.allReadiness')}
-                getLabel={(value) => t(`employment-terms:readiness.${value}`)}
-                onChange={(value) => updateFilter('readiness', value)}
-              />
-              <DateFilter
-                label={t('employment-terms:filters.effectiveOn')}
-                value={filters.effectiveOn}
-                onChange={(value) => updateFilter('effectiveOn', value)}
-              />
-              <DateFilter
-                label={t('employment-terms:filters.expiringBefore')}
-                value={filters.expiringBefore}
-                onChange={(value) => updateFilter('expiringBefore', value)}
-              />
-            </FilterToolbar>
-          </section>
-
-          {query.isFetching && data ? (
-            <p className="text-sm text-muted">{t('employment-terms:states.refreshingInline')}</p>
-          ) : null}
-          {query.isError && data ? (
-            <ErrorState
-              variant="inline"
-              title={t('employment-terms:states.refreshErrorTitle')}
-              message={t('employment-terms:states.refreshErrorMessage')}
-            />
-          ) : null}
-
-          {data.items.length === 0 ? (
-            <EmptyState
-              title={t(
-                businessFiltersActive
-                  ? 'employment-terms:states.filteredEmptyTitle'
-                  : 'employment-terms:states.initialEmptyTitle',
-              )}
-              message={t(
-                businessFiltersActive
-                  ? 'employment-terms:states.filteredEmptyMessage'
-                  : 'employment-terms:states.initialEmptyMessage',
-              )}
-            />
-          ) : null}
-
-          {data.items.length > 0 ? (
-            <section aria-labelledby="employment-terms-results" className="space-y-3">
-              <h2 id="employment-terms-results" className="text-base font-semibold text-text">
-                {t('employment-terms:sections.results')}
-              </h2>
-              <ResultsTable items={data.items} />
-            </section>
-          ) : null}
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">
-              {t('employment-terms:pagination.loaded', { count: data.items.length })}
-            </p>
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="w-36 text-sm">
-                <span className="mb-1 block font-medium text-text">
-                  {t('employment-terms:filters.rowsPerPage')}
-                </span>
-                <select
-                  value={filters.limit}
-                  onChange={(event) => updateFilter('limit', Number(event.target.value))}
-                  className="w-full rounded border border-border bg-bg px-3 py-2 text-sm"
-                >
-                  {[10, 20, 50, 100].map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <CursorPager
-                canGoBack={cursorStack.length > 0}
-                canGoNext={Boolean(data.nextCursor)}
-                onPrevious={() => setCursorStack((current) => current.slice(0, -1))}
-                onNext={() =>
-                  setCursorStack((current) =>
-                    data.nextCursor ? [...current, data.nextCursor] : current,
-                  )
-                }
-              />
+                />
+              </div>
             </div>
           </div>
-        </>
-      ) : null}
+        ) : null}
+      </section>
     </PageContainer>
   );
 };

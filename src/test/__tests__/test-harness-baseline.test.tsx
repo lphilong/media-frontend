@@ -82,9 +82,9 @@ describe('TEST Macro 2 harness baseline helpers', () => {
     expect(actor.scopeGrants.revenueLedger).toEqual(['global']);
     expect(defaultActor.accountContexts).toEqual([]);
     expect(defaultActor.workspaceAvailability?.primaryWorkspace).toBeNull();
-    expect(defaultActor.workspaceAvailability?.availableWorkspaces.every((entry) => !entry.available)).toBe(
-      true,
-    );
+    expect(
+      defaultActor.workspaceAvailability?.availableWorkspaces.every((entry) => !entry.available),
+    ).toBe(true);
     expect(makeFinanceScope()).toEqual({
       contractRegistry: [],
       revenueLedger: [],
@@ -138,9 +138,9 @@ describe('TEST Macro 2 harness baseline helpers', () => {
     expect(actor.scopeGrants).toEqual({});
     expect(actor.accountContexts).toEqual([]);
     expect(actor.workspaceAvailability?.primaryWorkspace).toBeNull();
-    expect(actor.workspaceAvailability?.availableWorkspaces.every((entry) => !entry.available)).toBe(
-      true,
-    );
+    expect(
+      actor.workspaceAvailability?.availableWorkspaces.every((entry) => !entry.available),
+    ).toBe(true);
   });
 
   it('sets MSW scenarios fail-closed by default after reset', () => {
@@ -159,9 +159,9 @@ describe('TEST Macro 2 harness baseline helpers', () => {
     expect(actor.scopeGrants).toEqual({});
     expect(actor.accountContexts).toEqual([]);
     expect(actor.workspaceAvailability?.primaryWorkspace).toBeNull();
-    expect(actor.workspaceAvailability?.availableWorkspaces.every((entry) => !entry.available)).toBe(
-      true,
-    );
+    expect(
+      actor.workspaceAvailability?.availableWorkspaces.every((entry) => !entry.available),
+    ).toBe(true);
   });
 
   it('sets MSW scenarios, locale, and fake time without using product behavior as truth', async () => {

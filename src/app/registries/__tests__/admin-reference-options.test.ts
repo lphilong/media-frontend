@@ -98,7 +98,9 @@ describe('reference lookup API', () => {
       }),
     );
 
-    await expect(adminReferenceLoaders.loadPlatformAccountReferenceOptions('Mina')).resolves.toEqual([
+    await expect(
+      adminReferenceLoaders.loadPlatformAccountReferenceOptions('Mina'),
+    ).resolves.toEqual([
       expect.objectContaining({
         id: 'platform-ops-1',
         label: 'Mina Live',

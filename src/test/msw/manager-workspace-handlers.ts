@@ -354,6 +354,7 @@ const defaultManagerEvents = (): ManagerEventSummary[] => [
       code: 'EP-OPS-001',
       displayName: 'Ops Owner',
       name: 'Ops Owner',
+      status: 'ACTIVE',
     },
     participants: [
       {
@@ -361,6 +362,7 @@ const defaultManagerEvents = (): ManagerEventSummary[] => [
         code: 'EP-ORG-001',
         displayName: 'Org Unit Member',
         name: 'Org Unit Member',
+        status: 'ACTIVE',
       },
     ],
     completionEvidence: {
@@ -386,6 +388,7 @@ const defaultManagerEvents = (): ManagerEventSummary[] => [
           code: 'ST-A',
           displayName: 'Studio A',
           name: 'Studio A',
+          status: 'ACTIVE',
         },
       },
     ],
@@ -402,6 +405,7 @@ const defaultManagerEvents = (): ManagerEventSummary[] => [
       code: 'EP-OPS-002',
       displayName: 'Studio Coordinator',
       name: 'Studio Coordinator',
+      status: 'ACTIVE',
     },
     participants: [
       {
@@ -409,6 +413,7 @@ const defaultManagerEvents = (): ManagerEventSummary[] => [
         code: 'EP-TG-001',
         displayName: 'Talent Group Member',
         name: 'Talent Group Member',
+        status: 'ACTIVE',
       },
     ],
     studioBookings: [
@@ -422,6 +427,7 @@ const defaultManagerEvents = (): ManagerEventSummary[] => [
           code: 'ST-B',
           displayName: 'Studio B',
           name: 'Studio B',
+          status: 'ACTIVE',
         },
       },
     ],
@@ -500,9 +506,7 @@ const managerContextHasTarget = (
 ): boolean =>
   targetType === 'ORG_UNIT'
     ? managerWorkspaceContext.scopes.orgUnits.some((scope) => scope.orgUnitId === targetId)
-    : managerWorkspaceContext.scopes.talentGroups.some(
-        (scope) => scope.talentGroupId === targetId,
-      );
+    : managerWorkspaceContext.scopes.talentGroups.some((scope) => scope.talentGroupId === targetId);
 
 const paginateManagerItems = <T>(items: readonly T[], cursor: string | null) => {
   const offset = cursor ? Number(cursor) : 0;
@@ -1176,9 +1180,8 @@ export const managerWorkspaceHandlers = [
         meta: {
           ...managerWorkShifts.meta,
           returnedShiftCount: page.items.length,
-          representedMemberCount: new Set(
-            page.items.map((item) => item.member.employmentProfileId),
-          ).size,
+          representedMemberCount: new Set(page.items.map((item) => item.member.employmentProfileId))
+            .size,
           ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
         },
       },
@@ -1464,11 +1467,7 @@ export const managerWorkspaceHandlers = [
     const eligibleMemberIds = new Set(
       managerWorkShifts.items.map((shift) => shift.member.employmentProfileId),
     );
-    if (
-      body.lines.some(
-        (line) => !eligibleMemberIds.has(String(line.memberEmploymentProfileId)),
-      )
-    ) {
+    if (body.lines.some((line) => !eligibleMemberIds.has(String(line.memberEmploymentProfileId)))) {
       return HttpResponse.json(
         { message: 'request member is not eligible for assigned scheduling scope' },
         { status: 422 },

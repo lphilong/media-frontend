@@ -32,7 +32,6 @@ import {
   FilterToolbar,
   LoadingState,
   PageContainer,
-  PageHeader,
   SensitiveActionDialog,
   StatusBadge,
   TechnicalDetailsDisclosure,
@@ -258,16 +257,9 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
       <div className="space-y-4">
         <WorkScheduleSubnavigation active="availability-batches" />
         <section className="rounded border border-border bg-panel p-4 shadow-sm">
-          <PageHeader
-            title={t('work-schedule:availabilityBatches.page.title')}
-            subtitle={t('work-schedule:availabilityBatches.page.subtitle')}
-            actions={
-              <StatusBadge
-                label={t('work-schedule:availabilityBatches.badges.global')}
-                tone="info"
-              />
-            }
-          />
+          <div className="flex justify-end">
+            <StatusBadge label={t('work-schedule:availabilityBatches.badges.global')} tone="info" />
+          </div>
 
           <div className="mt-4 rounded border border-border bg-bg p-3 text-sm text-muted">
             <p>{t('work-schedule:availabilityBatches.copy.planning')}</p>

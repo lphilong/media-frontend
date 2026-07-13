@@ -57,7 +57,8 @@ export const normalizeAccessAssignmentRequiredScopeTypes = (
 
 export const getUnsupportedAccessAssignmentScopeTypes = (
   scopeTypes: readonly AccessAssignmentScopeType[],
-): AccessAssignmentScopeType[] => scopeTypes.filter((scopeType) => !supportedScopeTypes.has(scopeType));
+): AccessAssignmentScopeType[] =>
+  scopeTypes.filter((scopeType) => !supportedScopeTypes.has(scopeType));
 
 export const isAccessAssignmentScopeWithoutTarget = (
   scopeType: AccessAssignmentScopeType,
@@ -90,7 +91,7 @@ export const buildAccessAssignmentRequirementState = (args: {
   const requiresReason = true;
   const requiresReviewDate = Boolean(
     args.selectedTarget &&
-      requiresAccessAssignmentReviewDate(args.selectedTarget, args.requiredScopeTypes),
+    requiresAccessAssignmentReviewDate(args.selectedTarget, args.requiredScopeTypes),
   );
   const requiresExpiryDate = Boolean(
     args.selectedTarget && requiresAccessAssignmentExpiryDate(args.selectedTarget),
@@ -121,11 +122,11 @@ export const buildAccessAssignmentRequirementState = (args: {
     missingUnsupportedScope,
     canEnterPreview: Boolean(
       args.selectedTarget &&
-        !missingScope &&
-        !missingReason &&
-        !missingReviewDate &&
-        !missingExpiryDate &&
-        !missingUnsupportedScope,
+      !missingScope &&
+      !missingReason &&
+      !missingReviewDate &&
+      !missingExpiryDate &&
+      !missingUnsupportedScope,
     ),
   };
 };

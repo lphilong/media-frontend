@@ -109,7 +109,9 @@ describe('KPI Admin integration replacement coverage', () => {
     expect(screen.queryByRole('heading', { name: /Actual Workspace/u })).not.toBeInTheDocument();
 
     await user.click(await findTabByText([/Approval Queue/u]));
-    expect(await screen.findByRole('heading', { name: /KPI Allocation approval queue/u })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /KPI Allocation approval queue/u }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('KPI-202605-000001')).not.toBeInTheDocument();
 
     await user.click(await findTabByText([/Progress & Actuals/u]));

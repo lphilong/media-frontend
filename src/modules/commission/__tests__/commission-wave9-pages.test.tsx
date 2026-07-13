@@ -26,9 +26,9 @@ vi.mock('@modules/employment-profile', async () => {
 
   return {
     ...actual,
-  loadEmploymentProfileReferenceOptions: vi.fn(async () => [
-    { id: 'ep-001', label: 'Employee One - EP-000001' },
-  ]),
+    loadEmploymentProfileReferenceOptions: vi.fn(async () => [
+      { id: 'ep-001', label: 'Employee One - EP-000001' },
+    ]),
   };
 });
 
@@ -37,9 +37,11 @@ vi.mock('@modules/talent', async () => {
 
   return {
     ...actual,
-  loadTalentReferenceOptions: vi.fn(async (search: string) =>
-    search === 'missing-reference' ? [] : [{ id: 'talent-001', label: 'Talent One - TAL-000001' }],
-  ),
+    loadTalentReferenceOptions: vi.fn(async (search: string) =>
+      search === 'missing-reference'
+        ? []
+        : [{ id: 'talent-001', label: 'Talent One - TAL-000001' }],
+    ),
   };
 });
 
@@ -50,9 +52,9 @@ vi.mock('@modules/contract-registry', async () => {
 
   return {
     ...actual,
-  loadContractReferenceOptions: vi.fn(async () => [
-    { id: 'contract-record-001', label: 'Contract One - CON-2026-000001' },
-  ]),
+    loadContractReferenceOptions: vi.fn(async () => [
+      { id: 'contract-record-001', label: 'Contract One - CON-2026-000001' },
+    ]),
   };
 });
 
@@ -61,22 +63,21 @@ vi.mock('@modules/commission', async () => {
 
   return {
     ...actual,
-  loadCommissionRuleReferenceOptions: vi.fn(async () => [
-    { id: 'commission-rule-001', label: 'Rule One - CRULE-000001' },
-  ]),
+    loadCommissionRuleReferenceOptions: vi.fn(async () => [
+      { id: 'commission-rule-001', label: 'Rule One - CRULE-000001' },
+    ]),
   };
 });
 
 vi.mock('@modules/revenue-ledger', async () => {
-  const actual = await vi.importActual<typeof import('@modules/revenue-ledger')>(
-    '@modules/revenue-ledger',
-  );
+  const actual =
+    await vi.importActual<typeof import('@modules/revenue-ledger')>('@modules/revenue-ledger');
 
   return {
     ...actual,
-  loadRevenueEntryReferenceOptions: vi.fn(async () => [
-    { id: 'revenue-entry-001', label: 'Revenue One - REV-202604-000001' },
-  ]),
+    loadRevenueEntryReferenceOptions: vi.fn(async () => [
+      { id: 'revenue-entry-001', label: 'Revenue One - REV-202604-000001' },
+    ]),
   };
 });
 

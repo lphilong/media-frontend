@@ -29,7 +29,6 @@ import {
   FilterToolbar,
   LoadingState,
   PageContainer,
-  PageHeader,
   PermissionDeniedState,
   SensitiveActionDialog,
   StatusBadge,
@@ -192,17 +191,11 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
     <PageContainer>
       <div className="space-y-4">
         <WorkScheduleSubnavigation active="request-batches" />
-        <section className="rounded border border-border bg-panel p-4 shadow-sm">
-          <PageHeader
-            title={t('work-schedule:requestBatches.page.title')}
-            subtitle={t('work-schedule:requestBatches.page.subtitle')}
-            actions={
-              <StatusBadge
-                label={t('work-schedule:requestBatches.copy.adminAuthority')}
-                tone={canDecide ? 'success' : 'neutral'}
-                uppercase={false}
-              />
-            }
+        <section className="flex justify-end rounded border border-border bg-panel p-4 shadow-sm">
+          <StatusBadge
+            label={t('work-schedule:requestBatches.copy.adminAuthority')}
+            tone={canDecide ? 'success' : 'neutral'}
+            uppercase={false}
           />
         </section>
 

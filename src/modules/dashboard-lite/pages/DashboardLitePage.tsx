@@ -28,7 +28,10 @@ import {
   formatInteger,
   formatUtcMidnightDateLike,
 } from '@shared/formatting/formatters';
-import { commissionRulesFlatListQueryConfig, commissionSettlementsFlatListQueryConfig } from '@modules/commission';
+import {
+  commissionRulesFlatListQueryConfig,
+  commissionSettlementsFlatListQueryConfig,
+} from '@modules/commission';
 import { contractRegistryFlatListQueryConfig } from '@modules/contract-registry';
 import { eventFlatListQueryConfig } from '@modules/event-assignment';
 import { revenueLedgerFlatListQueryConfig } from '@modules/revenue-ledger';

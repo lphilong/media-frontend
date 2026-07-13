@@ -18,9 +18,7 @@ const toContractOption = (item: ReferenceLookupItem): ReferenceOption => ({
   href: `/contract-registry/${item.id}`,
 });
 
-export const loadContractReferenceOptions = async (
-  search: string,
-): Promise<ReferenceOption[]> => {
+export const loadContractReferenceOptions = async (search: string): Promise<ReferenceOption[]> => {
   const items = await fetchReferenceLookupOptions('contract-records', {
     search: search || undefined,
     limit: OPTION_LIMIT,

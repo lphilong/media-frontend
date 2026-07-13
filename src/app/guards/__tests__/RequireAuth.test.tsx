@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { vi } from 'vitest';
 
 import { RequireAuth } from '@app/guards/RequireAuth';
+import { setLocale } from '@shared/i18n/i18n';
 
 const useAuthMock = vi.fn();
 
@@ -19,6 +20,10 @@ const LocationProbe = (): JSX.Element => {
 };
 
 describe('RequireAuth', () => {
+  beforeEach(async () => {
+    await setLocale('en');
+  });
+
   afterEach(() => {
     useAuthMock.mockReset();
   });

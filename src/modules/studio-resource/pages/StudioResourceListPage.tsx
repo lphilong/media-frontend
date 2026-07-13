@@ -41,7 +41,10 @@ import {
   useMutationFeedback,
 } from '@shared/components/primitives';
 import { ModuleListScreenShell } from '@shared/modules';
-import { studioResourceAvailabilityQueryConfig, studioResourceFlatListQueryConfig } from '@modules/studio-resource';
+import {
+  studioResourceAvailabilityQueryConfig,
+  studioResourceFlatListQueryConfig,
+} from '@modules/studio-resource';
 import { createCursorStack, moveNextCursor, movePreviousCursor } from '@shared/query/cursor';
 import {
   mergeScreenQueryParams,

@@ -143,12 +143,12 @@ const accessLabelPattern = (key: string) => new RegExp(escapedPattern(accessLabe
 
 const accessIssue = (key: string) => i18n.t(`role:accessAssignment.issues.${key}`);
 
-const openSelectedUserCurrentPermissionDetails = async (user: ReturnType<typeof userEvent.setup>) => {
+const openSelectedUserCurrentPermissionDetails = async (
+  user: ReturnType<typeof userEvent.setup>,
+) => {
   const selectedUserCard = await screen.findByTestId('role-assignment-selected-user-detail');
   await user.click(
-    within(selectedUserCard).getByText(
-      i18n.t('role:accessAssignment.selectedUser.viewDetails'),
-    ),
+    within(selectedUserCard).getByText(i18n.t('role:accessAssignment.selectedUser.viewDetails')),
   );
 };
 
@@ -410,9 +410,7 @@ describe('role IA-1 surfaces', () => {
       expect(screen.getAllByText(accessLabel('ownerAdmin')).length).toBeGreaterThan(0),
     );
     expect(screen.getAllByText(i18n.t('role:bundles.childRoles')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(i18n.t('role:bundles.recommendedScope')).length).toBeGreaterThan(
-      0,
-    );
+    expect(screen.getAllByText(i18n.t('role:bundles.recommendedScope')).length).toBeGreaterThan(0);
     expect(
       screen.queryByText(i18n.t('role:templateCatalog.capabilitySummary')),
     ).not.toBeInTheDocument();
@@ -500,7 +498,9 @@ describe('role IA-1 surfaces', () => {
     expect(within(userPicker).queryByText(/Chau/u)).not.toBeInTheDocument();
     await user.click(within(userPicker).getByText(/Alice/u));
 
-    expect(screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel')),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
     ).not.toBeInTheDocument();
@@ -532,7 +532,9 @@ describe('role IA-1 surfaces', () => {
     await user.selectOptions(targetSelect, staffOption);
 
     const reasonInput = await advanceAssignmentTargetToConditions(user);
-    expect(screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel')),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('role:accessAssignment.previewButton') }),
     ).not.toBeInTheDocument();
@@ -582,24 +584,33 @@ describe('role IA-1 surfaces', () => {
     expect(refreshedPreviewButton).toBeInTheDocument();
     await waitFor(() => expect(refreshedApplyButton).toBeEnabled());
     await user.click(refreshedApplyButton);
-    expect(screen.queryByRole('dialog', { name: i18n.t('role:accessAssignment.sensitiveConfirm.title') })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('dialog', {
+        name: i18n.t('role:accessAssignment.sensitiveConfirm.title'),
+      }),
+    ).not.toBeInTheDocument();
 
     expect(
-      await screen.findByText(i18n.t('role:accessAssignment.resultTitle')),
+      await screen.findByText(i18n.t('role:accessAssignment.completion.title')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.completion.message')),
     ).toBeInTheDocument();
     expect(screen.getByText(i18n.t('role:accessAssignment.resultApplied'))).toBeInTheDocument();
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.feedback.applied')),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(i18n.t('role:accessAssignment.accountContextResult')),
+      screen.getByText(i18n.t('role:accessAssignment.completion.assignee')),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(i18n.t('role:accessAssignment.responsibilityResult')),
+      screen.getByText(i18n.t('role:accessAssignment.completion.accessTarget')),
     ).toBeInTheDocument();
-    expect(screen.getAllByText(i18n.t('role:accessAssignment.auditTrace')).length).toBeGreaterThan(
-      0,
-    );
+    expect(screen.getByText(i18n.t('role:accessAssignment.normalizedScope'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('role:accessAssignment.appliedCount'))).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.completion.nextActions')),
+    ).toBeInTheDocument();
   }, 25_000);
 
   it('opens sensitive confirmation before applying high-risk access', async () => {
@@ -693,9 +704,18 @@ describe('role IA-1 surfaces', () => {
 
     const reasonInput = await advanceAssignmentTargetToConditions(user);
     await user.type(reasonInput, 'Sensitive access confirmation coverage');
-    await user.type(screen.getByLabelText(i18n.t('role:accessAssignment.reviewAtLabel')), '2026-08-01');
-    await user.type(screen.getByLabelText(i18n.t('role:accessAssignment.expiresAtLabel')), '2026-08-10');
-    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'success');
+    await user.type(
+      screen.getByLabelText(i18n.t('role:accessAssignment.reviewAtLabel')),
+      '2026-08-01',
+    );
+    await user.type(
+      screen.getByLabelText(i18n.t('role:accessAssignment.expiresAtLabel')),
+      '2026-08-10',
+    );
+    expect(getAssignmentProgressCard('conditions')).toHaveAttribute(
+      'data-business-tone',
+      'success',
+    );
     await continueAssignmentWorkflowToPreview(user);
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
@@ -708,22 +728,34 @@ describe('role IA-1 surfaces', () => {
     await waitFor(() => expect(applyButton).toBeEnabled());
     await user.click(applyButton);
     expect(applyRequests).toBe(0);
-    const dialog = screen.getByRole('dialog', { name: i18n.t('role:accessAssignment.sensitiveConfirm.title') });
+    const dialog = screen.getByRole('dialog', {
+      name: i18n.t('role:accessAssignment.sensitiveConfirm.title'),
+    });
     expect(within(dialog).getByText(/Alice Linked/u)).toBeInTheDocument();
     expect(within(dialog).getByText(accessLabelPattern('ownerAdmin'))).toBeInTheDocument();
     expect(
-      within(dialog).getByText(
-        new RegExp(i18n.t('role:accessAssignment.scopeTypes.global'), 'u'),
-      ),
+      within(dialog).getByText(new RegExp(i18n.t('role:accessAssignment.scopeTypes.global'), 'u')),
     ).toBeInTheDocument();
     expect(within(dialog).getByText(/2026-08-01/u)).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole('button', { name: i18n.t('role:accessAssignment.sensitiveConfirm.cancel') }));
-    expect(screen.queryByRole('dialog', { name: i18n.t('role:accessAssignment.sensitiveConfirm.title') })).not.toBeInTheDocument();
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: i18n.t('role:accessAssignment.sensitiveConfirm.cancel'),
+      }),
+    );
+    expect(
+      screen.queryByRole('dialog', {
+        name: i18n.t('role:accessAssignment.sensitiveConfirm.title'),
+      }),
+    ).not.toBeInTheDocument();
     expect(applyRequests).toBe(0);
 
     await user.click(applyButton);
-    await user.click(screen.getByRole('button', { name: i18n.t('role:accessAssignment.sensitiveConfirm.confirm') }));
+    await user.click(
+      screen.getByRole('button', {
+        name: i18n.t('role:accessAssignment.sensitiveConfirm.confirm'),
+      }),
+    );
     await waitFor(() => expect(applyRequests).toBe(1));
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.resultApplied')),
@@ -754,7 +786,11 @@ describe('role IA-1 surfaces', () => {
       await screen.findByText(i18n.t('role:accessAssignment.previewCanApply')),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: new RegExp(i18n.t('role:accessAssignment.workflow.user.title'), 'u') }));
+    await user.click(
+      screen.getByRole('button', {
+        name: new RegExp(i18n.t('role:accessAssignment.workflow.user.title'), 'u'),
+      }),
+    );
     const resetUserPicker = await findPickerSurface('role-access-assignment-linked-user');
     const clearButtons = within(resetUserPicker).getAllByRole('button', {
       name: i18n.t('common:actions.clear'),
@@ -780,12 +816,17 @@ describe('role IA-1 surfaces', () => {
     expect(getAssignmentProgressCard('user')).toHaveAttribute('data-business-tone', 'neutral');
     expect(getAssignmentProgressCard('user')).toHaveAttribute('data-active', 'true');
     expect(getAssignmentProgressCard('target')).toHaveAttribute('data-business-tone', 'disabled');
-    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-business-tone', 'disabled');
+    expect(getAssignmentProgressCard('condition')).toHaveAttribute(
+      'data-business-tone',
+      'disabled',
+    );
     expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'disabled');
     expect(getAssignmentProgressButton('target')).toBeDisabled();
     expect(getAssignmentProgressButton('condition')).toBeDisabled();
     expect(getAssignmentProgressButton('preview')).toBeDisabled();
-    expect(screen.getByRole('button', { name: i18n.t('role:accessAssignment.footer.continue') })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: i18n.t('role:accessAssignment.footer.continue') }),
+    ).toBeDisabled();
   }, 20_000);
 
   it('renders only the active guided assignment step and keeps current permissions in Step 1', async () => {
@@ -810,14 +851,27 @@ describe('role IA-1 surfaces', () => {
     expect(screen.queryByTestId('role-assignment-summary-strip')).not.toBeInTheDocument();
     expect(screen.getAllByTestId('role-assignment-workflow-progress')).toHaveLength(1);
     const progressCards = screen.getByTestId('role-assignment-workflow-progress');
-    expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.user.title'))).toBeInTheDocument();
-    expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.target.title'))).toBeInTheDocument();
-    expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.conditions.title'))).toBeInTheDocument();
-    expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.preview.title'))).toBeInTheDocument();
-    expect(within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.user.emptySummary'))).toBeInTheDocument();
+    expect(
+      within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.user.title')),
+    ).toBeInTheDocument();
+    expect(
+      within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.target.title')),
+    ).toBeInTheDocument();
+    expect(
+      within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.conditions.title')),
+    ).toBeInTheDocument();
+    expect(
+      within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.preview.title')),
+    ).toBeInTheDocument();
+    expect(
+      within(progressCards).getByText(i18n.t('role:accessAssignment.workflow.user.emptySummary')),
+    ).toBeInTheDocument();
     expect(getAssignmentProgressCard('user')).toHaveAttribute('data-business-tone', 'neutral');
     expect(getAssignmentProgressCard('user')).toHaveAttribute('data-active', 'true');
-    expect(getAssignmentProgressCard('condition')).toHaveAttribute('data-business-tone', 'disabled');
+    expect(getAssignmentProgressCard('condition')).toHaveAttribute(
+      'data-business-tone',
+      'disabled',
+    );
     expect(getAssignmentProgressButton('user')).toHaveAccessibleName(
       new RegExp(i18n.t('role:accessAssignment.workflow.active'), 'u'),
     );
@@ -837,13 +891,17 @@ describe('role IA-1 surfaces', () => {
       screen.getByPlaceholderText(i18n.t('role:accessAssignment.userSearchPlaceholder')),
     ).toBeInTheDocument();
     expect(await screen.findByText(/Alice Linked/u)).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('role:accessAssignment.selectedUser.eligibleTitle'))).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.selectedUser.eligibleTitle')),
+    ).toBeInTheDocument();
     expect(
       within(screen.getByTestId('role-assignment-step-user')).getByText(
         i18n.t('role:accessAssignment.selectedUser.emptyTitle'),
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel')),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
     ).not.toBeInTheDocument();
@@ -864,7 +922,9 @@ describe('role IA-1 surfaces', () => {
       within(selectedUserCard).getByTestId('role-assignment-current-permissions-compact'),
     ).toBeInTheDocument();
     expect(
-      within(selectedUserCard).getByText(i18n.t('role:accessAssignment.selectedUser.currentPermissionsTitle')),
+      within(selectedUserCard).getByText(
+        i18n.t('role:accessAssignment.selectedUser.currentPermissionsTitle'),
+      ),
     ).toBeInTheDocument();
     expect(
       within(selectedUserCard).getAllByText(accessLabelPattern('staffConsoleUser')).length,
@@ -911,7 +971,9 @@ describe('role IA-1 surfaces', () => {
     );
     expect(screen.getAllByTestId(/role-assignment-step-/u)).toHaveLength(1);
     expect(screen.getByTestId('role-assignment-step-scope')).toBeInTheDocument();
-    expect(screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel')),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: i18n.t('role:accessAssignment.lifecycle.title') }),
     ).not.toBeInTheDocument();
@@ -923,7 +985,10 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText(i18n.t('role:accessAssignment.expiresAtLabel'))).toBeInTheDocument();
 
     await user.type(reasonInput, 'Active step only UAT coverage');
-    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'success');
+    expect(getAssignmentProgressCard('conditions')).toHaveAttribute(
+      'data-business-tone',
+      'success',
+    );
     await continueAssignmentWorkflowToPreview(user);
     expect(['info', 'success', 'warning']).toContain(
       getAssignmentProgressCard('preview').getAttribute('data-business-tone'),
@@ -941,7 +1006,9 @@ describe('role IA-1 surfaces', () => {
     expect(
       screen.queryByPlaceholderText(i18n.t('role:accessAssignment.userSearchPlaceholder')),
     ).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel'))).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(i18n.t('role:accessAssignment.targetLabel')),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
     ).not.toBeInTheDocument();
@@ -971,9 +1038,9 @@ describe('role IA-1 surfaces', () => {
     expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'success');
 
     await user.click(getAssignmentProgressButton('condition'));
-    expect(screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder'))).toHaveValue(
-      'Active step only UAT coverage',
-    );
+    expect(
+      screen.getByPlaceholderText(i18n.t('role:accessAssignment.reasonPlaceholder')),
+    ).toHaveValue('Active step only UAT coverage');
   }, 20_000);
 
   it('keeps the scope picker terminal and clears dependent scope when user or target changes', async () => {
@@ -1022,10 +1089,7 @@ describe('role IA-1 surfaces', () => {
     await user.click(
       screen.getByRole('button', { name: i18n.t('role:accessAssignment.roleMode') }),
     );
-    await user.selectOptions(
-      targetSelect,
-      'ROLE_TEMPLATE:TALENT_GROUP_MANAGER:',
-    );
+    await user.selectOptions(targetSelect, 'ROLE_TEMPLATE:TALENT_GROUP_MANAGER:');
     await advanceAssignmentTargetToConditions(user);
 
     const scopePicker = await findPickerSurface('role-access-assignment-scope-managedTalentGroup');
@@ -1069,7 +1133,11 @@ describe('role IA-1 surfaces', () => {
     );
     expect(within(resetScopePicker).queryByText('Creators A')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: new RegExp(i18n.t('role:accessAssignment.workflow.user.title'), 'u') }));
+    await user.click(
+      screen.getByRole('button', {
+        name: new RegExp(i18n.t('role:accessAssignment.workflow.user.title'), 'u'),
+      }),
+    );
     const visibleUserPicker = await findPickerSurface('role-access-assignment-linked-user');
     const visibleClearButtons = within(visibleUserPicker).getAllByRole('button', {
       name: i18n.t('common:actions.clear'),
@@ -1128,9 +1196,15 @@ describe('role IA-1 surfaces', () => {
     });
     expect(previewStepButton).toBeDisabled();
     expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'danger');
-    expect(screen.getByText(i18n.t('role:accessAssignment.guardrail.missingScope'))).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReason'))).toBeInTheDocument();
-    expect(screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReviewDate'))).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.guardrail.missingScope')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReason')),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReviewDate')),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('role-assignment-step-preview')).not.toBeInTheDocument();
 
     const scopePicker = await findPickerSurface('role-access-assignment-scope-managedTalentGroup');
@@ -1143,12 +1217,20 @@ describe('role IA-1 surfaces', () => {
     await user.click(await within(scopePicker).findByText('Creators A'));
     await user.type(reasonInput, 'Scoped manager guardrail coverage');
     expect(previewStepButton).toBeDisabled();
-    expect(screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReviewDate'))).toBeInTheDocument();
+    expect(
+      screen.getByText(i18n.t('role:accessAssignment.guardrail.missingReviewDate')),
+    ).toBeInTheDocument();
     expect(getAssignmentProgressCard('preview')).toHaveAttribute('data-business-tone', 'disabled');
 
-    await user.type(screen.getByLabelText(i18n.t('role:accessAssignment.reviewAtLabel')), '2026-08-01');
+    await user.type(
+      screen.getByLabelText(i18n.t('role:accessAssignment.reviewAtLabel')),
+      '2026-08-01',
+    );
     await waitFor(() => expect(previewStepButton).toBeEnabled());
-    expect(getAssignmentProgressCard('conditions')).toHaveAttribute('data-business-tone', 'success');
+    expect(getAssignmentProgressCard('conditions')).toHaveAttribute(
+      'data-business-tone',
+      'success',
+    );
     await user.click(previewStepButton);
     expect(screen.getByTestId('role-assignment-step-preview')).toBeInTheDocument();
     expect(
@@ -1422,7 +1504,9 @@ describe('role IA-1 surfaces', () => {
     ).toBeInTheDocument();
     expect((await screen.findAllByText(accessLabel('staffConsoleUser'))).length).toBeGreaterThan(0);
     expect(document.body).not.toHaveTextContent(/staff console/i);
-    expect(screen.getAllByText(i18n.t('role:accessAssignment.auditActions.assign')).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(i18n.t('role:accessAssignment.auditActions.assign')).length,
+    ).toBeGreaterThan(0);
 
     await user.click(
       screen.getByRole('button', {
@@ -1541,7 +1625,9 @@ describe('role IA-1 surfaces', () => {
 
     await selectAliceForAssignment(user);
     const targetSelect = await openAssignmentTargetStep(user);
-    expect(within(targetSelect).queryByRole('option', { name: /Owner Admin/u })).not.toBeInTheDocument();
+    expect(
+      within(targetSelect).queryByRole('option', { name: /Owner Admin/u }),
+    ).not.toBeInTheDocument();
     expect(
       within(targetSelect).getByRole('option', { name: accessLabelPattern('ownerAdmin') }),
     ).toBeInTheDocument();
@@ -1581,7 +1667,7 @@ describe('role IA-1 surfaces', () => {
     expect(previewButton).toBeDisabled();
     expect(
       screen.queryByRole('button', {
-      name: i18n.t('role:accessAssignment.previewButton'),
+        name: i18n.t('role:accessAssignment.previewButton'),
       }),
     ).not.toBeInTheDocument();
   }, 20_000);
@@ -1650,11 +1736,7 @@ describe('role IA-1 surfaces', () => {
     expect(
       await screen.findByText(i18n.t('role:accessAssignment.previewBlocked')),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        accessIssue('REVIEW_AT_EXCEEDS_MAX_WINDOW'),
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText(accessIssue('REVIEW_AT_EXCEEDS_MAX_WINDOW'))).toBeInTheDocument();
     await waitFor(() => expect(applyButton).toBeDisabled());
     await user.click(applyButton);
     expect(applyRequests).toBe(0);
@@ -1740,18 +1822,18 @@ describe('role IA-1 surfaces', () => {
     await user.click(
       screen.getByRole('button', { name: i18n.t('role:accessAssignment.previewButton') }),
     );
-    expect(
-      await screen.findByText(
-        accessIssue('SELF_ASSIGNMENT_BLOCKED'),
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(accessIssue('SELF_ASSIGNMENT_BLOCKED'))).toBeInTheDocument();
     expect(
       screen.queryByRole('button', {
         name: i18n.t('role:accessAssignment.lifecycle.revokeButton'),
       }),
     ).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: new RegExp(i18n.t('role:accessAssignment.workflow.user.title'), 'u') }));
+    await user.click(
+      screen.getByRole('button', {
+        name: new RegExp(i18n.t('role:accessAssignment.workflow.user.title'), 'u'),
+      }),
+    );
     await openSelectedUserCurrentPermissionDetails(user);
     await user.click(
       await screen.findByRole('button', {
@@ -1769,11 +1851,7 @@ describe('role IA-1 surfaces', () => {
         name: i18n.t('role:accessAssignment.lifecycle.confirmRevoke'),
       }),
     );
-    expect(
-      await screen.findByText(
-        accessIssue('SELF_LIFECYCLE_BLOCKED'),
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(accessIssue('SELF_LIFECYCLE_BLOCKED'))).toBeInTheDocument();
   }, 20_000);
 
   it('loads default eligible linked users without falling back to /admin/users', async () => {
@@ -2676,7 +2754,9 @@ describe('role IA-1 surfaces', () => {
     expect(screen.getByText(i18n.t('role:templates.basedOnTemplate'))).toBeInTheDocument();
     expect(screen.getByText(accessLabel('ownerAdmin'))).toBeInTheDocument();
     expect(
-      screen.queryByText(new RegExp(`${escapedPattern(accessLabel('ownerAdmin'))} \\(OWNER_ADMIN\\)`, 'u')),
+      screen.queryByText(
+        new RegExp(`${escapedPattern(accessLabel('ownerAdmin'))} \\(OWNER_ADMIN\\)`, 'u'),
+      ),
     ).not.toBeInTheDocument();
     expect(document.body).not.toHaveTextContent(
       /\b(?:OWNER_ADMIN|HR_OPERATIONS|STAFF_CONSOLE_USER)\b/u,

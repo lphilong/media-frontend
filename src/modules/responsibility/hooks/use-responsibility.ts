@@ -72,7 +72,7 @@ export const useRevokeResponsibilityMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ assignmentId, reason }: { assignmentId: string; reason?: string | null }) =>
+    mutationFn: ({ assignmentId, reason }: { assignmentId: string; reason: string }) =>
       revokeResponsibility(assignmentId, reason),
     onSuccess: async () => {
       await invalidateResponsibilityQueries(queryClient);

@@ -37,8 +37,7 @@ export const selectAccessAssignmentTargets = (
   mode: AccessAssignmentMode,
 ): AccessAssignmentTargetOption[] =>
   targets.filter(
-    (target) =>
-      target.assignmentKind === mode && isNormalSelectableAccessAssignmentTarget(target),
+    (target) => target.assignmentKind === mode && isNormalSelectableAccessAssignmentTarget(target),
   );
 
 export const selectRestrictedAccessAssignmentTargets = (
@@ -71,16 +70,22 @@ export const selectDefaultAccessAssignmentTarget = (
   targets.find(hasCompleteDefaultScopes) ??
   targets[0];
 
-const isPreferredDefaultAccessAssignmentTarget = (target: AccessAssignmentTargetOption): boolean => {
+const isPreferredDefaultAccessAssignmentTarget = (
+  target: AccessAssignmentTargetOption,
+): boolean => {
   if (target.code === 'STAFF_CONSOLE_BUNDLE' || target.code === 'STAFF_CONSOLE_USER') {
     return true;
   }
 
-  const requiredScopes = normalizeAccessAssignmentRequiredScopeTypes(target.requiredScopeTypes ?? []);
+  const requiredScopes = normalizeAccessAssignmentRequiredScopeTypes(
+    target.requiredScopeTypes ?? [],
+  );
   return requiredScopes.length > 0 && requiredScopes.every((scopeType) => scopeType === 'self');
 };
 
 const hasCompleteDefaultScopes = (target: AccessAssignmentTargetOption): boolean => {
-  const requiredScopes = normalizeAccessAssignmentRequiredScopeTypes(target.requiredScopeTypes ?? []);
+  const requiredScopes = normalizeAccessAssignmentRequiredScopeTypes(
+    target.requiredScopeTypes ?? [],
+  );
   return requiredScopes.every((scopeType) => isAccessAssignmentScopeComplete(scopeType, {}, {}));
 };

@@ -26,12 +26,8 @@ import {
   commissionRulesScreenQueryConfigs,
   commissionSettlementsScreenQueryConfigs,
 } from '@modules/commission';
-import {
-  contractRegistryScreenQueryConfigs,
-} from '@modules/contract-registry';
-import {
-  revenueLedgerScreenQueryConfigs,
-} from '@modules/revenue-ledger';
+import { contractRegistryScreenQueryConfigs } from '@modules/contract-registry';
+import { revenueLedgerScreenQueryConfigs } from '@modules/revenue-ledger';
 
 export const commercialScreenQueryConfigs = {
   revenueLedger: revenueLedgerScreenQueryConfigs,

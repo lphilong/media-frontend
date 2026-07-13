@@ -36,9 +36,8 @@ export const loadOrgUnitReferenceOptions = async (search: string): Promise<Refer
   return items.map(toOrgUnitOption);
 };
 
-export const loadOrgUnitReferenceOptionById = async (
-  orgUnitId: string,
-): Promise<ReferenceOption> => toOrgUnitRecordOption(await fetchOrgUnitDetail(orgUnitId));
+export const loadOrgUnitReferenceOptionById = async (orgUnitId: string): Promise<ReferenceOption> =>
+  toOrgUnitRecordOption(await fetchOrgUnitDetail(orgUnitId));
 
 export const loadActiveOrgUnitReferenceOptions = async (
   search: string,

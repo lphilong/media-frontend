@@ -23,28 +23,28 @@ vi.mock('@modules/employment-profile', async () => {
 
   return {
     ...actual,
-  loadEmploymentProfileReferenceOptions: vi.fn(async () => [
-    {
-      id: 'ep-001',
-      label: 'Alice - EP-000001',
-      description: 'Director',
-      href: '/employment-profiles/ep-001',
-    },
-    {
-      id: 'ep-002',
-      label: 'Bao - EP-000002',
-      description: 'Specialist',
-      href: '/employment-profiles/ep-002',
-    },
-  ]),
-  loadContextualEmploymentProfileReferenceOptions: vi.fn(async () => [
-    {
-      id: 'ep-001',
-      label: 'Alice - EP-000001',
-      description: 'Director - ACTIVE',
-      href: '/employment-profiles/ep-001',
-    },
-  ]),
+    loadEmploymentProfileReferenceOptions: vi.fn(async () => [
+      {
+        id: 'ep-001',
+        label: 'Alice - EP-000001',
+        description: 'Director',
+        href: '/employment-profiles/ep-001',
+      },
+      {
+        id: 'ep-002',
+        label: 'Bao - EP-000002',
+        description: 'Specialist',
+        href: '/employment-profiles/ep-002',
+      },
+    ]),
+    loadContextualEmploymentProfileReferenceOptions: vi.fn(async () => [
+      {
+        id: 'ep-001',
+        label: 'Alice - EP-000001',
+        description: 'Director - ACTIVE',
+        href: '/employment-profiles/ep-001',
+      },
+    ]),
   };
 });
 
@@ -53,20 +53,20 @@ vi.mock('@modules/org-unit', async () => {
 
   return {
     ...actual,
-  loadOrgUnitReferenceOptions: vi.fn(async () => [
-    {
-      id: 'ou-parent',
-      label: 'Parent Unit - OU-PARENT',
-      description: 'ACTIVE',
-      href: '/org-units/ou-parent',
-    },
-    {
-      id: 'ou-new-parent',
-      label: 'New Parent - OU-NEW',
-      description: 'ACTIVE',
-      href: '/org-units/ou-new-parent',
-    },
-  ]),
+    loadOrgUnitReferenceOptions: vi.fn(async () => [
+      {
+        id: 'ou-parent',
+        label: 'Parent Unit - OU-PARENT',
+        description: 'ACTIVE',
+        href: '/org-units/ou-parent',
+      },
+      {
+        id: 'ou-new-parent',
+        label: 'New Parent - OU-NEW',
+        description: 'ACTIVE',
+        href: '/org-units/ou-new-parent',
+      },
+    ]),
   };
 });
 
@@ -187,7 +187,7 @@ describe('org unit wave 3 surfaces', () => {
     const picker = await findPicker('org-unit-filter-parent');
     expect(await within(picker).findAllByText(/OU-PARENT/)).not.toHaveLength(0);
 
-    await user.click(await within(picker).findByRole('button', { name: /OU-NEW/ }));
+    await user.click(await within(picker).findByRole('option', { name: /OU-NEW/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBe(
         'ou-new-parent',
@@ -208,7 +208,7 @@ describe('org unit wave 3 surfaces', () => {
       expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBeNull();
     });
 
-    await user.click(await within(picker).findByRole('button', { name: /OU-PARENT/ }));
+    await user.click(await within(picker).findByRole('option', { name: /OU-PARENT/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBe(
         'ou-parent',
@@ -226,7 +226,7 @@ describe('org unit wave 3 surfaces', () => {
       expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBeNull();
     });
 
-    await user.click(await within(picker).findByRole('button', { name: /OU-PARENT/ }));
+    await user.click(await within(picker).findByRole('option', { name: /OU-PARENT/ }));
     await waitFor(() => {
       expect(new URLSearchParams(router.state.location.search).get('parentOrgUnitId')).toBe(
         'ou-parent',
@@ -541,10 +541,8 @@ describe('org unit wave 3 surfaces', () => {
 
     renderRoute('/org-units/ou-root');
 
-    expect(await screen.findByText('Không có quyền truy cập')).toBeInTheDocument();
-    expect(
-      screen.getByText('Backend đã từ chối quyền truy cập tài nguyên này.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(i18n.t('errors:permission.title'))).toBeInTheDocument();
+    expect(screen.getByText(/Không tải được dữ liệu quyền truy cập/u)).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: i18n.t('org-unit:actions.edit') }),
     ).not.toBeInTheDocument();

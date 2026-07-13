@@ -124,12 +124,12 @@ export const createResponsibility = async (
 
 export const revokeResponsibility = async (
   assignmentId: string,
-  reason?: string | null,
+  reason: string,
 ): Promise<ResponsibilityAssignment> => {
-  const response = await apiRequest<unknown, { reason?: string | null }>({
+  const response = await apiRequest<unknown, { reason: string }>({
     method: 'POST',
     url: `/admin/responsibilities/${encodeURIComponent(assignmentId)}/revoke`,
-    data: { reason },
+    data: { reason: reason.trim() },
   });
 
   return detailResponseSchema.parse(response).data;
