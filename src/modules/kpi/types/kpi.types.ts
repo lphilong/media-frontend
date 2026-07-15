@@ -31,6 +31,32 @@ export const kpiMetricsBySubjectType = {
 
 export const kpiPlanStatuses = ['DRAFT', 'PUBLISHED', 'FINALIZED', 'ARCHIVED'] as const;
 export type KpiPlanStatus = (typeof kpiPlanStatuses)[number];
+export type KpiPlanLifecycleStatus =
+  | 'DRAFT'
+  | 'RELEASED_FOR_ALLOCATION'
+  | 'ACTIVE'
+  | 'FINALIZED'
+  | 'ARCHIVED';
+export type KpiAllocationLifecycleStatus =
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'CHANGES_REQUESTED'
+  | 'APPROVED'
+  | 'PUBLISHED'
+  | 'SUPERSEDED'
+  | 'CORRECTED';
+export type KpiAllocationMode = 'GROUP_ONLY' | 'MEMBER_ALLOCATED' | 'HYBRID';
+export type KpiActualCaptureMode = 'GROUP_ENTRY' | 'MEMBER_ENTRY' | 'IMPORTED_SOURCE' | 'DERIVED';
+export type KpiActualAggregationMethod = 'SUM' | 'AVERAGE' | 'WEIGHTED' | 'MAX' | 'MANUAL' | 'NONE';
+export type KpiActualReviewMode = 'NONE' | 'MANAGER_REVIEW' | 'OPS_REVIEW';
+export type KpiActualEvidenceMode = 'NONE' | 'OPTIONAL' | 'REQUIRED' | 'SOURCE_CONTROLLED';
+export type KpiActualLifecycleStatus =
+  | 'DRAFT'
+  | 'POSTED'
+  | 'UNDER_REVIEW'
+  | 'ACCEPTED'
+  | 'CORRECTED'
+  | 'LOCKED';
 
 export type KpiMetricUnit = 'VND' | 'COUNT' | 'HOUR';
 export type KpiAllocationStatus =
@@ -203,8 +229,12 @@ export type KpiTargetMetric = {
   metricCode: KpiMetricCode;
   targetValue: number;
   unit: KpiMetricUnit;
-  rollupMethod: 'SUM';
-  actualSource: 'MANUAL';
+  rollupMethod: KpiActualAggregationMethod;
+  actualSource: 'MANUAL' | 'IMPORTED_SOURCE' | 'DERIVED';
+  actualCaptureMode?: KpiActualCaptureMode;
+  actualReviewMode?: KpiActualReviewMode;
+  actualEvidenceMode?: KpiActualEvidenceMode;
+  actualPolicyVersion?: string;
   createdAt: number | string;
   updatedAt: number | string;
 };
@@ -217,6 +247,22 @@ export type KpiAllocation = {
   memberTalentId: string;
   membershipId: string | null;
   allocationStatus: KpiAllocationStatus;
+  lifecycleStatus?: KpiAllocationLifecycleStatus;
+  allocationMode?: KpiAllocationMode;
+  sourcePlanVersion?: number;
+  allocationVersion?: number;
+  membershipSnapshotVersion?: string | null;
+  eligibleMemberSnapshot?: {
+    employmentProfileId: string;
+    talentId: string | null;
+    membershipId: string | null;
+    membershipStatus: string | null;
+  } | null;
+  idempotencyKey?: string | null;
+  idempotencyFingerprint?: string | null;
+  correlationId?: string | null;
+  supersedesAllocationId?: string | null;
+  correctsAllocationId?: string | null;
   allocationStartDate: string;
   allocationEndDate: string | null;
   targetMetrics: KpiTargetMetricInput[];
@@ -257,6 +303,7 @@ export type KpiPlanListItem = {
   subjectId: string;
   subjectRef?: ReferenceSummary | null;
   status: KpiPlanStatus;
+  lifecycleStatus?: KpiPlanLifecycleStatus;
   currencyCode: 'VND';
   periodMonth: string;
   periodStartAt: number | string;
@@ -324,7 +371,11 @@ export type KpiActualDailyGrid = {
   policy: {
     timezone: 'Asia/Ho_Chi_Minh';
     entryOpenLocalTime: '00:00';
-    entryLockLocalTime: '10:00';
+    entryLockLocalTime: '10:00' | '12:00';
+    ordinaryCorrectionLockLocalTime?: '18:00';
+    ordinaryCorrectionDayOffset?: 2;
+    periodLockDayOfFollowingMonth?: 3;
+    periodLockLocalTime?: '18:00';
     maxDirectEditsPerEntry: 3;
     correctionAllowedUntil: 'PLAN_FINALIZED';
   };
@@ -333,7 +384,17 @@ export type KpiActualDailyGrid = {
     isPlanFinalized: boolean;
     disabledReason: string | null;
   };
-  targetMetrics: Array<{ metricCode: KpiMetricCode; targetValue: number; unit: KpiMetricUnit }>;
+  targetMetrics: Array<{
+    metricCode: KpiMetricCode;
+    targetValue: number;
+    unit: KpiMetricUnit;
+    captureMode?: KpiActualCaptureMode;
+    aggregationMethod?: KpiActualAggregationMethod;
+    reviewMode?: KpiActualReviewMode;
+    evidenceMode?: KpiActualEvidenceMode;
+    source: 'MANUAL' | 'IMPORTED_SOURCE' | 'DERIVED';
+    policyVersion?: string;
+  }>;
   rows: KpiActualGridRow[];
 };
 
@@ -354,6 +415,16 @@ export type KpiActualEntry = {
   editCount: number;
   correctionCount: number;
   latestCorrectionId: string | null;
+  lifecycleStatus?: KpiActualLifecycleStatus;
+  entryVersion?: number;
+  captureMode?: KpiActualCaptureMode;
+  aggregationMethod?: KpiActualAggregationMethod;
+  reviewMode?: KpiActualReviewMode;
+  evidenceMode?: KpiActualEvidenceMode;
+  policyVersion?: string;
+  sourceFingerprint?: string | null;
+  acceptedInputVersions?: string[];
+  derivationVersion?: string | null;
   createdAt: number | string;
   createdByActorId: string;
   updatedAt: number | string;
@@ -376,6 +447,10 @@ export type KpiActualCorrection = {
   actualDate: string;
   previousValue: number;
   correctedValue: number;
+  previousEntryVersion?: number;
+  replacementEntryVersion?: number;
+  replacementLifecycleStatus?: 'CORRECTED' | 'UNDER_REVIEW';
+  requiresReview?: boolean;
   reason: string;
   correctedAt: number | string;
   createdAt: number | string;

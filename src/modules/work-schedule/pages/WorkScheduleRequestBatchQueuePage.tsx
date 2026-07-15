@@ -75,6 +75,7 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
   const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
   const [approvalNote, setApprovalNote] = useState('');
+  const [emergencyOverrideReason, setEmergencyOverrideReason] = useState('');
   const [decisionReason, setDecisionReason] = useState('');
   const [pendingDecisionAction, setPendingDecisionAction] = useState<DecisionAction | null>(null);
   const resetQueueSelection = (): void => {
@@ -142,6 +143,7 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
 
   const resetDecisionInputs = (): void => {
     setApprovalNote('');
+    setEmergencyOverrideReason('');
     setDecisionReason('');
     setSelectedLineIds([]);
   };
@@ -153,8 +155,45 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
     if ((action === 'reject' || action === 'cancel') && decisionReason.trim().length < 10) {
       return;
     }
+    const selectedLines = pendingLines.filter((line) => selectedPendingLineIds.includes(line.id));
+    const includesEmergency = selectedLines.some(
+      (line) => line.leadTimeClassification === 'EMERGENCY',
+    );
+    if (action === 'approve' && includesEmergency && emergencyOverrideReason.trim().length < 10) {
+      return;
+    }
     const payload = {
       lineIds: selectedPendingLineIds,
+      ...(action === 'approve'
+        ? {
+            expectedRequestVersions: Object.fromEntries(
+              selectedLines.map((line) => [line.id, Number(line.updatedAt)]),
+            ),
+            expectedWorkShiftVersions: Object.fromEntries(
+              selectedLines
+                .filter((line) => line.workShiftId !== null)
+                .map((line) => [line.id, Number(line.sourceWorkShiftVersion)]),
+            ),
+            expectedSourceGenerationRunIds: Object.fromEntries(
+              selectedLines
+                .filter((line) => line.workShiftId !== null)
+                .map((line) => [line.id, line.sourceGenerationRunId ?? null]),
+            ),
+            idempotencyKey: `request-approve-apply:${detailQuery.data.id}:${selectedPendingLineIds
+              .slice()
+              .sort()
+              .map((lineId) => {
+                const line = pendingLines.find((candidate) => candidate.id === lineId);
+                return `${lineId}:${String(line?.updatedAt ?? '')}:${String(
+                  line?.sourceWorkShiftVersion ?? '',
+                )}:${line?.sourceGenerationRunId ?? ''}`;
+              })
+              .join('|')}`,
+            ...(includesEmergency
+              ? { emergencyOverrideReason: emergencyOverrideReason.trim() }
+              : {}),
+          }
+        : {}),
       ...(action === 'approve' && approvalNote.trim() ? { approvalNote } : {}),
       ...(action === 'reject' ? { rejectionReason: decisionReason } : {}),
       ...(action === 'cancel' ? { cancellationReason: decisionReason } : {}),
@@ -406,6 +445,17 @@ export const WorkScheduleRequestBatchQueuePage = (): JSX.Element => {
                           value={decisionReason}
                           onChange={(event) => setDecisionReason(event.target.value)}
                         />
+                      </label>
+                      <label className="text-sm font-medium text-text">
+                        {t('work-schedule:requestBatches.decisions.emergencyOverrideReason')}
+                        <textarea
+                          className="mt-1 min-h-20 w-full rounded border border-border bg-panel px-3 py-2"
+                          value={emergencyOverrideReason}
+                          onChange={(event) => setEmergencyOverrideReason(event.target.value)}
+                        />
+                        <span className="mt-1 block text-xs text-muted">
+                          {t('work-schedule:requestBatches.decisions.emergencyOverrideHelper')}
+                        </span>
                       </label>
                     </div>
                     {decisionError ? (

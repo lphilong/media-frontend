@@ -31,6 +31,22 @@ import { apiRequest } from '@shared/api';
 const timestampSchema = z.union([z.number(), z.string()]);
 const subjectTypeSchema = z.enum(['TALENT', 'TALENT_GROUP', 'EMPLOYMENT_PROFILE', 'ORG_UNIT']);
 const statusSchema = z.enum(['DRAFT', 'PUBLISHED', 'FINALIZED', 'ARCHIVED']);
+const planLifecycleStatusSchema = z.enum([
+  'DRAFT',
+  'RELEASED_FOR_ALLOCATION',
+  'ACTIVE',
+  'FINALIZED',
+  'ARCHIVED',
+]);
+const allocationLifecycleStatusSchema = z.enum([
+  'DRAFT',
+  'SUBMITTED',
+  'CHANGES_REQUESTED',
+  'APPROVED',
+  'PUBLISHED',
+  'SUPERSEDED',
+  'CORRECTED',
+]);
 const periodMonthSchema = z
   .string()
   .trim()
@@ -210,8 +226,14 @@ const targetMetricSchema = z
     metricCode: metricCodeSchema,
     targetValue: z.number(),
     unit: unitSchema,
-    rollupMethod: z.literal('SUM'),
-    actualSource: z.literal('MANUAL'),
+    rollupMethod: z.enum(['SUM', 'AVERAGE', 'WEIGHTED', 'MAX', 'MANUAL', 'NONE']),
+    actualSource: z.enum(['MANUAL', 'IMPORTED_SOURCE', 'DERIVED']),
+    actualCaptureMode: z
+      .enum(['GROUP_ENTRY', 'MEMBER_ENTRY', 'IMPORTED_SOURCE', 'DERIVED'])
+      .optional(),
+    actualReviewMode: z.enum(['NONE', 'MANAGER_REVIEW', 'OPS_REVIEW']).optional(),
+    actualEvidenceMode: z.enum(['NONE', 'OPTIONAL', 'REQUIRED', 'SOURCE_CONTROLLED']).optional(),
+    actualPolicyVersion: z.string().trim().min(1).optional(),
     createdAt: timestampSchema,
     updatedAt: timestampSchema,
   })
@@ -226,6 +248,26 @@ const allocationSchema = z
     memberTalentId: z.string().trim().min(1),
     membershipId: z.string().nullable(),
     allocationStatus: allocationStatusSchema,
+    lifecycleStatus: allocationLifecycleStatusSchema.optional(),
+    allocationMode: z.enum(['GROUP_ONLY', 'MEMBER_ALLOCATED', 'HYBRID']).optional(),
+    sourcePlanVersion: z.number().int().nonnegative().optional(),
+    allocationVersion: z.number().int().nonnegative().optional(),
+    membershipSnapshotVersion: z.string().nullable().optional(),
+    eligibleMemberSnapshot: z
+      .object({
+        employmentProfileId: z.string().trim().min(1),
+        talentId: z.string().nullable(),
+        membershipId: z.string().nullable(),
+        membershipStatus: z.string().nullable(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
+    idempotencyKey: z.string().nullable().optional(),
+    idempotencyFingerprint: z.string().nullable().optional(),
+    correlationId: z.string().nullable().optional(),
+    supersedesAllocationId: z.string().nullable().optional(),
+    correctsAllocationId: z.string().nullable().optional(),
     allocationStartDate: z.string().trim().min(1),
     allocationEndDate: z.string().nullable(),
     targetMetrics: z.array(targetMetricInputSchema),
@@ -257,6 +299,26 @@ const orgUnitAllocationSchema = z
     memberTalentId: z.string().trim().min(1).nullable().optional(),
     groupId: z.string().trim().min(1).nullable().optional(),
     allocationStatus: allocationStatusSchema,
+    lifecycleStatus: allocationLifecycleStatusSchema.optional(),
+    allocationMode: z.enum(['GROUP_ONLY', 'MEMBER_ALLOCATED', 'HYBRID']).optional(),
+    sourcePlanVersion: z.number().int().nonnegative().optional(),
+    allocationVersion: z.number().int().nonnegative().optional(),
+    membershipSnapshotVersion: z.string().nullable().optional(),
+    eligibleMemberSnapshot: z
+      .object({
+        employmentProfileId: z.string().trim().min(1),
+        talentId: z.string().nullable(),
+        membershipId: z.string().nullable(),
+        membershipStatus: z.string().nullable(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
+    idempotencyKey: z.string().nullable().optional(),
+    idempotencyFingerprint: z.string().nullable().optional(),
+    correlationId: z.string().nullable().optional(),
+    supersedesAllocationId: z.string().nullable().optional(),
+    correctsAllocationId: z.string().nullable().optional(),
     allocationStartDate: z.string().trim().min(1),
     allocationEndDate: z.string().nullable(),
     targetMetrics: z.array(targetMetricInputSchema),
@@ -290,6 +352,7 @@ const planBaseSchema = z
     subjectId: z.string().trim().min(1),
     subjectRef: referenceSummarySchema.nullable().optional(),
     status: statusSchema,
+    lifecycleStatus: planLifecycleStatusSchema.optional(),
     currencyCode: z.literal('VND'),
     periodMonth: periodMonthSchema,
     periodStartAt: timestampSchema,
@@ -526,7 +589,11 @@ const actualGridSchema = z
       .object({
         timezone: z.literal('Asia/Ho_Chi_Minh'),
         entryOpenLocalTime: z.literal('00:00'),
-        entryLockLocalTime: z.literal('10:00'),
+        entryLockLocalTime: z.enum(['10:00', '12:00']),
+        ordinaryCorrectionLockLocalTime: z.literal('18:00').optional(),
+        ordinaryCorrectionDayOffset: z.literal(2).optional(),
+        periodLockDayOfFollowingMonth: z.literal(3).optional(),
+        periodLockLocalTime: z.literal('18:00').optional(),
         maxDirectEditsPerEntry: z.literal(3),
         correctionAllowedUntil: z.literal('PLAN_FINALIZED'),
       })
@@ -544,6 +611,16 @@ const actualGridSchema = z
           metricCode: metricCodeSchema,
           targetValue: z.number(),
           unit: unitSchema,
+          captureMode: z
+            .enum(['GROUP_ENTRY', 'MEMBER_ENTRY', 'IMPORTED_SOURCE', 'DERIVED'])
+            .optional(),
+          aggregationMethod: z
+            .enum(['SUM', 'AVERAGE', 'WEIGHTED', 'MAX', 'MANUAL', 'NONE'])
+            .optional(),
+          reviewMode: z.enum(['NONE', 'MANAGER_REVIEW', 'OPS_REVIEW']).optional(),
+          evidenceMode: z.enum(['NONE', 'OPTIONAL', 'REQUIRED', 'SOURCE_CONTROLLED']).optional(),
+          source: z.enum(['MANUAL', 'IMPORTED_SOURCE', 'DERIVED']),
+          policyVersion: z.string().trim().min(1).optional(),
         })
         .strict(),
     ),
@@ -596,6 +673,18 @@ const actualEntrySchema = z
     editCount: z.number().int(),
     correctionCount: z.number().int(),
     latestCorrectionId: z.string().nullable(),
+    lifecycleStatus: z
+      .enum(['DRAFT', 'POSTED', 'UNDER_REVIEW', 'ACCEPTED', 'CORRECTED', 'LOCKED'])
+      .optional(),
+    entryVersion: z.number().int().positive().optional(),
+    captureMode: z.enum(['GROUP_ENTRY', 'MEMBER_ENTRY', 'IMPORTED_SOURCE', 'DERIVED']).optional(),
+    aggregationMethod: z.enum(['SUM', 'AVERAGE', 'WEIGHTED', 'MAX', 'MANUAL', 'NONE']).optional(),
+    reviewMode: z.enum(['NONE', 'MANAGER_REVIEW', 'OPS_REVIEW']).optional(),
+    evidenceMode: z.enum(['NONE', 'OPTIONAL', 'REQUIRED', 'SOURCE_CONTROLLED']).optional(),
+    policyVersion: z.string().trim().min(1).optional(),
+    sourceFingerprint: z.string().nullable().optional(),
+    acceptedInputVersions: z.array(z.string()).optional(),
+    derivationVersion: z.string().nullable().optional(),
     createdAt: timestampSchema,
     createdByActorId: z.string().trim().min(1),
     updatedAt: timestampSchema,
@@ -626,6 +715,10 @@ const correctionSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/),
     previousValue: z.number(),
     correctedValue: z.number(),
+    previousEntryVersion: z.number().int().positive().optional(),
+    replacementEntryVersion: z.number().int().positive().optional(),
+    replacementLifecycleStatus: z.enum(['CORRECTED', 'UNDER_REVIEW']).optional(),
+    requiresReview: z.boolean().optional(),
     reason: z.string().trim().min(1),
     correctedAt: timestampSchema,
     createdAt: timestampSchema,
@@ -1013,8 +1106,9 @@ export const fetchKpiOrgUnitAllocations = async (
 export const upsertKpiAllocationDraft = async (
   kpiPlanId: string,
   allocations: KpiAllocationDraftMemberInput[],
+  identity: KpiAllocationOperationIdentity = {},
 ): Promise<KpiPlanDetail> => {
-  const response = await apiRequest<unknown, { allocations: KpiAllocationDraftMemberInput[] }>({
+  const response = await apiRequest<unknown>({
     method: 'PUT',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-draft`,
     data: z
@@ -1035,18 +1129,31 @@ export const upsertKpiAllocationDraft = async (
               seen.add(item.employmentProfileId);
             });
           }),
+        expectedPlanVersion: z.number().int().nonnegative().optional(),
+        expectedAllocationVersion: z.number().int().nonnegative().optional(),
+        idempotencyKey: z.string().trim().min(1).optional(),
       })
       .strict()
-      .parse({ allocations }),
+      .parse({ allocations, ...identity }),
   });
   return detailResponseSchema.parse(response).data;
 };
 
-export const submitKpiAllocationDraft = async (kpiPlanId: string): Promise<KpiPlanDetail> => {
-  const response = await apiRequest<unknown, Record<string, never>>({
+export type KpiAllocationOperationIdentity = {
+  expectedPlanVersion?: number;
+  expectedAllocationVersion?: number;
+  expectedMembershipSnapshotVersion?: string;
+  idempotencyKey?: string;
+};
+
+export const submitKpiAllocationDraft = async (
+  kpiPlanId: string,
+  identity: KpiAllocationOperationIdentity = {},
+): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown>({
     method: 'POST',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-submit`,
-    data: {},
+    data: identity,
   });
   return detailResponseSchema.parse(response).data;
 };
@@ -1054,14 +1161,21 @@ export const submitKpiAllocationDraft = async (kpiPlanId: string): Promise<KpiPl
 export const approveKpiAllocation = async (
   kpiPlanId: string,
   approvalNote?: string | null,
+  identity: KpiAllocationOperationIdentity = {},
 ): Promise<KpiPlanDetail> => {
   const response = await apiRequest<unknown, { approvalNote?: string | null }>({
     method: 'POST',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-approve`,
     data: z
-      .object({ approvalNote: z.string().trim().min(1).nullable().optional() })
+      .object({
+        approvalNote: z.string().trim().min(1).nullable().optional(),
+        expectedPlanVersion: z.number().int().nonnegative().optional(),
+        expectedAllocationVersion: z.number().int().nonnegative().optional(),
+        expectedMembershipSnapshotVersion: z.string().trim().min(1).optional(),
+        idempotencyKey: z.string().trim().min(1).optional(),
+      })
       .strict()
-      .parse({ approvalNote: approvalNote?.trim() || null }),
+      .parse({ approvalNote: approvalNote?.trim() || null, ...identity }),
   });
   return detailResponseSchema.parse(response).data;
 };
@@ -1069,23 +1183,32 @@ export const approveKpiAllocation = async (
 export const rejectKpiAllocation = async (
   kpiPlanId: string,
   rejectionReason: string,
+  identity: KpiAllocationOperationIdentity = {},
 ): Promise<KpiPlanDetail> => {
   const response = await apiRequest<unknown, { rejectionReason: string }>({
     method: 'POST',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-reject`,
     data: z
-      .object({ rejectionReason: z.string().trim().min(1) })
+      .object({
+        rejectionReason: z.string().trim().min(1),
+        expectedPlanVersion: z.number().int().nonnegative().optional(),
+        expectedAllocationVersion: z.number().int().nonnegative().optional(),
+        idempotencyKey: z.string().trim().min(1).optional(),
+      })
       .strict()
-      .parse({ rejectionReason }),
+      .parse({ rejectionReason, ...identity }),
   });
   return detailResponseSchema.parse(response).data;
 };
 
-export const publishKpiAllocation = async (kpiPlanId: string): Promise<KpiPlanDetail> => {
-  const response = await apiRequest<unknown, Record<string, never>>({
+export const publishKpiAllocation = async (
+  kpiPlanId: string,
+  identity: KpiAllocationOperationIdentity = {},
+): Promise<KpiPlanDetail> => {
+  const response = await apiRequest<unknown>({
     method: 'POST',
     url: `/admin/kpi/plans/${encodeURIComponent(kpiPlanId)}/allocation-publish`,
-    data: {},
+    data: identity,
   });
   return detailResponseSchema.parse(response).data;
 };

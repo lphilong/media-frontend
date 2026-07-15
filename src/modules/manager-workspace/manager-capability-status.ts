@@ -54,7 +54,10 @@ const baseReadinessStatus = (context: ManagerWorkspaceContext): ManagerCapabilit
 };
 
 const overviewStatus = (
-  statuses: Pick<ManagerCapabilityStatusMap, 'kpi' | 'work' | 'revenue' | 'events'>,
+  statuses: Pick<
+    ManagerCapabilityStatusMap,
+    'kpi' | 'work' | 'revenue' | 'events' | 'groups' | 'members'
+  >,
 ): ManagerCapabilityStatus => {
   const values = Object.values(statuses);
   if (values.includes('AVAILABLE_ACTIONABLE')) return 'AVAILABLE_ACTIONABLE';
@@ -82,8 +85,8 @@ export const deriveManagerCapabilityStatuses = (input: {
       work: 'LOAD_ERROR',
       revenue: 'LOAD_ERROR',
       events: 'LOAD_ERROR',
-      groups: 'NOT_RELEASED',
-      members: 'NOT_RELEASED',
+      groups: 'LOAD_ERROR',
+      members: 'LOAD_ERROR',
     };
   }
 
@@ -118,15 +121,25 @@ export const deriveManagerCapabilityStatuses = (input: {
     : context.modules.events.visible
       ? 'AVAILABLE_READ_ONLY'
       : unavailableFromReason(context.modules.events.reason);
+  const groups = baseStatus
+    ? baseStatus
+    : context.modules.groups.visible
+      ? 'AVAILABLE_READ_ONLY'
+      : unavailableFromReason(context.modules.groups.reason);
+  const members = baseStatus
+    ? baseStatus
+    : context.modules.members.visible
+      ? 'AVAILABLE_READ_ONLY'
+      : unavailableFromReason(context.modules.members.reason);
 
   return {
-    overview: overviewStatus({ kpi, work, revenue, events }),
+    overview: overviewStatus({ kpi, work, revenue, events, groups, members }),
     kpi,
     work,
     revenue,
     events,
-    groups: 'NOT_RELEASED',
-    members: 'NOT_RELEASED',
+    groups,
+    members,
   };
 };
 

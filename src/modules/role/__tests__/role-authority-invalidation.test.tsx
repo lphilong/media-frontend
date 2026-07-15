@@ -16,7 +16,10 @@ vi.mock('@modules/role/api/role.api', async () => {
 
 import { applyAccessAssignment, revokeAccessAssignment } from '@modules/role/api/role.api';
 import { employmentTermsQueryKeys } from '@modules/employment-terms/hooks/use-employment-terms';
-import { MANAGER_WORKSPACE_CONTEXT_QUERY_KEY } from '@modules/manager-workspace/api/manager-workspace.api';
+import {
+  MANAGER_WORKSPACE_CONTEXT_QUERY_KEY,
+  managerWorkspaceReadQueryKeys,
+} from '@modules/manager-workspace/api/manager-workspace.api';
 import {
   classifyAuthorityReductionQuery,
   useAccessAssignmentApplyMutation,
@@ -58,6 +61,31 @@ const appliedResult: AccessAssignmentApplyResult = {
 };
 
 const employmentTermsAdminListKey = employmentTermsQueryKeys.adminList({});
+const managerReadIdentity = {
+  actorId: 'current-user',
+  accountContext: 'MANAGER_CONSOLE' as const,
+  scopeFingerprint: 'ORG_UNIT:ou-1',
+};
+const managerGroupsKey = managerWorkspaceReadQueryKeys.groups(managerReadIdentity, {
+  scopeType: 'ORG_UNIT',
+  search: 'ops',
+  cursor: 'cursor-1',
+});
+const managerMembersKey = managerWorkspaceReadQueryKeys.members(
+  managerReadIdentity,
+  { scopeType: 'ORG_UNIT', scopeId: 'ou-1' },
+  { operationalStatus: 'ACTIVE', cursor: 'cursor-2' },
+);
+const managerWeeklyScheduleKey = managerWorkspaceReadQueryKeys.weeklySchedule(managerReadIdentity, {
+  scopeType: 'ORG_UNIT',
+  scopeId: 'ou-1',
+  weekStart: '2026-07-13',
+  status: 'READY',
+  conflict: 'WITHOUT_CONFLICT',
+  request: 'WITH_REQUEST',
+  search: 'ops',
+  cursor: 'cursor-week',
+});
 const unregisteredRetentionEvidenceKey = ['unregistered-retention-evidence', 'opaque'] as const;
 
 const revokedResult = (targetUserId?: string): AccessAssignmentLifecycleResult => ({
@@ -118,6 +146,13 @@ describe('Role authority cache invalidation', () => {
     expect(classifyAuthorityReductionQuery(MANAGER_WORKSPACE_CONTEXT_QUERY_KEY)).toBe(
       'PROTECTED_AUTHORITY_DEPENDENT',
     );
+    expect(classifyAuthorityReductionQuery(managerGroupsKey)).toBe('PROTECTED_AUTHORITY_DEPENDENT');
+    expect(classifyAuthorityReductionQuery(managerMembersKey)).toBe(
+      'PROTECTED_AUTHORITY_DEPENDENT',
+    );
+    expect(classifyAuthorityReductionQuery(managerWeeklyScheduleKey)).toBe(
+      'PROTECTED_AUTHORITY_DEPENDENT',
+    );
     expect(classifyAuthorityReductionQuery(CURRENT_ACTOR_CAPABILITIES_QUERY_KEY)).toBe(
       'CURRENT_ACTOR_CAPABILITY',
     );
@@ -161,6 +196,9 @@ describe('Role authority cache invalidation', () => {
     const { queryClient, wrapper } = createHarness();
     queryClient.setQueryData(employmentTermsAdminListKey, { sensitive: 'cached' });
     queryClient.setQueryData(MANAGER_WORKSPACE_CONTEXT_QUERY_KEY, { scoped: 'cached' });
+    queryClient.setQueryData(managerGroupsKey, { scopedGroups: 'cached' });
+    queryClient.setQueryData(managerMembersKey, { scopedMembers: 'cached' });
+    queryClient.setQueryData(managerWeeklyScheduleKey, { weeklyRows: 'cached' });
     queryClient.setQueryData(unregisteredRetentionEvidenceKey, { retained: 'unclassified' });
     const { result } = renderHook(() => useAccessAssignmentRevokeMutation(), { wrapper });
 
@@ -173,6 +211,9 @@ describe('Role authority cache invalidation', () => {
 
     expect(queryClient.getQueryData(employmentTermsAdminListKey)).toBeUndefined();
     expect(queryClient.getQueryData(MANAGER_WORKSPACE_CONTEXT_QUERY_KEY)).toBeUndefined();
+    expect(queryClient.getQueryData(managerGroupsKey)).toBeUndefined();
+    expect(queryClient.getQueryData(managerMembersKey)).toBeUndefined();
+    expect(queryClient.getQueryData(managerWeeklyScheduleKey)).toBeUndefined();
     expect(queryClient.getQueryData(unregisteredRetentionEvidenceKey)).toEqual({
       retained: 'unclassified',
     });

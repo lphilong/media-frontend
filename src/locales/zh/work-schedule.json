@@ -381,6 +381,8 @@
       "selectedContext": "已选择 {{count}} 条待处理请求行。",
       "helper": "决定只适用于已选择的请求行。批准可能会在后端检查后应用班次变更；拒绝或取消需要填写原因。",
       "approvalNote": "批准备注（可选）",
+      "emergencyOverrideReason": "紧急覆盖原因",
+      "emergencyOverrideHelper": "仅当紧急请求将在四小时内开始时必填。",
       "reason": "拒绝或取消原因"
     },
     "actions": {

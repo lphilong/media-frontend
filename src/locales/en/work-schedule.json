@@ -381,6 +381,8 @@
       "selectedContext": "{{count}} pending request lines selected.",
       "helper": "The decision applies only to selected request lines. Approval may apply the shift change after backend checks; rejection or cancellation requires a reason.",
       "approvalNote": "Approval note (optional)",
+      "emergencyOverrideReason": "Emergency override reason",
+      "emergencyOverrideHelper": "Required only when an emergency request starts in less than four hours.",
       "reason": "Rejection or cancellation reason"
     },
     "actions": {

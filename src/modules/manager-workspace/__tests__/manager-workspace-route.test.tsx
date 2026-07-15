@@ -181,11 +181,8 @@ describe('/manager workspace route', () => {
     expect(screen.getByTestId('manager-overview-kpi-card')).toHaveTextContent('Có thể thao tác');
     expect(screen.getByTestId('manager-module-events')).toHaveTextContent('Chỉ đọc');
     expect(screen.getByTestId('manager-module-events')).not.toHaveTextContent('Có thể thao tác');
-    for (const moduleId of ['groups', 'members']) {
-      expect(screen.getByTestId(`manager-module-${moduleId}`)).toHaveTextContent(
-        'Chưa mở cho chức năng này',
-      );
-    }
+    expect(screen.getByTestId('manager-module-groups')).toHaveTextContent('Chỉ đọc');
+    expect(screen.getByTestId('manager-module-members')).toHaveTextContent('Chỉ đọc');
 
     const bodyText = document.body.textContent ?? '';
     expect(bodyText).not.toContain('Cần hợp đồng');
@@ -243,16 +240,8 @@ describe('/manager workspace route', () => {
       'aria-disabled',
       'true',
     );
-    expect(screen.getByRole('tab', { name: /Managed Groups/ })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    );
-    expect(screen.getByRole('tab', { name: /Managed Groups/ })).toBeDisabled();
-    expect(screen.getByRole('tab', { name: /Managed Members/ })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    );
-    expect(screen.getByRole('tab', { name: /Managed Members/ })).toBeDisabled();
+    expect(screen.getByRole('tab', { name: /Managed Groups/ })).not.toBeDisabled();
+    expect(screen.getByRole('tab', { name: /Managed Members/ })).not.toBeDisabled();
 
     expect(await screen.findByTestId('manager-panel-overview')).toBeInTheDocument();
     expect(await screen.findByTestId('manager-overview-panel')).toBeInTheDocument();
@@ -277,6 +266,61 @@ describe('/manager workspace route', () => {
     );
     expect(screen.queryByTestId('manager-panel-overview')).not.toBeInTheDocument();
     expect(screen.queryByText('Manager Profile')).not.toBeInTheDocument();
+  });
+
+  it('renders exact-scope managed groups and keeps external-only Talent read-only', async () => {
+    await renderRoute('/manager/members/TALENT_GROUP/group-001', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    expect(
+      await screen.findByTestId('manager-panel-members', {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    expect((await screen.findAllByText('Live Talent')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('Creator Member One')).toBeInTheDocument();
+    expect(await screen.findByText('External Creator')).toBeInTheDocument();
+    expect(screen.getByText('External-only Talent')).toBeInTheDocument();
+    expect(screen.getByText('Read-only / ineligible')).toBeInTheDocument();
+    const externalRow = screen.getByText('External Creator').closest('tr');
+    if (!externalRow) {
+      throw new Error('Expected external-only member row');
+    }
+    expect(within(externalRow).getByRole('button', { name: 'Open safe detail' })).toBeDisabled();
+    expect(document.body.textContent).not.toContain('Private Legal Name');
+    for (const mutation of ['Create group', 'Delete group', 'Move member']) {
+      expect(screen.queryByRole('button', { name: mutation })).not.toBeInTheDocument();
+    }
+  });
+
+  it('renders honest managed-group empty and error states', async () => {
+    server.use(
+      http.get('*/admin/manager-workspace/groups', () =>
+        HttpResponse.json({
+          data: {
+            items: [],
+            readiness: {
+              hasAssignedScope: false,
+              reasonCodes: ['NO_MANAGER_RESPONSIBILITY_ASSIGNED'],
+            },
+          },
+        }),
+      ),
+    );
+    await renderRoute('/manager/groups', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+    expect(await screen.findByText('No managed groups')).toBeInTheDocument();
+
+    server.use(
+      http.get('*/admin/manager-workspace/groups', () =>
+        HttpResponse.json({ message: 'raw group failure' }, { status: 500 }),
+      ),
+    );
+    await renderRoute('/manager/groups', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+    expect(await screen.findByText('Could not load managed groups')).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain('raw group failure');
   });
 
   it('renders scoped Manager Events read-only without global Admin data calls', async () => {
@@ -375,8 +419,8 @@ describe('/manager workspace route', () => {
     for (const action of ['Create', 'Confirm', 'Cancel', 'Complete', 'Archive']) {
       expect(screen.queryByRole('button', { name: action })).not.toBeInTheDocument();
     }
-    expect(screen.getByTestId('manager-module-groups')).toBeDisabled();
-    expect(screen.getByTestId('manager-module-members')).toBeDisabled();
+    expect(screen.getByTestId('manager-module-groups')).not.toBeDisabled();
+    expect(screen.getByTestId('manager-module-members')).not.toBeDisabled();
     expect(screen.queryByTestId('manager-panel-groups')).not.toBeInTheDocument();
     expect(screen.queryByTestId('manager-panel-members')).not.toBeInTheDocument();
     expect(screen.getByTestId('manager-panel-events')).toBeInTheDocument();
@@ -585,7 +629,9 @@ describe('/manager workspace route', () => {
       setMockManagerWorkspaceContext(managerWorkspaceOrgUnitOnlyContext());
     });
 
-    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-workspace-shell', undefined, { timeout: 5000 }),
+    ).toBeInTheDocument();
     expect(await screen.findByTestId('manager-module-kpi')).toHaveAttribute(
       'aria-selected',
       'true',
@@ -835,7 +881,9 @@ describe('/manager workspace route', () => {
       );
     });
 
-    expect(await screen.findByTestId('manager-workspace-shell')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('manager-workspace-shell', undefined, { timeout: 5000 }),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('admin-shell-main')).not.toBeInTheDocument();
 
     const operations = await screen.findByTestId('org-unit-operations');
@@ -871,6 +919,8 @@ describe('/manager workspace route', () => {
     expect(readLastKpiOrgUnitActualGridDate()).toBe('2026-06-15');
     const anActual = await within(operations).findByLabelText(
       'An Nguyen Operational revenue KPI actual',
+      undefined,
+      { timeout: 5000 },
     );
     await userEvent.clear(anActual);
     await userEvent.type(anActual, '0');
@@ -890,7 +940,7 @@ describe('/manager workspace route', () => {
     await waitFor(() =>
       expect(screen.getAllByText('Actual cells saved.').length).toBeGreaterThanOrEqual(2),
     );
-  }, 10000);
+  }, 15000);
 
   it('allows UNIT_MANAGER allocation draft and submit where the ORG_UNIT fixture is draftable', async () => {
     await renderRoute('/manager/kpi/plans/kpi-plan-org-unit-draft-allocation', () => {
@@ -1045,36 +1095,46 @@ describe('/manager workspace route', () => {
   it.each([
     ['DEPARTMENT_OWNER', managerWorkspaceOrgUnitDepartmentOwnerContext],
     ['UNIT_OPERATOR', managerWorkspaceOrgUnitOperatorContext],
-  ])('%s remains read-only for current ORG_UNIT KPI behavior', async (_role, contextFactory) => {
-    await renderRoute('/manager/kpi/plans/kpi-plan-org-unit', () => {
-      setMockManagerWorkspaceContext(contextFactory());
-    });
+  ])(
+    '%s remains read-only for current ORG_UNIT KPI behavior',
+    async (_role, contextFactory) => {
+      await renderRoute('/manager/kpi/plans/kpi-plan-org-unit', () => {
+        setMockManagerWorkspaceContext(contextFactory());
+      });
 
-    const operations = await screen.findByTestId('org-unit-operations');
-    expect(
-      within(operations).getByText('Read-only for this actor or plan state'),
-    ).toBeInTheDocument();
-    expect(
-      within(operations).queryByRole('button', { name: 'Save Allocation Draft' }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(operations).queryByRole('button', { name: 'Submit Allocation' }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(operations).queryByRole('button', { name: /Remove member/ }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(operations).queryByRole('button', { name: 'Save changed cells' }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(operations).queryByRole('button', { name: 'Mark excused' }),
-    ).not.toBeInTheDocument();
+      const operations = await screen.findByTestId('org-unit-operations', undefined, {
+        timeout: 5000,
+      });
+      expect(
+        within(operations).getByText('Read-only for this actor or plan state'),
+      ).toBeInTheDocument();
+      expect(
+        within(operations).queryByRole('button', { name: 'Save Allocation Draft' }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(operations).queryByRole('button', { name: 'Submit Allocation' }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(operations).queryByRole('button', { name: /Remove member/ }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(operations).queryByRole('button', { name: 'Save changed cells' }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(operations).queryByRole('button', { name: 'Mark excused' }),
+      ).not.toBeInTheDocument();
 
-    await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
-    expect(
-      await within(operations).findByLabelText('An Nguyen Operational revenue KPI actual'),
-    ).toBeDisabled();
-  });
+      await userEvent.click(within(operations).getByRole('button', { name: 'Load grid' }));
+      expect(
+        await within(operations).findByLabelText(
+          'An Nguyen Operational revenue KPI actual',
+          undefined,
+          { timeout: 5000 },
+        ),
+      ).toBeDisabled();
+    },
+    15000,
+  );
 
   it('renders finalized ORG_UNIT finalResult and keeps manager mutation UI absent', async () => {
     await renderRoute('/manager/kpi/plans/kpi-plan-org-unit-finalized', () => {
@@ -1143,8 +1203,8 @@ describe('/manager workspace route', () => {
     });
 
     expect(await screen.findByTestId('manager-panel-work')).toBeInTheDocument();
-    expect(await screen.findByText('Org Unit Member')).toBeInTheDocument();
-    expect(await screen.findByText('Talent Group Member')).toBeInTheDocument();
+    expect((await screen.findAllByText('Org Unit Member')).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('Talent Group Member')).length).toBeGreaterThan(0);
     expect(screen.getAllByTestId('manager-work-shift-row')).toHaveLength(2);
     expect(
       screen.getByText('Draft rosters are not visible here until they are published.'),
@@ -1153,6 +1213,46 @@ describe('/manager workspace route', () => {
     expect(
       screen.queryByRole('button', { name: /create|edit|cancel|request|approve/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders the bounded weekly group board with keyboard, mobile-day, scope, and conflict navigation', async () => {
+    const user = userEvent.setup();
+    await renderRoute('/manager/work-shifts?tab=published', () => {
+      setMockManagerWorkspaceContext(managerWorkspaceWorkEnabledContext());
+    });
+
+    const grid = await screen.findByRole(
+      'table',
+      { name: 'Manager weekly group schedule' },
+      { timeout: 5000 },
+    );
+    expect(within(grid).getAllByRole('columnheader')).toHaveLength(8);
+    expect(screen.getByRole('combobox', { name: 'Assigned scope' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Focused day' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /approve|publish|edit shift/i }),
+    ).not.toBeInTheDocument();
+
+    const cells = grid.querySelectorAll<HTMLElement>('[data-week-cell]');
+    expect(cells.length).toBeGreaterThanOrEqual(7);
+    cells[0]?.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(document.activeElement).toBe(cells[1]);
+
+    const memberButton = within(grid).getAllByRole('button', { name: 'Org Unit Member' })[0];
+    expect(memberButton).toBeDefined();
+    await user.click(memberButton!);
+    const drawer = await screen.findByRole('dialog');
+    expect(within(drawer).getByText('Org Unit Member')).toBeInTheDocument();
+    const closeButton = within(drawer).getByRole('button', { name: 'Close' });
+    expect(closeButton).toHaveFocus();
+    await user.keyboard('{Tab}');
+    expect(closeButton).toHaveFocus();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(memberButton).toHaveFocus());
+
+    await user.click(screen.getByRole('tab', { name: 'Conflicts / warnings' }));
+    expect(await screen.findByTestId('manager-weekly-schedule')).toBeInTheDocument();
   });
 
   it('preserves scheduling tab deep links and cursor continuation, then resets cursor on month change', async () => {

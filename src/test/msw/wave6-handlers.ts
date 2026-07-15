@@ -4732,8 +4732,24 @@ export const wave6Handlers = [
   http.post(
     '*/admin/work-schedule/request-batches/:batchId/approve-lines',
     async ({ params, request }) => {
-      const body = (await parseJsonBody(request)) as { lineIds?: unknown; approvalNote?: unknown };
-      const bodyFailure = rejectUnsupportedBody(body, ['lineIds', 'approvalNote']);
+      const body = (await parseJsonBody(request)) as {
+        lineIds?: unknown;
+        expectedRequestVersions?: unknown;
+        expectedWorkShiftVersions?: unknown;
+        expectedSourceGenerationRunIds?: unknown;
+        idempotencyKey?: unknown;
+        emergencyOverrideReason?: unknown;
+        approvalNote?: unknown;
+      };
+      const bodyFailure = rejectUnsupportedBody(body, [
+        'lineIds',
+        'expectedRequestVersions',
+        'expectedWorkShiftVersions',
+        'expectedSourceGenerationRunIds',
+        'idempotencyKey',
+        'emergencyOverrideReason',
+        'approvalNote',
+      ]);
       if (bodyFailure) {
         return bodyFailure;
       }

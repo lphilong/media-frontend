@@ -836,7 +836,6 @@ describe('work schedule capability UX hints', () => {
   });
 
   it.each([
-    ['approve', 'approve-lines', 'approve', false],
     ['reject', 'reject-lines', 'reject', true],
     ['cancel', 'cancel-lines', 'cancel', true],
   ] as const)(

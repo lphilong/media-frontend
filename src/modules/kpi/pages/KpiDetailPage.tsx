@@ -6,6 +6,11 @@ import { useParams } from 'react-router-dom';
 import { APP_PATHS } from '@app/router/paths';
 import { createKpiActionCapabilityHint } from '@modules/kpi/capability-hints';
 import { readKpiSafeErrorMessage } from '@modules/kpi/presentation/kpi-read-models';
+import {
+  hasStaleAllocationSource,
+  readAllocationLifecycleStatus,
+} from '@modules/kpi/presentation/kpi-allocation-lifecycle';
+import { presentActualPolicy } from '@modules/kpi/presentation/kpi-actual-policy';
 import { useKpiSensitiveConfirm } from '@modules/kpi/presentation/use-kpi-sensitive-confirm';
 import { fetchKpiManagedMembers } from '@modules/kpi/api/kpi.api';
 import {
@@ -338,6 +343,14 @@ const readOrgUnitAllocationWorkflowStatus = (
   return statuses.size === 1 ? (allocations[0]?.allocationStatus ?? 'NONE') : 'MIXED';
 };
 
+const readCanonicalAllocationWorkflowStatus = (
+  allocations: readonly KpiOrgUnitAllocation[] | KpiPlanDetail['allocations'],
+): string => {
+  if (allocations.length === 0) return 'NONE';
+  const statuses = new Set(allocations.map(readAllocationLifecycleStatus));
+  return statuses.size === 1 ? ([...statuses][0] ?? 'NONE') : 'MIXED';
+};
+
 const toDraftRows = (plan: KpiPlanDetail): AllocationDraftRow[] =>
   plan.allocations.length > 0
     ? plan.allocations.map((allocation) => ({
@@ -518,13 +531,16 @@ export const KpiOrgUnitOperationsSection = ({
   const canAttemptCorrection = plan.status === 'PUBLISHED' && correctActualHint.allowed;
   const finalResult = finalResultQuery.data?.finalResult ?? plan.finalResult ?? null;
   const allocationWorkflowStatus = readOrgUnitAllocationWorkflowStatus(allocations);
+  const allocationLifecycleStatus = readCanonicalAllocationWorkflowStatus(allocations);
+  const allocationSourceStale = hasStaleAllocationSource(plan.updatedAt, allocations);
   const allocationIsOfficial =
     allocationWorkflowStatus !== 'NONE' &&
     allocationWorkflowStatus !== 'MIXED' &&
     officialAllocationStatuses.has(allocationWorkflowStatus);
   const actualDateInputBounds = dateInputBoundsForPeriod(plan.periodMonth);
-  const allocationPlanStateDisabledReason =
-    plan.status === 'FINALIZED'
+  const allocationPlanStateDisabledReason = allocationSourceStale
+    ? 'Allocation source changed. Refresh the plan and member snapshot before continuing.'
+    : plan.status === 'FINALIZED'
       ? t('kpi:errors.finalizedReadOnly')
       : plan.status !== 'PUBLISHED'
         ? t('kpi:disabled.allocationPlanPublishedOnly')
@@ -864,7 +880,7 @@ export const KpiOrgUnitOperationsSection = ({
           <div className="space-y-2 rounded border border-border bg-slate-50 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{t('kpi:allocation.workflowStatus')}</span>
-              <StatusBadge label={t(`kpi:allocationStatuses.${allocationWorkflowStatus}`)} />
+              <StatusBadge label={allocationLifecycleStatus.replaceAll('_', ' ')} />
               {allocationIsOfficial ? (
                 <span className="text-muted">{t('kpi:allocation.official')}</span>
               ) : (
@@ -1321,6 +1337,18 @@ export const KpiOrgUnitOperationsSection = ({
           {loadedActualDate && actualGridQuery.isPending ? <LoadingState lines={3} /> : null}
           {actualGridQuery.data ? (
             <div className="overflow-x-auto rounded border border-border">
+              <div className="flex flex-wrap gap-2 border-b border-border p-3 text-xs text-muted">
+                <span>Direct entry: D+1 {actualGridQuery.data.policy.entryLockLocalTime}</span>
+                <span>
+                  Ordinary correction: D+
+                  {actualGridQuery.data.policy.ordinaryCorrectionDayOffset ?? 2}{' '}
+                  {actualGridQuery.data.policy.ordinaryCorrectionLockLocalTime ?? '18:00'}
+                </span>
+                <span>
+                  Period lock: Day {actualGridQuery.data.policy.periodLockDayOfFollowingMonth ?? 3}{' '}
+                  {actualGridQuery.data.policy.periodLockLocalTime ?? '18:00'}
+                </span>
+              </div>
               {actualGridQuery.data.editability.isPlanFinalized ? (
                 <p className="p-3 text-sm text-danger">{t('kpi:errors.finalizedReadOnly')}</p>
               ) : null}
@@ -1335,11 +1363,27 @@ export const KpiOrgUnitOperationsSection = ({
                 <thead className="bg-slate-100">
                   <tr>
                     <th className="px-3 py-2 text-left">{t('kpi:fields.member')}</th>
-                    {actualGridQuery.data.targetMetrics.map((metric) => (
-                      <th key={metric.metricCode} className="px-3 py-2 text-left">
-                        {t(`kpi:metricCodes.${metric.metricCode}`)}
-                      </th>
-                    ))}
+                    {actualGridQuery.data.targetMetrics.map((metric) => {
+                      const policyPresentation = presentActualPolicy({
+                        source: metric.source ?? 'MANUAL',
+                        captureMode: metric.captureMode,
+                        aggregationMethod: metric.aggregationMethod,
+                        reviewMode: metric.reviewMode,
+                        evidenceMode: metric.evidenceMode,
+                      });
+                      return (
+                        <th key={metric.metricCode} className="px-3 py-2 text-left">
+                          <div>{t(`kpi:metricCodes.${metric.metricCode}`)}</div>
+                          <div className="mt-1 font-normal text-muted">
+                            {policyPresentation.sourceLabel} · {policyPresentation.captureLabel} ·{' '}
+                            {policyPresentation.aggregationLabel}
+                          </div>
+                          <div className="font-normal text-muted">
+                            {policyPresentation.reviewLabel} · {policyPresentation.evidenceLabel}
+                          </div>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -1815,12 +1859,15 @@ export const KpiDetailPage = (): JSX.Element => {
   };
 
   const allocationWorkflowStatus = readAllocationWorkflowStatus(plan);
+  const allocationLifecycleStatus = readCanonicalAllocationWorkflowStatus(plan.allocations);
+  const allocationSourceStale = hasStaleAllocationSource(plan.updatedAt, plan.allocations);
   const allocationIsOfficial =
     allocationWorkflowStatus !== 'NONE' &&
     allocationWorkflowStatus !== 'MIXED' &&
     officialAllocationStatuses.has(allocationWorkflowStatus);
-  const allocationPlanStateDisabledReason =
-    plan.status === 'FINALIZED'
+  const allocationPlanStateDisabledReason = allocationSourceStale
+    ? 'Allocation source changed. Refresh the plan and member snapshot before continuing.'
+    : plan.status === 'FINALIZED'
       ? t('kpi:errors.finalizedReadOnly')
       : plan.status !== 'PUBLISHED'
         ? t('kpi:disabled.allocationPlanPublishedOnly')
@@ -2146,13 +2193,7 @@ export const KpiDetailPage = (): JSX.Element => {
               <div className="space-y-2 rounded border border-border bg-slate-50 p-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{t('kpi:allocation.workflowStatus')}</span>
-                  <StatusBadge
-                    label={
-                      allocationWorkflowStatus === 'NONE' || allocationWorkflowStatus === 'MIXED'
-                        ? t(`kpi:allocationStatuses.${allocationWorkflowStatus}`)
-                        : t(`kpi:allocationStatuses.${allocationWorkflowStatus}`)
-                    }
-                  />
+                  <StatusBadge label={allocationLifecycleStatus.replaceAll('_', ' ')} />
                   {allocationIsOfficial ? (
                     <span className="text-muted">{t('kpi:allocation.official')}</span>
                   ) : (

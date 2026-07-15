@@ -30,17 +30,17 @@ const blockedContext = (
 };
 
 describe('Manager capability status derivation', () => {
-  it('keeps released read-only/actionable modules distinct and Groups/Members not released', () => {
+  it('keeps released read-only/actionable modules distinct including Groups/Members', () => {
     const statuses = deriveManagerCapabilityStatuses({
       context: managerWorkspaceWorkEnabledContext(),
     });
 
     expect(statuses.events).toBe('AVAILABLE_READ_ONLY');
     expect(statuses.work).toBe('AVAILABLE_ACTIONABLE');
-    expect(statuses.groups).toBe('NOT_RELEASED');
-    expect(statuses.members).toBe('NOT_RELEASED');
+    expect(statuses.groups).toBe('AVAILABLE_READ_ONLY');
+    expect(statuses.members).toBe('AVAILABLE_READ_ONLY');
     expect(isManagerCapabilityAvailable(statuses.events)).toBe(true);
-    expect(isManagerCapabilityAvailable(statuses.groups)).toBe(false);
+    expect(isManagerCapabilityAvailable(statuses.groups)).toBe(true);
   });
 
   it('distinguishes missing profile, central responsibility, structured scope, and load error', () => {

@@ -19,7 +19,9 @@ import { useTranslation } from 'react-i18next';
 
 import { APP_PATHS } from '@app/router/paths';
 import { ManagerAvailabilityPanel } from '@modules/manager-workspace/components/ManagerAvailabilityPanel';
+import { ManagerGroupsMembersPanel } from '@modules/manager-workspace/components/ManagerGroupsMembersPanel';
 import { ManagerWorkActionNeeded } from '@modules/manager-workspace/components/ManagerWorkActionNeeded';
+import { ManagerWeeklyScheduleBoard } from '@modules/manager-workspace/components/ManagerWeeklyScheduleBoard';
 import {
   formatKpiNumber,
   KpiOrgUnitOperationsSection,
@@ -161,7 +163,11 @@ const getRouteModule = (pathname: string): ManagerWorkspaceModuleId =>
         ? 'revenue'
         : pathname.startsWith(APP_PATHS.managerEvents)
           ? 'events'
-          : 'overview';
+          : pathname.startsWith(APP_PATHS.managerMembers)
+            ? 'members'
+            : pathname.startsWith(APP_PATHS.managerGroups)
+              ? 'groups'
+              : 'overview';
 
 const isManagerKpiDetailPath = (pathname: string): boolean =>
   pathname.startsWith(`${APP_PATHS.managerKpi}/plans/`);
@@ -221,15 +227,6 @@ const buildManagerWorkspaceModuleItems = (
     };
   });
 };
-
-const getDisabledModulePanelCopy = (
-  moduleId: ManagerWorkspaceModuleId,
-  t: (key: string) => string,
-): { title: string; message: string; badgeLabel: string } => ({
-  title: t(`manager-workspace:modules.${moduleId}.title`),
-  message: t('manager-workspace:capabilityReasons.NOT_RELEASED'),
-  badgeLabel: t('manager-workspace:status.notReleased'),
-});
 
 const KpiPlanTable = ({
   plans,
@@ -661,7 +658,11 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
   const deepLinkedTab = new URLSearchParams(location.search).get('tab');
   const [month, setMonth] = useState('');
   const [activeTab, setActiveTab] = useState<ManagerWorkTab>(
-    deepLinkedTab === 'requests' || deepLinkedTab === 'availability' ? deepLinkedTab : 'published',
+    deepLinkedTab === 'requests' ||
+      deepLinkedTab === 'availability' ||
+      deepLinkedTab === 'conflicts'
+      ? deepLinkedTab
+      : 'published',
   );
   const [periodMonth, setPeriodMonth] = useState(getHcmMonth());
   const [batchNote, setBatchNote] = useState('');
@@ -672,7 +673,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const workShiftsQuery = useManagerWorkShiftPages(
     month || undefined,
-    context.modules.workShifts.visible && activeTab !== 'availability',
+    context.modules.workShifts.visible && (activeTab === 'published' || activeTab === 'requests'),
   );
   const data = useMemo<ManagerWorkShiftList | undefined>(() => {
     const pages = workShiftsQuery.data?.pages;
@@ -720,7 +721,8 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
     if (
       deepLinkedTab === 'published' ||
       deepLinkedTab === 'requests' ||
-      deepLinkedTab === 'availability'
+      deepLinkedTab === 'availability' ||
+      deepLinkedTab === 'conflicts'
     ) {
       setActiveTab(deepLinkedTab);
     }
@@ -884,7 +886,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
       </p>
 
       <div className="flex flex-wrap gap-2" role="tablist">
-        {(['published', 'requests', 'availability'] as const).map((tab) => (
+        {(['published', 'requests', 'availability', 'conflicts'] as const).map((tab) => (
           <Link
             key={tab}
             to={{ pathname: location.pathname, search: `?tab=${tab}` }}
@@ -897,7 +899,7 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
             }`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === 'published' ? (
+            {tab === 'published' || tab === 'conflicts' ? (
               <CalendarDays className="h-4 w-4" aria-hidden="true" />
             ) : tab === 'availability' ? (
               <ClipboardList className="h-4 w-4" aria-hidden="true" />
@@ -915,6 +917,10 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
         onSelectTab={setActiveTab}
       />
 
+      {activeTab === 'published' || activeTab === 'conflicts' ? (
+        <ManagerWeeklyScheduleBoard context={context} conflictOnly={activeTab === 'conflicts'} />
+      ) : null}
+
       {activeTab === 'published' ? (
         <label className="block max-w-xs text-sm font-medium text-text">
           {t('manager-workspace:work.month')}
@@ -927,10 +933,10 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
         </label>
       ) : null}
 
-      {activeTab !== 'availability' && workShiftsQuery.isLoading ? (
+      {(activeTab === 'published' || activeTab === 'requests') && workShiftsQuery.isLoading ? (
         <LoadingState lines={4} />
       ) : null}
-      {activeTab !== 'availability' && workShiftsQuery.isError ? (
+      {(activeTab === 'published' || activeTab === 'requests') && workShiftsQuery.isError ? (
         <ErrorState
           title={t('manager-workspace:errors.workTitle')}
           message={t('manager-workspace:errors.workMessage')}
@@ -1476,7 +1482,6 @@ const ManagerWorkspaceOverview = ({
   context: ManagerWorkspaceContext;
 }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace', 'common']);
-  const disabledModules: ManagerWorkspaceModuleId[] = ['groups', 'members'];
   const statuses = deriveManagerCapabilityStatuses({ context });
   const kpiStatusKey = capabilityStatusLabelKey(statuses.kpi);
   const overviewStatusKey = capabilityStatusLabelKey(statuses.overview);
@@ -1566,15 +1571,15 @@ const ManagerWorkspaceOverview = ({
 
         <section className="rounded border border-border bg-panel p-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text">
-            {t('manager-workspace:overview.unsupportedTitle')}
+            {t('manager-workspace:overview.groupAccessTitle')}
           </h2>
-          <p className="text-sm text-muted">{t('manager-workspace:overview.unsupportedSummary')}</p>
+          <p className="text-sm text-muted">{t('manager-workspace:overview.groupAccessSummary')}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {disabledModules.map((moduleId) => (
+            {(['groups', 'members'] as const).map((moduleId) => (
               <StatusBadge
                 key={moduleId}
                 label={t(`manager-workspace:modules.${moduleId}.title`)}
-                tone="warning"
+                tone={isManagerCapabilityAvailable(statuses[moduleId]) ? 'success' : 'warning'}
                 uppercase={false}
               />
             ))}
@@ -1692,23 +1697,6 @@ const ManagerWorkspaceOverview = ({
         </section>
       </div>
     </div>
-  );
-};
-
-const ManagerUnsupportedModulePanel = ({
-  moduleId,
-}: {
-  moduleId: ManagerWorkspaceModuleId;
-}): JSX.Element => {
-  const { t } = useTranslation(['manager-workspace']);
-  const copy = getDisabledModulePanelCopy(moduleId, t);
-
-  return (
-    <WorkspaceReadinessCard
-      title={copy.title}
-      message={copy.message}
-      badgeLabel={copy.badgeLabel}
-    />
   );
 };
 
@@ -2482,6 +2470,16 @@ export const ManagerWorkspacePage = ({
 
     if (moduleId === 'events') {
       navigate(APP_PATHS.managerEvents);
+      return;
+    }
+
+    if (moduleId === 'groups') {
+      navigate(APP_PATHS.managerGroups);
+      return;
+    }
+
+    if (moduleId === 'members') {
+      navigate(APP_PATHS.managerMembers);
     }
   };
 
@@ -2584,7 +2582,7 @@ export const ManagerWorkspacePage = ({
           ) : null}
           {activeModule === 'groups' || activeModule === 'members' ? (
             <WorkspacePanel testId={`manager-panel-${activeModule}`}>
-              <ManagerUnsupportedModulePanel moduleId={activeModule} />
+              <ManagerGroupsMembersPanel context={context} mode={activeModule} />
             </WorkspacePanel>
           ) : null}
         </>

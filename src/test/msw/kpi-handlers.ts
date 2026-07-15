@@ -2042,6 +2042,7 @@ const toActualGrid = (plan: KpiPlan, actualDate: string) => {
       metricCode: metric.metricCode,
       targetValue: metric.targetValue,
       unit: metric.unit,
+      source: 'MANUAL' as const,
     })),
     rows: (allocations[plan.id] ?? [])
       .filter((allocation) => allocation.allocationStatus === 'PUBLISHED')

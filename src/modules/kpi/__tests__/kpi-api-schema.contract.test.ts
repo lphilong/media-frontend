@@ -212,7 +212,14 @@ describe('KPI API schema contract', () => {
           isPlanFinalized: false,
           disabledReason: null,
         },
-        targetMetrics: [{ metricCode: 'REVENUE_VND', targetValue: 1_000_000, unit: 'VND' }],
+        targetMetrics: [
+          {
+            metricCode: 'REVENUE_VND',
+            targetValue: 1_000_000,
+            unit: 'VND',
+            source: 'MANUAL',
+          },
+        ],
         rows: [
           {
             allocationId: 'allocation-contract',

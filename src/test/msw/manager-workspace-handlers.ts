@@ -12,6 +12,8 @@ import type {
   ManagerRequestBatchListItem,
   ManagerWorkspaceContext,
   ManagerWorkShiftList,
+  ManagedGroup,
+  ManagedMember,
 } from '@modules/manager-workspace/api/manager-workspace.api';
 
 const kpiCapabilities = {
@@ -60,9 +62,13 @@ const baseContext = (): ManagerWorkspaceContext => ({
       visible: false,
       reason: 'NO_MANAGED_SCOPE_ASSIGNED',
     },
+    groups: {
+      visible: false,
+      reason: 'NO_MANAGED_SCOPE_ASSIGNED',
+    },
     members: {
       visible: false,
-      reason: 'NOT_ENABLED_IN_MANAGER_WORKSPACE_YET',
+      reason: 'NO_MANAGED_SCOPE_ASSIGNED',
     },
   },
 });
@@ -120,6 +126,8 @@ export const managerWorkspaceOrgUnitOnlyContext = (): ManagerWorkspaceContext =>
       visible: false,
       reason: 'NO_MANAGED_SCOPE_ASSIGNED',
     },
+    groups: { visible: true },
+    members: { visible: true },
   },
 });
 
@@ -217,6 +225,8 @@ export const managerWorkspaceTalentGroupOnlyContext = (): ManagerWorkspaceContex
     revenueSource: {
       visible: true,
     },
+    groups: { visible: true },
+    members: { visible: true },
   },
 });
 
@@ -243,6 +253,8 @@ export const managerWorkspaceDualContext = (): ManagerWorkspaceContext => {
       revenueSource: {
         visible: true,
       },
+      groups: { visible: true },
+      members: { visible: true },
     },
   };
 };
@@ -893,9 +905,155 @@ export const setMockManagerWorkspaceContext = (context: ManagerWorkspaceContext)
 
 resetManagerWorkspaceMockData();
 
+const managerManagedGroups: ManagedGroup[] = [
+  {
+    scopeType: 'ORG_UNIT',
+    scopeId: 'org-unit-001',
+    code: 'OU-PROD',
+    displayName: 'Production Unit',
+    operationalStatus: 'ACTIVE',
+    responsibility: { role: 'UNIT_MANAGER', includeDescendants: false, isPrimary: true },
+    readiness: { memberReadAvailable: true, reasonCodes: [] },
+    navigation: {
+      groupRef: 'ORG_UNIT:org-unit-001',
+      membersRef: 'ORG_UNIT:org-unit-001:members',
+    },
+  },
+  {
+    scopeType: 'TALENT_GROUP',
+    scopeId: 'group-001',
+    code: 'TG-LIVE',
+    displayName: 'Live Talent',
+    operationalStatus: 'ACTIVE',
+    responsibility: null,
+    readiness: { memberReadAvailable: true, reasonCodes: [] },
+    navigation: {
+      groupRef: 'TALENT_GROUP:group-001',
+      membersRef: 'TALENT_GROUP:group-001:members',
+    },
+  },
+];
+
+const managerManagedMembers: Record<string, ManagedMember[]> = {
+  'ORG_UNIT:org-unit-001': [
+    {
+      personKind: 'INTERNAL',
+      operationalMemberId: 'ep-org-member',
+      displayName: 'Org Unit Member',
+      employeeCode: 'EP-ORG-001',
+      operationalStatus: 'ACTIVE',
+      trace: {
+        talentId: null,
+        talentCode: null,
+        membershipId: null,
+        membershipStatus: null,
+        joinedAt: null,
+        leftAt: null,
+      },
+      eligibility: { kpi: true, schedule: true, actualEntry: true, mutation: true },
+      readinessReasonCodes: [],
+      navigation: { memberRef: 'ep-org-member' },
+    },
+  ],
+  'TALENT_GROUP:group-001': [
+    {
+      personKind: 'INTERNAL',
+      operationalMemberId: 'ep-group-member',
+      displayName: 'Creator Member One',
+      employeeCode: 'EP-CREATOR-1',
+      operationalStatus: 'ACTIVE',
+      trace: {
+        talentId: 'talent-group-member',
+        talentCode: 'TL-001',
+        membershipId: 'membership-group-member',
+        membershipStatus: 'ACTIVE',
+        joinedAt: Date.parse('2026-01-01T00:00:00+07:00'),
+        leftAt: null,
+      },
+      eligibility: { kpi: true, schedule: true, actualEntry: true, mutation: true },
+      readinessReasonCodes: [],
+      navigation: { memberRef: 'ep-group-member' },
+    },
+    {
+      personKind: 'EXTERNAL_ONLY',
+      operationalMemberId: null,
+      displayName: 'External Creator',
+      employeeCode: null,
+      operationalStatus: 'ACTIVE',
+      trace: {
+        talentId: 'talent-external',
+        talentCode: 'TL-EXT-001',
+        membershipId: 'membership-external',
+        membershipStatus: 'ACTIVE',
+        joinedAt: Date.parse('2026-02-01T00:00:00+07:00'),
+        leftAt: null,
+      },
+      eligibility: { kpi: false, schedule: false, actualEntry: false, mutation: false },
+      readinessReasonCodes: ['ACTIVE_EMPLOYMENT_PROFILE_LINK_REQUIRED'],
+      navigation: { memberRef: null },
+    },
+  ],
+};
+
 export const managerWorkspaceHandlers = [
   http.get('*/admin/manager-workspace/context', () =>
     HttpResponse.json({ data: managerWorkspaceContext }),
+  ),
+  http.get('*/admin/manager-workspace/groups', ({ request }) => {
+    if (!managerWorkspaceContext.modules.groups.visible) {
+      return HttpResponse.json({ message: 'Managed groups unavailable' }, { status: 403 });
+    }
+    const url = new URL(request.url);
+    const search = url.searchParams.get('search')?.toLocaleLowerCase('vi') ?? '';
+    const scopeType = url.searchParams.get('scopeType');
+    const items = managerManagedGroups
+      .filter((group) => !scopeType || group.scopeType === scopeType)
+      .filter(
+        (group) =>
+          !search || `${group.code} ${group.displayName}`.toLocaleLowerCase('vi').includes(search),
+      );
+    return HttpResponse.json({
+      data: { items, readiness: { hasAssignedScope: items.length > 0, reasonCodes: [] } },
+    });
+  }),
+  http.get('*/admin/manager-workspace/groups/:scopeType/:scopeId', ({ params }) => {
+    const group = managerManagedGroups.find(
+      (item) => item.scopeType === params.scopeType && item.scopeId === params.scopeId,
+    );
+    return group
+      ? HttpResponse.json({ data: group })
+      : HttpResponse.json({ message: 'Managed resource not found' }, { status: 404 });
+  }),
+  http.get(
+    '*/admin/manager-workspace/groups/:scopeType/:scopeId/members',
+    ({ params, request }) => {
+      if (!managerWorkspaceContext.modules.members.visible) {
+        return HttpResponse.json({ message: 'Managed members unavailable' }, { status: 403 });
+      }
+      const url = new URL(request.url);
+      const search = url.searchParams.get('search')?.toLocaleLowerCase('vi') ?? '';
+      const key = `${params.scopeType}:${params.scopeId}`;
+      const items = (managerManagedMembers[key] ?? []).filter(
+        (member) =>
+          !search ||
+          `${member.displayName} ${member.employeeCode ?? ''}`
+            .toLocaleLowerCase('vi')
+            .includes(search),
+      );
+      return HttpResponse.json({ data: { items } });
+    },
+  ),
+  http.get(
+    '*/admin/manager-workspace/groups/:scopeType/:scopeId/members/:memberId',
+    ({ params }) => {
+      const key = `${params.scopeType}:${params.scopeId}`;
+      const member = (managerManagedMembers[key] ?? []).find(
+        (item) => item.operationalMemberId === params.memberId,
+      );
+      return member
+        ? HttpResponse.json({ data: member })
+        : HttpResponse.json({ message: 'Managed resource not found' }, { status: 404 });
+    },
   ),
   http.get('*/admin/manager-workspace/events', () => {
     if (!managerWorkspaceContext.modules.events.visible) {
@@ -1183,6 +1341,87 @@ export const managerWorkspaceHandlers = [
           representedMemberCount: new Set(page.items.map((item) => item.member.employmentProfileId))
             .size,
           ...(page.nextCursor ? { nextCursor: page.nextCursor } : {}),
+        },
+      },
+    });
+  }),
+  http.get('*/admin/manager-workspace/work-schedule/weekly-schedule', ({ request }) => {
+    if (!managerSchedulingAuthorized()) {
+      return managerSchedulingForbidden();
+    }
+    const url = new URL(request.url);
+    const scopeType = url.searchParams.get('scopeType');
+    const scopeId = url.searchParams.get('scopeId');
+    const weekStart = url.searchParams.get('weekStart');
+    if (
+      (scopeType !== 'ORG_UNIT' && scopeType !== 'TALENT_GROUP') ||
+      !scopeId ||
+      !weekStart ||
+      !managerContextHasTarget(scopeType, scopeId)
+    ) {
+      return HttpResponse.json({ message: 'invalid exact weekly scope' }, { status: 422 });
+    }
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(`${weekStart}T00:00:00Z`);
+      date.setUTCDate(date.getUTCDate() + index);
+      return date.toISOString().slice(0, 10);
+    });
+    const grouped = new Map<string, (typeof managerWorkShifts.items)[number]['member']>();
+    managerWorkShifts.items.forEach((shift) =>
+      grouped.set(shift.member.employmentProfileId, shift.member),
+    );
+    const rows = [...grouped.values()].map((member) => {
+      const shifts = managerWorkShifts.items
+        .filter((shift) => shift.member.employmentProfileId === member.employmentProfileId)
+        .map((shift) => ({
+          workShiftId: shift.workShiftId,
+          title: shift.title,
+          status: shift.status,
+          shiftStartAt: shift.shiftStartAt,
+          shiftEndAt: shift.shiftEndAt,
+          timezone: shift.timezone,
+          sourceType: shift.sourceType,
+          sourceRosterMonth: shift.sourceRosterMonth,
+        }));
+      return {
+        member,
+        shifts,
+        availabilityIndicators: [],
+        requestIndicators: [],
+        conflicts: [],
+        readiness: shifts.length > 0 ? 'READY' : 'UNSCHEDULED',
+      };
+    });
+    return HttpResponse.json({
+      data: {
+        scope: { type: scopeType, id: scopeId },
+        window: {
+          weekStart: days[0],
+          weekEnd: days[6],
+          startAt: Date.parse(`${days[0]}T00:00:00+07:00`),
+          endAt: Date.parse(`${addMockDays(days[6]!, 1)}T00:00:00+07:00`),
+          timezone: 'Asia/Ho_Chi_Minh',
+          locked: false,
+        },
+        days,
+        rows,
+        summary: {
+          managedMemberCount: rows.length,
+          returnedMemberCount: rows.length,
+          scheduledMemberCount: rows.filter((row) => row.shifts.length > 0).length,
+          unscheduledMemberCount: rows.filter((row) => row.shifts.length === 0).length,
+          officialShiftCount: rows.reduce((sum, row) => sum + row.shifts.length, 0),
+          availabilityIndicatorCount: 0,
+          pendingRequestCount: 0,
+          appliedRequestCount: 0,
+          conflictCount: 0,
+          indicatorCompleteness: 'COMPLETE',
+        },
+        filters: {
+          search: url.searchParams.get('search'),
+          status: url.searchParams.get('status'),
+          conflict: url.searchParams.get('conflict'),
+          request: url.searchParams.get('request'),
         },
       },
     });
@@ -1602,3 +1841,9 @@ export const managerWorkspaceHandlers = [
     },
   ),
 ];
+
+function addMockDays(day: string, count: number): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + count);
+  return date.toISOString().slice(0, 10);
+}

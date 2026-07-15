@@ -61,12 +61,22 @@ const talentGroupScopeSchema = referenceNameSchema
   })
   .strict();
 
-const disabledModuleSchema = z
-  .object({
-    visible: z.literal(false),
-    reason: z.literal('NOT_ENABLED_IN_MANAGER_WORKSPACE_YET'),
-  })
-  .strict();
+const managerReadModuleSchema = (missingCapability: string) =>
+  z.union([
+    z.object({ visible: z.literal(true) }).strict(),
+    z
+      .object({
+        visible: z.literal(false),
+        reason: z.enum([
+          'NO_MANAGED_SCOPE_ASSIGNED',
+          'NO_MANAGER_RESPONSIBILITY_ASSIGNED',
+          'NO_STRUCTURED_SCOPE_ASSIGNED',
+          missingCapability,
+          'MISSING_MANAGER_GROUP_READ_CAPABILITY',
+        ] as [string, ...string[]]),
+      })
+      .strict(),
+  ]);
 
 const workShiftsModuleSchema = z.union([
   z.object({ visible: z.literal(true) }).strict(),
@@ -226,7 +236,8 @@ export const managerWorkspaceContextSchema = z
         workShifts: workShiftsModuleSchema,
         events: eventsModuleSchema,
         revenueSource: revenueSourceModuleSchema,
-        members: disabledModuleSchema,
+        groups: managerReadModuleSchema('MISSING_MANAGER_GROUP_READ_CAPABILITY'),
+        members: managerReadModuleSchema('MISSING_MANAGER_MEMBER_READ_CAPABILITY'),
       })
       .strict(),
   })
@@ -243,6 +254,343 @@ export type ManagerWorkspaceOrgUnitScope = ManagerWorkspaceContext['scopes']['or
 export type ManagerWorkspaceTalentGroupScope =
   ManagerWorkspaceContext['scopes']['talentGroups'][number];
 export type ManagerEventSummary = z.infer<typeof managerEventSchema>;
+
+export const managedScopeTypeSchema = z.enum(['ORG_UNIT', 'TALENT_GROUP']);
+
+export const managedGroupSchema = z
+  .object({
+    scopeType: managedScopeTypeSchema,
+    scopeId: z.string().trim().min(1),
+    code: z.string().trim().min(1),
+    displayName: z.string().trim().min(1),
+    operationalStatus: z.string().trim().min(1),
+    responsibility: z
+      .object({
+        role: z.string().trim().min(1).nullable(),
+        includeDescendants: z.boolean(),
+        isPrimary: z.boolean(),
+      })
+      .strict()
+      .nullable(),
+    readiness: z
+      .object({
+        memberReadAvailable: z.boolean(),
+        reasonCodes: z.array(z.string().trim().min(1)),
+      })
+      .strict(),
+    navigation: z
+      .object({
+        groupRef: z.string().trim().min(1),
+        membersRef: z.string().trim().min(1),
+      })
+      .strict(),
+  })
+  .strict();
+
+export const managedMemberSchema = z
+  .object({
+    personKind: z.enum(['INTERNAL', 'EXTERNAL_ONLY']),
+    operationalMemberId: z.string().trim().min(1).nullable(),
+    displayName: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1).nullable(),
+    operationalStatus: z.string().trim().min(1),
+    trace: z
+      .object({
+        talentId: z.string().trim().min(1).nullable(),
+        talentCode: z.string().trim().min(1).nullable(),
+        membershipId: z.string().trim().min(1).nullable(),
+        membershipStatus: z.string().trim().min(1).nullable(),
+        joinedAt: z.number().int().nullable(),
+        leftAt: z.number().int().nullable(),
+      })
+      .strict(),
+    eligibility: z
+      .object({
+        kpi: z.boolean(),
+        schedule: z.boolean(),
+        actualEntry: z.boolean(),
+        mutation: z.boolean(),
+      })
+      .strict(),
+    readinessReasonCodes: z.array(z.string().trim().min(1)),
+    navigation: z.object({ memberRef: z.string().trim().min(1).nullable() }).strict(),
+  })
+  .strict()
+  .superRefine((member, context) => {
+    if (member.personKind === 'EXTERNAL_ONLY' && member.operationalMemberId !== null) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'External-only Talent cannot have an operational member id',
+      });
+    }
+    if (member.personKind === 'EXTERNAL_ONLY' && Object.values(member.eligibility).some(Boolean)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'External-only Talent cannot be mutation eligible',
+      });
+    }
+  });
+
+const managedGroupListResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(managedGroupSchema),
+        nextCursor: z.string().trim().min(1).optional(),
+        readiness: z
+          .object({
+            hasAssignedScope: z.boolean(),
+            reasonCodes: z.array(z.string().trim().min(1)),
+          })
+          .strict(),
+      })
+      .strict(),
+  })
+  .strict();
+const managedGroupResponseSchema = z.object({ data: managedGroupSchema }).strict();
+const managedMemberListResponseSchema = z
+  .object({
+    data: z
+      .object({
+        items: z.array(managedMemberSchema),
+        nextCursor: z.string().trim().min(1).optional(),
+      })
+      .strict(),
+  })
+  .strict();
+const managedMemberResponseSchema = z.object({ data: managedMemberSchema }).strict();
+
+export type ManagedScopeType = z.infer<typeof managedScopeTypeSchema>;
+export type ManagedGroup = z.infer<typeof managedGroupSchema>;
+export type ManagedMember = z.infer<typeof managedMemberSchema>;
+export type ManagedGroupList = z.infer<typeof managedGroupListResponseSchema>['data'];
+export type ManagedMemberList = z.infer<typeof managedMemberListResponseSchema>['data'];
+
+export const managerWorkspaceReadIdentity = (context: ManagerWorkspaceContext) => ({
+  actorId: context.actor.id,
+  accountContext: 'MANAGER_CONSOLE' as const,
+  scopeFingerprint: [
+    ...context.scopes.orgUnits.map((scope) => `ORG_UNIT:${scope.orgUnitId}`),
+    ...context.scopes.talentGroups.map((scope) => `TALENT_GROUP:${scope.talentGroupId}`),
+  ]
+    .sort()
+    .join('|'),
+});
+
+export const managerWorkspaceReadQueryKeys = {
+  groups: (
+    identity: ReturnType<typeof managerWorkspaceReadIdentity>,
+    filters: { search?: string; scopeType?: ManagedScopeType; cursor?: string },
+  ) =>
+    [
+      'manager-workspace',
+      identity.actorId,
+      identity.accountContext,
+      identity.scopeFingerprint,
+      'groups',
+      filters.scopeType ?? 'ALL',
+      filters.search ?? '',
+      filters.cursor ?? 'FIRST',
+    ] as const,
+  group: (
+    identity: ReturnType<typeof managerWorkspaceReadIdentity>,
+    scope: { scopeType: ManagedScopeType; scopeId: string },
+  ) =>
+    [
+      'manager-workspace',
+      identity.actorId,
+      identity.accountContext,
+      identity.scopeFingerprint,
+      'group',
+      scope.scopeType,
+      scope.scopeId,
+    ] as const,
+  members: (
+    identity: ReturnType<typeof managerWorkspaceReadIdentity>,
+    scope: { scopeType: ManagedScopeType; scopeId: string },
+    filters: ManagerMemberFilters,
+  ) =>
+    [
+      'manager-workspace',
+      identity.actorId,
+      identity.accountContext,
+      identity.scopeFingerprint,
+      'members',
+      scope.scopeType,
+      scope.scopeId,
+      filters.operationalStatus ?? 'ALL',
+      filters.personKind ?? 'ALL_KINDS',
+      filters.kpiEligibility ?? 'ALL_KPI',
+      filters.scheduleEligibility ?? 'ALL_SCHEDULE',
+      filters.search ?? '',
+      filters.cursor ?? 'FIRST',
+    ] as const,
+  member: (
+    identity: ReturnType<typeof managerWorkspaceReadIdentity>,
+    scope: { scopeType: ManagedScopeType; scopeId: string },
+    memberId: string,
+  ) =>
+    [
+      'manager-workspace',
+      identity.actorId,
+      identity.accountContext,
+      identity.scopeFingerprint,
+      'member',
+      scope.scopeType,
+      scope.scopeId,
+      memberId,
+    ] as const,
+  weeklySchedule: (
+    identity: ReturnType<typeof managerWorkspaceReadIdentity>,
+    query: {
+      scopeType: ManagedScopeType;
+      scopeId: string;
+      weekStart: string;
+      search?: string;
+      status?: string;
+      conflict?: string;
+      request?: string;
+      cursor?: string;
+    },
+  ) =>
+    [
+      'manager-workspace',
+      identity.actorId,
+      identity.accountContext,
+      identity.scopeFingerprint,
+      'weekly-schedule',
+      query.scopeType,
+      query.scopeId,
+      query.weekStart,
+      query.status ?? 'ALL',
+      query.conflict ?? 'ALL',
+      query.request ?? 'ALL',
+      query.search ?? '',
+      query.cursor ?? 'FIRST',
+    ] as const,
+};
+
+export const fetchManagerGroups = async (query: {
+  search?: string;
+  scopeType?: ManagedScopeType;
+  cursor?: string;
+}): Promise<ManagedGroupList> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/manager-workspace/groups',
+    params: { ...query, limit: 25 },
+  });
+  return managedGroupListResponseSchema.parse(response).data;
+};
+
+export const fetchManagerGroup = async (
+  scopeType: ManagedScopeType,
+  scopeId: string,
+): Promise<ManagedGroup> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/manager-workspace/groups/${scopeType}/${encodeURIComponent(scopeId)}`,
+  });
+  return managedGroupResponseSchema.parse(response).data;
+};
+
+export const fetchManagerMembers = async (
+  scope: { scopeType: ManagedScopeType; scopeId: string },
+  query: ManagerMemberFilters,
+): Promise<ManagedMemberList> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/manager-workspace/groups/${scope.scopeType}/${encodeURIComponent(
+      scope.scopeId,
+    )}/members`,
+    params: { ...query, limit: 25 },
+  });
+  return managedMemberListResponseSchema.parse(response).data;
+};
+
+export const fetchManagerMember = async (
+  scope: { scopeType: ManagedScopeType; scopeId: string },
+  memberId: string,
+): Promise<ManagedMember> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: `/admin/manager-workspace/groups/${scope.scopeType}/${encodeURIComponent(
+      scope.scopeId,
+    )}/members/${encodeURIComponent(memberId)}`,
+  });
+  return managedMemberResponseSchema.parse(response).data;
+};
+
+export const useManagerGroups = (
+  context: ManagerWorkspaceContext,
+  query: { search?: string; scopeType?: ManagedScopeType; cursor?: string },
+  enabled = true,
+) => {
+  const identity = managerWorkspaceReadIdentity(context);
+  return useQuery({
+    queryKey: managerWorkspaceReadQueryKeys.groups(identity, query),
+    queryFn: () => fetchManagerGroups(query),
+    enabled,
+    retry: false,
+  });
+};
+
+export const useManagerGroup = (
+  context: ManagerWorkspaceContext,
+  scope: { scopeType: ManagedScopeType; scopeId: string },
+  enabled = true,
+) => {
+  const identity = managerWorkspaceReadIdentity(context);
+  return useQuery({
+    queryKey: managerWorkspaceReadQueryKeys.group(identity, scope),
+    queryFn: () => fetchManagerGroup(scope.scopeType, scope.scopeId),
+    enabled: enabled && Boolean(scope.scopeId),
+    retry: false,
+  });
+};
+
+export const useManagerMembers = (
+  context: ManagerWorkspaceContext,
+  scope: { scopeType: ManagedScopeType; scopeId: string },
+  query: ManagerMemberFilters,
+  enabled = true,
+) => {
+  const identity = managerWorkspaceReadIdentity(context);
+  return useQuery({
+    queryKey: managerWorkspaceReadQueryKeys.members(identity, scope, query),
+    queryFn: () => fetchManagerMembers(scope, query),
+    enabled: enabled && Boolean(scope.scopeId),
+    retry: false,
+  });
+};
+
+export type ManagerMemberFilters = {
+  search?: string;
+  operationalStatus?: string;
+  personKind?: 'INTERNAL' | 'EXTERNAL_ONLY';
+  kpiEligibility?: 'ELIGIBLE' | 'INELIGIBLE';
+  scheduleEligibility?: 'ELIGIBLE' | 'INELIGIBLE';
+  cursor?: string;
+};
+
+export const useManagerMember = (
+  context: ManagerWorkspaceContext,
+  scope: { scopeType: ManagedScopeType; scopeId: string },
+  memberId?: string,
+) => {
+  const identity = managerWorkspaceReadIdentity(context);
+  return useQuery({
+    queryKey: managerWorkspaceReadQueryKeys.member(identity, scope, memberId ?? 'NONE'),
+    queryFn: () => fetchManagerMember(scope, memberId ?? ''),
+    enabled: Boolean(memberId),
+    retry: false,
+  });
+};
+
+export const parseManagedGroupForTest = (value: unknown): ManagedGroup =>
+  managedGroupSchema.parse(value);
+export const parseManagedMemberForTest = (value: unknown): ManagedMember =>
+  managedMemberSchema.parse(value);
 
 const managerPlatformEarningStatusSchema = z.enum([
   'DRAFT',
@@ -656,6 +1004,138 @@ const managerWorkShiftListResponseSchema = z
   .strict();
 
 export type ManagerWorkShiftList = z.infer<typeof managerWorkShiftListResponseSchema>['data'];
+
+const managerWeeklyScheduleResponseSchema = z
+  .object({
+    data: z
+      .object({
+        scope: z
+          .object({ type: z.enum(['ORG_UNIT', 'TALENT_GROUP']), id: z.string().min(1) })
+          .strict(),
+        window: z
+          .object({
+            weekStart: z.string(),
+            weekEnd: z.string(),
+            startAt: z.number().int(),
+            endAt: z.number().int(),
+            timezone: z.literal('Asia/Ho_Chi_Minh'),
+            locked: z.boolean(),
+          })
+          .strict(),
+        days: z.array(z.string()).length(7),
+        rows: z.array(
+          z
+            .object({
+              member: managerWorkShiftSchema.shape.member,
+              shifts: z.array(managerWorkShiftSchema.omit({ member: true })),
+              availabilityIndicators: z.array(
+                z
+                  .object({
+                    lineId: z.string().min(1),
+                    dateFrom: z.string(),
+                    dateTo: z.string(),
+                    status: z.string().min(1),
+                    applyStatus: z.string().min(1),
+                    type: z.string().min(1),
+                  })
+                  .strict(),
+              ),
+              requestIndicators: z.array(
+                z
+                  .object({
+                    lineId: z.string().min(1),
+                    requestType: z.string().min(1),
+                    status: z.string().min(1),
+                    requestedStartAt: z.number().int().nullable(),
+                    requestedEndAt: z.number().int().nullable(),
+                  })
+                  .strict(),
+              ),
+              conflicts: z.array(
+                z
+                  .object({
+                    code: z.enum(['SHIFT_OVERLAP', 'UNAVAILABLE_WITH_SHIFT']),
+                    date: z.string(),
+                  })
+                  .strict(),
+              ),
+              readiness: z.enum(['READY', 'UNSCHEDULED', 'CONFLICT', 'LOCKED']),
+            })
+            .strict(),
+        ),
+        summary: z
+          .object({
+            managedMemberCount: z.number().int().nonnegative(),
+            returnedMemberCount: z.number().int().nonnegative(),
+            scheduledMemberCount: z.number().int().nonnegative(),
+            unscheduledMemberCount: z.number().int().nonnegative(),
+            officialShiftCount: z.number().int().nonnegative(),
+            availabilityIndicatorCount: z.number().int().nonnegative(),
+            pendingRequestCount: z.number().int().nonnegative(),
+            appliedRequestCount: z.number().int().nonnegative(),
+            conflictCount: z.number().int().nonnegative(),
+            indicatorCompleteness: z.enum(['COMPLETE', 'UNAVAILABLE']),
+          })
+          .strict(),
+        filters: z
+          .object({
+            search: z.string().nullable(),
+            status: z.string().nullable(),
+            conflict: z.string().nullable(),
+            request: z.string().nullable(),
+          })
+          .strict(),
+        nextCursor: z.string().min(1).optional(),
+      })
+      .strict(),
+  })
+  .strict();
+
+export type ManagerWeeklySchedule = z.infer<typeof managerWeeklyScheduleResponseSchema>['data'];
+export type ManagerWeeklyScheduleQuery = {
+  scopeType: ManagedScopeType;
+  scopeId: string;
+  weekStart: string;
+  search?: string;
+  status?: string;
+  conflict?: string;
+  request?: string;
+  cursor?: string;
+};
+
+export const fetchManagerWeeklySchedule = async (
+  query: ManagerWeeklyScheduleQuery,
+): Promise<ManagerWeeklySchedule> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/manager-workspace/work-schedule/weekly-schedule',
+    params: query,
+  });
+  return managerWeeklyScheduleResponseSchema.parse(response).data;
+};
+
+export const useManagerWeeklySchedule = (
+  context: ManagerWorkspaceContext,
+  query: ManagerWeeklyScheduleQuery | undefined,
+  enabled: boolean,
+) => {
+  const identity = managerWorkspaceReadIdentity(context);
+  return useQuery({
+    queryKey: query
+      ? managerWorkspaceReadQueryKeys.weeklySchedule(identity, query)
+      : [
+          'manager-workspace',
+          identity.actorId,
+          identity.accountContext,
+          identity.scopeFingerprint,
+          'weekly-schedule',
+          'NONE',
+        ],
+    queryFn: () => fetchManagerWeeklySchedule(query!),
+    enabled: Boolean(query) && enabled,
+    retry: false,
+  });
+};
 
 export const fetchManagerWorkShifts = async (
   month?: string,
@@ -1513,6 +1993,9 @@ export const parseManagerPlatformEarningBatchListForTest = (response: unknown) =
 
 export const parseManagerWorkShiftListForTest = (response: unknown): ManagerWorkShiftList =>
   managerWorkShiftListResponseSchema.parse(response).data;
+
+export const parseManagerWeeklyScheduleForTest = (response: unknown): ManagerWeeklySchedule =>
+  managerWeeklyScheduleResponseSchema.parse(response).data;
 
 export const parseManagerAvailabilityBatchListForTest = (
   response: unknown,

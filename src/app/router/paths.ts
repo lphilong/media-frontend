@@ -12,6 +12,14 @@ export const APP_PATHS = {
   managerWorkShifts: '/manager/work-shifts',
   managerRevenueSource: '/manager/revenue-source',
   managerEvents: '/manager/events',
+  managerGroups: '/manager/groups',
+  managerGroupPattern: '/manager/groups/:scopeType/:scopeId',
+  managerGroupDetail: (scopeType: string, scopeId: string) =>
+    `/manager/groups/${encodeURIComponent(scopeType)}/${encodeURIComponent(scopeId)}`,
+  managerMembers: '/manager/members',
+  managerMembersPattern: '/manager/members/:scopeType/:scopeId',
+  managerMembersForGroup: (scopeType: string, scopeId: string) =>
+    `/manager/members/${encodeURIComponent(scopeType)}/${encodeURIComponent(scopeId)}`,
   managerEventDetailPattern: '/manager/events/:eventId',
   managerEventDetail: (eventId: string) => joinDetailPath('/manager/events', eventId),
   managerKpiPlanDetailPattern: '/manager/kpi/plans/:kpiPlanId',

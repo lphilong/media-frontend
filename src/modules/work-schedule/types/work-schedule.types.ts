@@ -336,6 +336,11 @@ export type WorkScheduleRequestBatchLine = {
   memberEmploymentProfileId: string;
   memberEmploymentProfileRef?: ReferenceSummary | null;
   workShiftId: string | null;
+  sourceWorkShiftVersion?: number | string | null;
+  sourceGenerationRunId?: string | null;
+  leadTimeClassification?: 'NORMAL' | 'URGENT' | 'EMERGENCY';
+  decisionSlaMinutes?: 240 | 60 | null;
+  emergencyOverrideReason?: string | null;
   workShiftRef?: ReferenceSummary | null;
   requestedStartAt: number | string | null;
   requestedEndAt: number | string | null;
@@ -373,6 +378,11 @@ export type WorkScheduleRequestBatchListQuery = {
 
 export type WorkScheduleRequestBatchLineDecisionPayload = {
   lineIds: string[];
+  expectedRequestVersions?: Record<string, number>;
+  expectedWorkShiftVersions?: Record<string, number | null>;
+  expectedSourceGenerationRunIds?: Record<string, string | null>;
+  idempotencyKey?: string;
+  emergencyOverrideReason?: string | null;
   approvalNote?: string | null;
   rejectionReason?: string | null;
   cancellationReason?: string | null;
@@ -481,6 +491,9 @@ export type WorkScheduleAvailabilityLineDecisionPayload = {
 
 export type ApplyAvailabilityLinesToMonthlyRosterPayload = {
   availabilityLineIds: string[];
+  expectedRosterVersion?: number;
+  expectedRequestVersions?: Record<string, number>;
+  idempotencyKey?: string | null;
   applyNote?: string | null;
   note?: string | null;
   scope?: MonthlyRosterScope;
@@ -492,6 +505,11 @@ export type ApplyAvailabilityLineResult = {
   rosterExceptionId: string | null;
   rosterExceptionIds: string[];
   reason: string | null;
+  finalState?:
+    | 'APPROVED_APPLIED'
+    | 'SOURCE_CHANGED'
+    | 'APPLICATION_CONFLICT'
+    | 'APPLICATION_FAILED';
 };
 
 export type ApplyAvailabilityLinesToMonthlyRosterResult = {
@@ -508,6 +526,21 @@ export type ApplyAvailabilityLinesToMonthlyRosterResult = {
   skippedAlreadyAppliedCount: number;
   failedCount: number;
   results: ApplyAvailabilityLineResult[];
+  finalState?:
+    | 'APPROVED_APPLIED'
+    | 'SOURCE_CHANGED'
+    | 'APPLICATION_CONFLICT'
+    | 'APPLICATION_FAILED';
+  sourceVersions?: {
+    rosterVersionBefore: number;
+    rosterVersionAfter: number;
+    requestVersions: Record<string, number>;
+  };
+  beforeSnapshot?: { draftVersion: number; activeRosterExceptionIds: string[] };
+  afterSnapshot?: { draftVersion: number; activeRosterExceptionIds: string[] };
+  conflicts?: string[];
+  auditReference?: string;
+  idempotencyResult?: 'APPLIED' | 'REPLAYED';
 };
 
 export type CursorPagedResponse<TData> = {
@@ -694,6 +727,22 @@ export type MonthlyRosterRecord = MonthlyRosterListItem & {
   publishedAt?: number | string | null;
   publishedByUserId?: string | null;
   publishGenerationRunId?: string | null;
+  publicationVersion?: number;
+  sourceSnapshot?: {
+    snapshotVersion: 1;
+    rosterDraftVersion: number;
+    holidayCalendarId: string;
+    holidayCalendarVersion: number;
+    holidayEffectiveDays: string[];
+    workPatternId: string;
+    workPatternVersion: number;
+    resolvedWorkPatternFingerprint: string;
+    eligibleEmploymentProfileIds: string[];
+    talentMembershipTraceFingerprint: string | null;
+    previewHash: string;
+    previewActorId: string;
+    previewedAt: number | string;
+  } | null;
   exceptions?: RosterExceptionRecord[];
 };
 
@@ -884,6 +933,8 @@ export type MonthlyRosterPublishResult = {
   sourceGenerationRunId: string | null;
   publishedAt: number | string | null;
   publishedByUserId: string | null;
+  publicationVersion?: number;
+  sourceSnapshot?: MonthlyRosterRecord['sourceSnapshot'];
   generatedWorkShiftCount: number;
   skippedWorkingToOffCount: number;
   holidaySuppressedCount: number;

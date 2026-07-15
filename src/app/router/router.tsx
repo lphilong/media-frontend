@@ -598,6 +598,46 @@ export const appRoutes: RouteObject[] = [
     ),
   },
   {
+    path: APP_PATHS.managerGroups,
+    element: (
+      <RequireAuth>
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
+      </RequireAuth>
+    ),
+  },
+  {
+    path: APP_PATHS.managerGroupPattern,
+    element: (
+      <RequireAuth>
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
+      </RequireAuth>
+    ),
+  },
+  {
+    path: APP_PATHS.managerMembers,
+    element: (
+      <RequireAuth>
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
+      </RequireAuth>
+    ),
+  },
+  {
+    path: APP_PATHS.managerMembersPattern,
+    element: (
+      <RequireAuth>
+        <WorkspaceAccessGuard workspace="MANAGER_CONSOLE">
+          <LazyManagerWorkspaceElement />
+        </WorkspaceAccessGuard>
+      </RequireAuth>
+    ),
+  },
+  {
     path: APP_PATHS.managerEventDetailPattern,
     element: (
       <RequireAuth>

@@ -8,7 +8,7 @@ import type {
 } from './api/manager-workspace.api';
 export type { ManagerWorkScheduleRequestType } from './api/manager-workspace.api';
 
-export type ManagerWorkTab = 'published' | 'requests' | 'availability';
+export type ManagerWorkTab = 'published' | 'requests' | 'availability' | 'conflicts';
 
 export type DraftRequestLine = ManagerSubmitRequestBatchLinePayload & {
   localId: string;

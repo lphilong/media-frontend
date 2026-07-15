@@ -9,8 +9,10 @@ import {
   fetchManagerRequestBatches,
   fetchManagerRequestBatchDetail,
   fetchManagerWorkShifts,
+  fetchManagerWeeklySchedule,
   parseManagerAvailabilityBatchDetailForTest,
   parseManagerRequestBatchDetailForTest,
+  parseManagerWeeklyScheduleForTest,
 } from '@modules/manager-workspace/api/manager-workspace.api';
 import {
   availabilityApplyStatusLabelKey,
@@ -40,6 +42,13 @@ describe('Manager scheduling API and presentation contracts', () => {
     async (authority) => {
       setMockManagerSchedulingAuthority(authority);
       await expect(fetchManagerWorkShifts()).rejects.toBeDefined();
+      await expect(
+        fetchManagerWeeklySchedule({
+          scopeType: 'ORG_UNIT',
+          scopeId: 'org-unit-001',
+          weekStart: '2026-07-13',
+        }),
+      ).rejects.toBeDefined();
       await expect(fetchManagerAvailabilityBatches()).rejects.toBeDefined();
       await expect(fetchManagerRequestBatches()).rejects.toBeDefined();
     },
@@ -55,6 +64,26 @@ describe('Manager scheduling API and presentation contracts', () => {
     expect(second.items).toHaveLength(1);
     expect(second.items[0]?.workShiftId).not.toBe(first.items[0]?.workShiftId);
     expect(second.meta.nextCursor).toBeUndefined();
+  });
+
+  it('groups a strict seven-day weekly schedule without Attendance or Payroll fields', async () => {
+    const result = await fetchManagerWeeklySchedule({
+      scopeType: 'ORG_UNIT',
+      scopeId: 'org-unit-001',
+      weekStart: '2026-07-13',
+      status: 'READY',
+      conflict: 'WITHOUT_CONFLICT',
+      request: 'WITHOUT_REQUEST',
+    });
+    expect(result.days).toHaveLength(7);
+    expect(result.scope).toEqual({ type: 'ORG_UNIT', id: 'org-unit-001' });
+    expect(result.summary.indicatorCompleteness).toBe('COMPLETE');
+    expect(JSON.stringify(result).toLowerCase()).not.toMatch(/attendance|payroll/);
+    expect(() =>
+      parseManagerWeeklyScheduleForTest({
+        data: { ...result, payrollTotal: 100 },
+      }),
+    ).toThrow();
   });
 
   it('strictly rejects unsafe request and availability detail DTO additions', async () => {

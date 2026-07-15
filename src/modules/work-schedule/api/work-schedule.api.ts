@@ -360,6 +360,14 @@ const workScheduleRequestBatchLineSchema = z
     memberEmploymentProfileId: z.string().trim().min(1),
     memberEmploymentProfileRef: referenceSummarySchema.nullable().optional(),
     workShiftId: z.string().nullable(),
+    sourceWorkShiftVersion: timestampSchema.nullable().optional(),
+    sourceGenerationRunId: z.string().nullable().optional(),
+    leadTimeClassification: z.enum(['NORMAL', 'URGENT', 'EMERGENCY']).optional(),
+    decisionSlaMinutes: z
+      .union([z.literal(240), z.literal(60)])
+      .nullable()
+      .optional(),
+    emergencyOverrideReason: z.string().nullable().optional(),
     workShiftRef: referenceSummarySchema.nullable().optional(),
     requestedStartAt: timestampSchema.nullable(),
     requestedEndAt: timestampSchema.nullable(),
@@ -653,6 +661,26 @@ const monthlyRosterDetailSchema = monthlyRosterListItemSchema
     publishedAt: timestampSchema.nullable().optional(),
     publishedByUserId: z.string().nullable().optional(),
     publishGenerationRunId: z.string().nullable().optional(),
+    publicationVersion: z.number().int().positive().optional(),
+    sourceSnapshot: z
+      .object({
+        snapshotVersion: z.literal(1),
+        rosterDraftVersion: z.number().int().nonnegative(),
+        holidayCalendarId: z.string().trim().min(1),
+        holidayCalendarVersion: z.number().int().nonnegative(),
+        holidayEffectiveDays: z.array(z.string()),
+        workPatternId: z.string().trim().min(1),
+        workPatternVersion: z.number().int().nonnegative(),
+        resolvedWorkPatternFingerprint: z.string().trim().min(1),
+        eligibleEmploymentProfileIds: z.array(z.string()),
+        talentMembershipTraceFingerprint: z.string().nullable(),
+        previewHash: z.string().trim().min(1),
+        previewActorId: z.string().trim().min(1),
+        previewedAt: timestampSchema,
+      })
+      .strict()
+      .nullable()
+      .optional(),
     exceptions: z.array(rosterExceptionSchema).optional(),
   })
   .strict();
@@ -802,6 +830,8 @@ const monthlyRosterPublishResultSchema = z
     sourceGenerationRunId: z.string().trim().min(1).nullable(),
     publishedAt: timestampSchema.nullable(),
     publishedByUserId: z.string().nullable(),
+    publicationVersion: z.number().int().positive().optional(),
+    sourceSnapshot: monthlyRosterDetailSchema.shape.sourceSnapshot,
     generatedWorkShiftCount: z.number().int().nonnegative(),
     skippedWorkingToOffCount: z.number().int().nonnegative(),
     holidaySuppressedCount: z.number().int().nonnegative(),
@@ -826,6 +856,9 @@ const applyAvailabilityLineResultSchema = z
     rosterExceptionId: z.string().nullable(),
     rosterExceptionIds: z.array(z.string()),
     reason: z.string().nullable(),
+    finalState: z
+      .enum(['APPROVED_APPLIED', 'SOURCE_CHANGED', 'APPLICATION_CONFLICT', 'APPLICATION_FAILED'])
+      .optional(),
   })
   .strict();
 
@@ -844,6 +877,34 @@ const applyAvailabilityLinesToMonthlyRosterResultSchema = z
     skippedAlreadyAppliedCount: z.number().int().nonnegative(),
     failedCount: z.number().int().nonnegative(),
     results: z.array(applyAvailabilityLineResultSchema),
+    finalState: z
+      .enum(['APPROVED_APPLIED', 'SOURCE_CHANGED', 'APPLICATION_CONFLICT', 'APPLICATION_FAILED'])
+      .optional(),
+    sourceVersions: z
+      .object({
+        rosterVersionBefore: z.number().int().nonnegative(),
+        rosterVersionAfter: z.number().int().nonnegative(),
+        requestVersions: z.record(z.number().int().nonnegative()),
+      })
+      .strict()
+      .optional(),
+    beforeSnapshot: z
+      .object({
+        draftVersion: z.number().int().nonnegative(),
+        activeRosterExceptionIds: z.array(z.string()),
+      })
+      .strict()
+      .optional(),
+    afterSnapshot: z
+      .object({
+        draftVersion: z.number().int().nonnegative(),
+        activeRosterExceptionIds: z.array(z.string()),
+      })
+      .strict()
+      .optional(),
+    conflicts: z.array(z.string()).optional(),
+    auditReference: z.string().trim().min(1).optional(),
+    idempotencyResult: z.enum(['APPLIED', 'REPLAYED']).optional(),
   })
   .strict();
 
@@ -1201,6 +1262,15 @@ const sanitizeApplyAvailabilityLinesPayload = (
   payload: ApplyAvailabilityLinesToMonthlyRosterPayload,
 ): ApplyAvailabilityLinesToMonthlyRosterPayload => ({
   availabilityLineIds: payload.availabilityLineIds.map((lineId) => lineId.trim()).filter(Boolean),
+  ...(payload.expectedRosterVersion !== undefined
+    ? { expectedRosterVersion: payload.expectedRosterVersion }
+    : {}),
+  ...(payload.expectedRequestVersions !== undefined
+    ? { expectedRequestVersions: payload.expectedRequestVersions }
+    : {}),
+  ...(payload.idempotencyKey !== undefined
+    ? { idempotencyKey: sanitizeNullableText(payload.idempotencyKey) }
+    : {}),
   ...(payload.applyNote !== undefined
     ? { applyNote: sanitizeNullableText(payload.applyNote) }
     : {}),
@@ -1410,6 +1480,21 @@ const sanitizeLineDecisionPayload = (
   payload: WorkScheduleRequestBatchLineDecisionPayload,
 ): WorkScheduleRequestBatchLineDecisionPayload => ({
   lineIds: payload.lineIds.map((lineId) => lineId.trim()).filter(Boolean),
+  ...(payload.expectedRequestVersions !== undefined
+    ? { expectedRequestVersions: { ...payload.expectedRequestVersions } }
+    : {}),
+  ...(payload.expectedWorkShiftVersions !== undefined
+    ? { expectedWorkShiftVersions: { ...payload.expectedWorkShiftVersions } }
+    : {}),
+  ...(payload.expectedSourceGenerationRunIds !== undefined
+    ? { expectedSourceGenerationRunIds: { ...payload.expectedSourceGenerationRunIds } }
+    : {}),
+  ...(payload.idempotencyKey !== undefined
+    ? { idempotencyKey: payload.idempotencyKey.trim() }
+    : {}),
+  ...(payload.emergencyOverrideReason !== undefined
+    ? { emergencyOverrideReason: sanitizeNullableText(payload.emergencyOverrideReason) }
+    : {}),
   ...(payload.approvalNote !== undefined
     ? { approvalNote: sanitizeNullableText(payload.approvalNote) }
     : {}),

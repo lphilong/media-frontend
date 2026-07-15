@@ -286,10 +286,12 @@ export const useUpsertKpiAllocationDraftMutation = () => {
     mutationFn: ({
       kpiPlanId,
       allocations,
+      identity,
     }: {
       kpiPlanId: string;
       allocations: KpiAllocationDraftMemberInput[];
-    }) => upsertKpiAllocationDraft(kpiPlanId, allocations),
+      identity?: Parameters<typeof upsertKpiAllocationDraft>[2];
+    }) => upsertKpiAllocationDraft(kpiPlanId, allocations, identity),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };
@@ -297,7 +299,13 @@ export const useUpsertKpiAllocationDraftMutation = () => {
 export const useSubmitKpiAllocationDraftMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ kpiPlanId }: { kpiPlanId: string }) => submitKpiAllocationDraft(kpiPlanId),
+    mutationFn: ({
+      kpiPlanId,
+      identity,
+    }: {
+      kpiPlanId: string;
+      identity?: Parameters<typeof submitKpiAllocationDraft>[1];
+    }) => submitKpiAllocationDraft(kpiPlanId, identity),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };
@@ -308,10 +316,12 @@ export const useApproveKpiAllocationMutation = () => {
     mutationFn: ({
       kpiPlanId,
       approvalNote,
+      identity,
     }: {
       kpiPlanId: string;
       approvalNote?: string | null;
-    }) => approveKpiAllocation(kpiPlanId, approvalNote),
+      identity?: Parameters<typeof approveKpiAllocation>[2];
+    }) => approveKpiAllocation(kpiPlanId, approvalNote, identity),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };
@@ -319,8 +329,15 @@ export const useApproveKpiAllocationMutation = () => {
 export const useRejectKpiAllocationMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ kpiPlanId, rejectionReason }: { kpiPlanId: string; rejectionReason: string }) =>
-      rejectKpiAllocation(kpiPlanId, rejectionReason),
+    mutationFn: ({
+      kpiPlanId,
+      rejectionReason,
+      identity,
+    }: {
+      kpiPlanId: string;
+      rejectionReason: string;
+      identity?: Parameters<typeof rejectKpiAllocation>[2];
+    }) => rejectKpiAllocation(kpiPlanId, rejectionReason, identity),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };
@@ -328,7 +345,13 @@ export const useRejectKpiAllocationMutation = () => {
 export const usePublishKpiAllocationMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ kpiPlanId }: { kpiPlanId: string }) => publishKpiAllocation(kpiPlanId),
+    mutationFn: ({
+      kpiPlanId,
+      identity,
+    }: {
+      kpiPlanId: string;
+      identity?: Parameters<typeof publishKpiAllocation>[1];
+    }) => publishKpiAllocation(kpiPlanId, identity),
     onSuccess: () => invalidateKpi(queryClient),
   });
 };

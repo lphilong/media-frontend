@@ -381,6 +381,8 @@
       "selectedContext": "{{count}} dòng yêu cầu đang được chọn.",
       "helper": "Quyết định chỉ áp dụng cho các dòng yêu cầu đã chọn. Phê duyệt có thể áp dụng thay đổi ca sau khi hệ thống kiểm tra; từ chối hoặc hủy cần lý do.",
       "approvalNote": "Ghi chú duyệt (tùy chọn)",
+      "emergencyOverrideReason": "Lý do ghi đè khẩn cấp",
+      "emergencyOverrideHelper": "Chỉ bắt buộc khi yêu cầu khẩn cấp bắt đầu trong vòng chưa đến bốn giờ.",
       "reason": "Lý do từ chối hoặc hủy"
     },
     "actions": {

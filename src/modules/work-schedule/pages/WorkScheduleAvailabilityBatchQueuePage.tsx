@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 
 import { WorkScheduleSubnavigation } from '@modules/work-schedule/components/WorkScheduleSubnavigation';
 import { WorkScheduleDeadlineCue } from '@modules/work-schedule/components/WorkScheduleDeadlineCue';
+import { presentWorkScheduleApplication } from '@modules/work-schedule/presentation/work-schedule-application';
 import {
   useApplyAvailabilityLinesToMonthlyRosterMutation,
-  useApproveWorkScheduleAvailabilityBatchLinesMutation,
   useCancelWorkScheduleAvailabilityBatchLinesMutation,
   useMonthlyRosterList,
   useRejectWorkScheduleAvailabilityBatchLinesMutation,
@@ -124,7 +124,6 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
     },
     { enabled: canDecide && Boolean(detailQuery.data) },
   );
-  const approveMutation = useApproveWorkScheduleAvailabilityBatchLinesMutation();
   const rejectMutation = useRejectWorkScheduleAvailabilityBatchLinesMutation();
   const cancelMutation = useCancelWorkScheduleAvailabilityBatchLinesMutation();
   const applyMutation = useApplyAvailabilityLinesToMonthlyRosterMutation();
@@ -209,7 +208,35 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
       cancellationReason: action === 'cancel' ? decisionReason : undefined,
     };
     if (action === 'approve') {
-      await approveMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
+      const selectedRoster = (rosterQuery.data?.data ?? []).find(
+        (roster) => roster.monthlyRosterId === monthlyRosterId,
+      );
+      if (!selectedRoster) {
+        setValidationMessage(
+          t('work-schedule:availabilityBatches.validation.applySelectionRequired'),
+        );
+        return;
+      }
+      const result = await applyMutation.mutateAsync({
+        monthlyRosterId,
+        payload: {
+          availabilityLineIds: selectedReviewLineIds,
+          expectedRosterVersion: selectedRoster.draftVersion,
+          expectedRequestVersions: Object.fromEntries(
+            selectedReviewLines.map((line) => [
+              line.id,
+              typeof line.updatedAt === 'number' ? line.updatedAt : Date.parse(line.updatedAt),
+            ]),
+          ),
+          idempotencyKey: `availability-approve-apply:${detailQuery.data.id}:${selectedReviewLineIds
+            .slice()
+            .sort()
+            .join(',')}:${selectedRoster.draftVersion ?? 0}`,
+          applyNote: decisionNote,
+          scope: 'global',
+        },
+      });
+      setApplyResult(result);
     } else if (action === 'reject') {
       await rejectMutation.mutateAsync({ batchId: detailQuery.data.id, payload });
     } else {
@@ -251,6 +278,7 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
     setApplyNote('');
     setValidationMessage(null);
   };
+  const applyPresentation = applyResult ? presentWorkScheduleApplication(applyResult) : null;
 
   return (
     <PageContainer>
@@ -513,7 +541,11 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                         <div className="flex flex-wrap gap-2">
                           <Button
                             variant="primary"
-                            disabled={selectedReviewLines.length === 0 || approveMutation.isPending}
+                            disabled={
+                              selectedReviewLines.length === 0 ||
+                              !monthlyRosterId ||
+                              applyMutation.isPending
+                            }
                             onClick={() => requestDecision('approve')}
                           >
                             {t('work-schedule:availabilityBatches.actions.approve')}
@@ -709,6 +741,20 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
                       <h3 className="text-sm font-semibold text-text">
                         {t('work-schedule:availabilityBatches.apply.resultTitle')}
                       </h3>
+                      {applyPresentation ? (
+                        <p
+                          className={`mt-2 rounded border px-3 py-2 text-sm ${
+                            applyPresentation.reportsSuccess
+                              ? 'border-success text-success'
+                              : applyPresentation.tone === 'warning'
+                                ? 'border-warning text-warning'
+                                : 'border-danger text-danger'
+                          }`}
+                          role={applyPresentation.reportsSuccess ? 'status' : 'alert'}
+                        >
+                          {applyPresentation.state.replaceAll('_', ' ')}
+                        </p>
+                      ) : null}
                       <div className="mt-2 grid gap-2 text-sm sm:grid-cols-4">
                         <SummaryCard
                           label={t('work-schedule:availabilityBatches.apply.applied')}
@@ -785,7 +831,7 @@ export const WorkScheduleAvailabilityBatchQueuePage = (): JSX.Element => {
           cancelLabel={t('common:actions.cancel')}
           tone={pendingDecisionAction === 'approve' ? 'warning' : 'critical'}
           isSubmitting={
-            approveMutation.isPending || rejectMutation.isPending || cancelMutation.isPending
+            applyMutation.isPending || rejectMutation.isPending || cancelMutation.isPending
           }
           onCancel={() => setPendingDecisionAction(null)}
           onConfirm={() => {
