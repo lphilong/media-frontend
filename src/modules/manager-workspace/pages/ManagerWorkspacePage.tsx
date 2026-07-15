@@ -5,7 +5,6 @@ import {
   ClipboardList,
   Gem,
   LayoutDashboard,
-  Pencil,
   Plus,
   Send,
   Trash2,
@@ -13,7 +12,6 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -38,8 +36,6 @@ import {
   useCancelManagerRequestLineMutation,
   useManagerEventDetail,
   useManagerEvents,
-  useAddManagerPlatformEarningLineMutation,
-  useCreateManagerPlatformEarningBatchMutation,
   useManagerPlatformEarningBatchDetail,
   useManagerPlatformEarningBatches,
   useManagerPlatformEarningLines,
@@ -47,10 +43,7 @@ import {
   useManagerRequestBatchDetail,
   useManagerRequestBatchPages,
   useManagerWorkShiftPages,
-  useSubmitManagerPlatformEarningBatchMutation,
-  useUpdateManagerPlatformEarningLineMutation,
   type ManagerEventSummary,
-  type ManagerPlatformEarningLine,
   useSubmitManagerRequestBatchMutation,
   type ManagerWorkShiftList,
   type ManagerWorkspaceContext,
@@ -92,7 +85,6 @@ import {
   StatusBadge,
   SensitiveActionDialog,
   TechnicalDetailsDisclosure,
-  useMutationFeedback,
 } from '@shared/components/primitives';
 import { SessionArea } from '@shared/components/shell';
 import {
@@ -108,7 +100,6 @@ import {
   formatUtcMidnightDateLike,
   formatVietnamTimestamp,
   formatVietnamMonthLabel,
-  parseUtcMidnightDateInputValue,
   readReferenceDisplay,
 } from '@shared/formatting/formatters';
 
@@ -1961,89 +1952,30 @@ const ManagerEventSummaryCard = ({ event }: { event: ManagerEventSummary }): JSX
   );
 };
 
-type ManagerRevenueBatchFormValues = {
-  talentGroupId: string;
-  platformAccountId: string;
-  periodMonth: string;
-  sourceDateFrom: string;
-  sourceDateTo: string;
-};
-
-type ManagerRevenueLineFormValues = {
-  memberKey: string;
-  sourceDate: string;
-  rawQuantity: string;
-  externalSourceRef: string;
-  notes: string;
-};
-
 const ManagerRevenueSourceSlice = ({
   context,
 }: {
   context: ManagerWorkspaceContext;
 }): JSX.Element => {
   const { t } = useTranslation(['manager-workspace']);
-  const { notifyError, notifySuccess } = useMutationFeedback();
-  const canUseRevenueSource =
+  const canReadRevenueSource =
     context.modules.revenueSource.visible && context.scopes.talentGroups.length > 0;
-  const scopeQuery = useManagerPlatformEarningScope(canUseRevenueSource);
+  const scopeQuery = useManagerPlatformEarningScope(canReadRevenueSource);
   const [selectedTalentGroupId, setSelectedTalentGroupId] = useState<string>();
   const [selectedBatchId, setSelectedBatchId] = useState<string>();
-  const [editingLine, setEditingLine] = useState<ManagerPlatformEarningLine | null>(null);
   const activeTalentGroupId =
     selectedTalentGroupId ?? scopeQuery.data?.talentGroups[0]?.talentGroupId;
   const batchQuery = useManagerPlatformEarningBatches(
     { talentGroupId: activeTalentGroupId },
-    canUseRevenueSource && Boolean(activeTalentGroupId),
+    canReadRevenueSource && Boolean(activeTalentGroupId),
   );
   const batchDetailQuery = useManagerPlatformEarningBatchDetail(
     selectedBatchId,
-    canUseRevenueSource,
+    canReadRevenueSource,
   );
-  const linesQuery = useManagerPlatformEarningLines(selectedBatchId, canUseRevenueSource);
-  const createBatchMutation = useCreateManagerPlatformEarningBatchMutation();
-  const addLineMutation = useAddManagerPlatformEarningLineMutation();
-  const updateLineMutation = useUpdateManagerPlatformEarningLineMutation();
-  const submitBatchMutation = useSubmitManagerPlatformEarningBatchMutation();
-  const batchForm = useForm<ManagerRevenueBatchFormValues>({
-    defaultValues: {
-      talentGroupId: '',
-      platformAccountId: '',
-      periodMonth: '',
-      sourceDateFrom: '',
-      sourceDateTo: '',
-    },
-  });
-  const lineForm = useForm<ManagerRevenueLineFormValues>({
-    defaultValues: {
-      memberKey: '',
-      sourceDate: '',
-      rawQuantity: '',
-      externalSourceRef: '',
-      notes: '',
-    },
-  });
+  const linesQuery = useManagerPlatformEarningLines(selectedBatchId, canReadRevenueSource);
 
-  useEffect(() => {
-    if (activeTalentGroupId) {
-      batchForm.setValue('talentGroupId', activeTalentGroupId);
-    }
-  }, [activeTalentGroupId, batchForm]);
-
-  useEffect(() => {
-    if (!editingLine) {
-      return;
-    }
-    lineForm.reset({
-      memberKey: `${editingLine.memberEmploymentProfileId}|${editingLine.memberTalentId}`,
-      sourceDate: new Date(editingLine.sourceDate).toISOString().slice(0, 10),
-      rawQuantity: String(editingLine.rawQuantity),
-      externalSourceRef: editingLine.externalSourceRef ?? '',
-      notes: editingLine.notes ?? '',
-    });
-  }, [editingLine, lineForm]);
-
-  if (!canUseRevenueSource) {
+  if (!canReadRevenueSource) {
     return (
       <WorkspaceReadinessCard
         title={t('manager-workspace:revenue.noScopeTitle')}
@@ -2053,113 +1985,17 @@ const ManagerRevenueSourceSlice = ({
     );
   }
 
-  const selectedBatch = batchDetailQuery.data;
-  const activeAccounts =
-    scopeQuery.data?.platformAccounts.filter(
-      (account) => account.ownerTalentGroupId === activeTalentGroupId,
-    ) ?? [];
   const activeMembers =
     scopeQuery.data?.talentGroups.find((group) => group.talentGroupId === activeTalentGroupId)
       ?.members ?? [];
-  const canEditSelectedBatch = selectedBatch?.status === 'DRAFT';
-
-  const submitBatchForm = batchForm.handleSubmit(async (values) => {
-    const from = parseUtcMidnightDateInputValue(values.sourceDateFrom);
-    const to = parseUtcMidnightDateInputValue(values.sourceDateTo);
-    if (!from || !to || !values.platformAccountId || !values.talentGroupId || !values.periodMonth) {
-      return;
-    }
-    const account = activeAccounts.find((item) => item.id === values.platformAccountId);
-    if (!account) return;
-    try {
-      const batch = await createBatchMutation.mutateAsync({
-        payload: {
-          platform: account.platform,
-          platformAccountId: account.id,
-          talentGroupId: values.talentGroupId,
-          sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
-          periodMonth: values.periodMonth,
-          sourceDateFrom: from,
-          sourceDateTo: to,
-        },
-      });
-      setSelectedBatchId(batch.id);
-      notifySuccess('manager-workspace:revenue.feedback.batchCreated');
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  });
-
-  const submitLineForm = lineForm.handleSubmit(async (values) => {
-    if (!selectedBatch || !canEditSelectedBatch) return;
-    const sourceDate = parseUtcMidnightDateInputValue(values.sourceDate);
-    const [memberEmploymentProfileId, memberTalentId] = values.memberKey.split('|');
-    const rawQuantity = Number(values.rawQuantity);
-    if (
-      !sourceDate ||
-      !memberEmploymentProfileId ||
-      !memberTalentId ||
-      !Number.isInteger(rawQuantity)
-    ) {
-      return;
-    }
-    try {
-      if (editingLine) {
-        await updateLineMutation.mutateAsync({
-          batchId: selectedBatch.id,
-          lineId: editingLine.id,
-          payload: {
-            sourceDate,
-            memberEmploymentProfileId,
-            memberTalentId,
-            rawQuantity,
-            externalSourceRef: values.externalSourceRef.trim() || null,
-            notes: values.notes.trim() || null,
-          },
-        });
-        setEditingLine(null);
-      } else {
-        await addLineMutation.mutateAsync({
-          batchId: selectedBatch.id,
-          payload: {
-            sourceDate,
-            memberEmploymentProfileId,
-            memberTalentId,
-            rawQuantity,
-            externalSourceRef: values.externalSourceRef.trim() || null,
-            notes: values.notes.trim() || null,
-          },
-        });
-      }
-      lineForm.reset({
-        memberKey: '',
-        sourceDate: '',
-        rawQuantity: '',
-        externalSourceRef: '',
-        notes: '',
-      });
-      notifySuccess('manager-workspace:revenue.feedback.lineSaved');
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  });
-
-  const submitSelectedBatch = async (): Promise<void> => {
-    if (!selectedBatch) return;
-    try {
-      await submitBatchMutation.mutateAsync({ batchId: selectedBatch.id });
-      notifySuccess('manager-workspace:revenue.feedback.batchSubmitted');
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
+  const selectedBatch = batchDetailQuery.data;
 
   return (
     <div className="space-y-4" data-testid="manager-revenue-source-panel">
       <WorkspaceReadinessCard
         title={t('manager-workspace:revenue.title')}
         message={t('manager-workspace:revenue.boundaryHelper')}
-        badgeLabel={t('manager-workspace:status.actionable')}
+        badgeLabel={t('manager-workspace:status.readOnly')}
       />
 
       {scopeQuery.isLoading ? <LoadingState lines={4} /> : null}
@@ -2172,91 +2008,31 @@ const ManagerRevenueSourceSlice = ({
         />
       ) : null}
 
-      {scopeQuery.data && activeAccounts.length === 0 ? (
-        <EmptyState
-          title={t('manager-workspace:revenue.noEligibleAccountTitle')}
-          message={t('manager-workspace:revenue.noEligibleAccountMessage')}
-        />
-      ) : null}
-
-      <form
-        className="rounded border border-border bg-panel p-4"
-        onSubmit={(event) => void submitBatchForm(event)}
-      >
-        <h2 className="text-base font-semibold text-text">
-          {t('manager-workspace:revenue.createBatchTitle')}
-        </h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-5">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-xs uppercase text-muted">
-              {t('manager-workspace:revenue.fields.talentGroup')}
-            </span>
-            <select
-              className="rounded border border-border bg-bg px-2 py-1.5"
-              {...batchForm.register('talentGroupId')}
-              value={activeTalentGroupId ?? ''}
-              onChange={(event) => {
-                setSelectedTalentGroupId(event.target.value);
-                batchForm.setValue('talentGroupId', event.target.value);
-              }}
-            >
-              {(scopeQuery.data?.talentGroups ?? []).map((group) => (
-                <option key={group.talentGroupId} value={group.talentGroupId}>
-                  {context.scopes.talentGroups.find(
-                    (scope) => scope.talentGroupId === group.talentGroupId,
-                  )?.name ?? group.talentGroupId}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-xs uppercase text-muted">
-              {t('manager-workspace:revenue.fields.platformAccount')}
-            </span>
-            <select
-              className="rounded border border-border bg-bg px-2 py-1.5"
-              {...batchForm.register('platformAccountId')}
-            >
-              <option value="">{t('manager-workspace:values.notAvailable')}</option>
-              {activeAccounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.displayName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <input
-            type="month"
-            className="rounded border border-border bg-bg px-2 py-1.5 text-sm"
-            aria-label={t('manager-workspace:revenue.fields.periodMonth')}
-            {...batchForm.register('periodMonth')}
-          />
-          <input
-            type="date"
-            className="rounded border border-border bg-bg px-2 py-1.5 text-sm"
-            aria-label={t('manager-workspace:revenue.fields.sourceDateFrom')}
-            {...batchForm.register('sourceDateFrom')}
-          />
-          <input
-            type="date"
-            className="rounded border border-border bg-bg px-2 py-1.5 text-sm"
-            aria-label={t('manager-workspace:revenue.fields.sourceDateTo')}
-            {...batchForm.register('sourceDateTo')}
-          />
-        </div>
-        <button
-          type="submit"
-          className="mt-3 inline-flex items-center gap-2 rounded border border-accent px-3 py-2 text-sm font-medium text-accent"
-          disabled={createBatchMutation.isPending || activeAccounts.length === 0}
-        >
-          <Plus className="size-4" />
-          {t('manager-workspace:revenue.actions.createBatch')}
-        </button>
-      </form>
-
       <section className="rounded border border-border bg-panel p-4">
-        <h2 className="text-base font-semibold text-text">
-          {t('manager-workspace:revenue.ownBatches')}
+        <label className="flex max-w-md flex-col gap-1 text-sm">
+          <span className="text-xs uppercase text-muted">
+            {t('manager-workspace:revenue.fields.talentGroup')}
+          </span>
+          <select
+            className="rounded border border-border bg-bg px-2 py-1.5"
+            value={activeTalentGroupId ?? ''}
+            onChange={(event) => {
+              setSelectedTalentGroupId(event.target.value);
+              setSelectedBatchId(undefined);
+            }}
+          >
+            {(scopeQuery.data?.talentGroups ?? []).map((group) => (
+              <option key={group.talentGroupId} value={group.talentGroupId}>
+                {context.scopes.talentGroups.find(
+                  (scope) => scope.talentGroupId === group.talentGroupId,
+                )?.name ?? group.talentGroupId}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <h2 className="mt-4 text-base font-semibold text-text">
+          {t('manager-workspace:revenue.officialBatches')}
         </h2>
         <div className="mt-3 grid gap-3">
           {(batchQuery.data?.items ?? []).map((batch) => (
@@ -2287,86 +2063,20 @@ const ManagerRevenueSourceSlice = ({
 
       {selectedBatch ? (
         <section className="space-y-4 rounded border border-border bg-panel p-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-text">{selectedBatch.batchCode}</h2>
               <p className="text-sm text-muted">
                 {formatUtcMidnightDateLike(selectedBatch.sourceDateFrom)} -{' '}
                 {formatUtcMidnightDateLike(selectedBatch.sourceDateTo)}
               </p>
-              {selectedBatch.rejectionReason ? (
-                <p className="mt-1 text-sm text-danger">{selectedBatch.rejectionReason}</p>
-              ) : null}
             </div>
-            <div className="flex flex-wrap gap-2">
-              <StatusBadge
-                label={t(`manager-workspace:revenue.statuses.${selectedBatch.status}`)}
-                status={selectedBatch.status}
-                toneByStatus={revenueBatchStatusTone}
-              />
-              {selectedBatch.status === 'DRAFT' ? (
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 rounded border border-accent px-3 py-2 text-sm font-medium text-accent"
-                  disabled={selectedBatch.sourceLineCount < 1 || submitBatchMutation.isPending}
-                  onClick={() => void submitSelectedBatch()}
-                >
-                  <Send className="size-4" />
-                  {t('manager-workspace:revenue.actions.submitBatch')}
-                </button>
-              ) : null}
-            </div>
+            <StatusBadge
+              label={t(`manager-workspace:revenue.statuses.${selectedBatch.status}`)}
+              status={selectedBatch.status}
+              toneByStatus={revenueBatchStatusTone}
+            />
           </div>
-
-          {canEditSelectedBatch ? (
-            <form
-              className="grid gap-3 rounded border border-border bg-bg p-3 md:grid-cols-5"
-              onSubmit={(event) => void submitLineForm(event)}
-            >
-              <select
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                aria-label={t('manager-workspace:revenue.fields.member')}
-                {...lineForm.register('memberKey')}
-              >
-                <option value="">{t('manager-workspace:values.notAvailable')}</option>
-                {activeMembers.map((member) => (
-                  <option
-                    key={member.employmentProfileId}
-                    value={`${member.employmentProfileId}|${member.talentId}`}
-                  >
-                    {member.displayName}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="date"
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                aria-label={t('manager-workspace:revenue.fields.sourceDate')}
-                {...lineForm.register('sourceDate')}
-              />
-              <input
-                type="number"
-                min="1"
-                step="1"
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                aria-label={t('manager-workspace:revenue.fields.rawQuantity')}
-                {...lineForm.register('rawQuantity')}
-              />
-              <input
-                className="rounded border border-border bg-panel px-2 py-1.5 text-sm"
-                aria-label={t('manager-workspace:revenue.fields.externalSourceRef')}
-                {...lineForm.register('externalSourceRef')}
-              />
-              <button
-                type="submit"
-                className="rounded border border-accent px-3 py-1.5 text-sm text-accent"
-              >
-                {editingLine
-                  ? t('manager-workspace:revenue.actions.updateLine')
-                  : t('manager-workspace:revenue.actions.addLine')}
-              </button>
-            </form>
-          ) : null}
 
           <div className="overflow-x-auto rounded border border-border">
             <table className="min-w-full text-left text-sm">
@@ -2381,9 +2091,6 @@ const ManagerRevenueSourceSlice = ({
                   <th className="px-3 py-2 font-medium">
                     {t('manager-workspace:revenue.fields.rawQuantity')}
                   </th>
-                  <th className="px-3 py-2 font-medium">
-                    {t('manager-workspace:revenue.fields.actions')}
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -2396,20 +2103,6 @@ const ManagerRevenueSourceSlice = ({
                       )?.displayName ?? line.memberEmploymentProfileId}
                     </td>
                     <td className="px-3 py-3">{formatDecimal(line.rawQuantity, 'vi-VN', 0)}</td>
-                    <td className="px-3 py-3">
-                      {canEditSelectedBatch ? (
-                        <button
-                          type="button"
-                          className="inline-flex rounded border border-border p-2"
-                          aria-label={t('manager-workspace:revenue.actions.editLine')}
-                          onClick={() => setEditingLine(line)}
-                        >
-                          <Pencil className="size-4" />
-                        </button>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
                   </tr>
                 ))}
               </tbody>

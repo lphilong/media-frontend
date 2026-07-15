@@ -18,9 +18,11 @@ import type {
 
 const kpiCapabilities = {
   read: true,
+  readProgress: true,
   manageAllocation: false,
   enterActual: false,
   correctActual: false,
+  approveAllocation: false,
   finalize: false,
 } as const;
 
@@ -458,8 +460,6 @@ let managerSchedulingAccountContextEligible = true;
 let managerSchedulingResponsibilityEligible = true;
 let managerSchedulingStructuredScopeEligible = true;
 let managerSchedulingPageSize = 100;
-let managerPlatformEarningBatchSeed = 1;
-let managerPlatformEarningLineSeed = 1;
 let managerPlatformAccountEligible = true;
 let managerPlatformEarningScope: ManagerPlatformEarningScope;
 let managerPlatformEarningBatches: ManagerPlatformEarningBatch[] = [];
@@ -530,18 +530,6 @@ const paginateManagerItems = <T>(items: readonly T[], cursor: string | null) => 
   return {
     items: pageItems,
     ...(nextOffset < items.length ? { nextCursor: String(nextOffset) } : {}),
-  };
-};
-
-const recalculateManagerPlatformEarningBatch = (
-  batch: ManagerPlatformEarningBatch,
-): ManagerPlatformEarningBatch => {
-  const lines = managerPlatformEarningLines[batch.id] ?? [];
-  return {
-    ...batch,
-    sourceLineCount: lines.length,
-    rawQuantityTotal: lines.reduce((sum, line) => sum + line.rawQuantity, 0),
-    updatedAt: Date.now(),
   };
 };
 
@@ -860,8 +848,6 @@ export const resetManagerWorkspaceMockData = (): void => {
   managerSchedulingResponsibilityEligible = true;
   managerSchedulingStructuredScopeEligible = true;
   managerSchedulingPageSize = 100;
-  managerPlatformEarningBatchSeed = 1;
-  managerPlatformEarningLineSeed = 1;
   managerPlatformAccountEligible = true;
   managerPlatformEarningScope = seedManagerPlatformEarningScope();
   managerPlatformEarningBatches = seedManagerPlatformEarningBatches();
@@ -1100,66 +1086,6 @@ export const managerWorkspaceHandlers = [
       .filter((batch) => !status || batch.status === status);
     return HttpResponse.json({ data: { items, nextCursor: null } });
   }),
-  http.post('*/admin/manager-workspace/revenue/platform-earning-batches', async ({ request }) => {
-    if (!managerRevenueVisible()) {
-      return managerRevenueForbidden();
-    }
-    const body = (await request.json()) as {
-      platform?: string;
-      platformAccountId?: string;
-      talentGroupId?: string;
-      sourceType?: 'TIKTOK_LIVESTREAM_DIAMOND';
-      periodMonth?: string;
-      sourceDateFrom?: number;
-      sourceDateTo?: number;
-    };
-    const account = managerPlatformEarningScope.platformAccounts.find(
-      (item) =>
-        item.id === body.platformAccountId &&
-        item.ownerTalentGroupId === body.talentGroupId &&
-        item.platform === body.platform,
-    );
-    const scope = managerPlatformEarningScope.talentGroups.find(
-      (item) => item.talentGroupId === body.talentGroupId,
-    );
-    if (
-      !managerPlatformAccountEligible ||
-      !account ||
-      !scope ||
-      body.sourceType !== 'TIKTOK_LIVESTREAM_DIAMOND'
-    ) {
-      return HttpResponse.json({ message: 'source scope is not eligible' }, { status: 422 });
-    }
-    managerPlatformEarningBatchSeed += 1;
-    const now = Date.now();
-    const batch: ManagerPlatformEarningBatch = {
-      id: `manager-platform-batch-${managerPlatformEarningBatchSeed}`,
-      batchCode: `PEB-${String(managerPlatformEarningBatchSeed).padStart(6, '0')}`,
-      platform: account.platform,
-      platformAccountId: account.id,
-      talentGroupId: scope.talentGroupId,
-      sourceType: 'TIKTOK_LIVESTREAM_DIAMOND',
-      sourceUnit: 'DIAMOND',
-      periodMonth: body.periodMonth ?? '2026-06',
-      sourceDateFrom: Number(body.sourceDateFrom),
-      sourceDateTo: Number(body.sourceDateTo),
-      status: 'DRAFT',
-      sourceLineCount: 0,
-      rawQuantityTotal: 0,
-      submittedAt: null,
-      rejectedAt: null,
-      rejectionReason: null,
-      voidedAt: null,
-      voidReason: null,
-      approvedAt: null,
-      revenueEntryLinked: false,
-      createdAt: now,
-      updatedAt: now,
-    };
-    managerPlatformEarningBatches.unshift(batch);
-    managerPlatformEarningLines[batch.id] = [];
-    return HttpResponse.json({ data: batch });
-  }),
   http.get(
     '*/admin/manager-workspace/revenue/platform-earning-batches/:batchId/source-lines',
     ({ params }) => {
@@ -1178,136 +1104,6 @@ export const managerWorkspaceHandlers = [
       return HttpResponse.json({
         data: { items: managerPlatformEarningLines[batch.id] ?? [], nextCursor: null },
       });
-    },
-  ),
-  http.post(
-    '*/admin/manager-workspace/revenue/platform-earning-batches/:batchId/source-lines',
-    async ({ params, request }) => {
-      if (!managerRevenueVisible()) {
-        return managerRevenueForbidden();
-      }
-      const batchIndex = managerPlatformEarningBatches.findIndex(
-        (item) => item.id === String(params.batchId),
-      );
-      if (batchIndex < 0) {
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      }
-      const batch = managerPlatformEarningBatches[batchIndex];
-      if (!isManagerBatchPlatformAccountEligible(batch)) {
-        return managerPlatformAccountForbidden();
-      }
-      if (batch.status !== 'DRAFT') {
-        return HttpResponse.json({ message: 'source batch is not editable' }, { status: 409 });
-      }
-      const body = (await request.json()) as {
-        sourceDate?: number;
-        memberEmploymentProfileId?: string;
-        memberTalentId?: string;
-        rawQuantity?: number;
-        externalSourceRef?: string | null;
-        notes?: string | null;
-      };
-      const member = managerPlatformEarningScope.talentGroups
-        .find((group) => group.talentGroupId === batch.talentGroupId)
-        ?.members.find(
-          (item) =>
-            item.employmentProfileId === body.memberEmploymentProfileId &&
-            item.talentId === body.memberTalentId,
-        );
-      if (!member || !Number.isFinite(body.rawQuantity)) {
-        return HttpResponse.json({ message: 'source line is not eligible' }, { status: 422 });
-      }
-      managerPlatformEarningLineSeed += 1;
-      const now = Date.now();
-      const line: ManagerPlatformEarningLine = {
-        id: `manager-platform-line-${managerPlatformEarningLineSeed}`,
-        batchId: batch.id,
-        sourceDate: Number(body.sourceDate),
-        memberEmploymentProfileId: member.employmentProfileId,
-        memberTalentId: member.talentId,
-        rawQuantity: Number(body.rawQuantity),
-        externalSourceRef: body.externalSourceRef ?? null,
-        notes: body.notes ?? null,
-        createdAt: now,
-        updatedAt: now,
-      };
-      managerPlatformEarningLines[batch.id] = [
-        ...(managerPlatformEarningLines[batch.id] ?? []),
-        line,
-      ];
-      managerPlatformEarningBatches[batchIndex] = recalculateManagerPlatformEarningBatch(batch);
-      return HttpResponse.json({ data: line });
-    },
-  ),
-  http.patch(
-    '*/admin/manager-workspace/revenue/platform-earning-batches/:batchId/source-lines/:lineId',
-    async ({ params, request }) => {
-      if (!managerRevenueVisible()) {
-        return managerRevenueForbidden();
-      }
-      const batchIndex = managerPlatformEarningBatches.findIndex(
-        (item) => item.id === String(params.batchId),
-      );
-      if (batchIndex < 0) {
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      }
-      const batch = managerPlatformEarningBatches[batchIndex];
-      if (!isManagerBatchPlatformAccountEligible(batch)) {
-        return managerPlatformAccountForbidden();
-      }
-      if (batch.status !== 'DRAFT') {
-        return HttpResponse.json({ message: 'source batch is not editable' }, { status: 409 });
-      }
-      const lines = managerPlatformEarningLines[batch.id] ?? [];
-      const lineIndex = lines.findIndex((item) => item.id === String(params.lineId));
-      if (lineIndex < 0) {
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      }
-      const body = (await request.json()) as Partial<ManagerPlatformEarningLine>;
-      const updatedLine: ManagerPlatformEarningLine = {
-        ...lines[lineIndex],
-        sourceDate: body.sourceDate ?? lines[lineIndex].sourceDate,
-        memberEmploymentProfileId:
-          body.memberEmploymentProfileId ?? lines[lineIndex].memberEmploymentProfileId,
-        memberTalentId: body.memberTalentId ?? lines[lineIndex].memberTalentId,
-        rawQuantity: body.rawQuantity ?? lines[lineIndex].rawQuantity,
-        externalSourceRef: body.externalSourceRef ?? lines[lineIndex].externalSourceRef,
-        notes: body.notes ?? lines[lineIndex].notes,
-        updatedAt: Date.now(),
-      };
-      managerPlatformEarningLines[batch.id] = lines.map((line) =>
-        line.id === updatedLine.id ? updatedLine : line,
-      );
-      managerPlatformEarningBatches[batchIndex] = recalculateManagerPlatformEarningBatch(batch);
-      return HttpResponse.json({ data: updatedLine });
-    },
-  ),
-  http.post(
-    '*/admin/manager-workspace/revenue/platform-earning-batches/:batchId/submit',
-    ({ params }) => {
-      if (!managerRevenueVisible()) {
-        return managerRevenueForbidden();
-      }
-      const batchIndex = managerPlatformEarningBatches.findIndex(
-        (item) => item.id === String(params.batchId),
-      );
-      if (batchIndex < 0) {
-        return HttpResponse.json({ message: 'errors:notFound.message' }, { status: 404 });
-      }
-      const batch = managerPlatformEarningBatches[batchIndex];
-      if (!isManagerBatchPlatformAccountEligible(batch)) {
-        return managerPlatformAccountForbidden();
-      }
-      if (batch.status !== 'DRAFT' || (managerPlatformEarningLines[batch.id] ?? []).length < 1) {
-        return HttpResponse.json({ message: 'source batch cannot be submitted' }, { status: 409 });
-      }
-      const submitted: ManagerPlatformEarningBatch = {
-        ...recalculateManagerPlatformEarningBatch(batch),
-        status: 'SUBMITTED',
-        submittedAt: Date.now(),
-      };
-      managerPlatformEarningBatches[batchIndex] = submitted;
-      return HttpResponse.json({ data: submitted });
     },
   ),
   http.get('*/admin/manager-workspace/revenue/platform-earning-batches/:batchId', ({ params }) => {

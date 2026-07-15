@@ -360,6 +360,7 @@ const adminFullPermissionCodes = [
   'kpi.updateDraft',
   'kpi.publish',
   'kpi.manageAllocation',
+  'kpi.approveAllocation',
   'kpi.archive',
   'kpi.enterActual',
   'kpi.correctActual',
@@ -380,6 +381,7 @@ const adminFullPermissionCodes = [
   'revenueLedger.update',
   'revenueLedger.manageLifecycle',
   'revenueLedger.reconcile',
+  'revenueLedger.platformEarning.read',
   'dashboardLite.read',
 ];
 

@@ -116,6 +116,9 @@ const renderRoute = async (path: string, setup?: () => void): Promise<void> => {
   cleanup();
   vi.setSystemTime(new Date('2026-06-15T00:00:00+07:00'));
   await setLocale('en');
+  if (path === '/' || path.startsWith('/manager')) {
+    await import('@modules/manager-workspace/pages/ManagerWorkspacePage');
+  }
   resetKpiMockData();
   resetManagerWorkspaceMockData();
   mockAuthAdapter.logoutRedirect.mockClear();
@@ -1943,15 +1946,10 @@ describe('/manager workspace route', () => {
     ).toThrow();
   });
 
-  it('uses only Manager revenue endpoints and exposes source submission without Finance controls', async () => {
+  it('uses only GET Manager revenue endpoints and exposes a read-only Daily Source view', async () => {
     const user = userEvent.setup();
-    let managerRevenueCalls = 0;
     let adminRevenueCalls = 0;
     server.use(
-      http.all('*/admin/manager-workspace/revenue/*', () => {
-        managerRevenueCalls += 1;
-        return undefined;
-      }),
       http.all('*/admin/revenue-ledger/*', () => {
         adminRevenueCalls += 1;
         return HttpResponse.json({ data: [] });
@@ -1960,24 +1958,24 @@ describe('/manager workspace route', () => {
 
     await renderRoute('/manager', () => {
       setMockManagerWorkspaceContext(managerWorkspaceTalentGroupOnlyContext());
-      setMockCurrentActorCapabilities(
-        managerCapabilities({
-          permissions: ['revenueLedger.platformEarning.submit'],
-          scopeGrants: {},
-        }),
-      );
     });
 
     await user.click(await screen.findByTestId('manager-module-revenue'));
     expect(await screen.findByTestId('manager-revenue-source-panel')).toBeInTheDocument();
-    expect(screen.getByText(/Manager submission is not revenue approval/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/commission, payment, payroll, tax, or accounting/i),
-    ).toBeInTheDocument();
-    for (const action of ['Approve', 'Reject', 'Void', 'Archive', 'Create revenue entry']) {
+    expect(screen.getByText(/Read-only Daily Source view/i)).toBeInTheDocument();
+    for (const action of [
+      'Create draft source batch',
+      'Add source line',
+      'Edit source line',
+      'Submit source batch',
+      'Approve',
+      'Reject',
+      'Void',
+      'Archive',
+      'Create revenue entry',
+    ]) {
       expect(screen.queryByRole('button', { name: action })).not.toBeInTheDocument();
     }
-    await waitFor(() => expect(managerRevenueCalls).toBeGreaterThan(0));
     expect(adminRevenueCalls).toBe(0);
   });
 

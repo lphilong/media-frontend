@@ -37,9 +37,11 @@ const referenceNameSchema = z
 const kpiCapabilitiesSchema = z
   .object({
     read: z.boolean(),
+    readProgress: z.boolean(),
     manageAllocation: z.boolean(),
     enterActual: z.boolean(),
     correctActual: z.boolean(),
+    approveAllocation: z.boolean(),
     finalize: z.literal(false),
   })
   .strict();
@@ -118,7 +120,7 @@ const revenueSourceModuleSchema = z.union([
         'NO_MANAGER_RESPONSIBILITY_ASSIGNED',
         'NO_STRUCTURED_SCOPE_ASSIGNED',
         'MISSING_TALENT_GROUP_PREREQUISITE',
-        'MISSING_REVENUE_SOURCE_SUBMIT_CAPABILITY',
+        'MISSING_REVENUE_SOURCE_READ_CAPABILITY',
       ]),
     })
     .strict(),
@@ -711,10 +713,6 @@ const managerPlatformEarningLineListResponseSchema = z
       .strict(),
   })
   .strict();
-const managerPlatformEarningLineResponseSchema = z
-  .object({ data: managerPlatformEarningLineSchema })
-  .strict();
-
 export type ManagerPlatformEarningStatus = z.infer<typeof managerPlatformEarningStatusSchema>;
 export type ManagerPlatformEarningScope = z.infer<typeof managerPlatformEarningScopeSchema>;
 export type ManagerPlatformEarningBatch = z.infer<typeof managerPlatformEarningBatchSchema>;
@@ -852,71 +850,6 @@ export const fetchManagerPlatformEarningLines = async (
   });
 
   return managerPlatformEarningLineListResponseSchema.parse(response).data.items;
-};
-
-export const createManagerPlatformEarningBatch = async (
-  payload: ManagerPlatformEarningBatchPayload,
-): Promise<ManagerPlatformEarningBatch> => {
-  const response = await apiRequest<unknown, ManagerPlatformEarningBatchPayload>({
-    method: 'POST',
-    url: '/admin/manager-workspace/revenue/platform-earning-batches',
-    data: payload,
-  });
-
-  return managerPlatformEarningBatchResponseSchema.parse(response).data;
-};
-
-export const addManagerPlatformEarningLine = async (
-  batchId: string,
-  payload: Required<
-    Pick<
-      ManagerPlatformEarningLinePayload,
-      'sourceDate' | 'memberTalentId' | 'memberEmploymentProfileId' | 'rawQuantity'
-    >
-  > &
-    Pick<ManagerPlatformEarningLinePayload, 'externalSourceRef' | 'notes'>,
-): Promise<ManagerPlatformEarningLine> => {
-  const response = await apiRequest<unknown, typeof payload>({
-    method: 'POST',
-    url: `/admin/manager-workspace/revenue/platform-earning-batches/${encodeURIComponent(
-      batchId,
-    )}/source-lines`,
-    data: payload,
-  });
-
-  return managerPlatformEarningLineResponseSchema.parse(response).data;
-};
-
-export const updateManagerPlatformEarningLine = async (
-  batchId: string,
-  lineId: string,
-  payload: ManagerPlatformEarningLinePayload,
-): Promise<ManagerPlatformEarningLine> => {
-  const response = await apiRequest<unknown, ManagerPlatformEarningLinePayload>({
-    method: 'PATCH',
-    url: `/admin/manager-workspace/revenue/platform-earning-batches/${encodeURIComponent(
-      batchId,
-    )}/source-lines/${encodeURIComponent(lineId)}`,
-    data: Object.fromEntries(
-      Object.entries(payload).filter(([, value]) => value !== undefined),
-    ) as ManagerPlatformEarningLinePayload,
-  });
-
-  return managerPlatformEarningLineResponseSchema.parse(response).data;
-};
-
-export const submitManagerPlatformEarningBatch = async (
-  batchId: string,
-): Promise<ManagerPlatformEarningBatch> => {
-  const response = await apiRequest<unknown>({
-    method: 'POST',
-    url: `/admin/manager-workspace/revenue/platform-earning-batches/${encodeURIComponent(
-      batchId,
-    )}/submit`,
-    data: {},
-  });
-
-  return managerPlatformEarningBatchResponseSchema.parse(response).data;
 };
 
 export const useManagerPlatformEarningScope = (enabled: boolean) =>
@@ -1830,10 +1763,6 @@ const invalidateManagerAvailabilityBatches = async (
   await queryClient.invalidateQueries({ queryKey: MANAGER_AVAILABILITY_BATCHES_QUERY_KEY });
 };
 
-const invalidateManagerRevenueSource = async (queryClient: ReturnType<typeof useQueryClient>) => {
-  await queryClient.invalidateQueries({ queryKey: MANAGER_REVENUE_QUERY_KEY });
-};
-
 export const useSubmitManagerRequestBatchMutation = () => {
   const queryClient = useQueryClient();
 
@@ -1885,71 +1814,6 @@ export const useSubmitManagerAvailabilityBatchMutation = () => {
       submitManagerAvailabilityBatch(payload),
     onSuccess: async () => {
       await invalidateManagerAvailabilityBatches(queryClient);
-    },
-  });
-};
-
-export const useCreateManagerPlatformEarningBatchMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ payload }: { payload: ManagerPlatformEarningBatchPayload }) =>
-      createManagerPlatformEarningBatch(payload),
-    onSuccess: async () => {
-      await invalidateManagerRevenueSource(queryClient);
-    },
-  });
-};
-
-export const useAddManagerPlatformEarningLineMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      batchId,
-      payload,
-    }: {
-      batchId: string;
-      payload: Required<
-        Pick<
-          ManagerPlatformEarningLinePayload,
-          'sourceDate' | 'memberTalentId' | 'memberEmploymentProfileId' | 'rawQuantity'
-        >
-      > &
-        Pick<ManagerPlatformEarningLinePayload, 'externalSourceRef' | 'notes'>;
-    }) => addManagerPlatformEarningLine(batchId, payload),
-    onSuccess: async () => {
-      await invalidateManagerRevenueSource(queryClient);
-    },
-  });
-};
-
-export const useUpdateManagerPlatformEarningLineMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      batchId,
-      lineId,
-      payload,
-    }: {
-      batchId: string;
-      lineId: string;
-      payload: ManagerPlatformEarningLinePayload;
-    }) => updateManagerPlatformEarningLine(batchId, lineId, payload),
-    onSuccess: async () => {
-      await invalidateManagerRevenueSource(queryClient);
-    },
-  });
-};
-
-export const useSubmitManagerPlatformEarningBatchMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ batchId }: { batchId: string }) => submitManagerPlatformEarningBatch(batchId),
-    onSuccess: async () => {
-      await invalidateManagerRevenueSource(queryClient);
     },
   });
 };

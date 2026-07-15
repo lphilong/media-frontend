@@ -334,15 +334,15 @@
   },
   "revenue": {
     "title": "Daily platform source",
-    "boundaryHelper": "Managers only submit source data within assigned scope. Finance reviews and creates official Revenue Entries. Manager submission is not revenue approval and does not create commission, payment, payroll, tax, or accounting.",
+    "boundaryHelper": "Read-only Daily Source view for the exact managed group. Report missing or unusual source data to Admin, Ops, or Finance. Managers cannot create, submit, confirm, or finalize official source or Revenue data here.",
     "noScopeTitle": "Daily source unavailable",
-    "noScopeMessage": "No assigned Talent Group source submission scope is available.",
+    "noScopeMessage": "No assigned Talent Group read scope is available.",
     "loadErrorTitle": "Source scope unavailable",
     "loadErrorMessage": "Assigned source submission scope could not be loaded.",
     "noEligibleAccountTitle": "No eligible platform account",
     "noEligibleAccountMessage": "No active monetized livestream platform account is configured for the selected Talent Group.",
     "createBatchTitle": "Create draft source batch",
-    "ownBatches": "My source batches",
+    "officialBatches": "Official source batches",
     "fields": {
       "talentGroup": "Talent Group",
       "platformAccount": "Platform account",
