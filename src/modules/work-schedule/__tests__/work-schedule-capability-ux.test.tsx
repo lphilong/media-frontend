@@ -248,6 +248,39 @@ describe('work schedule capability UX hints', () => {
     expect(reject).toBeEnabled();
   });
 
+  it('keeps Admin decisions but removes requester self-cancel for the same pending request', async () => {
+    mockCapabilities({
+      id: 'team-manager-user-1',
+      roles: ['PRODUCTION_OPS'],
+      permissions: [
+        'workSchedule.read',
+        'workSchedule.create',
+        'workSchedule.update',
+        'workSchedule.manageLifecycle',
+      ],
+      workScheduleScopes: ['global'],
+    });
+
+    renderRoute('/work-schedule/global-ops');
+
+    expect(await screen.findByText('WSR-202605-000001')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.approve'),
+      }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.reject'),
+      }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole('button', {
+        name: i18n.t('work-schedule:requests.actions.cancel'),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it('counts pending lines from partially approved Admin batches and keeps card CTAs navigation-only', async () => {
     const user = userEvent.setup();
     let mutationCalls = 0;

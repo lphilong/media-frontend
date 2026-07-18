@@ -1680,7 +1680,7 @@ describe('/manager workspace route', () => {
     expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
   });
 
-  it('cancels own pending availability line and batch only with a reason through Flow B endpoints', async () => {
+  it('does not offer maker cancellation for pending availability lines or batches', async () => {
     const user = userEvent.setup();
     let cancelLineCalls = 0;
     let cancelBatchCalls = 0;
@@ -1712,27 +1712,12 @@ describe('/manager workspace route', () => {
     await user.click(await screen.findByRole('tab', { name: 'Availability' }, { timeout: 5000 }));
     expect((await screen.findAllByText('AVB-000001')).length).toBeGreaterThan(0);
 
-    const cancelLine = screen.getAllByRole('button', { name: 'Cancel pending line' })[0];
-    expect(cancelLine).toBeDefined();
-    if (!cancelLine) {
-      return;
-    }
-    const reason = screen.getByLabelText('Cancellation reason');
-    await user.type(reason, 'Manager cancels this pending availability line.');
-    await user.click(cancelLine);
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Keep availability' }));
+    expect(screen.queryByLabelText('Cancellation reason')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel pending line' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel pending batch' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(cancelLineCalls).toBe(0);
-    await user.click(cancelLine);
-    await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
-    await waitFor(() => expect(cancelLineCalls).toBe(1));
-
-    const cancelBatch = screen.getByRole('button', { name: 'Cancel pending batch' });
-    await user.type(reason, 'Manager cancels remaining pending availability.');
-    await user.click(cancelBatch);
-    await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
-    await waitFor(() => expect(cancelBatchCalls).toBe(1));
-
+    expect(cancelBatchCalls).toBe(0);
     expect(rawAdminAvailabilityCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject|apply/i })).not.toBeInTheDocument();
   }, 20_000);
@@ -1853,10 +1838,23 @@ describe('/manager workspace route', () => {
     expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
   }, 20000);
 
-  it('cancels own pending request lines and batches with a manager cancellation reason only', async () => {
+  it('does not offer maker cancellation for pending request lines or batches', async () => {
     const user = userEvent.setup();
     let rawAdminBatchCalls = 0;
+    let cancelLineCalls = 0;
+    let cancelBatchCalls = 0;
     server.use(
+      http.post(
+        '*/admin/manager-workspace/work-schedule/request-batches/:batchId/lines/:lineId/cancel',
+        () => {
+          cancelLineCalls += 1;
+          return undefined;
+        },
+      ),
+      http.post('*/admin/manager-workspace/work-schedule/request-batches/:batchId/cancel', () => {
+        cancelBatchCalls += 1;
+        return undefined;
+      }),
       http.all('*/admin/work-schedule/request-batches*', () => {
         rawAdminBatchCalls += 1;
         return HttpResponse.json({ data: [] });
@@ -1870,26 +1868,12 @@ describe('/manager workspace route', () => {
     await user.click(await screen.findByRole('tab', { name: 'Requests' }, { timeout: 5000 }));
     expect((await screen.findAllByText('WSB-202606-000001')).length).toBeGreaterThan(0);
 
-    const cancellationReason = screen.getByLabelText('Cancellation reason');
-    const cancelLine = await screen.findAllByRole('button', { name: 'Cancel line' });
-    expect(cancelLine[0]).toBeDisabled();
-    fireEvent.change(cancellationReason, { target: { value: 'Manager cancellation reason.' } });
-    await user.click(cancelLine[0]);
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Keep request' }));
-    expect(screen.queryByText('Cancelled')).not.toBeInTheDocument();
-    await user.click(cancelLine[0]);
-    await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
-    expect(await screen.findByText('Manager cancellation reason.')).toBeInTheDocument();
-
-    const cancelBatch = await screen.findByRole('button', { name: 'Cancel batch' });
-    fireEvent.change(cancellationReason, {
-      target: { value: 'Cancel the remaining pending request batch.' },
-    });
-    await user.click(cancelBatch);
-    await user.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
-
-    expect(await screen.findAllByText('Cancelled')).not.toHaveLength(0);
+    expect(screen.queryByLabelText('Cancellation reason')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel line' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel batch' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(cancelLineCalls).toBe(0);
+    expect(cancelBatchCalls).toBe(0);
     expect(rawAdminBatchCalls).toBe(0);
     expect(screen.queryByRole('button', { name: /approve|reject/i })).not.toBeInTheDocument();
   }, 20000);

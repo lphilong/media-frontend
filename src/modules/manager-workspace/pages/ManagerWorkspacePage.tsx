@@ -32,8 +32,6 @@ import {
 } from '@modules/kpi';
 import {
   useManagerWorkspaceContext,
-  useCancelManagerRequestBatchMutation,
-  useCancelManagerRequestLineMutation,
   useManagerEventDetail,
   useManagerEvents,
   useManagerPlatformEarningBatchDetail,
@@ -62,7 +60,6 @@ import {
   requestTypeOptions,
   requestTypeLabelKey,
   timestampToDateTimeLocal,
-  type ManagerSchedulingCancellation,
   type ManagerWorkScheduleRequestType,
   type ManagerWorkTab,
 } from '@modules/manager-workspace/manager-scheduling.model';
@@ -83,7 +80,6 @@ import {
   NotFoundState,
   PermissionDeniedState,
   StatusBadge,
-  SensitiveActionDialog,
   TechnicalDetailsDisclosure,
 } from '@shared/components/primitives';
 import { SessionArea } from '@shared/components/shell';
@@ -659,8 +655,6 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
   const [batchNote, setBatchNote] = useState('');
   const [draftLines, setDraftLines] = useState<DraftRequestLine[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
-  const [cancelReason, setCancelReason] = useState('');
-  const [cancellation, setCancellation] = useState<ManagerSchedulingCancellation | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const workShiftsQuery = useManagerWorkShiftPages(
     month || undefined,
@@ -696,8 +690,6 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
     context.modules.workShifts.visible && activeTab === 'requests',
   );
   const submitBatchMutation = useSubmitManagerRequestBatchMutation();
-  const cancelBatchMutation = useCancelManagerRequestBatchMutation();
-  const cancelLineMutation = useCancelManagerRequestLineMutation();
   const allowedMonths = useMemo(() => getAllowedRequestMonths(), []);
   const managedMembers = useMemo(() => {
     const members = new Map<string, ManagerWorkShiftList['items'][number]['member']>();
@@ -831,33 +823,6 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
     setSelectedBatchId(batch.id);
     setDraftLines([]);
     setBatchNote('');
-  };
-
-  const requestCancellation = (next: ManagerSchedulingCancellation): void => {
-    if (cancelReason.trim().length < 10) {
-      setValidationMessage(t('manager-workspace:availability.validation.cancelReasonRequired'));
-      return;
-    }
-    setCancellation(next);
-  };
-
-  const confirmCancellation = async (): Promise<void> => {
-    if (cancellation?.kind === 'request-batch') {
-      await cancelBatchMutation.mutateAsync({
-        batchId: cancellation.batchId,
-        payload: { cancellationReason: cancelReason },
-      });
-    } else if (cancellation?.kind === 'request-line') {
-      await cancelLineMutation.mutateAsync({
-        batchId: cancellation.batchId,
-        lineId: cancellation.lineId,
-        payload: { cancellationReason: cancelReason },
-      });
-    } else {
-      return;
-    }
-    setCancellation(null);
-    setCancelReason('');
   };
 
   return (
@@ -1037,7 +1002,6 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
           <div className="rounded border border-border bg-bg p-3 text-sm text-muted">
             <p>{t('manager-workspace:requests.copy.approval')}</p>
             <p>{t('manager-workspace:requests.copy.draftRoster')}</p>
-            <p>{t('manager-workspace:requests.copy.cancellation')}</p>
             <p>{t('manager-workspace:requests.copy.taxonomy')}</p>
           </div>
 
@@ -1351,30 +1315,6 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                       toneByStatus={managerRequestStatusTone}
                     />
                   </div>
-                  {requestBatchDetailQuery.data.status === 'PENDING' ? (
-                    <div className="flex flex-col gap-2 md:flex-row md:items-end">
-                      <label className="flex-1 text-sm font-medium text-text">
-                        {t('manager-workspace:requests.fields.cancellationReason')}
-                        <input
-                          className="mt-1 w-full rounded border border-border bg-panel px-3 py-2"
-                          value={cancelReason}
-                          onChange={(event) => setCancelReason(event.target.value)}
-                        />
-                      </label>
-                      <Button
-                        variant="danger"
-                        disabled={cancelReason.trim().length < 10 || cancelBatchMutation.isPending}
-                        onClick={() =>
-                          requestCancellation({
-                            kind: 'request-batch',
-                            batchId: requestBatchDetailQuery.data.id,
-                          })
-                        }
-                      >
-                        {t('manager-workspace:requests.actions.cancelBatch')}
-                      </Button>
-                    </div>
-                  ) : null}
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-left text-sm">
                       <tbody className="divide-y divide-border">
@@ -1404,26 +1344,6 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
                                 </div>
                               ) : null}
                             </td>
-                            <td className="px-3 py-3 text-right">
-                              {line.status === 'PENDING' ? (
-                                <Button
-                                  size="sm"
-                                  variant="danger"
-                                  disabled={
-                                    cancelReason.trim().length < 10 || cancelLineMutation.isPending
-                                  }
-                                  onClick={() =>
-                                    requestCancellation({
-                                      kind: 'request-line',
-                                      batchId: requestBatchDetailQuery.data.id,
-                                      lineId: line.id,
-                                    })
-                                  }
-                                >
-                                  {t('manager-workspace:requests.actions.cancelLine')}
-                                </Button>
-                              ) : null}
-                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1446,16 +1366,6 @@ const ManagerWorkSlice = ({ context }: { context: ManagerWorkspaceContext }): JS
       {activeTab === 'availability' ? (
         <ManagerAvailabilityPanel context={context} allowedMonths={allowedMonths} />
       ) : null}
-      <SensitiveActionDialog
-        open={cancellation !== null}
-        title={t('manager-workspace:requests.confirmation.title')}
-        summary={t('manager-workspace:requests.confirmation.summary')}
-        confirmLabel={t('manager-workspace:requests.confirmation.confirm')}
-        cancelLabel={t('manager-workspace:requests.confirmation.keep')}
-        isSubmitting={cancelBatchMutation.isPending || cancelLineMutation.isPending}
-        onCancel={() => setCancellation(null)}
-        onConfirm={() => void confirmCancellation()}
-      />
     </section>
   );
 };

@@ -3,8 +3,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
-  useCancelManagerAvailabilityBatchMutation,
-  useCancelManagerAvailabilityLineMutation,
   useManagerAvailabilityBatchDetail,
   useManagerAvailabilityBatchPages,
   useManagerAvailabilityTargetMembers,
@@ -20,15 +18,9 @@ import {
   availabilityStatusLabelKey,
   availabilityTaxonomyLabelKey,
   availabilityTypeLabelKey,
-  type ManagerSchedulingCancellation,
 } from '@modules/manager-workspace/manager-scheduling.model';
 import { WorkScheduleDeadlineCue } from '@modules/work-schedule';
-import {
-  Button,
-  ErrorState,
-  SensitiveActionDialog,
-  TechnicalDetailsDisclosure,
-} from '@shared/components/primitives';
+import { Button, ErrorState, TechnicalDetailsDisclosure } from '@shared/components/primitives';
 import type { NormalizedApiError } from '@shared/api';
 import { formatBusinessTimestamp } from '@shared/formatting/formatters';
 
@@ -102,8 +94,6 @@ export const ManagerAvailabilityPanel = ({
   const [batchNote, setBatchNote] = useState('');
   const [draftLines, setDraftLines] = useState<DraftAvailabilityLine[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>();
-  const [cancelReason, setCancelReason] = useState('');
-  const [cancellation, setCancellation] = useState<ManagerSchedulingCancellation | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<NormalizedApiError | null>(null);
   const submitInFlight = useRef(false);
@@ -157,8 +147,6 @@ export const ManagerAvailabilityPanel = ({
     context.modules.workShifts.visible,
   );
   const submitMutation = useSubmitManagerAvailabilityBatchMutation();
-  const cancelBatchMutation = useCancelManagerAvailabilityBatchMutation();
-  const cancelLineMutation = useCancelManagerAvailabilityLineMutation();
 
   useEffect(() => {
     setDraftLines([]);
@@ -293,44 +281,6 @@ export const ManagerAvailabilityPanel = ({
     } finally {
       submitInFlight.current = false;
     }
-  };
-
-  const requestBatchCancellation = (): void => {
-    const batchId = detailQuery.data?.id;
-    if (!batchId || cancelReason.trim().length < 10) {
-      setValidationMessage(t('manager-workspace:availability.validation.cancelReasonRequired'));
-      return;
-    }
-    setCancellation({ kind: 'availability-batch', batchId });
-  };
-
-  const requestLineCancellation = (lineId: string): void => {
-    const batchId = detailQuery.data?.id;
-    if (!batchId || cancelReason.trim().length < 10) {
-      setValidationMessage(t('manager-workspace:availability.validation.cancelReasonRequired'));
-      return;
-    }
-    setCancellation({ kind: 'availability-line', batchId, lineId });
-  };
-
-  const confirmCancellation = async (): Promise<void> => {
-    if (cancellation?.kind === 'availability-batch') {
-      await cancelBatchMutation.mutateAsync({
-        batchId: cancellation.batchId,
-        payload: { cancellationReason: cancelReason },
-      });
-    } else if (cancellation?.kind === 'availability-line') {
-      await cancelLineMutation.mutateAsync({
-        batchId: cancellation.batchId,
-        lineId: cancellation.lineId,
-        payload: { cancellationReason: cancelReason },
-      });
-    } else {
-      return;
-    }
-    setCancellation(null);
-    setCancelReason('');
-    setValidationMessage(null);
   };
 
   return (
@@ -682,25 +632,6 @@ export const ManagerAvailabilityPanel = ({
                   {t(`manager-workspace:availability.statuses.${detailQuery.data.status}`)}
                 </span>
               </div>
-              <label className="block text-sm font-medium text-text">
-                {t('manager-workspace:availability.fields.cancelReason')}
-                <input
-                  className="mt-1 w-full rounded border border-border bg-panel px-3 py-2"
-                  value={cancelReason}
-                  onChange={(event) => setCancelReason(event.target.value)}
-                />
-              </label>
-              <Button
-                variant="danger"
-                disabled={
-                  detailQuery.data.status !== 'PENDING' ||
-                  cancelReason.trim().length < 10 ||
-                  cancelBatchMutation.isPending
-                }
-                onClick={requestBatchCancellation}
-              >
-                {t('manager-workspace:availability.actions.cancelBatch')}
-              </Button>
               <div className="overflow-x-auto rounded border border-border">
                 <table className="min-w-full divide-y divide-border text-left text-sm">
                   <thead className="bg-panel text-xs uppercase text-muted">
@@ -722,9 +653,6 @@ export const ManagerAvailabilityPanel = ({
                       </th>
                       <th className="px-3 py-2">
                         {t('manager-workspace:availability.table.policy')}
-                      </th>
-                      <th className="px-3 py-2">
-                        {t('manager-workspace:availability.table.actions')}
                       </th>
                     </tr>
                   </thead>
@@ -764,20 +692,6 @@ export const ManagerAvailabilityPanel = ({
                         <td className="px-3 py-2">
                           {t(availabilityPolicyLabelKey(line.policyEvaluationStatus))}
                         </td>
-                        <td className="px-3 py-2">
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            disabled={
-                              line.status !== 'PENDING' ||
-                              cancelReason.trim().length < 10 ||
-                              cancelLineMutation.isPending
-                            }
-                            onClick={() => requestLineCancellation(line.id)}
-                          >
-                            {t('manager-workspace:availability.actions.cancelLine')}
-                          </Button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -798,16 +712,6 @@ export const ManagerAvailabilityPanel = ({
           )}
         </div>
       </div>
-      <SensitiveActionDialog
-        open={cancellation !== null}
-        title={t('manager-workspace:availability.confirmation.title')}
-        summary={t('manager-workspace:availability.confirmation.summary')}
-        confirmLabel={t('manager-workspace:availability.confirmation.confirm')}
-        cancelLabel={t('manager-workspace:availability.confirmation.keep')}
-        isSubmitting={cancelBatchMutation.isPending || cancelLineMutation.isPending}
-        onCancel={() => setCancellation(null)}
-        onConfirm={() => void confirmCancellation()}
-      />
     </div>
   );
 };

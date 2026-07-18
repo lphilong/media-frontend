@@ -13,7 +13,6 @@ import {
 import {
   useCreateWorkShiftMutation,
   useApproveWorkScheduleRequestMutation,
-  useCancelWorkScheduleRequestMutation,
   useCreateWorkScheduleRequestMutation,
   useRejectWorkScheduleRequestMutation,
   useWorkScheduleRequestList,
@@ -296,7 +295,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
   const createScheduleRequestMutation = useCreateWorkScheduleRequestMutation();
   const approveScheduleRequestMutation = useApproveWorkScheduleRequestMutation();
   const rejectScheduleRequestMutation = useRejectWorkScheduleRequestMutation();
-  const cancelScheduleRequestMutation = useCancelWorkScheduleRequestMutation();
   const { notifyError, notifySuccess } = useMutationFeedback();
   const requestDestructiveConfirm = useDestructiveConfirm();
   const [isGuidedWorkflowOpen, setIsGuidedWorkflowOpen] = useState(false);
@@ -538,26 +536,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
         payload: { rejectionReason: scheduleRequestForm.decisionNote || 'Rejected by dispatcher' },
       });
       notifySuccess('work-schedule:requests.feedback.rejected');
-    } catch (error) {
-      notifyError(error as NormalizedApiError);
-    }
-  };
-
-  const onCancelScheduleRequest = async (requestId: string): Promise<void> => {
-    const confirmed = await requestDestructiveConfirm({
-      description: t('work-schedule:requests.confirm.cancel'),
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      await cancelScheduleRequestMutation.mutateAsync({
-        requestId,
-        payload: { cancellationReason: 'Cancelled by requester' },
-      });
-      notifySuccess('work-schedule:requests.feedback.cancelled');
     } catch (error) {
       notifyError(error as NormalizedApiError);
     }
@@ -1254,8 +1232,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
               <div className="grid gap-2">
                 {scheduleRequestListQuery.data.data.map((request) => {
                   const isPending = request.status === 'PENDING';
-                  const canCancelOwn =
-                    isPending && request.requestedByUserId === capabilitiesQuery.data?.id;
                   return (
                     <div
                       key={request.id}
@@ -1296,16 +1272,6 @@ export const WorkScheduleListPage = (): JSX.Element => {
                               {t('work-schedule:requests.actions.reject')}
                             </button>
                           </>
-                        ) : null}
-                        {canCancelOwn ? (
-                          <button
-                            type="button"
-                            className="rounded border border-border bg-surface px-2 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-                            disabled={cancelScheduleRequestMutation.isPending}
-                            onClick={() => void onCancelScheduleRequest(request.id)}
-                          >
-                            {t('work-schedule:requests.actions.cancel')}
-                          </button>
                         ) : null}
                       </div>
                     </div>
