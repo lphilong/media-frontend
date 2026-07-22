@@ -19,6 +19,17 @@ export const PERMISSIONS = {
   ROLE_ASSIGNMENT_RULE_SET: 'role:assignment_rule:set',
   ROLE_ASSIGN_TO_USER: 'role:assign_to_user',
   ROLE_REVOKE_FROM_USER: 'role:revoke_from_user',
+  ROLE_ASSIGNMENT_REVIEW: 'role:assignment:review',
+  ROLE_ASSIGNMENT_GRACE_APPROVE: 'role:assignment:grace:approve',
+  ROLE_ASSIGNMENT_RENEW: 'role:assignment:renew',
+  ROLE_ASSIGNMENT_REPLACE: 'role:assignment:replace',
+  OWNER_GOVERNANCE_VIEW: 'owner:governance:view',
+  OWNER_SUCCESSION_MANAGE: 'owner:succession:manage',
+  BREAK_GLASS_REQUEST: 'break_glass:request',
+  BREAK_GLASS_ACTIVATE: 'break_glass:activate',
+  BREAK_GLASS_END: 'break_glass:end',
+  BREAK_GLASS_APPROVE: 'break_glass:approve',
+  BREAK_GLASS_REVIEW: 'break_glass:review',
   USER_PROVISION_ACCOUNT: 'user:provision_account',
   USER_EDIT: 'user:edit',
   USER_ACTIVATE: 'user:activate',
@@ -189,6 +200,8 @@ export const currentActorCapabilitiesSchema = z
     accountContexts: z.array(accountContextSchema).optional(),
     workspaceAvailability: workspaceAvailabilitySchema.optional(),
     generatedAt: z.string().trim().min(1).optional(),
+    nextAuthorityTransitionAt: z.number().finite().nullable().optional(),
+    capabilityRefreshAt: z.number().finite().nullable().optional(),
   })
   .strict();
 
@@ -247,11 +260,24 @@ export const fetchCurrentActorCapabilities = async (): Promise<CurrentActorCapab
   return currentActorCapabilitiesResponseSchema.parse(response).data;
 };
 
+export const getCapabilityDeadlineRefetchInterval = (
+  capabilities: CurrentActorCapabilities | undefined,
+  now = Date.now(),
+): number | false => {
+  const deadline = capabilities?.capabilityRefreshAt ?? capabilities?.nextAuthorityTransitionAt;
+  if (deadline === null || deadline === undefined) return false;
+  return Math.max(1_000, deadline - now + 250);
+};
+
 export const useCurrentActorCapabilities = () =>
   useQuery({
     queryKey: CURRENT_ACTOR_CAPABILITIES_QUERY_KEY,
     queryFn: fetchCurrentActorCapabilities,
     retry: false,
+    refetchInterval: (query) =>
+      getCapabilityDeadlineRefetchInterval(
+        query.state.data as CurrentActorCapabilities | undefined,
+      ),
   });
 
 export const hasPermission = (

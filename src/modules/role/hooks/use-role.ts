@@ -2,10 +2,21 @@ import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/
 
 import {
   applyAccessAssignment,
+  activateGovernanceSuccessor,
+  createBreakGlassRequest,
   createRole,
   createRoleFromTemplate,
+  decideAccessLifecycleGrace,
+  decideAccessLifecycleReview,
+  decideAccessLifecycleSuccessor,
+  decideGovernanceSuccessor,
   fetchAccessAssignmentsForUser,
+  fetchAccessLifecycleStatus,
+  fetchAccessLifecyclePage,
   fetchAccessAssignmentTargets,
+  fetchBreakGlassStatus,
+  fetchBreakGlassPage,
+  fetchGovernanceStatus,
   fetchEffectiveAccess,
   fetchRoleBundles,
   fetchRoleDetail,
@@ -15,14 +26,23 @@ import {
   performRoleLifecycleAction,
   previewAccessAssignment,
   previewRoleTemplate,
+  proposeGovernanceSuccessor,
   replaceRoleAssignmentRules,
   replaceRolePermissions,
+  requestAccessLifecycleGrace,
+  requestAccessLifecycleSuccessor,
+  decideBreakGlassRequest,
+  endBreakGlassActivation,
+  reviewBreakGlassActivation,
   revokeAccessAssignment,
   updateRole,
 } from '@modules/role/api/role.api';
 import type {
   AccessAssignmentRevokePayload,
   AccessAssignmentRequestPayload,
+  AccessLifecycleStatusView,
+  BreakGlassStatusView,
+  BreakGlassRequestPayload,
   RoleAssignmentRuleReplacementPayload,
   RoleCreateFromTemplatePayload,
   RoleCreatePayload,
@@ -97,15 +117,19 @@ export const roleQueryKeys = {
   bundles: () => ['role', 'bundles'] as const,
   accessAssignmentTargets: () => ['role', 'access-assignment-targets'] as const,
   accessAssignmentsForUser: (userId: string) => ['role', 'access-assignments', userId] as const,
+  accessLifecycle: (userId?: string) => ['role', 'access-lifecycle', userId ?? 'all'] as const,
   effectiveAccess: (userId: string) => ['role', 'effective-access', userId] as const,
+  governance: () => ['role', 'access-governance'] as const,
+  breakGlass: () => ['role', 'break-glass'] as const,
   templatePreview: (templateCode: string) => ['role', 'template-preview', templateCode] as const,
   permissionMatrix: (roleId: string) => ['role', 'permission-matrix', roleId] as const,
 };
 
-export const useRoleList = (query: RoleListQuery) => {
+export const useRoleList = (query: RoleListQuery, enabled = true) => {
   return useQuery({
     queryKey: roleQueryKeys.list(query),
     queryFn: () => fetchRoles(query),
+    enabled,
   });
 };
 
@@ -157,6 +181,123 @@ export const useAccessAssignmentsForUser = (userId?: string) => {
     enabled: Boolean(userId),
   });
 };
+
+export const useAccessGovernance = (enabled = true) =>
+  useQuery({
+    queryKey: roleQueryKeys.governance(),
+    queryFn: fetchGovernanceStatus,
+    enabled,
+  });
+
+export const useAccessLifecycleStatus = (targetUserId?: string, enabled = true) =>
+  useQuery({
+    queryKey: roleQueryKeys.accessLifecycle(targetUserId),
+    queryFn: () => fetchAccessLifecycleStatus(targetUserId),
+    enabled,
+  });
+
+export const useAccessLifecycleQueueLoadMore = (targetUserId?: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { queue: 'review' | 'grace' | 'successor'; cursor: string }) =>
+      fetchAccessLifecyclePage({ targetUserId, ...input }),
+    onSuccess: (next, input) => {
+      queryClient.setQueryData<AccessLifecycleStatusView>(
+        roleQueryKeys.accessLifecycle(targetUserId),
+        (current) => (current ? mergeLifecycleQueue(current, next, input.queue) : next),
+      );
+    },
+  });
+};
+
+export const useBreakGlassStatus = (enabled = true) =>
+  useQuery({
+    queryKey: roleQueryKeys.breakGlass(),
+    queryFn: fetchBreakGlassStatus,
+    enabled,
+    refetchInterval: (query) => {
+      const deadline = query.state.data?.nextAuthorityTransitionAt;
+      return deadline ? Math.max(1_000, deadline - Date.now() + 250) : false;
+    },
+  });
+
+export const useBreakGlassQueueLoadMore = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { queue: 'approval' | 'independentReview'; cursor: string }) =>
+      fetchBreakGlassPage(input),
+    onSuccess: (next, input) => {
+      queryClient.setQueryData<BreakGlassStatusView>(roleQueryKeys.breakGlass(), (current) =>
+        current ? mergeBreakGlassQueue(current, next, input.queue) : next,
+      );
+    },
+  });
+};
+
+export function mergeLifecycleQueue(
+  current: AccessLifecycleStatusView,
+  next: AccessLifecycleStatusView,
+  queue: 'review' | 'grace' | 'successor',
+): AccessLifecycleStatusView {
+  if (queue === 'review') {
+    return {
+      ...current,
+      reviewCycles: deduplicateBy(current.reviewCycles, next.reviewCycles, (item) => item.cycleId),
+      pagination: { ...current.pagination, reviewCycles: next.pagination.reviewCycles },
+    };
+  }
+  if (queue === 'grace') {
+    return {
+      ...current,
+      graceExceptions: deduplicateBy(
+        current.graceExceptions,
+        next.graceExceptions,
+        (item) => item.exceptionId,
+      ),
+      pagination: { ...current.pagination, graceExceptions: next.pagination.graceExceptions },
+    };
+  }
+  return {
+    ...current,
+    successorRequests: deduplicateBy(
+      current.successorRequests,
+      next.successorRequests,
+      (item) => item.requestId,
+    ),
+    pagination: { ...current.pagination, successorRequests: next.pagination.successorRequests },
+  };
+}
+
+export function mergeBreakGlassQueue(
+  current: BreakGlassStatusView,
+  next: BreakGlassStatusView,
+  queue: 'approval' | 'independentReview',
+): BreakGlassStatusView {
+  return queue === 'approval'
+    ? {
+        ...current,
+        requests: deduplicateBy(current.requests, next.requests, (item) => item.requestId),
+        pagination: { ...current.pagination, requests: next.pagination.requests },
+      }
+    : {
+        ...current,
+        activations: deduplicateBy(
+          current.activations,
+          next.activations,
+          (item) => item.activationId,
+        ),
+        pagination: { ...current.pagination, activations: next.pagination.activations },
+      };
+}
+
+function deduplicateBy<T>(
+  current: readonly T[],
+  next: readonly T[],
+  identity: (item: T) => string,
+): T[] {
+  const seen = new Set(current.map(identity));
+  return [...current, ...next.filter((item) => !seen.has(identity(item)))];
+}
 
 export const useRoleTemplatePreview = (templateCode?: string) => {
   return useQuery({
@@ -356,5 +497,119 @@ export const useAccessAssignmentApplyMutation = () => {
         await invalidateCurrentActorCapabilities(queryClient);
       }
     },
+  });
+};
+
+const invalidateBreakGlassAuthority = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+): Promise<void> => {
+  await queryClient.invalidateQueries({ queryKey: roleQueryKeys.breakGlass() });
+  await invalidateCurrentActorCapabilities(queryClient);
+  clearProtectedQueryData(queryClient);
+};
+
+export const useBreakGlassRequestMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BreakGlassRequestPayload) => createBreakGlassRequest(payload),
+    onSuccess: async () => invalidateBreakGlassAuthority(queryClient),
+  });
+};
+
+export const useBreakGlassDecisionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: decideBreakGlassRequest,
+    onSuccess: async () => invalidateBreakGlassAuthority(queryClient),
+  });
+};
+
+export const useBreakGlassReviewMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: reviewBreakGlassActivation,
+    onSuccess: async () => invalidateBreakGlassAuthority(queryClient),
+  });
+};
+
+export const useBreakGlassEndMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: endBreakGlassActivation,
+    onSuccess: async () => invalidateBreakGlassAuthority(queryClient),
+  });
+};
+
+const invalidateAccessGovernance = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+): Promise<void> => {
+  await queryClient.invalidateQueries({ queryKey: ['role', 'access-lifecycle'] });
+  await queryClient.invalidateQueries({ queryKey: roleQueryKeys.governance() });
+  await invalidateRoleLaneQueries(queryClient);
+  await invalidateCurrentActorCapabilities(queryClient);
+  clearProtectedQueryData(queryClient);
+};
+
+export const useAccessLifecycleReviewMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: decideAccessLifecycleReview,
+    onSuccess: async () => invalidateAccessGovernance(queryClient),
+  });
+};
+
+export const useAccessLifecycleGraceRequestMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: requestAccessLifecycleGrace,
+    onSuccess: async () => invalidateAccessGovernance(queryClient),
+  });
+};
+
+export const useAccessLifecycleGraceDecisionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: decideAccessLifecycleGrace,
+    onSuccess: async () => invalidateAccessGovernance(queryClient),
+  });
+};
+
+export const useAccessLifecycleSuccessorRequestMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: requestAccessLifecycleSuccessor,
+    onSuccess: async () => invalidateAccessGovernance(queryClient),
+  });
+};
+
+export const useAccessLifecycleSuccessorDecisionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: decideAccessLifecycleSuccessor,
+    onSuccess: async () => invalidateAccessGovernance(queryClient),
+  });
+};
+
+export const useGovernanceSuccessorProposalMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: proposeGovernanceSuccessor,
+    onSuccess: async () => invalidateAccessGovernance(queryClient),
+  });
+};
+
+export const useGovernanceSuccessorDecisionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: decideGovernanceSuccessor,
+    onSuccess: async () => invalidateAccessGovernance(queryClient),
+  });
+};
+
+export const useGovernanceSuccessorActivationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: activateGovernanceSuccessor,
+    onSuccess: async () => invalidateAccessGovernance(queryClient),
   });
 };

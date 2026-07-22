@@ -10,11 +10,16 @@ vi.mock('@modules/role/api/role.api', async () => {
   return {
     ...actual,
     applyAccessAssignment: vi.fn(),
+    decideAccessLifecycleReview: vi.fn(),
     revokeAccessAssignment: vi.fn(),
   };
 });
 
-import { applyAccessAssignment, revokeAccessAssignment } from '@modules/role/api/role.api';
+import {
+  applyAccessAssignment,
+  decideAccessLifecycleReview,
+  revokeAccessAssignment,
+} from '@modules/role/api/role.api';
 import { employmentTermsQueryKeys } from '@modules/employment-terms/hooks/use-employment-terms';
 import {
   MANAGER_WORKSPACE_CONTEXT_QUERY_KEY,
@@ -22,6 +27,7 @@ import {
 } from '@modules/manager-workspace/api/manager-workspace.api';
 import {
   classifyAuthorityReductionQuery,
+  useAccessLifecycleReviewMutation,
   useAccessAssignmentApplyMutation,
   useAccessAssignmentRevokeMutation,
 } from '@modules/role/hooks/use-role';
@@ -136,6 +142,7 @@ const createHarness = (actorId = 'current-user') => {
 describe('Role authority cache invalidation', () => {
   beforeEach(() => {
     vi.mocked(applyAccessAssignment).mockResolvedValue(appliedResult);
+    vi.mocked(decideAccessLifecycleReview).mockResolvedValue({ applied: true });
     vi.mocked(revokeAccessAssignment).mockReset();
   });
 
@@ -271,6 +278,29 @@ describe('Role authority cache invalidation', () => {
 
     expect(queryClient.getQueryData(employmentTermsAdminListKey)).toBeUndefined();
     expect(queryClient.getQueryData(MANAGER_WORKSPACE_CONTEXT_QUERY_KEY)).toBeUndefined();
+    expect(queryClient.getQueryData(unregisteredRetentionEvidenceKey)).toEqual({
+      retained: 'unclassified',
+    });
+    expect(queryClient.getQueryState(CURRENT_ACTOR_CAPABILITIES_QUERY_KEY)?.isInvalidated).toBe(
+      true,
+    );
+  });
+
+  it('refreshes capabilities and evicts protected data after a lifecycle decision', async () => {
+    const { queryClient, wrapper } = createHarness();
+    queryClient.setQueryData(employmentTermsAdminListKey, { sensitive: 'cached' });
+    queryClient.setQueryData(unregisteredRetentionEvidenceKey, { retained: 'unclassified' });
+    const { result } = renderHook(() => useAccessLifecycleReviewMutation(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        cycleId: 'cycle-1',
+        decision: 'REJECTED',
+        reason: 'Independent denial',
+      });
+    });
+
+    expect(queryClient.getQueryData(employmentTermsAdminListKey)).toBeUndefined();
     expect(queryClient.getQueryData(unregisteredRetentionEvidenceKey)).toEqual({
       retained: 'unclassified',
     });

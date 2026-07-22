@@ -20,6 +20,7 @@ export type RolePermission = {
 };
 
 export type ActiveRoleTemplateCode =
+  | 'OWNER_GOVERNANCE'
   | 'OWNER_ADMIN'
   | 'ACCESS_ADMIN'
   | 'HR_OPERATIONS'
@@ -506,6 +507,249 @@ export type AccessAssignmentLifecycleResult = {
 export type AccessAssignmentRevokePayload = {
   reason: string;
 };
+
+export type GovernancePrincipalStatusView = {
+  principalId: string;
+  principalType: 'PRIMARY_OWNER' | 'SUCCESSOR_OWNER';
+  status: 'PENDING' | 'ACTIVE' | 'SUPERSEDED' | 'REVOKED';
+  effectiveAt: number;
+  expiresAt: number | null;
+  eligibleNow: boolean;
+  eligible: boolean;
+  eligibilityReasons: string[];
+  canApproveSuccessor: boolean;
+  canActivateSuccessor: boolean;
+  ineligibilityReason: string | null;
+  nextAllowedAction: string | null;
+};
+
+export type GovernanceStatusView = {
+  generatedAt: number;
+  policy: {
+    version: string;
+    timeZone: 'Asia/Ho_Chi_Minh';
+    effectiveAtRequired: true;
+    expiresAtRequired: true;
+  };
+  primaryOwner: GovernancePrincipalStatusView | null;
+  successors: GovernancePrincipalStatusView[];
+  actions: {
+    canProposeSuccessor: boolean;
+    proposalIneligibilityReason: string | null;
+  };
+};
+
+export type BreakGlassApprovalView = {
+  approverUserId: string;
+  decision: 'APPROVED' | 'REJECTED';
+  reason: string;
+  decidedAt: number;
+};
+
+export type BreakGlassRequestView = {
+  requestId: string;
+  idempotencyKey: string;
+  payloadFingerprint: string;
+  targetUserId: string;
+  permissions: string[];
+  structuredScopeGrants: AccessAssignmentScopeGrant[];
+  scopeFingerprint: string;
+  urgency: 'URGENT' | 'NON_URGENT';
+  incidentReferenceId: string;
+  reason: string;
+  requesterUserId: string;
+  requestedAt: number;
+  requestedDurationMs: number;
+  approvals: BreakGlassApprovalView[];
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'ACTIVATED' | 'EXPIRED' | 'REVIEWED';
+  canApprove: boolean;
+  canReject: boolean;
+  requiredApprovals: number;
+  completedApprovals: number;
+  remainingApprovals: number;
+  ineligibilityReason: string | null;
+  nextAllowedAction: string | null;
+};
+
+export type BreakGlassActivationView = {
+  activationId: string;
+  requestId: string;
+  targetUserId: string;
+  permissions: string[];
+  structuredScopeGrants: AccessAssignmentScopeGrant[];
+  incidentReferenceId: string;
+  reason: string;
+  activatedAt: number;
+  expiresAt: number;
+  endedAt?: number | null;
+  endedByUserId?: string | null;
+  endReason?: string | null;
+  status: 'ACTIVE' | 'EXPIRED' | 'REVIEWED';
+  stepUpState: 'SATISFIED' | 'NOT_SATISFIED' | 'NOT_SUPPORTED';
+  independentReviewDeadline: {
+    calendarVersion: string;
+    timeZone: 'Asia/Ho_Chi_Minh';
+    dueAt: number;
+  };
+  independentReviewState: 'PENDING' | 'OVERDUE' | 'COMPLETED';
+  independentReviewCategory: 'POST_USE_REVIEW';
+  overdueSince: number | null;
+  completedAt: number | null;
+  wasOverdue: boolean;
+  reviewResult: 'APPROVED_USE' | 'MISUSE_FOUND' | null;
+  reviewedAt: number | null;
+  currentlyEffective: boolean;
+  remainingMs: number;
+  canReview: boolean;
+  canEnd: boolean;
+  endIneligibilityReason: string | null;
+  ineligibilityReason: string | null;
+  nextAllowedAction: string | null;
+};
+
+export type BreakGlassStatusView = {
+  generatedAt: number;
+  policy: {
+    version: string;
+    defaultDurationMs: number;
+    maximumDurationMs: number;
+  };
+  pagination: AccessGovernanceQueuePagination<'requests' | 'activations'>;
+  availablePermissions: string[];
+  availableScopeTypes: AccessAssignmentScopeType[];
+  primaryOwner: { eligible: boolean; isCurrentActor: boolean };
+  requestEligibility: {
+    canRequestNonUrgent: boolean;
+    canRequestUrgent: boolean;
+    nonUrgentIneligibilityReason: string | null;
+    urgentIneligibilityReason: string | null;
+  };
+  requests: BreakGlassRequestView[];
+  activations: BreakGlassActivationView[];
+  nextAuthorityTransitionAt: number | null;
+};
+
+export type BreakGlassRequestPayload = {
+  targetUserId: string;
+  permissions: string[];
+  structuredScopeGrants: AccessAssignmentScopeGrant[];
+  urgency: 'URGENT' | 'NON_URGENT';
+  incidentReferenceId: string;
+  reason: string;
+  durationMs?: number;
+  idempotencyKey: string;
+};
+
+export type AccessLifecycleReviewQueueItem = {
+  cycleId: string;
+  assignmentId: string;
+  targetUserId: string;
+  riskTier: 'HIGH' | 'LOW';
+  reviewDeadline: number;
+  automaticGraceEndsAt: number | null;
+  maximumGraceEndsAt: number | null;
+  state: 'PENDING';
+  requiredApprovals: number;
+  completedApprovals: number;
+  remainingApprovals: number;
+  canApprove: boolean;
+  canReject: boolean;
+  canRequestGrace: boolean;
+  ineligibilityReason: string | null;
+  nextAllowedAction: string | null;
+};
+
+export type AccessLifecycleGraceQueueItem = {
+  exceptionId: string;
+  cycleId: string;
+  targetUserId: string;
+  requestedAt: number;
+  requestedExpiresAt: number;
+  state: 'PENDING';
+  canApprove: boolean;
+  canReject: boolean;
+  ineligibilityReason: string | null;
+  nextAllowedAction: string | null;
+};
+
+export type AccessLifecycleSuccessorQueueItem = {
+  requestId: string;
+  action: 'RENEWAL' | 'REPLACEMENT' | 'RESTORATION';
+  predecessorAssignmentId: string;
+  targetUserId: string;
+  requestedAt: number;
+  state: 'PENDING';
+  riskTier: 'HIGH' | 'LOW';
+  effectiveAt: number;
+  expiresAt: number;
+  reviewAt: number;
+  requiredApprovals: number;
+  completedApprovals: number;
+  remainingApprovals: number;
+  canApprove: boolean;
+  canReject: boolean;
+  ineligibilityReason: string | null;
+  nextAllowedAction: string | null;
+};
+
+export type AccessLifecycleRequestableAssignment = {
+  assignmentId: string;
+  targetUserId: string;
+  roleId: string;
+  roleCode: string | null;
+  structuredScopeGrants: AccessAssignmentScopeGrant[];
+  scopeFingerprint: string;
+  state: 'ACTIVE' | 'SCHEDULED' | 'SUSPENDED';
+  operationalState?: string;
+  effectiveAt: number;
+  expiresAt: number | null;
+  reviewAt: number | null;
+  riskTier: 'HIGH' | 'LOW';
+  riskPolicyVersion: string;
+  reviewWindowMs: number | null;
+  actionTiming: {
+    renewalEffectiveAt: number;
+    replacementEffectiveAt: number;
+    restorationEffectiveAt: number;
+  };
+  canRenew: boolean;
+  canReplace: boolean;
+  canRestore: boolean;
+  ineligibilityReasons: {
+    renewal: string | null;
+    replacement: string | null;
+    restoration: string | null;
+  };
+};
+
+export type AccessLifecycleStatusView = {
+  generatedAt: number;
+  availableScopeTypes: AccessAssignmentScopeType[];
+  policy: {
+    version: string;
+    timeZone: 'Asia/Ho_Chi_Minh';
+    grace: {
+      automaticExtensionMs: number;
+      maximumAbsoluteExtensionMs: number;
+    };
+  };
+  pagination: AccessGovernanceQueuePagination<
+    'reviewCycles' | 'graceExceptions' | 'successorRequests'
+  >;
+  reviewCycles: AccessLifecycleReviewQueueItem[];
+  graceExceptions: AccessLifecycleGraceQueueItem[];
+  successorRequests: AccessLifecycleSuccessorQueueItem[];
+  requestableAssignments: AccessLifecycleRequestableAssignment[];
+};
+
+export type AccessGovernanceQueuePage = {
+  nextCursor: string | null;
+  exhausted: boolean;
+};
+
+export type AccessGovernanceQueuePagination<TKey extends string> = {
+  pageSize: number;
+} & Record<TKey, AccessGovernanceQueuePage>;
 
 export type AccessRisk = {
   isSensitive?: boolean;

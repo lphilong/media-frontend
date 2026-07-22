@@ -13,8 +13,13 @@ import type {
   AccessAssignmentLifecycleResult,
   AccessAssignmentPreviewResult,
   AccessAssignmentRequestPayload,
+  AccessAssignmentScopeGrant,
   AccessAssignmentRevokePayload,
   AccessAssignmentTargetsMetadata,
+  AccessLifecycleStatusView,
+  BreakGlassRequestPayload,
+  BreakGlassStatusView,
+  GovernanceStatusView,
   RoleAssignmentRuleReplacementPayload,
   RoleCreateFromTemplatePayload,
   RoleCreatePayload,
@@ -49,6 +54,7 @@ const permissionSchema = z
   .strict();
 
 const activeRoleTemplateCodeSchema = z.enum([
+  'OWNER_GOVERNANCE',
   'OWNER_ADMIN',
   'ACCESS_ADMIN',
   'HR_OPERATIONS',
@@ -611,6 +617,308 @@ const accessAssignmentLifecycleResponseSchema = z
   })
   .strict();
 
+const governancePrincipalStatusSchema = z
+  .object({
+    principalId: z.string().trim().min(1),
+    principalType: z.enum(['PRIMARY_OWNER', 'SUCCESSOR_OWNER']),
+    status: z.enum(['PENDING', 'ACTIVE', 'SUPERSEDED', 'REVOKED']),
+    effectiveAt: z.number().finite(),
+    expiresAt: z.number().finite().nullable(),
+    eligibleNow: z.boolean(),
+    eligible: z.boolean(),
+    eligibilityReasons: z.array(z.string()),
+    canApproveSuccessor: z.boolean(),
+    canActivateSuccessor: z.boolean(),
+    ineligibilityReason: z.string().nullable(),
+    nextAllowedAction: z.string().nullable(),
+  })
+  .strict();
+
+const governanceQueuePageSchema = z
+  .object({
+    nextCursor: z.string().trim().min(1).nullable(),
+    exhausted: z.boolean(),
+  })
+  .strict();
+
+const governanceStatusResponseSchema = z
+  .object({
+    data: z
+      .object({
+        generatedAt: z.number().finite(),
+        policy: z
+          .object({
+            version: z.string().trim().min(1),
+            timeZone: z.literal('Asia/Ho_Chi_Minh'),
+            effectiveAtRequired: z.literal(true),
+            expiresAtRequired: z.literal(true),
+          })
+          .strict(),
+        primaryOwner: governancePrincipalStatusSchema.nullable(),
+        successors: z.array(governancePrincipalStatusSchema),
+        actions: z
+          .object({
+            canProposeSuccessor: z.boolean(),
+            proposalIneligibilityReason: z.string().nullable(),
+          })
+          .strict(),
+      })
+      .strict(),
+  })
+  .strict();
+
+const breakGlassApprovalSchema = z
+  .object({
+    approverUserId: z.string().trim().min(1),
+    decision: z.enum(['APPROVED', 'REJECTED']),
+    reason: z.string().trim().min(1),
+    decidedAt: z.number().finite(),
+  })
+  .strict();
+
+const breakGlassRequestSchema = z
+  .object({
+    requestId: z.string().trim().min(1),
+    idempotencyKey: z.string().trim().min(1),
+    payloadFingerprint: z.string().trim().min(1),
+    targetUserId: z.string().trim().min(1),
+    permissions: z.array(z.string().trim().min(1)).min(1),
+    structuredScopeGrants: z.array(accessAssignmentScopeGrantSchema).min(1),
+    scopeFingerprint: z.string().trim().min(1),
+    urgency: z.enum(['URGENT', 'NON_URGENT']),
+    incidentReferenceId: z.string().trim().min(1),
+    reason: z.string().trim().min(1),
+    requesterUserId: z.string().trim().min(1),
+    requestedAt: z.number().finite(),
+    requestedDurationMs: z.number().positive(),
+    approvals: z.array(breakGlassApprovalSchema),
+    status: z.enum([
+      'PENDING_APPROVAL',
+      'APPROVED',
+      'REJECTED',
+      'ACTIVATED',
+      'EXPIRED',
+      'REVIEWED',
+    ]),
+    canApprove: z.boolean(),
+    canReject: z.boolean(),
+    requiredApprovals: z.number().int().nonnegative(),
+    completedApprovals: z.number().int().nonnegative(),
+    remainingApprovals: z.number().int().nonnegative(),
+    ineligibilityReason: z.string().nullable(),
+    nextAllowedAction: z.string().nullable(),
+  })
+  .strict();
+
+const breakGlassActivationSchema = z
+  .object({
+    activationId: z.string().trim().min(1),
+    requestId: z.string().trim().min(1),
+    targetUserId: z.string().trim().min(1),
+    permissions: z.array(z.string().trim().min(1)).min(1),
+    structuredScopeGrants: z.array(accessAssignmentScopeGrantSchema).min(1),
+    scopeFingerprint: z.string().trim().min(1),
+    incidentReferenceId: z.string().trim().min(1),
+    reason: z.string().trim().min(1),
+    activatorUserId: z.string().trim().min(1),
+    activatedAt: z.number().finite(),
+    expiresAt: z.number().finite(),
+    endedAt: z.number().finite().nullable().optional(),
+    endedByUserId: z.string().nullable().optional(),
+    endReason: z.string().nullable().optional(),
+    status: z.enum(['ACTIVE', 'EXPIRED', 'REVIEWED']),
+    stepUpState: z.enum(['SATISFIED', 'NOT_SATISFIED', 'NOT_SUPPORTED']),
+    independentReviewDeadline: z
+      .object({
+        calendarVersion: z.string().trim().min(1),
+        timeZone: z.literal('Asia/Ho_Chi_Minh'),
+        dueAt: z.number().finite(),
+      })
+      .strict(),
+    independentReviewState: z.enum(['PENDING', 'OVERDUE', 'COMPLETED']),
+    independentReviewCategory: z.literal('POST_USE_REVIEW'),
+    overdueSince: z.number().finite().nullable(),
+    completedAt: z.number().finite().nullable(),
+    wasOverdue: z.boolean(),
+    reviewerUserId: z.string().nullable(),
+    reviewResult: z.enum(['APPROVED_USE', 'MISUSE_FOUND']).nullable(),
+    reviewedAt: z.number().finite().nullable(),
+    auditCorrelationId: z.string().trim().min(1),
+    currentlyEffective: z.boolean(),
+    remainingMs: z.number().nonnegative(),
+    canReview: z.boolean(),
+    canEnd: z.boolean(),
+    endIneligibilityReason: z.string().nullable(),
+    ineligibilityReason: z.string().nullable(),
+    nextAllowedAction: z.string().nullable(),
+  })
+  .strict();
+
+const breakGlassStatusResponseSchema = z
+  .object({
+    data: z
+      .object({
+        generatedAt: z.number().finite(),
+        policy: z
+          .object({
+            version: z.string().trim().min(1),
+            defaultDurationMs: z.number().positive(),
+            maximumDurationMs: z.number().positive(),
+          })
+          .strict(),
+        pagination: z
+          .object({
+            pageSize: z.number().int().positive(),
+            requests: governanceQueuePageSchema,
+            activations: governanceQueuePageSchema,
+          })
+          .strict(),
+        availablePermissions: z.array(z.string().trim().min(1)),
+        availableScopeTypes: z.array(accessAssignmentScopeTypeSchema),
+        primaryOwner: z.object({ eligible: z.boolean(), isCurrentActor: z.boolean() }).strict(),
+        requestEligibility: z
+          .object({
+            canRequestNonUrgent: z.boolean(),
+            canRequestUrgent: z.boolean(),
+            nonUrgentIneligibilityReason: z.string().nullable(),
+            urgentIneligibilityReason: z.string().nullable(),
+          })
+          .strict(),
+        requests: z.array(breakGlassRequestSchema),
+        activations: z.array(breakGlassActivationSchema),
+        nextAuthorityTransitionAt: z.number().finite().nullable(),
+      })
+      .strict(),
+  })
+  .strict();
+
+const lifecycleActionEligibilitySchema = {
+  canApprove: z.boolean(),
+  canReject: z.boolean(),
+  ineligibilityReason: z.string().nullable(),
+  nextAllowedAction: z.string().nullable(),
+};
+
+const accessLifecycleStatusResponseSchema = z
+  .object({
+    data: z
+      .object({
+        generatedAt: z.number().finite(),
+        availableScopeTypes: z.array(accessAssignmentScopeTypeSchema),
+        policy: z
+          .object({
+            version: z.string().trim().min(1),
+            timeZone: z.literal('Asia/Ho_Chi_Minh'),
+            grace: z
+              .object({
+                automaticExtensionMs: z.number().positive(),
+                maximumAbsoluteExtensionMs: z.number().positive(),
+              })
+              .strict(),
+          })
+          .strict(),
+        pagination: z
+          .object({
+            pageSize: z.number().int().positive(),
+            reviewCycles: governanceQueuePageSchema,
+            graceExceptions: governanceQueuePageSchema,
+            successorRequests: governanceQueuePageSchema,
+          })
+          .strict(),
+        reviewCycles: z.array(
+          z
+            .object({
+              cycleId: z.string().trim().min(1),
+              assignmentId: z.string().trim().min(1),
+              targetUserId: z.string().trim().min(1),
+              riskTier: z.enum(['HIGH', 'LOW']),
+              reviewDeadline: z.number().finite(),
+              automaticGraceEndsAt: z.number().finite().nullable(),
+              maximumGraceEndsAt: z.number().finite().nullable(),
+              state: z.literal('PENDING'),
+              requiredApprovals: z.number().int().positive(),
+              completedApprovals: z.number().int().nonnegative(),
+              remainingApprovals: z.number().int().nonnegative(),
+              ...lifecycleActionEligibilitySchema,
+              canRequestGrace: z.boolean(),
+            })
+            .strict(),
+        ),
+        graceExceptions: z.array(
+          z
+            .object({
+              exceptionId: z.string().trim().min(1),
+              cycleId: z.string().trim().min(1),
+              targetUserId: z.string().trim().min(1),
+              requestedAt: z.number().finite(),
+              requestedExpiresAt: z.number().finite(),
+              state: z.literal('PENDING'),
+              ...lifecycleActionEligibilitySchema,
+            })
+            .strict(),
+        ),
+        successorRequests: z.array(
+          z
+            .object({
+              requestId: z.string().trim().min(1),
+              action: z.enum(['RENEWAL', 'REPLACEMENT', 'RESTORATION']),
+              predecessorAssignmentId: z.string().trim().min(1),
+              targetUserId: z.string().trim().min(1),
+              requestedAt: z.number().finite(),
+              state: z.literal('PENDING'),
+              riskTier: z.enum(['HIGH', 'LOW']),
+              effectiveAt: z.number().finite(),
+              expiresAt: z.number().finite(),
+              reviewAt: z.number().finite(),
+              requiredApprovals: z.number().int().positive(),
+              completedApprovals: z.number().int().nonnegative(),
+              remainingApprovals: z.number().int().nonnegative(),
+              ...lifecycleActionEligibilitySchema,
+            })
+            .strict(),
+        ),
+        requestableAssignments: z.array(
+          z
+            .object({
+              assignmentId: z.string().trim().min(1),
+              targetUserId: z.string().trim().min(1),
+              roleId: z.string().trim().min(1),
+              roleCode: z.string().nullable(),
+              structuredScopeGrants: z.array(accessAssignmentScopeGrantSchema).min(1),
+              scopeFingerprint: z.string().trim().min(1),
+              state: z.enum(['ACTIVE', 'SCHEDULED', 'SUSPENDED']),
+              operationalState: z.string().trim().min(1).optional(),
+              effectiveAt: z.number().finite(),
+              expiresAt: z.number().finite().nullable(),
+              reviewAt: z.number().finite().nullable(),
+              riskTier: z.enum(['HIGH', 'LOW']),
+              riskPolicyVersion: z.string().trim().min(1),
+              reviewWindowMs: z.number().positive().nullable(),
+              actionTiming: z
+                .object({
+                  renewalEffectiveAt: z.number().finite(),
+                  replacementEffectiveAt: z.number().finite(),
+                  restorationEffectiveAt: z.number().finite(),
+                })
+                .strict(),
+              canRenew: z.boolean(),
+              canReplace: z.boolean(),
+              canRestore: z.boolean(),
+              ineligibilityReasons: z
+                .object({
+                  renewal: z.string().nullable(),
+                  replacement: z.string().nullable(),
+                  restoration: z.string().nullable(),
+                })
+                .strict(),
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
+  })
+  .strict();
+
 const effectiveAccessAssignmentSchema = z
   .object({
     assignmentId: z.string().trim().min(1),
@@ -842,6 +1150,255 @@ export const revokeAccessAssignment = async (
   });
 
   return accessAssignmentLifecycleResponseSchema.parse(response).data;
+};
+
+export const fetchGovernanceStatus = async (): Promise<GovernanceStatusView> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/access-assignments/governance',
+  });
+  return governanceStatusResponseSchema.parse(response).data;
+};
+
+export const fetchAccessLifecycleStatus = async (
+  targetUserId?: string,
+): Promise<AccessLifecycleStatusView> => {
+  return fetchAccessLifecyclePage({ targetUserId });
+};
+
+export const fetchAccessLifecyclePage = async (input: {
+  targetUserId?: string;
+  queue?: 'review' | 'grace' | 'successor';
+  cursor?: string;
+}): Promise<AccessLifecycleStatusView> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/access-assignments/lifecycle',
+    params: input,
+  });
+  return accessLifecycleStatusResponseSchema.parse(response).data;
+};
+
+export const decideAccessLifecycleReview = async (input: {
+  cycleId: string;
+  decision: 'APPROVED' | 'REJECTED';
+  reason: string;
+  nextReviewAt?: number;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/access-assignments/lifecycle/reviews/${encodeURIComponent(input.cycleId)}/decision`,
+    data: {
+      decision: input.decision,
+      reason: input.reason,
+      ...(input.nextReviewAt ? { nextReviewAt: input.nextReviewAt } : {}),
+    },
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const requestAccessLifecycleGrace = async (input: {
+  cycleId: string;
+  requestedExpiresAt: number;
+  reason: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: '/admin/access-assignments/lifecycle/grace-exceptions',
+    data: input,
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const decideAccessLifecycleGrace = async (input: {
+  exceptionId: string;
+  decision: 'APPROVED' | 'REJECTED';
+  reason: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/access-assignments/lifecycle/grace-exceptions/${encodeURIComponent(input.exceptionId)}/decision`,
+    data: { decision: input.decision, reason: input.reason },
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const requestAccessLifecycleSuccessor = async (input: {
+  action: 'RENEWAL' | 'REPLACEMENT' | 'RESTORATION';
+  predecessorAssignmentId: string;
+  roleId?: string;
+  structuredScopeGrants?: AccessAssignmentScopeGrant[];
+  effectiveAt?: number;
+  expiresAt: number;
+  reviewAt?: number;
+  reason: string;
+  idempotencyKey: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: '/admin/access-assignments/lifecycle/successors',
+    data: input,
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const decideAccessLifecycleSuccessor = async (input: {
+  requestId: string;
+  decision: 'APPROVED' | 'REJECTED';
+  reason: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/access-assignments/lifecycle/successors/${encodeURIComponent(input.requestId)}/decision`,
+    data: { decision: input.decision, reason: input.reason },
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const proposeGovernanceSuccessor = async (input: {
+  targetUserId: string;
+  effectiveAt: number;
+  expiresAt: number;
+  reason: string;
+  idempotencyKey: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: '/admin/access-assignments/governance/successors',
+    data: input,
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const decideGovernanceSuccessor = async (input: {
+  principalId: string;
+  decision: 'APPROVED' | 'REJECTED';
+  reason: string;
+  idempotencyKey: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/access-assignments/governance/successors/${encodeURIComponent(input.principalId)}/decision`,
+    data: {
+      decision: input.decision,
+      reason: input.reason,
+      idempotencyKey: input.idempotencyKey,
+    },
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const activateGovernanceSuccessor = async (input: {
+  principalId: string;
+  reason: string;
+  idempotencyKey: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/access-assignments/governance/successors/${encodeURIComponent(input.principalId)}/activate`,
+    data: { reason: input.reason, idempotencyKey: input.idempotencyKey },
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const fetchBreakGlassStatus = async (): Promise<BreakGlassStatusView> =>
+  fetchBreakGlassPage({});
+
+export const fetchBreakGlassPage = async (input: {
+  queue?: 'approval' | 'independentReview';
+  cursor?: string;
+}): Promise<BreakGlassStatusView> => {
+  const response = await apiRequest<unknown>({
+    method: 'GET',
+    url: '/admin/access-assignments/break-glass',
+    params: input,
+  });
+  return breakGlassStatusResponseSchema.parse(response).data;
+};
+
+export const createBreakGlassRequest = async (
+  payload: BreakGlassRequestPayload,
+): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown, BreakGlassRequestPayload>({
+    method: 'POST',
+    url: '/admin/access-assignments/break-glass',
+    data: payload,
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const decideBreakGlassRequest = async (input: {
+  requestId: string;
+  decision: 'APPROVED' | 'REJECTED';
+  reason: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/access-assignments/break-glass/${encodeURIComponent(input.requestId)}/decision`,
+    data: { decision: input.decision, reason: input.reason },
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const reviewBreakGlassActivation = async (input: {
+  activationId: string;
+  result: 'APPROVED_USE' | 'MISUSE_FOUND';
+  reason: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/access-assignments/break-glass/activations/${encodeURIComponent(input.activationId)}/review`,
+    data: { result: input.result, reason: input.reason },
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
+};
+
+export const endBreakGlassActivation = async (input: {
+  activationId: string;
+  reason: string;
+}): Promise<Record<string, unknown>> => {
+  const response = await apiRequest<unknown>({
+    method: 'POST',
+    url: `/admin/access-assignments/break-glass/activations/${encodeURIComponent(input.activationId)}/end`,
+    data: { reason: input.reason },
+  });
+  return z
+    .object({ data: z.record(z.unknown()) })
+    .strict()
+    .parse(response).data;
 };
 
 export const previewRoleTemplate = async (templateCode: string): Promise<RoleTemplatePreview> => {

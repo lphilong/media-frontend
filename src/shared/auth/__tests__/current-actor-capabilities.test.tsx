@@ -7,6 +7,7 @@ import {
   canUseAction,
   currentActorCapabilitiesSchema,
   fetchCurrentActorCapabilities,
+  getCapabilityDeadlineRefetchInterval,
   getAvailableWorkspaces,
   getPrimaryWorkspace,
   hasAllPermissions,
@@ -123,6 +124,18 @@ describe('current actor capabilities', () => {
       method: 'GET',
       url: '/admin/me/capabilities',
     });
+  });
+
+  it('uses backend transition metadata for one shared bounded capability refresh', () => {
+    const withDeadline = {
+      ...capabilitiesPayload,
+      nextAuthorityTransitionAt: 10_000,
+      capabilityRefreshAt: 9_000,
+    };
+    expect(currentActorCapabilitiesSchema.parse(withDeadline).capabilityRefreshAt).toBe(9_000);
+    expect(getCapabilityDeadlineRefetchInterval(withDeadline, 8_000)).toBe(1_250);
+    expect(getCapabilityDeadlineRefetchInterval(withDeadline, 9_000)).toBe(1_000);
+    expect(getCapabilityDeadlineRefetchInterval(capabilitiesPayload, 8_000)).toBe(false);
   });
 
   it('exposes UX-only permission and scope helpers', () => {

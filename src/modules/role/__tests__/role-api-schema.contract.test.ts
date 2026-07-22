@@ -3,8 +3,12 @@ import {
   createRole,
   createRoleFromTemplate,
   fetchAccessAssignmentsForUser,
+  fetchAccessLifecycleStatus,
   fetchAccessAssignmentTargets,
   fetchEffectiveAccess,
+  fetchBreakGlassStatus,
+  endBreakGlassActivation,
+  fetchGovernanceStatus,
   fetchRoleTemplates,
   fetchRoles,
   performRoleLifecycleAction,
@@ -206,6 +210,230 @@ describe('Role API and schema contracts', () => {
       assignabilityStatus: 'SYSTEM_CONTROLLED',
       operatorFlowGroup: 'SYSTEM_CONTROLLED',
     });
+  });
+
+  it('parses strict backend-derived governance and break-glass read models', async () => {
+    const principal = {
+      principalId: 'principal-1',
+      principalType: 'PRIMARY_OWNER' as const,
+      status: 'ACTIVE' as const,
+      effectiveAt: 1,
+      expiresAt: null,
+      eligibleNow: true,
+      eligible: true,
+      eligibilityReasons: [],
+      canApproveSuccessor: false,
+      canActivateSuccessor: false,
+      ineligibilityReason: null,
+      nextAllowedAction: null,
+    };
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        generatedAt: 2,
+        policy: {
+          version: 'owner-succession-command-policy/v2',
+          timeZone: 'Asia/Ho_Chi_Minh',
+          effectiveAtRequired: true,
+          expiresAtRequired: true,
+        },
+        primaryOwner: principal,
+        successors: [],
+        actions: { canProposeSuccessor: true, proposalIneligibilityReason: null },
+      },
+    });
+    await expect(fetchGovernanceStatus()).resolves.toEqual({
+      generatedAt: 2,
+      policy: {
+        version: 'owner-succession-command-policy/v2',
+        timeZone: 'Asia/Ho_Chi_Minh',
+        effectiveAtRequired: true,
+        expiresAtRequired: true,
+      },
+      primaryOwner: principal,
+      successors: [],
+      actions: { canProposeSuccessor: true, proposalIneligibilityReason: null },
+    });
+
+    const activation = {
+      activationId: 'activation-1',
+      requestId: 'request-1',
+      targetUserId: 'user-1',
+      permissions: ['kpi.read'],
+      structuredScopeGrants: [{ scopeType: 'global' as const }],
+      scopeFingerprint: 'scope:v1:global',
+      incidentReferenceId: 'INC-1',
+      reason: 'Emergency',
+      activatorUserId: 'owner-1',
+      activatedAt: 1,
+      expiresAt: 3_600_001,
+      endedAt: null,
+      endedByUserId: null,
+      endReason: null,
+      status: 'ACTIVE' as const,
+      stepUpState: 'NOT_SUPPORTED' as const,
+      independentReviewDeadline: {
+        calendarVersion: 'v1',
+        timeZone: 'Asia/Ho_Chi_Minh' as const,
+        dueAt: 86_400_000,
+      },
+      independentReviewState: 'PENDING' as const,
+      independentReviewCategory: 'POST_USE_REVIEW' as const,
+      overdueSince: null,
+      completedAt: null,
+      wasOverdue: false,
+      reviewerUserId: null,
+      reviewResult: null,
+      reviewedAt: null,
+      auditCorrelationId: 'trace-1',
+      currentlyEffective: true,
+      remainingMs: 3_600_000,
+      canReview: false,
+      canEnd: true,
+      endIneligibilityReason: null,
+      ineligibilityReason: 'POST_USE_REVIEW_REQUIRES_EXPIRED_ACTIVATION',
+      nextAllowedAction: 'WAIT_FOR_EXPIRY',
+    };
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        generatedAt: 1,
+        policy: {
+          version: 'break-glass-policy/v1',
+          defaultDurationMs: 3_600_000,
+          maximumDurationMs: 14_400_000,
+        },
+        pagination: {
+          pageSize: 25,
+          requests: { nextCursor: null, exhausted: true },
+          activations: { nextCursor: null, exhausted: true },
+        },
+        availablePermissions: ['kpi.read'],
+        availableScopeTypes: ['global'],
+        primaryOwner: { eligible: true, isCurrentActor: true },
+        requestEligibility: {
+          canRequestNonUrgent: true,
+          canRequestUrgent: true,
+          nonUrgentIneligibilityReason: null,
+          urgentIneligibilityReason: null,
+        },
+        requests: [
+          {
+            requestId: 'request-1',
+            idempotencyKey: 'idempotency-1',
+            payloadFingerprint: 'payload-1',
+            targetUserId: 'user-1',
+            permissions: ['kpi.read'],
+            structuredScopeGrants: [{ scopeType: 'global' }],
+            scopeFingerprint: 'scope:v1:global',
+            urgency: 'NON_URGENT',
+            incidentReferenceId: 'INC-1',
+            reason: 'Emergency',
+            requesterUserId: 'requester-1',
+            requestedAt: 1,
+            requestedDurationMs: 3_600_000,
+            approvals: [],
+            status: 'PENDING_APPROVAL',
+            canApprove: false,
+            canReject: false,
+            requiredApprovals: 2,
+            completedApprovals: 0,
+            remainingApprovals: 2,
+            ineligibilityReason: 'EXACT_APPROVER_SCOPE_REQUIRED',
+            nextAllowedAction: null,
+          },
+        ],
+        activations: [activation],
+        nextAuthorityTransitionAt: activation.expiresAt,
+      },
+    });
+    await expect(fetchBreakGlassStatus()).resolves.toMatchObject({
+      availablePermissions: ['kpi.read'],
+      activations: [{ incidentReferenceId: 'INC-1', currentlyEffective: true }],
+    });
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: { applied: true, activationId: 'activation-1', endedAt: 2 },
+    });
+    await expect(
+      endBreakGlassActivation({
+        activationId: 'activation-1',
+        reason: 'Incident resolved',
+      }),
+    ).resolves.toMatchObject({ applied: true, endedAt: 2 });
+    expect(apiRequestMock).toHaveBeenLastCalledWith({
+      method: 'POST',
+      url: '/admin/access-assignments/break-glass/activations/activation-1/end',
+      data: { reason: 'Incident resolved' },
+    });
+
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        generatedAt: 2,
+        policy: {
+          version: 'owner-succession-command-policy/v2',
+          timeZone: 'Asia/Ho_Chi_Minh',
+          effectiveAtRequired: true,
+          expiresAtRequired: true,
+        },
+        primaryOwner: principal,
+        successors: [],
+        actions: { canProposeSuccessor: true, proposalIneligibilityReason: null },
+        unexpected: true,
+      },
+    });
+    await expect(fetchGovernanceStatus()).rejects.toThrow();
+  });
+
+  it('parses the strict backend-derived lifecycle queue and uses the bounded target query', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      data: {
+        generatedAt: 1,
+        availableScopeTypes: ['global'],
+        policy: {
+          version: 'access-lifecycle-command-policy/v2',
+          timeZone: 'Asia/Ho_Chi_Minh',
+          grace: { automaticExtensionMs: 259_200_000, maximumAbsoluteExtensionMs: 604_800_000 },
+        },
+        pagination: {
+          pageSize: 25,
+          reviewCycles: { nextCursor: 'opaque-review-cursor', exhausted: false },
+          graceExceptions: { nextCursor: null, exhausted: true },
+          successorRequests: { nextCursor: null, exhausted: true },
+        },
+        reviewCycles: [
+          {
+            cycleId: 'cycle-1',
+            assignmentId: 'assignment-1',
+            targetUserId: 'target-user',
+            riskTier: 'LOW',
+            reviewDeadline: 2,
+            automaticGraceEndsAt: 259_200_002,
+            maximumGraceEndsAt: 604_800_002,
+            state: 'PENDING',
+            requiredApprovals: 1,
+            completedApprovals: 0,
+            remainingApprovals: 1,
+            canApprove: false,
+            canReject: false,
+            canRequestGrace: true,
+            ineligibilityReason: 'EXACT_LIFECYCLE_SCOPE_REQUIRED',
+            nextAllowedAction: 'REQUEST_GRACE_EXCEPTION',
+          },
+        ],
+        graceExceptions: [],
+        successorRequests: [],
+        requestableAssignments: [],
+      },
+    });
+
+    await expect(fetchAccessLifecycleStatus('target-user')).resolves.toMatchObject({
+      reviewCycles: [{ cycleId: 'cycle-1', canRequestGrace: true }],
+    });
+    expect(apiRequestMock).toHaveBeenLastCalledWith({
+      method: 'GET',
+      url: '/admin/access-assignments/lifecycle',
+      params: { targetUserId: 'target-user' },
+    });
+    expect(apiRequestMock).toHaveBeenCalledTimes(1);
   });
 
   it('uses canonical assignment endpoints and strips backend-owned authority fields', async () => {
